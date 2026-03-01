@@ -1,10 +1,13 @@
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { FluentProvider, webDarkTheme } from '@fluentui/react-components'
+import './index.css'
+import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <FluentProvider theme={webDarkTheme} style={{ height: '100%' }}>
+      <App />
+    </FluentProvider>
   </StrictMode>,
-);
+)
