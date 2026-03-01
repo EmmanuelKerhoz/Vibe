@@ -21,6 +21,7 @@ import {
   TableHeaderCell,
   TableBody,
   TableCell,
+  TableCellLayout,
   Tooltip,
 } from '@fluentui/react-components';
 import {
@@ -373,23 +374,30 @@ export default function App() {
         </div>
 
         <div style={{ padding: 24, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* FIX: Spinner moved out of icon slot into children to avoid composite-component-in-SVG-slot issue */}
           <Button
             appearance="primary"
-            icon={isGenerating ? <Spinner size="tiny" /> : <SparkleRegular />}
+            icon={isGenerating ? undefined : <SparkleRegular />}
             onClick={generateSong}
             disabled={isGenerating || isAnalyzing}
             style={{ width: '100%', justifyContent: 'center' }}
           >
-            {isGenerating ? 'Generating...' : 'Generate Song'}
+            {isGenerating
+              ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner size="tiny" /> Generating...</span>
+              : 'Generate Song'
+            }
           </Button>
           <Button
             appearance="secondary"
-            icon={<ClipboardPasteRegular />}
+            icon={isAnalyzing ? undefined : <ClipboardPasteRegular />}
             onClick={() => setIsPasteModalOpen(true)}
             disabled={isGenerating || isAnalyzing}
             style={{ width: '100%', justifyContent: 'center' }}
           >
-            Paste Lyrics
+            {isAnalyzing
+              ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner size="tiny" /> Analyzing...</span>
+              : 'Paste Lyrics'
+            }
           </Button>
         </div>
       </div>
@@ -471,11 +479,13 @@ export default function App() {
                     <Table>
                       <TableHeader>
                         <TableRow style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                          <TableHeaderCell style={{ width: 48, textAlign: 'center' }}><NumberSymbolRegular style={{ fontSize: 12, color: '#71717a' }} /></TableHeaderCell>
-                          <TableHeaderCell>Lyric Line</TableHeaderCell>
-                          <TableHeaderCell style={{ width: 96, textAlign: 'center' }}>Rhyme</TableHeaderCell>
-                          <TableHeaderCell style={{ width: 96, textAlign: 'center' }}>Steps</TableHeaderCell>
-                          <TableHeaderCell style={{ width: 256 }}>Concept</TableHeaderCell>
+                          <TableHeaderCell style={{ width: 48, textAlign: 'center' }}>
+                            <TableCellLayout><NumberSymbolRegular style={{ fontSize: 12, color: '#71717a' }} /></TableCellLayout>
+                          </TableHeaderCell>
+                          <TableHeaderCell><TableCellLayout>Lyric Line</TableCellLayout></TableHeaderCell>
+                          <TableHeaderCell style={{ width: 96, textAlign: 'center' }}><TableCellLayout>Rhyme</TableCellLayout></TableHeaderCell>
+                          <TableHeaderCell style={{ width: 96, textAlign: 'center' }}><TableCellLayout>Steps</TableCellLayout></TableHeaderCell>
+                          <TableHeaderCell style={{ width: 256 }}><TableCellLayout>Concept</TableCellLayout></TableHeaderCell>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -489,21 +499,37 @@ export default function App() {
                               backgroundColor: selectedLineId === line.id ? 'rgba(99,102,241,0.06)' : undefined,
                             }}
                           >
-                            <TableCell style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: 12, color: '#52525b' }}>{idx + 1}</TableCell>
                             <TableCell>
-                              <input
-                                value={line.text}
-                                onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
-                                onFocus={saveHistory}
-                                style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', color: '#e4e4e7', fontWeight: 500, fontSize: 14 }}
-                                placeholder="Enter lyric line..."
-                              />
+                              <TableCellLayout style={{ justifyContent: 'center', fontFamily: 'monospace', fontSize: 12, color: '#52525b' }}>
+                                {idx + 1}
+                              </TableCellLayout>
                             </TableCell>
-                            <TableCell style={{ textAlign: 'center' }}>
-                              <Badge appearance="outline" style={{ fontFamily: 'monospace', fontSize: 11 }}>{line.rhyme}</Badge>
+                            <TableCell>
+                              <TableCellLayout>
+                                <input
+                                  value={line.text}
+                                  onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
+                                  onFocus={saveHistory}
+                                  style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', color: '#e4e4e7', fontWeight: 500, fontSize: 14 }}
+                                  placeholder="Enter lyric line..."
+                                />
+                              </TableCellLayout>
                             </TableCell>
-                            <TableCell style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: 12, color: '#71717a' }}>{line.syllables}</TableCell>
-                            <TableCell style={{ fontSize: 12, color: '#71717a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 256 }}>{line.concept}</TableCell>
+                            <TableCell>
+                              <TableCellLayout style={{ justifyContent: 'center' }}>
+                                <Badge appearance="outline" style={{ fontFamily: 'monospace', fontSize: 11 }}>{line.rhyme}</Badge>
+                              </TableCellLayout>
+                            </TableCell>
+                            <TableCell>
+                              <TableCellLayout style={{ justifyContent: 'center', fontFamily: 'monospace', fontSize: 12, color: '#71717a' }}>
+                                {line.syllables}
+                              </TableCellLayout>
+                            </TableCell>
+                            <TableCell>
+                              <TableCellLayout style={{ fontSize: 12, color: '#71717a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 256 }}>
+                                {line.concept}
+                              </TableCellLayout>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -589,11 +615,14 @@ export default function App() {
               <Button appearance="secondary" onClick={() => setIsPasteModalOpen(false)}>Cancel</Button>
               <Button
                 appearance="primary"
-                icon={isAnalyzing ? <Spinner size="tiny" /> : <SparkleRegular />}
+                icon={isAnalyzing ? undefined : <SparkleRegular />}
                 onClick={analyzePastedLyrics}
                 disabled={!pastedText.trim() || isAnalyzing}
               >
-                {isAnalyzing ? 'Analyzing...' : 'Analyze & Import'}
+                {isAnalyzing
+                  ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner size="tiny" /> Analyzing...</span>
+                  : 'Analyze & Import'
+                }
               </Button>
             </DialogActions>
           </DialogBody>
