@@ -1,6 +1,43 @@
 import React, { useState } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
-import { Sparkles, Check, X, Loader2, RefreshCw, Music, AlignLeft, Hash, Lightbulb, ClipboardPaste, Undo2, Redo2, Ruler, BarChart2 } from 'lucide-react';
+import {
+  Button,
+  Input,
+  Select,
+  Textarea,
+  Label,
+  Spinner,
+  Badge,
+  Card,
+  Dialog,
+  DialogSurface,
+  DialogBody,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableHeader,
+  TableRow,
+  TableHeaderCell,
+  TableBody,
+  TableCell,
+  Tooltip,
+} from '@fluentui/react-components';
+import {
+  SparkleRegular,
+  CheckmarkRegular,
+  DismissRegular,
+  MusicNote2Regular,
+  TextAlignLeftRegular,
+  NumberSymbolRegular,
+  LightbulbRegular,
+  ClipboardPasteRegular,
+  ArrowUndoRegular,
+  ArrowRedoRegular,
+  RulerRegular,
+  DataBarVerticalRegular,
+  ArrowClockwiseRegular,
+} from '@fluentui/react-icons';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -18,33 +55,13 @@ interface Section {
   lines: Line[];
 }
 
-const Label = ({ children }: { children: React.ReactNode }) => (
-  <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">{children}</label>
-);
-
-const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-  <input 
-    {...props} 
-    className="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-lg px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-zinc-700"
-  />
-);
-
-const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
-  <select 
-    {...props} 
-    className="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-lg px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all appearance-none"
-  >
-    {props.children}
-  </select>
-);
-
 export default function App() {
   const [topic, setTopic] = useState('A neon city in the rain');
   const [mood, setMood] = useState('Cyberpunk, melancholic, reflective');
   const [rhymeScheme, setRhymeScheme] = useState('AABB');
   const [targetSteps, setTargetSteps] = useState(10);
   const [structure, setStructure] = useState('Verse 1, Chorus, Verse 2, Chorus, Bridge, Outro');
-  
+
   const [song, setSong] = useState<Section[]>([]);
   const [past, setPast] = useState<Section[][]>([]);
   const [future, setFuture] = useState<Section[][]>([]);
@@ -76,7 +93,7 @@ export default function App() {
     setPast(prev => [...prev, song]);
     setSong(next);
   };
-  
+
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -90,7 +107,6 @@ export default function App() {
     setIsAnalyzing(true);
     try {
       const prompt = `Analyze the following lyrics and structure them into sections (e.g., Verse 1, Chorus). For each line, provide the exact lyric text, the rhyme identifier (e.g., A, B), the exact syllable count, and a short core concept.\n\nLyrics:\n${pastedText}`;
-
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
@@ -121,23 +137,19 @@ export default function App() {
           }
         }
       });
-
       const data = JSON.parse(response.text || '[]');
       const songWithIds = data.map((section: any) => ({
         ...section,
         id: crypto.randomUUID(),
-        lines: section.lines.map((line: any) => ({
-          ...line,
-          id: crypto.randomUUID()
-        }))
+        lines: section.lines.map((line: any) => ({ ...line, id: crypto.randomUUID() }))
       }));
       updateSongWithHistory(songWithIds);
       setSelectedLineId(null);
       setIsPasteModalOpen(false);
       setPastedText('');
     } catch (error) {
-      console.error("Failed to analyze lyrics:", error);
-      alert("Failed to analyze lyrics. Please try again.");
+      console.error('Failed to analyze lyrics:', error);
+      alert('Failed to analyze lyrics. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -146,14 +158,7 @@ export default function App() {
   const generateSong = async () => {
     setIsGenerating(true);
     try {
-      const prompt = `Write a song about "${topic}". 
-Mood: ${mood}
-Rhyme Scheme: ${rhymeScheme}
-Target Syllables per line: ${targetSteps}
-Structure: ${structure}
-
-For each line, provide the lyric text, the rhyme identifier (e.g., A, B), the exact syllable count, and a short core concept.`;
-
+      const prompt = `Write a song about "${topic}". \nMood: ${mood}\nRhyme Scheme: ${rhymeScheme}\nTarget Syllables per line: ${targetSteps}\nStructure: ${structure}\n\nFor each line, provide the lyric text, the rhyme identifier (e.g., A, B), the exact syllable count, and a short core concept.`;
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
@@ -184,21 +189,17 @@ For each line, provide the lyric text, the rhyme identifier (e.g., A, B), the ex
           }
         }
       });
-
       const data = JSON.parse(response.text || '[]');
       const songWithIds = data.map((section: any) => ({
         ...section,
         id: crypto.randomUUID(),
-        lines: section.lines.map((line: any) => ({
-          ...line,
-          id: crypto.randomUUID()
-        }))
+        lines: section.lines.map((line: any) => ({ ...line, id: crypto.randomUUID() }))
       }));
       setSong(songWithIds);
       setSelectedLineId(null);
     } catch (error) {
-      console.error("Failed to generate song:", error);
-      alert("Failed to generate song. Please try again.");
+      console.error('Failed to generate song:', error);
+      alert('Failed to generate song. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -208,13 +209,7 @@ For each line, provide the lyric text, the rhyme identifier (e.g., A, B), the ex
     if (song.length === 0) return;
     setIsGenerating(true);
     try {
-      const prompt = `Rewrite the following song so that EVERY line has EXACTLY ${targetSteps} syllables. Maintain the original meaning, rhyme scheme, and section structure.
-
-Current Song:
-${JSON.stringify(song, null, 2)}
-
-Return the updated song in the exact same JSON structure.`;
-
+      const prompt = `Rewrite the following song so that EVERY line has EXACTLY ${targetSteps} syllables. Maintain the original meaning, rhyme scheme, and section structure.\n\nCurrent Song:\n${JSON.stringify(song, null, 2)}\n\nReturn the updated song in the exact same JSON structure.`;
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
@@ -245,20 +240,16 @@ Return the updated song in the exact same JSON structure.`;
           }
         }
       });
-
       const data = JSON.parse(response.text || '[]');
       const songWithIds = data.map((section: any) => ({
         ...section,
         id: crypto.randomUUID(),
-        lines: section.lines.map((line: any) => ({
-          ...line,
-          id: crypto.randomUUID()
-        }))
+        lines: section.lines.map((line: any) => ({ ...line, id: crypto.randomUUID() }))
       }));
       updateSongWithHistory(songWithIds);
     } catch (error) {
-      console.error("Failed to quantize:", error);
-      alert("Failed to quantize syllables. Please try again.");
+      console.error('Failed to quantize:', error);
+      alert('Failed to quantize syllables. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -267,12 +258,10 @@ Return the updated song in the exact same JSON structure.`;
   const generateSuggestions = async (lineId: string) => {
     setIsSuggesting(true);
     setSuggestions([]);
-    
     let currentLine: Line | null = null;
     let previousLine: Line | null = null;
     let nextLine: Line | null = null;
-    let sectionName = "";
-
+    let sectionName = '';
     for (let s = 0; s < song.length; s++) {
       const section = song[s];
       for (let l = 0; l < section.lines.length; l++) {
@@ -286,75 +275,39 @@ Return the updated song in the exact same JSON structure.`;
       }
       if (currentLine) break;
     }
-
-    if (!currentLine) {
-      setIsSuggesting(false);
-      return;
-    }
-
+    if (!currentLine) { setIsSuggesting(false); return; }
     try {
-      const prompt = `Generate 3 creative alternative versions for a lyric line.
-Context:
-- Topic: ${topic}
-- Mood: ${mood}
-- Rhyme Scheme: ${rhymeScheme}
-- Target Syllables: ${targetSteps}
-- Section: ${sectionName}
-${previousLine ? `- Previous Line: "${previousLine.text}" (Rhyme: ${previousLine.rhyme})` : ''}
-- Current Line to replace: "${currentLine.text}" (Rhyme: ${currentLine.rhyme}, Concept: ${currentLine.concept})
-${nextLine ? `- Next Line: "${nextLine.text}" (Rhyme: ${nextLine.rhyme})` : ''}
-
-Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
-
+      const prompt = `Generate 3 creative alternative versions for a lyric line.\nContext:\n- Topic: ${topic}\n- Mood: ${mood}\n- Rhyme Scheme: ${rhymeScheme}\n- Target Syllables: ${targetSteps}\n- Section: ${sectionName}\n${previousLine ? `- Previous Line: "${previousLine.text}" (Rhyme: ${previousLine.rhyme})` : ''}\n- Current Line to replace: "${currentLine.text}" (Rhyme: ${currentLine.rhyme}, Concept: ${currentLine.concept})\n${nextLine ? `- Next Line: "${nextLine.text}" (Rhyme: ${nextLine.rhyme})` : ''}\n\nProvide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING }
-          }
+          responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
         }
       });
-
       const data = JSON.parse(response.text || '[]');
       setSuggestions(data);
     } catch (error) {
-      console.error("Failed to generate suggestions:", error);
+      console.error('Failed to generate suggestions:', error);
     } finally {
       setIsSuggesting(false);
     }
   };
 
   const updateLineText = (sectionId: string, lineId: string, newText: string) => {
-    setSong(prev => prev.map(section => {
-      if (section.id === sectionId) {
-        return {
-          ...section,
-          lines: section.lines.map(line => {
-            if (line.id === lineId) {
-              return { ...line, text: newText };
-            }
-            return line;
-          })
-        };
-      }
-      return section;
-    }));
+    setSong(prev => prev.map(section =>
+      section.id === sectionId
+        ? { ...section, lines: section.lines.map(line => line.id === lineId ? { ...line, text: newText } : line) }
+        : section
+    ));
   };
 
   const applySuggestion = (newText: string) => {
     if (!selectedLineId) return;
-    
     const newSong = song.map(section => ({
       ...section,
-      lines: section.lines.map(line => {
-        if (line.id === selectedLineId) {
-          return { ...line, text: newText };
-        }
-        return line;
-      })
+      lines: section.lines.map(line => line.id === selectedLineId ? { ...line, text: newText } : line)
     }));
     updateSongWithHistory(newSong);
   };
@@ -370,31 +323,30 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
 
   return (
-    <div className="h-screen w-full bg-[#09090b] text-zinc-300 flex overflow-hidden font-sans selection:bg-indigo-500/30">
-      {/* Left Sidebar - Settings */}
-      <div className="w-80 border-r border-zinc-800/60 bg-[#0c0c0e] flex flex-col z-10 shadow-xl">
-        <div className="p-6 border-b border-zinc-800/60 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-            <Music className="w-4 h-4 text-indigo-400" />
+    <div style={{ height: '100vh', width: '100%', display: 'flex', overflow: 'hidden', backgroundColor: '#09090b', color: '#d4d4d8' }}>
+
+      {/* ── Left Sidebar ── */}
+      <div style={{ width: 320, borderRight: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#0c0c0e', display: 'flex', flexDirection: 'column', zIndex: 10 }}>
+        <div style={{ padding: 24, borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <MusicNote2Regular style={{ color: '#818cf8', fontSize: 16 }} />
           </div>
-          <h1 className="text-base font-semibold text-zinc-100 tracking-tight">
-            Lyricist Pro
-          </h1>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#f4f4f5' }}>Lyricist Pro</span>
         </div>
-        
-        <div className="p-6 flex-1 overflow-y-auto space-y-6">
-          <div>
-            <Label>Topic / Theme</Label>
-            <Input value={topic} onChange={e => setTopic(e.target.value)} placeholder="What is the song about?" />
+
+        <div style={{ padding: 24, flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Label htmlFor="topic">Topic / Theme</Label>
+            <Input id="topic" value={topic} onChange={(_, d) => setTopic(d.value)} placeholder="What is the song about?" />
           </div>
-          <div>
-            <Label>Mood / Vibe</Label>
-            <Input value={mood} onChange={e => setMood(e.target.value)} placeholder="e.g., Upbeat, Melancholic" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Label htmlFor="mood">Mood / Vibe</Label>
+            <Input id="mood" value={mood} onChange={(_, d) => setMood(d.value)} placeholder="e.g., Upbeat, Melancholic" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Rhyme Scheme</Label>
-              <Select value={rhymeScheme} onChange={e => setRhymeScheme(e.target.value)}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <Label htmlFor="rhyme">Rhyme Scheme</Label>
+              <Select id="rhyme" value={rhymeScheme} onChange={(_, d) => setRhymeScheme(d.value)}>
                 <option value="AABB">AABB</option>
                 <option value="ABAB">ABAB</option>
                 <option value="ABCB">ABCB</option>
@@ -402,190 +354,161 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
                 <option value="Free">Free Verse</option>
               </Select>
             </div>
-            <div>
-              <Label>Target Steps</Label>
-              <Input type="number" value={targetSteps} onChange={e => setTargetSteps(parseInt(e.target.value) || 0)} min={1} max={20} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <Label htmlFor="steps">Target Steps</Label>
+              <Input id="steps" type="number" value={String(targetSteps)} onChange={(_, d) => setTargetSteps(parseInt(d.value) || 0)} />
             </div>
           </div>
-          <div>
-            <Label>Song Structure</Label>
-            <textarea 
-              value={structure} 
-              onChange={e => setStructure(e.target.value)}
-              className="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-lg px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all min-h-[80px] resize-y"
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Label htmlFor="structure">Song Structure</Label>
+            <Textarea
+              id="structure"
+              value={structure}
+              onChange={(_, d) => setStructure(d.value)}
               placeholder="Verse 1, Chorus, Verse 2..."
+              resize="vertical"
+              style={{ minHeight: 80 }}
             />
           </div>
         </div>
-        
-        <div className="p-6 border-t border-zinc-800/60 bg-[#0c0c0e] space-y-3">
-          <button 
-            onClick={generateSong} 
+
+        <div style={{ padding: 24, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Button
+            appearance="primary"
+            icon={isGenerating ? <Spinner size="tiny" /> : <SparkleRegular />}
+            onClick={generateSong}
             disabled={isGenerating || isAnalyzing}
-            className="w-full py-3 bg-zinc-100 hover:bg-white text-zinc-900 font-medium rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.15)]"
+            style={{ width: '100%', justifyContent: 'center' }}
           >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Generate Song
-              </>
-            )}
-          </button>
-          <button 
-            onClick={() => setIsPasteModalOpen(true)} 
+            {isGenerating ? 'Generating...' : 'Generate Song'}
+          </Button>
+          <Button
+            appearance="secondary"
+            icon={<ClipboardPasteRegular />}
+            onClick={() => setIsPasteModalOpen(true)}
             disabled={isGenerating || isAnalyzing}
-            className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-medium rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border border-zinc-800"
+            style={{ width: '100%', justifyContent: 'center' }}
           >
-            <ClipboardPaste className="w-4 h-4" />
             Paste Lyrics
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Main Content - Table */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#09090b] relative">
-        {/* Background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-500/5 blur-[120px] pointer-events-none rounded-full" />
-        
-        <div className="h-16 border-b border-zinc-800/60 flex items-center justify-between px-8 z-10 bg-[#09090b]/80 backdrop-blur-sm">
-          <h2 className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-            <AlignLeft className="w-4 h-4" />
-            Editor
-          </h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={undo}
-              disabled={past.length === 0}
-              className="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Undo"
-            >
-              <Undo2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={redo}
-              disabled={future.length === 0}
-              className="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Redo"
-            >
-              <Redo2 className="w-4 h-4" />
-            </button>
-            <div className="w-px h-4 bg-zinc-800 mx-2"></div>
-            <button
+      {/* ── Main Content ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, backgroundColor: '#09090b', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 800, height: 400, background: 'rgba(99,102,241,0.05)', filter: 'blur(120px)', pointerEvents: 'none', borderRadius: '50%' }} />
+
+        {/* Top bar */}
+        <div style={{ height: 64, borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', zIndex: 10, backgroundColor: 'rgba(9,9,11,0.8)', backdropFilter: 'blur(8px)' }}>
+          <span style={{ fontSize: 13, color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <TextAlignLeftRegular style={{ fontSize: 16 }} /> Editor
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Tooltip content="Undo" relationship="label">
+              <Button appearance="subtle" icon={<ArrowUndoRegular />} onClick={undo} disabled={past.length === 0} />
+            </Tooltip>
+            <Tooltip content="Redo" relationship="label">
+              <Button appearance="subtle" icon={<ArrowRedoRegular />} onClick={redo} disabled={future.length === 0} />
+            </Tooltip>
+            <div style={{ width: 1, height: 16, backgroundColor: 'rgba(255,255,255,0.1)', margin: '0 8px' }} />
+            <Button
+              appearance="outline"
+              icon={<RulerRegular />}
               onClick={quantizeSyllables}
               disabled={song.length === 0 || isGenerating}
-              className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-medium rounded-lg transition-all flex items-center gap-2 border border-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              size="small"
             >
-              <Ruler className="w-3.5 h-3.5" />
               Quantize Steps
-            </button>
+            </Button>
           </div>
         </div>
-        
+
+        {/* Stats bar */}
         {song.length > 0 && (
-          <div className="border-b border-zinc-800/60 bg-zinc-900/10 p-6 z-10 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                <BarChart2 className="w-4 h-4" />
-                Song Structure & Stats
-              </h3>
-              <div className="flex items-center gap-6">
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Sections</span>
-                  <span className="text-sm font-mono text-zinc-300">{sectionCount}</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Words</span>
-                  <span className="text-sm font-mono text-zinc-300">{wordCount}</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Characters</span>
-                  <span className="text-sm font-mono text-zinc-300">{charCount}</span>
-                </div>
+          <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px 32px', zIndex: 10, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <DataBarVerticalRegular style={{ fontSize: 16 }} /> Song Structure & Stats
+              </span>
+              <div style={{ display: 'flex', gap: 24 }}>
+                {([['Sections', sectionCount], ['Words', wordCount], ['Characters', charCount]] as [string, number][]).map(([label, val]) => (
+                  <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <span style={{ fontSize: 10, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>{label}</span>
+                    <span style={{ fontSize: 13, fontFamily: 'monospace', color: '#d4d4d8' }}>{val}</span>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {song.map((section) => (
-                <div key={section.id} className="flex-shrink-0 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-xs font-medium text-indigo-300 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+              {song.map(section => (
+                <Badge key={section.id} appearance="tint" color="brand" style={{ flexShrink: 0 }}>
                   {section.name}
-                </div>
+                </Badge>
               ))}
             </div>
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-8 z-10">
+        {/* Editor */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 32, zIndex: 10 }}>
           {song.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-500 space-y-4">
-              <div className="w-16 h-16 rounded-2xl border border-zinc-800/60 bg-zinc-900/30 flex items-center justify-center">
-                <Music className="w-8 h-8 text-zinc-700" />
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, color: '#71717a' }}>
+              <div style={{ width: 64, height: 64, borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MusicNote2Regular style={{ fontSize: 32, color: '#3f3f46' }} />
               </div>
-              <p className="text-sm">Configure settings and generate a song, or paste existing lyrics to start editing.</p>
-              <button 
-                onClick={() => setIsPasteModalOpen(true)}
-                className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-sm font-medium rounded-lg transition-all flex items-center gap-2 border border-zinc-800"
-              >
-                <ClipboardPaste className="w-4 h-4" />
-                Paste Lyrics
-              </button>
+              <p style={{ fontSize: 14 }}>Configure settings and generate a song, or paste existing lyrics to start editing.</p>
+              <Button appearance="secondary" icon={<ClipboardPasteRegular />} onClick={() => setIsPasteModalOpen(true)}>Paste Lyrics</Button>
             </div>
           ) : (
-            <div className="max-w-5xl mx-auto space-y-12 pb-20">
+            <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 48, paddingBottom: 80 }}>
               {song.map(section => (
-                <div key={section.id} className="space-y-4">
-                  <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] pl-2 flex items-center gap-2">
-                    <span className="w-8 h-[1px] bg-zinc-800"></span>
+                <div key={section.id} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <h3 style={{ fontSize: 11, fontWeight: 700, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.2em', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+                    <span style={{ width: 32, height: 1, backgroundColor: '#27272a', display: 'inline-block' }} />
                     {section.name}
                   </h3>
-                  <div className="bg-[#0c0c0e] border border-zinc-800/60 rounded-xl overflow-hidden shadow-sm">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-zinc-800/60 text-[10px] text-zinc-500 uppercase tracking-wider bg-zinc-900/20">
-                          <th className="px-4 py-3 font-medium w-12 text-center"><Hash className="w-3 h-3 mx-auto" /></th>
-                          <th className="px-4 py-3 font-medium">Lyric Line</th>
-                          <th className="px-4 py-3 font-medium w-24 text-center">Rhyme</th>
-                          <th className="px-4 py-3 font-medium w-24 text-center">Steps</th>
-                          <th className="px-4 py-3 font-medium w-64">Concept</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-800/40">
+                  <Card style={{ padding: 0, overflow: 'hidden', backgroundColor: '#0c0c0e', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                          <TableHeaderCell style={{ width: 48, textAlign: 'center' }}><NumberSymbolRegular style={{ fontSize: 12, color: '#71717a' }} /></TableHeaderCell>
+                          <TableHeaderCell>Lyric Line</TableHeaderCell>
+                          <TableHeaderCell style={{ width: 96, textAlign: 'center' }}>Rhyme</TableHeaderCell>
+                          <TableHeaderCell style={{ width: 96, textAlign: 'center' }}>Steps</TableHeaderCell>
+                          <TableHeaderCell style={{ width: 256 }}>Concept</TableHeaderCell>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {section.lines.map((line, idx) => (
-                          <tr 
-                            key={line.id} 
+                          <TableRow
+                            key={line.id}
                             onClick={() => handleLineClick(line.id)}
-                            className={`group transition-colors ${selectedLineId === line.id ? 'bg-indigo-500/[0.03] border-l-2 border-l-indigo-500' : 'hover:bg-zinc-800/20 border-l-2 border-l-transparent'}`}
+                            style={{
+                              cursor: 'pointer',
+                              borderLeft: selectedLineId === line.id ? '3px solid #818cf8' : '3px solid transparent',
+                              backgroundColor: selectedLineId === line.id ? 'rgba(99,102,241,0.06)' : undefined,
+                            }}
                           >
-                            <td className="px-4 py-3.5 text-xs text-zinc-600 font-mono text-center">{idx + 1}</td>
-                            <td className="px-4 py-3.5">
-                              <input 
+                            <TableCell style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: 12, color: '#52525b' }}>{idx + 1}</TableCell>
+                            <TableCell>
+                              <input
                                 value={line.text}
                                 onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
                                 onFocus={saveHistory}
-                                className="bg-transparent border-none outline-none w-full text-zinc-200 font-medium placeholder-zinc-700 focus:text-white transition-colors"
+                                style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', color: '#e4e4e7', fontWeight: 500, fontSize: 14 }}
                                 placeholder="Enter lyric line..."
                               />
-                            </td>
-                            <td className="px-4 py-3.5 text-center">
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-400 shadow-inner">
-                                {line.rhyme}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5 text-center text-xs font-mono text-zinc-500">
-                              {line.syllables}
-                            </td>
-                            <td className="px-4 py-3.5 text-xs text-zinc-500 truncate max-w-[16rem]">
-                              {line.concept}
-                            </td>
-                          </tr>
+                            </TableCell>
+                            <TableCell style={{ textAlign: 'center' }}>
+                              <Badge appearance="outline" style={{ fontFamily: 'monospace', fontSize: 11 }}>{line.rhyme}</Badge>
+                            </TableCell>
+                            <TableCell style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: 12, color: '#71717a' }}>{line.syllables}</TableCell>
+                            <TableCell style={{ fontSize: 12, color: '#71717a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 256 }}>{line.concept}</TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      </TableBody>
+                    </Table>
+                  </Card>
                 </div>
               ))}
             </div>
@@ -593,119 +516,89 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
         </div>
       </div>
 
-      {/* Right Sidebar - Suggestions */}
+      {/* ── Right Sidebar – Suggestions ── */}
       {selectedLineId && (
-        <div className="w-80 border-l border-zinc-800/60 bg-[#0c0c0e] flex flex-col shadow-2xl z-20">
-          <div className="p-6 border-b border-zinc-800/60 flex items-center justify-between bg-zinc-900/20">
-            <h3 className="text-sm font-medium text-zinc-200 flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-amber-400" />
-              AI Suggestions
-            </h3>
-            <div className="flex items-center gap-1">
-              <button 
-                onClick={() => generateSuggestions(selectedLineId)} 
-                className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded transition-colors"
-                title="Regenerate"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSuggesting ? 'animate-spin' : ''}`} />
-              </button>
-              <button 
-                onClick={() => setSelectedLineId(null)} 
-                className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <div style={{ width: 320, borderLeft: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#0c0c0e', display: 'flex', flexDirection: 'column', zIndex: 20 }}>
+          <div style={{ padding: 24, borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+            <span style={{ fontSize: 14, fontWeight: 500, color: '#e4e4e7', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <LightbulbRegular style={{ color: '#fbbf24', fontSize: 16 }} /> AI Suggestions
+            </span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <Tooltip content="Regenerate" relationship="label">
+                <Button appearance="subtle" icon={<ArrowClockwiseRegular />} onClick={() => generateSuggestions(selectedLineId)} size="small" disabled={isSuggesting} />
+              </Tooltip>
+              <Button appearance="subtle" icon={<DismissRegular />} onClick={() => setSelectedLineId(null)} size="small" />
             </div>
           </div>
-          
-          <div className="p-6 flex-1 overflow-y-auto bg-[#0c0c0e]">
+          <div style={{ padding: 24, flex: 1, overflowY: 'auto' }}>
             {isSuggesting ? (
-              <div className="flex flex-col items-center justify-center h-40 space-y-4 text-zinc-500">
-                <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-                <span className="text-xs font-medium uppercase tracking-wider">Brainstorming...</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 160, gap: 16 }}>
+                <Spinner size="medium" label="Brainstorming..." />
               </div>
             ) : suggestions.length > 0 ? (
-              <div className="space-y-4">
-                <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
-                  Based on your theme, mood, and rhyme scheme, here are some alternatives:
-                </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <p style={{ fontSize: 12, color: '#71717a', lineHeight: 1.6, margin: 0 }}>Based on your theme, mood, and rhyme scheme, here are some alternatives:</p>
                 {suggestions.map((suggestion, idx) => (
-                  <div key={idx} className="bg-[#09090b] border border-zinc-800/80 rounded-xl p-4 space-y-4 group hover:border-indigo-500/40 transition-all shadow-sm">
-                    <p className="text-sm text-zinc-200 leading-relaxed font-medium">"{suggestion}"</p>
-                    <button 
+                  <Card key={idx} style={{ backgroundColor: '#09090b', border: '1px solid rgba(255,255,255,0.06)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <p style={{ fontSize: 14, color: '#e4e4e7', lineHeight: 1.6, fontWeight: 500, margin: 0 }}>"{suggestion}"</p>
+                    <Button
+                      appearance="primary"
+                      icon={<CheckmarkRegular />}
                       onClick={() => applySuggestion(suggestion)}
-                      className="w-full py-2 bg-zinc-900 hover:bg-indigo-500 text-zinc-400 hover:text-white text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-2 border border-zinc-800 hover:border-indigo-500"
+                      size="small"
+                      style={{ width: '100%', justifyContent: 'center' }}
                     >
-                      <Check className="w-3.5 h-3.5" />
                       Apply Line
-                    </button>
-                  </div>
+                    </Button>
+                  </Card>
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-zinc-500 text-center mt-10">
-                Select a line to get AI suggestions.
-              </div>
+              <p style={{ fontSize: 14, color: '#71717a', textAlign: 'center', marginTop: 40 }}>Select a line to get AI suggestions.</p>
             )}
           </div>
         </div>
       )}
 
-      {/* Paste Modal */}
-      {isPasteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#0c0c0e] border border-zinc-800/80 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-zinc-800/60 flex items-center justify-between bg-zinc-900/20">
-              <h3 className="text-lg font-medium text-zinc-100 flex items-center gap-2">
-                <ClipboardPaste className="w-5 h-5 text-indigo-400" />
-                Paste Lyrics
-              </h3>
-              <button 
-                onClick={() => setIsPasteModalOpen(false)} 
-                className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 flex-1 overflow-y-auto">
-              <p className="text-sm text-zinc-400 mb-4">
+      {/* ── Paste Modal ── */}
+      <Dialog open={isPasteModalOpen} onOpenChange={(_, d) => setIsPasteModalOpen(d.open)}>
+        <DialogSurface style={{ backgroundColor: '#0c0c0e', border: '1px solid rgba(255,255,255,0.08)', maxWidth: 640, width: '100%' }}>
+          <DialogBody>
+            <DialogTitle
+              action={
+                <Button appearance="subtle" icon={<DismissRegular />} onClick={() => setIsPasteModalOpen(false)} />
+              }
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ClipboardPasteRegular style={{ color: '#818cf8', fontSize: 20 }} /> Paste Lyrics
+              </span>
+            </DialogTitle>
+            <DialogContent>
+              <p style={{ fontSize: 14, color: '#a1a1aa', marginBottom: 16, lineHeight: 1.6 }}>
                 Paste your existing lyrics below. Our AI will analyze them to extract the structure, rhyme scheme, syllable count, and core concepts to fit into the editor.
               </p>
-              <textarea
+              <Textarea
                 value={pastedText}
-                onChange={(e) => setPastedText(e.target.value)}
+                onChange={(_, d) => setPastedText(d.value)}
                 placeholder="Paste your lyrics here..."
-                className="w-full h-64 bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-4 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all resize-y placeholder:text-zinc-700 font-mono"
+                resize="vertical"
+                style={{ width: '100%', minHeight: 256, fontFamily: 'monospace', fontSize: 13 }}
               />
-            </div>
-            <div className="p-6 border-t border-zinc-800/60 bg-zinc-900/20 flex justify-end gap-3">
-              <button
-                onClick={() => setIsPasteModalOpen(false)}
-                className="px-5 py-2.5 text-sm font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" onClick={() => setIsPasteModalOpen(false)}>Cancel</Button>
+              <Button
+                appearance="primary"
+                icon={isAnalyzing ? <Spinner size="tiny" /> : <SparkleRegular />}
                 onClick={analyzePastedLyrics}
                 disabled={!pastedText.trim() || isAnalyzing}
-                className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
               >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Analyze & Import
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                {isAnalyzing ? 'Analyzing...' : 'Analyze & Import'}
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
     </div>
   );
 }
