@@ -2571,7 +2571,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
                     <MenuItem value="Wolof" sx={{ fontSize: '10px' }}>Wolof (Senegal - West Africa)</MenuItem>
                     <MenuItem value="Yoruba" sx={{ fontSize: '10px' }}>Yoruba (Nigeria - West Africa)</MenuItem>
                     <MenuItem value="Zulu" sx={{ fontSize: '10px' }}>Zulu (South Africa)</MenuItem>
-                  </SelectMui>
+                  </Select>
                   <Tooltip title={`Translate and adapt the entire song to ${targetLanguage} (creative adaptation, not just literal translation)`}>
                     <button
                       onClick={() => adaptSongLanguage(targetLanguage)}
