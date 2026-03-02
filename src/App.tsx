@@ -2,17 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { Sparkles, Check, X, Loader2, RefreshCw, Music, AlignLeft, Hash, Lightbulb, ClipboardPaste, Undo2, Redo2, Ruler, BarChart2, Trash2, GripVertical, Download, Upload, Sun, Moon, Plus, ChevronDown, PanelRight, PanelLeft, ChevronRight, Waves, Mic, Volume2, VolumeX, Wand2, History, Bot, User, FileText, Layout, BookOpen, Activity, CheckCircle2, Target, Languages, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
-
-
-import { Line, Section, SongVersion } from './types';
-import { Label } from './components/ui/Label';
-import { Input } from './components/ui/Input';
-import { Select } from './components/ui/Select';
-import { Button } from './components/ui/Button';
-import { Tooltip } from './components/ui/Tooltip';
-import { MenuItem } from './components/ui/MenuItem';
-import { IconButton } from './components/ui/IconButton';
+import { FluentProvider, webLightTheme, webDarkTheme, Input as FluentInput, Select as FluentSelect, Label as FluentLabel, Button as FluentButton, Tooltip as FluentTooltip } from '@fluentui/react-components';
 
 // Remove global ai instance. We'll create it on demand to use the latest key.
 // const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -20,6 +10,45 @@ import { IconButton } from './components/ui/IconButton';
 const getAi = () => {
   const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   return new GoogleGenAI({ apiKey });
+};
+
+interface Line {
+  id: string;
+  text: string;
+  rhymingSyllables: string;
+  rhyme: string;
+  syllables: number;
+  concept: string;
+  isManual?: boolean;
+}
+
+interface Section {
+  id: string;
+  name: string;
+  lines: Line[];
+  rhymeScheme?: string;
+  targetSyllables?: number;
+  mood?: string;
+  preInstructions?: string[];
+  postInstructions?: string[];
+  language?: string;
+}
+
+interface SongVersion {
+  id: string;
+  timestamp: number;
+  song: Section[];
+  topic: string;
+  mood: string;
+  name: string;
+}
+
+const Label = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <FluentLabel style={{ display: 'block', textTransform: 'uppercase', marginBottom: '8px', marginLeft: '4px', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em', color: 'var(--colorNeutralForeground2)' }}>
+      {children}
+    </FluentLabel>
+  );
 };
 
 const LyricInput = ({ value, onChange, onKeyDown, className, ...props }: any) => {
@@ -204,6 +233,78 @@ const InstructionEditor = ({
     </div>
   );
 };
+
+const Input = ({ color, ...props }: any) => {
+  return <FluentInput {...props} style={{ width: '100%' }} className="lcars-hud-chip" />;
+};
+
+const Select = ({ color, ...props }: any) => {
+  return (
+    <FluentSelect 
+      {...props} 
+      style={{ width: '100%' }}
+      className="lcars-hud-chip"
+      onChange={(e, data) => {
+        if (props.onChange) {
+          props.onChange({ target: { value: data.value } });
+        }
+      }}
+    >
+      {React.Children.map(props.children, child => {
+        if (React.isValidElement(child)) {
+          return <option value={(child.props as any).value}>{(child.props as any).children}</option>;
+        }
+        return child;
+      })}
+    </FluentSelect>
+  );
+};
+
+const Button = ({ children, variant, color, size, startIcon, sx, component, fullWidth, className, style, ...props }: any) => {
+  let appearance: any = 'secondary';
+  if (variant === 'contained') appearance = 'primary';
+  if (variant === 'outlined') appearance = 'outline';
+  if (variant === 'text') appearance = 'transparent';
+  
+  const fluentStyle = { ...style, width: fullWidth ? '100%' : undefined };
+  const fluentClass = `fluent-button ${appearance === 'outline' || appearance === 'transparent' ? 'lcars-holo' : ''} ${className || ''}`;
+  
+  if (component === 'label') {
+    return (
+      <label style={{ display: 'inline-flex', cursor: 'pointer', ...fluentStyle }} className={className}>
+        <FluentButton as="span" appearance={appearance} size={size} icon={startIcon} className={fluentClass} {...props}>
+          {children}
+        </FluentButton>
+      </label>
+    );
+  }
+  
+  return (
+    <FluentButton appearance={appearance} size={size} icon={startIcon} style={fluentStyle} className={fluentClass} {...props}>
+      {children}
+    </FluentButton>
+  );
+};
+
+const Tooltip = ({ title, children }: { title: string, children: React.ReactElement }) => {
+  return (
+    <FluentTooltip content={title} relationship="label">
+      {children}
+    </FluentTooltip>
+  );
+};
+
+const MenuItem = ({ children, value, ...props }: any) => (
+  <option value={value} {...props}>
+    {children}
+  </option>
+);
+
+const IconButton = ({ children, ...props }: any) => (
+  <Button {...props} variant="text" style={{ minWidth: 'auto', padding: '4px', ...props.style }}>
+    {children}
+  </Button>
+);
 
 const getSectionColor = (name: string) => {
   const n = name.toLowerCase();
@@ -2470,7 +2571,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
                     <MenuItem value="Wolof" sx={{ fontSize: '10px' }}>Wolof (Senegal - West Africa)</MenuItem>
                     <MenuItem value="Yoruba" sx={{ fontSize: '10px' }}>Yoruba (Nigeria - West Africa)</MenuItem>
                     <MenuItem value="Zulu" sx={{ fontSize: '10px' }}>Zulu (South Africa)</MenuItem>
-                  </Select>
+                  </SelectMui>
                   <Tooltip title={`Translate and adapt the entire song to ${targetLanguage} (creative adaptation, not just literal translation)`}>
                     <button
                       onClick={() => adaptSongLanguage(targetLanguage)}
