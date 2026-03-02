@@ -2,23 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { Sparkles, Check, X, Loader2, RefreshCw, Music, AlignLeft, Hash, Lightbulb, ClipboardPaste, Undo2, Redo2, Ruler, BarChart2, Trash2, GripVertical, Download, Upload, Sun, Moon, Plus, ChevronDown, PanelRight, PanelLeft, ChevronRight, Waves, Mic, Volume2, VolumeX, Wand2, History, Bot, User, FileText, Layout, BookOpen, Activity, CheckCircle2, Target, Languages, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ThemeProvider, createTheme, StyledEngineProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import MuiButton from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
-import SelectMui from '@mui/material/Select';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
-import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import { FluentProvider, webLightTheme, webDarkTheme, Input as FluentInput, Select as FluentSelect, Label as FluentLabel, Button as FluentButton } from '@fluentui/react-components';
+import { FluentProvider, webLightTheme, webDarkTheme, Input as FluentInput, Select as FluentSelect, Label as FluentLabel, Button as FluentButton, Tooltip as FluentTooltip } from '@fluentui/react-components';
 
 // Remove global ai instance. We'll create it on demand to use the latest key.
 // const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-const UIContext = React.createContext<'material' | 'fluent'>('material');
 
 const getAi = () => {
   const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
@@ -57,31 +44,10 @@ interface SongVersion {
 }
 
 const Label = ({ children }: { children: React.ReactNode }) => {
-  const ui = React.useContext(UIContext);
-  if (ui === 'fluent') {
-    return (
-      <FluentLabel style={{ display: 'block', textTransform: 'uppercase', marginBottom: '8px', marginLeft: '4px', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em', color: 'var(--colorNeutralForeground2)' }}>
-        {children}
-      </FluentLabel>
-    );
-  }
   return (
-    <Typography 
-      variant="body2" 
-      component="label"
-      sx={{ 
-        display: 'block', 
-        color: 'text.secondary', 
-        textTransform: 'uppercase', 
-        mb: 1, 
-        ml: 0.5,
-        fontSize: '0.7rem',
-        fontWeight: 600,
-        letterSpacing: '0.05em'
-      }}
-    >
+    <FluentLabel style={{ display: 'block', textTransform: 'uppercase', marginBottom: '8px', marginLeft: '4px', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em', color: 'var(--colorNeutralForeground2)' }}>
       {children}
-    </Typography>
+    </FluentLabel>
   );
 };
 
@@ -269,77 +235,76 @@ const InstructionEditor = ({
 };
 
 const Input = ({ color, ...props }: any) => {
-  const ui = React.useContext(UIContext);
-  if (ui === 'fluent') {
-    return <FluentInput {...props} style={{ width: '100%' }} className="lcars-hud-chip" />;
-  }
-  return <TextField {...props} fullWidth />;
+  return <FluentInput {...props} style={{ width: '100%' }} className="lcars-hud-chip" />;
 };
 
 const Select = ({ color, ...props }: any) => {
-  const ui = React.useContext(UIContext);
-  if (ui === 'fluent') {
-    return (
-      <FluentSelect 
-        {...props} 
-        style={{ width: '100%' }}
-        className="lcars-hud-chip"
-        onChange={(e, data) => {
-          if (props.onChange) {
-            props.onChange({ target: { value: data.value } });
-          }
-        }}
-      >
-        {React.Children.map(props.children, child => {
-          if (React.isValidElement(child)) {
-            return <option value={(child.props as any).value}>{(child.props as any).children}</option>;
-          }
-          return child;
-        })}
-      </FluentSelect>
-    );
-  }
   return (
-    <SelectMui {...props} fullWidth>
-      {props.children}
-    </SelectMui>
+    <FluentSelect 
+      {...props} 
+      style={{ width: '100%' }}
+      className="lcars-hud-chip"
+      onChange={(e, data) => {
+        if (props.onChange) {
+          props.onChange({ target: { value: data.value } });
+        }
+      }}
+    >
+      {React.Children.map(props.children, child => {
+        if (React.isValidElement(child)) {
+          return <option value={(child.props as any).value}>{(child.props as any).children}</option>;
+        }
+        return child;
+      })}
+    </FluentSelect>
   );
 };
 
 const Button = ({ children, variant, color, size, startIcon, sx, component, fullWidth, className, style, ...props }: any) => {
-  const ui = React.useContext(UIContext);
-  if (ui === 'fluent') {
-    let appearance: any = 'secondary';
-    if (variant === 'contained') appearance = 'primary';
-    if (variant === 'outlined') appearance = 'outline';
-    if (variant === 'text') appearance = 'transparent';
-    
-    const fluentStyle = { ...style, width: fullWidth ? '100%' : undefined };
-    const fluentClass = `fluent-button ${appearance === 'outline' || appearance === 'transparent' ? 'lcars-holo' : ''} ${className || ''}`;
-    
-    if (component === 'label') {
-      return (
-        <label style={{ display: 'inline-flex', cursor: 'pointer', ...fluentStyle }} className={className}>
-          <FluentButton as="span" appearance={appearance} size={size} icon={startIcon} className={fluentClass} {...props}>
-            {children}
-          </FluentButton>
-        </label>
-      );
-    }
-    
+  let appearance: any = 'secondary';
+  if (variant === 'contained') appearance = 'primary';
+  if (variant === 'outlined') appearance = 'outline';
+  if (variant === 'text') appearance = 'transparent';
+  
+  const fluentStyle = { ...style, width: fullWidth ? '100%' : undefined };
+  const fluentClass = `fluent-button ${appearance === 'outline' || appearance === 'transparent' ? 'lcars-holo' : ''} ${className || ''}`;
+  
+  if (component === 'label') {
     return (
-      <FluentButton appearance={appearance} size={size} icon={startIcon} style={fluentStyle} className={fluentClass} {...props}>
-        {children}
-      </FluentButton>
+      <label style={{ display: 'inline-flex', cursor: 'pointer', ...fluentStyle }} className={className}>
+        <FluentButton as="span" appearance={appearance} size={size} icon={startIcon} className={fluentClass} {...props}>
+          {children}
+        </FluentButton>
+      </label>
     );
   }
   
   return (
-    <MuiButton variant={variant} color={color} size={size} startIcon={startIcon} sx={sx} component={component} fullWidth={fullWidth} className={className} style={style} {...props}>
+    <FluentButton appearance={appearance} size={size} icon={startIcon} style={fluentStyle} className={fluentClass} {...props}>
       {children}
-    </MuiButton>
+    </FluentButton>
   );
 };
+
+const Tooltip = ({ title, children }: { title: string, children: React.ReactElement }) => {
+  return (
+    <FluentTooltip content={title} relationship="label">
+      {children}
+    </FluentTooltip>
+  );
+};
+
+const MenuItem = ({ children, value, ...props }: any) => (
+  <option value={value} {...props}>
+    {children}
+  </option>
+);
+
+const IconButton = ({ children, ...props }: any) => (
+  <Button {...props} variant="text" style={{ minWidth: 'auto', padding: '4px', ...props.style }}>
+    {children}
+  </Button>
+);
 
 const getSectionColor = (name: string) => {
   const n = name.toLowerCase();
@@ -491,195 +456,7 @@ const cleanSectionName = (name: string) => {
 
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-  const [uiPersonality, setUiPersonality] = useState<'material' | 'fluent'>('fluent');
   
-  const m3Theme = useMemo(() => createTheme({
-    palette: {
-      mode: theme,
-      primary: {
-        main: theme === 'light' ? '#146C2E' : '#8FDE8B', // Green
-        contrastText: theme === 'light' ? '#FFFFFF' : '#003912',
-      },
-      secondary: {
-        main: theme === 'light' ? '#625B71' : '#CCC2DC', // Tone 50 (Light), Tone 70 (Dark)
-        contrastText: theme === 'light' ? '#FFFFFF' : '#332D41',
-      },
-      error: {
-        main: theme === 'light' ? '#B3261E' : '#F2B8B5', // M3 Error Tone 40/80
-      },
-      warning: {
-        main: theme === 'light' ? '#BA1A1A' : '#FFB4AB', // Using error tones for warning as fallback, or standard amber
-      },
-      info: {
-        main: theme === 'light' ? '#0061A4' : '#9ECAFF', // M3 Info Tone 40/80
-      },
-      success: {
-        main: theme === 'light' ? '#146C2E' : '#8FDE8B', // M3 Success Tone 40/80
-      },
-      background: {
-        default: theme === 'light' ? '#F4F0F4' : '#1C1B1F', // Neutral 95 (Light), Neutral 10 (Dark)
-        paper: theme === 'light' ? '#F4F0F4' : '#1C1B1F',
-      },
-      text: {
-        primary: theme === 'light' ? '#1C1B1F' : '#E6E1E5', // Neutral 10 (Light), Neutral 90 (Dark)
-        secondary: theme === 'light' ? '#49454F' : '#CAC4D0', // Neutral Variant 30 (Light), Neutral Variant 80 (Dark)
-      },
-      divider: theme === 'light' ? '#49454F' : '#49454F', // Neutral Variant 30
-    },
-    shape: {
-      borderRadius: 8, // Default base radius
-    },
-    typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-      h1: { fontWeight: 700, letterSpacing: '-0.03em' },
-      h2: { fontWeight: 700, letterSpacing: '-0.03em' },
-      h3: { fontWeight: 600, letterSpacing: '-0.03em' },
-      h4: { fontWeight: 600, letterSpacing: '-0.03em' },
-      h5: { fontWeight: 600, letterSpacing: '-0.03em' },
-      h6: { fontWeight: 600, letterSpacing: '-0.03em' },
-      body1: { fontWeight: 400, letterSpacing: '-0.02em' },
-      body2: { fontWeight: 400, letterSpacing: '-0.02em' },
-      button: {
-        textTransform: 'none',
-        fontWeight: 600,
-        letterSpacing: '-0.02em',
-      },
-      caption: { letterSpacing: '-0.02em' },
-      overline: { letterSpacing: '-0.02em' },
-    },
-    components: {
-      MuiButton: {
-        defaultProps: {
-          disableElevation: true,
-          size: 'small',
-        },
-        styleOverrides: {
-          root: {
-            borderRadius: 8, // Buttons: 6-8dp
-            paddingTop: 10, // Buttons: vertical padding 10-12dp
-            paddingBottom: 10,
-            minHeight: 40, // Minimum touch target: 40dp
-            maxHeight: 48, // No component may exceed 48dp height
-            fontSize: '0.875rem',
-            fontWeight: 600,
-          },
-          outlined: {
-            borderWidth: '1px',
-          },
-        },
-      },
-      MuiTextField: {
-        defaultProps: {
-          variant: 'outlined',
-          size: 'small',
-        },
-        styleOverrides: {
-          root: {
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 6, // Text fields: Reduce corner radius to 6dp
-            },
-            '& .MuiInputBase-input': {
-              paddingTop: 8, // Text fields: Reduce padding to 8dp vertical
-              paddingBottom: 8,
-              height: 'auto',
-            },
-          },
-        },
-      },
-      MuiSelect: {
-        defaultProps: {
-          variant: 'outlined',
-          size: 'small',
-        },
-        styleOverrides: {
-          root: {
-            borderRadius: 6,
-          },
-          select: {
-            paddingTop: 8,
-            paddingBottom: 8,
-          },
-        },
-      },
-      MuiCard: {
-        defaultProps: {
-          elevation: 1,
-          variant: 'outlined',
-        },
-        styleOverrides: {
-          root: {
-            borderRadius: 6, // Cards: 4-6dp
-            elevation: 1, // Cards: 1
-            borderWidth: '1px',
-            borderColor: theme === 'light' ? '#49454F' : '#49454F', // Neutral Variant 30
-          },
-        },
-      },
-      MuiDialog: {
-        styleOverrides: {
-          paper: {
-            borderRadius: 8, // Dialogs: 8dp
-            elevation: 3, // Dialogs: 3
-          },
-        },
-      },
-      MuiFab: {
-        styleOverrides: {
-          root: {
-            borderRadius: 16, // FAB: keep Material 3 default (16dp)
-            elevation: 4, // FAB: 4-5
-          },
-        },
-      },
-      MuiDivider: {
-        styleOverrides: {
-          root: {
-            borderBottomWidth: '1px',
-            borderColor: '#49454F', // Neutral Variant 30
-          },
-        },
-      },
-      MuiListItem: {
-        styleOverrides: {
-          root: {
-            height: 48, // List items: height 48dp max
-          },
-        },
-      },
-      MuiAppBar: {
-        styleOverrides: {
-          root: {
-            elevation: 2, // Top app bar: 2
-            backgroundColor: theme === 'light' ? '#F4F0F4' : '#1C1B1F',
-            color: theme === 'light' ? '#1C1B1F' : '#E6E1E5',
-            borderBottom: '1px solid #49454F',
-          },
-        },
-      },
-      MuiDrawer: {
-        styleOverrides: {
-          paper: {
-            backgroundColor: theme === 'light' ? '#F4F0F4' : '#1C1B1F',
-            borderRight: '1px solid #49454F',
-          },
-        },
-      },
-      MuiInputLabel: {
-        styleOverrides: {
-          root: {
-            fontWeight: 500,
-            fontSize: '0.75rem',
-          },
-        },
-      },
-      MuiIconButton: {
-        defaultProps: {
-          size: 'small',
-        },
-      },
-    },
-  }), [theme]);
-
   const [title, setTitle] = useState('Untitled Song');
   const [topic, setTopic] = useState('A neon city in the rain');
   const [mood, setMood] = useState('Cyberpunk, nostalgic, bittersweet, reflective');
@@ -2490,12 +2267,8 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
 
   return (
-    <UIContext.Provider value={uiPersonality}>
     <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
-    <ThemeProvider theme={m3Theme}>
-    <StyledEngineProvider injectFirst>
-    <CssBaseline />
-    <div className={`h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ui-${uiPersonality} ${theme === 'dark' ? 'dark' : ''}`}>
+    <div className={`h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Settings */}
         <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col z-10 shadow-2xl transition-all duration-300 ease-in-out flex-shrink-0 lcars-panel !rounded-none ${isLeftPanelOpen ? 'w-80' : 'w-0 overflow-hidden border-r-0'}`}>
@@ -2767,17 +2540,15 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
                 </h3>
                 <div className="h-4 w-px bg-white/10" />
                 <div className="flex items-center gap-2">
-                  <SelectMui
+                  <Select
                     value={targetLanguage}
-                    onChange={(e) => setTargetLanguage(e.target.value as string)}
+                    onChange={(e: any) => setTargetLanguage(e.target.value as string)}
                     size="small"
-                    sx={{ 
+                    style={{ 
                       height: 24, 
                       fontSize: '10px',
-                      '.MuiOutlinedInput-notchedOutline': { border: 'none' },
-                      '.MuiSelect-select': { py: 0, px: 1, display: 'flex', alignItems: 'center' },
-                      color: 'text.secondary',
-                      bgcolor: 'white/[0.03]',
+                      color: 'var(--colorNeutralForeground2)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
                       borderRadius: '4px'
                     }}
                   >
@@ -3172,15 +2943,13 @@ Chorus lines..."
                     </div>
                     <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1 h-7">
                       <Globe className="w-3 h-3 text-zinc-500" />
-                      <SelectMui
+                      <Select
                         value={sectionTargetLanguages[section.id] || section.language || songLanguage}
-                        onChange={(e) => setSectionTargetLanguages(prev => ({ ...prev, [section.id]: e.target.value as string }))}
-                        sx={{ 
+                        onChange={(e: any) => setSectionTargetLanguages(prev => ({ ...prev, [section.id]: e.target.value as string }))}
+                        style={{ 
                           height: 20, 
                           fontSize: '9px',
-                          '.MuiOutlinedInput-notchedOutline': { border: 'none' },
-                          '.MuiSelect-select': { py: 0, px: 0.5, display: 'flex', alignItems: 'center' },
-                          color: 'text.secondary',
+                          color: 'var(--colorNeutralForeground2)',
                           minWidth: 45
                         }}
                       >
@@ -3203,7 +2972,7 @@ Chorus lines..."
                         <MenuItem value="Wolof" sx={{ fontSize: '9px' }}>WO</MenuItem>
                         <MenuItem value="Yoruba" sx={{ fontSize: '9px' }}>YO</MenuItem>
                         <MenuItem value="Zulu" sx={{ fontSize: '9px' }}>ZU</MenuItem>
-                      </SelectMui>
+                      </Select>
                       <Tooltip title={`Adapt this section to ${sectionTargetLanguages[section.id] || section.language || songLanguage}`}>
                         <button
                           onClick={() => adaptSectionLanguage(section.id, sectionTargetLanguages[section.id] || section.language || songLanguage)}
@@ -3685,14 +3454,6 @@ Chorus lines..."
         </div>
         
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setUiPersonality(uiPersonality === 'material' ? 'fluent' : 'material')}
-            className="flex items-center gap-2 px-2 py-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors text-zinc-900 dark:text-zinc-300 tracking-wider"
-            title="Toggle UI Personality"
-          >
-            Toggle UI [{uiPersonality.toUpperCase()}]
-          </button>
-          <div className="w-px h-3 bg-fluent-border" />
           <button 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="flex items-center gap-2 px-2 py-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors text-zinc-900 dark:text-zinc-300"
@@ -4231,9 +3992,6 @@ Chorus lines..."
         </div>
       )}
     </div>
-    </StyledEngineProvider>
-    </ThemeProvider>
     </FluentProvider>
-    </UIContext.Provider>
   );
 }
