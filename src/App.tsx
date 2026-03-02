@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { Sparkles, Check, X, Loader2, RefreshCw, Music, AlignLeft, Hash, Lightbulb, ClipboardPaste, Undo2, Redo2, Ruler, BarChart2, Trash2, GripVertical, Download, Upload, Sun, Moon, Plus, ChevronDown, PanelRight, PanelLeft, ChevronRight, Waves, Mic, Volume2, VolumeX, Wand2, History, Bot, User, FileText, Layout, BookOpen, Activity, CheckCircle2, Target, Languages, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FluentProvider, webLightTheme, webDarkTheme, Input as FluentInput, Select as FluentSelect, Label as FluentLabel, Button as FluentButton, Tooltip as FluentTooltip } from '@fluentui/react-components';
+import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
+
 
 import { Line, Section, SongVersion } from './types';
 import { Label } from './components/ui/Label';
