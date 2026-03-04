@@ -13,344 +13,12 @@ import { Tooltip } from './components/ui/Tooltip';
 import { MenuItem } from './components/ui/MenuItem';
 import { IconButton } from './components/ui/IconButton';
 
-// Remove global ai instance. We'll create it on demand to use the latest key.
-// const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-const getAi = () => {
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-  return new GoogleGenAI({ apiKey });
-};
-
-const LyricInput = ({ value, onChange, onKeyDown, className, ...props }: any) => {
-  const renderStyledText = (text: string) => {
-    if (!text) return null;
-    const parts = text.split(/(\(.*?\))/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('(') && part.endsWith(')')) {
-        return (
-          <span key={i} className="text-amber-500 dark:text-amber-400">
-            {part}
-          </span>
-        );
-      }
-      return <span key={i}>{part}</span>;
-    });
-  };
-
-  // Remove color classes from the base className for the input to ensure text-transparent works
-  // We want to keep size classes like text-sm. We also handle dark: prefixes.
-  const inputClassName = className
-    .replace(/(?:[a-z0-9-]+:)?text-(?:zinc|white|black|slate|stone|neutral|gray|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(?:-\d+)?/g, '')
-    .trim();
-
-  return (
-    <div className="relative w-full flex items-center">
-      <div 
-        className={`${className} pointer-events-none whitespace-pre overflow-hidden absolute left-0 right-0 border-none bg-transparent px-0`}
-        aria-hidden="true"
-        style={{ font: 'inherit', letterSpacing: 'inherit' }}
-      >
-        {renderStyledText(value)}
-      </div>
-      <input
-        {...props}
-        value={value}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        className={`${inputClassName} !text-transparent caret-zinc-900 dark:caret-white bg-transparent relative z-10 w-full border-none outline-none focus:ring-0 px-0`}
-        style={{ font: 'inherit', letterSpacing: 'inherit' }}
-      />
-    </div>
-  );
-};
-
-const MarkupInput = ({ value, onChange, textareaRef, className, onScroll, ...props }: any) => {
-  const renderStyledMarkup = (text: string) => {
-    if (!text) return null;
-    const lines = text.split('\n');
-    return lines.map((line, i) => {
-      const trimmed = line.trim();
-      const isSection = (trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('**[') && trimmed.endsWith(']**'));
-      
-      let colorClass = '';
-      if (isSection) {
-        const name = trimmed.replace(/[\[\]\*]/g, '');
-        colorClass = getSectionTextColor(name) + ' font-bold';
-      }
-      
-      return (
-        <div key={i} className={colorClass}>
-          {line || '\u00A0'}
-        </div>
-      );
-    });
-  };
-
-  return (
-    <div className="relative w-full h-full flex flex-col">
-      <div 
-        className={`${className} pointer-events-none whitespace-pre-wrap overflow-hidden absolute inset-0 border-transparent bg-transparent`}
-        aria-hidden="true"
-        style={{ 
-          font: 'inherit', 
-          letterSpacing: 'inherit', 
-          lineHeight: 'inherit',
-          padding: '1.25rem',
-          boxSizing: 'border-box'
-        }}
-      >
-        {renderStyledMarkup(value)}
-      </div>
-      <textarea
-        {...props}
-        ref={textareaRef}
-        value={value}
-        onChange={onChange}
-        onScroll={onScroll}
-        className={`${className} !text-transparent caret-zinc-900 dark:caret-white relative z-10 bg-transparent focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] whitespace-pre-wrap`}
-        style={{ 
-          font: 'inherit', 
-          letterSpacing: 'inherit', 
-          lineHeight: 'inherit',
-          padding: '1.25rem',
-          boxSizing: 'border-box'
-        }}
-      />
-    </div>
-  );
-};
-
-const InstructionEditor = ({ 
-  instructions, 
-  sectionId, 
-  type, 
-  onChange, 
-  onAdd, 
-  onRemove 
-}: { 
-  instructions?: string[], 
-  sectionId: string, 
-  type: 'pre' | 'post',
-  onChange: (sectionId: string, type: 'pre' | 'post', index: number, value: string) => void,
-  onAdd: (sectionId: string, type: 'pre' | 'post') => void,
-  onRemove: (sectionId: string, type: 'pre' | 'post', index: number) => void
-}) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const hasInstructions = instructions && instructions.length > 0;
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between px-1">
-        <button 
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors uppercase"
-        >
-          <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
-          Musical / Modulation {hasInstructions && `(${instructions.length})`}
-        </button>
-        {!isExpanded && hasInstructions && (
-          <div className="flex gap-1 overflow-hidden max-w-[150px]">
-            {instructions.slice(0, 2).map((inst, i) => (
-              <span key={i} className="text-[9px] px-1.5 py-0.5 bg-zinc-100 dark:bg-white/5 text-zinc-500 rounded border border-zinc-200 dark:border-white/10 truncate max-w-[60px]">
-                {inst}
-              </span>
-            ))}
-            {instructions.length > 2 && <span className="text-[9px] text-zinc-400">+{instructions.length - 2}</span>}
-          </div>
-        )}
-      </div>
-
-      {isExpanded && (
-        <motion.div 
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="space-y-2 overflow-hidden"
-        >
-          {instructions?.map((inst, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <input
-                  value={inst}
-                  onChange={(e) => onChange(sectionId, type, idx, e.target.value)}
-                  placeholder="e.g. [Guitar Solo]"
-                  className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md px-3 py-1.5 text-xs text-[var(--accent-color)] font-mono focus:outline-none focus:border-[var(--accent-color)]/50 transition-colors"
-                  list={`instructions-list-${sectionId}-${type}-${idx}`}
-                />
-                <datalist id={`instructions-list-${sectionId}-${type}-${idx}`}>
-                  {MUSICAL_INSTRUCTIONS.map(option => (
-                    <option key={option} value={`[${option}]`} />
-                  ))}
-                </datalist>
-              </div>
-              <button
-                onClick={() => onRemove(sectionId, type, idx)}
-                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-          <button
-            onClick={() => onAdd(sectionId, type)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-colors border border-dashed border-[var(--accent-color)]/30 w-full justify-center"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Instruction
-          </button>
-        </motion.div>
-      )}
-    </div>
-  );
-};
-
-const getSectionColor = (name: string) => {
-  const n = name.toLowerCase();
-  if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500/10 border-orange-500/20 text-orange-500';
-  if (n.includes('chorus')) return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
-  if (n.includes('verse')) return 'bg-blue-500/10 border-blue-500/20 text-blue-500';
-  if (n.includes('bridge') || n.includes('breakdown')) return 'bg-purple-500/10 border-purple-500/20 text-purple-500';
-  if (n.includes('intro') || n.includes('outro')) return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500';
-  return 'bg-zinc-800/50 border-white/10 text-zinc-400';
-};
-
-const getSectionTextColor = (name: string) => {
-  const n = name.toLowerCase();
-  if (n.includes('pre-chorus') || n.includes('prechorus')) return 'text-orange-500';
-  if (n.includes('chorus')) return 'text-amber-500';
-  if (n.includes('verse')) return 'text-blue-500';
-  if (n.includes('bridge') || n.includes('breakdown')) return 'text-purple-500';
-  if (n.includes('intro') || n.includes('outro')) return 'text-emerald-500';
-  return 'text-zinc-600 dark:text-zinc-400';
-};
-
-const getSectionDotColor = (name: string) => {
-  const n = name.toLowerCase();
-  if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500';
-  if (n.includes('chorus')) return 'bg-amber-500';
-  if (n.includes('verse')) return 'bg-blue-500';
-  if (n.includes('bridge')) return 'bg-purple-500';
-  if (n.includes('intro') || n.includes('outro')) return 'bg-emerald-500';
-  return 'bg-zinc-500';
-};
-
-const getRhymeColor = (rhyme: string) => {
-  const r = rhyme.toUpperCase();
-  if (r === 'A') return 'bg-blue-500/15 text-blue-500 border-blue-500/20';
-  if (r === 'B') return 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20';
-  if (r === 'C') return 'bg-amber-500/15 text-amber-500 border-amber-500/20';
-  if (r === 'D') return 'bg-purple-500/15 text-purple-500 border-purple-500/20';
-  if (r === 'E') return 'bg-pink-500/15 text-pink-500 border-pink-500/20';
-  if (r === 'F') return 'bg-cyan-500/15 text-cyan-500 border-cyan-500/20';
-  if (r === 'G') return 'bg-rose-500/15 text-rose-500 border-rose-500/20';
-  if (r === 'H') return 'bg-indigo-500/15 text-indigo-500 border-indigo-500/20';
-  return 'bg-white/5 text-zinc-500 border-white/10';
-};
-
-const MUSICAL_INSTRUCTIONS = [
-  "Harmonica riff",
-  "Guitar Solo",
-  "Choir answer",
-  "Riff",
-  "Solo",
-  "Vocaloid",
-  "Bass drop",
-  "Drum fill",
-  "Acapella",
-  "Beat drop",
-  "Synth lead",
-  "Piano arpeggio",
-  "Strings swell",
-  "Brass stab",
-  "Modulation",
-  "Tempo change",
-  "Fade out",
-  "Crescendo",
-  "Whispered",
-  "Shouted"
-];
-
-const safeJsonParse = (text: string, fallback: any) => {
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    console.warn('JSON parse failed, attempting to fix truncation...', e);
-    let fixedText = text;
-    const quotes = (fixedText.match(/"/g) || []).length;
-    if (quotes % 2 !== 0) {
-      fixedText += '"';
-    }
-    
-    let openBraces = (fixedText.match(/\{/g) || []).length;
-    let closeBraces = (fixedText.match(/\}/g) || []).length;
-    let openBrackets = (fixedText.match(/\[/g) || []).length;
-    let closeBrackets = (fixedText.match(/\]/g) || []).length;
-    
-    for (let i = 0; i < openBraces - closeBraces; i++) fixedText += '}';
-    for (let i = 0; i < openBrackets - closeBrackets; i++) fixedText += ']';
-    
-    try {
-      return JSON.parse(fixedText);
-    } catch (e2) {
-      console.warn('First fix attempt failed, trying aggressive truncation...', e2);
-      // Aggressive fix: remove everything after the last complete object
-      fixedText = text.replace(/,[^}]*$/, '');
-      openBraces = (fixedText.match(/\{/g) || []).length;
-      closeBraces = (fixedText.match(/\}/g) || []).length;
-      openBrackets = (fixedText.match(/\[/g) || []).length;
-      closeBrackets = (fixedText.match(/\]/g) || []).length;
-      for (let i = 0; i < openBraces - closeBraces; i++) fixedText += '}';
-      for (let i = 0; i < openBrackets - closeBrackets; i++) fixedText += ']';
-      try {
-        return JSON.parse(fixedText);
-      } catch (e3) {
-        console.error('Failed to fix JSON:', e3);
-        return fallback;
-      }
-    }
-  }
-};
-
-let isErrorDialogOpen = false;
-const handleApiError = (error: any, defaultMessage: string) => {
-  console.error(defaultMessage, error);
-  if (isErrorDialogOpen) return;
-
-  const errorMessage = error?.message || (typeof error === 'string' ? error : "");
-  const errorCode = error?.code || error?.status;
-  
-  if (errorCode === 429 || errorCode === 'RESOURCE_EXHAUSTED' || errorMessage.includes('429') || errorMessage.includes('quota')) {
-    isErrorDialogOpen = true;
-    const confirmMsg = "You've exceeded your current Gemini API quota. Would you like to select a different API key (e.g., from a paid project) to continue?";
-    if (window.confirm(confirmMsg)) {
-      if (typeof (window as any).aistudio?.openSelectKey === 'function') {
-        (window as any).aistudio.openSelectKey();
-      } else {
-        alert("API key selection is not available in this environment. Please check your plan and billing details.");
-      }
-    }
-    isErrorDialogOpen = false;
-  } else if (errorMessage.includes("Requested entity was not found")) {
-    isErrorDialogOpen = true;
-    alert("API key error. Please select your API key again.");
-    if (typeof (window as any).aistudio?.openSelectKey === 'function') {
-      (window as any).aistudio.openSelectKey();
-    }
-    isErrorDialogOpen = false;
-  } else {
-    isErrorDialogOpen = true;
-    alert(errorMessage || defaultMessage);
-    isErrorDialogOpen = false;
-  }
-};
-
-const DEFAULT_STRUCTURE = ['Intro', 'Verse 1', 'Chorus', 'Verse 2', 'Chorus', 'Bridge', 'Outro'];
-
-const cleanSectionName = (name: string) => {
-  if (!name) return '';
-  // Aggressively remove all brackets, asterisks, and extra whitespace from anywhere in the name
-  return name.replace(/[\[\]\*]/g, '').trim();
-};
+import { LyricInput } from './components/editor/LyricInput';
+import { MarkupInput } from './components/editor/MarkupInput';
+import { InstructionEditor } from './components/editor/InstructionEditor';
+import { getAi, safeJsonParse, handleApiError } from './utils/aiUtils';
+import { getSectionColor, getSectionTextColor, getSectionDotColor, getRhymeColor, MUSICAL_INSTRUCTIONS, DEFAULT_STRUCTURE, cleanSectionName, countSyllables } from './utils/songUtils';
+import { useAudioFeedback } from './hooks/useAudioFeedback';
 
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -498,66 +166,7 @@ export default function App() {
     }
   }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, musicalPrompt]);
 
-  const playAudioFeedback = React.useCallback((type: 'click' | 'success' | 'error' | 'drag' | 'drop') => {
-    if (!audioFeedback) return;
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      
-      if (type === 'click') {
-        osc.frequency.setValueAtTime(600, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.05);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.05);
-      } else if (type === 'success') {
-        osc.frequency.setValueAtTime(400, ctx.currentTime);
-        osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.2);
-      } else if (type === 'error') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(200, ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.2);
-      } else if (type === 'drag') {
-        osc.frequency.setValueAtTime(300, ctx.currentTime);
-        gain.gain.setValueAtTime(0.05, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.1);
-      } else if (type === 'drop') {
-        osc.frequency.setValueAtTime(200, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.05, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.1);
-      }
-    } catch (e) {
-      // Ignore audio context errors
-    }
-  }, [audioFeedback]);
-
-  useEffect(() => {
-    const handleGlobalClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('button') || target.closest('.fluent-button') || target.closest('input') || target.closest('select')) {
-        playAudioFeedback('click');
-      }
-    };
-    document.addEventListener('click', handleGlobalClick);
-    return () => document.removeEventListener('click', handleGlobalClick);
-  }, [playAudioFeedback]);
+  const { playAudioFeedback } = useAudioFeedback(audioFeedback);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -675,16 +284,7 @@ export default function App() {
     const timer = setTimeout(async () => {
       setIsAnalyzingTheme(true);
       try {
-        const prompt = `Analyze the following song lyrics. 
-Current Topic: "${topic}"
-Current Mood: "${mood}"
-
-If the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.
-Return JSON with "topic" and "mood" strings.
-
-Lyrics:
-${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n')}
-`;
+        const prompt = `Analyze the following song lyrics. \nCurrent Topic: "${topic}"\nCurrent Mood: "${mood}"\n\nIf the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.\nReturn JSON with "topic" and "mood" strings.\n\nLyrics:\n${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n')}\n`;
         const response = await getAi().models.generateContent({
           model: 'gemini-2.5-flash',
           contents: prompt,
@@ -761,8 +361,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     saveVersion('Before Analysis Batch Improvements');
 
     try {
-      const prompt = `Modify the following song lyrics based on these improvement suggestions:
-      ${itemsToApply.map((item, i) => `${i + 1}. ${item}`).join('\n')}
+      const prompt = `Modify the following song lyrics based on these improvement suggestions:\n      ${itemsToApply.map((item, i) => `${i + 1}. ${item}`).join('\n')}
       
       IMPORTANT:
       1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).
@@ -1554,23 +1153,7 @@ ${pastedText}`;
   const generateSong = async () => {
     setIsGenerating(true);
     try {
-      const prompt = `Write a song about "${topic}". 
-Mood: ${mood}
-Default Rhyme Scheme: ${rhymeScheme}
-Target Syllables per line: ${targetSyllables}
-Structure: ${structure.join(', ')}
-
-IMPORTANT: You MUST follow the provided structure EXACTLY. Generate exactly the sections listed in the Structure field, in that specific order.
-
-Line counts for sections:
-- Intro: 4 lines
-- Verse: 6 lines
-- Chorus: 4 lines
-- Bridge: 6 lines
-- Outro: 4 lines
-
-For each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
-For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight'), the rhyme identifier (e.g., A, B), the exact syllable count, and a short core concept.`;
+      const prompt = `Write a song about "${topic}". \nMood: ${mood}\nDefault Rhyme Scheme: ${rhymeScheme}\nTarget Syllables per line: ${targetSyllables}\nStructure: ${structure.join(', ')}\n\nIMPORTANT: You MUST follow the provided structure EXACTLY. Generate exactly the sections listed in the Structure field, in that specific order.\n\nLine counts for sections:\n- Intro: 4 lines\n- Verse: 6 lines\n- Chorus: 4 lines\n- Bridge: 6 lines\n- Outro: 4 lines\n\nFor each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).\nFor each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight'), the rhyme identifier (e.g., A, B), the exact syllable count, and a short core concept.`;
 
       const response = await getAi().models.generateContent({
         model: 'gemini-2.5-flash',
@@ -1641,19 +1224,7 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
       else if (lowerName.includes('bridge')) lineCountPrompt = "The section should have exactly 6 lines.";
       else if (lowerName.includes('outro')) lineCountPrompt = "The section should have exactly 4 lines.";
 
-      const prompt = `Rewrite the following section of a song about "${topic}".
-Mood: ${mood}
-Target Syllables per line: ${targetSyllables}
-Section Name: ${sectionToRegenerate.name}
-Rhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}
-Mood: ${sectionToRegenerate.mood || mood}
-${lineCountPrompt}
-
-Current Section:
-${JSON.stringify([sectionToRegenerate], null, 2)}
-
-Provide a new creative version of this section.
-Return the updated section in the exact same JSON structure (as an array with one section).`;
+      const prompt = `Rewrite the following section of a song about "${topic}".\nMood: ${mood}\nTarget Syllables per line: ${targetSyllables}\nSection Name: ${sectionToRegenerate.name}\nRhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}\nMood: ${sectionToRegenerate.mood || mood}\n${lineCountPrompt}\n\nCurrent Section:\n${JSON.stringify([sectionToRegenerate], null, 2)}\n\nProvide a new creative version of this section.\nReturn the updated section in the exact same JSON structure (as an array with one section).`;
 
       const response = await getAi().models.generateContent({
         model: 'gemini-2.5-flash',
@@ -1719,19 +1290,9 @@ Return the updated section in the exact same JSON structure (as an array with on
         const sectionToQuantize = song.find(s => s.id === sectionId);
         if (!sectionToQuantize) return;
         const syllables = sectionToQuantize.targetSyllables ?? targetSyllables;
-        prompt = `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables. Maintain the original meaning, rhyme scheme, and section structure.
-
-Current Section:
-${JSON.stringify([sectionToQuantize], null, 2)}
-
-Return the updated section in the exact same JSON structure (as an array with one section).`;
+        prompt = `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables. Maintain the original meaning, rhyme scheme, and section structure.\n\nCurrent Section:\n${JSON.stringify([sectionToQuantize], null, 2)}\n\nReturn the updated section in the exact same JSON structure (as an array with one section).`;
       } else {
-        prompt = `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its section's targetSyllables (or ${targetSyllables} if not specified). Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
-
-Current Song:
-${JSON.stringify(song, null, 2)}
-
-Return the updated song in the exact same JSON structure.`;
+        prompt = `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its section's targetSyllables (or ${targetSyllables} if not specified). Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.\n\nCurrent Song:\n${JSON.stringify(song, null, 2)}\n\nReturn the updated song in the exact same JSON structure.`;
       }
 
       const response = await getAi().models.generateContent({
@@ -1829,18 +1390,7 @@ Return the updated song in the exact same JSON structure.`;
     }
 
     try {
-      const prompt = `Generate 3 creative alternative versions for a lyric line.
-Context:
-- Topic: ${topic}
-- Mood: ${mood}
-- Rhyme Scheme: ${song.find(s => s.lines.some(l => l.id === lineId))?.rhymeScheme || rhymeScheme}
-- Target Syllables: ${targetSyllables}
-- Section: ${sectionName}
-- Previous Line: "${previousLine?.text || ''}" (Rhyme: ${previousLine?.rhyme || ''})
-- Current Line to replace: "${currentLine.text}" (Rhyme: ${currentLine.rhyme}, Concept: ${currentLine.concept})
-- Next Line: "${nextLine?.text || ''}" (Rhyme: ${nextLine?.rhyme || ''})
-
-Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
+      const prompt = `Generate 3 creative alternative versions for a lyric line.\nContext:\n- Topic: ${topic}\n- Mood: ${mood}\n- Rhyme Scheme: ${song.find(s => s.lines.some(l => l.id === lineId))?.rhymeScheme || rhymeScheme}\n- Target Syllables: ${targetSyllables}\n- Section: ${sectionName}\n- Previous Line: "${previousLine?.text || ''}" (Rhyme: ${previousLine?.rhyme || ''})\n- Current Line to replace: "${currentLine.text}" (Rhyme: ${currentLine.rhyme}, Concept: ${currentLine.concept})\n- Next Line: "${nextLine?.text || ''}" (Rhyme: ${nextLine?.rhyme || ''})\n\nProvide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
 
       const response = await getAi().models.generateContent({
         model: 'gemini-2.5-flash',
@@ -1861,17 +1411,6 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     } finally {
       setIsSuggesting(false);
     }
-  };
-
-  const countSyllables = (text: string) => {
-    if (!text) return 0;
-    const word = text.toLowerCase().replace(/[^a-z]/g, '');
-    if (word.length <= 3) return 1;
-    const syllables = word
-      .replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '')
-      .replace(/^y/, '')
-      .match(/[aeiouy]{1,2}/g);
-    return syllables ? syllables.length : 1;
   };
 
   const updateLineText = (sectionId: string, lineId: string, newText: string) => {
@@ -2107,16 +1646,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     try {
       const response = await getAi().models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Generate a detailed musical production prompt for an AI music generator (like Suno or Udio).
-        Song Title: ${title}
-        Topic/Theme: ${topic}
-        Mood: ${mood}
-        Genre: ${genre}
-        Tempo: ${tempo} BPM
-        Instrumentation: ${instrumentation}
-        Lyrics Snippet: ${song.slice(0, 2).map(s => s.lines.map(l => l.text).join('\n')).join('\n\n')}
-        
-        Provide a concise, highly descriptive prompt that captures the essence of the song's production style, vocal characteristics, and sonic atmosphere.`,
+        contents: `Generate a detailed musical production prompt for an AI music generator (like Suno or Udio).\n        Song Title: ${title}\n        Topic/Theme: ${topic}\n        Mood: ${mood}\n        Genre: ${genre}\n        Tempo: ${tempo} BPM\n        Instrumentation: ${instrumentation}\n        Lyrics Snippet: ${song.slice(0, 2).map(s => s.lines.map(l => l.text).join('\n')).join('\n\n')}\n        \n        Provide a concise, highly descriptive prompt that captures the essence of the song's production style, vocal characteristics, and sonic atmosphere.`,
       });
       setMusicalPrompt(response.text || '');
     } catch (error) {
@@ -2715,11 +2245,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
                     value={markupText}
                     onChange={(e: any) => setMarkupText(e.target.value)}
                     className="w-full h-full bg-zinc-900/50 dark:bg-black/50 border border-white/10 rounded-xl text-sm font-mono custom-scrollbar resize-none leading-relaxed"
-                    placeholder="[Verse 1]
-Lyrics go here...
-
-[Chorus]
-Chorus lines..."
+                    placeholder="[Verse 1]\nLyrics go here...\n\n[Chorus]\nChorus lines..."
                     onScroll={(e: any) => {
                       const overlay = e.target.previousSibling;
                       if (overlay) {
@@ -3225,10 +2751,7 @@ Chorus lines..."
                               e.stopPropagation();
                               handleDrop(idx);
                             }}
-                            className={`group flex items-center gap-2 border rounded-md pl-2 pr-1 py-2 text-xs transition-all duration-150 ${getSectionColor(item)} 
-                              ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/50' : 'cursor-default'}
-                              ${draggedItemIndex === idx ? 'opacity-30' : ''} 
-                              ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                            className={`group flex items-center gap-2 border rounded-md pl-2 pr-1 py-2 text-xs transition-all duration-150 ${getSectionColor(item)} \n                              ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/50' : 'cursor-default'}\n                              ${draggedItemIndex === idx ? 'opacity-30' : ''} \n                              ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                           >
                             {isDraggable ? (
                               <GripVertical className="w-3.5 h-3.5 opacity-30 group-hover:opacity-60 transition-opacity" />
