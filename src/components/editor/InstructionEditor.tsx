@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronDown, Plus, X } from 'lucide-react';
 import { motion } from 'motion/react';
-import { MUSICAL_INSTRUCTIONS } from '../../constants/editor';
+import { ChevronDown, Plus, X } from 'lucide-react';
+import { MUSICAL_INSTRUCTIONS } from '../../utils/songUtils';
 
 export const InstructionEditor = ({ 
   instructions, 

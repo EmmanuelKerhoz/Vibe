@@ -1,5 +1,5 @@
 import React from 'react';
-import { getSectionTextColor } from '../../utils/themeUtils';
+import { getSectionTextColor } from '../../utils/songUtils';
 
 export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll, ...props }: any) => {
   const renderStyledMarkup = (text: string) => {
