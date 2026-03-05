@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronDown, Plus, X } from 'lucide-react';
+import { ChevronDown, X, Plus } from 'lucide-react';
 import { MUSICAL_INSTRUCTIONS } from '../../utils/songUtils';
 
-export const InstructionEditor = ({
-  instructions,
-  sectionId,
-  type,
-  onChange,
-  onAdd,
-  onRemove,
-}: {
-  instructions?: string[];
-  sectionId: string;
-  type: 'pre' | 'post';
-  onChange: (sectionId: string, type: 'pre' | 'post', index: number, value: string) => void;
-  onAdd: (sectionId: string, type: 'pre' | 'post') => void;
-  onRemove: (sectionId: string, type: 'pre' | 'post', index: number) => void;
+export const InstructionEditor = ({ 
+  instructions, 
+  sectionId, 
+  type, 
+  onChange, 
+  onAdd, 
+  onRemove 
+}: { 
+  instructions?: string[], 
+  sectionId: string, 
+  type: 'pre' | 'post',
+  onChange: (sectionId: string, type: 'pre' | 'post', index: number, value: string) => void,
+  onAdd: (sectionId: string, type: 'pre' | 'post') => void,
+  onRemove: (sectionId: string, type: 'pre' | 'post', index: number) => void
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasInstructions = instructions && instructions.length > 0;
@@ -24,7 +24,7 @@ export const InstructionEditor = ({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
-        <button
+        <button 
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors uppercase"
         >
@@ -44,7 +44,7 @@ export const InstructionEditor = ({
       </div>
 
       {isExpanded && (
-        <motion.div
+        <motion.div 
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}

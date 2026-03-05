@@ -9,7 +9,7 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-
+      
       if (type === 'click') {
         osc.frequency.setValueAtTime(600, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.05);
@@ -46,7 +46,7 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.1);
       }
-    } catch {
+    } catch (e) {
       // Ignore audio context errors
     }
   }, [audioFeedback]);
