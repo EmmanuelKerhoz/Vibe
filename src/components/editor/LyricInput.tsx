@@ -3,7 +3,7 @@ import React from 'react';
 export const LyricInput = ({ value, onChange, onKeyDown, className, ...props }: any) => {
   const renderStyledText = (text: string) => {
     if (!text) return null;
-    const parts = text.split(/(\(.*?\))/g);
+    const parts = text.split(/(\\(.*?\\))/g);
     return parts.map((part, i) => {
       if (part.startsWith('(') && part.endsWith(')')) {
         return (
@@ -16,13 +16,14 @@ export const LyricInput = ({ value, onChange, onKeyDown, className, ...props }: 
     });
   };
 
+  // Remove color classes from the base className for the input to ensure text-transparent works
   const inputClassName = className
-    .replace(/(?:[a-z0-9-]+:)?text-(?:zinc|white|black|slate|stone|neutral|gray|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(?:-\d+)?/g, '')
+    .replace(/(?:[a-z0-9-]+:)?text-(?:zinc|white|black|slate|stone|neutral|gray|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(?:-\\d+)?/g, '')
     .trim();
 
   return (
     <div className="relative w-full flex items-center">
-      <div
+      <div 
         className={`${className} pointer-events-none whitespace-pre overflow-hidden absolute left-0 right-0 border-none bg-transparent px-0`}
         aria-hidden="true"
         style={{ font: 'inherit', letterSpacing: 'inherit' }}
