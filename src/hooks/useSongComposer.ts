@@ -50,7 +50,7 @@ export const useSongComposer = ({
   const generateSong = async () => {
     setIsGenerating(true);
     try {
-      const prompt = `Write a song about "${topic}".
+      const prompt = `Write a song about "${topic}". 
 Mood: ${mood}
 Default Rhyme Scheme: ${rhymeScheme}
 Target Syllables per line: ${targetSyllables}
@@ -126,7 +126,7 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
   const regenerateSection = async (sectionId: string) => {
     const sectionToRegenerate = song.find(s => s.id === sectionId);
     if (!sectionToRegenerate) return;
-
+    
     setIsGenerating(true);
     try {
       let lineCountPrompt = "";
@@ -195,7 +195,7 @@ Return the updated section in the exact same JSON structure (as an array with on
             id: generateId()
           }))
         };
-
+        
         const updatedSong = song.map(s => s.id === sectionId ? newSection : s);
         updateSongWithHistory(updatedSong);
       }
@@ -299,7 +299,7 @@ Return the updated song in the exact same JSON structure.`;
   const generateSuggestions = async (lineId: string) => {
     setIsSuggesting(true);
     setSuggestions([]);
-
+    
     let currentLine: Line | null = null;
     let previousLine: Line | null = null;
     let nextLine: Line | null = null;
@@ -365,8 +365,8 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
           ...section,
           lines: section.lines.map(line => {
             if (line.id === lineId) {
-              return {
-                ...line,
+              return { 
+                ...line, 
                 text: newText,
                 syllables: newText.split(/\s+/).reduce((acc, word) => acc + countSyllables(word), 0),
                 isManual: true
@@ -389,10 +389,10 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     if (e.key === 'Delete' && selectionStart === value.length && selectionEnd === value.length) {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-
+      
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
-
+      
       if (lineIndex === -1 || lineIndex === section.lines.length - 1) return;
 
       e.preventDefault();
@@ -413,7 +413,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
         }
         return s;
       });
-
+      
       updateSongWithHistory(newSong);
 
       setTimeout(() => {
@@ -426,10 +426,10 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     } else if (e.key === 'Backspace' && selectionStart === 0 && selectionEnd === 0) {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-
+      
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
-
+      
       if (lineIndex <= 0) return;
 
       e.preventDefault();
@@ -451,10 +451,10 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
         }
         return s;
       });
-
+      
       updateSongWithHistory(newSong);
       setSelectedLineId(prevLineId);
-
+      
       setTimeout(() => {
         const prevInput = document.querySelector(`input[data-line-id="${prevLineId}"]`) as HTMLInputElement;
         if (prevInput) {
@@ -465,13 +465,13 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     } else if (e.key === 'Enter') {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-
+      
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
       if (lineIndex === -1) return;
 
       e.preventDefault();
-
+      
       const textBefore = value.substring(0, selectionStart || 0);
       const textAfter = value.substring(selectionEnd || 0);
       const newLineId = generateId();
@@ -516,7 +516,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       if (sectionIndex === -1) return;
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
-
+      
       let targetLineId = '';
       if (lineIndex > 0) {
         targetLineId = section.lines[lineIndex - 1].id;
@@ -544,7 +544,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       if (sectionIndex === -1) return;
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
-
+      
       let targetLineId = '';
       if (lineIndex < section.lines.length - 1) {
         targetLineId = section.lines[lineIndex + 1].id;
@@ -572,7 +572,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
 
   const applySuggestion = (newText: string) => {
     if (!selectedLineId) return;
-
+    
     const newSong = song.map(section => ({
       ...section,
       lines: section.lines.map(line => {
@@ -599,7 +599,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
         Tempo: ${tempo} BPM
         Instrumentation: ${instrumentation}
         Lyrics Snippet: ${song.slice(0, 2).map(s => s.lines.map(l => l.text).join('\n')).join('\n\n')}
-
+        
         Provide a concise, highly descriptive prompt that captures the essence of the song's production style, vocal characteristics, and sonic atmosphere.`,
       });
       setMusicalPrompt(response.text || '');

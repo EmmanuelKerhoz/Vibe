@@ -1,34 +1,3 @@
-export const DEFAULT_STRUCTURE = ['Intro', 'Verse 1', 'Chorus', 'Verse 2', 'Chorus', 'Bridge', 'Outro'];
-
-export const MUSICAL_INSTRUCTIONS = [
-  "Harmonica riff",
-  "Guitar Solo",
-  "Choir answer",
-  "Riff",
-  "Solo",
-  "Vocaloid",
-  "Bass drop",
-  "Drum fill",
-  "Acapella",
-  "Beat drop",
-  "Synth lead",
-  "Piano arpeggio",
-  "Strings swell",
-  "Brass stab",
-  "Modulation",
-  "Tempo change",
-  "Fade out",
-  "Crescendo",
-  "Whispered",
-  "Shouted"
-];
-
-export const cleanSectionName = (name: string) => {
-  if (!name) return '';
-  // Aggressively remove all brackets, asterisks, and extra whitespace from anywhere in the name
-  return name.replace(/[\\[\\]\\*]/g, '').trim();
-};
-
 export const getSectionColor = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500/10 border-orange-500/20 text-orange-500';
@@ -70,6 +39,36 @@ export const getRhymeColor = (rhyme: string) => {
   if (r === 'G') return 'bg-rose-500/15 text-rose-500 border-rose-500/20';
   if (r === 'H') return 'bg-indigo-500/15 text-indigo-500 border-indigo-500/20';
   return 'bg-white/5 text-zinc-500 border-white/10';
+};
+
+export const MUSICAL_INSTRUCTIONS = [
+  'Harmonica riff',
+  'Guitar Solo',
+  'Choir answer',
+  'Riff',
+  'Solo',
+  'Vocaloid',
+  'Bass drop',
+  'Drum fill',
+  'Acapella',
+  'Beat drop',
+  'Synth lead',
+  'Piano arpeggio',
+  'Strings swell',
+  'Brass stab',
+  'Modulation',
+  'Tempo change',
+  'Fade out',
+  'Crescendo',
+  'Whispered',
+  'Shouted',
+];
+
+export const DEFAULT_STRUCTURE = ['Intro', 'Verse 1', 'Chorus', 'Verse 2', 'Chorus', 'Bridge', 'Outro'];
+
+export const cleanSectionName = (name: string) => {
+  if (!name) return '';
+  return name.replace(/[\[\]\*]/g, '').trim();
 };
 
 export const countSyllables = (text: string) => {

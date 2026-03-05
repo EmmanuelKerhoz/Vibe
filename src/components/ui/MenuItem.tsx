@@ -1,6 +1,11 @@
-import React from 'react';
+import type { OptionHTMLAttributes, ReactNode } from 'react';
 
-export const MenuItem = ({ children, value, ...props }: any) => (
+type MenuItemProps = OptionHTMLAttributes<HTMLOptionElement> & {
+  children?: ReactNode;
+  sx?: Record<string, unknown>;
+};
+
+export const MenuItem = ({ children, value, sx: _sx, ...props }: MenuItemProps) => (
   <option value={value} {...props}>
     {children}
   </option>

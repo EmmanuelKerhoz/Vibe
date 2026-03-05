@@ -1,24 +1,24 @@
-import React from 'react';
 import { Select as FluentSelect } from '@fluentui/react-components';
+import type { SelectProps } from '@fluentui/react-components';
 
-export const Select = ({ color, ...props }: any) => {
+type LegacyOnChange = (event: { target: { value?: string } }) => void;
+
+type AdaptedSelectProps = Omit<SelectProps, 'onChange'> & {
+  onChange?: LegacyOnChange;
+  sx?: Record<string, unknown>;
+};
+
+export const Select = ({ onChange, children, sx: _sx, ...props }: AdaptedSelectProps) => {
   return (
-    <FluentSelect 
-      {...props} 
-      style={{ width: '100%' }}
-      className="lcars-hud-chip"
-      onChange={(e, data) => {
-        if (props.onChange) {
-          props.onChange({ target: { value: data.value } });
-        }
+    <FluentSelect
+      {...props}
+      style={{ width: '100%', ...(props.style || {}) }}
+      className={`lcars-hud-chip ${props.className || ''}`.trim()}
+      onChange={(_, data) => {
+        onChange?.({ target: { value: data.value } });
       }}
     >
-      {React.Children.map(props.children, child => {
-        if (React.isValidElement(child)) {
-          return <option value={(child.props as any).value}>{(child.props as any).children}</option>;
-        }
-        return child;
-      })}
+      {children}
     </FluentSelect>
   );
 };

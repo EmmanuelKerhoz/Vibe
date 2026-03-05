@@ -1,15 +1,31 @@
 import { GoogleGenAI } from '@google/genai';
 
+const env = import.meta.env;
+
+const getErrorMessage = (error: unknown) => {
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message?: unknown }).message ?? '');
+  }
+  if (typeof error === 'string') return error;
+  return '';
+};
+
+const getErrorCode = (error: unknown) => {
+  if (error && typeof error === 'object') {
+    const code = (error as { code?: unknown; status?: unknown }).code ?? (error as { status?: unknown }).status;
+    return code;
+  }
+  return undefined;
+};
+
 export const getAi = () => {
-  // Use Vite's import.meta.env for environment variables
-  // Fallback to local storage if user has provided one (optional later)
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY;
+  const apiKey = env.VITE_API_KEY || env.VITE_GEMINI_API_KEY || env.API_KEY || env.GEMINI_API_KEY;
   return new GoogleGenAI({ apiKey });
 };
 
-export const safeJsonParse = (text: string, fallback: any) => {
+export const safeJsonParse = <T>(text: string, fallback: T): T => {
   try {
-    return JSON.parse(text);
+    return JSON.parse(text) as T;
   } catch (e) {
     console.warn('JSON parse failed, attempting to fix truncation...', e);
     let fixedText = text;
@@ -17,29 +33,28 @@ export const safeJsonParse = (text: string, fallback: any) => {
     if (quotes % 2 !== 0) {
       fixedText += '"';
     }
-    
-    let openBraces = (fixedText.match(/\\{/g) || []).length;
-    let closeBraces = (fixedText.match(/\\}/g) || []).length;
-    let openBrackets = (fixedText.match(/\\[/g) || []).length;
-    let closeBrackets = (fixedText.match(/\\]/g) || []).length;
-    
+
+    let openBraces = (fixedText.match(/\{/g) || []).length;
+    let closeBraces = (fixedText.match(/\}/g) || []).length;
+    let openBrackets = (fixedText.match(/\[/g) || []).length;
+    let closeBrackets = (fixedText.match(/\]/g) || []).length;
+
     for (let i = 0; i < openBraces - closeBraces; i++) fixedText += '}';
     for (let i = 0; i < openBrackets - closeBrackets; i++) fixedText += ']';
-    
+
     try {
-      return JSON.parse(fixedText);
+      return JSON.parse(fixedText) as T;
     } catch (e2) {
       console.warn('First fix attempt failed, trying aggressive truncation...', e2);
-      // Aggressive fix: remove everything after the last complete object
       fixedText = text.replace(/,[^}]*$/, '');
-      openBraces = (fixedText.match(/\\{/g) || []).length;
-      closeBraces = (fixedText.match(/\\}/g) || []).length;
-      openBrackets = (fixedText.match(/\\[/g) || []).length;
-      closeBrackets = (fixedText.match(/\\]/g) || []).length;
+      openBraces = (fixedText.match(/\{/g) || []).length;
+      closeBraces = (fixedText.match(/\}/g) || []).length;
+      openBrackets = (fixedText.match(/\[/g) || []).length;
+      closeBrackets = (fixedText.match(/\]/g) || []).length;
       for (let i = 0; i < openBraces - closeBraces; i++) fixedText += '}';
       for (let i = 0; i < openBrackets - closeBrackets; i++) fixedText += ']';
       try {
-        return JSON.parse(fixedText);
+        return JSON.parse(fixedText) as T;
       } catch (e3) {
         console.error('Failed to fix JSON:', e3);
         return fallback;
@@ -49,30 +64,21 @@ export const safeJsonParse = (text: string, fallback: any) => {
 };
 
 let isErrorDialogOpen = false;
-export const handleApiError = (error: any, defaultMessage: string) => {
+export const handleApiError = (error: unknown, defaultMessage: string) => {
   console.error(defaultMessage, error);
   if (isErrorDialogOpen) return;
 
-  const errorMessage = error?.message || (typeof error === 'string' ? error : "");
-  const errorCode = error?.code || error?.status;
-  
+  const errorMessage = getErrorMessage(error);
+  const errorCode = getErrorCode(error);
+
   if (errorCode === 429 || errorCode === 'RESOURCE_EXHAUSTED' || errorMessage.includes('429') || errorMessage.includes('quota')) {
     isErrorDialogOpen = true;
-    const confirmMsg = "You've exceeded your current Gemini API quota. Would you like to select a different API key (e.g., from a paid project) to continue?";
-    if (window.confirm(confirmMsg)) {
-      if (typeof (window as any).aistudio?.openSelectKey === 'function') {
-        (window as any).aistudio.openSelectKey();
-      } else {
-        alert("API key selection is not available in this environment. Please check your plan and billing details.");
-      }
-    }
+    const confirmMsg = "You've exceeded your current Gemini API quota. Please verify your plan/billing and API key in your local environment.";
+    alert(confirmMsg);
     isErrorDialogOpen = false;
-  } else if (errorMessage.includes("Requested entity was not found")) {
+  } else if (errorMessage.includes('Requested entity was not found')) {
     isErrorDialogOpen = true;
-    alert("API key error. Please select your API key again.");
-    if (typeof (window as any).aistudio?.openSelectKey === 'function') {
-      (window as any).aistudio.openSelectKey();
-    }
+    alert('API key error. Please check VITE_GEMINI_API_KEY/VITE_API_KEY in your environment.');
     isErrorDialogOpen = false;
   } else {
     isErrorDialogOpen = true;

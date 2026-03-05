@@ -31,7 +31,7 @@ type AnalysisReport = {
 const mapSongWithPreservedIds = (newSongData: any[], song: Section[], language?: string): Section[] => {
   return newSongData.map((s: any, idx: number) => {
     const existingSection = (song[idx] || {}) as any;
-
+  
   return {
       ...existingSection,
       ...s,
