@@ -13,6 +13,7 @@ type UseSongAnalysisParams = {
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
   saveVersion: (name: string) => void;
+  updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
   updateSongWithHistory: (newSong: Section[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   clearLineSelection: () => void;
@@ -45,6 +46,31 @@ const mapSongWithPreservedIds = (newSongData: any[], song: Section[], language?:
   });
 };
 
+const mergeAiSectionIntoCurrent = (currentSection: Section, aiSection: any, language?: string): Section => {
+  const mergedName = cleanSectionName(aiSection?.name || currentSection.name);
+  const mergedRhymeScheme = aiSection?.rhymeScheme || currentSection.rhymeScheme;
+  const mergedLinesSource = Array.isArray(aiSection?.lines) ? aiSection.lines : currentSection.lines;
+
+  return {
+    ...currentSection,
+    ...aiSection,
+    id: currentSection.id,
+    name: mergedName,
+    rhymeScheme: mergedRhymeScheme,
+    language: language ?? currentSection.language,
+    lines: mergedLinesSource.map((line: any, index: number) => ({
+      ...(currentSection.lines[index] || {}),
+      ...line,
+      id: currentSection.lines[index]?.id || generateId(),
+      text: line?.text ?? currentSection.lines[index]?.text ?? '',
+      rhymingSyllables: line?.rhymingSyllables ?? currentSection.lines[index]?.rhymingSyllables ?? '',
+      rhyme: line?.rhyme ?? currentSection.lines[index]?.rhyme ?? '',
+      syllables: typeof line?.syllables === 'number' ? line.syllables : currentSection.lines[index]?.syllables ?? 0,
+      concept: line?.concept ?? currentSection.lines[index]?.concept ?? 'New line',
+    })),
+  };
+};
+
 export const useSongAnalysis = ({
   song,
   topic,
@@ -53,6 +79,7 @@ export const useSongAnalysis = ({
   setTopic,
   setMood,
   saveVersion,
+  updateState,
   updateSongWithHistory,
   updateSongAndStructureWithHistory,
   clearLineSelection,
@@ -76,7 +103,10 @@ export const useSongAnalysis = ({
   const lastAnalyzedSongRef = useRef<string>('');
 
   const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
-    updateSongWithHistory(transform(song));
+    updateState(current => ({
+      song: transform(current.song),
+      structure: current.structure,
+    }));
   };
 
   useEffect(() => {
@@ -474,15 +504,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
         updateSong(currentSong =>
           currentSong.map(currentSection => {
             if (currentSection.id !== sectionId) return currentSection;
-            return {
-              ...currentSection,
-              ...newSectionData,
-              language: newLanguage,
-              lines: newSectionData.lines.map((l: any, lIdx: number) => ({
-                ...l,
-                id: currentSection.lines[lIdx]?.id || generateId(),
-              })),
-            };
+            return mergeAiSectionIntoCurrent(currentSection, newSectionData, newLanguage);
           })
         );
       }
