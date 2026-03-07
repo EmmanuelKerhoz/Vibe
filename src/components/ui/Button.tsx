@@ -2,13 +2,19 @@ import React from 'react';
 import { Button as FluentButton } from '@fluentui/react-components';
 import type { CSSProperties } from 'react';
 
+/** Converts a MUI spacing multiplier (number) or raw value (string) to a CSS value. */
+const toSpacingValue = (value: unknown): string | undefined => {
+  if (value === undefined) return undefined;
+  return typeof value === 'number' ? `${value * 0.25}rem` : String(value);
+};
+
 /** Maps a MUI-style `sx` object to a partial CSSProperties. Only handles the
  *  spacing/sizing tokens actually used in App.tsx so we avoid a full MUI dep. */
 const sxToStyle = (sx: Record<string, unknown>): CSSProperties => ({
-  ...(sx.mt !== undefined ? { marginTop: typeof sx.mt === 'number' ? `${(sx.mt as number) * 0.25}rem` : String(sx.mt) } : {}),
-  ...(sx.mb !== undefined ? { marginBottom: typeof sx.mb === 'number' ? `${(sx.mb as number) * 0.25}rem` : String(sx.mb) } : {}),
-  ...(sx.py !== undefined ? { paddingTop: typeof sx.py === 'number' ? `${(sx.py as number) * 0.25}rem` : String(sx.py), paddingBottom: typeof sx.py === 'number' ? `${(sx.py as number) * 0.25}rem` : String(sx.py) } : {}),
-  ...(sx.px !== undefined ? { paddingLeft: typeof sx.px === 'number' ? `${(sx.px as number) * 0.25}rem` : String(sx.px), paddingRight: typeof sx.px === 'number' ? `${(sx.px as number) * 0.25}rem` : String(sx.px) } : {}),
+  ...(sx.mt !== undefined ? { marginTop: toSpacingValue(sx.mt) } : {}),
+  ...(sx.mb !== undefined ? { marginBottom: toSpacingValue(sx.mb) } : {}),
+  ...(sx.py !== undefined ? { paddingTop: toSpacingValue(sx.py), paddingBottom: toSpacingValue(sx.py) } : {}),
+  ...(sx.px !== undefined ? { paddingLeft: toSpacingValue(sx.px), paddingRight: toSpacingValue(sx.px) } : {}),
   ...(sx.fontSize !== undefined ? { fontSize: String(sx.fontSize) } : {}),
 });
 
