@@ -46,6 +46,10 @@ export const useSongEditor = ({
   openPasteModalWithText,
   playAudioFeedback,
 }: UseSongEditorParams) => {
+  const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
+    updateSongWithHistory(transform(song));
+  };
+
   const removeStructureItem = (index: number) => {
     const newStructure = structure.filter((_, i) => i !== index);
 
@@ -118,9 +122,7 @@ export const useSongEditor = ({
     };
 
     newStructure.splice(insertIndex, 0, finalName);
-    if (song.length > 0) {
-      newSong.splice(insertIndex, 0, newSection);
-    }
+    newSong.splice(insertIndex, 0, newSection);
 
     updateSongAndStructureWithHistory(newSong, newStructure);
 
@@ -264,29 +266,33 @@ export const useSongEditor = ({
       return;
     }
 
-    const newSong = [...song];
-    const sourceSectionIndex = newSong.findIndex(s => s.id === draggedLineInfo.sectionId);
-    const targetSectionIndex = newSong.findIndex(s => s.id === targetSectionId);
+    const sourceSectionIndex = song.findIndex(s => s.id === draggedLineInfo.sectionId);
+    const targetSectionIndex = song.findIndex(s => s.id === targetSectionId);
 
     if (sourceSectionIndex === -1 || targetSectionIndex === -1) return;
 
-    const sourceSection = { ...newSong[sourceSectionIndex], lines: [...newSong[sourceSectionIndex].lines] };
-    const targetSection = sourceSectionIndex === targetSectionIndex ? sourceSection : { ...newSong[targetSectionIndex], lines: [...newSong[targetSectionIndex].lines] };
+    updateSong(currentSong => {
+      const newSong = [...currentSong];
+      const sourceSection = { ...newSong[sourceSectionIndex], lines: [...newSong[sourceSectionIndex].lines] };
+      const targetSection = sourceSectionIndex === targetSectionIndex ? sourceSection : { ...newSong[targetSectionIndex], lines: [...newSong[targetSectionIndex].lines] };
 
-    const sourceLineIndex = sourceSection.lines.findIndex(l => l.id === draggedLineInfo.lineId);
-    const targetLineIndex = targetSection.lines.findIndex(l => l.id === targetLineId);
+      const sourceLineIndex = sourceSection.lines.findIndex(l => l.id === draggedLineInfo.lineId);
+      const targetLineIndex = targetSection.lines.findIndex(l => l.id === targetLineId);
 
-    if (sourceLineIndex === -1 || targetLineIndex === -1) return;
+      if (sourceLineIndex === -1 || targetLineIndex === -1) {
+        return currentSong;
+      }
 
-    const [draggedLine] = sourceSection.lines.splice(sourceLineIndex, 1);
-    targetSection.lines.splice(targetLineIndex, 0, draggedLine);
+      const [draggedLine] = sourceSection.lines.splice(sourceLineIndex, 1);
+      targetSection.lines.splice(targetLineIndex, 0, draggedLine);
 
-    newSong[sourceSectionIndex] = sourceSection;
-    if (sourceSectionIndex !== targetSectionIndex) {
-      newSong[targetSectionIndex] = targetSection;
-    }
+      newSong[sourceSectionIndex] = sourceSection;
+      if (sourceSectionIndex !== targetSectionIndex) {
+        newSong[targetSectionIndex] = targetSection;
+      }
 
-    updateSongWithHistory(newSong);
+      return newSong;
+    });
     setDraggedLineInfo(null);
     playAudioFeedback('drop');
   };
