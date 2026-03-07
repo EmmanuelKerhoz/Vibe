@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Dispatch, KeyboardEvent, SetStateAction } from 'react';
+import type { KeyboardEvent } from 'react';
 import { Type } from '@google/genai';
 import type { Line, Section } from '../types';
 import { getAi, safeJsonParse, handleApiError } from '../utils/aiUtils';
@@ -17,8 +17,7 @@ type UseSongComposerParams = {
   genre: string;
   tempo: string;
   instrumentation: string;
-  setSong: Dispatch<SetStateAction<Section[]>>;
-  setMusicalPrompt: Dispatch<SetStateAction<string>>;
+  setMusicalPrompt: (value: string) => void;
   updateSongWithHistory: (newSong: Section[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   saveVersion: (name: string) => void;
@@ -41,7 +40,6 @@ export const useSongComposer = ({
   genre,
   tempo,
   instrumentation,
-  setSong,
   setMusicalPrompt,
   updateSongWithHistory,
   updateSongAndStructureWithHistory,
@@ -52,6 +50,10 @@ export const useSongComposer = ({
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
+
+  const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
+    updateSongWithHistory(transform(song));
+  };
 
   const generateSong = async () => {
     setIsGenerating(true);
@@ -364,29 +366,28 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       setIsSuggesting(false);
     }
   };
+
   const updateLineText = (sectionId: string, lineId: string, newText: string) => {
-    setSong(prev => prev.map(section => {
-      if (section.id === sectionId) {
+    updateSong(currentSong =>
+      currentSong.map(section => {
+        if (section.id !== sectionId) return section;
         return {
           ...section,
           lines: section.lines.map(line => {
-            if (line.id === lineId) {
-              return { 
-                ...line, 
-                text: newText,
-                syllables: computeSyllables(newText),
-                isManual: true
-              };
-            }
-            return line;
-          })
+            if (line.id !== lineId) return line;
+            return {
+              ...line,
+              text: newText,
+              syllables: computeSyllables(newText),
+              isManual: true,
+            };
+          }),
         };
-      }
-      return section;
-    }));
+      })
+    );
   };
 
-  const handleLineKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => {
+  const handleLineKeyDown = (e: KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => {
     const target = e.currentTarget;
     const selectionStart = target.selectionStart;
     const selectionEnd = target.selectionEnd;
@@ -626,33 +627,38 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
   };
 
   const handleInstructionChange = (sectionId: string, type: 'pre' | 'post', index: number, value: string) => {
-    setSong(prev => prev.map(s => {
-      if (s.id !== sectionId) return s;
-      const key = type === 'pre' ? 'preInstructions' : 'postInstructions';
-      const instructions = [...(s[key] || [])];
-      instructions[index] = value;
-      return { ...s, [key]: instructions };
-    }));
+    updateSong(currentSong =>
+      currentSong.map(section => {
+        if (section.id !== sectionId) return section;
+        const key = type === 'pre' ? 'preInstructions' : 'postInstructions';
+        const instructions = [...(section[key] || [])];
+        instructions[index] = value;
+        return { ...section, [key]: instructions };
+      })
+    );
   };
 
   const addInstruction = (sectionId: string, type: 'pre' | 'post') => {
-    setSong(prev => prev.map(s => {
-      if (s.id !== sectionId) return s;
-      const key = type === 'pre' ? 'preInstructions' : 'postInstructions';
-      return { ...s, [key]: [...(s[key] || []), ''] };
-    }));
+    updateSong(currentSong =>
+      currentSong.map(section => {
+        if (section.id !== sectionId) return section;
+        const key = type === 'pre' ? 'preInstructions' : 'postInstructions';
+        return { ...section, [key]: [...(section[key] || []), ''] };
+      })
+    );
   };
 
   const removeInstruction = (sectionId: string, type: 'pre' | 'post', index: number) => {
-    setSong(prev => prev.map(s => {
-      if (s.id !== sectionId) return s;
-      const key = type === 'pre' ? 'preInstructions' : 'postInstructions';
-      const instructions = [...(s[key] || [])];
-      instructions.splice(index, 1);
-      return { ...s, [key]: instructions };
-    }));
+    updateSong(currentSong =>
+      currentSong.map(section => {
+        if (section.id !== sectionId) return section;
+        const key = type === 'pre' ? 'preInstructions' : 'postInstructions';
+        const instructions = [...(section[key] || [])];
+        instructions.splice(index, 1);
+        return { ...section, [key]: instructions };
+      })
+    );
   };
-
 
   const clearSelection = () => {
     setSelectedLineId(null);
