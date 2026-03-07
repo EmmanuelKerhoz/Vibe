@@ -189,6 +189,10 @@ export default function App() {
     setSong(cleanedSong);
   };
 
+  const updateSongInHistory = (transform: (currentSong: Section[]) => Section[]) => {
+    updateSongWithHistory(transform(song));
+  };
+
   const updateStructureWithHistory = (newStructure: string[]) => {
     const cleanedStructure = newStructure.map(s => cleanSectionName(s));
     setPast(prev => [...prev, { song, structure }]);
@@ -303,7 +307,6 @@ export default function App() {
     genre,
     tempo,
     instrumentation,
-    setSong,
     setMusicalPrompt,
     updateSongWithHistory,
     updateSongAndStructureWithHistory,
@@ -1031,7 +1034,9 @@ Chorus lines..."
                         value={section.rhymeScheme || rhymeScheme} 
                         onChange={(e) => {
                           const val = e.target.value;
-                          setSong(prev => prev.map(s => s.id === section.id ? { ...s, rhymeScheme: val } : s));
+                          updateSongInHistory(currentSong =>
+                            currentSong.map(s => s.id === section.id ? { ...s, rhymeScheme: val } : s)
+                          );
                         }}
                         className="!py-0 !px-2 !text-[10px] h-7"
                         style={{ minHeight: '28px', height: '28px' }}
@@ -1052,7 +1057,9 @@ Chorus lines..."
                         value={section.mood || ''} 
                         onChange={(e) => {
                           const val = e.target.value;
-                          setSong(prev => prev.map(s => s.id === section.id ? { ...s, mood: val } : s));
+                          updateSongInHistory(currentSong =>
+                            currentSong.map(s => s.id === section.id ? { ...s, mood: val } : s)
+                          );
                         }}
                         placeholder="Mood..."
                         list="mood-suggestions"
@@ -1123,7 +1130,9 @@ Chorus lines..."
                           checked={section.targetSyllables !== undefined}
                           onChange={(e) => {
                             const enabled = e.target.checked;
-                            setSong(prev => prev.map(s => s.id === section.id ? { ...s, targetSyllables: enabled ? targetSyllables : undefined } : s));
+                            updateSongInHistory(currentSong =>
+                              currentSong.map(s => s.id === section.id ? { ...s, targetSyllables: enabled ? targetSyllables : undefined } : s)
+                            );
                           }}
                           className="accent-[var(--accent-color)] cursor-pointer w-3.5 h-3.5"
                         />
@@ -1140,7 +1149,9 @@ Chorus lines..."
                             value={section.targetSyllables} 
                             onChange={e => {
                               const val = parseInt(e.target.value);
-                              setSong(prev => prev.map(s => s.id === section.id ? { ...s, targetSyllables: val } : s));
+                              updateSongInHistory(currentSong =>
+                                currentSong.map(s => s.id === section.id ? { ...s, targetSyllables: val } : s)
+                              );
                             }}
                             className="w-full accent-[var(--accent-color)] h-1 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
                           />
@@ -1228,10 +1239,12 @@ Chorus lines..."
                             value={line.rhymingSyllables || ''}
                             onChange={(e) => {
                               const val = e.target.value;
-                              setSong(prev => prev.map(s => ({
-                                ...s,
-                                lines: s.lines.map(l => l.id === line.id ? { ...l, rhymingSyllables: val } : l)
-                              })));
+                              updateSongInHistory(currentSong =>
+                                currentSong.map(s => ({
+                                  ...s,
+                                  lines: s.lines.map(l => l.id === line.id ? { ...l, rhymingSyllables: val } : l)
+                                }))
+                              );
                             }}
                             className="w-full bg-transparent text-[10px] text-center text-zinc-500 dark:text-zinc-400 focus:outline-none focus:text-zinc-900 dark:focus:text-white transition-colors"
                             placeholder="-"
@@ -1243,10 +1256,12 @@ Chorus lines..."
                             value={line.rhyme || ''}
                             onChange={(e) => {
                               const val = e.target.value.toUpperCase().slice(0, 1);
-                              setSong(prev => prev.map(s => ({
-                                ...s,
-                                lines: s.lines.map(l => l.id === line.id ? { ...l, rhyme: val } : l)
-                              })));
+                              updateSongInHistory(currentSong =>
+                                currentSong.map(s => ({
+                                  ...s,
+                                  lines: s.lines.map(l => l.id === line.id ? { ...l, rhyme: val } : l)
+                                }))
+                              );
                             }}
                             className={`w-7 h-7 rounded border text-[10px] telemetry-text text-center transition-all focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] ${getRhymeColor(line.rhyme)}`}
                             placeholder="-"
