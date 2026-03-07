@@ -2,17 +2,11 @@ import type { CSSProperties, OptionHTMLAttributes, ReactNode } from 'react';
 
 type MenuItemProps = OptionHTMLAttributes<HTMLOptionElement> & {
   children?: ReactNode;
-  sx?: Record<string, unknown>;
 };
 
-export const MenuItem = ({ children, value, sx, style, ...props }: MenuItemProps) => {
-  const resolvedStyle: CSSProperties | undefined =
-    sx?.fontSize !== undefined
-      ? { fontSize: String(sx.fontSize), ...style }
-      : style;
-
+export const MenuItem = ({ children, value, style, ...props }: MenuItemProps) => {
   return (
-    <option value={value} style={resolvedStyle} {...props}>
+    <option value={value} style={style} {...props}>
       {children}
     </option>
   );
