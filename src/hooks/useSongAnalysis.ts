@@ -423,10 +423,9 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
   };
 
   const adaptSectionLanguage = async (sectionId: string, newLanguage: string) => {
-    const sectionIndex = song.findIndex(s => s.id === sectionId);
-    if (sectionIndex === -1) return;
+    const section = song.find(s => s.id === sectionId);
+    if (!section) return;
 
-    const section = song[sectionIndex];
     setIsAdaptingLanguage(true);
     saveVersion(`Before Section ${section.name} Translation to ${newLanguage}`);
 
@@ -473,15 +472,15 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
       const newSectionData = safeJsonParse<any>(response.text || '{}', {});
       if (newSectionData.name) {
         updateSong(currentSong =>
-          currentSong.map((currentSection, index) => {
-            if (index !== sectionIndex) return currentSection;
+          currentSong.map(currentSection => {
+            if (currentSection.id !== sectionId) return currentSection;
             return {
-              ...section,
+              ...currentSection,
               ...newSectionData,
               language: newLanguage,
               lines: newSectionData.lines.map((l: any, lIdx: number) => ({
                 ...l,
-                id: section.lines[lIdx]?.id || generateId(),
+                id: currentSection.lines[lIdx]?.id || generateId(),
               })),
             };
           })
