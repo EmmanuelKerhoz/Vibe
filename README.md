@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="1200" height="475" alt="Lyricist Pro banner" src="docs/Lyricist%20Splash%20(Medium).png" />
+  <img width="1200" height="475" alt="Lyricist Pro banner" src="docs/Lyricist_Splash_Medium.png" />
 </div>
 
 # Lyricist Pro
