@@ -16,6 +16,7 @@ type UseSongEditorParams = {
   draggedLineInfo: LineDragInfo;
   setDraggedLineInfo: Dispatch<SetStateAction<LineDragInfo>>;
   setDragOverLineInfo: Dispatch<SetStateAction<LineDragInfo>>;
+  updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
   updateSongWithHistory: (newSong: Section[]) => void;
   updateStructureWithHistory: (newStructure: string[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
@@ -37,6 +38,7 @@ export const useSongEditor = ({
   draggedLineInfo,
   setDraggedLineInfo,
   setDragOverLineInfo,
+  updateState,
   updateSongWithHistory,
   updateStructureWithHistory,
   updateSongAndStructureWithHistory,
@@ -47,7 +49,10 @@ export const useSongEditor = ({
   playAudioFeedback,
 }: UseSongEditorParams) => {
   const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
-    updateSongWithHistory(transform(song));
+    updateState(current => ({
+      song: transform(current.song),
+      structure: current.structure,
+    }));
   };
 
   const removeStructureItem = (index: number) => {
@@ -266,12 +271,14 @@ export const useSongEditor = ({
       return;
     }
 
-    const sourceSectionIndex = song.findIndex(s => s.id === draggedLineInfo.sectionId);
-    const targetSectionIndex = song.findIndex(s => s.id === targetSectionId);
-
-    if (sourceSectionIndex === -1 || targetSectionIndex === -1) return;
-
     updateSong(currentSong => {
+      const sourceSectionIndex = currentSong.findIndex(s => s.id === draggedLineInfo.sectionId);
+      const targetSectionIndex = currentSong.findIndex(s => s.id === targetSectionId);
+
+      if (sourceSectionIndex === -1 || targetSectionIndex === -1) {
+        return currentSong;
+      }
+
       const newSong = [...currentSong];
       const sourceSection = { ...newSong[sourceSectionIndex], lines: [...newSong[sourceSectionIndex].lines] };
       const targetSection = sourceSectionIndex === targetSectionIndex ? sourceSection : { ...newSong[targetSectionIndex], lines: [...newSong[targetSectionIndex].lines] };
