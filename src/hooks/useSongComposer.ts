@@ -29,6 +29,23 @@ const computeSyllables = (text: string) =>
     .filter(Boolean)
     .reduce((acc, word) => acc + countSyllables(word), 0);
 
+const mapSongWithPreservedIds = (newSongData: any[], song: Section[]): Section[] => {
+  return newSongData.map((section: any, sectionIndex: number) => {
+    const existingSection = song[sectionIndex];
+
+    return {
+      ...existingSection,
+      ...section,
+      id: existingSection?.id || generateId(),
+      name: cleanSectionName(section.name),
+      lines: (section.lines || []).map((line: any, lineIndex: number) => ({
+        ...line,
+        id: existingSection?.lines?.[lineIndex]?.id || generateId(),
+      })),
+    };
+  });
+};
+
 export const useSongComposer = ({
   song,
   structure,
@@ -205,8 +222,7 @@ Return the updated section in the exact same JSON structure (as an array with on
           }))
         };
         
-        const updatedSong = song.map(s => s.id === sectionId ? newSection : s);
-        updateSongWithHistory(updatedSong);
+        updateSong(currentSong => currentSong.map(s => (s.id === sectionId ? newSection : s)));
       }
     } catch (error: any) {
       handleApiError(error, "Failed to regenerate section. Please try again.");
@@ -273,29 +289,17 @@ Return the updated song in the exact same JSON structure.`;
       });
 
       const data = safeJsonParse(response.text || '[]', []);
-      const newSections = data.map((section: any) => ({
-        ...section,
-        name: cleanSectionName(section.name),
-        id: generateId(),
-        lines: section.lines.map((line: any) => ({
-          ...line,
-          id: generateId()
-        }))
-      }));
 
       if (sectionId) {
-        const updatedSong = song.map(s => {
-          if (s.id === sectionId && newSections.length > 0) {
-            return {
-              ...s,
-              lines: newSections[0].lines
-            };
-          }
-          return s;
-        });
-        updateSongWithHistory(updatedSong);
+        const updatedSections = mapSongWithPreservedIds(data, [song.find(s => s.id === sectionId)!]);
+        if (updatedSections.length > 0) {
+          updateSong(currentSong =>
+            currentSong.map(section => (section.id === sectionId ? updatedSections[0] : section))
+          );
+        }
       } else {
-        updateSongWithHistory(newSections);
+        const updatedSong = mapSongWithPreservedIds(data, song);
+        updateSongWithHistory(updatedSong);
       }
     } catch (error: any) {
       handleApiError(error, 'Failed to quantize syllables. Please try again.');
@@ -406,8 +410,9 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       const nextLine = section.lines[lineIndex + 1];
       const mergedText = value + nextLine.text;
 
-      const newSong = song.map(s => {
-        if (s.id === sectionId) {
+      updateSong(currentSong =>
+        currentSong.map(s => {
+          if (s.id !== sectionId) return s;
           const newLines = [...s.lines];
           newLines[lineIndex] = {
             ...newLines[lineIndex],
@@ -417,11 +422,8 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
           };
           newLines.splice(lineIndex + 1, 1);
           return { ...s, lines: newLines };
-        }
-        return s;
-      });
-      
-      updateSongWithHistory(newSong);
+        })
+      );
 
       setTimeout(() => {
         const currentInput = document.querySelector(`input[data-line-id="${lineId}"]`) as HTMLInputElement;
@@ -444,8 +446,9 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       const mergedText = prevLine.text + value;
       const prevLineId = prevLine.id;
 
-      const newSong = song.map(s => {
-        if (s.id === sectionId) {
+      updateSong(currentSong =>
+        currentSong.map(s => {
+          if (s.id !== sectionId) return s;
           const newLines = [...s.lines];
           newLines[lineIndex - 1] = {
             ...newLines[lineIndex - 1],
@@ -455,11 +458,8 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
           };
           newLines.splice(lineIndex, 1);
           return { ...s, lines: newLines };
-        }
-        return s;
-      });
-      
-      updateSongWithHistory(newSong);
+        })
+      );
       setSelectedLineId(prevLineId);
       
       setTimeout(() => {
@@ -483,8 +483,9 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       const textAfter = value.substring(selectionEnd || 0);
       const newLineId = generateId();
 
-      const newSong = song.map(s => {
-        if (s.id === sectionId) {
+      updateSong(currentSong =>
+        currentSong.map(s => {
+          if (s.id !== sectionId) return s;
           const newLines = [...s.lines];
           newLines[lineIndex] = {
             ...newLines[lineIndex],
@@ -502,11 +503,8 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
             isManual: true
           });
           return { ...s, lines: newLines };
-        }
-        return s;
-      });
-
-      updateSongWithHistory(newSong);
+        })
+      );
       setSelectedLineId(newLineId);
 
       setTimeout(() => {
@@ -578,21 +576,22 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
   const applySuggestion = (newText: string) => {
     if (!selectedLineId) return;
     
-    const newSong = song.map(section => ({
-      ...section,
-      lines: section.lines.map(line => {
-        if (line.id === selectedLineId) {
-          return {
-            ...line,
-            text: newText,
-            syllables: computeSyllables(newText),
-            isManual: true,
-          };
-        }
-        return line;
-      })
-    }));
-    updateSongWithHistory(newSong);
+    updateSong(currentSong =>
+      currentSong.map(section => ({
+        ...section,
+        lines: section.lines.map(line => {
+          if (line.id === selectedLineId) {
+            return {
+              ...line,
+              text: newText,
+              syllables: computeSyllables(newText),
+              isManual: true,
+            };
+          }
+          return line;
+        })
+      }))
+    );
   };
 
   const generateMusicalPrompt = async () => {
