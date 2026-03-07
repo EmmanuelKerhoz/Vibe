@@ -18,6 +18,7 @@ type UseSongComposerParams = {
   tempo: string;
   instrumentation: string;
   setMusicalPrompt: (value: string) => void;
+  updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
   updateSongWithHistory: (newSong: Section[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   saveVersion: (name: string) => void;
@@ -58,6 +59,7 @@ export const useSongComposer = ({
   tempo,
   instrumentation,
   setMusicalPrompt,
+  updateState,
   updateSongWithHistory,
   updateSongAndStructureWithHistory,
   saveVersion,
@@ -69,7 +71,10 @@ export const useSongComposer = ({
   const [isSuggesting, setIsSuggesting] = useState(false);
 
   const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
-    updateSongWithHistory(transform(song));
+    updateState(current => ({
+      song: transform(current.song),
+      structure: current.structure,
+    }));
   };
 
   const generateSong = async () => {
