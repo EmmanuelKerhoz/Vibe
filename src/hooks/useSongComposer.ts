@@ -24,6 +24,12 @@ type UseSongComposerParams = {
   saveVersion: (name: string) => void;
 };
 
+const computeSyllables = (text: string) =>
+  text
+    .split(/\s+/)
+    .filter(Boolean)
+    .reduce((acc, word) => acc + countSyllables(word), 0);
+
 export const useSongComposer = ({
   song,
   structure,
@@ -187,12 +193,13 @@ Return the updated section in the exact same JSON structure (as an array with on
       const data = safeJsonParse(response.text || '[]', []);
       if (data.length > 0) {
         const newSection = {
+          ...sectionToRegenerate,
           ...data[0],
+          id: sectionToRegenerate.id,
           name: cleanSectionName(data[0].name),
-          id: generateId(),
-          lines: data[0].lines.map((line: any) => ({
+          lines: data[0].lines.map((line: any, index: number) => ({
             ...line,
-            id: generateId()
+            id: sectionToRegenerate.lines[index]?.id || generateId()
           }))
         };
         
@@ -288,9 +295,8 @@ Return the updated song in the exact same JSON structure.`;
       } else {
         updateSongWithHistory(newSections);
       }
-    } catch (error) {
-      console.error("Failed to quantize:", error);
-      alert("Failed to quantize syllables. Please try again.");
+    } catch (error: any) {
+      handleApiError(error, 'Failed to quantize syllables. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -368,7 +374,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
               return { 
                 ...line, 
                 text: newText,
-                syllables: newText.split(/\s+/).reduce((acc, word) => acc + countSyllables(word), 0),
+                syllables: computeSyllables(newText),
                 isManual: true
               };
             }
@@ -405,7 +411,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
           newLines[lineIndex] = {
             ...newLines[lineIndex],
             text: mergedText,
-            syllables: mergedText.split(/\s+/).reduce((acc, word) => acc + countSyllables(word), 0),
+            syllables: computeSyllables(mergedText),
             isManual: true
           };
           newLines.splice(lineIndex + 1, 1);
@@ -443,7 +449,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
           newLines[lineIndex - 1] = {
             ...newLines[lineIndex - 1],
             text: mergedText,
-            syllables: mergedText.split(/\s+/).reduce((acc, word) => acc + countSyllables(word), 0),
+            syllables: computeSyllables(mergedText),
             isManual: true
           };
           newLines.splice(lineIndex, 1);
@@ -479,20 +485,18 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       const newSong = song.map(s => {
         if (s.id === sectionId) {
           const newLines = [...s.lines];
-          // Update current line
           newLines[lineIndex] = {
             ...newLines[lineIndex],
             text: textBefore,
-            syllables: textBefore.split(/\s+/).reduce((acc, word) => acc + countSyllables(word), 0),
+            syllables: computeSyllables(textBefore),
             isManual: true
           };
-          // Insert new line
           newLines.splice(lineIndex + 1, 0, {
             id: newLineId,
             text: textAfter,
             rhymingSyllables: '',
             rhyme: '',
-            syllables: textAfter.split(/\s+/).reduce((acc, word) => acc + countSyllables(word), 0),
+            syllables: computeSyllables(textAfter),
             concept: 'New line',
             isManual: true
           });
@@ -577,7 +581,12 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       ...section,
       lines: section.lines.map(line => {
         if (line.id === selectedLineId) {
-          return { ...line, text: newText };
+          return {
+            ...line,
+            text: newText,
+            syllables: computeSyllables(newText),
+            isManual: true,
+          };
         }
         return line;
       })
