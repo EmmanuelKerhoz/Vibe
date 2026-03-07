@@ -75,6 +75,10 @@ export const useSongAnalysis = ({
 
   const lastAnalyzedSongRef = useRef<string>('');
 
+  const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
+    updateSongWithHistory(transform(song));
+  };
+
   useEffect(() => {
     if (song.length === 0) return;
 
@@ -468,17 +472,20 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
 
       const newSectionData = safeJsonParse<any>(response.text || '{}', {});
       if (newSectionData.name) {
-        const newSong = [...song];
-        newSong[sectionIndex] = {
-          ...section,
-          ...newSectionData,
-          language: newLanguage,
-          lines: newSectionData.lines.map((l: any, lIdx: number) => ({
-            ...l,
-            id: section.lines[lIdx]?.id || generateId(),
-          })),
-        };
-        updateSongWithHistory(newSong);
+        updateSong(currentSong =>
+          currentSong.map((currentSection, index) => {
+            if (index !== sectionIndex) return currentSection;
+            return {
+              ...section,
+              ...newSectionData,
+              language: newLanguage,
+              lines: newSectionData.lines.map((l: any, lIdx: number) => ({
+                ...l,
+                id: section.lines[lIdx]?.id || generateId(),
+              })),
+            };
+          })
+        );
       }
     } catch (error) {
       console.error('Section language adaptation error:', error);
