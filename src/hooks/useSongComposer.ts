@@ -47,6 +47,32 @@ const mapSongWithPreservedIds = (newSongData: any[], song: Section[]): Section[]
   });
 };
 
+const mergeAiSectionIntoCurrent = (currentSection: Section, aiSection: any): Section => {
+  const mergedName = cleanSectionName(aiSection?.name || currentSection.name);
+  const mergedRhymeScheme = aiSection?.rhymeScheme || currentSection.rhymeScheme;
+  const mergedLinesSource = Array.isArray(aiSection?.lines) ? aiSection.lines : currentSection.lines;
+
+  return {
+    ...currentSection,
+    ...aiSection,
+    id: currentSection.id,
+    name: mergedName,
+    rhymeScheme: mergedRhymeScheme,
+    lines: mergedLinesSource.map((line: any, index: number) => ({
+      ...(currentSection.lines[index] || {}),
+      ...line,
+      id: currentSection.lines[index]?.id || generateId(),
+      text: line?.text ?? currentSection.lines[index]?.text ?? '',
+      rhymingSyllables: line?.rhymingSyllables ?? currentSection.lines[index]?.rhymingSyllables ?? '',
+      rhyme: line?.rhyme ?? currentSection.lines[index]?.rhyme ?? '',
+      syllables: typeof line?.syllables === 'number'
+        ? line.syllables
+        : computeSyllables(line?.text ?? currentSection.lines[index]?.text ?? ''),
+      concept: line?.concept ?? currentSection.lines[index]?.concept ?? 'New line',
+    })),
+  };
+};
+
 export const useSongComposer = ({
   song,
   structure,
@@ -216,18 +242,12 @@ Return the updated section in the exact same JSON structure (as an array with on
 
       const data = safeJsonParse(response.text || '[]', []);
       if (data.length > 0) {
-        const newSection = {
-          ...sectionToRegenerate,
-          ...data[0],
-          id: sectionToRegenerate.id,
-          name: cleanSectionName(data[0].name),
-          lines: data[0].lines.map((line: any, index: number) => ({
-            ...line,
-            id: sectionToRegenerate.lines[index]?.id || generateId()
-          }))
-        };
-        
-        updateSong(currentSong => currentSong.map(s => (s.id === sectionId ? newSection : s)));
+        updateSong(currentSong =>
+          currentSong.map(section => {
+            if (section.id !== sectionId) return section;
+            return mergeAiSectionIntoCurrent(section, data[0]);
+          })
+        );
       }
     } catch (error: any) {
       handleApiError(error, "Failed to regenerate section. Please try again.");
@@ -296,10 +316,12 @@ Return the updated song in the exact same JSON structure.`;
       const data = safeJsonParse(response.text || '[]', []);
 
       if (sectionId) {
-        const updatedSections = mapSongWithPreservedIds(data, [song.find(s => s.id === sectionId)!]);
-        if (updatedSections.length > 0) {
+        if (data.length > 0) {
           updateSong(currentSong =>
-            currentSong.map(section => (section.id === sectionId ? updatedSections[0] : section))
+            currentSong.map(section => {
+              if (section.id !== sectionId) return section;
+              return mergeAiSectionIntoCurrent(section, data[0]);
+            })
           );
         }
       } else {
