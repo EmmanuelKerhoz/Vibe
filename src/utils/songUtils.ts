@@ -41,30 +41,8 @@ export const getRhymeColor = (rhyme: string) => {
   return 'bg-white/5 text-zinc-500 border-white/10';
 };
 
-export const MUSICAL_INSTRUCTIONS = [
-  'Harmonica riff',
-  'Guitar Solo',
-  'Choir answer',
-  'Riff',
-  'Solo',
-  'Vocaloid',
-  'Bass drop',
-  'Drum fill',
-  'Acapella',
-  'Beat drop',
-  'Synth lead',
-  'Piano arpeggio',
-  'Strings swell',
-  'Brass stab',
-  'Modulation',
-  'Tempo change',
-  'Fade out',
-  'Crescendo',
-  'Whispered',
-  'Shouted',
-];
-
-export const DEFAULT_STRUCTURE = ['Intro', 'Verse 1', 'Chorus', 'Verse 2', 'Chorus', 'Bridge', 'Outro'];
+// Re-exported from constants/editor for backward compatibility.
+export { DEFAULT_STRUCTURE, MUSICAL_INSTRUCTIONS } from '../constants/editor';
 
 export const cleanSectionName = (name: string) => {
   if (!name) return '';

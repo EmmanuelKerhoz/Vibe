@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 
 import { Section, SongVersion } from './types';
-import { DEFAULT_STRUCTURE, cleanSectionName, getSectionColor, getSectionTextColor, getSectionDotColor, getRhymeColor, countSyllables } from './utils/songUtils';
+import { APP_VERSION } from './version';
+import { DEFAULT_STRUCTURE } from './constants/editor';
+import { cleanSectionName, getSectionColor, getSectionTextColor, getSectionDotColor, getRhymeColor, countSyllables } from './utils/songUtils';
 import { generateId } from './utils/idUtils';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
@@ -1598,7 +1600,7 @@ Chorus lines..."
             onClick={() => setIsAboutOpen(true)}
             className="flex items-center gap-1 text-zinc-900 dark:text-zinc-300 hover:text-[var(--accent-color)] transition-colors"
           >
-            Lyricist Pro v02.07
+            Lyricist Pro {APP_VERSION}
           </button>
         </div>
       </div>
@@ -1626,7 +1628,7 @@ Chorus lines..."
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-2xl text-primary tracking-tight">Lyricist Pro</h2>
-                  <p className="text-xs telemetry-text text-[var(--accent-color)]">v02.05 by VoxNova42</p>
+                  <p className="text-xs telemetry-text text-[var(--accent-color)]">{APP_VERSION} by VoxNova42</p>
                 </div>
                 <p className="text-sm text-zinc-500 leading-relaxed">
                   A professional-grade AI lyrics editor designed for songwriters and poets. 

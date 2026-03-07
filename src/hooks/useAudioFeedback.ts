@@ -1,10 +1,27 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export const useAudioFeedback = (audioFeedback: boolean) => {
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  const getAudioContext = useCallback((): AudioContext | null => {
+    if (!audioCtxRef.current) {
+      try {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      } catch {
+        return null;
+      }
+    }
+    return audioCtxRef.current;
+  }, []);
+
   const playAudioFeedback = useCallback((type: 'click' | 'success' | 'error' | 'drag' | 'drop') => {
     if (!audioFeedback) return;
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -49,7 +66,7 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
     } catch {
       // Ignore audio context errors
     }
-  }, [audioFeedback]);
+  }, [audioFeedback, getAudioContext]);
 
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
