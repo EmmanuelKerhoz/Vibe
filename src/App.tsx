@@ -496,7 +496,7 @@ export default function App() {
                     color="primary"
                     fullWidth
                     startIcon={<Ruler className="w-3.5 h-3.5" />}
-                    sx={{ mt: 2, fontSize: '10px', py: 1 }}
+                    style={{ fontSize: '10px', padding: '4px 0' }}
                     className="mt-4"
                   >
                     Quantize Syllables (GLOBAL)
@@ -556,7 +556,6 @@ export default function App() {
                 color="info"
                 size="small"
                 startIcon={<Upload className="w-3.5 h-3.5" />}
-                sx={{ fontSize: '0.75rem', py: 0.5 }}
                 style={{ fontSize: '0.75rem', padding: '4px 12px' }}
               >
                 Import
@@ -571,7 +570,6 @@ export default function App() {
                 color="info"
                 size="small"
                 startIcon={<Download className="w-3.5 h-3.5" />}
-                sx={{ fontSize: '0.75rem', py: 0.5 }}
                 style={{ fontSize: '0.75rem', padding: '4px 12px' }}
               >
                 TXT
@@ -585,7 +583,6 @@ export default function App() {
                 color="info"
                 size="small"
                 startIcon={<Download className="w-3.5 h-3.5" />}
-                sx={{ fontSize: '0.75rem', py: 0.5 }}
                 style={{ fontSize: '0.75rem', padding: '4px 12px' }}
               >
                 MD
@@ -596,7 +593,7 @@ export default function App() {
               <IconButton
                 onClick={() => setIsVersionsModalOpen(true)}
                 size="small"
-                sx={{ color: 'text.secondary' }}
+                style={{ color: 'var(--text-secondary)' }}
               >
                 <History className="w-4 h-4" />
               </IconButton>
@@ -606,7 +603,7 @@ export default function App() {
                 onClick={undo}
                 disabled={past.length === 0}
                 size="small"
-                sx={{ color: 'text.secondary' }}
+                style={{ color: 'var(--text-secondary)' }}
               >
                 <Undo2 className="w-4 h-4" />
               </IconButton>
@@ -616,7 +613,7 @@ export default function App() {
                 onClick={redo}
                 disabled={future.length === 0}
                 size="small"
-                sx={{ color: 'text.secondary' }}
+                style={{ color: 'var(--text-secondary)' }}
               >
                 <Redo2 className="w-4 h-4" />
               </IconButton>
@@ -627,7 +624,7 @@ export default function App() {
                 onClick={() => setIsResetModalOpen(true)}
                 disabled={song.length === 0}
                 size="small"
-                sx={{ color: 'error.main' }}
+                style={{ color: 'var(--accent-critical)' }}
               >
                 <Trash2 className="w-4 h-4" />
               </IconButton>
@@ -677,25 +674,25 @@ export default function App() {
                       borderRadius: '4px'
                     }}
                   >
-                    <MenuItem value="Amharic" sx={{ fontSize: '10px' }}>Amharic (Ethiopia - East Africa)</MenuItem>
-                    <MenuItem value="Arabic" sx={{ fontSize: '10px' }}>Arabic</MenuItem>
-                    <MenuItem value="Baoulé" sx={{ fontSize: '10px' }}>Baoulé (Ivory Coast - West Africa)</MenuItem>
-                    <MenuItem value="Chinese" sx={{ fontSize: '10px' }}>Chinese (Mandarin)</MenuItem>
-                    <MenuItem value="Dioula" sx={{ fontSize: '10px' }}>Dioula (Ivory Coast/Burkina Faso - West Africa)</MenuItem>
-                    <MenuItem value="English" sx={{ fontSize: '10px' }}>English</MenuItem>
-                    <MenuItem value="French" sx={{ fontSize: '10px' }}>French</MenuItem>
-                    <MenuItem value="German" sx={{ fontSize: '10px' }}>German</MenuItem>
-                    <MenuItem value="Hausa" sx={{ fontSize: '10px' }}>Hausa (Nigeria/Niger - West Africa)</MenuItem>
-                    <MenuItem value="Italian" sx={{ fontSize: '10px' }}>Italian</MenuItem>
-                    <MenuItem value="Japanese" sx={{ fontSize: '10px' }}>Japanese</MenuItem>
-                    <MenuItem value="Korean" sx={{ fontSize: '10px' }}>Korean (South Korea)</MenuItem>
-                    <MenuItem value="Lingala" sx={{ fontSize: '10px' }}>Lingala (Congo - Central Africa)</MenuItem>
-                    <MenuItem value="Portuguese" sx={{ fontSize: '10px' }}>Portuguese</MenuItem>
-                    <MenuItem value="Spanish" sx={{ fontSize: '10px' }}>Spanish</MenuItem>
-                    <MenuItem value="Swahili" sx={{ fontSize: '10px' }}>Swahili (East Africa)</MenuItem>
-                    <MenuItem value="Wolof" sx={{ fontSize: '10px' }}>Wolof (Senegal - West Africa)</MenuItem>
-                    <MenuItem value="Yoruba" sx={{ fontSize: '10px' }}>Yoruba (Nigeria - West Africa)</MenuItem>
-                    <MenuItem value="Zulu" sx={{ fontSize: '10px' }}>Zulu (South Africa)</MenuItem>
+                    <MenuItem value="Amharic" style={{ fontSize: '10px' }}>Amharic (Ethiopia - East Africa)</MenuItem>
+                    <MenuItem value="Arabic" style={{ fontSize: '10px' }}>Arabic</MenuItem>
+                    <MenuItem value="Baoulé" style={{ fontSize: '10px' }}>Baoulé (Ivory Coast - West Africa)</MenuItem>
+                    <MenuItem value="Chinese" style={{ fontSize: '10px' }}>Chinese (Mandarin)</MenuItem>
+                    <MenuItem value="Dioula" style={{ fontSize: '10px' }}>Dioula (Ivory Coast/Burkina Faso - West Africa)</MenuItem>
+                    <MenuItem value="English" style={{ fontSize: '10px' }}>English</MenuItem>
+                    <MenuItem value="French" style={{ fontSize: '10px' }}>French</MenuItem>
+                    <MenuItem value="German" style={{ fontSize: '10px' }}>German</MenuItem>
+                    <MenuItem value="Hausa" style={{ fontSize: '10px' }}>Hausa (Nigeria/Niger - West Africa)</MenuItem>
+                    <MenuItem value="Italian" style={{ fontSize: '10px' }}>Italian</MenuItem>
+                    <MenuItem value="Japanese" style={{ fontSize: '10px' }}>Japanese</MenuItem>
+                    <MenuItem value="Korean" style={{ fontSize: '10px' }}>Korean (South Korea)</MenuItem>
+                    <MenuItem value="Lingala" style={{ fontSize: '10px' }}>Lingala (Congo - Central Africa)</MenuItem>
+                    <MenuItem value="Portuguese" style={{ fontSize: '10px' }}>Portuguese</MenuItem>
+                    <MenuItem value="Spanish" style={{ fontSize: '10px' }}>Spanish</MenuItem>
+                    <MenuItem value="Swahili" style={{ fontSize: '10px' }}>Swahili (East Africa)</MenuItem>
+                    <MenuItem value="Wolof" style={{ fontSize: '10px' }}>Wolof (Senegal - West Africa)</MenuItem>
+                    <MenuItem value="Yoruba" style={{ fontSize: '10px' }}>Yoruba (Nigeria - West Africa)</MenuItem>
+                    <MenuItem value="Zulu" style={{ fontSize: '10px' }}>Zulu (South Africa)</MenuItem>
                   </Select>
                   <Tooltip title={`Translate and adapt the entire song to ${targetLanguage} (creative adaptation, not just literal translation)`}>
                     <button
@@ -972,7 +969,6 @@ Chorus lines..."
                     variant="outlined"
                     color="success"
                     startIcon={<History className="w-4 h-4" />}
-                    sx={{ flex: 1, py: 1.5 }}
                     style={{ flex: 1, padding: '12px 0' }}
                   >
                     Load Last Session
@@ -983,7 +979,6 @@ Chorus lines..."
                   variant="outlined"
                   color="secondary"
                   startIcon={<ClipboardPaste className="w-4 h-4" />}
-                  sx={{ flex: 1, py: 1.5 }}
                   style={{ flex: 1, padding: '12px 0' }}
                 >
                   Paste Lyrics
@@ -994,7 +989,6 @@ Chorus lines..."
                   variant="contained"
                   color="primary"
                   startIcon={isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  sx={{ flex: 1, py: 1.5 }}
                   style={{ flex: 1, padding: '12px 0' }}
                 >
                   Generate Song
@@ -1078,25 +1072,25 @@ Chorus lines..."
                           minWidth: 45
                         }}
                       >
-                        <MenuItem value="Amharic" sx={{ fontSize: '9px' }}>AM</MenuItem>
-                        <MenuItem value="Arabic" sx={{ fontSize: '9px' }}>AR</MenuItem>
-                        <MenuItem value="Baoulé" sx={{ fontSize: '9px' }}>BA</MenuItem>
-                        <MenuItem value="Chinese" sx={{ fontSize: '9px' }}>CN</MenuItem>
-                        <MenuItem value="Dioula" sx={{ fontSize: '9px' }}>DI</MenuItem>
-                        <MenuItem value="English" sx={{ fontSize: '9px' }}>EN</MenuItem>
-                        <MenuItem value="French" sx={{ fontSize: '9px' }}>FR</MenuItem>
-                        <MenuItem value="German" sx={{ fontSize: '9px' }}>DE</MenuItem>
-                        <MenuItem value="Hausa" sx={{ fontSize: '9px' }}>HA</MenuItem>
-                        <MenuItem value="Italian" sx={{ fontSize: '9px' }}>IT</MenuItem>
-                        <MenuItem value="Japanese" sx={{ fontSize: '9px' }}>JP</MenuItem>
-                        <MenuItem value="Korean" sx={{ fontSize: '9px' }}>KR</MenuItem>
-                        <MenuItem value="Lingala" sx={{ fontSize: '9px' }}>LI</MenuItem>
-                        <MenuItem value="Portuguese" sx={{ fontSize: '9px' }}>PT</MenuItem>
-                        <MenuItem value="Spanish" sx={{ fontSize: '9px' }}>ES</MenuItem>
-                        <MenuItem value="Swahili" sx={{ fontSize: '9px' }}>SW</MenuItem>
-                        <MenuItem value="Wolof" sx={{ fontSize: '9px' }}>WO</MenuItem>
-                        <MenuItem value="Yoruba" sx={{ fontSize: '9px' }}>YO</MenuItem>
-                        <MenuItem value="Zulu" sx={{ fontSize: '9px' }}>ZU</MenuItem>
+                        <MenuItem value="Amharic" style={{ fontSize: '9px' }}>AM</MenuItem>
+                        <MenuItem value="Arabic" style={{ fontSize: '9px' }}>AR</MenuItem>
+                        <MenuItem value="Baoulé" style={{ fontSize: '9px' }}>BA</MenuItem>
+                        <MenuItem value="Chinese" style={{ fontSize: '9px' }}>CN</MenuItem>
+                        <MenuItem value="Dioula" style={{ fontSize: '9px' }}>DI</MenuItem>
+                        <MenuItem value="English" style={{ fontSize: '9px' }}>EN</MenuItem>
+                        <MenuItem value="French" style={{ fontSize: '9px' }}>FR</MenuItem>
+                        <MenuItem value="German" style={{ fontSize: '9px' }}>DE</MenuItem>
+                        <MenuItem value="Hausa" style={{ fontSize: '9px' }}>HA</MenuItem>
+                        <MenuItem value="Italian" style={{ fontSize: '9px' }}>IT</MenuItem>
+                        <MenuItem value="Japanese" style={{ fontSize: '9px' }}>JP</MenuItem>
+                        <MenuItem value="Korean" style={{ fontSize: '9px' }}>KR</MenuItem>
+                        <MenuItem value="Lingala" style={{ fontSize: '9px' }}>LI</MenuItem>
+                        <MenuItem value="Portuguese" style={{ fontSize: '9px' }}>PT</MenuItem>
+                        <MenuItem value="Spanish" style={{ fontSize: '9px' }}>ES</MenuItem>
+                        <MenuItem value="Swahili" style={{ fontSize: '9px' }}>SW</MenuItem>
+                        <MenuItem value="Wolof" style={{ fontSize: '9px' }}>WO</MenuItem>
+                        <MenuItem value="Yoruba" style={{ fontSize: '9px' }}>YO</MenuItem>
+                        <MenuItem value="Zulu" style={{ fontSize: '9px' }}>ZU</MenuItem>
                       </Select>
                       <Tooltip title={`Adapt this section to ${sectionTargetLanguages[section.id] || section.language || songLanguage}`}>
                         <button
@@ -1116,7 +1110,6 @@ Chorus lines..."
                         color="success"
                         size="small"
                         startIcon={<RefreshCw className="w-3 h-3" />}
-                        sx={{ fontSize: '10px', py: 0, px: 1.5, minHeight: '28px', height: '28px' }}
                         style={{ minHeight: '28px', height: '28px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
                       >
                         Regenerate
@@ -1161,8 +1154,7 @@ Chorus lines..."
                           color="primary"
                           size="small"
                           startIcon={<Ruler className="w-3 h-3" />}
-                          sx={{ fontSize: '10px', py: 0, px: 1.5, minHeight: '28px', height: '28px', flexShrink: 0 }}
-                          style={{ minHeight: '28px', height: '28px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                          style={{ minHeight: '28px', height: '28px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}
                         >
                           Quantize
                         </Button>
@@ -1359,7 +1351,6 @@ Chorus lines..."
                     color="primary"
                     fullWidth
                     startIcon={isGeneratingMusicalPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                    sx={{ py: 1.5 }}
                     style={{ padding: '12px 0' }}
                   >
                     Generate Master Prompt
@@ -1497,12 +1488,7 @@ Chorus lines..."
                         <IconButton 
                           onClick={() => addStructureItem()}
                           color="primary"
-                          sx={{ 
-                            backgroundColor: 'primary.main', 
-                            color: 'primary.contrastText',
-                            '&:hover': { backgroundColor: 'primary.dark' },
-                            borderRadius: '8px'
-                          }}
+                          style={{ backgroundColor: 'var(--accent-color)', color: 'var(--on-accent-color)', borderRadius: '8px' }}
                         >
                           <Plus className="w-4 h-4" />
                         </IconButton>
@@ -1540,7 +1526,7 @@ Chorus lines..."
                       variant="outlined"
                       fullWidth
                       startIcon={<AlignLeft className="w-3.5 h-3.5" />}
-                      sx={{ mt: 2, fontSize: '10px', py: 1 }}
+                      style={{ fontSize: '10px', padding: '4px 0' }}
                       className="mt-4"
                     >
                       Normalize Structure

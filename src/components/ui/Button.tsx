@@ -2,23 +2,7 @@ import React from 'react';
 import { Button as FluentButton } from '@fluentui/react-components';
 import type { CSSProperties } from 'react';
 
-/** Converts a MUI spacing multiplier (number) or raw value (string) to a CSS value. */
-const toSpacingValue = (value: unknown): string | undefined => {
-  if (value === undefined) return undefined;
-  return typeof value === 'number' ? `${value * 0.25}rem` : String(value);
-};
-
-/** Maps a MUI-style `sx` object to a partial CSSProperties. Only handles the
- *  spacing/sizing tokens actually used in App.tsx so we avoid a full MUI dep. */
-const sxToStyle = (sx: Record<string, unknown>): CSSProperties => ({
-  ...(sx.mt !== undefined ? { marginTop: toSpacingValue(sx.mt) } : {}),
-  ...(sx.mb !== undefined ? { marginBottom: toSpacingValue(sx.mb) } : {}),
-  ...(sx.py !== undefined ? { paddingTop: toSpacingValue(sx.py), paddingBottom: toSpacingValue(sx.py) } : {}),
-  ...(sx.px !== undefined ? { paddingLeft: toSpacingValue(sx.px), paddingRight: toSpacingValue(sx.px) } : {}),
-  ...(sx.fontSize !== undefined ? { fontSize: String(sx.fontSize) } : {}),
-});
-
-/** Maps MUI color names to Tailwind utility strings for the Fluent button wrapper. */
+/** Maps semantic color names to Tailwind utility strings for the Fluent button wrapper. */
 const colorToClass = (color: string | undefined): string => {
   if (color === 'error') return 'text-red-500 hover:text-red-600 hover:bg-red-500/10';
   if (color === 'success') return 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10';
@@ -27,26 +11,38 @@ const colorToClass = (color: string | undefined): string => {
   return '';
 };
 
+type ButtonProps = {
+  children?: React.ReactNode;
+  variant?: 'contained' | 'outlined' | 'text';
+  color?: string;
+  size?: 'small' | 'medium' | 'large';
+  startIcon?: React.ReactElement;
+  component?: string;
+  fullWidth?: boolean;
+  className?: string;
+  style?: CSSProperties;
+  disabled?: boolean;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+} & Record<string, unknown>;
+
 export const Button = ({
   children,
   variant,
   color,
   size,
   startIcon,
-  sx,
   component,
   fullWidth,
   className,
   style,
   ...props
-}: any) => {
-  let appearance: any = 'secondary';
+}: ButtonProps) => {
+  let appearance: 'primary' | 'secondary' | 'outline' | 'transparent' = 'secondary';
   if (variant === 'contained') appearance = 'primary';
   if (variant === 'outlined') appearance = 'outline';
   if (variant === 'text') appearance = 'transparent';
 
-  const sxStyle = sx ? sxToStyle(sx as Record<string, unknown>) : {};
-  const fluentStyle: CSSProperties = { ...sxStyle, ...style, width: fullWidth ? '100%' : undefined };
+  const fluentStyle: CSSProperties = { ...style, width: fullWidth ? '100%' : undefined };
   const fluentClass = [
     'fluent-button',
     appearance === 'outline' || appearance === 'transparent' ? 'lcars-holo' : '',
@@ -59,7 +55,7 @@ export const Button = ({
   if (component === 'label') {
     return (
       <label style={{ display: 'inline-flex', cursor: 'pointer', ...fluentStyle }} className={className}>
-        <FluentButton as="span" appearance={appearance} size={normalizedSize} icon={startIcon} className={fluentClass} {...props}>
+        <FluentButton appearance={appearance} size={normalizedSize} icon={startIcon} className={fluentClass} {...props}>
           {children}
         </FluentButton>
       </label>

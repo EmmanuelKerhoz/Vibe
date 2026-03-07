@@ -5,10 +5,9 @@ type LegacyOnChange = (event: { target: { value?: string } }) => void;
 
 type AdaptedSelectProps = Omit<SelectProps, 'onChange'> & {
   onChange?: LegacyOnChange;
-  sx?: Record<string, unknown>;
 };
 
-export const Select = ({ onChange, children, sx: _sx, ...props }: AdaptedSelectProps) => {
+export const Select = ({ onChange, children, ...props }: AdaptedSelectProps) => {
   return (
     <FluentSelect
       {...props}
