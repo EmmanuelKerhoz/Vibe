@@ -22,13 +22,13 @@ Lyricist Pro est une application React/Vite pour générer, éditer et analyser 
 
 2. Créer un fichier `.env.local` à partir de `.env.example`.
 
-3. Définir une clé API (recommandé) :
+3. Définir la clé API **côté serveur** (ne pas préfixer avec `VITE_`) :
 
    ```env
-   VITE_GEMINI_API_KEY=YOUR_KEY
+   GEMINI_API_KEY=YOUR_KEY
    ```
 
-   Alias accepté : `VITE_API_KEY`.
+   La clé est lue par le proxy serveur et n'est jamais exposée au navigateur.
 
 ## Démarrage local
 
@@ -40,6 +40,26 @@ Application disponible sur `http://localhost:3000`.
 
 Le serveur est lancé avec `--host=0.0.0.0`, donc vous pouvez aussi y accéder depuis un autre appareil du même réseau local avec l'URL **Network** affichée par Vite (par ex. `http://192.168.x.x:3000`).
 
+## Déploiement sur Vercel (recommandé pour la production)
+
+Ce projet inclut un endpoint serverless (`/api/generate`) qui agit comme proxy sécurisé vers l'API Gemini.
+La clé API n'est **jamais** transmise au navigateur.
+
+### Étapes
+
+1. Poussez votre dépôt sur GitHub (branche `main`).
+2. Importez le projet dans [Vercel](https://vercel.com/new).
+3. Ajoutez la variable d'environnement suivante dans **Settings → Environment Variables** de votre projet Vercel :
+
+   | Nom              | Valeur              |
+   |------------------|---------------------|
+   | `GEMINI_API_KEY` | `<votre clé Gemini>` |
+
+4. Déployez. Vercel détecte automatiquement Vite comme framework.
+
+> ⚠️ **GitHub Pages** expose les clés injectées au build dans le bundle JS.  
+> Pour une configuration sécurisée en production, utilisez **Vercel** avec le proxy `/api/generate` décrit ci-dessus.
+
 ## Dépannage (localhost refusé)
 
 Si votre navigateur affiche `localhost refused to connect` :
@@ -49,19 +69,6 @@ Si votre navigateur affiche `localhost refused to connect` :
    - `Local: http://localhost:3000/` (même machine)
    - `Network: http://<ip>:3000/` (WSL/Docker/VM ou autre appareil du LAN)
 3. Si vous exécutez le code dans un conteneur distant (Codespaces, VM, serveur), `localhost` du navigateur ne pointe pas ce conteneur : utilisez l'URL de port-forwarding de votre plateforme.
-
-## Windows + dépôt GitHub (lien partageable)
-
-Si vous êtes sous Windows et que le code est sur GitHub, le plus simple pour obtenir un lien accessible est de déployer sur **GitHub Pages** (workflow fourni dans `.github/workflows/deploy-pages.yml`).
-
-1. Poussez votre branche sur `main`.
-2. Dans GitHub → **Settings → Pages**, choisissez **GitHub Actions** comme source.
-3. (Optionnel) Ajoutez les secrets `VITE_GEMINI_API_KEY` et/ou `VITE_API_KEY` dans **Settings → Secrets and variables → Actions**.
-4. Attendez le workflow **Deploy Vite app to GitHub Pages**.
-
-Votre lien public sera : `https://<votre-user>.github.io/<nom-du-repo>/`.
-
-> ⚠️ Important : dans une app front-end, une clé API injectée au build devient visible côté client. Pour un usage production, utilisez plutôt un backend/proxy pour protéger la clé.
 
 ## Scripts utiles
 
@@ -76,4 +83,5 @@ Votre lien public sera : `https://<votre-user>.github.io/<nom-du-repo>/`.
 - React 19 + Vite
 - Fluent UI 2 (`@fluentui/react-components`)
 - Tailwind CSS
-- Gemini via `@google/genai`
+- Gemini via proxy serverless (`/api/generate`)
+
