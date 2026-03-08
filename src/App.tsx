@@ -380,7 +380,7 @@ export default function App() {
                         </MenuItem>
                       ))}
                     </Select>
-                    <Tooltip title={t.tooltips.adaptSong.replace('{lang}', targetLanguage)}>
+                    <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
                       <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
                         {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
                         {t.editor.adaptation}

@@ -66,7 +66,7 @@ export function LeftSettingsPanel({
                 list="mood-suggestions"
               />
               <datalist id="mood-suggestions">
-                {Object.values(t.moods).map(m => <option key={m} value={m} />)}
+                {Object.entries(t.moods).map(([key, m]) => <option key={key} value={m} />)}
               </datalist>
             </div>
           </div>

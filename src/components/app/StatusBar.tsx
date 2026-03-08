@@ -32,8 +32,9 @@ export function StatusBar({
 
   const cycleLanguage = () => {
     const codes = SUPPORTED_UI_LOCALES.map(l => l.code);
-    const next = codes[(codes.indexOf(language) + 1) % codes.length];
-    setLanguage(next);
+    const idx = codes.indexOf(language);
+    const safeIdx = idx === -1 ? 0 : idx;
+    setLanguage(codes[(safeIdx + 1) % codes.length]);
   };
 
   return (

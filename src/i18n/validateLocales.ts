@@ -43,13 +43,16 @@ export interface LocaleValidationResult {
  * Returns a report of missing and extra keys per locale.
  * An empty object means all locales are complete.
  */
+/** Keys that are structural metadata and should not be treated as translation keys. */
+const METADATA_KEYS = new Set(['_meta']);
+
 export function validateLocales(): Record<string, LocaleValidationResult> {
   const report: Record<string, LocaleValidationResult> = {};
 
   for (const [code, locale] of Object.entries(ALL_LOCALES)) {
     const localeKeys = new Set(collectKeys(locale));
     const missing = [...BASE_KEYS].filter(k => !localeKeys.has(k));
-    const extra   = [...localeKeys].filter(k => !BASE_KEYS.has(k) && k !== '_meta');
+    const extra   = [...localeKeys].filter(k => !BASE_KEYS.has(k) && !METADATA_KEYS.has(k));
 
     if (missing.length > 0 || extra.length > 0) {
       report[code] = { missing, extra };

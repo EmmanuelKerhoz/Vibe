@@ -6,7 +6,8 @@ export interface Translations {
 
   /** Locale metadata – only populated for AI-generated draft locales */
   _meta?: {
-    isAiGenerated: true;
+    /** Whether this locale pack was bootstrapped by AI (pending human review) */
+    isAiGenerated: boolean;
     generatedAt: string; // ISO date string
   };
 
