@@ -73,9 +73,10 @@ export default function App() {
   const [hasApiKey, setHasApiKey] = useState(true);
 
   useEffect(() => {
-    const env = import.meta.env;
-    const hasKey = Boolean(env.VITE_GEMINI_API_KEY || env.VITE_API_KEY || env.GEMINI_API_KEY || env.API_KEY);
-    setHasApiKey(hasKey);
+    fetch('/api/status')
+      .then(r => r.json())
+      .then((data: { available?: boolean }) => setHasApiKey(data.available === true))
+      .catch(() => setHasApiKey(false)); // Network error or endpoint missing → treat as unavailable
   }, []);
 
   useEffect(() => {
@@ -91,7 +92,7 @@ export default function App() {
   }, []);
 
   const handleApiKeyHelp = () => {
-    alert('API key missing. Add VITE_GEMINI_API_KEY or VITE_API_KEY to your .env.local file and restart the app.');
+    alert('Gemini backend unavailable. Set GEMINI_API_KEY in your Vercel project environment variables (Settings → Environment Variables) and redeploy.');
   };
 
   const loadSavedSession = () => {
@@ -544,10 +545,10 @@ export default function App() {
             </Tooltip>
             <div className="w-px h-4 bg-white/10 mx-2"></div>
             {!hasApiKey && (
-              <Tooltip title="Gemini API key missing">
+              <Tooltip title="Gemini backend unavailable">
                 <button onClick={handleApiKeyHelp} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold rounded-lg flex items-center gap-2 hover:bg-amber-500/20 transition-all">
                   <Sparkles className="w-3 h-3" />
-                  SET API KEY
+                  AI UNAVAILABLE
                 </button>
               </Tooltip>
             )}

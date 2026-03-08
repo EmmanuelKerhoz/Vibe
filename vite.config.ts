@@ -19,6 +19,14 @@ export default defineConfig(({mode}) => {
         name: 'local-api-generate',
         configureServer(server) {
           server.middlewares.use(
+            '/api/status',
+            (_req: IncomingMessage, res: ServerResponse) => {
+              const available = Boolean(process.env.GEMINI_API_KEY);
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ available }));
+            }
+          );
+          server.middlewares.use(
             '/api/generate',
             async (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => {
               if (req.method !== 'POST') {
