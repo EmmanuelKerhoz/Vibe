@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music } from 'lucide-react';
+import { Music, Youtube, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
@@ -25,30 +25,78 @@ export function AboutModal({ isOpen, onClose }: Props) {
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            className="relative w-full max-w-md bg-fluent-card border border-fluent-border shadow-2xl overflow-hidden lcars-panel"
+            className="relative w-full max-w-2xl bg-fluent-card border border-fluent-border shadow-2xl overflow-hidden lcars-panel"
           >
+            {/* Banner */}
+            <div className="w-full h-48 overflow-hidden bg-gradient-to-br from-[var(--accent-color)]/20 to-transparent relative">
+              <img
+                src="/Lyricist_Splash_Medium.png"
+                alt="Lyricist Pro Banner"
+                className="w-full h-full object-cover opacity-90"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent) {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'w-full h-full flex items-center justify-center';
+                    fallback.innerHTML = '<div class="w-20 h-20 rounded-2xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner"><svg class="w-10 h-10 text-[var(--accent-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg></div>';
+                    parent.appendChild(fallback);
+                  }
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-fluent-card via-transparent to-transparent" />
+            </div>
+
             <div className="p-8 text-center space-y-6">
-              <div className="w-20 h-20 mx-auto rounded-2xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner">
-                <Music className="w-10 h-10 text-[var(--accent-color)]" />
-              </div>
               <div className="space-y-2">
-                <h2 className="text-2xl text-primary tracking-tight">{t.app.name}</h2>
-                <p className="text-xs telemetry-text text-[var(--accent-color)]">{APP_VERSION} by VoxNova42</p>
+                <h2 className="text-3xl text-primary tracking-tight font-bold">{t.app.name}</h2>
+                <p className="text-sm telemetry-text text-[var(--accent-color)]">{APP_VERSION} by VoxNova42</p>
               </div>
-              <p className="text-sm text-zinc-500 leading-relaxed">{t.about.description}</p>
-              <div className="pt-4 flex flex-col gap-2">
-                <div className="flex items-center justify-between micro-label text-zinc-500 border-t border-fluent-border pt-4">
-                  <span>{t.about.engineLabel}</span>
-                  <span className="text-zinc-400 telemetry-text">{t.about.engine}</span>
+              
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xl mx-auto">
+                {t.about.description}
+              </p>
+
+              {/* Tech Info */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-fluent-border">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="micro-label text-zinc-500">{t.about.engineLabel}</span>
+                  <span className="text-xs text-zinc-400 telemetry-text">{t.about.engine}</span>
                 </div>
-                <div className="flex items-center justify-between micro-label text-zinc-500">
-                  <span>{t.about.licenseLabel}</span>
-                  <span className="text-zinc-400 telemetry-text">{t.about.license}</span>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="micro-label text-zinc-500">{t.about.licenseLabel}</span>
+                  <span className="text-xs text-zinc-400 telemetry-text">{t.about.license}</span>
                 </div>
               </div>
+
+              {/* Social Links */}
+              <div className="flex items-center justify-center gap-4 pt-4">
+                <a
+                  href="https://www.youtube.com/@voxnova42"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-lg transition-all text-xs font-medium"
+                >
+                  <Youtube className="w-4 h-4" />
+                  <span>YouTube</span>
+                  <ExternalLink className="w-3 h-3 opacity-50" />
+                </a>
+                <a
+                  href="https://open.spotify.com/artist/6VfhDlWsBW0qk0a8x7UbOM?si=UtpaOQ5JT3iN1mUb2vN7vg&nd=1&dlsi=1dffb43b3c7d4280"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/40 text-green-400 hover:text-green-300 rounded-lg transition-all text-xs font-medium"
+                >
+                  <Music className="w-4 h-4" />
+                  <span>Spotify</span>
+                  <ExternalLink className="w-3 h-3 opacity-50" />
+                </a>
+              </div>
+
               <button
                 onClick={onClose}
-                className="w-full py-3 bg-[var(--accent-color)] hover:brightness-110 text-[var(--on-accent-color)] rounded-xl transition-all shadow-lg shadow-[var(--accent-color)]/20"
+                className="w-full py-3 mt-4 bg-[var(--accent-color)] hover:brightness-110 text-[var(--on-accent-color)] rounded-xl transition-all shadow-lg shadow-[var(--accent-color)]/20 font-medium"
               >
                 {t.about.close}
               </button>
