@@ -1,22 +1,20 @@
-import { Tooltip as FluentTooltip } from '@fluentui/react-components';
-import type { ReactElement, ReactNode } from 'react';
+import React from 'react';
+import { Tooltip as FluentTooltip, TooltipProps } from '@fluentui/react-components';
 
-type TooltipProps = {
-  title: ReactNode;
-  children: ReactElement;
-  placement?: 'top' | 'left' | 'right';
-};
+interface Props extends Omit<TooltipProps, 'content'> {
+  title: string;
+  children: React.ReactElement;
+}
 
-const placementMap: Record<NonNullable<TooltipProps['placement']>, 'above' | 'before' | 'after'> = {
-  top: 'above',
-  left: 'before',
-  right: 'after',
-};
-
-export const Tooltip = ({ title, children, placement = 'top' }: TooltipProps) => {
+export function Tooltip({ title, children, ...props }: Props) {
   return (
-    <FluentTooltip content={title as any} relationship="label" positioning={placementMap[placement]}>
+    <FluentTooltip
+      content={title}
+      relationship="label"
+      positioning="above"
+      {...props}
+    >
       {children}
     </FluentTooltip>
   );
-};
+}
