@@ -4,20 +4,20 @@ import { getSectionTextColor } from '../../utils/songUtils';
 export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll, ...props }: any) => {
   const renderStyledMarkup = (text: string) => {
     if (!text) return null;
-    const lines = text.split('\\n');
+    const lines = text.split('\n');
     return lines.map((line, i) => {
       const trimmed = line.trim();
       const isSection = (trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('**[') && trimmed.endsWith(']**'));
       
       let colorClass = '';
       if (isSection) {
-        const name = trimmed.replace(/[\\[\\]\\*]/g, '');
-        colorClass = getSectionTextColor(name) + ' font-bold';
+        const name = trimmed.replace(/[\[\]\*]/g, '');
+        colorClass = getSectionTextColor(name) + ' font-bold text-base';
       }
       
       return (
         <div key={i} className={colorClass}>
-          {line || '\\u00A0'}
+          {line || '\u00A0'}
         </div>
       );
     });
