@@ -1,0 +1,50 @@
+name: Cleanup Merged Branches
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete obsolete merged branches
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branches = [
+              'copilot/add-gemini-proxy-endpoint',
+              'copilot/audit-copilot-app-tsx-cleanup',
+              'copilot/audit-main-and-fix-inconsistencies',
+              'copilot/fix-build-and-typecheck-issues',
+              'copilot/fix-github-pages-deployment',
+              'copilot/regenerate-package-lock-file',
+              'copilot/restore-src-app-tsx-version',
+              'copilot/update-gemini-model-unification',
+              'refactor/auto-split-phase1',
+              'refactor/modularize-app',
+              'refactor/type-safety-phase2',
+            ];
+
+            for (const branch of branches) {
+              try {
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `heads/${branch}`,
+                });
+                console.log(`Deleted branch: ${branch}`);
+              } catch (error) {
+                if (error.status === 422 || error.status === 404) {
+                  console.log(`Branch not found (already deleted): ${branch}`);
+                } else {
+                  console.error(`Failed to delete branch ${branch}: ${error.message}`);
+                }
+              }
+            }
