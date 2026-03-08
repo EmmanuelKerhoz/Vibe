@@ -34,8 +34,11 @@ const en: Translations = {
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: 'SONG TITLE',
+    songTitlePlaceholder: 'Enter song title...',
     songTopic: 'SONG TOPIC',
+    songTopicPlaceholder: "What's the song about?",
     songMood: 'SONG MOOD',
+    songMoodPlaceholder: 'e.g. Melancholic, Energetic...',
     rhymeScheme: 'DEFAULT RHYME SCHEME',
     targetSyllables: 'TARGET SYLLABLES',
     quantize: 'Quantize Syllables (GLOBAL)',
@@ -62,6 +65,12 @@ const en: Translations = {
       description: 'Pure text editing experience',
       hint: 'Format: [Section Name] followed by lyrics. Separate sections with double newlines.',
       placeholder: '[Verse 1]\nLyrics go here...\n\n[Chorus]\nChorus lines...',
+    },
+    sectionTooltip: {
+      lines: 'Lines',
+      words: 'Words',
+      syllablesTarget: 'Syllables Target',
+      rhymeScheme: 'Rhyme Scheme',
     },
     analyze: 'Song Analysis',
     regenerate: 'Regenerate Song',
@@ -130,7 +139,9 @@ const en: Translations = {
   about: {
     description: 'A professional-grade AI lyrics editor designed for songwriters and poets. Craft your masterpiece with real-time suggestions, structure management, and intelligent quantization.',
     engine: 'Gemini 3.1 Pro',
+    engineLabel: 'Engine',
     license: 'Commercial Pro',
+    licenseLabel: 'License',
     close: 'Close',
   },
 
@@ -147,6 +158,7 @@ const en: Translations = {
     redo: 'Redo',
     reset: 'Reset Song',
     aiUnavailable: 'Gemini backend unavailable',
+    aiUnavailableHelp: 'Set GEMINI_API_KEY in your Vercel project environment variables (Settings → Environment Variables) and redeploy.',
     quantize: 'Adjust all lines to match the target syllable count while maintaining meaning',
     analyzeTheme: 'Analyze song structure, rhyme quality, and emotional impact',
     regenerate: 'Rewrite the entire song based on current settings and topic',
@@ -163,6 +175,7 @@ const en: Translations = {
     generateSong: 'Generate a new song with AI',
     regenerateSection: 'Rewrite only this section',
     quantizeSection: 'Adjust lines in this section to match the syllable target',
+    adaptSong: 'Translate and adapt the entire song to {lang} (creative adaptation, not literal translation)',
     sectionAdapt: 'Adapt this section to the selected language',
     markupMode: 'Switch to Pure Text Mode',
     editorMode: 'Switch to Structured Editor',
@@ -173,6 +186,7 @@ const en: Translations = {
     closeAbout: 'Close',
     analysisCancel: 'Cancel and close',
     analysisImport: 'Analyze and import pasted lyrics',
+    copyPrompt: 'Copy to clipboard',
   },
 
   sections: {
@@ -218,6 +232,18 @@ const en: Translations = {
     sections: 'Sections',
     words: 'Words',
     characters: 'Characters',
+  },
+
+  rhymeSchemes: {
+    AABB:   'AABB (Couplets)',
+    ABAB:   'ABAB (Alternate)',
+    AAAA:   'AAAA (Monorhyme)',
+    ABCB:   'ABCB (Ballad)',
+    AAABBB: 'AAABBB (6-line Block)',
+    AABBCC: 'AABBCC (6-line Couplets)',
+    ABABAB: 'ABABAB (6-line Alternate)',
+    ABCABC: 'ABCABC (6-line Repeating)',
+    FREE:   'Free Verse',
   },
 };
 

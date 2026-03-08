@@ -34,8 +34,11 @@ const pt: Translations = {
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: 'TÍTULO DA MÚSICA',
+    songTitlePlaceholder: 'Insira o título da música...',
     songTopic: 'TEMA DA MÚSICA',
+    songTopicPlaceholder: 'Qual é o tema da música?',
     songMood: 'HUMOR DA MÚSICA',
+    songMoodPlaceholder: 'ex. Melancólico, Enérgico...',
     rhymeScheme: 'ESQUEMA DE RIMA PADRÃO',
     targetSyllables: 'SÍLABAS ALVO',
     quantize: 'Quantizar sílabas (GLOBAL)',
@@ -62,6 +65,12 @@ const pt: Translations = {
       description: 'Experiência de edição em texto puro',
       hint: 'Formato: [Nome da seção] seguido das letras. Separe as seções com dupla quebra de linha.',
       placeholder: '[Verso 1]\nLetras aqui...\n\n[Refrão]\nLinhas do refrão...',
+    },
+    sectionTooltip: {
+      lines: 'Linhas',
+      words: 'Palavras',
+      syllablesTarget: 'Meta de sílabas',
+      rhymeScheme: 'Esquema de rima',
     },
     analyze: 'Análise da música',
     regenerate: 'Regenerar música',
@@ -130,7 +139,9 @@ const pt: Translations = {
   about: {
     description: 'Um editor de letras com IA de nível profissional para compositores e poetas. Crie sua obra-prima com sugestões em tempo real, gerenciamento de estrutura e quantização inteligente.',
     engine: 'Gemini 3.1 Pro',
+    engineLabel: 'Motor',
     license: 'Commercial Pro',
+    licenseLabel: 'Licença',
     close: 'Fechar',
   },
 
@@ -147,6 +158,9 @@ const pt: Translations = {
     redo: 'Refazer',
     reset: 'Redefinir música',
     aiUnavailable: 'Backend Gemini indisponível',
+    aiUnavailableHelp: 'Defina GEMINI_API_KEY nas variáveis de ambiente do seu projeto Vercel (Configurações → Variáveis de Ambiente) e faça o redeploy.',
+    adaptSong: 'Traduzir e adaptar toda a música para {lang} (adaptação criativa, não tradução literal)',
+    copyPrompt: 'Copiar para a área de transferência',
     quantize: 'Ajustar todas as linhas para corresponder à contagem de sílabas alvo mantendo o significado',
     analyzeTheme: 'Analisar a estrutura da música, a qualidade da rima e o impacto emocional',
     regenerate: 'Reescrever toda a música com base nas configurações e no tema atuais',
@@ -218,6 +232,18 @@ const pt: Translations = {
     sections: 'Seções',
     words: 'Palavras',
     characters: 'Caracteres',
+  },
+
+  rhymeSchemes: {
+    AABB: 'AABB (Dísticos)',
+    ABAB: 'ABAB (Alternada)',
+    AAAA: 'AAAA (Monorrima)',
+    ABCB: 'ABCB (Balada)',
+    AAABBB: 'AAABBB (Bloco de 6 linhas)',
+    AABBCC: 'AABBCC (Dísticos de 6 linhas)',
+    ABABAB: 'ABABAB (Alternada de 6 linhas)',
+    ABCABC: 'ABCABC (Repetição de 6 linhas)',
+    FREE: 'Verso Livre',
   },
 };
 

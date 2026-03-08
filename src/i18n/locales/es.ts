@@ -34,8 +34,11 @@ const es: Translations = {
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: 'TÍTULO DE LA CANCIÓN',
+    songTitlePlaceholder: 'Ingresa el título de la canción...',
     songTopic: 'TEMA DE LA CANCIÓN',
+    songTopicPlaceholder: '¿De qué trata la canción?',
     songMood: 'ESTADO DE ÁNIMO',
+    songMoodPlaceholder: 'ej. Melancólico, Enérgico...',
     rhymeScheme: 'ESQUEMA DE RIMA PREDETERMINADO',
     targetSyllables: 'SÍLABAS OBJETIVO',
     quantize: 'Cuantizar sílabas (GLOBAL)',
@@ -62,6 +65,12 @@ const es: Translations = {
       description: 'Experiencia de edición en texto puro',
       hint: 'Formato: [Nombre de sección] seguido de las letras. Separa las secciones con doble salto de línea.',
       placeholder: '[Verso 1]\nLetras aquí...\n\n[Estribillo]\nLíneas del estribillo...',
+    },
+    sectionTooltip: {
+      lines: 'Líneas',
+      words: 'Palabras',
+      syllablesTarget: 'Objetivo de sílabas',
+      rhymeScheme: 'Esquema de rima',
     },
     analyze: 'Análisis de canción',
     regenerate: 'Regenerar canción',
@@ -130,7 +139,9 @@ const es: Translations = {
   about: {
     description: 'Un editor de letras con IA de nivel profesional para compositores y poetas. Crea tu obra maestra con sugerencias en tiempo real, gestión de estructura y cuantización inteligente.',
     engine: 'Gemini 3.1 Pro',
+    engineLabel: 'Motor',
     license: 'Commercial Pro',
+    licenseLabel: 'Licencia',
     close: 'Cerrar',
   },
 
@@ -147,6 +158,9 @@ const es: Translations = {
     redo: 'Rehacer',
     reset: 'Restablecer canción',
     aiUnavailable: 'Backend Gemini no disponible',
+    aiUnavailableHelp: 'Configura GEMINI_API_KEY en las variables de entorno de tu proyecto Vercel (Ajustes → Variables de Entorno) y vuelve a desplegar.',
+    adaptSong: 'Traducir y adaptar toda la canción al {lang} (adaptación creativa, no traducción literal)',
+    copyPrompt: 'Copiar al portapapeles',
     quantize: 'Ajustar todas las líneas para que coincidan con el recuento de sílabas objetivo manteniendo el significado',
     analyzeTheme: 'Analizar la estructura de la canción, la calidad de la rima y el impacto emocional',
     regenerate: 'Reescribir toda la canción según la configuración y el tema actuales',
@@ -218,6 +232,18 @@ const es: Translations = {
     sections: 'Secciones',
     words: 'Palabras',
     characters: 'Caracteres',
+  },
+
+  rhymeSchemes: {
+    AABB: 'AABB (Pareados)',
+    ABAB: 'ABAB (Alterna)',
+    AAAA: 'AAAA (Monorrima)',
+    ABCB: 'ABCB (Balada)',
+    AAABBB: 'AAABBB (Bloque de 6 líneas)',
+    AABBCC: 'AABBCC (Pareados de 6 líneas)',
+    ABABAB: 'ABABAB (Alterna de 6 líneas)',
+    ABCABC: 'ABCABC (Repetición de 6 líneas)',
+    FREE: 'Verso libre',
   },
 };
 

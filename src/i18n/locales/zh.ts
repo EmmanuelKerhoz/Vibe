@@ -34,8 +34,11 @@ const zh: Translations = {
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: '歌曲标题',
+    songTitlePlaceholder: '输入歌曲标题...',
     songTopic: '歌曲主题',
+    songTopicPlaceholder: '歌曲讲述什么？',
     songMood: '歌曲情感',
+    songMoodPlaceholder: '如：忧郁、充满活力...',
     rhymeScheme: '默认押韵方案',
     targetSyllables: '目标音节数',
     quantize: '全局量化音节',
@@ -62,6 +65,12 @@ const zh: Translations = {
       description: '纯文本编辑体验',
       hint: '格式：[段落名称] 后跟歌词。用双换行符分隔各段落。',
       placeholder: '[第一段]\n歌词内容...\n\n[副歌]\n副歌内容...',
+    },
+    sectionTooltip: {
+      lines: '行数',
+      words: '字数',
+      syllablesTarget: '音节目标',
+      rhymeScheme: '押韵方案',
     },
     analyze: '歌曲分析',
     regenerate: '重新生成歌曲',
@@ -130,7 +139,9 @@ const zh: Translations = {
   about: {
     description: '专为词曲作者和诗人打造的专业AI歌词编辑器。借助实时建议、结构管理和智能量化，创作您的传世之作。',
     engine: 'Gemini 3.1 Pro',
+    engineLabel: '引擎',
     license: 'Commercial Pro',
+    licenseLabel: '许可证',
     close: '关闭',
   },
 
@@ -147,6 +158,9 @@ const zh: Translations = {
     redo: '重做',
     reset: '重置歌曲',
     aiUnavailable: 'Gemini 后端不可用',
+    aiUnavailableHelp: '在您的 Vercel 项目环境变量中设置 GEMINI_API_KEY（设置 → 环境变量），然后重新部署。',
+    adaptSong: '将整首歌曲翻译并改编为 {lang}（创意改编，而非直译）',
+    copyPrompt: '复制到剪贴板',
     quantize: '调整所有行以匹配目标音节数，同时保持含义',
     analyzeTheme: '分析歌曲结构、押韵质量和情感影响',
     regenerate: '根据当前设置和主题重写整首歌曲',
@@ -218,6 +232,18 @@ const zh: Translations = {
     sections: '段落',
     words: '字数',
     characters: '字符数',
+  },
+
+  rhymeSchemes: {
+    AABB: 'AABB（对句）',
+    ABAB: 'ABAB（交替韵）',
+    AAAA: 'AAAA（单一韵）',
+    ABCB: 'ABCB（民谣体）',
+    AAABBB: 'AAABBB（六行块）',
+    AABBCC: 'AABBCC（六行对句）',
+    ABABAB: 'ABABAB（六行交替）',
+    ABCABC: 'ABCABC（六行循环）',
+    FREE: '自由诗',
   },
 };
 

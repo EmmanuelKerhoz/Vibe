@@ -34,8 +34,11 @@ const fr: Translations = {
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: 'TITRE DE LA CHANSON',
+    songTitlePlaceholder: 'Entrez le titre...',
     songTopic: 'SUJET DE LA CHANSON',
+    songTopicPlaceholder: 'De quoi parle la chanson ?',
     songMood: 'AMBIANCE DE LA CHANSON',
+    songMoodPlaceholder: 'ex. Mélancolique, Énergique...',
     rhymeScheme: 'SCHÉMA DE RIMES PAR DÉFAUT',
     targetSyllables: 'SYLLABES CIBLES',
     quantize: 'Quantifier les syllabes (GLOBAL)',
@@ -62,6 +65,12 @@ const fr: Translations = {
       description: 'Expérience d\'édition en texte brut',
       hint: 'Format : [Nom de la section] suivi des paroles. Séparez les sections par des doubles sauts de ligne.',
       placeholder: '[Couplet 1]\nParoles ici...\n\n[Refrain]\nLignes du refrain...',
+    },
+    sectionTooltip: {
+      lines: 'Lignes',
+      words: 'Mots',
+      syllablesTarget: 'Syllabes cibles',
+      rhymeScheme: 'Schéma de rimes',
     },
     analyze: 'Analyse de la chanson',
     regenerate: 'Régénérer la chanson',
@@ -130,7 +139,9 @@ const fr: Translations = {
   about: {
     description: 'Un éditeur de paroles IA professionnel pour les auteurs-compositeurs et poètes. Composez votre chef-d\'œuvre avec des suggestions en temps réel, la gestion de structure et la quantification intelligente.',
     engine: 'Gemini 3.1 Pro',
+    engineLabel: 'Moteur',
     license: 'Commercial Pro',
+    licenseLabel: 'Licence',
     close: 'Fermer',
   },
 
@@ -147,6 +158,7 @@ const fr: Translations = {
     redo: 'Rétablir',
     reset: 'Réinitialiser la chanson',
     aiUnavailable: 'Backend Gemini indisponible',
+    aiUnavailableHelp: 'Définissez GEMINI_API_KEY dans les variables d\'environnement de votre projet Vercel (Paramètres → Variables d\'environnement) et redéployez.',
     quantize: 'Ajuster toutes les lignes pour correspondre au nombre de syllabes cibles tout en maintenant le sens',
     analyzeTheme: 'Analyser la structure de la chanson, la qualité des rimes et l\'impact émotionnel',
     regenerate: 'Réécrire toute la chanson selon les paramètres et le sujet actuels',
@@ -163,6 +175,7 @@ const fr: Translations = {
     generateSong: 'Générer une nouvelle chanson avec l\'IA',
     regenerateSection: 'Réécrire uniquement cette section',
     quantizeSection: 'Ajuster les lignes de cette section pour correspondre à la cible syllabique',
+    adaptSong: 'Traduire et adapter toute la chanson en {lang} (adaptation créative, pas traduction littérale)',
     sectionAdapt: 'Adapter cette section à la langue sélectionnée',
     markupMode: 'Passer en mode texte brut',
     editorMode: 'Passer en éditeur structuré',
@@ -173,6 +186,7 @@ const fr: Translations = {
     closeAbout: 'Fermer',
     analysisCancel: 'Annuler et fermer',
     analysisImport: 'Analyser et importer les paroles collées',
+    copyPrompt: 'Copier dans le presse-papiers',
   },
 
   sections: {
@@ -218,6 +232,18 @@ const fr: Translations = {
     sections: 'Sections',
     words: 'Mots',
     characters: 'Caractères',
+  },
+
+  rhymeSchemes: {
+    AABB:   'AABB (Couplets)',
+    ABAB:   'ABAB (Alternance)',
+    AAAA:   'AAAA (Monorime)',
+    ABCB:   'ABCB (Ballade)',
+    AAABBB: 'AAABBB (Bloc 6 lignes)',
+    AABBCC: 'AABBCC (Couplets 6 lignes)',
+    ABABAB: 'ABABAB (Alternance 6 lignes)',
+    ABCABC: 'ABCABC (Répétition 6 lignes)',
+    FREE:   'Vers libre',
   },
 };
 

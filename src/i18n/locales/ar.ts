@@ -34,8 +34,11 @@ const ar: Translations = {
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: 'عنوان الأغنية',
+    songTitlePlaceholder: 'أدخل عنوان الأغنية...',
     songTopic: 'موضوع الأغنية',
+    songTopicPlaceholder: 'عمَّ تتحدث الأغنية؟',
     songMood: 'مزاج الأغنية',
+    songMoodPlaceholder: 'مثل: حزين، نشيط...',
     rhymeScheme: 'نظام القافية الافتراضي',
     targetSyllables: 'المقاطع المستهدفة',
     quantize: 'ضبط المقاطع (الكل)',
@@ -62,6 +65,12 @@ const ar: Translations = {
       description: 'تجربة تحرير نصية',
       hint: 'التنسيق: [اسم القسم] متبوعًا بالكلمات. افصل الأقسام بسطر فارغ مزدوج.',
       placeholder: '[مقطع 1]\nالكلمات هنا...\n\n[لازمة]\nأسطر اللازمة...',
+    },
+    sectionTooltip: {
+      lines: 'أسطر',
+      words: 'كلمات',
+      syllablesTarget: 'هدف المقاطع',
+      rhymeScheme: 'نظام القافية',
     },
     analyze: 'تحليل الأغنية',
     regenerate: 'إعادة توليد الأغنية',
@@ -130,7 +139,9 @@ const ar: Translations = {
   about: {
     description: 'محرر كلمات احترافي مدعوم بالذكاء الاصطناعي للملحنين والشعراء. اصنع تحفتك الفنية مع اقتراحات فورية وإدارة الهيكل وضبط ذكي للمقاطع.',
     engine: 'Gemini 3.1 Pro',
+    engineLabel: 'المحرك',
     license: 'Commercial Pro',
+    licenseLabel: 'الترخيص',
     close: 'إغلاق',
   },
 
@@ -147,6 +158,9 @@ const ar: Translations = {
     redo: 'إعادة',
     reset: 'إعادة تعيين الأغنية',
     aiUnavailable: 'الخادم الخلفي Gemini غير متاح',
+    aiUnavailableHelp: 'قم بتعيين GEMINI_API_KEY في متغيرات البيئة لمشروع Vercel الخاص بك (الإعدادات ← متغيرات البيئة) وأعد النشر.',
+    adaptSong: 'ترجمة وتكييف الأغنية بالكامل إلى {lang} (تكييف إبداعي، وليس ترجمة حرفية)',
+    copyPrompt: 'نسخ إلى الحافظة',
     quantize: 'ضبط جميع الأسطر لتطابق عدد المقاطع المستهدف مع الحفاظ على المعنى',
     analyzeTheme: 'تحليل هيكل الأغنية وجودة القافية والتأثير العاطفي',
     regenerate: 'إعادة كتابة الأغنية بالكامل بناءً على الإعدادات والموضوع الحاليين',
@@ -218,6 +232,18 @@ const ar: Translations = {
     sections: 'أقسام',
     words: 'كلمات',
     characters: 'أحرف',
+  },
+
+  rhymeSchemes: {
+    AABB: 'AABB (أزواج متتالية)',
+    ABAB: 'ABAB (تناوب)',
+    AAAA: 'AAAA (قافية واحدة)',
+    ABCB: 'ABCB (بالاد)',
+    AAABBB: 'AAABBB (كتلة 6 أسطر)',
+    AABBCC: 'AABBCC (أزواج 6 أسطر)',
+    ABABAB: 'ABABAB (تناوب 6 أسطر)',
+    ABCABC: 'ABCABC (تكرار 6 أسطر)',
+    FREE: 'شعر حر',
   },
 };
 

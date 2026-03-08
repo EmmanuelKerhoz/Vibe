@@ -4,6 +4,12 @@ export interface Translations {
     tagline: string;
   };
 
+  /** Locale metadata – only populated for AI-generated draft locales */
+  _meta?: {
+    isAiGenerated: true;
+    generatedAt: string; // ISO date string
+  };
+
   statusBar: {
     ready: string;
     generating: string;
@@ -32,8 +38,11 @@ export interface Translations {
   leftPanel: {
     title: string;
     songTitle: string;
+    songTitlePlaceholder: string;
     songTopic: string;
+    songTopicPlaceholder: string;
     songMood: string;
+    songMoodPlaceholder: string;
     rhymeScheme: string;
     targetSyllables: string;
     quantize: string;
@@ -60,6 +69,12 @@ export interface Translations {
       description: string;
       hint: string;
       placeholder: string;
+    };
+    sectionTooltip: {
+      lines: string;
+      words: string;
+      syllablesTarget: string;
+      rhymeScheme: string;
     };
     analyze: string;
     regenerate: string;
@@ -128,7 +143,9 @@ export interface Translations {
   about: {
     description: string;
     engine: string;
+    engineLabel: string;
     license: string;
+    licenseLabel: string;
     close: string;
   };
 
@@ -145,6 +162,7 @@ export interface Translations {
     redo: string;
     reset: string;
     aiUnavailable: string;
+    aiUnavailableHelp: string;
     quantize: string;
     analyzeTheme: string;
     regenerate: string;
@@ -161,6 +179,8 @@ export interface Translations {
     generateSong: string;
     regenerateSection: string;
     quantizeSection: string;
+    /** Template: use `{lang}` placeholder for the target language name */
+    adaptSong: string;
     sectionAdapt: string;
     markupMode: string;
     editorMode: string;
@@ -171,6 +191,7 @@ export interface Translations {
     closeAbout: string;
     analysisCancel: string;
     analysisImport: string;
+    copyPrompt: string;
   };
 
   sections: {
@@ -216,5 +237,17 @@ export interface Translations {
     sections: string;
     words: string;
     characters: string;
+  };
+
+  rhymeSchemes: {
+    AABB: string;
+    ABAB: string;
+    AAAA: string;
+    ABCB: string;
+    AAABBB: string;
+    AABBCC: string;
+    ABABAB: string;
+    ABCABC: string;
+    FREE: string;
   };
 }

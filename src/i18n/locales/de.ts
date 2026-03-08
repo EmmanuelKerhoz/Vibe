@@ -34,8 +34,11 @@ const de: Translations = {
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: 'SONGTITEL',
+    songTitlePlaceholder: 'Songtitel eingeben...',
     songTopic: 'SONGTHEMA',
+    songTopicPlaceholder: 'Worum geht es im Song?',
     songMood: 'STIMMUNG DES SONGS',
+    songMoodPlaceholder: 'z.B. Melancholisch, Energiegeladen...',
     rhymeScheme: 'STANDARD-REIMSCHEMA',
     targetSyllables: 'ZIEL-SILBENANZAHL',
     quantize: 'Silben quantisieren (GLOBAL)',
@@ -62,6 +65,12 @@ const de: Translations = {
       description: 'Reine Textbearbeitungserfahrung',
       hint: 'Format: [Abschnittsname] gefolgt von den Liedtexten. Trenne Abschnitte durch doppelte Zeilenumbrüche.',
       placeholder: '[Strophe 1]\nLiedtext hier...\n\n[Refrain]\nRefrainzeilen...',
+    },
+    sectionTooltip: {
+      lines: 'Zeilen',
+      words: 'Wörter',
+      syllablesTarget: 'Silbenziel',
+      rhymeScheme: 'Reimschema',
     },
     analyze: 'Song-Analyse',
     regenerate: 'Song neu generieren',
@@ -130,7 +139,9 @@ const de: Translations = {
   about: {
     description: 'Ein professioneller KI-Liedtexteditor für Songwriter und Dichter. Erschaffe dein Meisterwerk mit Echtzeit-Vorschlägen, Strukturverwaltung und intelligenter Quantisierung.',
     engine: 'Gemini 3.1 Pro',
+    engineLabel: 'Engine',
     license: 'Commercial Pro',
+    licenseLabel: 'Lizenz',
     close: 'Schließen',
   },
 
@@ -147,6 +158,9 @@ const de: Translations = {
     redo: 'Wiederholen',
     reset: 'Song zurücksetzen',
     aiUnavailable: 'Gemini-Backend nicht verfügbar',
+    aiUnavailableHelp: 'Setze GEMINI_API_KEY in den Umgebungsvariablen deines Vercel-Projekts (Einstellungen → Umgebungsvariablen) und stelle neu bereit.',
+    adaptSong: 'Den gesamten Song ins {lang} übersetzen und anpassen (kreative Adaption, keine wörtliche Übersetzung)',
+    copyPrompt: 'In die Zwischenablage kopieren',
     quantize: 'Alle Zeilen an die Ziel-Silbenanzahl anpassen, ohne den Sinn zu verändern',
     analyzeTheme: 'Songstruktur, Reimqualität und emotionale Wirkung analysieren',
     regenerate: 'Den gesamten Song basierend auf aktuellen Einstellungen und Thema neu schreiben',
@@ -218,6 +232,18 @@ const de: Translations = {
     sections: 'Abschnitte',
     words: 'Wörter',
     characters: 'Zeichen',
+  },
+
+  rhymeSchemes: {
+    AABB: 'AABB (Paarreime)',
+    ABAB: 'ABAB (Kreuzreim)',
+    AAAA: 'AAAA (Einreim)',
+    ABCB: 'ABCB (Ballade)',
+    AAABBB: 'AAABBB (6-zeiliger Block)',
+    AABBCC: 'AABBCC (6-zeilige Paarreime)',
+    ABABAB: 'ABABAB (6-zeiliger Kreuzreim)',
+    ABCABC: 'ABCABC (6-zeilige Wiederholung)',
+    FREE: 'Freier Vers',
   },
 };
 
