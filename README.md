@@ -4,7 +4,7 @@
 
 # Lyricist Pro
 
-Lyricist Pro est une application React/Vite pour générer, éditer et analyser des paroles avec Gemini.
+Lyricist Pro est une application React/Vite/Fluent pour générer, éditer et analyser des paroles avec Gemini.
 
 ## Prérequis
 
