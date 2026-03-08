@@ -27,24 +27,11 @@ export function AboutModal({ isOpen, onClose }: Props) {
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             className="relative w-full max-w-2xl bg-fluent-card border border-fluent-border shadow-2xl overflow-hidden lcars-panel"
           >
-            {/* Banner */}
-            <div className="w-full h-48 overflow-hidden bg-gradient-to-br from-[var(--accent-color)]/20 to-transparent relative">
-              <img
-                src="/Lyricist_Splash_Medium.png"
-                alt="Lyricist Pro Banner"
-                className="w-full h-full object-cover opacity-90"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const parent = target.parentElement;
-                  if (parent) {
-                    const fallback = document.createElement('div');
-                    fallback.className = 'w-full h-full flex items-center justify-center';
-                    fallback.innerHTML = '<div class="w-20 h-20 rounded-2xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner"><svg class="w-10 h-10 text-[var(--accent-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg></div>';
-                    parent.appendChild(fallback);
-                  }
-                }}
-              />
+            {/* Banner - fallback gradient only */}
+            <div className="w-full h-48 overflow-hidden bg-gradient-to-br from-[var(--accent-color)]/20 via-[var(--accent-color)]/10 to-transparent relative flex items-center justify-center">
+              <div className="w-20 h-20 rounded-2xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner">
+                <Music className="w-10 h-10 text-[var(--accent-color)]" />
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-fluent-card via-transparent to-transparent" />
             </div>
 
