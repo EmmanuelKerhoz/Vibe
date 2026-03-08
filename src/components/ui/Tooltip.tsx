@@ -4,12 +4,18 @@ import type { ReactElement, ReactNode } from 'react';
 type TooltipProps = {
   title: ReactNode;
   children: ReactElement;
-  placement?: 'top' | 'bottom' | 'left' | 'right';
+  placement?: 'top' | 'left' | 'right';
 };
 
-export const Tooltip = ({ title, children, placement: _placement }: TooltipProps) => {
+const placementMap: Record<NonNullable<TooltipProps['placement']>, 'above' | 'before' | 'after'> = {
+  top: 'above',
+  left: 'before',
+  right: 'after',
+};
+
+export const Tooltip = ({ title, children, placement = 'top' }: TooltipProps) => {
   return (
-    <FluentTooltip content={title as any} relationship="label">
+    <FluentTooltip content={title as any} relationship="label" positioning={placementMap[placement]}>
       {children}
     </FluentTooltip>
   );
