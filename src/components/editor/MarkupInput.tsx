@@ -12,7 +12,8 @@ export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll,
       let colorClass = '';
       if (isSection) {
         const name = trimmed.replace(/[\[\]\*]/g, '');
-        colorClass = getSectionTextColor(name) + ' font-bold text-base';
+        // Apply bold + LCARS color per section type
+        colorClass = `${getSectionTextColor(name)} font-bold text-base uppercase tracking-wider lcars-section-title`;
       }
       
       return (

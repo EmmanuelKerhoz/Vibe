@@ -97,7 +97,7 @@ export function StatusBar({
             </button>
           </Tooltip>
           {isLangDropdownOpen && (
-            <div className="absolute bottom-full mb-2 right-0 py-1 bg-fluent-card border border-fluent-border rounded-lg shadow-2xl z-[9999] backdrop-blur-xl min-w-[160px] overflow-hidden">
+            <div className="absolute bottom-full mb-2 right-0 py-1 bg-fluent-card border border-fluent-border rounded-lg shadow-2xl z-50 backdrop-blur-xl min-w-[160px] overflow-hidden">
               {SUPPORTED_UI_LOCALES.map(locale => (
                 <button
                   key={locale.code}

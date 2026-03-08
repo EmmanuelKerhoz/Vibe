@@ -267,7 +267,7 @@ body {
   overflow: hidden;
   margin-bottom: 8px;
   border: 1px solid var(--border-color);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
 }
 .dark .lcars-band:hover {
   border-color: rgba(76, 175, 115, 0.2);
@@ -408,10 +408,13 @@ body {
 }
 
 /* Section header text (CHORUS, VERSE, etc.) */
-.dark .lcars-section-title {
+.lcars-section-title {
   font-family: var(--font-sans);
   font-weight: 700;
   letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.dark .lcars-section-title {
   text-shadow: 0 0 12px currentColor;
 }
 
@@ -468,4 +471,3 @@ body {
   background-size: 20px 20px;
   filter: drop-shadow(0 0 4px var(--accent-color));
 }
-
