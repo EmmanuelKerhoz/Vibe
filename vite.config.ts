@@ -21,10 +21,9 @@ export default defineConfig(({ mode }) => ({
     },
     chunkSizeWarningLimit: 800,
   },
-  // Expose docs folder as static asset
-  publicDir: false,
+  // Vite serves public/ folder at root
+  publicDir: 'public',
   assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.svg'],
-  // Copy docs assets to build
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode),
   },
@@ -33,6 +32,5 @@ export default defineConfig(({ mode }) => ({
       '@': '/src',
     },
   },
-  // Serve docs folder as static
   base: '/',
 }));
