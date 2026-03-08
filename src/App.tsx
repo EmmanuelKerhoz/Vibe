@@ -350,5 +350,75 @@ export default function App() {
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
 
-  return <div />;
+  return (
+    <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
+    <div className={`h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
+      <div className="flex-1 flex overflow-hidden">
+        <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col z-10 shadow-2xl transition-all duration-300 ease-in-out flex-shrink-0 lcars-panel !rounded-none ${isLeftPanelOpen ? 'w-80' : 'w-0 overflow-hidden border-r-0'}`}>
+          <div className="w-80 flex flex-col h-full">
+            <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner">
+                  <Music className="w-4.5 h-4.5 text-[var(--accent-color)]" />
+                </div>
+                <h1 className="text-base text-primary tracking-tight">
+                  Lyricist Pro
+                </h1>
+              </div>
+            </div>
+            <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
+              <div className="space-y-4">
+                <div>
+                  <Label>Song Title</Label>
+                  <Input value={title} onChange={(e: any) => setTitle(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Topic</Label>
+                  <Input value={topic} onChange={(e: any) => setTopic(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Mood</Label>
+                  <Input value={mood} onChange={(e: any) => setMood(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Rhyme</Label>
+                  <Input value={rhymeScheme} onChange={(e: any) => setRhymeScheme(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Syllables</Label>
+                  <Input type="number" value={targetSyllables} onChange={(e: any) => setTargetSyllables(Number(e.target.value) || 0)} />
+                </div>
+                <Button onClick={generateSong} disabled={isGenerating} variant="contained" fullWidth>
+                  {isGenerating ? 'Generating…' : 'Generate Song'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-3 p-8">
+            <h2 className="text-xl text-primary">Lyricist Pro UI restored</h2>
+            <p className="text-sm text-zinc-500">Core screen is back. Advanced panels remain wired through hooks/components.</p>
+            <div className="text-xs text-zinc-600">Sections: {sectionCount} · Words: {wordCount} · Chars: {charCount} · Version: {APP_VERSION}</div>
+          </div>
+        </div>
+      </div>
+      <VersionsModal
+        isOpen={isVersionsModalOpen}
+        versions={versions}
+        onClose={() => setIsVersionsModalOpen(false)}
+        onSaveCurrent={() => {
+          const name = prompt('Enter version name:');
+          if (name !== null) saveVersion(name);
+        }}
+        onRollback={rollbackToVersion}
+      />
+      <ResetModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        onConfirm={resetSong}
+      />
+    </div>
+    </FluentProvider>
+  );
 }
