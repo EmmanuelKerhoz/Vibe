@@ -30,7 +30,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
             {/* Banner */}
             <div className="w-full h-48 overflow-hidden bg-gradient-to-br from-[var(--accent-color)]/20 to-transparent relative">
               <img
-                src="/Lyricist_Splash_Medium.png"
+                src="/docs/Lyricist_Splash_Medium.png"
                 alt="Lyricist Pro Banner"
                 className="w-full h-full object-cover opacity-90"
                 onError={(e) => {
