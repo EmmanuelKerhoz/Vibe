@@ -7,18 +7,42 @@ import de from './locales/de';
 import pt from './locales/pt';
 import ar from './locales/ar';
 import zh from './locales/zh';
+import { SUPPORTED_UI_LOCALES } from './constants';
+
+// Re-export legacy alias so existing consumers don't break
+export { SUPPORTED_UI_LOCALES as SUPPORTED_LANGUAGES } from './constants';
 
 const locales: Record<string, Translations> = { en, fr, es, de, pt, ar, zh };
 
-export const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English', dir: 'ltr' as const },
-  { code: 'fr', label: 'Français', dir: 'ltr' as const },
-  { code: 'es', label: 'Español', dir: 'ltr' as const },
-  { code: 'de', label: 'Deutsch', dir: 'ltr' as const },
-  { code: 'pt', label: 'Português', dir: 'ltr' as const },
-  { code: 'ar', label: 'العربية', dir: 'rtl' as const },
-  { code: 'zh', label: '中文', dir: 'ltr' as const },
-];
+// ---------------------------------------------------------------------------
+// Missing-key safety: deep-merge any locale over the English base so that
+// incomplete or AI-generated locale packs can never break rendering.
+// ---------------------------------------------------------------------------
+function deepMerge<T extends object>(base: T, override: Partial<T>): T {
+  const result: T = { ...base };
+  for (const key in override) {
+    const val = override[key as keyof T];
+    if (val !== undefined && val !== null) {
+      if (typeof val === 'object' && !Array.isArray(val)) {
+        result[key as keyof T] = deepMerge(
+          base[key as keyof T] as object,
+          val as Partial<T[keyof T] & object>,
+        ) as T[keyof T];
+      } else {
+        result[key as keyof T] = val as T[keyof T];
+      }
+    }
+  }
+  return result;
+}
+
+function buildSafeTranslations(language: string): Translations {
+  if (language === 'en') return en;
+  const locale = locales[language];
+  if (!locale) return en;
+  // Deep-merge: any key missing in `locale` falls back to the English value.
+  return deepMerge(en, locale as Partial<Translations>);
+}
 
 export interface LanguageContextValue {
   language: string;
@@ -47,10 +71,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const t = useMemo(() => locales[language] ?? locales.en, [language]);
+  const t = useMemo(() => buildSafeTranslations(language), [language]);
 
   const dir = useMemo(
-    () => SUPPORTED_LANGUAGES.find(l => l.code === language)?.dir ?? 'ltr',
+    () => SUPPORTED_UI_LOCALES.find(l => l.code === language)?.dir ?? 'ltr',
     [language],
   );
 

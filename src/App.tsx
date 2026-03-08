@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, Check, X, Loader2, RefreshCw, Music, AlignLeft, Hash, Lightbulb, ClipboardPaste, Undo2, Redo2, Ruler, BarChart2, Trash2, GripVertical, Download, Upload, Sun, Moon, Plus, ChevronDown, PanelRight, PanelLeft, ChevronRight, Waves, Mic, Volume2, VolumeX, Wand2, History, Bot, User, FileText, Layout, BookOpen, Activity, CheckCircle2, Target, Languages, Globe } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Sparkles, Loader2, RefreshCw, Music, Lightbulb, ClipboardPaste, Ruler, BarChart2, GripVertical, Waves, Volume2, Wand2, History, Bot, User, FileText, Layout, Languages, Globe } from 'lucide-react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 
 import { Section, SongVersion } from './types';
-import { APP_VERSION } from './version';
 import { DEFAULT_STRUCTURE } from './constants/editor';
 import { cleanSectionName, getSectionColor, getSectionTextColor, getSectionDotColor, getRhymeColor, countSyllables } from './utils/songUtils';
 import { generateId } from './utils/idUtils';
@@ -19,16 +17,23 @@ import { Select } from './components/ui/Select';
 import { Button } from './components/ui/Button';
 import { Tooltip } from './components/ui/Tooltip';
 import { MenuItem } from './components/ui/MenuItem';
-import { IconButton } from './components/ui/IconButton';
 import { LyricInput } from './components/editor/LyricInput';
 import { MarkupInput } from './components/editor/MarkupInput';
 import { InstructionEditor } from './components/editor/InstructionEditor';
 import { VersionsModal } from './components/modals/VersionsModal';
 import { ResetModal } from './components/modals/ResetModal';
-import { useTranslation, SUPPORTED_LANGUAGES } from './i18n';
+import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
+import { TopRibbon } from './components/app/TopRibbon';
+import { StructureSidebar } from './components/app/StructureSidebar';
+import { StatusBar } from './components/app/StatusBar';
+import { SuggestionsPanel } from './components/app/SuggestionsPanel';
+import { AboutModal } from './components/app/modals/AboutModal';
+import { PasteModal } from './components/app/modals/PasteModal';
+import { AnalysisModal } from './components/app/modals/AnalysisModal';
+import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
 
 export default function App() {
-  const { language, setLanguage, t } = useTranslation();
+  const { t } = useTranslation();
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   
   const [title, setTitle] = useState('Untitled Song');
@@ -45,18 +50,8 @@ export default function App() {
   const [audioFeedback, setAudioFeedback] = useState(true);
   
   const {
-    song,
-    structure,
-    past,
-    future,
-    updateState,
-    updateSongWithHistory,
-    updateStructureWithHistory,
-    updateSongAndStructureWithHistory,
-    replaceStateWithoutHistory,
-    clearHistory,
-    undo,
-    redo,
+    song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
+    updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory, undo, redo,
   } = useSongHistoryState([], DEFAULT_STRUCTURE);
   const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>('lyrics');
   const [genre, setGenre] = useState('');
@@ -78,7 +73,7 @@ export default function App() {
     fetch('/api/status')
       .then(r => r.json())
       .then((data: { available?: boolean }) => setHasApiKey(data.available === true))
-      .catch(() => setHasApiKey(false)); // Network error or endpoint missing → treat as unavailable
+      .catch(() => setHasApiKey(false));
   }, []);
 
   useEffect(() => {
@@ -94,7 +89,7 @@ export default function App() {
   }, []);
 
   const handleApiKeyHelp = () => {
-    alert('Gemini backend unavailable. Set GEMINI_API_KEY in your Vercel project environment variables (Settings → Environment Variables) and redeploy.');
+    alert(t.tooltips.aiUnavailableHelp);
   };
 
   const loadSavedSession = () => {
@@ -143,22 +138,14 @@ export default function App() {
   useEffect(() => {
     if (song.length > 0) {
       const sessionData = {
-        song,
-        structure,
-        title,
-        topic,
-        mood,
-        rhymeScheme,
-        targetSyllables,
-        genre,
-        tempo,
-        instrumentation,
-        musicalPrompt
+        song, structure, title, topic, mood, rhymeScheme, targetSyllables,
+        genre, tempo, instrumentation, musicalPrompt
       };
       localStorage.setItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
     }
   }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, musicalPrompt]);
+
   const { playAudioFeedback } = useAudioFeedback(audioFeedback);
 
   useEffect(() => {
@@ -187,15 +174,9 @@ export default function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         const target = e.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-          return;
-        }
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
         e.preventDefault();
-        if (e.shiftKey) {
-          redo();
-        } else {
-          undo();
-        }
+        if (e.shiftKey) { redo(); } else { undo(); }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -232,115 +213,39 @@ export default function App() {
   };
 
   const {
-    isGenerating,
-    isGeneratingMusicalPrompt,
-    selectedLineId,
-    setSelectedLineId,
-    suggestions,
-    isSuggesting,
-    generateSong,
-    regenerateSection,
-    quantizeSyllables,
-    generateSuggestions,
-    updateLineText,
-    handleLineKeyDown,
-    applySuggestion,
-    generateMusicalPrompt,
-    handleLineClick,
-    handleInstructionChange,
-    addInstruction,
-    removeInstruction,
-    clearSelection,
+    isGenerating, isGeneratingMusicalPrompt, selectedLineId, setSelectedLineId,
+    suggestions, isSuggesting, generateSong, regenerateSection, quantizeSyllables,
+    generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
+    generateMusicalPrompt, handleLineClick, handleInstructionChange,
+    addInstruction, removeInstruction, clearSelection,
   } = useSongComposer({
-    song,
-    structure,
-    topic,
-    mood,
-    rhymeScheme,
-    targetSyllables,
-    title,
-    genre,
-    tempo,
-    instrumentation,
-    setMusicalPrompt,
-    updateState,
-    updateSongWithHistory,
-    updateSongAndStructureWithHistory,
-    saveVersion,
+    song, structure, topic, mood, rhymeScheme, targetSyllables, title,
+    genre, tempo, instrumentation, setMusicalPrompt,
+    updateState, updateSongWithHistory, updateSongAndStructureWithHistory, saveVersion,
   });
 
   const {
-    isPasteModalOpen,
-    setIsPasteModalOpen,
-    pastedText,
-    setPastedText,
-    isAnalyzing,
-    isAnalysisModalOpen,
-    setIsAnalysisModalOpen,
-    analysisReport,
-    analysisSteps,
-    appliedAnalysisItems,
-    selectedAnalysisItems,
-    isApplyingAnalysis,
-    isAnalyzingTheme,
-    songLanguage,
-    targetLanguage,
-    setTargetLanguage,
-    sectionTargetLanguages,
-    setSectionTargetLanguages,
-    isDetectingLanguage,
-    isAdaptingLanguage,
-    toggleAnalysisItemSelection,
-    applySelectedAnalysisItems,
-    applyAnalysisItem,
-    analyzeCurrentSong,
-    detectLanguage,
-    adaptSongLanguage,
-    adaptSectionLanguage,
-    analyzePastedLyrics,
-    clearAppliedAnalysisItems,
+    isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
+    isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
+    appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
+    songLanguage, targetLanguage, setTargetLanguage, sectionTargetLanguages, setSectionTargetLanguages,
+    isAdaptingLanguage, toggleAnalysisItemSelection, applySelectedAnalysisItems,
+    analyzeCurrentSong, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
   } = useSongAnalysis({
-    song,
-    topic,
-    mood,
-    rhymeScheme,
-    setTopic,
-    setMood,
-    saveVersion,
-    updateState,
-    updateSongWithHistory,
-    updateSongAndStructureWithHistory,
+    song, topic, mood, rhymeScheme, setTopic, setMood, saveVersion,
+    updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
     clearLineSelection: clearSelection,
   });
 
   const {
-    removeStructureItem,
-    addStructureItem,
-    normalizeStructure,
-    handleDrop,
-    handleLineDragStart,
-    handleLineDrop,
-    exportTxt,
-    exportMd,
-    handleImport,
+    removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
+    handleLineDragStart, handleLineDrop, exportTxt, exportMd, handleImport,
   } = useSongEditor({
-    song,
-    structure,
-    newSectionName,
-    setNewSectionName,
-    draggedItemIndex,
-    setDraggedItemIndex,
-    setDragOverIndex,
-    draggedLineInfo,
-    setDraggedLineInfo,
-    setDragOverLineInfo,
-    updateState,
-    updateSongWithHistory,
-    updateStructureWithHistory,
-    updateSongAndStructureWithHistory,
-    title,
-    topic,
-    mood,
+    song, structure, newSectionName, setNewSectionName,
+    draggedItemIndex, setDraggedItemIndex, setDragOverIndex,
+    draggedLineInfo, setDraggedLineInfo, setDragOverLineInfo,
+    updateState, updateSongWithHistory, updateStructureWithHistory,
+    updateSongAndStructureWithHistory, title, topic, mood,
     openPasteModalWithText: (text: string) => {
       setPastedText(text);
       setIsPasteModalOpen(true);
@@ -352,592 +257,338 @@ export default function App() {
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
 
+  const scrollToSection = (section: Section) => {
+    if (isMarkupMode) {
+      if (!markupTextareaRef.current) return;
+      let searchStr = `**[${section.name}]**`;
+      let index = markupText.indexOf(searchStr);
+      if (index === -1) { searchStr = `[${section.name}]`; index = markupText.indexOf(searchStr); }
+      if (index !== -1) {
+        markupTextareaRef.current.focus();
+        markupTextareaRef.current.setSelectionRange(index, index + searchStr.length);
+        markupTextareaRef.current.scrollTop = (markupText.substring(0, index).split('\n').length - 2) * 20;
+      }
+    } else {
+      const el = document.getElementById(`section-${section.id}`);
+      if (el) {
+        const container = el.closest('.overflow-y-auto');
+        if (container) { container.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' }); }
+        else { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      }
+    }
+  };
+
+  const handleMarkupToggle = () => {
+    if (isMarkupMode) {
+      const blocks = markupText.split(/\n\s*\n/);
+      const usedSectionIds = new Set<string>();
+      const usedLineIds = new Set<string>();
+      const newSections: Section[] = blocks.map((block, index) => {
+        const lines = block.trim().split('\n');
+        if (lines.length === 0 || (lines.length === 1 && !lines[0].trim())) return null;
+        let name = 'Verse';
+        let remainingLines = lines;
+        const firstLine = lines[0].trim();
+        if ((firstLine.startsWith('**[') && firstLine.endsWith(']**')) || (firstLine.startsWith('[') && firstLine.endsWith(']'))) {
+          name = cleanSectionName(firstLine);
+          remainingLines = lines.slice(1);
+        }
+        const preInstructions: string[] = [], postInstructions: string[] = [], lyricLines: string[] = [];
+        let foundLyrics = false;
+        remainingLines.forEach(line => {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+            if (foundLyrics) postInstructions.push(trimmed); else preInstructions.push(trimmed);
+          } else if (trimmed !== '') { foundLyrics = true; lyricLines.push(line); }
+        });
+        let existingSection = (song[index] && song[index].name === name) ? song[index] : song.find(s => s.name === name && !usedSectionIds.has(s.id));
+        let sectionId = existingSection?.id || generateId();
+        if (usedSectionIds.has(sectionId)) sectionId = generateId();
+        usedSectionIds.add(sectionId);
+        return {
+          id: sectionId, name,
+          rhymeScheme: existingSection?.rhymeScheme || 'AABB',
+          targetSyllables: existingSection?.targetSyllables || 8,
+          mood: existingSection?.mood || '',
+          preInstructions: preInstructions.length > 0 ? preInstructions : (existingSection?.preInstructions || []),
+          postInstructions: postInstructions.length > 0 ? postInstructions : (existingSection?.postInstructions || []),
+          lines: lyricLines.map((text, lIdx) => {
+            const existingLine = existingSection?.lines.find(l => l.text === text && !usedLineIds.has(l.id)) || (existingSection?.lines[lIdx] && !usedLineIds.has(existingSection.lines[lIdx].id) ? existingSection.lines[lIdx] : null);
+            let lineId = existingLine?.id || generateId();
+            if (usedLineIds.has(lineId)) lineId = generateId();
+            usedLineIds.add(lineId);
+            return { id: lineId, text, rhymingSyllables: existingLine?.rhymingSyllables || '', rhyme: existingLine?.rhyme || '', syllables: text.split(/\s+/).reduce((acc, word) => acc + (word ? countSyllables(word) : 0), 0), concept: existingLine?.concept || 'New line', isManual: true };
+          })
+        };
+      }).filter(s => s !== null) as Section[];
+      if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
+      setIsMarkupMode(false);
+    } else {
+      const fmt = (i: string) => { const tr = i.trim(); return (tr.startsWith('[') && tr.endsWith(']')) ? tr : `[${tr}]`; };
+      const text = song.map(sec => {
+        const pre = (sec.preInstructions || []).map(fmt).join('\n');
+        const post = (sec.postInstructions || []).map(fmt).join('\n');
+        return `[${sec.name}]\n${pre ? pre + '\n' : ''}${sec.lines.map(l => l.text).join('\n')}${post ? '\n' + post : ''}`;
+      }).join('\n\n');
+      setMarkupText(text);
+      setIsMarkupMode(true);
+    }
+  };
+
+  const RHYME_KEYS = Object.keys(t.rhymeSchemes) as Array<keyof typeof t.rhymeSchemes>;
+
   return (
     <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
     <div className={`h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
       <div className="flex-1 flex overflow-hidden">
-        <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col z-10 shadow-2xl transition-all duration-300 ease-in-out flex-shrink-0 lcars-panel !rounded-none ${isLeftPanelOpen ? 'w-80' : 'w-0 overflow-hidden border-r-0'}`}>
-          <div className="w-80 flex flex-col h-full">
-            <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner">
-                  <Music className="w-4.5 h-4.5 text-[var(--accent-color)]" />
-                </div>
-                <h1 className="text-base text-primary tracking-tight">
-                  {t.app.name}
-                </h1>
-              </div>
-            </div>
-          
-            <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
-              <div className="space-y-4">
-                <div>
-                  <Label>{t.leftPanel.songTitle}</Label>
-                  <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter song title..." />
-                </div>
-                <div>
-                  <Label>{t.leftPanel.songTopic}</Label>
-                  <Input value={topic} onChange={e => setTopic(e.target.value)} placeholder="What's the song about?" />
-                </div>
-                <div>
-                  <Label>{t.leftPanel.songMood}</Label>
-                  <Input 
-                    value={mood} 
-                    onChange={e => setMood(e.target.value)} 
-                    placeholder="e.g. Melancholic, Energetic..." 
-                    list="mood-suggestions"
-                  />
-                  <datalist id="mood-suggestions">
-                    <option value={t.moods.aggressive} />
-                    <option value={t.moods.calm} />
-                    <option value={t.moods.dark} />
-                    <option value={t.moods.energetic} />
-                    <option value={t.moods.ethereal} />
-                    <option value={t.moods.funky} />
-                    <option value={t.moods.gloomy} />
-                    <option value={t.moods.happy} />
-                    <option value={t.moods.intense} />
-                    <option value={t.moods.joyful} />
-                    <option value={t.moods.lonely} />
-                    <option value={t.moods.majestic} />
-                    <option value={t.moods.melancholic} />
-                    <option value={t.moods.nostalgic} />
-                    <option value={t.moods.optimistic} />
-                    <option value={t.moods.peaceful} />
-                    <option value={t.moods.quirky} />
-                    <option value={t.moods.romantic} />
-                    <option value={t.moods.sad} />
-                    <option value={t.moods.tense} />
-                    <option value={t.moods.uplifting} />
-                    <option value={t.moods.vibrant} />
-                    <option value={t.moods.whimsical} />
-                    <option value={t.moods.yearning} />
-                    <option value={t.moods.zen} />
-                  </datalist>
-                </div>
-              </div>
+        <LeftSettingsPanel
+          title={title} setTitle={setTitle} topic={topic} setTopic={setTopic}
+          mood={mood} setMood={setMood} rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+          targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+          song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
+          isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+        />
 
-              <div className="h-px bg-white/5 mx-1" />
+        <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded-full" />
 
-              <div className="space-y-4">
-                <div>
-                  <Label>{t.leftPanel.rhymeScheme}</Label>
-                  <Select value={rhymeScheme} onChange={e => setRhymeScheme(e.target.value)}>
-                    <MenuItem value="AABB">AABB (Couplets)</MenuItem>
-                    <MenuItem value="ABAB">ABAB (Alternate)</MenuItem>
-                    <MenuItem value="AAAA">AAAA (Monorhyme)</MenuItem>
-                    <MenuItem value="ABCB">ABCB (Ballad)</MenuItem>
-                    <MenuItem value="AAABBB">AAABBB (6-line Block)</MenuItem>
-                    <MenuItem value="AABBCC">AABBCC (6-line Couplets)</MenuItem>
-                    <MenuItem value="ABABAB">ABABAB (6-line Alternate)</MenuItem>
-                    <MenuItem value="ABCABC">ABCABC (6-line Repeating)</MenuItem>
-                    <MenuItem value="FREE">Free Verse</MenuItem>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{t.leftPanel.targetSyllables}</Label>
-                  <div className="flex items-center gap-3">
-                    <input 
-                      type="range" 
-                      min="4" 
-                      max="20" 
-                      value={targetSyllables} 
-                      onChange={e => setTargetSyllables(parseInt(e.target.value))}
-                      className="flex-1 accent-[var(--accent-color)] h-1.5 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
-                    />
-                    <span className="text-xs telemetry-text text-[var(--accent-color)] w-5 text-center">{targetSyllables}</span>
+          <TopRibbon
+            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+            activeTab={activeTab} setActiveTab={setActiveTab}
+            song={song} past={past} future={future} undo={undo} redo={redo}
+            setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
+            isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+            hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+            handleImport={handleImport} exportTxt={exportTxt} exportMd={exportMd}
+            isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+          />
+
+          {activeTab === 'lyrics' && song.length > 0 && (
+            <div className="border-b border-white/10 bg-white/[0.03] p-6 z-10 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <h3 className="micro-label text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+                    <BarChart2 className="w-3.5 h-3.5" />
+                    {t.insights.title}
+                  </h3>
+                  <div className="h-4 w-px bg-white/10" />
+                  <div className="flex items-center gap-2">
+                    <Select value={targetLanguage} onChange={(e: any) => setTargetLanguage(e.target.value as string)} size="small" style={{ height: 24, fontSize: '10px', color: 'var(--colorNeutralForeground2)', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '4px' }}>
+                      {SUPPORTED_ADAPTATION_LANGUAGES.map(lang => (
+                        <MenuItem key={lang.code} value={lang.aiName} style={{ fontSize: '10px' }}>
+                          {adaptationLanguageLabel(lang)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <Tooltip title={t.tooltips.adaptSong.replace('{lang}', targetLanguage)}>
+                      <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
+                        {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
+                        {t.editor.adaptation}
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
-                <Tooltip title={t.tooltips.quantize}>
-                  <Button
-                    onClick={() => quantizeSyllables()}
-                    disabled={song.length === 0 || isGenerating}
-                    variant="outlined"
-                    color="primary"
-                    fullWidth
-                    startIcon={<Ruler className="w-3.5 h-3.5" />}
-                    style={{ fontSize: '10px', padding: '4px 0' }}
-                    className="mt-4"
-                  >
-                    {t.leftPanel.quantize}
-                  </Button>
-                </Tooltip>
+                <div className="flex items-center gap-6">
+                  <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.sections}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{sectionCount}</span></div>
+                  <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.words}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{wordCount}</span></div>
+                  <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.characters}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{charCount}</span></div>
+                </div>
               </div>
-            </div>
-
-            <div className="p-5 border-t border-fluent-border">
-              <Tooltip title={t.tooltips.collapseLeft}>
-                <button 
-                  onClick={() => setIsLeftPanelOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-2 text-[10px] uppercase tracking-widest text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                >
-                  <PanelLeft className="w-3.5 h-3.5" />
-                  {t.leftPanel.collapse}
-                </button>
-              </Tooltip>
-            </div>
-          </div>
-        </div>
-
-      <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded-full" />
-        
-        <div className="h-16 border-b border-fluent-border flex items-center justify-between px-8 z-10 bg-white/[0.02] backdrop-blur-md">
-          <div className="flex items-center gap-6">
-            <Tooltip title={isLeftPanelOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}>
-              <button
-                onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
-                className="p-2 -ml-4 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors"
-              >
-                <PanelLeft className="w-5 h-5" />
-              </button>
-            </Tooltip>
-            <div className="w-px h-6 bg-fluent-border" />
-            <Tooltip title={t.tooltips.lyricsTab}>
-              <button 
-                onClick={() => setActiveTab('lyrics')}
-                className={`text-sm tracking-widest transition-all relative py-5 ${activeTab === 'lyrics' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'}`}
-              >
-                {t.ribbon.lyrics}
-                {activeTab === 'lyrics' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent-color)]" />}
-              </button>
-            </Tooltip>
-            <Tooltip title={t.tooltips.musicalTab}>
-              <button 
-                onClick={() => setActiveTab('musical')}
-                className={`text-sm tracking-widest transition-all relative py-5 ${activeTab === 'musical' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'}`}
-              >
-                {t.ribbon.musical}
-                {activeTab === 'musical' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent-color)]" />}
-              </button>
-            </Tooltip>
-          </div>
-          <div className="flex items-center gap-2">
-            <Tooltip title={t.tooltips.import}>
-              <Button component="label" variant="outlined" color="info" size="small" startIcon={<Upload className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-                {t.ribbon.import}
-                <input type="file" accept=".txt,.md" className="hidden" onChange={handleImport} />
-              </Button>
-            </Tooltip>
-            <Tooltip title={t.tooltips.exportTxt}>
-              <Button onClick={exportTxt} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-                {t.ribbon.exportTxt}
-              </Button>
-            </Tooltip>
-            <Tooltip title={t.tooltips.exportMd}>
-              <Button onClick={exportMd} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-                {t.ribbon.exportMd}
-              </Button>
-            </Tooltip>
-            <div className="w-px h-4 bg-white/10 mx-2"></div>
-            <Tooltip title={t.tooltips.versions}>
-              <IconButton onClick={() => setIsVersionsModalOpen(true)} size="small" style={{ color: 'var(--text-secondary)' }}>
-                <History className="w-4 h-4" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t.tooltips.undo}>
-              <IconButton onClick={undo} disabled={past.length === 0} size="small" style={{ color: 'var(--text-secondary)' }}>
-                <Undo2 className="w-4 h-4" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t.tooltips.redo}>
-              <IconButton onClick={redo} disabled={future.length === 0} size="small" style={{ color: 'var(--text-secondary)' }}>
-                <Redo2 className="w-4 h-4" />
-              </IconButton>
-            </Tooltip>
-            <div className="w-px h-4 bg-white/10 mx-2"></div>
-            <Tooltip title={t.tooltips.reset}>
-              <IconButton onClick={() => setIsResetModalOpen(true)} disabled={song.length === 0} size="small" style={{ color: 'var(--accent-critical)' }}>
-                <Trash2 className="w-4 h-4" />
-              </IconButton>
-            </Tooltip>
-            <div className="w-px h-4 bg-white/10 mx-2"></div>
-            {!hasApiKey && (
-              <Tooltip title={t.tooltips.aiUnavailable}>
-                <button onClick={handleApiKeyHelp} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold rounded-lg flex items-center gap-2 hover:bg-amber-500/20 transition-all">
-                  <Sparkles className="w-3 h-3" />
-                  {t.ribbon.aiUnavailable}
-                </button>
-              </Tooltip>
-            )}
-            <Tooltip title={isStructureOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}>
-              <button onClick={() => setIsStructureOpen(!isStructureOpen)} className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors">
-                <PanelRight className="w-5 h-5" />
-              </button>
-            </Tooltip>
-          </div>
-        </div>
-
-        {activeTab === 'lyrics' && song.length > 0 && (
-          <div className="border-b border-white/10 bg-white/[0.03] p-6 z-10 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <h3 className="micro-label text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-                  <BarChart2 className="w-3.5 h-3.5" />
-                  {t.insights.title}
-                </h3>
-                <div className="h-4 w-px bg-white/10" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                  {song.map((section) => {
+                    const sectionWordCount = section.lines.reduce((acc, line) => acc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0);
+                    return (
+                      <Tooltip key={section.id} title={
+                        <div className="flex flex-col gap-1 text-xs">
+                          <div><span>{t.editor.sectionTooltip.lines}:</span> {section.lines.length}</div>
+                          <div><span>{t.editor.sectionTooltip.words}:</span> {sectionWordCount}</div>
+                          <div><span>{t.editor.sectionTooltip.syllablesTarget}:</span> {section.targetSyllables !== undefined ? section.targetSyllables : targetSyllables}</div>
+                          <div><span>{t.editor.sectionTooltip.rhymeScheme}:</span> {section.rhymeScheme || rhymeScheme}</div>
+                        </div>
+                      }>
+                        <div onClick={() => scrollToSection(section)} className={`flex-shrink-0 px-3 py-1.5 border rounded-md text-[10px] flex items-center gap-2 transition-all hover:brightness-110 cursor-pointer ${getSectionColor(section.name)}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${getSectionDotColor(section.name)} shadow-[0_0_8px_rgba(0,0,0,0.2)]`}></span>
+                          {section.name.toUpperCase()}
+                        </div>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
                 <div className="flex items-center gap-2">
-                  <Select value={targetLanguage} onChange={(e: any) => setTargetLanguage(e.target.value as string)} size="small" style={{ height: 24, fontSize: '10px', color: 'var(--colorNeutralForeground2)', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '4px' }}>
-                    <MenuItem value="Amharic" style={{ fontSize: '10px' }}>Amharic (Ethiopia - East Africa)</MenuItem>
-                    <MenuItem value="Arabic" style={{ fontSize: '10px' }}>Arabic</MenuItem>
-                    <MenuItem value="Baoulé" style={{ fontSize: '10px' }}>Baoulé (Ivory Coast - West Africa)</MenuItem>
-                    <MenuItem value="Chinese" style={{ fontSize: '10px' }}>Chinese (Mandarin)</MenuItem>
-                    <MenuItem value="Dioula" style={{ fontSize: '10px' }}>Dioula (Ivory Coast/Burkina Faso - West Africa)</MenuItem>
-                    <MenuItem value="English" style={{ fontSize: '10px' }}>English</MenuItem>
-                    <MenuItem value="French" style={{ fontSize: '10px' }}>French</MenuItem>
-                    <MenuItem value="German" style={{ fontSize: '10px' }}>German</MenuItem>
-                    <MenuItem value="Hausa" style={{ fontSize: '10px' }}>Hausa (Nigeria/Niger - West Africa)</MenuItem>
-                    <MenuItem value="Italian" style={{ fontSize: '10px' }}>Italian</MenuItem>
-                    <MenuItem value="Japanese" style={{ fontSize: '10px' }}>Japanese</MenuItem>
-                    <MenuItem value="Korean" style={{ fontSize: '10px' }}>Korean (South Korea)</MenuItem>
-                    <MenuItem value="Lingala" style={{ fontSize: '10px' }}>Lingala (Congo - Central Africa)</MenuItem>
-                    <MenuItem value="Portuguese" style={{ fontSize: '10px' }}>Portuguese</MenuItem>
-                    <MenuItem value="Spanish" style={{ fontSize: '10px' }}>Spanish</MenuItem>
-                    <MenuItem value="Swahili" style={{ fontSize: '10px' }}>Swahili (East Africa)</MenuItem>
-                    <MenuItem value="Wolof" style={{ fontSize: '10px' }}>Wolof (Senegal - West Africa)</MenuItem>
-                    <MenuItem value="Yoruba" style={{ fontSize: '10px' }}>Yoruba (Nigeria - West Africa)</MenuItem>
-                    <MenuItem value="Zulu" style={{ fontSize: '10px' }}>Zulu (South Africa)</MenuItem>
-                  </Select>
-                  <Tooltip title={`Translate and adapt the entire song to ${targetLanguage} (creative adaptation, not just literal translation)`}>
-                    <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
-                      {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
-                      {t.editor.adaptation}
+                  <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
+                    <button onClick={handleMarkupToggle} disabled={!isMarkupMode && song.length === 0} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/20 fluent-button whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                      {isMarkupMode ? <Layout className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
+                      {isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}
+                    </button>
+                  </Tooltip>
+                  <Tooltip title={t.tooltips.analyzeTheme}>
+                    <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/20 fluent-button whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                      <BarChart2 className="w-3.5 h-3.5" />
+                      {t.editor.analyze}
+                    </button>
+                  </Tooltip>
+                  <Tooltip title={t.tooltips.regenerate}>
+                    <button onClick={generateSong} disabled={isGenerating || isAnalyzing} className="px-4 py-2 bg-[var(--accent-color)] hover:brightness-110 text-[var(--on-accent-color)] text-xs rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--accent-color)]/20 fluent-button whitespace-nowrap">
+                      {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {t.editor.regenerate}
                     </button>
                   </Tooltip>
                 </div>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.sections}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{sectionCount}</span></div>
-                <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.words}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{wordCount}</span></div>
-                <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.characters}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{charCount}</span></div>
-              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                {song.map((section) => {
-                  const sectionWordCount = section.lines.reduce((acc, line) => acc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0);
-                  return (
-                    <Tooltip key={section.id} title={<div className="flex flex-col gap-1 text-xs"><div><span>Lines:</span> {section.lines.length}</div><div><span>Words:</span> {sectionWordCount}</div><div><span>Syllables Target:</span> {section.targetSyllables !== undefined ? section.targetSyllables : targetSyllables}</div><div><span>Rhyme Scheme:</span> {section.rhymeScheme || rhymeScheme}</div></div>}>
-                      <div onClick={() => {
-                        if (isMarkupMode) {
-                          if (markupTextareaRef.current) {
-                            let searchStr = `**[${section.name}]**`;
-                            let index = markupText.indexOf(searchStr);
-                            if (index === -1) {
-                              searchStr = `[${section.name}]`;
-                              index = markupText.indexOf(searchStr);
-                            }
-                            if (index !== -1) {
-                              markupTextareaRef.current.focus();
-                              markupTextareaRef.current.setSelectionRange(index, index + searchStr.length);
-                              const linesBefore = markupText.substring(0, index).split('\n').length;
-                              const lineHeight = 20;
-                              markupTextareaRef.current.scrollTop = (linesBefore - 2) * lineHeight;
-                            }
-                          }
-                        } else {
-                          const el = document.getElementById(`section-${section.id}`);
-                          if (el) {
-                            const container = el.closest('.overflow-y-auto');
-                            if (container) {
-                              const top = el.offsetTop - 20;
-                              container.scrollTo({ top, behavior: 'smooth' });
-                            } else {
-                              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }
-                          }
-                        }
-                      }} className={`flex-shrink-0 px-3 py-1.5 border rounded-md text-[10px] flex items-center gap-2 transition-all hover:brightness-110 cursor-pointer ${getSectionColor(section.name)}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${getSectionDotColor(section.name)} shadow-[0_0_8px_rgba(0,0,0,0.2)]`}></span>
-                        {section.name.toUpperCase()}
-                      </div>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-              <div className="flex items-center gap-2">
-                <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
-                  <button onClick={() => {
-                    if (isMarkupMode) {
-                      const blocks = markupText.split(/\n\s*\n/);
-                      const usedSectionIds = new Set<string>();
-                      const usedLineIds = new Set<string>();
-                      const newSections: Section[] = blocks.map((block, index) => {
-                        const lines = block.trim().split('\n');
-                        if (lines.length === 0 || (lines.length === 1 && !lines[0].trim())) return null;
-                        let name = 'Verse';
-                        let remainingLines = lines;
-                        const firstLine = lines[0].trim();
-                        if ((firstLine.startsWith('**[') && firstLine.endsWith(']**')) || (firstLine.startsWith('[') && firstLine.endsWith(']'))) {
-                          name = cleanSectionName(firstLine);
-                          remainingLines = lines.slice(1);
-                        }
-                        const preInstructions: string[] = [];
-                        const postInstructions: string[] = [];
-                        const lyricLines: string[] = [];
-                        let foundLyrics = false;
-                        remainingLines.forEach(line => {
-                          const trimmed = line.trim();
-                          if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-                            if (foundLyrics) postInstructions.push(trimmed); else preInstructions.push(trimmed);
-                          } else if (trimmed !== '') {
-                            foundLyrics = true;
-                            lyricLines.push(line);
-                          }
-                        });
-                        let existingSection = (song[index] && song[index].name === name) ? song[index] : song.find(s => s.name === name && !usedSectionIds.has(s.id));
-                        let sectionId = existingSection?.id || generateId();
-                        if (usedSectionIds.has(sectionId)) sectionId = generateId();
-                        usedSectionIds.add(sectionId);
-                        return {
-                          id: sectionId,
-                          name,
-                          rhymeScheme: existingSection?.rhymeScheme || 'AABB',
-                          targetSyllables: existingSection?.targetSyllables || 8,
-                          mood: existingSection?.mood || '',
-                          preInstructions: preInstructions.length > 0 ? preInstructions : (existingSection?.preInstructions || []),
-                          postInstructions: postInstructions.length > 0 ? postInstructions : (existingSection?.postInstructions || []),
-                          lines: lyricLines.map((text, lIdx) => {
-                            const existingLine = existingSection?.lines.find(l => l.text === text && !usedLineIds.has(l.id)) || (existingSection?.lines[lIdx] && !usedLineIds.has(existingSection.lines[lIdx].id) ? existingSection.lines[lIdx] : null);
-                            let lineId = existingLine?.id || generateId();
-                            if (usedLineIds.has(lineId)) lineId = generateId();
-                            usedLineIds.add(lineId);
-                            return { id: lineId, text, rhymingSyllables: existingLine?.rhymingSyllables || '', rhyme: existingLine?.rhyme || '', syllables: text.split(/\s+/).reduce((acc, word) => acc + (word ? countSyllables(word) : 0), 0), concept: existingLine?.concept || 'New line', isManual: true };
-                          })
-                        };
-                      }).filter(s => s !== null) as Section[];
-                      if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
-                      setIsMarkupMode(false);
-                    } else {
-                      const text = song.map(section => {
-                        const formatInst = (i: string) => {
-                          const trimmed = i.trim();
-                          if (trimmed.startsWith('[') && trimmed.endsWith(']')) return trimmed;
-                          return `[${trimmed}]`;
-                        };
-                        const pre = (section.preInstructions || []).map(formatInst).join('\n');
-                        const post = (section.postInstructions || []).map(formatInst).join('\n');
-                        const lyrics = section.lines.map(l => l.text).join('\n');
-                        return `[${section.name}]\n${pre ? pre + '\n' : ''}${lyrics}${post ? '\n' + post : ''}`;
-                      }).join('\n\n');
-                      setMarkupText(text);
-                      setIsMarkupMode(true);
-                    }
-                  }} disabled={!isMarkupMode && song.length === 0} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/20 fluent-button whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                    {isMarkupMode ? <Layout className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
-                    {isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}
-                  </button>
-                </Tooltip>
-                <Tooltip title={t.tooltips.analyzeTheme}>
-                  <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/20 fluent-button whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                    <BarChart2 className="w-3.5 h-3.5" />
-                    {t.editor.analyze}
-                  </button>
-                </Tooltip>
-                <Tooltip title={t.tooltips.regenerate}>
-                  <button onClick={generateSong} disabled={isGenerating || isAnalyzing} className="px-4 py-2 bg-[var(--accent-color)] hover:brightness-110 text-[var(--on-accent-color)] text-xs rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--accent-color)]/20 fluent-button whitespace-nowrap">
-                    {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    {t.editor.regenerate}
-                  </button>
-                </Tooltip>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto p-8 z-10 custom-scrollbar">
-          {activeTab === 'lyrics' ? (
-            isMarkupMode ? (
-              <div className="max-w-[1400px] mx-auto h-full flex flex-col space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center"><FileText className="w-4 h-4 text-zinc-400" /></div>
-                    <div><h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t.editor.markupMode.title}</h3><p className="text-[10px] text-zinc-500">{t.editor.markupMode.description}</p></div>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg"><Lightbulb className="w-3.5 h-3.5 text-amber-500" /><p className="text-[10px] text-amber-500 font-medium">{t.editor.markupMode.hint}</p></div>
-                </div>
-                <div className="flex-1 min-h-[600px] mb-6">
-                  <MarkupInput textareaRef={markupTextareaRef} value={markupText} onChange={(e: any) => setMarkupText(e.target.value)} className="w-full h-full bg-zinc-900/50 dark:bg-black/50 border border-white/10 rounded-xl text-sm font-mono custom-scrollbar resize-none leading-relaxed" placeholder={t.editor.markupMode.placeholder} onScroll={(e: any) => { const overlay = e.target.previousSibling; if (overlay) overlay.scrollTop = e.target.scrollTop; }} />
-                </div>
-              </div>
-            ) : song.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-500 space-y-5 p-8 border border-white/5 bg-white/[0.02] lcars-panel fluent-animate-in max-w-2xl mx-auto my-auto mt-20">
-              <div className="w-20 h-20 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-center shadow-2xl"><Music className="w-10 h-10 text-zinc-800" /></div>
-              <div className="text-center space-y-2"><p className="text-sm text-zinc-400 ">{t.editor.emptyState.title}</p><p className="text-xs text-zinc-600 max-w-xs mx-auto">{t.editor.emptyState.description}</p></div>
-              <div className="flex items-center gap-4 w-full max-w-2xl">
-                {hasSavedSession && <Tooltip title={t.tooltips.loadSession}><Button onClick={loadSavedSession} variant="outlined" color="success" startIcon={<History className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.loadSession}</Button></Tooltip>}
-                <Tooltip title={t.tooltips.pasteLyrics}><Button onClick={() => setIsPasteModalOpen(true)} variant="outlined" color="secondary" startIcon={<ClipboardPaste className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.pasteLyrics}</Button></Tooltip>
-                <Tooltip title={t.tooltips.generateSong}><Button onClick={generateSong} disabled={isGenerating || isAnalyzing} variant="contained" color="primary" startIcon={isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.generateSong}</Button></Tooltip>
-              </div>
-            </div>
-          ) : (
-            <div className="max-w-[1400px] mx-auto space-y-6 pb-32">
-              {song.map((section, idx) => (
-                <div key={section.id} id={`section-${section.id}`} className={`lcars-band transition-all fluent-animate-in relative group ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx && dragOverIndex !== draggedItemIndex ? 'border-t-2 border-[var(--accent-color)] pt-3 -mt-1' : ''}`} style={{ animationDelay: `${idx * 0.05}s` }} draggable={draggableSectionIndex === idx && !(section.name.toLowerCase() === 'intro' || section.name.toLowerCase() === 'outro')} onDragStart={() => { setDraggedItemIndex(idx); }} onDragOver={(e) => { e.preventDefault(); if (draggedItemIndex === null || draggedItemIndex === idx) return; if (idx === 0 && song[0].name.toLowerCase() === 'intro') return; if (idx === song.length - 1 && song[song.length - 1].name.toLowerCase() === 'outro') return; setDragOverIndex(idx); }} onDragLeave={() => setDragOverIndex(null)} onDrop={(e) => { e.stopPropagation(); handleDrop(idx); }}>
-                  <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
-                  <div className="flex-1 space-y-4 p-5">
-                    <div className="flex items-center gap-3 flex-wrap pb-2 border-b border-black/5 dark:border-white/10">
-                      <h3 className={`text-lg tracking-tight uppercase ${getSectionTextColor(section.name)}`}>{section.name}</h3>
-                      <div className="w-28">
-                        <Select value={section.rhymeScheme || rhymeScheme} onChange={(e) => { const val = e.target.value; updateSongInHistory(currentSong => currentSong.map(s => s.id === section.id ? { ...s, rhymeScheme: val } : s)); }} className="!py-0 !px-2 !text-[10px] h-7" style={{ minHeight: '28px', height: '28px' }}>
-                          <MenuItem value="AABB">AABB</MenuItem><MenuItem value="ABAB">ABAB</MenuItem><MenuItem value="AAAA">AAAA</MenuItem><MenuItem value="ABCB">ABCB</MenuItem><MenuItem value="AAABBB">AAABBB</MenuItem><MenuItem value="AABBCC">AABBCC</MenuItem><MenuItem value="ABABAB">ABABAB</MenuItem><MenuItem value="ABCABC">ABCABC</MenuItem><MenuItem value="FREE">FREE</MenuItem>
-                        </Select>
-                      </div>
-                      <div className="w-32">
-                        <Input value={section.mood || ''} onChange={(e) => { const val = e.target.value; updateSongInHistory(currentSong => currentSong.map(s => s.id === section.id ? { ...s, mood: val } : s)); }} placeholder={t.editor.moodPlaceholder} list="mood-suggestions" className="!py-0 !px-2 !text-[10px] h-7" style={{ minHeight: '28px', height: '28px' }} />
-                      </div>
-                      <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1 h-7">
-                        <Globe className="w-3 h-3 text-zinc-500" />
-                        <Select value={sectionTargetLanguages[section.id] || section.language || songLanguage} onChange={(e: any) => setSectionTargetLanguages(prev => ({ ...prev, [section.id]: e.target.value as string }))} style={{ height: 20, fontSize: '9px', color: 'var(--colorNeutralForeground2)', minWidth: 45 }}>
-                          <MenuItem value="Amharic" style={{ fontSize: '9px' }}>AM</MenuItem><MenuItem value="Arabic" style={{ fontSize: '9px' }}>AR</MenuItem><MenuItem value="Baoulé" style={{ fontSize: '9px' }}>BA</MenuItem><MenuItem value="Chinese" style={{ fontSize: '9px' }}>CN</MenuItem><MenuItem value="Dioula" style={{ fontSize: '9px' }}>DI</MenuItem><MenuItem value="English" style={{ fontSize: '9px' }}>EN</MenuItem><MenuItem value="French" style={{ fontSize: '9px' }}>FR</MenuItem><MenuItem value="German" style={{ fontSize: '9px' }}>DE</MenuItem><MenuItem value="Hausa" style={{ fontSize: '9px' }}>HA</MenuItem><MenuItem value="Italian" style={{ fontSize: '9px' }}>IT</MenuItem><MenuItem value="Japanese" style={{ fontSize: '9px' }}>JP</MenuItem><MenuItem value="Korean" style={{ fontSize: '9px' }}>KR</MenuItem><MenuItem value="Lingala" style={{ fontSize: '9px' }}>LI</MenuItem><MenuItem value="Portuguese" style={{ fontSize: '9px' }}>PT</MenuItem><MenuItem value="Spanish" style={{ fontSize: '9px' }}>ES</MenuItem><MenuItem value="Swahili" style={{ fontSize: '9px' }}>SW</MenuItem><MenuItem value="Wolof" style={{ fontSize: '9px' }}>WO</MenuItem><MenuItem value="Yoruba" style={{ fontSize: '9px' }}>YO</MenuItem><MenuItem value="Zulu" style={{ fontSize: '9px' }}>ZU</MenuItem>
-                        </Select>
-                        <Tooltip title={t.tooltips.sectionAdapt}><button onClick={() => adaptSectionLanguage(section.id, sectionTargetLanguages[section.id] || section.language || songLanguage)} disabled={isAdaptingLanguage} className="px-1.5 py-0.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] text-[8px] font-bold rounded transition-all disabled:opacity-50">{t.editor.adapt}</button></Tooltip>
-                      </div>
-                      <Tooltip title={t.tooltips.regenerateSection}><Button onClick={() => regenerateSection(section.id)} disabled={isGenerating} variant="outlined" color="success" size="small" startIcon={<RefreshCw className="w-3 h-3" />} style={{ minHeight: '28px', height: '28px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.editor.regenerateSection}</Button></Tooltip>
-                      <div className="flex items-center gap-4 ml-auto flex-wrap sm:flex-nowrap">
-                        <div className="flex items-center gap-2 shrink-0">
-                          <input type="checkbox" id={`local-syllables-${section.id}`} checked={section.targetSyllables !== undefined} onChange={(e) => { const enabled = e.target.checked; updateSongInHistory(currentSong => currentSong.map(s => s.id === section.id ? { ...s, targetSyllables: enabled ? targetSyllables : undefined } : s)); }} className="accent-[var(--accent-color)] cursor-pointer w-3.5 h-3.5" />
-                          <label htmlFor={`local-syllables-${section.id}`} className="micro-label text-zinc-500 cursor-pointer whitespace-nowrap">{t.editor.syllables} {section.targetSyllables !== undefined ? `(${section.targetSyllables})` : `(${targetSyllables})`}</label>
-                        </div>
-                        {section.targetSyllables !== undefined && <div className="flex items-center w-20 shrink-0"><input type="range" min="4" max="20" value={section.targetSyllables} onChange={e => { const val = parseInt(e.target.value); updateSongInHistory(currentSong => currentSong.map(s => s.id === section.id ? { ...s, targetSyllables: val } : s)); }} className="w-full accent-[var(--accent-color)] h-1 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer" /></div>}
-                        <Tooltip title={t.tooltips.quantizeSection}><Button onClick={() => quantizeSyllables(section.id)} disabled={isGenerating} variant="outlined" color="primary" size="small" startIcon={<Ruler className="w-3 h-3" />} style={{ minHeight: '28px', height: '28px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>{t.editor.quantize}</Button></Tooltip>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 px-2">
-                      <div className="mb-4"><InstructionEditor instructions={section.preInstructions} sectionId={section.id} type="pre" onChange={handleInstructionChange} onAdd={addInstruction} onRemove={removeInstruction} /></div>
-                      <div className="grid grid-cols-[1fr_100px_80px_60px_100px] gap-x-4 mb-2"><div className="micro-label text-zinc-500 dark:text-zinc-600 ml-1">{t.editor.lyricLine}</div><div className="micro-label text-zinc-500 dark:text-zinc-600 text-center">{t.editor.rhymeSyllable}</div><div className="micro-label text-zinc-500 dark:text-zinc-600 text-center">{t.editor.rhyme}</div><div className="micro-label text-zinc-500 dark:text-zinc-600 text-center">{t.editor.syllables}</div><div className="micro-label text-zinc-500 dark:text-zinc-600">{t.editor.concept}</div></div>
-                      {section.lines.map((line) => (
-                        <div key={line.id} draggable onDragStart={() => handleLineDragStart(section.id, line.id)} onDragOver={(e) => { e.preventDefault(); setDragOverLineInfo({ sectionId: section.id, lineId: line.id }); }} onDragLeave={() => setDragOverLineInfo(null)} onDrop={(e) => { e.stopPropagation(); handleLineDrop(section.id, line.id); }} className={`grid grid-cols-[1fr_100px_80px_60px_100px] gap-x-4 items-center transition-all ${draggedLineInfo?.lineId === line.id ? 'opacity-30' : ''} ${dragOverLineInfo?.lineId === line.id && dragOverLineInfo?.lineId !== draggedLineInfo?.lineId ? 'border-t-2 border-[var(--accent-color)] pt-2 -mt-2' : ''}`}>
-                          <div className="flex items-center gap-2">
-                            <GripVertical className="w-4 h-4 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-800 dark:hover:text-zinc-400 transition-colors shrink-0" />
-                            {line.isManual ? <User className="w-4 h-4 text-[var(--accent-color)]/70 shrink-0" /> : <Bot className="w-4 h-4 text-[var(--accent-color)]/70 shrink-0" />}
-                            <div onClick={() => handleLineClick(line.id)} className={`relative group cursor-text transition-all flex-1 ${selectedLineId === line.id ? 'z-20' : ''}`}>
-                              <LyricInput data-line-id={line.id} value={line.text} onChange={(e: any) => updateLineText(section.id, line.id, e.target.value)} onKeyDown={(e: any) => handleLineKeyDown(e, section.id, line.id)} className={`w-full bg-transparent py-1.5 text-sm transition-all focus:outline-none ${selectedLineId === line.id ? 'text-zinc-900 dark:text-white ' : 'text-zinc-600 dark:text-zinc-400'}`} />
-                              {selectedLineId === line.id && <div className="absolute -left-[6px] top-1/2 -translate-y-1/2 w-1 h-6 bg-[var(--accent-color)] rounded-full shadow-[0_0_12px_var(--accent-color)]" />}
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-center"><input value={line.rhymingSyllables || ''} onChange={(e) => { const val = e.target.value; updateSongInHistory(currentSong => currentSong.map(s => ({ ...s, lines: s.lines.map(l => l.id === line.id ? { ...l, rhymingSyllables: val } : l) }))); }} className="w-full bg-transparent text-[10px] text-center text-zinc-500 dark:text-zinc-400 focus:outline-none focus:text-zinc-900 dark:focus:text-white transition-colors" placeholder="-" /></div>
-                          <div className="flex items-center justify-center"><input value={line.rhyme || ''} onChange={(e) => { const val = e.target.value.toUpperCase().slice(0, 1); updateSongInHistory(currentSong => currentSong.map(s => ({ ...s, lines: s.lines.map(l => l.id === line.id ? { ...l, rhyme: val } : l) }))); }} className={`w-7 h-7 rounded border text-[10px] telemetry-text text-center transition-all focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] ${getRhymeColor(line.rhyme)}`} placeholder="-" /></div>
-                          <div className="flex items-center justify-center"><div className={`text-xs telemetry-text transition-colors ${line.syllables > targetSyllables ? 'text-[var(--accent-critical)]' : line.syllables < targetSyllables ? 'text-[var(--accent-warning)]' : 'text-[var(--accent-color)]'}`}>{line.syllables}</div></div>
-                          <div className="flex items-center"><div className="text-[10px] text-zinc-500 italic truncate group-hover:text-zinc-800 dark:group-hover:text-zinc-400 transition-colors">{line.concept}</div></div>
-                        </div>
-                      ))}
-                      <div className="flex items-center gap-4 mt-4 pt-2 border-t border-black/5 dark:border-white/5 micro-label text-zinc-500"><div className="flex items-center gap-1"><span className="text-zinc-400">{t.editor.lines}:</span><span className="font-mono">{section.lines.length}</span></div><div className="flex items-center gap-1"><span className="text-zinc-400">{t.insights.words}:</span><span className="font-mono">{section.lines.reduce((acc, l) => acc + (l.text.trim() ? l.text.trim().split(/\s+/).length : 0), 0)}</span></div><div className="flex items-center gap-1"><span className="text-zinc-400">{t.editor.chars}:</span><span className="font-mono">{section.lines.reduce((acc, l) => acc + l.text.length, 0)}</span></div></div>
-                    </div>
-                  </div>
-                  {!(section.name.toLowerCase() === 'intro' || section.name.toLowerCase() === 'outro') ? <div className="w-8 flex-shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing section-drag-handle hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-l border-black/5 dark:border-white/5" onMouseEnter={() => setDraggableSectionIndex(idx)} onMouseLeave={() => setDraggableSectionIndex(null)}><GripVertical className="w-4 h-4 text-zinc-400 opacity-50 group-hover:opacity-100 transition-opacity" /></div> : <div className="w-8 flex-shrink-0 border-l border-black/5 dark:border-white/5" />}
-                </div>
-              ))}
-            </div>
-          )) : (
-          <div className="max-w-4xl mx-auto space-y-12 pb-32 p-8 border border-white/5 bg-white/[0.02] lcars-panel fluent-animate-in">
-            <div className="flex items-center gap-4 mb-8"><div className="w-12 h-12 rounded-xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center"><Waves className="w-6 h-6 text-[var(--accent-color)]" /></div><div><h2 className="text-xl text-primary">{t.musical.title}</h2><p className="text-sm text-zinc-500">{t.musical.description}</p></div></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div><Label>{t.musical.genre}</Label><Input value={genre} onChange={e => setGenre(e.target.value)} placeholder={t.musical.genrePlaceholder} /></div>
-                <div><Label>{t.musical.tempo}</Label><div className="flex items-center gap-4"><input type="range" min="40" max="220" value={tempo} onChange={e => setTempo(e.target.value)} className="flex-1 accent-[var(--accent-color)] h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer" /><span className="text-sm telemetry-text text-[var(--accent-color)] w-12 text-center">{tempo}</span></div></div>
-                <div><Label>{t.musical.instrumentation}</Label><textarea value={instrumentation} onChange={e => setInstrumentation(e.target.value)} className="w-full bg-white/5 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-lg p-3 text-sm text-zinc-800 dark:text-zinc-300 focus:ring-2 focus:ring-[var(--accent-color)]/20 focus:border-[var(--accent-color)] outline-none transition-all min-h-[100px]" placeholder={t.musical.instrumentationPlaceholder} /></div>
-                <Tooltip title={t.tooltips.generateMusical}>
-                  <Button onClick={generateMusicalPrompt} disabled={isGeneratingMusicalPrompt || (!title && !topic)} variant="contained" color="primary" fullWidth startIcon={isGeneratingMusicalPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} style={{ padding: '12px 0' }}>{t.musical.generatePrompt}</Button>
-                </Tooltip>
-              </div>
-              <div className="space-y-4">
-                <Label>{t.musical.promptLabel}</Label>
-                <div className="relative group"><div className="w-full bg-black/5 dark:bg-black/20 border border-black/10 dark:border-white/5 rounded-xl p-6 min-h-[300px] text-sm text-zinc-800 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap font-serif italic">{musicalPrompt || t.musical.promptPlaceholder}</div>{musicalPrompt && <button onClick={() => { navigator.clipboard.writeText(musicalPrompt); }} className="absolute top-4 right-4 p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Copy to clipboard"><ClipboardPaste className="w-4 h-4 text-zinc-400" /></button>}</div>
-                <div className="flex items-center gap-2 micro-label text-zinc-500"><Volume2 className="w-3 h-3" />{t.musical.optimizedFor}</div>
-              </div>
-            </div>
-          </div>
           )}
-        </div>
-      </div>
 
-      <AnimatePresence>
-        {isStructureOpen && (
-          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 280, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="border-l border-fluent-border bg-fluent-sidebar flex flex-col z-10 shadow-2xl overflow-hidden lcars-panel !rounded-none">
-            <div className="w-[280px] flex flex-col h-full">
-              <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between"><h3 className="micro-label text-zinc-400 flex items-center gap-2"><BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />{t.structure.title}</h3></div>
-              <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
-                <div><div className="space-y-2"><div className="flex flex-col gap-1.5">
-                  {structure.map((item, idx) => {
-                    const isIntro = item.toLowerCase() === 'intro';
-                    const isOutro = item.toLowerCase() === 'outro';
-                    const isDraggable = !isIntro && !isOutro;
-                    return (
-                      <div key={idx} draggable={isDraggable} onDragStart={() => isDraggable && setDraggedItemIndex(idx)} onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (draggedItemIndex === null || draggedItemIndex === idx) return; if (idx === 0 && structure[0].toLowerCase() === 'intro') return; if (idx === structure.length - 1 && structure[structure.length - 1].toLowerCase() === 'outro') return; setDragOverIndex(idx); }} onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }} onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }} onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }} className={`group flex items-center gap-2 border rounded-md pl-2 pr-1 py-2 text-xs transition-all duration-150 ${getSectionColor(item)} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/50' : 'cursor-default'} ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}>
-                        {isDraggable ? <GripVertical className="w-3.5 h-3.5 opacity-30 group-hover:opacity-60 transition-opacity" /> : <div className="w-3.5" />}
-                        <span className="flex-1 ">{item}</span>
-                        <Tooltip title={t.tooltips.removeSection}>
-                          <button onClick={() => removeStructureItem(idx)} className="p-1 hover:bg-black/20 rounded transition-colors opacity-0 group-hover:opacity-100"><X className="w-3 h-3" /></button>
-                        </Tooltip>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="relative" ref={sectionDropdownRef}>
-                  <div className="flex gap-1.5 mt-3">
-                    <div className="relative flex-1">
-                      <Input value={newSectionName} onChange={e => { setNewSectionName(e.target.value); setIsSectionDropdownOpen(true); }} onFocus={() => setIsSectionDropdownOpen(true)} placeholder={t.structure.addSection} onKeyDown={e => e.key === 'Enter' && addStructureItem()} />
-                      <button onClick={() => setIsSectionDropdownOpen(!isSectionDropdownOpen)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors"><ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isSectionDropdownOpen ? 'rotate-180' : ''}`} /></button>
+          <div className="flex-1 overflow-y-auto p-8 z-10 custom-scrollbar">
+            {activeTab === 'lyrics' ? (
+              isMarkupMode ? (
+                <div className="max-w-[1400px] mx-auto h-full flex flex-col space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center"><FileText className="w-4 h-4 text-zinc-400" /></div>
+                      <div><h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t.editor.markupMode.title}</h3><p className="text-[10px] text-zinc-500">{t.editor.markupMode.description}</p></div>
                     </div>
-                    <Tooltip title={t.tooltips.addSection}>
-                      <IconButton onClick={() => addStructureItem()} color="primary" style={{ backgroundColor: 'var(--accent-color)', color: 'var(--on-accent-color)', borderRadius: '8px' }}><Plus className="w-4 h-4" /></IconButton>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg"><Lightbulb className="w-3.5 h-3.5 text-amber-500" /><p className="text-[10px] text-amber-500 font-medium">{t.editor.markupMode.hint}</p></div>
+                  </div>
+                  <div className="flex-1 min-h-[600px] mb-6">
+                    <MarkupInput textareaRef={markupTextareaRef} value={markupText} onChange={(e: any) => setMarkupText(e.target.value)} className="w-full h-full bg-zinc-900/50 dark:bg-black/50 border border-white/10 rounded-xl text-sm font-mono custom-scrollbar resize-none leading-relaxed" placeholder={t.editor.markupMode.placeholder} onScroll={(e: any) => { const overlay = e.target.previousSibling; if (overlay) overlay.scrollTop = e.target.scrollTop; }} />
+                  </div>
+                </div>
+              ) : song.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-zinc-500 space-y-5 p-8 border border-white/5 bg-white/[0.02] lcars-panel fluent-animate-in max-w-2xl mx-auto my-auto mt-20">
+                  <div className="w-20 h-20 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-center shadow-2xl"><Music className="w-10 h-10 text-zinc-800" /></div>
+                  <div className="text-center space-y-2"><p className="text-sm text-zinc-400">{t.editor.emptyState.title}</p><p className="text-xs text-zinc-600 max-w-xs mx-auto">{t.editor.emptyState.description}</p></div>
+                  <div className="flex items-center gap-4 w-full max-w-2xl">
+                    {hasSavedSession && <Tooltip title={t.tooltips.loadSession}><Button onClick={loadSavedSession} variant="outlined" color="success" startIcon={<History className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.loadSession}</Button></Tooltip>}
+                    <Tooltip title={t.tooltips.pasteLyrics}><Button onClick={() => setIsPasteModalOpen(true)} variant="outlined" color="secondary" startIcon={<ClipboardPaste className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.pasteLyrics}</Button></Tooltip>
+                    <Tooltip title={t.tooltips.generateSong}><Button onClick={generateSong} disabled={isGenerating || isAnalyzing} variant="contained" color="primary" startIcon={isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.generateSong}</Button></Tooltip>
+                  </div>
+                </div>
+              ) : (
+                <div className="max-w-[1400px] mx-auto space-y-6 pb-32">
+                  {song.map((section, idx) => (
+                    <div key={section.id} id={`section-${section.id}`} className={`lcars-band transition-all fluent-animate-in relative group ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx && dragOverIndex !== draggedItemIndex ? 'border-t-2 border-[var(--accent-color)] pt-3 -mt-1' : ''}`} style={{ animationDelay: `${idx * 0.05}s` }} draggable={draggableSectionIndex === idx && !(section.name.toLowerCase() === 'intro' || section.name.toLowerCase() === 'outro')} onDragStart={() => { setDraggedItemIndex(idx); }} onDragOver={(e) => { e.preventDefault(); if (draggedItemIndex === null || draggedItemIndex === idx) return; if (idx === 0 && song[0].name.toLowerCase() === 'intro') return; if (idx === song.length - 1 && song[song.length - 1].name.toLowerCase() === 'outro') return; setDragOverIndex(idx); }} onDragLeave={() => setDragOverIndex(null)} onDrop={(e) => { e.stopPropagation(); handleDrop(idx); }}>
+                      <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
+                      <div className="flex-1 space-y-4 p-5">
+                        <div className="flex items-center gap-3 flex-wrap pb-2 border-b border-black/5 dark:border-white/10">
+                          <h3 className={`text-lg tracking-tight uppercase ${getSectionTextColor(section.name)}`}>{section.name}</h3>
+                          <div className="w-28">
+                            <Select value={section.rhymeScheme || rhymeScheme} onChange={(e) => { const val = e.target.value; updateSongInHistory(currentSong => currentSong.map(s => s.id === section.id ? { ...s, rhymeScheme: val } : s)); }} className="!py-0 !px-2 !text-[10px] h-7" style={{ minHeight: '28px', height: '28px' }}>
+                              {RHYME_KEYS.map(k => <MenuItem key={k} value={k}>{t.rhymeSchemes[k]}</MenuItem>)}
+                            </Select>
+                          </div>
+                          <div className="w-32">
+                            <Input value={section.mood || ''} onChange={(e) => { const val = e.target.value; updateSongInHistory(currentSong => currentSong.map(s => s.id === section.id ? { ...s, mood: val } : s)); }} placeholder={t.editor.moodPlaceholder} list="mood-suggestions" className="!py-0 !px-2 !text-[10px] h-7" style={{ minHeight: '28px', height: '28px' }} />
+                          </div>
+                          <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1 h-7">
+                            <Globe className="w-3 h-3 text-zinc-500" />
+                            <Select value={sectionTargetLanguages[section.id] || section.language || songLanguage} onChange={(e: any) => setSectionTargetLanguages(prev => ({ ...prev, [section.id]: e.target.value as string }))} style={{ height: 20, fontSize: '9px', color: 'var(--colorNeutralForeground2)', minWidth: 45 }}>
+                              {SUPPORTED_ADAPTATION_LANGUAGES.map(lang => (
+                                <MenuItem key={lang.code} value={lang.aiName} style={{ fontSize: '9px' }}>{lang.code}</MenuItem>
+                              ))}
+                            </Select>
+                            <Tooltip title={t.tooltips.sectionAdapt}><button onClick={() => adaptSectionLanguage(section.id, sectionTargetLanguages[section.id] || section.language || songLanguage)} disabled={isAdaptingLanguage} className="px-1.5 py-0.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] text-[8px] font-bold rounded transition-all disabled:opacity-50">{t.editor.adapt}</button></Tooltip>
+                          </div>
+                          <Tooltip title={t.tooltips.regenerateSection}><Button onClick={() => regenerateSection(section.id)} disabled={isGenerating} variant="outlined" color="success" size="small" startIcon={<RefreshCw className="w-3 h-3" />} style={{ minHeight: '28px', height: '28px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.editor.regenerateSection}</Button></Tooltip>
+                          <div className="flex items-center gap-4 ml-auto flex-wrap sm:flex-nowrap">
+                            <div className="flex items-center gap-2 shrink-0">
+                              <input type="checkbox" id={`local-syllables-${section.id}`} checked={section.targetSyllables !== undefined} onChange={(e) => { const enabled = e.target.checked; updateSongInHistory(currentSong => currentSong.map(s => s.id === section.id ? { ...s, targetSyllables: enabled ? targetSyllables : undefined } : s)); }} className="accent-[var(--accent-color)] cursor-pointer w-3.5 h-3.5" />
+                              <label htmlFor={`local-syllables-${section.id}`} className="micro-label text-zinc-500 cursor-pointer whitespace-nowrap">{t.editor.syllables} {section.targetSyllables !== undefined ? `(${section.targetSyllables})` : `(${targetSyllables})`}</label>
+                            </div>
+                            {section.targetSyllables !== undefined && <div className="flex items-center w-20 shrink-0"><input type="range" min="4" max="20" value={section.targetSyllables} onChange={e => { const val = parseInt(e.target.value); updateSongInHistory(currentSong => currentSong.map(s => s.id === section.id ? { ...s, targetSyllables: val } : s)); }} className="w-full accent-[var(--accent-color)] h-1 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer" /></div>}
+                            <Tooltip title={t.tooltips.quantizeSection}><Button onClick={() => quantizeSyllables(section.id)} disabled={isGenerating} variant="outlined" color="primary" size="small" startIcon={<Ruler className="w-3 h-3" />} style={{ minHeight: '28px', height: '28px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>{t.editor.quantize}</Button></Tooltip>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 px-2">
+                          <div className="mb-4"><InstructionEditor instructions={section.preInstructions} sectionId={section.id} type="pre" onChange={handleInstructionChange} onAdd={addInstruction} onRemove={removeInstruction} /></div>
+                          <div className="grid grid-cols-[1fr_100px_80px_60px_100px] gap-x-4 mb-2"><div className="micro-label text-zinc-500 dark:text-zinc-600 ml-1">{t.editor.lyricLine}</div><div className="micro-label text-zinc-500 dark:text-zinc-600 text-center">{t.editor.rhymeSyllable}</div><div className="micro-label text-zinc-500 dark:text-zinc-600 text-center">{t.editor.rhyme}</div><div className="micro-label text-zinc-500 dark:text-zinc-600 text-center">{t.editor.syllables}</div><div className="micro-label text-zinc-500 dark:text-zinc-600">{t.editor.concept}</div></div>
+                          {section.lines.map((line) => (
+                            <div key={line.id} draggable onDragStart={() => handleLineDragStart(section.id, line.id)} onDragOver={(e) => { e.preventDefault(); setDragOverLineInfo({ sectionId: section.id, lineId: line.id }); }} onDragLeave={() => setDragOverLineInfo(null)} onDrop={(e) => { e.stopPropagation(); handleLineDrop(section.id, line.id); }} className={`grid grid-cols-[1fr_100px_80px_60px_100px] gap-x-4 items-center transition-all ${draggedLineInfo?.lineId === line.id ? 'opacity-30' : ''} ${dragOverLineInfo?.lineId === line.id && dragOverLineInfo?.lineId !== draggedLineInfo?.lineId ? 'border-t-2 border-[var(--accent-color)] pt-2 -mt-2' : ''}`}>
+                              <div className="flex items-center gap-2">
+                                <GripVertical className="w-4 h-4 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-800 dark:hover:text-zinc-400 transition-colors shrink-0" />
+                                {line.isManual ? <User className="w-4 h-4 text-[var(--accent-color)]/70 shrink-0" /> : <Bot className="w-4 h-4 text-[var(--accent-color)]/70 shrink-0" />}
+                                <div onClick={() => handleLineClick(line.id)} className={`relative group cursor-text transition-all flex-1 ${selectedLineId === line.id ? 'z-20' : ''}`}>
+                                  <LyricInput data-line-id={line.id} value={line.text} onChange={(e: any) => updateLineText(section.id, line.id, e.target.value)} onKeyDown={(e: any) => handleLineKeyDown(e, section.id, line.id)} className={`w-full bg-transparent py-1.5 text-sm transition-all focus:outline-none ${selectedLineId === line.id ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`} />
+                                  {selectedLineId === line.id && <div className="absolute -left-[6px] top-1/2 -translate-y-1/2 w-1 h-6 bg-[var(--accent-color)] rounded-full shadow-[0_0_12px_var(--accent-color)]" />}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-center"><input value={line.rhymingSyllables || ''} onChange={(e) => { const val = e.target.value; updateSongInHistory(currentSong => currentSong.map(s => ({ ...s, lines: s.lines.map(l => l.id === line.id ? { ...l, rhymingSyllables: val } : l) }))); }} className="w-full bg-transparent text-[10px] text-center text-zinc-500 dark:text-zinc-400 focus:outline-none focus:text-zinc-900 dark:focus:text-white transition-colors" placeholder="-" /></div>
+                              <div className="flex items-center justify-center"><input value={line.rhyme || ''} onChange={(e) => { const val = e.target.value.toUpperCase().slice(0, 1); updateSongInHistory(currentSong => currentSong.map(s => ({ ...s, lines: s.lines.map(l => l.id === line.id ? { ...l, rhyme: val } : l) }))); }} className={`w-7 h-7 rounded border text-[10px] telemetry-text text-center transition-all focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] ${getRhymeColor(line.rhyme)}`} placeholder="-" /></div>
+                              <div className="flex items-center justify-center"><div className={`text-xs telemetry-text transition-colors ${line.syllables > targetSyllables ? 'text-[var(--accent-critical)]' : line.syllables < targetSyllables ? 'text-[var(--accent-warning)]' : 'text-[var(--accent-color)]'}`}>{line.syllables}</div></div>
+                              <div className="flex items-center"><div className="text-[10px] text-zinc-500 italic truncate group-hover:text-zinc-800 dark:group-hover:text-zinc-400 transition-colors">{line.concept}</div></div>
+                            </div>
+                          ))}
+                          <div className="flex items-center gap-4 mt-4 pt-2 border-t border-black/5 dark:border-white/5 micro-label text-zinc-500"><div className="flex items-center gap-1"><span className="text-zinc-400">{t.editor.lines}:</span><span className="font-mono">{section.lines.length}</span></div><div className="flex items-center gap-1"><span className="text-zinc-400">{t.insights.words}:</span><span className="font-mono">{section.lines.reduce((acc, l) => acc + (l.text.trim() ? l.text.trim().split(/\s+/).length : 0), 0)}</span></div><div className="flex items-center gap-1"><span className="text-zinc-400">{t.editor.chars}:</span><span className="font-mono">{section.lines.reduce((acc, l) => acc + l.text.length, 0)}</span></div></div>
+                          <InstructionEditor instructions={section.postInstructions} sectionId={section.id} type="post" onChange={handleInstructionChange} onAdd={addInstruction} onRemove={removeInstruction} />
+                        </div>
+                      </div>
+                      {!(section.name.toLowerCase() === 'intro' || section.name.toLowerCase() === 'outro') ? <div className="w-8 flex-shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing section-drag-handle hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-l border-black/5 dark:border-white/5" onMouseEnter={() => setDraggableSectionIndex(idx)} onMouseLeave={() => setDraggableSectionIndex(null)}><GripVertical className="w-4 h-4 text-zinc-400 opacity-50 group-hover:opacity-100 transition-opacity" /></div> : <div className="w-8 flex-shrink-0 border-l border-black/5 dark:border-white/5" />}
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="max-w-4xl mx-auto space-y-12 pb-32 p-8 border border-white/5 bg-white/[0.02] lcars-panel fluent-animate-in">
+                <div className="flex items-center gap-4 mb-8"><div className="w-12 h-12 rounded-xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center"><Waves className="w-6 h-6 text-[var(--accent-color)]" /></div><div><h2 className="text-xl text-primary">{t.musical.title}</h2><p className="text-sm text-zinc-500">{t.musical.description}</p></div></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div><Label>{t.musical.genre}</Label><Input value={genre} onChange={e => setGenre(e.target.value)} placeholder={t.musical.genrePlaceholder} /></div>
+                    <div><Label>{t.musical.tempo}</Label><div className="flex items-center gap-4"><input type="range" min="40" max="220" value={tempo} onChange={e => setTempo(e.target.value)} className="flex-1 accent-[var(--accent-color)] h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer" /><span className="text-sm telemetry-text text-[var(--accent-color)] w-12 text-center">{tempo}</span></div></div>
+                    <div><Label>{t.musical.instrumentation}</Label><textarea value={instrumentation} onChange={e => setInstrumentation(e.target.value)} className="w-full bg-white/5 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-lg p-3 text-sm text-zinc-800 dark:text-zinc-300 focus:ring-2 focus:ring-[var(--accent-color)]/20 focus:border-[var(--accent-color)] outline-none transition-all min-h-[100px]" placeholder={t.musical.instrumentationPlaceholder} /></div>
+                    <Tooltip title={t.tooltips.generateMusical}>
+                      <Button onClick={generateMusicalPrompt} disabled={isGeneratingMusicalPrompt || (!title && !topic)} variant="contained" color="primary" fullWidth startIcon={isGeneratingMusicalPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} style={{ padding: '12px 0' }}>{t.musical.generatePrompt}</Button>
                     </Tooltip>
                   </div>
-                  {isSectionDropdownOpen && <div className="absolute left-0 right-0 mt-1 py-1 bg-fluent-card border border-fluent-border rounded-md shadow-xl z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 lcars-panel">{[t.sections.intro, t.sections.verse, t.sections.preChorus, t.sections.chorus, t.sections.bridge, t.sections.breakdown, t.sections.outro].filter(name => { if (name === t.sections.intro || name === t.sections.outro) return !structure.some(s => s.toLowerCase() === name.toLowerCase()); return true; }).map(name => (<button key={name} onClick={() => { addStructureItem(name); setIsSectionDropdownOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 transition-colors flex items-center gap-2"><Plus className="w-3 h-3 text-[var(--accent-color)]" />{name}</button>))}</div>}
+                  <div className="space-y-4">
+                    <Label>{t.musical.promptLabel}</Label>
+                    <div className="relative group"><div className="w-full bg-black/5 dark:bg-black/20 border border-black/10 dark:border-white/5 rounded-xl p-6 min-h-[300px] text-sm text-zinc-800 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap font-serif italic">{musicalPrompt || t.musical.promptPlaceholder}</div>{musicalPrompt && <button onClick={() => { navigator.clipboard.writeText(musicalPrompt); }} className="absolute top-4 right-4 p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Copy to clipboard"><ClipboardPaste className="w-4 h-4 text-zinc-400" /></button>}</div>
+                    <div className="flex items-center gap-2 micro-label text-zinc-500"><Volume2 className="w-3 h-3" />{t.musical.optimizedFor}</div>
+                  </div>
                 </div>
-                <Tooltip title={t.tooltips.normalizeStructure}>
-                  <Button onClick={normalizeStructure} disabled={structure.length === 0 || isGenerating} variant="outlined" fullWidth startIcon={<AlignLeft className="w-3.5 h-3.5" />} style={{ fontSize: '10px', padding: '4px 0' }} className="mt-4">{t.structure.normalize}</Button>
-                </Tooltip>
-                </div></div>
               </div>
-              <div className="p-5 border-t border-fluent-border"><Tooltip title={t.tooltips.collapseRight}><button onClick={() => setIsStructureOpen(false)} className="w-full flex items-center justify-center gap-2 py-2 text-[10px] uppercase tracking-widest text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"><PanelRight className="w-3.5 h-3.5" />{t.structure.collapse}</button></Tooltip></div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      </div>
-
-      <div className="h-10 border-t border-fluent-border bg-white/50 dark:bg-white/[0.02] flex items-center justify-between px-6 z-40 text-[10px] text-zinc-900 dark:text-zinc-300">
-        <div className="flex items-center gap-4"><div className="flex items-center gap-1.5"><div className={`w-1.5 h-1.5 rounded-full ${isGenerating || isAnalyzing || isSuggesting ? 'bg-[var(--accent-warning)] animate-pulse' : 'bg-[var(--accent-color)]'}`} /><span className="text-zinc-900 dark:text-zinc-300">{isGenerating ? t.statusBar.generating : isAnalyzing ? t.statusBar.analyzing : isSuggesting ? t.statusBar.suggesting : t.statusBar.ready}</span></div><div className="w-px h-3 bg-fluent-border" /><div className="text-zinc-900 dark:text-zinc-300">{song.length} {t.statusBar.sections}</div><div className="text-zinc-900 dark:text-zinc-300">{wordCount} {t.statusBar.words}</div></div>
-        <div className="flex items-center gap-4">
-          <Tooltip title={t.tooltips.theme}>
-            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="flex items-center gap-2 px-2 py-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors text-zinc-900 dark:text-zinc-300">{theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}{t.statusBar.theme}</button>
-          </Tooltip>
-          <div className="w-px h-3 bg-fluent-border" />
-          <Tooltip title={t.tooltips.audioFeedback}>
-            <button onClick={() => setAudioFeedback(!audioFeedback)} className="flex items-center gap-2 px-2 py-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors text-zinc-900 dark:text-zinc-300">{audioFeedback ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}{t.statusBar.audioFeedback}</button>
-          </Tooltip>
-          <div className="w-px h-3 bg-fluent-border" />
-          <Tooltip title={t.statusBar.language}>
-            <button
-              onClick={() => {
-                const langs = SUPPORTED_LANGUAGES.map(l => l.code);
-                const currentIndex = langs.indexOf(language);
-                const nextLang = langs[(currentIndex + 1) % langs.length];
-                setLanguage(nextLang);
-              }}
-              className="flex items-center gap-2 px-2 py-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors text-zinc-900 dark:text-zinc-300"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              {language.toUpperCase()}
-            </button>
-          </Tooltip>
-          <div className="w-px h-3 bg-fluent-border" />
-          <Tooltip title={t.tooltips.appInfo}>
-            <button onClick={() => setIsAboutOpen(true)} className="flex items-center gap-1 text-zinc-900 dark:text-zinc-300 hover:text-[var(--accent-color)] transition-colors">{t.app.name} {APP_VERSION}</button>
-          </Tooltip>
+            )}
+          </div>
         </div>
+
+        <StructureSidebar
+          isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+          structure={structure} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
+          isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+          draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
+          dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
+          addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+          normalizeStructure={normalizeStructure} handleDrop={handleDrop}
+        />
       </div>
 
-      <AnimatePresence>{isAboutOpen && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-4"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAboutOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" /><motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="relative w-full max-w-md bg-fluent-card border border-fluent-border shadow-2xl overflow-hidden lcars-panel"><div className="p-8 text-center space-y-6"><div className="w-20 h-20 mx-auto rounded-2xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner"><Music className="w-10 h-10 text-[var(--accent-color)]" /></div><div className="space-y-2"><h2 className="text-2xl text-primary tracking-tight">{t.app.name}</h2><p className="text-xs telemetry-text text-[var(--accent-color)]">{APP_VERSION} by VoxNova42</p></div><p className="text-sm text-zinc-500 leading-relaxed">{t.about.description}</p><div className="pt-4 flex flex-col gap-2"><div className="flex items-center justify-between micro-label text-zinc-500 border-t border-fluent-border pt-4"><span>Engine</span><span className="text-zinc-400">{t.about.engine}</span></div><div className="flex items-center justify-between micro-label text-zinc-500"><span>License</span><span className="text-zinc-400">{t.about.license}</span></div></div><button onClick={() => setIsAboutOpen(false)} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg shadow-blue-500/20">{t.about.close}</button></div></motion.div></div>)}</AnimatePresence>
+      <StatusBar
+        song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+        isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
+        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback} setIsAboutOpen={setIsAboutOpen}
+      />
 
-      {selectedLineId && <div className="absolute right-8 top-24 bottom-8 w-80 acrylic rounded-2xl shadow-3xl z-30 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300"><div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]"><h3 className="text-xs text-zinc-400 uppercase tracking-widest flex items-center gap-2"><Lightbulb className="w-4 h-4 text-[var(--accent-warning)]" />{t.suggestions.title}</h3><button onClick={() => setSelectedLineId(null)} className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors"><X className="w-4 h-4" /></button></div><div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">{isSuggesting ? (<div className="h-full flex flex-col items-center justify-center space-y-4 py-20"><div className="relative"><div className="w-12 h-12 rounded-full border-2 border-[var(--accent-color)]/20 border-t-[var(--accent-color)] animate-spin" /><Sparkles className="absolute inset-0 m-auto w-5 h-5 text-[var(--accent-color)] animate-pulse" /></div><p className="text-xs text-zinc-500 animate-pulse">{t.suggestions.crafting}</p></div>) : suggestions.length > 0 ? (<div className="space-y-3">{suggestions.map((suggestion, idx) => (<div key={idx} onClick={() => { applySuggestion(suggestion); setSelectedLineId(null); }} className="group p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-[var(--accent-color)]/30 rounded-xl cursor-pointer transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"><p className="text-sm text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white leading-relaxed">{suggestion}</p><div className="mt-3 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity"><span className="text-[9px] text-[var(--accent-color)] uppercase tracking-wider">{t.suggestions.clickToApply}</span><Check className="w-3 h-3 text-[var(--accent-color)]" /></div></div>))}<button onClick={() => generateSuggestions(selectedLineId)} className="w-full py-3 mt-4 flex items-center justify-center gap-2 text-[10px] text-zinc-500 uppercase tracking-widest hover:text-[var(--accent-color)] transition-colors"><RefreshCw className="w-3 h-3" />{t.suggestions.moreOptions}</button></div>) : (<div className="h-full flex flex-col items-center justify-center text-center space-y-3 py-20"><div className="w-12 h-12 rounded-full bg-white/[0.02] flex items-center justify-center"><Hash className="w-6 h-6 text-zinc-800" /></div><p className="text-xs text-zinc-500">{t.suggestions.empty}</p></div>)}</div></div>}
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
-      {isPasteModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-in fade-in duration-200"><div className="acrylic w-full max-w-2xl shadow-[0_32px_64px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 lcars-panel"><div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]"><h3 className="text-lg text-zinc-100 flex items-center gap-2.5"><ClipboardPaste className="w-5 h-5 text-[var(--accent-color)]" />{t.paste.title}</h3><button onClick={() => setIsPasteModalOpen(false)} className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors"><X className="w-5 h-5" /></button></div><div className="p-8 flex-1 overflow-y-auto custom-scrollbar"><p className="text-sm text-zinc-400 mb-6 leading-relaxed">{t.paste.description}</p><textarea value={pastedText} onChange={(e) => setPastedText(e.target.value)} placeholder={t.paste.placeholder} className="w-full h-80 bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl p-5 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[var(--accent-color)]/50 focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all resize-none placeholder:text-zinc-400 dark:placeholder:text-zinc-800 font-mono leading-relaxed" /></div><div className="p-6 border-t border-white/5 bg-white/[0.02] flex justify-end gap-3"><Tooltip title={t.tooltips.analysisCancel}><Button onClick={() => setIsPasteModalOpen(false)} variant="text" color="inherit">{t.paste.cancel}</Button></Tooltip><Tooltip title={t.tooltips.analysisImport}><Button onClick={analyzePastedLyrics} disabled={!pastedText.trim() || isAnalyzing} variant="contained" color="info" startIcon={isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}>{isAnalyzing ? t.paste.analyzing : t.paste.analyze}</Button></Tooltip></div></div></div>}
+      <SuggestionsPanel
+        selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
+        suggestions={suggestions} isSuggesting={isSuggesting}
+        applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
+      />
 
-      {isAnalysisModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-in fade-in duration-200"><div className="acrylic w-full max-w-3xl shadow-[0_32px_64px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 lcars-panel"><div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]"><h3 className="text-lg text-zinc-100 flex items-center gap-2.5"><BarChart2 className="w-5 h-5 text-[var(--accent-color)]" />{t.analysis.title}</h3><button onClick={() => setIsAnalysisModalOpen(false)} className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors"><X className="w-5 h-5" /></button></div><div className="p-8 flex-1 overflow-y-auto custom-scrollbar">{isAnalyzing ? (<div className="h-full flex flex-col items-center justify-center space-y-8 py-20"><div className="relative"><div className="w-20 h-20 rounded-full border-4 border-[var(--accent-color)]/10 border-t-[var(--accent-color)] animate-spin" /><div className="absolute inset-0 flex items-center justify-center"><Sparkles className="w-8 h-8 text-[var(--accent-color)] animate-pulse" /></div></div><div className="space-y-3 text-center"><h4 className="text-xl font-medium text-zinc-100">{t.analysis.deepAnalysis}</h4><div className="flex flex-col items-center gap-2">{analysisSteps.map((step, idx) => (<p key={idx} className={`text-sm transition-all duration-500 ${idx === analysisSteps.length - 1 ? 'text-[var(--accent-color)] font-medium scale-110' : 'text-zinc-500 opacity-50'}`}>{step}</p>))}</div></div></div>) : analysisReport ? (<div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"><section className="space-y-3"><h4 className="micro-label text-[var(--accent-color)] flex items-center gap-2"><BookOpen className="w-3.5 h-3.5" />{t.analysis.theme}</h4><p className="text-zinc-300 leading-relaxed bg-white/[0.02] p-4 rounded-xl border border-white/5">{analysisReport.theme}</p></section><section className="space-y-3"><h4 className="micro-label text-[var(--accent-color)] flex items-center gap-2"><Activity className="w-3.5 h-3.5" />{t.analysis.emotionalArc}</h4><p className="text-zinc-300 leading-relaxed bg-white/[0.02] p-4 rounded-xl border border-white/5">{analysisReport.emotionalArc}</p></section><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><section className="space-y-3"><h4 className="micro-label text-emerald-500 flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5" />{t.analysis.strengths}</h4><ul className="space-y-2">{analysisReport.strengths.map((s: string, i: number) => (<li key={i} className="text-sm text-zinc-400 flex gap-2"><span className="text-emerald-500 mt-1">•</span>{s}</li>))}</ul></section><section className="space-y-3"><h4 className="micro-label text-amber-500 flex items-center gap-2"><Target className="w-3.5 h-3.5" />{t.analysis.improvements}</h4><ul className="space-y-3">{analysisReport.improvements.map((s: string, i: number) => (<li key={i} className="flex items-start gap-3 group"><button onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)} disabled={isApplyingAnalysis !== null || appliedAnalysisItems.has(s)} className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-all ${appliedAnalysisItems.has(s) ? 'bg-emerald-500 border-emerald-500 text-white' : selectedAnalysisItems.has(s) ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white' : 'border-white/20 hover:border-amber-500/50 group-hover:bg-amber-500/10'}`}>{appliedAnalysisItems.has(s) ? <Check className="w-3 h-3" /> : selectedAnalysisItems.has(s) ? <Check className="w-3 h-3" /> : <div className="w-1.5 h-1.5 rounded-full bg-white/20 group-hover:bg-amber-500/50" />}</button><span className={`text-sm leading-relaxed transition-colors ${appliedAnalysisItems.has(s) ? 'text-zinc-500 line-through' : selectedAnalysisItems.has(s) ? 'text-zinc-200' : 'text-zinc-400'}`}>{s}</span></li>))}</ul></section></div><section className="space-y-3"><h4 className="micro-label text-blue-500 flex items-center gap-2"><Music className="w-3.5 h-3.5" />{t.analysis.musicalSuggestions}</h4><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{analysisReport.musicalSuggestions.map((s: string, i: number) => (<div key={i} onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)} className={`text-xs p-3 rounded-lg border transition-all cursor-pointer flex items-start gap-3 group ${appliedAnalysisItems.has(s) ? 'bg-emerald-500/10 border-emerald-500/30 text-zinc-500' : selectedAnalysisItems.has(s) ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/30 text-zinc-200' : 'bg-blue-500/5 border-blue-500/10 text-zinc-400 hover:bg-blue-500/10 hover:border-blue-500/30'}`}><div className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center ${appliedAnalysisItems.has(s) ? 'bg-emerald-500 border-emerald-500 text-white' : selectedAnalysisItems.has(s) ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white' : 'border-white/20 group-hover:border-blue-500/50'}`}>{appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s) ? <Check className="w-2.5 h-2.5" /> : <Plus className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />}</div><span className={appliedAnalysisItems.has(s) ? 'line-through' : ''}>{s}</span></div>))}</div></section><section className="pt-6 border-t border-white/5"><div className="bg-[var(--accent-color)]/5 border border-[var(--accent-color)]/20 p-5 rounded-2xl"><h4 className="text-sm font-medium text-[var(--accent-color)] mb-2">{t.analysis.summary}</h4><p className="text-sm text-zinc-300 italic leading-relaxed">"{analysisReport.summary}"</p></div></section></div>) : (<div className="h-full flex flex-col items-center justify-center text-center py-20"><p className="text-zinc-500">{t.analysis.noData}</p></div>)}</div><div className="p-6 border-t border-white/5 bg-white/[0.02] flex justify-between items-center"><div className="flex items-center gap-4">{appliedAnalysisItems.size > 0 && <Tooltip title={t.tooltips.revertAnalysis}><button onClick={() => { const beforeVersion = versions.find(v => v.name === 'Before Analysis Improvements' || v.name === 'Before Analysis Batch Improvements'); if (beforeVersion) rollbackToVersion(beforeVersion); clearAppliedAnalysisItems(); }} className="text-[10px] uppercase tracking-widest text-amber-500 hover:text-amber-400 flex items-center gap-2 transition-colors"><Undo2 className="w-3.5 h-3.5" />{t.analysis.revert}</button></Tooltip>}</div><div className="flex items-center gap-3">{selectedAnalysisItems.size > 0 && <Tooltip title={t.tooltips.applyAnalysis}><Button onClick={applySelectedAnalysisItems} variant="contained" color="success" disabled={isApplyingAnalysis !== null} startIcon={isApplyingAnalysis === 'batch' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}>{t.analysis.apply} ({selectedAnalysisItems.size})</Button></Tooltip>}<Tooltip title={t.tooltips.closeAnalysis}><Button onClick={() => setIsAnalysisModalOpen(false)} variant="outlined" color="inherit" disabled={isAnalyzing || isApplyingAnalysis !== null}>{t.analysis.close}</Button></Tooltip></div></div></div></div>}
+      <PasteModal
+        isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)}
+        pastedText={pastedText} setPastedText={setPastedText}
+        isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics}
+      />
+
+      <AnalysisModal
+        isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)}
+        isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps}
+        appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
+        isApplyingAnalysis={isApplyingAnalysis} toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+        applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems}
+        versions={versions} rollbackToVersion={rollbackToVersion}
+      />
 
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
