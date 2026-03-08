@@ -97,7 +97,7 @@ export function StatusBar({
             </button>
           </Tooltip>
           {isLangDropdownOpen && (
-            <div className="absolute bottom-full mb-1 right-0 py-1 bg-fluent-card border border-fluent-border rounded-md shadow-xl z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 lcars-panel min-w-[160px]">
+            <div className="absolute bottom-full mb-2 right-0 py-1 bg-fluent-card border border-fluent-border rounded-lg shadow-2xl z-[9999] backdrop-blur-xl min-w-[160px] overflow-hidden">
               {SUPPORTED_UI_LOCALES.map(locale => (
                 <button
                   key={locale.code}
@@ -105,12 +105,12 @@ export function StatusBar({
                     setLanguage(locale.code);
                     setIsLangDropdownOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-white/5 transition-colors flex items-center gap-2 ${
-                    locale.code === language ? 'text-[var(--accent-color)] bg-[var(--accent-color)]/5' : 'text-zinc-400'
+                  className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/5 transition-colors flex items-center gap-2.5 ${
+                    locale.code === language ? 'text-[var(--accent-color)] bg-[var(--accent-color)]/10' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <span className="text-base">{locale.flag}</span>
-                  <span className="flex-1">{locale.name}</span>
+                  <span className="text-lg leading-none">{locale.flag}</span>
+                  <span className="flex-1 font-medium">{locale.name}</span>
                   {locale.code === language && <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-color)]" />}
                 </button>
               ))}
