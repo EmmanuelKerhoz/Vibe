@@ -12,10 +12,15 @@ const ar: Translations = {
     analyzing: 'جارٍ التحليل...',
     suggesting: 'جارٍ الاقتراح...',
     sections: 'أقسام',
+    sections_one: 'قسم',
+    sections_other: 'أقسام',
     words: 'كلمات',
+    words_one: 'كلمة',
+    words_other: 'كلمات',
     theme: 'المظهر الفاتح/الداكن',
     audioFeedback: 'ردود الفعل الصوتية',
     language: 'تغيير اللغة',
+    settings: 'الإعدادات',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const ar: Translations = {
     analyze: 'تحليل الأغنية',
     regenerate: 'إعادة توليد الأغنية',
     adaptation: 'تكييف',
+    adaptGlobal: 'تكييف (الكل)',
+    regenerateGlobal: 'إعادة توليد (الكل)',
+    adaptSection: 'تكييف',
     editorMode: 'وضع التحرير',
     markupModeLabel: 'وضع الترميز',
     regenerateSection: 'إعادة توليد',
@@ -147,6 +155,29 @@ const ar: Translations = {
     close: 'إغلاق',
   },
 
+  settings: {
+    title: 'الإعدادات',
+    theme: {
+      label: 'المظهر',
+      dark: 'داكن',
+      light: 'فاتح',
+      system: 'النظام',
+    },
+    audio: {
+      label: 'الصوت',
+      enable: 'تفعيل الصوت',
+      volume: 'مستوى الصوت',
+    },
+    language: {
+      label: 'اللغة',
+    },
+    about: {
+      version: 'الإصدار',
+      github: 'مستودع GitHub',
+      docs: 'التوثيق',
+    },
+  },
+
   tooltips: {
     hideSidebar: 'إخفاء الشريط الجانبي',
     showSidebar: 'إظهار الشريط الجانبي',
@@ -189,6 +220,7 @@ const ar: Translations = {
     closeAbout: 'إغلاق',
     analysisCancel: 'إلغاء وإغلاق',
     analysisImport: 'تحليل واستيراد الكلمات الملصقة',
+    settings: 'الإعدادات',
   },
 
   sections: {

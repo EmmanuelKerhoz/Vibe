@@ -12,10 +12,15 @@ const en: Translations = {
     analyzing: 'Analyzing...',
     suggesting: 'Suggesting...',
     sections: 'Sections',
+    sections_one: 'Section',
+    sections_other: 'Sections',
     words: 'Words',
+    words_one: 'Word',
+    words_other: 'Words',
     theme: 'Dark/Light Theme',
     audioFeedback: 'Audio Feedback',
     language: 'Switch language',
+    settings: 'Settings',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const en: Translations = {
     analyze: 'Song Analysis',
     regenerate: 'Regenerate Song',
     adaptation: 'ADAPTATION',
+    adaptGlobal: 'Adaptation (GLOBAL)',
+    regenerateGlobal: 'Regenerate (GLOBAL)',
+    adaptSection: 'Adaptation',
     editorMode: 'Editor Mode',
     markupModeLabel: 'Markup Mode',
     regenerateSection: 'Regenerate',
@@ -147,6 +155,29 @@ const en: Translations = {
     close: 'Close',
   },
 
+  settings: {
+    title: 'Settings',
+    theme: {
+      label: 'Theme',
+      dark: 'Dark',
+      light: 'Light',
+      system: 'System',
+    },
+    audio: {
+      label: 'Audio',
+      enable: 'Enable sound',
+      volume: 'Volume',
+    },
+    language: {
+      label: 'Language',
+    },
+    about: {
+      version: 'Version',
+      github: 'GitHub Repository',
+      docs: 'Documentation',
+    },
+  },
+
   tooltips: {
     hideSidebar: 'Hide Sidebar',
     showSidebar: 'Show Sidebar',
@@ -189,6 +220,7 @@ const en: Translations = {
     analysisCancel: 'Cancel and close',
     analysisImport: 'Analyze and import pasted lyrics',
     copyPrompt: 'Copy to clipboard',
+    settings: 'Settings',
   },
 
   sections: {

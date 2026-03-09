@@ -17,10 +17,15 @@ export interface Translations {
     analyzing: string;
     suggesting: string;
     sections: string;
+    sections_one: string;
+    sections_other: string;
     words: string;
+    words_one: string;
+    words_other: string;
     theme: string;
     audioFeedback: string;
     language: string;
+    settings: string;
   };
 
   ribbon: {
@@ -80,6 +85,9 @@ export interface Translations {
     analyze: string;
     regenerate: string;
     adaptation: string;
+    adaptGlobal: string;
+    regenerateGlobal: string;
+    adaptSection: string;
     editorMode: string;
     markupModeLabel: string;
     regenerateSection: string;
@@ -152,6 +160,29 @@ export interface Translations {
     close: string;
   };
 
+  settings: {
+    title: string;
+    theme: {
+      label: string;
+      dark: string;
+      light: string;
+      system: string;
+    };
+    audio: {
+      label: string;
+      enable: string;
+      volume: string;
+    };
+    language: {
+      label: string;
+    };
+    about: {
+      version: string;
+      github: string;
+      docs: string;
+    };
+  };
+
   tooltips: {
     hideSidebar: string;
     showSidebar: string;
@@ -195,6 +226,7 @@ export interface Translations {
     analysisCancel: string;
     analysisImport: string;
     copyPrompt: string;
+    settings: string;
   };
 
   sections: {

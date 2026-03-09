@@ -383,7 +383,7 @@ export default function App() {
                     <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
                       <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
                         {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
-                        {t.editor.adaptation}
+                        {t.editor.adaptGlobal}
                       </button>
                     </Tooltip>
                   </div>
@@ -431,7 +431,7 @@ export default function App() {
                   <Tooltip title={t.tooltips.regenerate}>
                     <button onClick={generateSong} disabled={isGenerating || isAnalyzing} className="px-4 py-2 bg-[var(--accent-color)] hover:brightness-110 text-[var(--on-accent-color)] text-xs rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--accent-color)]/20 fluent-button whitespace-nowrap">
                       {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                      {t.editor.regenerate}
+                      {t.editor.regenerateGlobal}
                     </button>
                   </Tooltip>
                 </div>
@@ -487,7 +487,7 @@ export default function App() {
                                 <MenuItem key={lang.code} value={lang.aiName} style={{ fontSize: '9px' }}>{lang.code}</MenuItem>
                               ))}
                             </Select>
-                            <Tooltip title={t.tooltips.sectionAdapt}><button onClick={() => adaptSectionLanguage(section.id, sectionTargetLanguages[section.id] || section.language || songLanguage)} disabled={isAdaptingLanguage} className="px-1.5 py-0.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] text-[8px] font-bold rounded transition-all disabled:opacity-50">{t.editor.adapt}</button></Tooltip>
+                            <Tooltip title={t.tooltips.sectionAdapt}><button onClick={() => adaptSectionLanguage(section.id, sectionTargetLanguages[section.id] || section.language || songLanguage)} disabled={isAdaptingLanguage} className="px-1.5 py-0.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] text-[8px] font-bold rounded transition-all disabled:opacity-50">{t.editor.adaptSection}</button></Tooltip>
                           </div>
                           <Tooltip title={t.tooltips.regenerateSection}><Button onClick={() => regenerateSection(section.id)} disabled={isGenerating} variant="outlined" color="success" size="small" startIcon={<RefreshCw className="w-3 h-3" />} style={{ minHeight: '28px', height: '28px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.editor.regenerateSection}</Button></Tooltip>
                           <div className="flex items-center gap-4 ml-auto flex-wrap sm:flex-nowrap">
@@ -564,7 +564,7 @@ export default function App() {
       <StatusBar
         song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
         isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
-        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback} setIsAboutOpen={setIsAboutOpen}
+        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />

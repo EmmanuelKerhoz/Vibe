@@ -12,10 +12,15 @@ const fr: Translations = {
     analyzing: 'Analyse...',
     suggesting: 'Suggestions...',
     sections: 'Sections',
+    sections_one: 'Section',
+    sections_other: 'Sections',
     words: 'Mots',
+    words_one: 'Mot',
+    words_other: 'Mots',
     theme: 'Thème Clair/Sombre',
     audioFeedback: 'Retour Audio',
     language: 'Changer de langue',
+    settings: 'Paramètres',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const fr: Translations = {
     analyze: 'Analyse de la chanson',
     regenerate: 'Régénérer la chanson',
     adaptation: 'ADAPTATION',
+    adaptGlobal: 'Adaptation (GLOBAL)',
+    regenerateGlobal: 'Régénérer (GLOBAL)',
+    adaptSection: 'Adaptation',
     editorMode: 'Mode Éditeur',
     markupModeLabel: 'Mode Balisage',
     regenerateSection: 'Régénérer',
@@ -147,6 +155,29 @@ const fr: Translations = {
     close: 'Fermer',
   },
 
+  settings: {
+    title: 'Paramètres',
+    theme: {
+      label: 'Thème',
+      dark: 'Sombre',
+      light: 'Clair',
+      system: 'Système',
+    },
+    audio: {
+      label: 'Audio',
+      enable: 'Activer le son',
+      volume: 'Volume',
+    },
+    language: {
+      label: 'Langue',
+    },
+    about: {
+      version: 'Version',
+      github: 'Dépôt GitHub',
+      docs: 'Documentation',
+    },
+  },
+
   tooltips: {
     hideSidebar: 'Masquer la barre latérale',
     showSidebar: 'Afficher la barre latérale',
@@ -189,6 +220,7 @@ const fr: Translations = {
     analysisCancel: 'Annuler et fermer',
     analysisImport: 'Analyser et importer les paroles collées',
     copyPrompt: 'Copier dans le presse-papiers',
+    settings: 'Paramètres',
   },
 
   sections: {
