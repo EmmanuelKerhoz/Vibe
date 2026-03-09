@@ -55,8 +55,7 @@ export function useTopicMoodSuggester(
         }
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTopic, currentMood, hasSuggested]);
+  }, [currentTopic, currentMood, hasSuggested, setTopic, setMood]);
 
   return { generateSuggestion, isGeneratingSuggestion };
 }

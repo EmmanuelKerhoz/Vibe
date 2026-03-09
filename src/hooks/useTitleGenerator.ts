@@ -6,7 +6,7 @@ export function useTitleGenerator(song: Section[], topic: string, mood: string) 
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
 
   const generateTitle = async (): Promise<string | null> => {
-    if (song.length === 0 && !topic) return null;
+    if (song.length === 0) return null;
 
     setIsGeneratingTitle(true);
     try {
