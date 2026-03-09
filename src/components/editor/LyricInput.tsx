@@ -1,6 +1,13 @@
 import React from 'react';
 
-export const LyricInput = ({ value, onChange, onKeyDown, className, ...props }: any) => {
+interface LyricInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+  value: string;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+  className: string;
+}
+
+export const LyricInput = ({ value, onChange, onKeyDown, className, ...props }: LyricInputProps) => {
   const renderStyledText = (text: string) => {
     if (!text) return null;
     const parts = text.split(/(\\(.*?\\))/g);

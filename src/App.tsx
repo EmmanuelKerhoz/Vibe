@@ -34,7 +34,7 @@ import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
 import { SimilarityModal } from './components/app/modals/SimilarityModal';
 import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
-import { getTopSimilarSongMatches } from './utils/similarityUtils';
+import { getTopSimilarSongMatches, SimilarityMatch } from './utils/similarityUtils';
 import { findSimilarAssetsInLibrary, saveAssetToLibrary } from './utils/libraryUtils';
 
 const DEFAULT_TITLE = 'Untitled Song';
@@ -91,7 +91,7 @@ export default function App() {
   const [hasApiKey, setHasApiKey] = useState(true);
   
   // Similarity detection: use library instead of local versions
-  const [similarityMatches, setSimilarityMatches] = useState<any[]>([]);
+  const [similarityMatches, setSimilarityMatches] = useState<SimilarityMatch[]>([]);
   const [libraryCount, setLibraryCount] = useState(0);
   
   useEffect(() => {
@@ -196,10 +196,10 @@ export default function App() {
       try {
         const parsed = JSON.parse(savedSession);
         if (parsed.song) {
-          const cleanedSong = parsed.song.map((s: any) => ({ ...s, name: cleanSectionName(s.name) }));
+          const cleanedSong = parsed.song.map((s: Section) => ({ ...s, name: cleanSectionName(s.name) }));
           const nextStructure = cleanedSong.length > 0
-            ? cleanedSong.map((s: any) => s.name)
-            : (parsed.structure ? parsed.structure.map((s: any) => cleanSectionName(s)) : DEFAULT_STRUCTURE);
+            ? cleanedSong.map((s: Section) => s.name)
+            : (parsed.structure ? parsed.structure.map((s: string) => cleanSectionName(s)) : DEFAULT_STRUCTURE);
           replaceStateWithoutHistory(cleanedSong, nextStructure);
         }
         if (parsed.title) setTitle(parsed.title);
@@ -647,7 +647,7 @@ export default function App() {
                   </h3>
                   <div className="h-4 w-px bg-white/10" />
                   <div className="flex items-center gap-2">
-                    <Select value={targetLanguage} onChange={(e: any) => setTargetLanguage(e.target.value as string)} size="small" style={{ height: 24, fontSize: '10px', color: 'var(--colorNeutralForeground2)', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '4px' }}>
+                    <Select value={targetLanguage} onChange={(e: { target: { value?: string } }) => setTargetLanguage(e.target.value ?? '')} size="small" style={{ height: 24, fontSize: '10px', color: 'var(--colorNeutralForeground2)', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '4px' }}>
                       {SUPPORTED_ADAPTATION_LANGUAGES.map(lang => (
                         <MenuItem key={lang.code} value={lang.aiName} style={{ fontSize: '10px' }}>
                           {adaptationLanguageLabel(lang)}
@@ -699,10 +699,10 @@ export default function App() {
                       Save to Library
                     </button>
                   </Tooltip>
-                  <Tooltip title={isMarkupMode ? t.tooltips.visualMode : t.tooltips.markupMode}>
+                  <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
                     <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-4 py-2 glass-button text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       <Layout className="w-3.5 h-3.5" />
-                      {isMarkupMode ? t.editor.visualMode : t.editor.markupMode}
+                      {isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}
                     </button>
                   </Tooltip>
                   <Tooltip title={t.tooltips.analyzeTheme}>
@@ -718,10 +718,10 @@ export default function App() {
                       {libraryCount > 0 && <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded text-[9px]">{libraryCount}</span>}
                     </button>
                   </Tooltip>
-                  <Tooltip title={t.tooltips.regenerateGlobal}>
+                  <Tooltip title={t.tooltips.regenerate}>
                     <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-4 py-2 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap">
                       {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                      {t.editor.regenerateAll}
+                      {t.editor.regenerateGlobal}
                     </button>
                   </Tooltip>
                 </div>

@@ -1,7 +1,15 @@
 import React from 'react';
 import { getSectionTextColor } from '../../utils/songUtils';
 
-export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll, ...props }: any) => {
+interface MarkupInputProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'onScroll'> {
+  value: string;
+  onChange: React.ChangeEventHandler<HTMLTextAreaElement>;
+  textareaRef?: React.RefObject<HTMLTextAreaElement>;
+  className: string;
+  onScroll?: React.UIEventHandler<HTMLTextAreaElement>;
+}
+
+export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll, ...props }: MarkupInputProps) => {
   const renderStyledMarkup = (text: string) => {
     if (!text) return null;
     const lines = text.split('\n');
