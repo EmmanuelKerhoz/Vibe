@@ -44,6 +44,7 @@ const pt: Translations = {
     songTopicPlaceholder: 'Qual é o tema da música?',
     songMood: 'HUMOR DA MÚSICA',
     songMoodPlaceholder: 'ex. Melancólico, Enérgico...',
+    songMoodPresets: 'Humores predefinidos',
     rhymeScheme: 'ESQUEMA DE RIMA PADRÃO',
     targetSyllables: 'SÍLABAS ALVO',
     quantize: 'Quantizar sílabas (GLOBAL)',
@@ -96,6 +97,7 @@ const pt: Translations = {
     chars: 'Caracteres',
     adapt: 'ADAPTAR',
     moodPlaceholder: 'Humor...',
+    regenerateWarning: 'Isto regenerará totalmente a letra atual. Deseja continuar?',
   },
 
   suggestions: {
@@ -181,6 +183,11 @@ const pt: Translations = {
     },
     language: {
       label: 'Idioma',
+    },
+    actions: {
+      default: 'Padrão',
+      save: 'Salvar',
+      close: 'Fechar',
     },
     about: {
       version: 'Versão',

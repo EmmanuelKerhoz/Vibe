@@ -1,10 +1,16 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
+import { Button } from '../../ui/Button';
 
 const SETTINGS_MODAL_VIEWPORT_MARGIN = '2rem';
+const DEFAULT_SETTINGS = {
+  theme: 'dark' as const,
+  audioFeedback: true,
+  language: 'en',
+};
 
 interface Props {
   isOpen: boolean;
@@ -21,8 +27,10 @@ export function SettingsModal({
   audioFeedback, setAudioFeedback,
 }: Props) {
   const { t, language, setLanguage } = useTranslation();
-  const currentLocale = SUPPORTED_UI_LOCALES.find(l => l.code === language);
   const langListRef = useRef<HTMLDivElement>(null);
+  const [draftTheme, setDraftTheme] = useState(theme);
+  const [draftAudioFeedback, setDraftAudioFeedback] = useState(audioFeedback);
+  const [draftLanguage, setDraftLanguage] = useState(language);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -32,6 +40,26 @@ export function SettingsModal({
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setDraftTheme(theme);
+    setDraftAudioFeedback(audioFeedback);
+    setDraftLanguage(language);
+  }, [audioFeedback, isOpen, language, theme]);
+
+  const handleDefault = () => {
+    setDraftTheme(DEFAULT_SETTINGS.theme);
+    setDraftAudioFeedback(DEFAULT_SETTINGS.audioFeedback);
+    setDraftLanguage(DEFAULT_SETTINGS.language);
+  };
+
+  const handleSave = () => {
+    setTheme(draftTheme);
+    setAudioFeedback(draftAudioFeedback);
+    setLanguage(draftLanguage);
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -82,10 +110,10 @@ export function SettingsModal({
                   ).map(({ value, label, icon }) => (
                     <button
                       key={value}
-                      onClick={() => setTheme(value)}
-                      aria-pressed={theme === value}
+                      onClick={() => setDraftTheme(value)}
+                      aria-pressed={draftTheme === value}
                       className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-all ${
-                        theme === value
+                        draftTheme === value
                           ? 'border-[var(--accent-color)] bg-[var(--accent-color)]/10 text-[var(--accent-color)]'
                           : 'border-fluent-border bg-white/[0.02] text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
                       }`}
@@ -100,22 +128,22 @@ export function SettingsModal({
               {/* Audio section */}
               <section aria-labelledby="settings-audio-heading">
                 <h3 id="settings-audio-heading" className="micro-label text-zinc-500 mb-3 flex items-center gap-2">
-                  {audioFeedback ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                  {draftAudioFeedback ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
                   {t.settings.audio.label}
                 </h3>
                 <div className="flex items-center justify-between px-4 py-3 bg-white/[0.02] border border-fluent-border rounded-lg">
                   <span className="text-xs text-zinc-300">{t.settings.audio.enable}</span>
                   <button
                     role="switch"
-                    aria-checked={audioFeedback}
-                    onClick={() => setAudioFeedback(!audioFeedback)}
+                    aria-checked={draftAudioFeedback}
+                    onClick={() => setDraftAudioFeedback(!draftAudioFeedback)}
                     className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-color)] ${
-                      audioFeedback ? 'bg-[var(--accent-color)]' : 'bg-zinc-700'
+                      draftAudioFeedback ? 'bg-[var(--accent-color)]' : 'bg-zinc-700'
                     }`}
                   >
                     <span
                       className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                        audioFeedback ? 'translate-x-5' : 'translate-x-0'
+                        draftAudioFeedback ? 'translate-x-5' : 'translate-x-0'
                       }`}
                     />
                   </button>
@@ -135,20 +163,20 @@ export function SettingsModal({
                   {SUPPORTED_UI_LOCALES.map(locale => (
                     <button
                       key={locale.code}
-                      onClick={() => setLanguage(locale.code)}
-                      aria-pressed={locale.code === language}
+                      onClick={() => setDraftLanguage(locale.code)}
+                      aria-pressed={locale.code === draftLanguage}
                       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all ${
-                        locale.code === language
+                        locale.code === draftLanguage
                           ? 'bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/30 text-[var(--accent-color)]'
                           : 'bg-white/[0.02] border border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
                       }`}
                     >
                       <span className="text-base leading-none">{locale.flag}</span>
                       <span className="font-medium truncate">{locale.label}</span>
-                      {locale.code === language && (
-                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] flex-shrink-0" />
-                      )}
-                    </button>
+                       {locale.code === draftLanguage && (
+                         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] flex-shrink-0" />
+                       )}
+                     </button>
                   ))}
                 </div>
               </section>
@@ -185,6 +213,19 @@ export function SettingsModal({
                   </a>
                 </div>
               </section>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-fluent-border bg-white/[0.02]">
+              <Button onClick={handleDefault} variant="outlined" color="inherit">
+                {t.settings.actions.default}
+              </Button>
+              <div className="flex items-center gap-3">
+                <Button onClick={onClose} variant="text" color="inherit">
+                  {t.settings.actions.close}
+                </Button>
+                <Button onClick={handleSave} variant="contained" color="primary">
+                  {t.settings.actions.save}
+                </Button>
+              </div>
             </div>
           </motion.div>
         </div>

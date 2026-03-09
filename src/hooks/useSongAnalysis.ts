@@ -12,11 +12,19 @@ type UseSongAnalysisParams = {
   rhymeScheme: string;
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
-  saveVersion: (name: string) => void;
+  saveVersion: (name: string, snapshot?: {
+    song: Section[];
+    structure: string[];
+    title: string;
+    titleOrigin: 'user' | 'ai';
+    topic: string;
+    mood: string;
+  }) => void;
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
   updateSongWithHistory: (newSong: Section[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   clearLineSelection: () => void;
+  requestAutoTitleGeneration: () => void;
 };
 
 type AnalysisReport = {
@@ -83,6 +91,7 @@ export const useSongAnalysis = ({
   updateSongWithHistory,
   updateSongAndStructureWithHistory,
   clearLineSelection,
+  requestAutoTitleGeneration,
 }: UseSongAnalysisParams) => {
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pastedText, setPastedText] = useState('');
@@ -678,6 +687,7 @@ ${pastedText}`;
 
       const newStructure = sections.map((s: any) => cleanSectionName(s.name));
       updateSongAndStructureWithHistory(songWithIds, newStructure);
+      requestAutoTitleGeneration();
       clearLineSelection();
       setIsPasteModalOpen(false);
       setPastedText('');

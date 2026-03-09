@@ -44,6 +44,7 @@ const fr: Translations = {
     songTopicPlaceholder: 'De quoi parle la chanson ?',
     songMood: 'AMBIANCE DE LA CHANSON',
     songMoodPlaceholder: 'ex. Mélancolique, Énergique...',
+    songMoodPresets: 'Ambiances prédéfinies',
     rhymeScheme: 'SCHÉMA DE RIMES PAR DÉFAUT',
     targetSyllables: 'SYLLABES CIBLES',
     quantize: 'Quantifier les syllabes (GLOBAL)',
@@ -96,6 +97,7 @@ const fr: Translations = {
     chars: 'Caractères',
     adapt: 'ADAPTER',
     moodPlaceholder: 'Ambiance...',
+    regenerateWarning: 'Cela régénérera entièrement les paroles actuelles. Voulez-vous continuer ?',
   },
 
   suggestions: {
@@ -181,6 +183,11 @@ const fr: Translations = {
     },
     language: {
       label: 'Langue',
+    },
+    actions: {
+      default: 'Par défaut',
+      save: 'Enregistrer',
+      close: 'Fermer',
     },
     about: {
       version: 'Version',

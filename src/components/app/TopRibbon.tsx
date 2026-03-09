@@ -43,6 +43,8 @@ export function TopRibbon({
   isGenerating, isAnalyzing,
 }: Props) {
   const { t } = useTranslation();
+  const canUndo = past.length > 0;
+  const canRedo = future.length > 0;
 
   return (
     <div className="h-16 border-b border-fluent-border flex items-center justify-between px-8 z-10 bg-white/[0.02] backdrop-blur-md lcars-ribbon">
@@ -103,12 +105,26 @@ export function TopRibbon({
           </IconButton>
         </Tooltip>
         <Tooltip title={t.tooltips.undo}>
-          <IconButton onClick={undo} disabled={past.length === 0} size="small" style={{ color: 'var(--text-secondary)' }}>
+          <IconButton
+            onClick={undo}
+            disabled={!canUndo}
+            size="small"
+            style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
+            className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
+            aria-disabled={!canUndo}
+          >
             <Undo2 className="w-4 h-4" />
           </IconButton>
         </Tooltip>
         <Tooltip title={t.tooltips.redo}>
-          <IconButton onClick={redo} disabled={future.length === 0} size="small" style={{ color: 'var(--text-secondary)' }}>
+          <IconButton
+            onClick={redo}
+            disabled={!canRedo}
+            size="small"
+            style={{ color: canRedo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
+            className={canRedo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
+            aria-disabled={!canRedo}
+          >
             <Redo2 className="w-4 h-4" />
           </IconButton>
         </Tooltip>

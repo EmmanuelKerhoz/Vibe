@@ -24,6 +24,9 @@ export interface SongVersion {
   id: string;
   timestamp: number;
   song: Section[];
+  structure: string[];
+  title: string;
+  titleOrigin: 'user' | 'ai';
   topic: string;
   mood: string;
   name: string;

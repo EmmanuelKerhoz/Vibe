@@ -91,14 +91,22 @@ export function LeftSettingsPanel({
             </div>
             <div>
               <Label>{t.leftPanel.songMood}</Label>
-              <Input
-                value={mood}
-                onChange={e => setMood(e.target.value)}
-                placeholder={t.leftPanel.songMoodPlaceholder}
-                list="mood-suggestions"
-              />
+              <div className="space-y-2">
+                <Input
+                  value={mood}
+                  onChange={e => setMood(e.target.value)}
+                  placeholder={t.leftPanel.songMoodPlaceholder}
+                  list="mood-suggestions"
+                />
+                <Select value="" onChange={e => { if (e.target.value) setMood(e.target.value); }} aria-label={t.leftPanel.songMoodPresets}>
+                  <MenuItem value="">{t.leftPanel.songMoodPresets}</MenuItem>
+                  {Object.entries(t.moods).map(([key, moodOption]) => (
+                    <MenuItem key={key} value={moodOption}>{moodOption}</MenuItem>
+                  ))}
+                </Select>
+              </div>
               <datalist id="mood-suggestions">
-                {Object.entries(t.moods).map(([key, m]) => <option key={key} value={m} />)}
+                {Object.entries(t.moods).map(([key, moodOption]) => <option key={key} value={moodOption} />)}
               </datalist>
             </div>
           </div>

@@ -44,6 +44,7 @@ const de: Translations = {
     songTopicPlaceholder: 'Worum geht es im Song?',
     songMood: 'STIMMUNG DES SONGS',
     songMoodPlaceholder: 'z.B. Melancholisch, Energiegeladen...',
+    songMoodPresets: 'Vordefinierte Stimmungen',
     rhymeScheme: 'STANDARD-REIMSCHEMA',
     targetSyllables: 'ZIEL-SILBENANZAHL',
     quantize: 'Silben quantisieren (GLOBAL)',
@@ -96,6 +97,7 @@ const de: Translations = {
     chars: 'Zeichen',
     adapt: 'ANPASSEN',
     moodPlaceholder: 'Stimmung...',
+    regenerateWarning: 'Dadurch wird der aktuelle Liedtext vollständig neu generiert. Möchtest du fortfahren?',
   },
 
   suggestions: {
@@ -181,6 +183,11 @@ const de: Translations = {
     },
     language: {
       label: 'Sprache',
+    },
+    actions: {
+      default: 'Standard',
+      save: 'Speichern',
+      close: 'Schließen',
     },
     about: {
       version: 'Version',

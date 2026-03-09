@@ -44,6 +44,7 @@ const ar: Translations = {
     songTopicPlaceholder: 'عمَّ تتحدث الأغنية؟',
     songMood: 'مزاج الأغنية',
     songMoodPlaceholder: 'مثل: حزين، نشيط...',
+    songMoodPresets: 'حالات مزاجية جاهزة',
     rhymeScheme: 'نظام القافية الافتراضي',
     targetSyllables: 'المقاطع المستهدفة',
     quantize: 'ضبط المقاطع (الكل)',
@@ -96,6 +97,7 @@ const ar: Translations = {
     chars: 'حروف',
     adapt: 'تكييف',
     moodPlaceholder: 'المزاج...',
+    regenerateWarning: 'سيؤدي هذا إلى إعادة توليد كلمات الأغنية الحالية بالكامل. هل تريد المتابعة؟',
   },
 
   suggestions: {
@@ -181,6 +183,11 @@ const ar: Translations = {
     },
     language: {
       label: 'اللغة',
+    },
+    actions: {
+      default: 'افتراضي',
+      save: 'حفظ',
+      close: 'إغلاق',
     },
     about: {
       version: 'الإصدار',

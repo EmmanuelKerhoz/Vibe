@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Sparkles, Loader2, RefreshCw, Music, Lightbulb, ClipboardPaste, Ruler, BarChart2, GripVertical, Waves, Volume2, Wand2, History, Bot, User, FileText, Layout, Languages, Globe } from 'lucide-react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 
@@ -37,6 +37,15 @@ import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel
 const DEFAULT_TITLE = 'Untitled Song';
 const DEFAULT_TOPIC = 'A neon city in the rain';
 const DEFAULT_MOOD = 'Cyberpunk, nostalgic, bittersweet, reflective';
+
+type VersionSnapshot = {
+  song: Section[];
+  structure: string[];
+  title: string;
+  titleOrigin: 'user' | 'ai';
+  topic: string;
+  mood: string;
+};
 
 export default function App() {
   const { t } = useTranslation();
@@ -193,6 +202,55 @@ export default function App() {
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [shouldAutoGenerateTitle, setShouldAutoGenerateTitle] = useState(false);
+  const previousLyricsSnapshotRef = useRef<VersionSnapshot | null>(null);
+
+  const createVersion = useCallback((
+    snapshot: VersionSnapshot,
+    name: string,
+    previousVersions: SongVersion[],
+    options?: { allowDuplicate?: boolean },
+  ): SongVersion[] => {
+    const latestVersion = previousVersions[0];
+    const normalizedSnapshot = JSON.stringify({
+      song: snapshot.song,
+      structure: snapshot.structure,
+      title: snapshot.title,
+      titleOrigin: snapshot.titleOrigin,
+      topic: snapshot.topic,
+      mood: snapshot.mood,
+    });
+
+    if (!options?.allowDuplicate && latestVersion) {
+      const normalizedLatest = JSON.stringify({
+        song: latestVersion.song,
+        structure: latestVersion.structure,
+        title: latestVersion.title,
+        titleOrigin: latestVersion.titleOrigin,
+        topic: latestVersion.topic,
+        mood: latestVersion.mood,
+      });
+
+      if (normalizedLatest === normalizedSnapshot) {
+        return previousVersions;
+      }
+    }
+
+    return [
+      {
+        id: generateId(),
+        timestamp: Date.now(),
+        song: JSON.parse(JSON.stringify(snapshot.song)),
+        structure: [...snapshot.structure],
+        title: snapshot.title,
+        titleOrigin: snapshot.titleOrigin,
+        topic: snapshot.topic,
+        mood: snapshot.mood,
+        name,
+      },
+      ...previousVersions,
+    ];
+  }, []);
 
   const resetSong = () => {
     updateSongAndStructureWithHistory([], DEFAULT_STRUCTURE);
@@ -200,20 +258,15 @@ export default function App() {
     setIsResetModalOpen(false);
   };
 
-  const saveVersion = (name: string) => {
-    const newVersion: SongVersion = {
-      id: generateId(),
-      timestamp: Date.now(),
-      song: JSON.parse(JSON.stringify(song)),
-      topic,
-      mood,
-      name: name || `Version ${versions.length + 1}`,
-    };
-    setVersions(prev => [newVersion, ...prev]);
-  };
+  const saveVersion = useCallback((name: string, snapshot?: VersionSnapshot) => {
+    const versionSnapshot = snapshot || { song, structure, title, titleOrigin, topic, mood };
+    setVersions(prev => createVersion(versionSnapshot, name || `Version ${prev.length + 1}`, prev, { allowDuplicate: true }));
+  }, [createVersion, song, structure, title, titleOrigin, topic, mood]);
 
   const rollbackToVersion = (version: SongVersion) => {
-    updateSongAndStructureWithHistory(version.song, version.song.map(s => s.name));
+    updateSongAndStructureWithHistory(version.song, version.structure);
+    setTitle(version.title);
+    setTitleOrigin(version.titleOrigin);
     setTopic(version.topic);
     setMood(version.mood);
     setIsVersionsModalOpen(false);
@@ -229,6 +282,7 @@ export default function App() {
     song, structure, topic, mood, rhymeScheme, targetSyllables, title,
     genre, tempo, instrumentation, setMusicalPrompt,
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory, saveVersion,
+    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
   const {
@@ -242,6 +296,7 @@ export default function App() {
     song, topic, mood, rhymeScheme, setTopic, setMood, saveVersion,
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
     clearLineSelection: clearSelection,
+    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
   const {
@@ -263,6 +318,25 @@ export default function App() {
   const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood);
 
   useTopicMoodSuggester(topic, mood, setTopic, setMood);
+
+  useEffect(() => {
+    const currentSnapshot = { song, structure, title, titleOrigin, topic, mood };
+
+    if (!previousLyricsSnapshotRef.current) {
+      previousLyricsSnapshotRef.current = currentSnapshot;
+      return;
+    }
+
+    const previousSnapshot = previousLyricsSnapshotRef.current;
+    const lyricsChanged = JSON.stringify(previousSnapshot.song) !== JSON.stringify(song)
+      || JSON.stringify(previousSnapshot.structure) !== JSON.stringify(structure);
+
+    if (lyricsChanged && previousSnapshot.song.length > 0) {
+      setVersions(prev => createVersion(previousSnapshot, 'Auto Restore Point', prev));
+    }
+
+    previousLyricsSnapshotRef.current = currentSnapshot;
+  }, [createVersion, song, structure, title, titleOrigin, topic, mood]);
 
   const sectionCount = song.length;
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
@@ -336,9 +410,39 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    if (!shouldAutoGenerateTitle || song.length === 0) return;
+
+    let isCancelled = false;
+
+    const run = async () => {
+      const newTitle = await generateTitle();
+      if (!isCancelled && newTitle) {
+        setTitle(newTitle);
+        setTitleOrigin('ai');
+      }
+      if (!isCancelled) {
+        setShouldAutoGenerateTitle(false);
+      }
+    };
+
+    void run();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [generateTitle, shouldAutoGenerateTitle, song.length]);
+
   const handleTitleChange = (value: string) => {
     setTitle(value);
     setTitleOrigin('user');
+  };
+
+  const handleGlobalRegenerate = () => {
+    if (song.length > 0 && !window.confirm(t.editor.regenerateWarning)) {
+      return;
+    }
+    void generateSong();
   };
 
   const scrollToSection = (section: Section) => {
@@ -515,12 +619,12 @@ export default function App() {
                       {t.editor.analyze}
                     </button>
                   </Tooltip>
-                  <Tooltip title={t.tooltips.regenerate}>
-                    <button onClick={generateSong} disabled={isGenerating || isAnalyzing} className="px-4 py-2 bg-[var(--accent-color)] hover:brightness-110 text-[var(--on-accent-color)] text-xs rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--accent-color)]/20 fluent-button whitespace-nowrap">
-                      {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                      {t.editor.regenerateGlobal}
-                    </button>
-                  </Tooltip>
+                    <Tooltip title={t.tooltips.regenerate}>
+                     <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-4 py-2 bg-[var(--accent-color)] hover:brightness-110 text-[var(--on-accent-color)] text-xs rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--accent-color)]/20 fluent-button whitespace-nowrap">
+                       {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                       {t.editor.regenerateGlobal}
+                     </button>
+                    </Tooltip>
                 </div>
               </div>
               </div>
@@ -549,7 +653,7 @@ export default function App() {
                   <div className="flex items-center gap-4 w-full max-w-2xl">
                     {hasSavedSession && <Tooltip title={t.tooltips.loadSession}><Button onClick={loadSavedSession} variant="outlined" color="success" startIcon={<History className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.loadSession}</Button></Tooltip>}
                     <Tooltip title={t.tooltips.pasteLyrics}><Button onClick={() => setIsPasteModalOpen(true)} variant="outlined" color="secondary" startIcon={<ClipboardPaste className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.pasteLyrics}</Button></Tooltip>
-                    <Tooltip title={t.tooltips.generateSong}><Button onClick={generateSong} disabled={isGenerating || isAnalyzing} variant="contained" color="primary" startIcon={isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.generateSong}</Button></Tooltip>
+                    <Tooltip title={t.tooltips.generateSong}><Button onClick={() => void generateSong()} disabled={isGenerating || isAnalyzing} variant="contained" color="primary" startIcon={isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} style={{ flex: 1, padding: '12px 0' }}>{t.editor.emptyState.generateSong}</Button></Tooltip>
                   </div>
                 </div>
               ) : (

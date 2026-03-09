@@ -49,6 +49,7 @@ export interface Translations {
     songTopicPlaceholder: string;
     songMood: string;
     songMoodPlaceholder: string;
+    songMoodPresets: string;
     rhymeScheme: string;
     targetSyllables: string;
     quantize: string;
@@ -101,6 +102,7 @@ export interface Translations {
     chars: string;
     adapt: string;
     moodPlaceholder: string;
+    regenerateWarning: string;
   };
 
   suggestions: {
@@ -185,6 +187,11 @@ export interface Translations {
     };
     language: {
       label: string;
+    };
+    actions: {
+      default: string;
+      save: string;
+      close: string;
     };
     about: {
       version: string;

@@ -79,8 +79,8 @@ export function StatusBar({
               aria-label={t.statusBar.theme}
               className="lcars-meta-btn"
             >
-              {theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-              <span>{theme === 'dark' ? t.settings.theme.dark : t.settings.theme.light}</span>
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+              <span>{theme === 'dark' ? t.settings.theme.light : t.settings.theme.dark}</span>
             </button>
           </Tooltip>
           <Tooltip title={t.statusBar.settings}>
