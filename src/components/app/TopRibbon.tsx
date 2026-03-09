@@ -25,7 +25,7 @@ interface Props {
   setIsStructureOpen: (v: boolean) => void;
   hasApiKey: boolean;
   handleApiKeyHelp: () => void;
-  handleImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImportClick: () => void;
   exportTxt: () => void;
   exportMd: () => void;
   isGenerating: boolean;
@@ -39,7 +39,7 @@ export function TopRibbon({
   setIsVersionsModalOpen, setIsResetModalOpen,
   isStructureOpen, setIsStructureOpen,
   hasApiKey, handleApiKeyHelp,
-  handleImport, exportTxt, exportMd,
+  onImportClick, exportTxt, exportMd,
   isGenerating, isAnalyzing,
 }: Props) {
   const { t } = useTranslation();
@@ -82,9 +82,8 @@ export function TopRibbon({
 
       <div className="flex items-center gap-2">
         <Tooltip title={t.tooltips.import}>
-          <Button component="label" variant="outlined" color="info" size="small" startIcon={<Upload className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
+          <Button onClick={onImportClick} variant="outlined" color="info" size="small" startIcon={<Upload className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
             {t.ribbon.import}
-            <input type="file" accept=".txt,.md" className="hidden" onChange={handleImport} />
           </Button>
         </Tooltip>
         <Tooltip title={t.tooltips.exportTxt}>
