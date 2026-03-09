@@ -31,7 +31,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
             {/* Banner */}
             <div className="w-full h-48 overflow-hidden relative">
               <img src={bannerImage} alt="Lyricist splash screen" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-fluent-card via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-fluent-card/70 via-fluent-card/10 to-transparent" />
             </div>
 
             <div className="p-8 text-center space-y-6">
