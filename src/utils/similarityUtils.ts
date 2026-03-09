@@ -115,6 +115,36 @@ const calculateSimilarity = (currentSong: Section[], candidateSong: Section[]) =
   return Math.round((tokenScore * 0.6 + lineScore * 0.3 + structureScore * 0.1) * 100);
 };
 
+/**
+ * Calculate similarity with full metadata (exported for library use)
+ */
+export const calculateSimilarityWithMetadata = (
+  currentSong: Section[],
+  candidateSong: Section[],
+): Omit<SimilarityMatch, 'versionId' | 'versionName' | 'title' | 'timestamp'> => {
+  const currentTokens = getSongTokens(currentSong);
+  const candidateTokens = getSongTokens(candidateSong);
+  const candidateTokenSet = new Set(candidateTokens);
+  
+  const currentLines = getSongLines(currentSong);
+  const candidateLines = getSongLines(candidateSong);
+  const candidateLineSet = new Set(candidateLines);
+
+  const sharedWords = new Set(currentTokens.filter(token => candidateTokenSet.has(token))).size;
+  const sharedLines = new Set(currentLines.filter(line => candidateLineSet.has(line))).size;
+
+  return {
+    score: calculateSimilarity(currentSong, candidateSong),
+    sharedWords,
+    sharedLines,
+    sharedKeywords: getSharedKeywords(currentSong, candidateSong),
+    matchedSections: getMatchedSections(currentSong, candidateSong).slice(0, 3),
+  };
+};
+
+/**
+ * Get top similar matches from version history (original behavior)
+ */
 export const getTopSimilarSongMatches = (
   currentSong: Section[],
   versions: SongVersion[],
