@@ -100,13 +100,13 @@ export function LeftSettingsPanel({
                 />
                 <Select value="" onChange={e => { if (e.target.value) setMood(e.target.value); }} aria-label={t.leftPanel.songMoodPresets}>
                   <MenuItem value="">{t.leftPanel.songMoodPresets}</MenuItem>
-                  {Object.entries(t.moods).map(([key, currentMood]) => (
-                    <MenuItem key={key} value={currentMood}>{currentMood}</MenuItem>
+                  {Object.entries(t.moods).map(([key, moodOption]) => (
+                    <MenuItem key={key} value={moodOption}>{moodOption}</MenuItem>
                   ))}
                 </Select>
               </div>
               <datalist id="mood-suggestions">
-                {Object.entries(t.moods).map(([key, currentMood]) => <option key={key} value={currentMood} />)}
+                {Object.entries(t.moods).map(([key, moodOption]) => <option key={key} value={moodOption} />)}
               </datalist>
             </div>
           </div>
