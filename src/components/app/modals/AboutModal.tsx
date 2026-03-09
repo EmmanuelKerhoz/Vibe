@@ -5,6 +5,10 @@ import { useTranslation } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
 import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
 
+const ABOUT_MODAL_VIEWPORT_MARGIN = '2rem';
+const BANNER_WIDTH = 1366;
+const BANNER_HEIGHT = 580;
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -26,11 +30,12 @@ export function AboutModal({ isOpen, onClose }: Props) {
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            className="relative w-full max-w-2xl max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden bg-fluent-card border border-fluent-border shadow-2xl lcars-panel"
+            className="relative w-full max-w-2xl overflow-y-auto overflow-x-hidden bg-fluent-card border border-fluent-border shadow-2xl lcars-panel"
+            style={{ maxHeight: `calc(100vh - ${ABOUT_MODAL_VIEWPORT_MARGIN})` }}
           >
             {/* Banner */}
             <div className="w-full bg-black/70">
-              <div className="w-full aspect-[1366/580]">
+              <div className="w-full" style={{ aspectRatio: `${BANNER_WIDTH} / ${BANNER_HEIGHT}` }}>
                 <img src={bannerImage} alt="Lyricist splash screen" className="w-full h-full object-contain" />
               </div>
             </div>
