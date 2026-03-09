@@ -30,11 +30,21 @@ const computeSyllables = (text: string) =>
     .filter(Boolean)
     .reduce((acc, word) => acc + countSyllables(word), 0);
 
+const SHORT_SECTION_LINE_COUNT = 4;
+const LONG_SECTION_LINE_COUNT = 6;
+
+const getDefaultLineCount = (name: string) =>
+  name.toLowerCase().includes('verse') || name.toLowerCase().includes('bridge')
+    ? LONG_SECTION_LINE_COUNT
+    : SHORT_SECTION_LINE_COUNT;
+
+const sectionNamesMatch = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
+
 const createEmptySection = (name: string, defaultRhymeScheme: string): Section => ({
   id: generateId(),
   name,
   rhymeScheme: defaultRhymeScheme,
-  lines: Array(name.toLowerCase().includes('verse') || name.toLowerCase().includes('bridge') ? 6 : 4)
+  lines: Array(getDefaultLineCount(name))
     .fill(null)
     .map(() => ({
       id: generateId(),
@@ -50,10 +60,17 @@ const alignGeneratedSongToStructure = (generatedSong: Section[], structure: stri
   const remainingSections = [...generatedSong];
 
   return structure.map(sectionName => {
-    const matchingIndex = remainingSections.findIndex(section => section.name.toLowerCase() === sectionName.toLowerCase());
-    const matchedSection = matchingIndex === -1
-      ? remainingSections.shift()
-      : remainingSections.splice(matchingIndex, 1)[0];
+    const matchingIndex = remainingSections.findIndex(section => sectionNamesMatch(section.name, sectionName));
+    let matchedSection: Section | undefined;
+
+    // Prefer an exact section-name match. If the model renamed a section or produced unexpected
+    // duplicates, fall back to the next remaining generated section so the requested structure order
+    // still wins over the raw AI response order.
+    if (matchingIndex === -1) {
+      matchedSection = remainingSections.length > 0 ? remainingSections.shift() : undefined;
+    } else {
+      matchedSection = remainingSections.splice(matchingIndex, 1)[0];
+    }
 
     return matchedSection
       ? { ...matchedSection, name: sectionName }
