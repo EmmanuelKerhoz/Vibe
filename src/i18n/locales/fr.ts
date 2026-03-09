@@ -136,6 +136,17 @@ const fr: Translations = {
     analyzing: 'Analyse...',
   },
 
+
+  importDialog: {
+    title: 'Importer un fichier de paroles',
+    emptyDescription: 'Choisissez un fichier .txt ou .md à analyser et à importer dans l\'éditeur.',
+    replaceDescription: 'Choisissez un fichier .txt ou .md à importer. Les paroles importées remplaceront les paroles, la structure et le contexte d\'analyse actuels.',
+    warning: 'Votre travail actuel sera perdu une fois le fichier importé analysé.',
+    supportedFiles: 'Prend en charge les fichiers .txt et .md',
+    cancel: 'Annuler',
+    chooseFile: 'Choisir un fichier',
+  },
+
   about: {
     description: 'Un éditeur de paroles IA professionnel pour les auteurs-compositeurs et poètes. Composez votre chef-d\'œuvre avec des suggestions en temps réel, la gestion de structure et la quantification intelligente.',
     engine: 'Google Gemini',

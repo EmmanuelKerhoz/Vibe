@@ -136,6 +136,17 @@ const zh: Translations = {
     analyzing: '分析中...',
   },
 
+
+  importDialog: {
+    title: '导入歌词文件',
+    emptyDescription: '选择一个 .txt 或 .md 文件进行分析并导入编辑器。',
+    replaceDescription: '选择一个 .txt 或 .md 文件进行导入。导入的歌词将替换当前的歌词、结构和分析上下文。',
+    warning: '导入文件一旦分析，您当前的工作将会丢失。',
+    supportedFiles: '支持 .txt 和 .md 文件',
+    cancel: '取消',
+    chooseFile: '选择文件',
+  },
+
   about: {
     description: '专为词曲作者和诗人打造的专业AI歌词编辑器。借助实时建议、结构管理和智能量化，创作您的传世之作。',
     engine: 'Google Gemini',

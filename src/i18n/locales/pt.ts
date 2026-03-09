@@ -136,6 +136,17 @@ const pt: Translations = {
     analyzing: 'Analisando...',
   },
 
+
+  importDialog: {
+    title: 'Importar arquivo de letra',
+    emptyDescription: 'Escolha um arquivo .txt ou .md para analisar e importar para o editor.',
+    replaceDescription: 'Escolha um arquivo .txt ou .md para importar. A letra importada substituirá a letra, a estrutura e o contexto de análise atuais.',
+    warning: 'Seu trabalho atual será perdido assim que o arquivo importado for analisado.',
+    supportedFiles: 'Compatível com arquivos .txt e .md',
+    cancel: 'Cancelar',
+    chooseFile: 'Escolher arquivo',
+  },
+
   about: {
     description: 'Um editor de letras com IA de nível profissional para compositores e poetas. Crie sua obra-prima com sugestões em tempo real, gerenciamento de estrutura e quantização inteligente.',
     engine: 'Google Gemini',

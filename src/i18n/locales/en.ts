@@ -136,6 +136,16 @@ const en: Translations = {
     analyzing: 'Analyzing...',
   },
 
+  importDialog: {
+    title: 'Import lyrics file',
+    emptyDescription: 'Choose a .txt or .md file to analyze and import into the editor.',
+    replaceDescription: 'Choose a .txt or .md file to import. The imported lyrics will replace the current lyrics, structure, and analysis context.',
+    warning: 'Your current work will be lost once the imported file is analyzed.',
+    supportedFiles: 'Supports .txt and .md files',
+    cancel: 'Cancel',
+    chooseFile: 'Choose file',
+  },
+
   about: {
     description: 'A professional-grade AI lyrics editor designed for songwriters and poets. Craft your masterpiece with real-time suggestions, structure management, and intelligent quantization.',
     engine: 'Google Gemini',

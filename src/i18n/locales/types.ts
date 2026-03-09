@@ -141,6 +141,16 @@ export interface Translations {
     analyzing: string;
   };
 
+  importDialog: {
+    title: string;
+    emptyDescription: string;
+    replaceDescription: string;
+    warning: string;
+    supportedFiles: string;
+    cancel: string;
+    chooseFile: string;
+  };
+
   about: {
     description: string;
     engine: string;
