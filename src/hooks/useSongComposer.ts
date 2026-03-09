@@ -30,6 +30,37 @@ const computeSyllables = (text: string) =>
     .filter(Boolean)
     .reduce((acc, word) => acc + countSyllables(word), 0);
 
+const createEmptySection = (name: string, defaultRhymeScheme: string): Section => ({
+  id: generateId(),
+  name,
+  rhymeScheme: defaultRhymeScheme,
+  lines: Array(name.toLowerCase().includes('verse') || name.toLowerCase().includes('bridge') ? 6 : 4)
+    .fill(null)
+    .map(() => ({
+      id: generateId(),
+      text: '',
+      rhymingSyllables: '',
+      rhyme: '',
+      syllables: 0,
+      concept: 'New line',
+    })),
+});
+
+const alignGeneratedSongToStructure = (generatedSong: Section[], structure: string[], defaultRhymeScheme: string): Section[] => {
+  const remainingSections = [...generatedSong];
+
+  return structure.map(sectionName => {
+    const matchingIndex = remainingSections.findIndex(section => section.name.toLowerCase() === sectionName.toLowerCase());
+    const matchedSection = matchingIndex === -1
+      ? remainingSections.shift()
+      : remainingSections.splice(matchingIndex, 1)[0];
+
+    return matchedSection
+      ? { ...matchedSection, name: sectionName }
+      : createEmptySection(sectionName, defaultRhymeScheme);
+  });
+};
+
 const mapSongWithPreservedIds = (newSongData: any[], song: Section[]): Section[] => {
   return newSongData.map((section: any, sectionIndex: number) => {
     const existingSection = song[sectionIndex];
@@ -168,8 +199,8 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
           id: generateId()
         }))
       }));
-      const newStructure = songWithIds.map((s: any) => s.name);
-      updateSongAndStructureWithHistory(songWithIds, newStructure);
+      const orderedSong = alignGeneratedSongToStructure(songWithIds, structure, rhymeScheme);
+      updateSongAndStructureWithHistory(orderedSong, structure);
       saveVersion(`Generated: ${topic}`);
       setSelectedLineId(null);
     } catch (error: any) {
