@@ -236,7 +236,9 @@ export interface Translations {
     analysisCancel: string;
     analysisImport: string;
     copyPrompt: string;
-    settings: string;
+    generateTitle: string;
+    aiGeneratedTitle: string;
+    userEnteredTitle: string;
   };
 
   sections: {

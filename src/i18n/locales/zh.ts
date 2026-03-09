@@ -231,7 +231,9 @@ const zh: Translations = {
     closeAbout: '关闭',
     analysisCancel: '取消并关闭',
     analysisImport: '分析并导入粘贴的歌词',
-    settings: '设置',
+    generateTitle: '从歌词生成标题',
+    aiGeneratedTitle: 'AI生成的标题',
+    userEnteredTitle: '用户输入的标题',
   },
 
   sections: {

@@ -231,7 +231,9 @@ const es: Translations = {
     closeAbout: 'Cerrar',
     analysisCancel: 'Cancelar y cerrar',
     analysisImport: 'Analizar e importar letras pegadas',
-    settings: 'Ajustes',
+    generateTitle: 'Generar título desde la letra',
+    aiGeneratedTitle: 'Título generado por IA',
+    userEnteredTitle: 'Título introducido por el usuario',
   },
 
   sections: {

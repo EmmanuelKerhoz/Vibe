@@ -230,7 +230,9 @@ const en: Translations = {
     analysisCancel: 'Cancel and close',
     analysisImport: 'Analyze and import pasted lyrics',
     copyPrompt: 'Copy to clipboard',
-    settings: 'Settings',
+    generateTitle: 'Generate title from lyrics',
+    aiGeneratedTitle: 'AI-generated title',
+    userEnteredTitle: 'User-entered title',
   },
 
   sections: {

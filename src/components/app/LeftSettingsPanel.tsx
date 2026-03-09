@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, PanelLeft, Ruler } from 'lucide-react';
+import { Music, PanelLeft, Ruler, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Label } from '../ui/Label';
@@ -12,6 +12,9 @@ import type { Section } from '../../types';
 interface Props {
   title: string;
   setTitle: (v: string) => void;
+  titleOrigin: 'user' | 'ai';
+  onGenerateTitle: () => void;
+  isGeneratingTitle: boolean;
   topic: string;
   setTopic: (v: string) => void;
   mood: string;
@@ -28,7 +31,8 @@ interface Props {
 }
 
 export function LeftSettingsPanel({
-  title, setTitle, topic, setTopic, mood, setMood,
+  title, setTitle, titleOrigin, onGenerateTitle, isGeneratingTitle,
+  topic, setTopic, mood, setMood,
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   song, isGenerating, quantizeSyllables,
   isLeftPanelOpen, setIsLeftPanelOpen,
@@ -50,8 +54,36 @@ export function LeftSettingsPanel({
         <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
           <div className="space-y-4">
             <div>
-              <Label>{t.leftPanel.songTitle}</Label>
-              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t.leftPanel.songTitlePlaceholder} />
+              <Label>
+                <div className="flex items-center gap-2">
+                  <span>{t.leftPanel.songTitle}</span>
+                  {titleOrigin === 'ai' ? (
+                    <Tooltip title={t.tooltips.aiGeneratedTitle}>
+                      <Bot className="w-3 h-3 text-[var(--accent-color)]" />
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title={t.tooltips.userEnteredTitle}>
+                      <User className="w-3 h-3 text-zinc-400" />
+                    </Tooltip>
+                  )}
+                </div>
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t.leftPanel.songTitlePlaceholder} className="flex-1" />
+                <Tooltip title={t.tooltips.generateTitle}>
+                  <button
+                    onClick={onGenerateTitle}
+                    disabled={isGeneratingTitle || song.length === 0}
+                    className="px-2 py-1.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] rounded transition-all disabled:opacity-50"
+                  >
+                    {isGeneratingTitle ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </Tooltip>
+              </div>
             </div>
             <div>
               <Label>{t.leftPanel.songTopic}</Label>
