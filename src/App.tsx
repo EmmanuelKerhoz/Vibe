@@ -523,7 +523,7 @@ export default function App() {
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 z-10 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-8 z-10 custom-scrollbar">
             {activeTab === 'lyrics' ? (
               isMarkupMode ? (
                 <div className="lyrics-editor-zoom max-w-[1400px] mx-auto h-full flex flex-col space-y-4">
