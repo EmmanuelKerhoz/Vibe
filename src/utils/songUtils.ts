@@ -23,7 +23,7 @@ export const getSectionDotColor = (name: string) => {
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500';
   if (n.includes('chorus')) return 'bg-amber-500';
   if (n.includes('verse')) return 'bg-blue-500';
-  if (n.includes('bridge')) return 'bg-purple-500';
+  if (n.includes('bridge') || n.includes('breakdown')) return 'bg-purple-500';
   if (n.includes('intro') || n.includes('outro')) return 'bg-emerald-500';
   return 'bg-zinc-500';
 };
