@@ -138,8 +138,10 @@ const de: Translations = {
 
   about: {
     description: 'Ein professioneller KI-Liedtexteditor für Songwriter und Dichter. Erschaffe dein Meisterwerk mit Echtzeit-Vorschlägen, Strukturverwaltung und intelligenter Quantisierung.',
-    engine: 'Gemini 3.1 Pro',
+    engine: 'Google Gemini',
     engineLabel: 'Engine',
+    modelLabel: 'KI-Modell',
+    apiKeyLabel: 'KI-Schlüssel',
     license: 'Commercial Pro',
     licenseLabel: 'Lizenz',
     close: 'Schließen',

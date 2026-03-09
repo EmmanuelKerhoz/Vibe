@@ -138,8 +138,10 @@ const es: Translations = {
 
   about: {
     description: 'Un editor de letras con IA de nivel profesional para compositores y poetas. Crea tu obra maestra con sugerencias en tiempo real, gestión de estructura y cuantización inteligente.',
-    engine: 'Gemini 3.1 Pro',
+    engine: 'Google Gemini',
     engineLabel: 'Motor',
+    modelLabel: 'Modelo de IA',
+    apiKeyLabel: 'Clave de IA',
     license: 'Commercial Pro',
     licenseLabel: 'Licencia',
     close: 'Cerrar',

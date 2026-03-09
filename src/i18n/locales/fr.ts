@@ -138,8 +138,10 @@ const fr: Translations = {
 
   about: {
     description: 'Un éditeur de paroles IA professionnel pour les auteurs-compositeurs et poètes. Composez votre chef-d\'œuvre avec des suggestions en temps réel, la gestion de structure et la quantification intelligente.',
-    engine: 'Gemini 3.1 Pro',
+    engine: 'Google Gemini',
     engineLabel: 'Moteur',
+    modelLabel: 'Modèle IA',
+    apiKeyLabel: 'Clé IA',
     license: 'Commercial Pro',
     licenseLabel: 'Licence',
     close: 'Fermer',

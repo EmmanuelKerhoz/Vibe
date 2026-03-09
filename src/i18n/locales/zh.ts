@@ -138,8 +138,10 @@ const zh: Translations = {
 
   about: {
     description: '专为词曲作者和诗人打造的专业AI歌词编辑器。借助实时建议、结构管理和智能量化，创作您的传世之作。',
-    engine: 'Gemini 3.1 Pro',
+    engine: 'Google Gemini',
     engineLabel: '引擎',
+    modelLabel: 'AI 模型',
+    apiKeyLabel: 'AI 密钥',
     license: 'Commercial Pro',
     licenseLabel: '许可证',
     close: '关闭',

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Type } from '@google/genai';
-import { getAi, safeJsonParse, handleApiError } from '../utils/aiUtils';
+import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../utils/aiUtils';
 import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
 import type { Section } from '../types';
@@ -129,7 +129,7 @@ Lyrics:
 ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n')}
 `;
         const response = await getAi().models.generateContent({
-          model: 'gemini-3-flash-preview',
+          model: AI_MODEL_NAME,
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
@@ -190,7 +190,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
       ${JSON.stringify(song)}`;
 
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -261,7 +261,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
       ${JSON.stringify(song)}`;
 
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -332,7 +332,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
 
       setAnalysisSteps(prev => [...prev, 'Consulting AI Lyricist...']);
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -378,7 +378,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     try {
       const songText = song.map(s => s.lines.map(l => l.text).join('\n')).join('\n');
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: `Detect the language of these lyrics. Return ONLY the name of the language (e.g., "English", "French", "Spanish").\n\nLyrics:\n${songText.substring(0, 1000)}`,
       });
       const detected = response.text?.trim() || 'English';
@@ -440,7 +440,7 @@ ${JSON.stringify(song)}
 Return the fully adapted song that feels native to ${newLanguage} speakers while preserving the soul of the original.`;
 
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -537,7 +537,7 @@ ${JSON.stringify(section)}
 Return the fully adapted section that feels native to ${newLanguage} speakers while preserving the soul of the original.`;
 
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -612,7 +612,7 @@ Lyrics:
 ${pastedText}`;
 
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',

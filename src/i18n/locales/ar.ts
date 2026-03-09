@@ -138,8 +138,10 @@ const ar: Translations = {
 
   about: {
     description: 'محرر كلمات احترافي مدعوم بالذكاء الاصطناعي للملحنين والشعراء. اصنع تحفتك الفنية مع اقتراحات فورية وإدارة الهيكل وضبط ذكي للمقاطع.',
-    engine: 'Gemini 3.1 Pro',
+    engine: 'Google Gemini',
     engineLabel: 'المحرك',
+    modelLabel: 'نموذج الذكاء الاصطناعي',
+    apiKeyLabel: 'مفتاح الذكاء الاصطناعي',
     license: 'Commercial Pro',
     licenseLabel: 'الترخيص',
     close: 'إغلاق',
