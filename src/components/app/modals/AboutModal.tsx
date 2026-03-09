@@ -26,12 +26,13 @@ export function AboutModal({ isOpen, onClose }: Props) {
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            className="relative w-full max-w-2xl bg-fluent-card border border-fluent-border shadow-2xl overflow-hidden lcars-panel"
+            className="relative w-full max-w-2xl max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden bg-fluent-card border border-fluent-border shadow-2xl lcars-panel"
           >
             {/* Banner */}
-            <div className="w-full h-48 overflow-hidden relative">
-              <img src={bannerImage} alt="Lyricist splash screen" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-fluent-card/70 via-fluent-card/10 to-transparent" />
+            <div className="w-full bg-black/70">
+              <div className="w-full aspect-[1366/580]">
+                <img src={bannerImage} alt="Lyricist splash screen" className="w-full h-full object-contain" />
+              </div>
             </div>
 
             <div className="p-8 text-center space-y-6">
