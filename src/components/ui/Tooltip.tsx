@@ -2,7 +2,7 @@ import React from 'react';
 import { Tooltip as FluentTooltip, TooltipProps } from '@fluentui/react-components';
 
 interface Props extends Omit<TooltipProps, 'content' | 'positioning' | 'relationship'> {
-  title: React.ReactNode;
+  title: React.ReactElement | string;
   children: React.ReactElement;
 }
 
