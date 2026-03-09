@@ -30,6 +30,54 @@ const computeSyllables = (text: string) =>
     .filter(Boolean)
     .reduce((acc, word) => acc + countSyllables(word), 0);
 
+const SHORT_SECTION_LINE_COUNT = 4;
+const LONG_SECTION_LINE_COUNT = 6;
+
+const getDefaultLineCount = (name: string) =>
+  name.toLowerCase().includes('verse') || name.toLowerCase().includes('bridge')
+    ? LONG_SECTION_LINE_COUNT
+    : SHORT_SECTION_LINE_COUNT;
+
+const sectionNamesMatch = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
+
+const createEmptySection = (name: string, defaultRhymeScheme: string): Section => ({
+  id: generateId(),
+  name,
+  rhymeScheme: defaultRhymeScheme,
+  lines: Array(getDefaultLineCount(name))
+    .fill(null)
+    .map(() => ({
+      id: generateId(),
+      text: '',
+      rhymingSyllables: '',
+      rhyme: '',
+      syllables: 0,
+      concept: 'New line',
+    })),
+});
+
+const alignGeneratedSongToStructure = (generatedSong: Section[], structure: string[], defaultRhymeScheme: string): Section[] => {
+  const remainingSections = [...generatedSong];
+
+  return structure.map(sectionName => {
+    const matchingIndex = remainingSections.findIndex(section => sectionNamesMatch(section.name, sectionName));
+    let matchedSection: Section | undefined;
+
+    // Prefer an exact section-name match. If the model renamed a section or produced unexpected
+    // duplicates, fall back to the next remaining generated section so the requested structure order
+    // still wins over the raw AI response order.
+    if (matchingIndex === -1) {
+      matchedSection = remainingSections.length > 0 ? remainingSections.shift() : undefined;
+    } else {
+      matchedSection = remainingSections.splice(matchingIndex, 1)[0];
+    }
+
+    return matchedSection
+      ? { ...matchedSection, name: sectionName }
+      : createEmptySection(sectionName, defaultRhymeScheme);
+  });
+};
+
 const mapSongWithPreservedIds = (newSongData: any[], song: Section[]): Section[] => {
   return newSongData.map((section: any, sectionIndex: number) => {
     const existingSection = song[sectionIndex];
@@ -168,8 +216,8 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
           id: generateId()
         }))
       }));
-      const newStructure = songWithIds.map((s: any) => s.name);
-      updateSongAndStructureWithHistory(songWithIds, newStructure);
+      const orderedSong = alignGeneratedSongToStructure(songWithIds, structure, rhymeScheme);
+      updateSongAndStructureWithHistory(orderedSong, structure);
       saveVersion(`Generated: ${topic}`);
       setSelectedLineId(null);
     } catch (error: any) {
