@@ -189,6 +189,9 @@ const de: Translations = {
     closeAbout: 'Schließen',
     analysisCancel: 'Abbrechen und schließen',
     analysisImport: 'Eingefügte Liedtexte analysieren und importieren',
+    generateTitle: 'Titel aus Liedtext generieren',
+    aiGeneratedTitle: 'KI-generierter Titel',
+    userEnteredTitle: 'Vom Benutzer eingegebener Titel',
   },
 
   sections: {

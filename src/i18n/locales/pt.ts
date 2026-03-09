@@ -189,6 +189,9 @@ const pt: Translations = {
     closeAbout: 'Fechar',
     analysisCancel: 'Cancelar e fechar',
     analysisImport: 'Analisar e importar letras coladas',
+    generateTitle: 'Gerar título a partir da letra',
+    aiGeneratedTitle: 'Título gerado por IA',
+    userEnteredTitle: 'Título inserido pelo utilizador',
   },
 
   sections: {

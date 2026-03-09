@@ -11,6 +11,8 @@ import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
 import { useSongComposer } from './hooks/useSongComposer';
 import { useSongHistoryState } from './hooks/useSongHistoryState';
+import { useTitleGenerator } from './hooks/useTitleGenerator';
+import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
 import { Label } from './components/ui/Label';
 import { Input } from './components/ui/Input';
 import { Select } from './components/ui/Select';
@@ -37,6 +39,7 @@ export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   
   const [title, setTitle] = useState('Untitled Song');
+  const [titleOrigin, setTitleOrigin] = useState<'user' | 'ai'>('user');
   const [topic, setTopic] = useState('A neon city in the rain');
   const [mood, setMood] = useState('Cyberpunk, nostalgic, bittersweet, reflective');
   const [rhymeScheme, setRhymeScheme] = useState('AABB');
@@ -253,9 +256,26 @@ export default function App() {
     playAudioFeedback,
   });
 
+  const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood);
+
+  useTopicMoodSuggester(topic, mood, setTopic, setMood);
+
   const sectionCount = song.length;
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
+
+  const handleGenerateTitle = async () => {
+    const newTitle = await generateTitle();
+    if (newTitle) {
+      setTitle(newTitle);
+      setTitleOrigin('ai');
+    }
+  };
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    setTitleOrigin('user');
+  };
 
   const scrollToSection = (section: Section) => {
     if (isMarkupMode) {
@@ -342,7 +362,9 @@ export default function App() {
     <div className={`h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
       <div className="flex-1 flex overflow-hidden">
         <LeftSettingsPanel
-          title={title} setTitle={setTitle} topic={topic} setTopic={setTopic}
+          title={title} setTitle={handleTitleChange}
+          titleOrigin={titleOrigin} onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+          topic={topic} setTopic={setTopic}
           mood={mood} setMood={setMood} rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
           targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
           song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}

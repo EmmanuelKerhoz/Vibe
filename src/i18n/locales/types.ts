@@ -195,6 +195,9 @@ export interface Translations {
     analysisCancel: string;
     analysisImport: string;
     copyPrompt: string;
+    generateTitle: string;
+    aiGeneratedTitle: string;
+    userEnteredTitle: string;
   };
 
   sections: {

@@ -189,6 +189,9 @@ const ar: Translations = {
     closeAbout: 'إغلاق',
     analysisCancel: 'إلغاء وإغلاق',
     analysisImport: 'تحليل واستيراد الكلمات الملصقة',
+    generateTitle: 'توليد عنوان من كلمات الأغنية',
+    aiGeneratedTitle: 'عنوان مُولَّد بالذكاء الاصطناعي',
+    userEnteredTitle: 'عنوان أدخله المستخدم',
   },
 
   sections: {

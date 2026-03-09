@@ -189,6 +189,9 @@ const fr: Translations = {
     analysisCancel: 'Annuler et fermer',
     analysisImport: 'Analyser et importer les paroles collées',
     copyPrompt: 'Copier dans le presse-papiers',
+    generateTitle: 'Générer un titre basé sur les paroles',
+    aiGeneratedTitle: 'Titre généré par IA',
+    userEnteredTitle: 'Titre saisi par l\'utilisateur',
   },
 
   sections: {
