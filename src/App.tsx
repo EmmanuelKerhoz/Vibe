@@ -33,13 +33,17 @@ import { AnalysisModal } from './components/app/modals/AnalysisModal';
 import { ImportModal } from './components/app/modals/ImportModal';
 import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
 
+const DEFAULT_TITLE = 'Untitled Song';
+const DEFAULT_TOPIC = 'A neon city in the rain';
+const DEFAULT_MOOD = 'Cyberpunk, nostalgic, bittersweet, reflective';
+
 export default function App() {
   const { t } = useTranslation();
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   
-  const [title, setTitle] = useState('Untitled Song');
-  const [topic, setTopic] = useState('A neon city in the rain');
-  const [mood, setMood] = useState('Cyberpunk, nostalgic, bittersweet, reflective');
+  const [title, setTitle] = useState(DEFAULT_TITLE);
+  const [topic, setTopic] = useState(DEFAULT_TOPIC);
+  const [mood, setMood] = useState(DEFAULT_MOOD);
   const [rhymeScheme, setRhymeScheme] = useState('AABB');
   const [targetSyllables, setTargetSyllables] = useState(10);
   const [newSectionName, setNewSectionName] = useState('');
@@ -242,7 +246,7 @@ export default function App() {
 
   const {
     removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
-    handleLineDragStart, handleLineDrop, exportTxt, exportMd, importFile,
+    handleLineDragStart, handleLineDrop, exportTxt, exportMd, loadFileForAnalysis,
   } = useSongEditor({
     song, structure, newSectionName, setNewSectionName,
     draggedItemIndex, setDraggedItemIndex, setDragOverIndex,
@@ -259,9 +263,9 @@ export default function App() {
   const sectionCount = song.length;
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
-  const hasImportWorkToLose = song.length > 0
-    || topic !== 'A neon city in the rain'
-    || mood !== 'Cyberpunk, nostalgic, bittersweet, reflective'
+  const hasExistingWork = song.length > 0
+    || topic !== DEFAULT_TOPIC
+    || mood !== DEFAULT_MOOD
     || (isMarkupMode && markupText.trim().length > 0);
 
   const handleImportInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -269,10 +273,10 @@ export default function App() {
     e.target.value = '';
     if (!file) return;
     setIsImportModalOpen(false);
-    await importFile(file);
+    loadFileForAnalysis(file);
   };
 
-  const openImportFilePicker = async () => {
+  const triggerImportFilePicker = async () => {
     const pickerWindow = window as Window & {
       showOpenFilePicker?: (options: {
         multiple?: boolean;
@@ -301,7 +305,7 @@ export default function App() {
         if (!handle) return;
         const file = await handle.getFile();
         setIsImportModalOpen(false);
-        await importFile(file);
+        loadFileForAnalysis(file);
       } catch (error) {
         if (!(error instanceof DOMException && error.name === 'AbortError')) {
           console.error('Failed to open import file picker', error);
@@ -639,9 +643,9 @@ export default function App() {
 
       <ImportModal
         isOpen={isImportModalOpen}
-        hasExistingWork={hasImportWorkToLose}
+        hasExistingWork={hasExistingWork}
         onClose={() => setIsImportModalOpen(false)}
-        onChooseFile={openImportFilePicker}
+        onChooseFile={triggerImportFilePicker}
       />
 
       <AnalysisModal
@@ -655,7 +659,7 @@ export default function App() {
 
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
-      <input ref={importInputRef} type="file" accept=".txt,.md,text/plain,text/markdown" className="hidden" onChange={handleImportInputChange} />
+      <input ref={importInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportInputChange} />
     </div>
     </FluentProvider>
   );

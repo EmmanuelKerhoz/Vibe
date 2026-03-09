@@ -347,7 +347,7 @@ export const useSongEditor = ({
     URL.revokeObjectURL(url);
   };
 
-  const importFile = async (file: File) => {
+  const loadFileForAnalysis = (file: File) => {
     const reader = new FileReader();
     reader.onload = event => {
       const text = event.target?.result as string;
@@ -367,6 +367,6 @@ export const useSongEditor = ({
     handleLineDrop,
     exportTxt,
     exportMd,
-    importFile,
+    loadFileForAnalysis,
   };
 };
