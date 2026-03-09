@@ -32,7 +32,6 @@ import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { AboutModal } from './components/app/modals/AboutModal';
 import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
-import { ImportModal } from './components/app/modals/ImportModal';
 import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
 
 const DEFAULT_TITLE = 'Untitled Song';
@@ -77,8 +76,6 @@ export default function App() {
   const [markupText, setMarkupText] = useState('');
   const markupTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [hasApiKey, setHasApiKey] = useState(true);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-
   useEffect(() => {
     fetch('/api/status')
       .then(r => r.json())
@@ -279,11 +276,19 @@ export default function App() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    setIsImportModalOpen(false);
     loadFileForAnalysis(file);
   };
 
   const triggerImportFilePicker = async () => {
+    if (hasExistingWork) {
+      const shouldContinue = window.confirm(
+        `${t.importDialog.replaceDescription}\n\n${t.importDialog.warning}\n${t.importDialog.supportedFiles}`
+      );
+      if (!shouldContinue) {
+        return;
+      }
+    }
+
     const pickerWindow = window as Window & {
       showOpenFilePicker?: (options: {
         multiple?: boolean;
@@ -311,7 +316,6 @@ export default function App() {
         });
         if (!handle) return;
         const file = await handle.getFile();
-        setIsImportModalOpen(false);
         loadFileForAnalysis(file);
       } catch (error) {
         if (!(error instanceof DOMException && error.name === 'AbortError')) {
@@ -441,7 +445,7 @@ export default function App() {
             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-            onImportClick={() => setIsImportModalOpen(true)} exportTxt={exportTxt} exportMd={exportMd}
+            onImportClick={triggerImportFilePicker} exportTxt={exportTxt} exportMd={exportMd}
             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
           />
 
@@ -664,13 +668,6 @@ export default function App() {
         isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)}
         pastedText={pastedText} setPastedText={setPastedText}
         isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics}
-      />
-
-      <ImportModal
-        isOpen={isImportModalOpen}
-        hasExistingWork={hasExistingWork}
-        onClose={() => setIsImportModalOpen(false)}
-        onChooseFile={triggerImportFilePicker}
       />
 
       <AnalysisModal
