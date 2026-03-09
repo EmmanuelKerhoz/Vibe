@@ -26,6 +26,7 @@ const zh: Translations = {
   ribbon: {
     lyrics: '歌词',
     musical: '音乐',
+    similarity: '相似度',
     import: '导入',
     exportTxt: 'TXT',
     exportMd: 'MD',
@@ -137,6 +138,19 @@ const zh: Translations = {
     noData: '暂无分析数据。',
   },
 
+  similarity: {
+    title: '相似度检查',
+    subtitle: '仅显示相似度超过 50% 的前 3 首已保存歌曲。',
+    empty: '没有任何已保存歌曲超过 50% 的相似度阈值。',
+    noCandidates: '请先保存或生成至少一个歌曲版本，再进行相似度比较。',
+    score: '相似度',
+    sharedWords: '共享词语',
+    sharedLines: '共享行数',
+    matchedSections: '匹配段落',
+    sharedKeywords: '共享关键词',
+    thresholdHint: '只显示相似度高于 50% 的歌曲，并按从高到低排序。',
+  },
+
   paste: {
     title: '粘贴歌词',
     description: '将您现有的歌词粘贴到下方。我们的 AI 将分析它们，提取结构、押韵方案、音节数和核心概念，以便在编辑器中使用。',
@@ -211,6 +225,7 @@ const zh: Translations = {
     aiUnavailable: 'Gemini 后端不可用',
     aiUnavailableHelp: '在您的 Vercel 项目环境变量中设置 GEMINI_API_KEY（设置 → 环境变量），然后重新部署。',
     adaptSong: '将整首歌曲翻译并改编为 {lang}（创意改编，而非直译）',
+    checkSimilarity: '将这首歌与已保存版本进行比较，并显示最接近的结果',
     copyPrompt: '复制到剪贴板',
     quantize: '调整所有行以匹配目标音节数，同时保持含义',
     analyzeTheme: '分析歌曲结构、押韵质量和情感影响',

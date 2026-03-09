@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Sparkles, Loader2, RefreshCw, Music, Lightbulb, ClipboardPaste, Ruler, BarChart2, GripVertical, Waves, Volume2, Wand2, History, Bot, User, FileText, Layout, Languages, Globe } from 'lucide-react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 
@@ -32,7 +32,9 @@ import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { AboutModal } from './components/app/modals/AboutModal';
 import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
+import { SimilarityModal } from './components/app/modals/SimilarityModal';
 import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
+import { getTopSimilarSongMatches } from './utils/similarityUtils';
 
 const DEFAULT_TITLE = 'Untitled Song';
 const DEFAULT_TOPIC = 'A neon city in the rain';
@@ -202,6 +204,7 @@ export default function App() {
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isSimilarityModalOpen, setIsSimilarityModalOpen] = useState(false);
   const [shouldAutoGenerateTitle, setShouldAutoGenerateTitle] = useState(false);
   const previousLyricsSnapshotRef = useRef<VersionSnapshot | null>(null);
 
@@ -341,6 +344,7 @@ export default function App() {
   const sectionCount = song.length;
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
+  const similarityMatches = useMemo(() => getTopSimilarSongMatches(song, versions), [song, versions]);
   const hasExistingWork = song.length > 0
     || topic !== DEFAULT_TOPIC
     || mood !== DEFAULT_MOOD
@@ -549,6 +553,7 @@ export default function App() {
             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+            onSimilarityCheck={() => setIsSimilarityModalOpen(true)}
             onImportClick={triggerImportFilePicker} exportTxt={exportTxt} exportMd={exportMd}
             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
           />
@@ -781,6 +786,12 @@ export default function App() {
         isApplyingAnalysis={isApplyingAnalysis} toggleAnalysisItemSelection={toggleAnalysisItemSelection}
         applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems}
         versions={versions} rollbackToVersion={rollbackToVersion}
+      />
+      <SimilarityModal
+        isOpen={isSimilarityModalOpen}
+        onClose={() => setIsSimilarityModalOpen(false)}
+        matches={similarityMatches}
+        candidateCount={versions.filter(version => version.song.length > 0).length}
       />
 
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />

@@ -31,6 +31,7 @@ export interface Translations {
   ribbon: {
     lyrics: string;
     musical: string;
+    similarity: string;
     import: string;
     exportTxt: string;
     exportMd: string;
@@ -142,6 +143,19 @@ export interface Translations {
     noData: string;
   };
 
+  similarity: {
+    title: string;
+    subtitle: string;
+    empty: string;
+    noCandidates: string;
+    score: string;
+    sharedWords: string;
+    sharedLines: string;
+    matchedSections: string;
+    sharedKeywords: string;
+    thresholdHint: string;
+  };
+
   paste: {
     title: string;
     description: string;
@@ -242,6 +256,7 @@ export interface Translations {
     closeAbout: string;
     analysisCancel: string;
     analysisImport: string;
+    checkSimilarity: string;
     copyPrompt: string;
     generateTitle: string;
     aiGeneratedTitle: string;

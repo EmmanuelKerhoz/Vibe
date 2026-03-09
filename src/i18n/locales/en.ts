@@ -26,6 +26,7 @@ const en: Translations = {
   ribbon: {
     lyrics: 'LYRICS',
     musical: 'MUSICAL',
+    similarity: 'Similarity',
     import: 'Import',
     exportTxt: 'TXT',
     exportMd: 'MD',
@@ -137,6 +138,19 @@ const en: Translations = {
     noData: 'No analysis data available.',
   },
 
+  similarity: {
+    title: 'Similarity Check',
+    subtitle: 'Top 3 saved songs with a similarity score above 50%.',
+    empty: 'No saved song exceeded the 50% similarity threshold.',
+    noCandidates: 'Save or generate at least one song version to compare similarities.',
+    score: 'Similarity',
+    sharedWords: 'Shared words',
+    sharedLines: 'Shared lines',
+    matchedSections: 'Matched sections',
+    sharedKeywords: 'Shared keywords',
+    thresholdHint: 'Only songs above 50% similarity are shown, ordered from most to least similar.',
+  },
+
   paste: {
     title: 'Paste Lyrics',
     description: 'Paste your existing lyrics below. Our AI will analyze them to extract the structure, rhyme scheme, syllable count, and core concepts to fit into the editor.',
@@ -236,6 +250,7 @@ const en: Translations = {
     closeAbout: 'Close',
     analysisCancel: 'Cancel and close',
     analysisImport: 'Analyze and import pasted lyrics',
+    checkSimilarity: 'Compare this song with saved song versions and show the closest matches',
     copyPrompt: 'Copy to clipboard',
     generateTitle: 'Generate title from lyrics',
     aiGeneratedTitle: 'AI-generated title',

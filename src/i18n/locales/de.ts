@@ -26,6 +26,7 @@ const de: Translations = {
   ribbon: {
     lyrics: 'TEXTE',
     musical: 'MUSIK',
+    similarity: 'Ähnlichkeit',
     import: 'Importieren',
     exportTxt: 'TXT',
     exportMd: 'MD',
@@ -137,6 +138,19 @@ const de: Translations = {
     noData: 'Keine Analysedaten verfügbar.',
   },
 
+  similarity: {
+    title: 'Ähnlichkeitsprüfung',
+    subtitle: 'Die 3 gespeicherten Songs mit mehr als 50 % Ähnlichkeit.',
+    empty: 'Kein gespeicherter Song hat den Ähnlichkeitsschwellenwert von 50 % überschritten.',
+    noCandidates: 'Speichere oder generiere mindestens eine Song-Version, um Ähnlichkeiten zu vergleichen.',
+    score: 'Ähnlichkeit',
+    sharedWords: 'Gemeinsame Wörter',
+    sharedLines: 'Gemeinsame Zeilen',
+    matchedSections: 'Passende Abschnitte',
+    sharedKeywords: 'Geteilte Schlüsselwörter',
+    thresholdHint: 'Es werden nur Songs über 50 % Ähnlichkeit angezeigt, sortiert von der höchsten zur niedrigsten.',
+  },
+
   paste: {
     title: 'Liedtexte einfügen',
     description: 'Füge deine vorhandenen Liedtexte unten ein. Unsere KI analysiert sie, um Struktur, Reimschema, Silbenanzahl und Kernkonzepte zu extrahieren und in den Editor einzufügen.',
@@ -211,6 +225,7 @@ const de: Translations = {
     aiUnavailable: 'Gemini-Backend nicht verfügbar',
     aiUnavailableHelp: 'Setze GEMINI_API_KEY in den Umgebungsvariablen deines Vercel-Projekts (Einstellungen → Umgebungsvariablen) und stelle neu bereit.',
     adaptSong: 'Den gesamten Song ins {lang} übersetzen und anpassen (kreative Adaption, keine wörtliche Übersetzung)',
+    checkSimilarity: 'Diesen Song mit gespeicherten Song-Versionen vergleichen und die nächsten Treffer anzeigen',
     copyPrompt: 'In die Zwischenablage kopieren',
     quantize: 'Alle Zeilen an die Ziel-Silbenanzahl anpassen, ohne den Sinn zu verändern',
     analyzeTheme: 'Songstruktur, Reimqualität und emotionale Wirkung analysieren',
