@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, ChevronDown } from 'lucide-react';
+import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION } from '../../../version';

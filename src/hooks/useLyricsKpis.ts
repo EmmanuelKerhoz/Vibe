@@ -20,7 +20,7 @@ export function useLyricsKpis(song: Section[]): LyricsKpis {
         acc +
         sec.lines.reduce(
           (lAcc, line) =>
-            lAcc + line.text.split(/\s+/).filter(w => w.trim()).length,
+            lAcc + line.text.split(/\s+/).filter(Boolean).length,
           0,
         ),
       0,
