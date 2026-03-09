@@ -77,7 +77,7 @@ const zh: Translations = {
       syllablesTarget: '音节目标',
       rhymeScheme: '押韵方案',
     },
-    analyze: '歌曲分析',
+    analyze: '歌词分析',
     regenerate: '重新生成歌曲',
     adaptation: '语言适配',
     adaptGlobal: '语言适配（全局）',

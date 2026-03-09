@@ -446,7 +446,8 @@ export default function App() {
           />
 
           {activeTab === 'lyrics' && song.length > 0 && (
-            <div className="border-b border-white/10 bg-white/[0.03] p-6 z-10 flex flex-col gap-4">
+            <div className="border-b border-white/10 bg-white/[0.03] px-4 py-3 z-10">
+              <div className="lyrics-editor-zoom flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <h3 className="micro-label text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
@@ -465,7 +466,7 @@ export default function App() {
                     <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
                       <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
                         {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
-                        {t.editor.adaptGlobal}
+                        {t.editor.adaptation}
                       </button>
                     </Tooltip>
                   </div>
@@ -518,13 +519,14 @@ export default function App() {
                   </Tooltip>
                 </div>
               </div>
+              </div>
             </div>
           )}
 
           <div className="flex-1 overflow-y-auto p-8 z-10 custom-scrollbar">
             {activeTab === 'lyrics' ? (
               isMarkupMode ? (
-                <div className="max-w-[1400px] mx-auto h-full flex flex-col space-y-4">
+                <div className="lyrics-editor-zoom max-w-[1400px] mx-auto h-full flex flex-col space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center"><FileText className="w-4 h-4 text-zinc-400" /></div>
@@ -537,7 +539,7 @@ export default function App() {
                   </div>
                 </div>
               ) : song.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-zinc-500 space-y-5 p-8 border border-white/5 bg-white/[0.02] lcars-panel fluent-animate-in max-w-2xl mx-auto my-auto mt-20">
+                <div className="lyrics-editor-zoom h-full flex flex-col items-center justify-center text-zinc-500 space-y-5 p-8 border border-white/5 bg-white/[0.02] lcars-panel fluent-animate-in max-w-2xl mx-auto my-auto mt-20">
                   <div className="w-20 h-20 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-center shadow-2xl"><Music className="w-10 h-10 text-zinc-800" /></div>
                   <div className="text-center space-y-2"><p className="text-sm text-zinc-400">{t.editor.emptyState.title}</p><p className="text-xs text-zinc-600 max-w-xs mx-auto">{t.editor.emptyState.description}</p></div>
                   <div className="flex items-center gap-4 w-full max-w-2xl">
@@ -547,7 +549,7 @@ export default function App() {
                   </div>
                 </div>
               ) : (
-                <div className="max-w-[1400px] mx-auto space-y-6 pb-32">
+                <div className="lyrics-editor-zoom max-w-[1400px] mx-auto space-y-6 pb-32">
                   {song.map((section, idx) => (
                     <div key={section.id} id={`section-${section.id}`} className={`lcars-band transition-all fluent-animate-in relative group ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx && dragOverIndex !== draggedItemIndex ? 'border-t-2 border-[var(--accent-color)] pt-3 -mt-1' : ''}`} style={{ animationDelay: `${idx * 0.05}s` }} draggable={draggableSectionIndex === idx && !(section.name.toLowerCase() === 'intro' || section.name.toLowerCase() === 'outro')} onDragStart={() => { setDraggedItemIndex(idx); }} onDragOver={(e) => { e.preventDefault(); if (draggedItemIndex === null || draggedItemIndex === idx) return; if (idx === 0 && song[0].name.toLowerCase() === 'intro') return; if (idx === song.length - 1 && song[song.length - 1].name.toLowerCase() === 'outro') return; setDragOverIndex(idx); }} onDragLeave={() => setDragOverIndex(null)} onDrop={(e) => { e.stopPropagation(); handleDrop(idx); }}>
                       <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
@@ -647,6 +649,7 @@ export default function App() {
         song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
         isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
         audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+        onOpenAbout={() => setIsAboutOpen(true)}
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />

@@ -77,7 +77,7 @@ const de: Translations = {
       syllablesTarget: 'Silbenziel',
       rhymeScheme: 'Reimschema',
     },
-    analyze: 'Song-Analyse',
+    analyze: 'Textanalyse',
     regenerate: 'Song neu generieren',
     adaptation: 'ANPASSUNG',
     adaptGlobal: 'Anpassung (GLOBAL)',

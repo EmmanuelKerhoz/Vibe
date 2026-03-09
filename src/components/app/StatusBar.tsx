@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Info, Moon, Settings, Sun } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
 import { tPlural } from '../../i18n/plurals';
 import { SettingsModal } from './modals/SettingsModal';
+import { APP_VERSION } from '../../version';
 
 interface Props {
   song: { length: number };
@@ -15,11 +16,13 @@ interface Props {
   setTheme: (v: 'light' | 'dark') => void;
   audioFeedback: boolean;
   setAudioFeedback: (v: boolean) => void;
+  onOpenAbout: () => void;
 }
 
 export function StatusBar({
   song, wordCount, isGenerating, isAnalyzing, isSuggesting,
   theme, setTheme, audioFeedback, setAudioFeedback,
+  onOpenAbout,
 }: Props) {
   const { t, language } = useTranslation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -58,9 +61,29 @@ export function StatusBar({
           </span>
         </div>
 
-        {/* Right: settings button */}
+        {/* Right: version + theme + settings */}
         <div className="flex items-center gap-1">
-          <Tooltip title={t.tooltips.settings}>
+          <Tooltip title={t.tooltips.appInfo}>
+            <button
+              onClick={onOpenAbout}
+              aria-label={t.settings.about.version}
+              className="lcars-meta-btn lcars-app-id"
+            >
+              <Info className="w-3.5 h-3.5" />
+              <span>{APP_VERSION}</span>
+            </button>
+          </Tooltip>
+          <Tooltip title={t.tooltips.theme}>
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              aria-label={t.statusBar.theme}
+              className="lcars-meta-btn"
+            >
+              {theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+              <span>{theme === 'dark' ? t.settings.theme.dark : t.settings.theme.light}</span>
+            </button>
+          </Tooltip>
+          <Tooltip title={t.statusBar.settings}>
             <button
               onClick={() => setIsSettingsOpen(true)}
               aria-label={t.statusBar.settings}

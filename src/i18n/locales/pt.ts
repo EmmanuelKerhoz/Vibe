@@ -77,7 +77,7 @@ const pt: Translations = {
       syllablesTarget: 'Meta de sílabas',
       rhymeScheme: 'Esquema de rima',
     },
-    analyze: 'Análise da música',
+    analyze: 'Análise da letra',
     regenerate: 'Regenerar música',
     adaptation: 'ADAPTAÇÃO',
     adaptGlobal: 'Adaptação (GLOBAL)',

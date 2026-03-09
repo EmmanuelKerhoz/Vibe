@@ -77,7 +77,7 @@ const ar: Translations = {
       syllablesTarget: 'هدف المقاطع',
       rhymeScheme: 'نظام القافية',
     },
-    analyze: 'تحليل الأغنية',
+    analyze: 'تحليل الكلمات',
     regenerate: 'إعادة توليد الأغنية',
     adaptation: 'تكييف',
     adaptGlobal: 'تكييف (الكل)',
