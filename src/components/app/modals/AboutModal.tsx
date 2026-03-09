@@ -3,6 +3,7 @@ import { Music, Youtube, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
+import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
 
 interface Props {
   isOpen: boolean;
@@ -27,11 +28,9 @@ export function AboutModal({ isOpen, onClose }: Props) {
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             className="relative w-full max-w-2xl bg-fluent-card border border-fluent-border shadow-2xl overflow-hidden lcars-panel"
           >
-            {/* Banner - fallback gradient only */}
-            <div className="w-full h-48 overflow-hidden bg-gradient-to-br from-[var(--accent-color)]/20 via-[var(--accent-color)]/10 to-transparent relative flex items-center justify-center">
-              <div className="w-20 h-20 rounded-2xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner">
-                <Music className="w-10 h-10 text-[var(--accent-color)]" />
-              </div>
+            {/* Banner */}
+            <div className="w-full h-48 overflow-hidden relative">
+              <img src={bannerImage} alt="Lyricist banner" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-fluent-card via-transparent to-transparent" />
             </div>
 
