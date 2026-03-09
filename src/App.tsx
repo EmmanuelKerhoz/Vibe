@@ -32,7 +32,12 @@ import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { AboutModal } from './components/app/modals/AboutModal';
 import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
+import { ImportModal } from './components/app/modals/ImportModal';
 import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
+
+const DEFAULT_TITLE = 'Untitled Song';
+const DEFAULT_TOPIC = 'A neon city in the rain';
+const DEFAULT_MOOD = 'Cyberpunk, nostalgic, bittersweet, reflective';
 
 export default function App() {
   const { t } = useTranslation();
@@ -66,11 +71,13 @@ export default function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
   const sectionDropdownRef = useRef<HTMLDivElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const [hasSavedSession, setHasSavedSession] = useState(false);
   const [isMarkupMode, setIsMarkupMode] = useState(false);
   const [markupText, setMarkupText] = useState('');
   const markupTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [hasApiKey, setHasApiKey] = useState(true);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/status')
@@ -242,7 +249,7 @@ export default function App() {
 
   const {
     removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
-    handleLineDragStart, handleLineDrop, exportTxt, exportMd, handleImport,
+    handleLineDragStart, handleLineDrop, exportTxt, exportMd, loadFileForAnalysis,
   } = useSongEditor({
     song, structure, newSectionName, setNewSectionName,
     draggedItemIndex, setDraggedItemIndex, setDragOverIndex,
@@ -263,6 +270,59 @@ export default function App() {
   const sectionCount = song.length;
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
+  const hasExistingWork = song.length > 0
+    || topic !== DEFAULT_TOPIC
+    || mood !== DEFAULT_MOOD
+    || (isMarkupMode && markupText.trim().length > 0);
+
+  const handleImportInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsImportModalOpen(false);
+    loadFileForAnalysis(file);
+  };
+
+  const triggerImportFilePicker = async () => {
+    const pickerWindow = window as Window & {
+      showOpenFilePicker?: (options: {
+        multiple?: boolean;
+        excludeAcceptAllOption?: boolean;
+        types?: Array<{
+          description?: string;
+          accept: Record<string, string[]>;
+        }>;
+      }) => Promise<Array<{ getFile: () => Promise<File> }>>;
+    };
+
+    if (pickerWindow.showOpenFilePicker) {
+      try {
+        const [handle] = await pickerWindow.showOpenFilePicker({
+          multiple: false,
+          types: [
+            {
+              description: 'Lyrics files',
+              accept: {
+                'text/plain': ['.txt', '.md'],
+                'text/markdown': ['.md'],
+              },
+            },
+          ],
+        });
+        if (!handle) return;
+        const file = await handle.getFile();
+        setIsImportModalOpen(false);
+        loadFileForAnalysis(file);
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('Failed to open import file picker', error);
+        }
+      }
+      return;
+    }
+
+    importInputRef.current?.click();
+  };
 
   const handleGenerateTitle = async () => {
     const newTitle = await generateTitle();
@@ -381,7 +441,7 @@ export default function App() {
             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-            handleImport={handleImport} exportTxt={exportTxt} exportMd={exportMd}
+            onImportClick={() => setIsImportModalOpen(true)} exportTxt={exportTxt} exportMd={exportMd}
             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
           />
 
@@ -405,7 +465,7 @@ export default function App() {
                     <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
                       <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
                         {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
-                        {t.editor.adaptation}
+                        {t.editor.adaptGlobal}
                       </button>
                     </Tooltip>
                   </div>
@@ -453,7 +513,7 @@ export default function App() {
                   <Tooltip title={t.tooltips.regenerate}>
                     <button onClick={generateSong} disabled={isGenerating || isAnalyzing} className="px-4 py-2 bg-[var(--accent-color)] hover:brightness-110 text-[var(--on-accent-color)] text-xs rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--accent-color)]/20 fluent-button whitespace-nowrap">
                       {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                      {t.editor.regenerate}
+                      {t.editor.regenerateGlobal}
                     </button>
                   </Tooltip>
                 </div>
@@ -509,7 +569,7 @@ export default function App() {
                                 <MenuItem key={lang.code} value={lang.aiName} style={{ fontSize: '9px' }}>{lang.code}</MenuItem>
                               ))}
                             </Select>
-                            <Tooltip title={t.tooltips.sectionAdapt}><button onClick={() => adaptSectionLanguage(section.id, sectionTargetLanguages[section.id] || section.language || songLanguage)} disabled={isAdaptingLanguage} className="px-1.5 py-0.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] text-[8px] font-bold rounded transition-all disabled:opacity-50">{t.editor.adapt}</button></Tooltip>
+                            <Tooltip title={t.tooltips.sectionAdapt}><button onClick={() => adaptSectionLanguage(section.id, sectionTargetLanguages[section.id] || section.language || songLanguage)} disabled={isAdaptingLanguage} className="px-1.5 py-0.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] text-[8px] font-bold rounded transition-all disabled:opacity-50">{t.editor.adaptSection}</button></Tooltip>
                           </div>
                           <Tooltip title={t.tooltips.regenerateSection}><Button onClick={() => regenerateSection(section.id)} disabled={isGenerating} variant="outlined" color="success" size="small" startIcon={<RefreshCw className="w-3 h-3" />} style={{ minHeight: '28px', height: '28px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.editor.regenerateSection}</Button></Tooltip>
                           <div className="flex items-center gap-4 ml-auto flex-wrap sm:flex-nowrap">
@@ -586,7 +646,7 @@ export default function App() {
       <StatusBar
         song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
         isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
-        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback} setIsAboutOpen={setIsAboutOpen}
+        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
@@ -603,6 +663,13 @@ export default function App() {
         isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics}
       />
 
+      <ImportModal
+        isOpen={isImportModalOpen}
+        hasExistingWork={hasExistingWork}
+        onClose={() => setIsImportModalOpen(false)}
+        onChooseFile={triggerImportFilePicker}
+      />
+
       <AnalysisModal
         isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)}
         isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps}
@@ -614,6 +681,7 @@ export default function App() {
 
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
+      <input ref={importInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportInputChange} />
     </div>
     </FluentProvider>
   );

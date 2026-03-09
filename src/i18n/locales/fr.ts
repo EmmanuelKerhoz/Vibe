@@ -12,10 +12,15 @@ const fr: Translations = {
     analyzing: 'Analyse...',
     suggesting: 'Suggestions...',
     sections: 'Sections',
+    sections_one: 'Section',
+    sections_other: 'Sections',
     words: 'Mots',
+    words_one: 'Mot',
+    words_other: 'Mots',
     theme: 'Thème Clair/Sombre',
     audioFeedback: 'Retour Audio',
     language: 'Changer de langue',
+    settings: 'Paramètres',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const fr: Translations = {
     analyze: 'Analyse de la chanson',
     regenerate: 'Régénérer la chanson',
     adaptation: 'ADAPTATION',
+    adaptGlobal: 'Adaptation (GLOBAL)',
+    regenerateGlobal: 'Régénérer (GLOBAL)',
+    adaptSection: 'Adaptation',
     editorMode: 'Mode Éditeur',
     markupModeLabel: 'Mode Balisage',
     regenerateSection: 'Régénérer',
@@ -136,6 +144,17 @@ const fr: Translations = {
     analyzing: 'Analyse...',
   },
 
+
+  importDialog: {
+    title: 'Importer un fichier de paroles',
+    emptyDescription: 'Choisissez un fichier .txt ou .md à analyser et à importer dans l\'éditeur.',
+    replaceDescription: 'Choisissez un fichier .txt ou .md à importer. Les paroles importées remplaceront les paroles, la structure et le contexte d\'analyse actuels.',
+    warning: 'Votre travail actuel sera perdu une fois le fichier importé analysé.',
+    supportedFiles: 'Prend en charge les fichiers .txt et .md',
+    cancel: 'Annuler',
+    chooseFile: 'Choisir un fichier',
+  },
+
   about: {
     description: 'Un éditeur de paroles IA professionnel pour les auteurs-compositeurs et poètes. Composez votre chef-d\'œuvre avec des suggestions en temps réel, la gestion de structure et la quantification intelligente.',
     engine: 'Google Gemini',
@@ -145,6 +164,29 @@ const fr: Translations = {
     license: 'Commercial Pro',
     licenseLabel: 'Licence',
     close: 'Fermer',
+  },
+
+  settings: {
+    title: 'Paramètres',
+    theme: {
+      label: 'Thème',
+      dark: 'Sombre',
+      light: 'Clair',
+      system: 'Système',
+    },
+    audio: {
+      label: 'Audio',
+      enable: 'Activer le son',
+      volume: 'Volume',
+    },
+    language: {
+      label: 'Langue',
+    },
+    about: {
+      version: 'Version',
+      github: 'Dépôt GitHub',
+      docs: 'Documentation',
+    },
   },
 
   tooltips: {

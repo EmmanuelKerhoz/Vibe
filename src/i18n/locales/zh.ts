@@ -12,10 +12,15 @@ const zh: Translations = {
     analyzing: '分析中...',
     suggesting: '建议中...',
     sections: '段落',
+    sections_one: '段落',
+    sections_other: '段落',
     words: '字数',
+    words_one: '字',
+    words_other: '字',
     theme: '明暗主题',
     audioFeedback: '音频反馈',
     language: '切换语言',
+    settings: '设置',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const zh: Translations = {
     analyze: '歌曲分析',
     regenerate: '重新生成歌曲',
     adaptation: '语言适配',
+    adaptGlobal: '语言适配（全局）',
+    regenerateGlobal: '重新生成（全局）',
+    adaptSection: '语言适配',
     editorMode: '编辑模式',
     markupModeLabel: '标记模式',
     regenerateSection: '重新生成',
@@ -136,6 +144,17 @@ const zh: Translations = {
     analyzing: '分析中...',
   },
 
+
+  importDialog: {
+    title: '导入歌词文件',
+    emptyDescription: '选择一个 .txt 或 .md 文件进行分析并导入编辑器。',
+    replaceDescription: '选择一个 .txt 或 .md 文件进行导入。导入的歌词将替换当前的歌词、结构和分析上下文。',
+    warning: '导入文件一旦分析，您当前的工作将会丢失。',
+    supportedFiles: '支持 .txt 和 .md 文件',
+    cancel: '取消',
+    chooseFile: '选择文件',
+  },
+
   about: {
     description: '专为词曲作者和诗人打造的专业AI歌词编辑器。借助实时建议、结构管理和智能量化，创作您的传世之作。',
     engine: 'Google Gemini',
@@ -145,6 +164,29 @@ const zh: Translations = {
     license: 'Commercial Pro',
     licenseLabel: '许可证',
     close: '关闭',
+  },
+
+  settings: {
+    title: '设置',
+    theme: {
+      label: '主题',
+      dark: '深色',
+      light: '浅色',
+      system: '跟随系统',
+    },
+    audio: {
+      label: '音频',
+      enable: '启用声音',
+      volume: '音量',
+    },
+    language: {
+      label: '语言',
+    },
+    about: {
+      version: '版本',
+      github: 'GitHub 仓库',
+      docs: '文档',
+    },
   },
 
   tooltips: {

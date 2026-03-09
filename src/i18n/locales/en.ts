@@ -12,10 +12,15 @@ const en: Translations = {
     analyzing: 'Analyzing...',
     suggesting: 'Suggesting...',
     sections: 'Sections',
+    sections_one: 'Section',
+    sections_other: 'Sections',
     words: 'Words',
+    words_one: 'Word',
+    words_other: 'Words',
     theme: 'Dark/Light Theme',
     audioFeedback: 'Audio Feedback',
     language: 'Switch language',
+    settings: 'Settings',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const en: Translations = {
     analyze: 'Song Analysis',
     regenerate: 'Regenerate Song',
     adaptation: 'ADAPTATION',
+    adaptGlobal: 'Adaptation (GLOBAL)',
+    regenerateGlobal: 'Regenerate (GLOBAL)',
+    adaptSection: 'Adaptation',
     editorMode: 'Editor Mode',
     markupModeLabel: 'Markup Mode',
     regenerateSection: 'Regenerate',
@@ -136,6 +144,16 @@ const en: Translations = {
     analyzing: 'Analyzing...',
   },
 
+  importDialog: {
+    title: 'Import lyrics file',
+    emptyDescription: 'Choose a .txt or .md file to analyze and import into the editor.',
+    replaceDescription: 'Choose a .txt or .md file to import. The imported lyrics will replace the current lyrics, structure, and analysis context.',
+    warning: 'Your current work will be lost once the imported file is analyzed.',
+    supportedFiles: 'Supports .txt and .md files',
+    cancel: 'Cancel',
+    chooseFile: 'Choose file',
+  },
+
   about: {
     description: 'A professional-grade AI lyrics editor designed for songwriters and poets. Craft your masterpiece with real-time suggestions, structure management, and intelligent quantization.',
     engine: 'Google Gemini',
@@ -145,6 +163,29 @@ const en: Translations = {
     license: 'Commercial Pro',
     licenseLabel: 'License',
     close: 'Close',
+  },
+
+  settings: {
+    title: 'Settings',
+    theme: {
+      label: 'Theme',
+      dark: 'Dark',
+      light: 'Light',
+      system: 'System',
+    },
+    audio: {
+      label: 'Audio',
+      enable: 'Enable sound',
+      volume: 'Volume',
+    },
+    language: {
+      label: 'Language',
+    },
+    about: {
+      version: 'Version',
+      github: 'GitHub Repository',
+      docs: 'Documentation',
+    },
   },
 
   tooltips: {

@@ -12,10 +12,15 @@ const pt: Translations = {
     analyzing: 'Analisando...',
     suggesting: 'Sugerindo...',
     sections: 'Seções',
+    sections_one: 'Seção',
+    sections_other: 'Seções',
     words: 'Palavras',
+    words_one: 'Palavra',
+    words_other: 'Palavras',
     theme: 'Tema Claro/Escuro',
     audioFeedback: 'Feedback de Áudio',
     language: 'Trocar idioma',
+    settings: 'Configurações',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const pt: Translations = {
     analyze: 'Análise da música',
     regenerate: 'Regenerar música',
     adaptation: 'ADAPTAÇÃO',
+    adaptGlobal: 'Adaptação (GLOBAL)',
+    regenerateGlobal: 'Regenerar (GLOBAL)',
+    adaptSection: 'Adaptação',
     editorMode: 'Modo Editor',
     markupModeLabel: 'Modo Marcação',
     regenerateSection: 'Regenerar',
@@ -136,6 +144,17 @@ const pt: Translations = {
     analyzing: 'Analisando...',
   },
 
+
+  importDialog: {
+    title: 'Importar arquivo de letra',
+    emptyDescription: 'Escolha um arquivo .txt ou .md para analisar e importar para o editor.',
+    replaceDescription: 'Escolha um arquivo .txt ou .md para importar. A letra importada substituirá a letra, a estrutura e o contexto de análise atuais.',
+    warning: 'Seu trabalho atual será perdido assim que o arquivo importado for analisado.',
+    supportedFiles: 'Compatível com arquivos .txt e .md',
+    cancel: 'Cancelar',
+    chooseFile: 'Escolher arquivo',
+  },
+
   about: {
     description: 'Um editor de letras com IA de nível profissional para compositores e poetas. Crie sua obra-prima com sugestões em tempo real, gerenciamento de estrutura e quantização inteligente.',
     engine: 'Google Gemini',
@@ -145,6 +164,29 @@ const pt: Translations = {
     license: 'Commercial Pro',
     licenseLabel: 'Licença',
     close: 'Fechar',
+  },
+
+  settings: {
+    title: 'Configurações',
+    theme: {
+      label: 'Tema',
+      dark: 'Escuro',
+      light: 'Claro',
+      system: 'Sistema',
+    },
+    audio: {
+      label: 'Áudio',
+      enable: 'Ativar som',
+      volume: 'Volume',
+    },
+    language: {
+      label: 'Idioma',
+    },
+    about: {
+      version: 'Versão',
+      github: 'Repositório GitHub',
+      docs: 'Documentação',
+    },
   },
 
   tooltips: {

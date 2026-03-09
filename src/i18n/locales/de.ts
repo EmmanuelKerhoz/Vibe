@@ -12,10 +12,15 @@ const de: Translations = {
     analyzing: 'Analysiere...',
     suggesting: 'Schlage vor...',
     sections: 'Abschnitte',
+    sections_one: 'Abschnitt',
+    sections_other: 'Abschnitte',
     words: 'Wörter',
+    words_one: 'Wort',
+    words_other: 'Wörter',
     theme: 'Hell/Dunkel-Modus',
     audioFeedback: 'Audio-Feedback',
     language: 'Sprache wechseln',
+    settings: 'Einstellungen',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const de: Translations = {
     analyze: 'Song-Analyse',
     regenerate: 'Song neu generieren',
     adaptation: 'ANPASSUNG',
+    adaptGlobal: 'Anpassung (GLOBAL)',
+    regenerateGlobal: 'Neu generieren (GLOBAL)',
+    adaptSection: 'Anpassung',
     editorMode: 'Editor-Modus',
     markupModeLabel: 'Markup-Modus',
     regenerateSection: 'Neu generieren',
@@ -136,6 +144,17 @@ const de: Translations = {
     analyzing: 'Analysiere...',
   },
 
+
+  importDialog: {
+    title: 'Songtextdatei importieren',
+    emptyDescription: 'Wähle eine .txt- oder .md-Datei aus, um sie zu analysieren und in den Editor zu importieren.',
+    replaceDescription: 'Wähle eine .txt- oder .md-Datei zum Importieren aus. Die importierten Texte ersetzen die aktuellen Texte, die Struktur und den Analysekontext.',
+    warning: 'Deine aktuelle Arbeit geht verloren, sobald die importierte Datei analysiert wurde.',
+    supportedFiles: 'Unterstützt .txt- und .md-Dateien',
+    cancel: 'Abbrechen',
+    chooseFile: 'Datei wählen',
+  },
+
   about: {
     description: 'Ein professioneller KI-Liedtexteditor für Songwriter und Dichter. Erschaffe dein Meisterwerk mit Echtzeit-Vorschlägen, Strukturverwaltung und intelligenter Quantisierung.',
     engine: 'Google Gemini',
@@ -145,6 +164,29 @@ const de: Translations = {
     license: 'Commercial Pro',
     licenseLabel: 'Lizenz',
     close: 'Schließen',
+  },
+
+  settings: {
+    title: 'Einstellungen',
+    theme: {
+      label: 'Design',
+      dark: 'Dunkel',
+      light: 'Hell',
+      system: 'System',
+    },
+    audio: {
+      label: 'Audio',
+      enable: 'Sound aktivieren',
+      volume: 'Lautstärke',
+    },
+    language: {
+      label: 'Sprache',
+    },
+    about: {
+      version: 'Version',
+      github: 'GitHub-Repository',
+      docs: 'Dokumentation',
+    },
   },
 
   tooltips: {

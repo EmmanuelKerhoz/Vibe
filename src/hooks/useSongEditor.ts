@@ -1,4 +1,4 @@
-import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
@@ -347,19 +347,15 @@ export const useSongEditor = ({
     URL.revokeObjectURL(url);
   };
 
-  const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const loadFileForAnalysis = (file: File) => {
     const reader = new FileReader();
-    reader.onload = async event => {
+    reader.onload = event => {
       const text = event.target?.result as string;
       if (text) {
         openPasteModalWithText(text);
       }
     };
     reader.readAsText(file);
-    e.target.value = '';
   };
 
   return {
@@ -371,6 +367,6 @@ export const useSongEditor = ({
     handleLineDrop,
     exportTxt,
     exportMd,
-    handleImport,
+    loadFileForAnalysis,
   };
 };

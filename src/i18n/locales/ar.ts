@@ -12,10 +12,15 @@ const ar: Translations = {
     analyzing: 'جارٍ التحليل...',
     suggesting: 'جارٍ الاقتراح...',
     sections: 'أقسام',
+    sections_one: 'قسم',
+    sections_other: 'أقسام',
     words: 'كلمات',
+    words_one: 'كلمة',
+    words_other: 'كلمات',
     theme: 'المظهر الفاتح/الداكن',
     audioFeedback: 'ردود الفعل الصوتية',
     language: 'تغيير اللغة',
+    settings: 'الإعدادات',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const ar: Translations = {
     analyze: 'تحليل الأغنية',
     regenerate: 'إعادة توليد الأغنية',
     adaptation: 'تكييف',
+    adaptGlobal: 'تكييف (الكل)',
+    regenerateGlobal: 'إعادة توليد (الكل)',
+    adaptSection: 'تكييف',
     editorMode: 'وضع التحرير',
     markupModeLabel: 'وضع الترميز',
     regenerateSection: 'إعادة توليد',
@@ -136,6 +144,17 @@ const ar: Translations = {
     analyzing: 'جارٍ التحليل...',
   },
 
+
+  importDialog: {
+    title: 'استيراد ملف كلمات',
+    emptyDescription: 'اختر ملف ‎.txt أو ‎.md لتحليله واستيراده إلى المحرر.',
+    replaceDescription: 'اختر ملف ‎.txt أو ‎.md لاستيراده. ستستبدل الكلمات المستوردة الكلمات الحالية والبنية وسياق التحليل.',
+    warning: 'سيتم فقدان عملك الحالي بمجرد تحليل الملف المستورد.',
+    supportedFiles: 'يدعم ملفات ‎.txt و‎.md',
+    cancel: 'إلغاء',
+    chooseFile: 'اختيار ملف',
+  },
+
   about: {
     description: 'محرر كلمات احترافي مدعوم بالذكاء الاصطناعي للملحنين والشعراء. اصنع تحفتك الفنية مع اقتراحات فورية وإدارة الهيكل وضبط ذكي للمقاطع.',
     engine: 'Google Gemini',
@@ -145,6 +164,29 @@ const ar: Translations = {
     license: 'Commercial Pro',
     licenseLabel: 'الترخيص',
     close: 'إغلاق',
+  },
+
+  settings: {
+    title: 'الإعدادات',
+    theme: {
+      label: 'المظهر',
+      dark: 'داكن',
+      light: 'فاتح',
+      system: 'النظام',
+    },
+    audio: {
+      label: 'الصوت',
+      enable: 'تفعيل الصوت',
+      volume: 'مستوى الصوت',
+    },
+    language: {
+      label: 'اللغة',
+    },
+    about: {
+      version: 'الإصدار',
+      github: 'مستودع GitHub',
+      docs: 'التوثيق',
+    },
   },
 
   tooltips: {
