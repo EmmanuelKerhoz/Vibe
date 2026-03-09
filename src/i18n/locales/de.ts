@@ -12,10 +12,15 @@ const de: Translations = {
     analyzing: 'Analysiere...',
     suggesting: 'Schlage vor...',
     sections: 'Abschnitte',
+    sections_one: 'Abschnitt',
+    sections_other: 'Abschnitte',
     words: 'Wörter',
+    words_one: 'Wort',
+    words_other: 'Wörter',
     theme: 'Hell/Dunkel-Modus',
     audioFeedback: 'Audio-Feedback',
     language: 'Sprache wechseln',
+    settings: 'Einstellungen',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const de: Translations = {
     analyze: 'Song-Analyse',
     regenerate: 'Song neu generieren',
     adaptation: 'ANPASSUNG',
+    adaptGlobal: 'Anpassung (GLOBAL)',
+    regenerateGlobal: 'Neu generieren (GLOBAL)',
+    adaptSection: 'Anpassung',
     editorMode: 'Editor-Modus',
     markupModeLabel: 'Markup-Modus',
     regenerateSection: 'Neu generieren',
@@ -147,6 +155,29 @@ const de: Translations = {
     close: 'Schließen',
   },
 
+  settings: {
+    title: 'Einstellungen',
+    theme: {
+      label: 'Design',
+      dark: 'Dunkel',
+      light: 'Hell',
+      system: 'System',
+    },
+    audio: {
+      label: 'Audio',
+      enable: 'Sound aktivieren',
+      volume: 'Lautstärke',
+    },
+    language: {
+      label: 'Sprache',
+    },
+    about: {
+      version: 'Version',
+      github: 'GitHub-Repository',
+      docs: 'Dokumentation',
+    },
+  },
+
   tooltips: {
     hideSidebar: 'Seitenleiste ausblenden',
     showSidebar: 'Seitenleiste anzeigen',
@@ -189,6 +220,7 @@ const de: Translations = {
     closeAbout: 'Schließen',
     analysisCancel: 'Abbrechen und schließen',
     analysisImport: 'Eingefügte Liedtexte analysieren und importieren',
+    settings: 'Einstellungen',
   },
 
   sections: {

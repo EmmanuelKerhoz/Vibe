@@ -12,10 +12,15 @@ const pt: Translations = {
     analyzing: 'Analisando...',
     suggesting: 'Sugerindo...',
     sections: 'Seções',
+    sections_one: 'Seção',
+    sections_other: 'Seções',
     words: 'Palavras',
+    words_one: 'Palavra',
+    words_other: 'Palavras',
     theme: 'Tema Claro/Escuro',
     audioFeedback: 'Feedback de Áudio',
     language: 'Trocar idioma',
+    settings: 'Configurações',
   },
 
   ribbon: {
@@ -75,6 +80,9 @@ const pt: Translations = {
     analyze: 'Análise da música',
     regenerate: 'Regenerar música',
     adaptation: 'ADAPTAÇÃO',
+    adaptGlobal: 'Adaptação (GLOBAL)',
+    regenerateGlobal: 'Regenerar (GLOBAL)',
+    adaptSection: 'Adaptação',
     editorMode: 'Modo Editor',
     markupModeLabel: 'Modo Marcação',
     regenerateSection: 'Regenerar',
@@ -147,6 +155,29 @@ const pt: Translations = {
     close: 'Fechar',
   },
 
+  settings: {
+    title: 'Configurações',
+    theme: {
+      label: 'Tema',
+      dark: 'Escuro',
+      light: 'Claro',
+      system: 'Sistema',
+    },
+    audio: {
+      label: 'Áudio',
+      enable: 'Ativar som',
+      volume: 'Volume',
+    },
+    language: {
+      label: 'Idioma',
+    },
+    about: {
+      version: 'Versão',
+      github: 'Repositório GitHub',
+      docs: 'Documentação',
+    },
+  },
+
   tooltips: {
     hideSidebar: 'Ocultar barra lateral',
     showSidebar: 'Mostrar barra lateral',
@@ -189,6 +220,7 @@ const pt: Translations = {
     closeAbout: 'Fechar',
     analysisCancel: 'Cancelar e fechar',
     analysisImport: 'Analisar e importar letras coladas',
+    settings: 'Configurações',
   },
 
   sections: {
