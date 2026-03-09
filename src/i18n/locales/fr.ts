@@ -26,6 +26,7 @@ const fr: Translations = {
   ribbon: {
     lyrics: 'PAROLES',
     musical: 'MUSICAL',
+    similarity: 'Similarité',
     import: 'Importer',
     exportTxt: 'TXT',
     exportMd: 'MD',
@@ -137,6 +138,19 @@ const fr: Translations = {
     noData: 'Aucune donnée d\'analyse disponible.',
   },
 
+  similarity: {
+    title: 'Vérification de similarité',
+    subtitle: 'Top 3 des chansons enregistrées avec un taux de similarité supérieur à 50%.',
+    empty: 'Aucune chanson enregistrée ne dépasse le seuil de similarité de 50%.',
+    noCandidates: 'Enregistrez ou générez au moins une version de chanson pour comparer les similarités.',
+    score: 'Similarité',
+    sharedWords: 'Mots communs',
+    sharedLines: 'Lignes communes',
+    matchedSections: 'Sections correspondantes',
+    sharedKeywords: 'Mots-clés partagés',
+    thresholdHint: 'Seules les chansons au-dessus de 50% de similarité sont affichées, de la plus proche à la moins proche.',
+  },
+
   paste: {
     title: 'Coller les paroles',
     description: 'Collez vos paroles ci-dessous. Notre IA les analysera pour extraire la structure, le schéma de rimes, le nombre de syllabes et les concepts clés afin de les intégrer dans l\'éditeur.',
@@ -237,6 +251,7 @@ const fr: Translations = {
     closeAbout: 'Fermer',
     analysisCancel: 'Annuler et fermer',
     analysisImport: 'Analyser et importer les paroles collées',
+    checkSimilarity: 'Comparer cette chanson aux versions enregistrées et afficher les correspondances les plus proches',
     copyPrompt: 'Copier dans le presse-papiers',
     generateTitle: 'Générer un titre basé sur les paroles',
     aiGeneratedTitle: 'Titre généré par IA',

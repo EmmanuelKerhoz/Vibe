@@ -26,6 +26,7 @@ const pt: Translations = {
   ribbon: {
     lyrics: 'LETRAS',
     musical: 'MUSICAL',
+    similarity: 'Similaridade',
     import: 'Importar',
     exportTxt: 'TXT',
     exportMd: 'MD',
@@ -137,6 +138,19 @@ const pt: Translations = {
     noData: 'Nenhum dado de análise disponível.',
   },
 
+  similarity: {
+    title: 'Verificação de similaridade',
+    subtitle: 'As 3 músicas guardadas com mais de 50% de similaridade.',
+    empty: 'Nenhuma música guardada ultrapassou o limite de 50% de similaridade.',
+    noCandidates: 'Guarde ou gere pelo menos uma versão da música para comparar similaridades.',
+    score: 'Similaridade',
+    sharedWords: 'Palavras partilhadas',
+    sharedLines: 'Linhas partilhadas',
+    matchedSections: 'Secções correspondentes',
+    sharedKeywords: 'Palavras-chave partilhadas',
+    thresholdHint: 'Só são mostradas músicas acima de 50% de similaridade, ordenadas da mais próxima para a menos próxima.',
+  },
+
   paste: {
     title: 'Colar letras',
     description: 'Cole suas letras existentes abaixo. Nossa IA as analisará para extrair a estrutura, o esquema de rima, a contagem de sílabas e os conceitos principais para encaixar no editor.',
@@ -211,6 +225,7 @@ const pt: Translations = {
     aiUnavailable: 'Backend Gemini indisponível',
     aiUnavailableHelp: 'Defina GEMINI_API_KEY nas variáveis de ambiente do seu projeto Vercel (Configurações → Variáveis de Ambiente) e faça o redeploy.',
     adaptSong: 'Traduzir e adaptar toda a música para {lang} (adaptação criativa, não tradução literal)',
+    checkSimilarity: 'Comparar esta música com versões guardadas e mostrar as correspondências mais próximas',
     copyPrompt: 'Copiar para a área de transferência',
     quantize: 'Ajustar todas as linhas para corresponder à contagem de sílabas alvo mantendo o significado',
     analyzeTheme: 'Analisar a estrutura da música, a qualidade da rima e o impacto emocional',
