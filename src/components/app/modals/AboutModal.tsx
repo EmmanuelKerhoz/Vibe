@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, Youtube, ExternalLink } from 'lucide-react';
+import { Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
@@ -34,10 +34,15 @@ export function AboutModal({ isOpen, onClose }: Props) {
             style={{ maxHeight: `calc(100vh - ${ABOUT_MODAL_VIEWPORT_MARGIN})` }}
           >
             {/* Banner */}
-            <div className="w-full bg-black/70">
+            <div className="relative w-full bg-black/70">
               <div className="w-full" style={{ aspectRatio: `${BANNER_WIDTH} / ${BANNER_HEIGHT}` }}>
                 <img src={bannerImage} alt="Lyricist splash screen" className="w-full h-full object-contain" />
               </div>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-20"
+                style={{ background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0), var(--bg-card))' }}
+              />
             </div>
 
             <div className="p-8 text-center space-y-6">
@@ -63,11 +68,12 @@ export function AboutModal({ isOpen, onClose }: Props) {
               </div>
 
               {/* Social Links */}
-              <div className="flex items-center justify-center gap-4 pt-4">
+              <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                 <a
                   href="https://www.youtube.com/@voxnova42"
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Visit YouTube channel"
                   className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-lg transition-all text-xs font-medium"
                 >
                   <Youtube className="w-4 h-4" />
@@ -78,10 +84,44 @@ export function AboutModal({ isOpen, onClose }: Props) {
                   href="https://open.spotify.com/artist/6VfhDlWsBW0qk0a8x7UbOM?si=UtpaOQ5JT3iN1mUb2vN7vg&nd=1&dlsi=1dffb43b3c7d4280"
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Visit Spotify artist page"
                   className="flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/40 text-green-400 hover:text-green-300 rounded-lg transition-all text-xs font-medium"
                 >
                   <Music className="w-4 h-4" />
                   <span>Spotify</span>
+                  <ExternalLink className="w-3 h-3 opacity-50" />
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/emmanuelkerhoz/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visit LinkedIn profile"
+                  className="flex items-center gap-2 px-4 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 hover:border-sky-500/40 text-sky-400 hover:text-sky-300 rounded-lg transition-all text-xs font-medium"
+                >
+                  <Linkedin className="w-4 h-4" />
+                  <span>LinkedIn</span>
+                  <ExternalLink className="w-3 h-3 opacity-50" />
+                </a>
+                <a
+                  href="https://network.landr.com/users/emmanueldk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visit Landr profile"
+                  className="flex items-center gap-2 px-4 py-2 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 hover:border-violet-500/40 text-violet-400 hover:text-violet-300 rounded-lg transition-all text-xs font-medium"
+                >
+                  <Radio className="w-4 h-4" />
+                  <span>Landr</span>
+                  <ExternalLink className="w-3 h-3 opacity-50" />
+                </a>
+                <a
+                  href="https://music.amazon.com/artists/B0DKW3BNL7/emmanuel-kerhoz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visit Amazon Music artist page"
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 text-amber-400 hover:text-amber-300 rounded-lg transition-all text-xs font-medium"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Amazon</span>
                   <ExternalLink className="w-3 h-3 opacity-50" />
                 </a>
               </div>
