@@ -260,15 +260,8 @@ export default function App() {
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
   const hasImportWorkToLose = song.length > 0
-    || title !== 'Untitled Song'
     || topic !== 'A neon city in the rain'
     || mood !== 'Cyberpunk, nostalgic, bittersweet, reflective'
-    || rhymeScheme !== 'AABB'
-    || targetSyllables !== 10
-    || genre.trim().length > 0
-    || tempo !== '120'
-    || instrumentation.trim().length > 0
-    || musicalPrompt.trim().length > 0
     || (isMarkupMode && markupText.trim().length > 0);
 
   const handleImportInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
