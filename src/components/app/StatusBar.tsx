@@ -92,7 +92,7 @@ export function StatusBar({
               className="lcars-meta-btn lcars-lang-btn flex items-center gap-1.5"
             >
               <Globe className="w-3.5 h-3.5" />
-              <span className="telemetry-text font-semibold">{currentLocale?.name || language.toUpperCase()}</span>
+              <span className="telemetry-text font-semibold">{currentLocale?.label || language.toUpperCase()}</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
           </Tooltip>
@@ -110,7 +110,7 @@ export function StatusBar({
                   }`}
                 >
                   <span className="text-lg leading-none">{locale.flag}</span>
-                  <span className="flex-1 font-medium">{locale.name}</span>
+                  <span className="flex-1 font-medium">{locale.label}</span>
                   {locale.code === language && <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-color)]" />}
                 </button>
               ))}
