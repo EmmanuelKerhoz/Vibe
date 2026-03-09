@@ -26,8 +26,7 @@ export function SimilarityModal({ isOpen, onClose, matches, candidateCount }: Pr
       </div>
 
       {/* Glassmorphic + LCARS Asymmetrical Panel */}
-      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-500 
-                      glass-panel rounded-[48px_8px_48px_8px]">
+      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-500 glass-panel rounded-[48px_8px_48px_8px]">
         
         {/* Glow border effect over the asymmetrical shape */}
         <div className="absolute inset-0 border-t border-l border-white/30 rounded-[48px_8px_48px_8px] pointer-events-none" />
@@ -42,7 +41,7 @@ export function SimilarityModal({ isOpen, onClose, matches, candidateCount }: Pr
               <h3 className="text-xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60 uppercase">
                 {t.similarity.title}
               </h3>
-              <p className="text-xs text-[var(--accent-color)] uppercase tracking-widest">{t.similarity.subtitle || t.similarity.thresholdHint}</p>
+              <p className="text-xs text-[var(--accent-color)] uppercase tracking-widest">{t.similarity.subtitle}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-zinc-400 hover:text-white glass-button rounded-full">
@@ -153,7 +152,7 @@ export function SimilarityModal({ isOpen, onClose, matches, candidateCount }: Pr
         {/* Footer */}
         <div className="p-6 border-t border-white/10 bg-black/20 backdrop-blur-md flex justify-end relative z-10">
           <Button onClick={onClose} variant="contained" color="primary" className="rounded-[16px_4px_16px_4px] shadow-[0_0_20px_rgba(var(--accent-color-rgb),0.4)] backdrop-blur-md border border-white/20">
-            {t.settings.actions.close}
+            {t.analysis.close}
           </Button>
         </div>
       </div>
