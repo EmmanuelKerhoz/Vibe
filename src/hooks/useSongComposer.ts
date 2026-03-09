@@ -21,7 +21,15 @@ type UseSongComposerParams = {
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
   updateSongWithHistory: (newSong: Section[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
-  saveVersion: (name: string) => void;
+  saveVersion: (name: string, snapshot?: {
+    song: Section[];
+    structure: string[];
+    title: string;
+    titleOrigin: 'user' | 'ai';
+    topic: string;
+    mood: string;
+  }) => void;
+  requestAutoTitleGeneration: () => void;
 };
 
 const computeSyllables = (text: string) =>
@@ -137,6 +145,7 @@ export const useSongComposer = ({
   updateSongWithHistory,
   updateSongAndStructureWithHistory,
   saveVersion,
+  requestAutoTitleGeneration,
 }: UseSongComposerParams) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingMusicalPrompt, setIsGeneratingMusicalPrompt] = useState(false);
@@ -218,7 +227,7 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
       }));
       const orderedSong = alignGeneratedSongToStructure(songWithIds, structure, rhymeScheme);
       updateSongAndStructureWithHistory(orderedSong, structure);
-      saveVersion(`Generated: ${topic}`);
+      requestAutoTitleGeneration();
       setSelectedLineId(null);
     } catch (error: any) {
       handleApiError(error, "Failed to generate song. Please try again.");

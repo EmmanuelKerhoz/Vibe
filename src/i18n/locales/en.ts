@@ -44,6 +44,7 @@ const en: Translations = {
     songTopicPlaceholder: "What's the song about?",
     songMood: 'SONG MOOD',
     songMoodPlaceholder: 'e.g. Melancholic, Energetic...',
+    songMoodPresets: 'Preset moods',
     rhymeScheme: 'DEFAULT RHYME SCHEME',
     targetSyllables: 'TARGET SYLLABLES',
     quantize: 'Quantize Syllables (GLOBAL)',
@@ -96,6 +97,7 @@ const en: Translations = {
     chars: 'Chars',
     adapt: 'ADAPT',
     moodPlaceholder: 'Mood...',
+    regenerateWarning: 'This will fully regenerate the current lyrics. Do you want to continue?',
   },
 
   suggestions: {
@@ -180,6 +182,11 @@ const en: Translations = {
     },
     language: {
       label: 'Language',
+    },
+    actions: {
+      default: 'Default',
+      save: 'Save',
+      close: 'Close',
     },
     about: {
       version: 'Version',

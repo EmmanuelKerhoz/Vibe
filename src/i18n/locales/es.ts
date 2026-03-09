@@ -44,6 +44,7 @@ const es: Translations = {
     songTopicPlaceholder: '¿De qué trata la canción?',
     songMood: 'ESTADO DE ÁNIMO',
     songMoodPlaceholder: 'ej. Melancólico, Enérgico...',
+    songMoodPresets: 'Estados predefinidos',
     rhymeScheme: 'ESQUEMA DE RIMA PREDETERMINADO',
     targetSyllables: 'SÍLABAS OBJETIVO',
     quantize: 'Cuantizar sílabas (GLOBAL)',
@@ -96,6 +97,7 @@ const es: Translations = {
     chars: 'Caracteres',
     adapt: 'ADAPTAR',
     moodPlaceholder: 'Ánimo...',
+    regenerateWarning: 'Esto regenerará por completo la letra actual. ¿Quieres continuar?',
   },
 
   suggestions: {
@@ -181,6 +183,11 @@ const es: Translations = {
     },
     language: {
       label: 'Idioma',
+    },
+    actions: {
+      default: 'Predeterminado',
+      save: 'Guardar',
+      close: 'Cerrar',
     },
     about: {
       version: 'Versión',

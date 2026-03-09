@@ -44,6 +44,7 @@ const zh: Translations = {
     songTopicPlaceholder: '歌曲讲述什么？',
     songMood: '歌曲情感',
     songMoodPlaceholder: '如：忧郁、充满活力...',
+    songMoodPresets: '预设情绪',
     rhymeScheme: '默认押韵方案',
     targetSyllables: '目标音节数',
     quantize: '全局量化音节',
@@ -96,6 +97,7 @@ const zh: Translations = {
     chars: '字符',
     adapt: '适配',
     moodPlaceholder: '情感...',
+    regenerateWarning: '这将完全重新生成当前歌词。是否继续？',
   },
 
   suggestions: {
@@ -181,6 +183,11 @@ const zh: Translations = {
     },
     language: {
       label: '语言',
+    },
+    actions: {
+      default: '默认',
+      save: '保存',
+      close: '关闭',
     },
     about: {
       version: '版本',
