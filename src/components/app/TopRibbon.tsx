@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Sparkles, Download, Upload, Undo2, Redo2, Trash2, History, PanelLeft, PanelRight, Search
+  Sparkles, Download, Upload, Undo2, Redo2, Trash2, History, PanelLeft, PanelRight
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
@@ -25,7 +25,6 @@ interface Props {
   setIsStructureOpen: (v: boolean) => void;
   hasApiKey: boolean;
   handleApiKeyHelp: () => void;
-  onSimilarityCheck: () => void;
   onImportClick: () => void;
   exportTxt: () => void;
   exportMd: () => void;
@@ -40,7 +39,7 @@ export function TopRibbon({
   setIsVersionsModalOpen, setIsResetModalOpen,
   isStructureOpen, setIsStructureOpen,
   hasApiKey, handleApiKeyHelp,
-  onSimilarityCheck, onImportClick, exportTxt, exportMd,
+  onImportClick, exportTxt, exportMd,
   isGenerating, isAnalyzing,
 }: Props) {
   const { t } = useTranslation();
@@ -48,7 +47,7 @@ export function TopRibbon({
   const canRedo = future.length > 0;
 
   return (
-    <div className="h-16 border-b border-fluent-border flex items-center justify-between px-8 z-10 bg-white/[0.02] backdrop-blur-md lcars-ribbon">
+    <div className="h-16 border-b border-fluent-border flex items-center justify-between px-8 z-10 glass-panel lcars-ribbon rounded-none border-t-0 border-l-0 border-r-0">
       <div className="flex items-center gap-6">
         <Tooltip title={isLeftPanelOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}>
           <button
@@ -84,11 +83,6 @@ export function TopRibbon({
       </div>
 
       <div className="flex items-center gap-2">
-        <Tooltip title={t.tooltips.checkSimilarity}>
-          <Button onClick={onSimilarityCheck} disabled={song.length === 0 || isGenerating || isAnalyzing} variant="outlined" color="info" size="small" startIcon={<Search className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-            {t.ribbon.similarity}
-          </Button>
-        </Tooltip>
         <Tooltip title={t.tooltips.import}>
           <Button onClick={onImportClick} variant="outlined" color="info" size="small" startIcon={<Upload className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
             {t.ribbon.import}

@@ -31,6 +31,7 @@
   --text-primary:      #242424;
   --text-secondary:    #605e5c;
   --accent-color:      #0f7b0f;
+  --accent-color-rgb:  15, 123, 15;
   --on-accent-color:   #ffffff;
   --accent-warning:    #d83b01;
   --on-accent-warning: #ffffff;
@@ -50,6 +51,7 @@
   --text-primary:      #242424;
   --text-secondary:    #605e5c;
   --accent-color:      #0f7b0f;
+  --accent-color-rgb:  15, 123, 15;
   --on-accent-color:   #ffffff;
   --accent-warning:    #d83b01;
   --on-accent-warning: #ffffff;
@@ -84,6 +86,7 @@
   --text-primary:      #f3f2f1;
   --text-secondary:    #a19f9d;
   --accent-color:      #8FDE8B;
+  --accent-color-rgb:  143, 222, 139;
   --on-accent-color:   #003912;
   --accent-warning:    #fce100;
   --on-accent-warning: #1a1a00;
@@ -103,6 +106,7 @@
   --text-primary:      var(--lcars-white);
   --text-secondary:    #8a8a8a;
   --accent-color:      var(--lcars-sage);   /* LCARS green = "ready" */
+  --accent-color-rgb:  76, 175, 115;
   --on-accent-color:   #000000;
   --accent-warning:    var(--lcars-tangerine);
   --on-accent-warning: #000000;
@@ -145,6 +149,79 @@
   --color-fluent-card:    var(--bg-card);
   --color-fluent-border:  var(--border-color);
   --color-fluent-accent:  var(--accent-color);
+}
+
+/* ===========================================================================
+   Glassmorphism Utilities
+   =========================================================================== */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .glass-panel {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+/* Subtle organic noise texture overlay */
+.glass-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glass-button {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-button::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%;
+  width: 50%; height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: skewX(-20deg);
+  transition: all 0.5s ease;
+}
+
+.glass-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.glass-button:hover:not(:disabled)::after {
+  left: 200%;
+}
+
+.dark .glass-button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dark .glass-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
 /* ===========================================================================

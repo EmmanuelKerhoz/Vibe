@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Sparkles, Loader2, RefreshCw, Music, Lightbulb, ClipboardPaste, Ruler, BarChart2, GripVertical, Waves, Volume2, Wand2, History, Bot, User, FileText, Layout, Languages, Globe } from 'lucide-react';
+import { Sparkles, Loader2, RefreshCw, Music, Lightbulb, ClipboardPaste, Ruler, BarChart2, GripVertical, Waves, Volume2, Wand2, History, Bot, User, FileText, Layout, Languages, Globe, Search } from 'lucide-react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 
 import { Section, SongVersion } from './types';
@@ -553,7 +553,6 @@ export default function App() {
             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-            onSimilarityCheck={() => setIsSimilarityModalOpen(true)}
             onImportClick={triggerImportFilePicker} exportTxt={exportTxt} exportMd={exportMd}
             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
           />
@@ -622,6 +621,12 @@ export default function App() {
                     <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/20 fluent-button whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       <BarChart2 className="w-3.5 h-3.5" />
                       {t.editor.analyze}
+                    </button>
+                  </Tooltip>
+                  <Tooltip title={t.tooltips.checkSimilarity}>
+                    <button onClick={() => setIsSimilarityModalOpen(true)} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-4 py-2 glass-button text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                      <Search className="w-3.5 h-3.5" />
+                      {t.ribbon.similarity}
                     </button>
                   </Tooltip>
                     <Tooltip title={t.tooltips.regenerate}>
