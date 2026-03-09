@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag } from 'lucide-react';
+import { Apple, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
@@ -122,6 +122,17 @@ export function AboutModal({ isOpen, onClose }: Props) {
                 >
                   <ShoppingBag className="w-4 h-4" />
                   <span>Amazon</span>
+                  <ExternalLink className="w-3 h-3 opacity-50" />
+                </a>
+                <a
+                  href="https://music.apple.com/artist/emmanuel-kerhoz/1776965137"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visit Apple Music artist page"
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-500/10 hover:bg-zinc-500/20 border border-zinc-500/20 hover:border-zinc-500/40 text-zinc-300 hover:text-zinc-200 rounded-lg transition-all text-xs font-medium"
+                >
+                  <Apple className="w-4 h-4" />
+                  <span>Apple Music</span>
                   <ExternalLink className="w-3 h-3 opacity-50" />
                 </a>
               </div>
