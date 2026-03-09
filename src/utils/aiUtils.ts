@@ -20,6 +20,10 @@ type GenerateContentParams = {
   config?: Record<string, unknown>;
 };
 
+export const AI_PROVIDER_NAME = 'Google Gemini';
+export const AI_MODEL_NAME = 'gemini-3-flash-preview';
+export const AI_KEY_ENV_VAR = 'GEMINI_API_KEY';
+
 type GenerateContentResponse = {
   text: string;
 };
@@ -105,12 +109,12 @@ export const handleApiError = (error: unknown, defaultMessage: string) => {
 
   if (errorCode === 429 || errorCode === 'RESOURCE_EXHAUSTED' || errorMessage.includes('429') || errorMessage.includes('quota')) {
     isErrorDialogOpen = true;
-    const confirmMsg = "You've exceeded your current Gemini API quota. Please verify your plan/billing and API key in your local environment.";
+    const confirmMsg = `You've exceeded your current ${AI_PROVIDER_NAME} API quota. Please verify your plan/billing and API key in your local environment.`;
     alert(confirmMsg);
     isErrorDialogOpen = false;
   } else if (errorMessage.includes('Requested entity was not found')) {
     isErrorDialogOpen = true;
-    alert('API key error. Please check GEMINI_API_KEY in your server environment.');
+    alert(`API key error. Please check ${AI_KEY_ENV_VAR} in your server environment.`);
     isErrorDialogOpen = false;
   } else {
     isErrorDialogOpen = true;

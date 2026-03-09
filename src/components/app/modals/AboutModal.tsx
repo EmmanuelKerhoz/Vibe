@@ -3,6 +3,7 @@ import { Apple, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag } fro
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
+import { AI_KEY_ENV_VAR, AI_MODEL_NAME } from '../../../utils/aiUtils';
 import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
 
 const ABOUT_MODAL_VIEWPORT_MARGIN = '2rem';
@@ -56,12 +57,20 @@ export function AboutModal({ isOpen, onClose }: Props) {
               </p>
 
               {/* Tech Info */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-fluent-border">
-                <div className="flex flex-col items-center gap-1">
+              <div className="grid grid-cols-1 gap-4 pt-4 border-t border-fluent-border sm:grid-cols-2">
+                <div className="flex min-w-0 flex-col items-center gap-1">
                   <span className="micro-label text-zinc-500">{t.about.engineLabel}</span>
                   <span className="text-xs text-zinc-400 telemetry-text">{t.about.engine}</span>
                 </div>
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex min-w-0 flex-col items-center gap-1">
+                  <span className="micro-label text-zinc-500">{t.about.modelLabel}</span>
+                  <span className="text-xs text-zinc-400 telemetry-text break-all">{AI_MODEL_NAME}</span>
+                </div>
+                <div className="flex min-w-0 flex-col items-center gap-1">
+                  <span className="micro-label text-zinc-500">{t.about.apiKeyLabel}</span>
+                  <span className="text-xs text-zinc-400 telemetry-text break-all">{AI_KEY_ENV_VAR}</span>
+                </div>
+                <div className="flex min-w-0 flex-col items-center gap-1">
                   <span className="micro-label text-zinc-500">{t.about.licenseLabel}</span>
                   <span className="text-xs text-zinc-400 telemetry-text">{t.about.license}</span>
                 </div>

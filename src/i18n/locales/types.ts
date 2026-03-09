@@ -145,6 +145,8 @@ export interface Translations {
     description: string;
     engine: string;
     engineLabel: string;
+    modelLabel: string;
+    apiKeyLabel: string;
     license: string;
     licenseLabel: string;
     close: string;

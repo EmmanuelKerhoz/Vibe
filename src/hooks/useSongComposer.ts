@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Type } from '@google/genai';
 import type { Line, Section } from '../types';
-import { getAi, safeJsonParse, handleApiError } from '../utils/aiUtils';
+import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../utils/aiUtils';
 import { cleanSectionName, countSyllables } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
 
@@ -125,7 +125,7 @@ For each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, 
 For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight'), the rhyme identifier (e.g., A, B), the exact syllable count, and a short core concept.`;
 
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -208,7 +208,7 @@ Provide a new creative version of this section.
 Return the updated section in the exact same JSON structure (as an array with one section).`;
 
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -281,7 +281,7 @@ Return the updated song in the exact same JSON structure.`;
       }
 
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -378,7 +378,7 @@ Context:
 Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
 
       const response = await getAi().models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: AI_MODEL_NAME,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -626,7 +626,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     setIsGeneratingMusicalPrompt(true);
     try {
       const response = await getAi().models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: AI_MODEL_NAME,
         contents: `Generate a detailed musical production prompt for an AI music generator (like Suno or Udio).
         Song Title: ${title}
         Topic/Theme: ${topic}

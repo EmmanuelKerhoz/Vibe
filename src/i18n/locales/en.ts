@@ -138,8 +138,10 @@ const en: Translations = {
 
   about: {
     description: 'A professional-grade AI lyrics editor designed for songwriters and poets. Craft your masterpiece with real-time suggestions, structure management, and intelligent quantization.',
-    engine: 'Gemini 3.1 Pro',
+    engine: 'Google Gemini',
     engineLabel: 'Engine',
+    modelLabel: 'AI Model',
+    apiKeyLabel: 'AI Key',
     license: 'Commercial Pro',
     licenseLabel: 'License',
     close: 'Close',
