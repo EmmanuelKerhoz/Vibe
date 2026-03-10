@@ -186,7 +186,7 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0;
+  border-radius: 4px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -361,34 +361,64 @@ body {
 .lcars-band-stripe { width: 16px; flex-shrink: 0; }
 
 /* ── Lyrics scroll area (carbon fiber texture) ──────────────────── */
+/* Black carbon fiber — forged look via cross-hatch chips */
 .lcars-lyrics-area {
-  background-color: #050505;
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      rgba(255,255,255,0.015) 0px,
-      rgba(255,255,255,0.015) 1px,
-      transparent 1px,
-      transparent 8px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      rgba(255,255,255,0.015) 0px,
-      rgba(255,255,255,0.015) 1px,
-      transparent 1px,
-      transparent 8px
-    );
+  background-color: #080808;
 }
 
 .dark .lcars-lyrics-area {
-  background-color: #050505;
+  background-color: #080808;
+  background-image:
+    /* Carbon weave layer 1: NE diagonal fine grain */
+    repeating-linear-gradient(
+      62deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(255, 255, 255, 0.018) 3px,
+      rgba(255, 255, 255, 0.018) 4px
+    ),
+    /* Carbon weave layer 2: NW diagonal fine grain */
+    repeating-linear-gradient(
+      -62deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(255, 255, 255, 0.018) 3px,
+      rgba(255, 255, 255, 0.018) 4px
+    ),
+    /* Chip highlight: broad NE bands giving 3D forged look */
+    repeating-linear-gradient(
+      62deg,
+      transparent 0px,
+      transparent 7px,
+      rgba(255, 255, 255, 0.012) 7px,
+      rgba(255, 255, 255, 0.012) 8px,
+      transparent 8px,
+      transparent 15px
+    ),
+    /* Chip shadow: broad NW counter-bands */
+    repeating-linear-gradient(
+      -62deg,
+      transparent 0px,
+      transparent 7px,
+      rgba(0, 0, 0, 0.25) 7px,
+      rgba(0, 0, 0, 0.25) 8px,
+      transparent 8px,
+      transparent 15px
+    ),
+    /* Subtle surface sheen: radial vignette */
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(255, 255, 255, 0.03) 0%,
+      transparent 70%
+    );
+  background-attachment: fixed;
 }
 
 /* ── LCARS HUD chip ─────────────────────────────────────────────── */
 .ui-fluent .lcars-hud-chip {
   background-color: rgba(22, 22, 22, 0.50);
   backdrop-filter: blur(8px);
-  border-radius: 8px 4px 8px 4px;
+  border-radius: 4px 2px 4px 2px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
