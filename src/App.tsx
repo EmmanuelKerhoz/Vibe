@@ -760,7 +760,7 @@ export default function App() {
         />
 
         <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded-full" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
 
           <TopRibbon
             isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
@@ -792,13 +792,13 @@ export default function App() {
                       ))}
                     </Select>
                     <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
-                      <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded-none transition-all flex items-center gap-1.5 disabled:opacity-50">
+                      <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
                         {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
                         {t.editor.adaptation}
                       </button>
                     </Tooltip>
                     <Tooltip title={songLanguage ? `Detected: ${songLanguage} — click to re-detect` : 'Detect song language'}>
-                      <button onClick={() => void detectLanguage()} disabled={isDetectingLanguage || song.length === 0} className="px-3 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded-none transition-all flex items-center gap-1.5 disabled:opacity-50 border border-white/10">
+                      <button onClick={() => void detectLanguage()} disabled={isDetectingLanguage || song.length === 0} className="px-3 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50 border border-white/10">
                         {isDetectingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanText className="w-3 h-3" />}
                         {songLanguage || 'Detect'}
                       </button>
@@ -824,7 +824,7 @@ export default function App() {
                       }>
                         <button
                           onClick={() => scrollToSection(section)}
-                          className="px-3 py-1.5 rounded-none text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-white/20 transition-all lcars-section-chip glass-button"
+                          className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-white/20 transition-all lcars-section-chip glass-button"
                           style={{ color: getSectionTextColor(section.name) }}
                         >
                           <div className={`w-1.5 h-1.5 rounded-full ${getSectionDotColor(section.name)}`} />
@@ -837,32 +837,32 @@ export default function App() {
 
                 <div className="flex items-center gap-2 ml-4">
                   <Tooltip title="Save current song to library for similarity detection">
-                    <button onClick={handleSaveToLibrary} disabled={isSavingToLibrary || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded-none transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={handleSaveToLibrary} disabled={isSavingToLibrary || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       {isSavingToLibrary ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                       Save to Library
                     </button>
                   </Tooltip>
                   <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
-                    <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button text-white text-[11px] rounded-none transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       <Layout className="w-3.5 h-3.5" />
                       {isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}
                     </button>
                   </Tooltip>
                   <Tooltip title={t.tooltips.analyzeTheme}>
-                    <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded-none transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       <BarChart2 className="w-3.5 h-3.5" />
                       {t.editor.analyze}
                     </button>
                   </Tooltip>
                   <Tooltip title={`Check similarity with ${libraryCount} songs in library`}>
-                    <button onClick={() => setIsSimilarityModalOpen(true)} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded-none transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative">
+                    <button onClick={() => setIsSimilarityModalOpen(true)} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative">
                       <Search className="w-3.5 h-3.5" />
                       {t.ribbon?.similarity || 'Similarity'}
-                      {libraryCount > 0 && <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-none text-[9px]">{libraryCount}</span>}
+                      {libraryCount > 0 && <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>}
                     </button>
                   </Tooltip>
                   <Tooltip title={t.tooltips.regenerate}>
-                    <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-white text-[11px] rounded-none transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap">
+                    <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap">
                       {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                       {t.editor.regenerateGlobal}
                     </button>
@@ -969,7 +969,7 @@ export default function App() {
                                 <select
                                   value={section.rhymeScheme || rhymeScheme}
                                   onChange={(e) => setSectionRhymeScheme(section.id, e.target.value)}
-                                  className="text-[10px] uppercase tracking-[0.15em] bg-transparent border border-white/10 rounded-none px-1.5 py-0.5 text-zinc-500 dark:text-zinc-400 hover:border-white/25 transition cursor-pointer outline-none"
+                                  className="text-[10px] uppercase tracking-[0.15em] bg-transparent border border-white/10 rounded px-1.5 py-0.5 text-zinc-500 dark:text-zinc-400 hover:border-white/25 transition cursor-pointer outline-none"
                                 >
                                   {RHYME_KEYS.map(key => (
                                     <option key={key} value={key}>{key}</option>
@@ -984,7 +984,7 @@ export default function App() {
                               <button
                                 onClick={() => regenerateSection(section.id)}
                                 disabled={isGenerating || isAnalyzing}
-                                className="flex items-center gap-2 rounded-none border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex items-center gap-2 rounded border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
                                 {t.editor.regenerateSection}
@@ -1049,7 +1049,7 @@ export default function App() {
                                 e.stopPropagation();
                                 handleLineDrop(section.id, line.id);
                               }}
-                              className={`group flex items-center gap-3 px-3 py-1.5 rounded-none transition-colors ${
+                              className={`group flex items-center gap-3 px-3 py-1.5 rounded transition-colors ${
                                 selectedLineId === line.id
                                   ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
                                   : 'hover:bg-white/[0.025]'
@@ -1118,15 +1118,23 @@ export default function App() {
                                   placeholder={`${section.name} line ${index + 1}`}
                                   className="flex-1 text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                                 />
-                                <div className="flex items-center gap-2 shrink-0 w-24 justify-end text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-                                  <span className="w-6 text-right tabular-nums">{line.syllables > 0 ? line.syllables : ''}</span>
-                                  <span className="w-8 text-center">
-                                    {line.rhyme ? (
-                                      <span className={`px-1.5 py-0.5 border text-[10px] ${getRhymeColor(line.rhyme)}`}>
-                                        {line.rhyme}
-                                      </span>
-                                    ) : null}
+                                <div className="flex items-center gap-3 shrink-0 min-w-[120px] justify-end">
+                                  {/* Rhyming syllables — the ending sound that rhymes */}
+                                  {line.rhymingSyllables && (
+                                    <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 tracking-wide opacity-80">
+                                      {line.rhymingSyllables}
+                                    </span>
+                                  )}
+                                  {/* Total syllable count */}
+                                  <span className="text-[11px] tabular-nums font-mono text-zinc-400 dark:text-zinc-500 w-5 text-right">
+                                    {line.syllables > 0 ? line.syllables : ''}
                                   </span>
+                                  {/* Rhyme group label */}
+                                  {line.rhyme && (
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
+                                      {line.rhyme}
+                                    </span>
+                                  )}
                                 </div>
 
                                 {/* Delete line button */}
@@ -1134,7 +1142,7 @@ export default function App() {
                                   <button
                                     type="button"
                                     onClick={() => deleteLineFromSection(section.id, line.id)}
-                                    className="shrink-0 opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-none border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
+                                    className="shrink-0 opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </button>
@@ -1148,7 +1156,7 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => addLineToSection(section.id)}
-                            className="flex items-center gap-2 rounded-none border border-dashed border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500 transition hover:border-white/30 hover:text-zinc-300 dark:hover:text-zinc-200"
+                            className="flex items-center gap-2 rounded border border-dashed border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500 transition hover:border-white/30 hover:text-zinc-300 dark:hover:text-zinc-200"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             Add Line
