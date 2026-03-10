@@ -31,6 +31,7 @@ import { StructureSidebar } from './components/app/StructureSidebar';
 import { StatusBar } from './components/app/StatusBar';
 import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { AboutModal } from './components/app/modals/AboutModal';
+import { ImportModal } from './components/app/modals/ImportModal';
 import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
 import { SimilarityModal } from './components/app/modals/SimilarityModal';
@@ -134,6 +135,7 @@ export default function App() {
   const [isStructureOpen, setIsStructureOpen] = useState(true);
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
   const sectionDropdownRef = useRef<HTMLDivElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -513,15 +515,12 @@ export default function App() {
     loadFileForAnalysis(file);
   };
 
-  const triggerImportFilePicker = async () => {
-    if (hasExistingWork) {
-      const shouldContinue = window.confirm(
-        `${t.importDialog.replaceDescription}\n\n${t.importDialog.warning}\n${t.importDialog.supportedFiles}`
-      );
-      if (!shouldContinue) {
-        return;
-      }
-    }
+  const openImportModal = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const handleImportChooseFile = async () => {
+    setIsImportModalOpen(false);
 
     const pickerWindow = window as Window & {
       showOpenFilePicker?: (options: {
@@ -798,7 +797,7 @@ export default function App() {
             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-            onImportClick={triggerImportFilePicker} exportTxt={exportTxt} exportMd={exportMd}
+            onImportClick={openImportModal} exportTxt={exportTxt} exportMd={exportMd}
             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
           />
 
@@ -925,7 +924,7 @@ export default function App() {
                     value={markupText}
                     onChange={(e) => setMarkupText(e.target.value)}
                     textareaRef={markupTextareaRef}
-                    className="w-full min-h-[70vh] rounded-sm border border-black/10 bg-white/70 p-5 font-mono text-sm leading-7 text-zinc-800 shadow-[0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-100"
+                    className="w-full min-h-[70vh] rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] font-mono text-sm leading-7 text-[var(--text-primary)] shadow-2xl"
                     spellCheck={false}
                   />
                 ) : (
@@ -1294,6 +1293,13 @@ export default function App() {
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        hasExistingWork={hasExistingWork}
+        onClose={() => setIsImportModalOpen(false)}
+        onChooseFile={handleImportChooseFile}
+      />
 
       <SuggestionsPanel
         selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}

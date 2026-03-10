@@ -5,7 +5,6 @@ import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
 import { Button } from '../../ui/Button';
 
-const SETTINGS_MODAL_VIEWPORT_MARGIN = '2rem';
 const DEFAULT_SETTINGS = {
   theme: 'dark' as const,
   audioFeedback: true,
@@ -68,8 +67,13 @@ export function SettingsModal({
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-xl"
           />
+          {/* Ambient glow – dark theme only */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden items-center justify-center hidden dark:flex">
+            <div className="w-[500px] h-[300px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
+          </div>
+
           <motion.div
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -77,27 +81,26 @@ export function SettingsModal({
             role="dialog"
             aria-modal="true"
             aria-label={t.settings.title}
-            className="relative w-full max-w-lg overflow-y-auto bg-fluent-card border border-fluent-border shadow-2xl lcars-panel"
-            style={{ maxHeight: `calc(100vh - ${SETTINGS_MODAL_VIEWPORT_MARGIN})` }}
+            className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-fluent-border bg-white/[0.02]">
-              <h2 className="text-sm font-semibold text-zinc-100 tracking-wide uppercase">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex-shrink-0">
+              <h2 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
                 {t.settings.title}
               </h2>
               <button
                 onClick={onClose}
                 aria-label={t.about.close}
-                className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-all"
+                className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
               {/* Theme section */}
               <section aria-labelledby="settings-theme-heading">
-                <h3 id="settings-theme-heading" className="micro-label text-zinc-500 mb-3 flex items-center gap-2">
+                <h3 id="settings-theme-heading" className="micro-label text-[var(--text-secondary)] mb-3 flex items-center gap-2">
                   <Monitor className="w-3.5 h-3.5" />
                   {t.settings.theme.label}
                 </h3>
@@ -115,7 +118,7 @@ export function SettingsModal({
                       className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-all ${
                         draftTheme === value
                           ? 'border-[var(--accent-color)] bg-[var(--accent-color)]/10 text-[var(--accent-color)]'
-                          : 'border-fluent-border bg-white/[0.02] text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                          : 'border-[var(--border-color)] bg-[var(--bg-app)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sidebar)]'
                       }`}
                     >
                       {icon}
@@ -127,18 +130,18 @@ export function SettingsModal({
 
               {/* Audio section */}
               <section aria-labelledby="settings-audio-heading">
-                <h3 id="settings-audio-heading" className="micro-label text-zinc-500 mb-3 flex items-center gap-2">
+                <h3 id="settings-audio-heading" className="micro-label text-[var(--text-secondary)] mb-3 flex items-center gap-2">
                   {draftAudioFeedback ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
                   {t.settings.audio.label}
                 </h3>
-                <div className="flex items-center justify-between px-4 py-3 bg-white/[0.02] border border-fluent-border rounded-lg">
-                  <span className="text-xs text-zinc-300">{t.settings.audio.enable}</span>
+                <div className="flex items-center justify-between px-4 py-3 bg-[var(--bg-app)] border border-[var(--border-color)] rounded-lg">
+                  <span className="text-xs text-[var(--text-primary)]">{t.settings.audio.enable}</span>
                   <button
                     role="switch"
                     aria-checked={draftAudioFeedback}
                     onClick={() => setDraftAudioFeedback(!draftAudioFeedback)}
                     className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-color)] ${
-                      draftAudioFeedback ? 'bg-[var(--accent-color)]' : 'bg-zinc-700'
+                      draftAudioFeedback ? 'bg-[var(--accent-color)]' : 'bg-[var(--border-color)]'
                     }`}
                   >
                     <span
@@ -152,7 +155,7 @@ export function SettingsModal({
 
               {/* Language section */}
               <section aria-labelledby="settings-lang-heading">
-                <h3 id="settings-lang-heading" className="micro-label text-zinc-500 mb-3 flex items-center gap-2">
+                <h3 id="settings-lang-heading" className="micro-label text-[var(--text-secondary)] mb-3 flex items-center gap-2">
                   <Globe className="w-3.5 h-3.5" />
                   {t.settings.language.label}
                 </h3>
@@ -168,7 +171,7 @@ export function SettingsModal({
                       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all ${
                         locale.code === draftLanguage
                           ? 'bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/30 text-[var(--accent-color)]'
-                          : 'bg-white/[0.02] border border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                          : 'bg-[var(--bg-app)] border border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sidebar)]'
                       }`}
                     >
                       <span className="text-base leading-none">{locale.flag}</span>
@@ -182,12 +185,12 @@ export function SettingsModal({
               </section>
 
               {/* About section */}
-              <section aria-labelledby="settings-about-heading" className="border-t border-fluent-border pt-6">
-                <h3 id="settings-about-heading" className="micro-label text-zinc-500 mb-3">
+              <section aria-labelledby="settings-about-heading" className="border-t border-[var(--border-color)] pt-6">
+                <h3 id="settings-about-heading" className="micro-label text-[var(--text-secondary)] mb-3">
                   {t.settings.about.version}
                 </h3>
-                <div className="flex items-center justify-between px-4 py-3 bg-white/[0.02] border border-fluent-border rounded-lg mb-3">
-                  <span className="text-xs text-zinc-400">{t.app.name}</span>
+                <div className="flex items-center justify-between px-4 py-3 bg-[var(--bg-app)] border border-[var(--border-color)] rounded-lg mb-3">
+                  <span className="text-xs text-[var(--text-secondary)]">{t.app.name}</span>
                   <span className="telemetry-text text-xs text-[var(--accent-color)]">{APP_VERSION}</span>
                 </div>
                 <div className="flex gap-2">
@@ -196,7 +199,7 @@ export function SettingsModal({
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={t.settings.about.github}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800/50 hover:bg-zinc-700/50 border border-zinc-700/50 hover:border-zinc-600/50 text-zinc-400 hover:text-zinc-200 rounded-lg transition-all text-xs"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-all text-xs"
                   >
                     <Github className="w-3.5 h-3.5" />
                     {t.settings.about.github}
@@ -206,7 +209,7 @@ export function SettingsModal({
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={t.settings.about.docs}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800/50 hover:bg-zinc-700/50 border border-zinc-700/50 hover:border-zinc-600/50 text-zinc-400 hover:text-zinc-200 rounded-lg transition-all text-xs"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-all text-xs"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
                     {t.settings.about.docs}
@@ -214,7 +217,7 @@ export function SettingsModal({
                 </div>
               </section>
             </div>
-            <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-fluent-border bg-white/[0.02]">
+            <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex-shrink-0">
               <Button onClick={handleDefault} variant="outlined" color="inherit">
                 {t.settings.actions.default}
               </Button>
