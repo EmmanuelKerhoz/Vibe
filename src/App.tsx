@@ -886,11 +886,36 @@ export default function App() {
                     spellCheck={false}
                   />
                 ) : (
-                  song.map((section, sectionIndex) => (
+                  song.map((section, sectionIndex) => {
+                    const isSectionDraggable = section.name.toLowerCase() !== 'intro' && section.name.toLowerCase() !== 'outro';
+                    const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
+
+                    return (
                     <section
                       key={section.id}
                       id={`section-${section.id}`}
-                      className="lcars-band"
+                      onDragOver={(e) => {
+                        if (!isSectionDraggable && draggedItemIndex === sectionIndex) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (draggedItemIndex === null || draggedItemIndex === sectionIndex) return;
+                        setDragOverIndex(sectionIndex);
+                      }}
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (dragOverIndex === sectionIndex) setDragOverIndex(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDrop(sectionIndex);
+                      }}
+                      className={`lcars-band ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
                     >
                       {/* LCARS asymmetric colored left stripe */}
                       <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
@@ -899,6 +924,30 @@ export default function App() {
                         {/* Section header */}
                         <div className="mb-5 flex items-center justify-between gap-4 flex-wrap">
                           <div className="flex items-center gap-3">
+                            <Tooltip title={isSectionDraggable ? 'Drag to reorder section' : 'Intro and Outro stay anchored'}>
+                              <div
+                                draggable={isSectionDraggable}
+                                onDragStart={() => {
+                                  if (!isSectionDraggable) return;
+                                  setDraggedItemIndex(sectionIndex);
+                                  setDraggableSectionIndex(sectionIndex);
+                                  playAudioFeedback('drag');
+                                }}
+                                onDragEnd={() => {
+                                  setDraggedItemIndex(null);
+                                  setDragOverIndex(null);
+                                  setDraggableSectionIndex(null);
+                                }}
+                                className={`flex h-11 w-8 shrink-0 items-center justify-center rounded-[999px] border border-white/10 bg-white/[0.03] text-zinc-500 transition ${
+                                  isSectionDraggable
+                                    ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:text-[var(--accent-color)]'
+                                    : 'cursor-not-allowed opacity-40'
+                                }`}
+                              >
+                                <GripVertical className="h-4 w-4" />
+                              </div>
+                            </Tooltip>
+
                             {/* Section move up/down */}
                             <div className="flex flex-col gap-0.5">
                               <Tooltip title="Move section up">
@@ -977,16 +1026,54 @@ export default function App() {
                         />
 
                         <div className="mt-5 space-y-3">
-                          {section.lines.map((line, index) => (
+                          {section.lines.map((line, index) => {
+                            const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
+                            const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
+
+                            return (
                             <div
                               key={line.id}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (!draggedLineInfo || isDraggedLine) return;
+                                setDragOverLineInfo({ sectionId: section.id, lineId: line.id });
+                              }}
+                              onDragEnter={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              onDragLeave={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (isLineDropTarget) setDragOverLineInfo(null);
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleLineDrop(section.id, line.id);
+                              }}
                               className={`group rounded-2xl border px-4 py-3 transition ${
                                 selectedLineId === line.id
                                   ? 'border-[var(--accent-color)]/60 bg-[var(--accent-color)]/10 shadow-[0_0_0_1px_rgba(var(--accent-color-rgb),0.15)]'
                                   : 'border-black/10 bg-black/[0.02] hover:border-black/20 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20'
-                              }`}
+                              } ${isLineDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
                             >
                               <div className="flex items-center gap-3">
+                                <Tooltip title="Drag to reorder line">
+                                  <div
+                                    draggable
+                                    onDragStart={() => handleLineDragStart(section.id, line.id)}
+                                    onDragEnd={() => {
+                                      setDraggedLineInfo(null);
+                                      setDragOverLineInfo(null);
+                                    }}
+                                    className="flex h-8 w-6 shrink-0 items-center justify-center rounded-[999px] border border-white/10 bg-white/[0.03] text-zinc-500 opacity-60 transition hover:border-[var(--accent-color)]/40 hover:text-[var(--accent-color)] group-hover:opacity-100 cursor-grab active:cursor-grabbing"
+                                  >
+                                    <GripVertical className="h-3.5 w-3.5" />
+                                  </div>
+                                </Tooltip>
+
                                 {/* Line move up/down */}
                                 <div className="flex flex-col gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Tooltip title="Move line up">
@@ -1028,6 +1115,15 @@ export default function App() {
                                   className="flex-1 text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                                 />
                                 <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
+                                  <Tooltip title={line.isManual ? 'Manually edited line' : 'AI-generated line'}>
+                                    <span className={`flex h-6 w-6 items-center justify-center rounded-full border ${
+                                      line.isManual
+                                        ? 'border-white/10 bg-white/[0.03] text-zinc-400'
+                                        : 'border-[var(--accent-color)]/25 bg-[var(--accent-color)]/10 text-[var(--accent-color)]'
+                                    }`}>
+                                      {line.isManual ? <User className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
+                                    </span>
+                                  </Tooltip>
                                   <span>{line.syllables}</span>
                                   {line.rhyme && (
                                     <span className={`rounded-full px-2 py-1 border ${getRhymeColor(line.rhyme)}`}>
@@ -1048,7 +1144,7 @@ export default function App() {
                                 </Tooltip>
                               </div>
                             </div>
-                          ))}
+                          )})}
                         </div>
 
                         {/* Add line button */}
@@ -1075,7 +1171,7 @@ export default function App() {
                         </div>
                       </div>
                     </section>
-                  ))
+                  )})
                 )}
               </div>
             ) : (
