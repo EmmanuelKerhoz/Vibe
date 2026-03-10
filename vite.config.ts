@@ -8,6 +8,13 @@ export default defineConfig(({ mode }) => ({
     host: '0.0.0.0',
     port: 3000,
     strictPort: false,
+    proxy: {
+      '/api/ddg': {
+        target: 'https://api.duckduckgo.com',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/api\/ddg/, ''),
+      },
+    },
   },
   build: {
     outDir: 'dist',
@@ -22,7 +29,6 @@ export default defineConfig(({ mode }) => ({
     },
     chunkSizeWarningLimit: 800,
   },
-  // Vite serves public/ folder at root
   publicDir: 'public',
   assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.svg'],
   define: {
