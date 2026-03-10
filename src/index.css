@@ -4,26 +4,21 @@
 
 /* ===========================================================================
    LCARS / Fluent 2 Design Token System
-   Tier 1: Canonical color palette (Trek-canonical hues)
-   Tier 2: Semantic role tokens (mapped to Tier 1)
-   Tier 3: Component-level tokens (consumed by .lcars-* classes)
    =========================================================================== */
 
 :root {
-  /* ── Tier 1: LCARS canonical palette ─────────────────────────── */
-  --lcars-rust:        #C45B2D;  /* LCARS coral-orange */
-  --lcars-tangerine:   #F5A623;  /* LCARS amber / warning */
-  --lcars-maize:       #FFCC44;  /* LCARS yellow accent */
-  --lcars-sage:        #4CAF73;  /* LCARS green / ready */
-  --lcars-teal:        #0FB8B8;  /* LCARS cyan / data */
-  --lcars-blue:        #5EA3DE;  /* LCARS medium blue */
-  --lcars-indigo:      #4040C0;  /* LCARS deep blue */
-  --lcars-purple:      #9956D6;  /* LCARS purple band */
-  --lcars-red:         #D50000;  /* Critical / error */
-  --lcars-white:       #E0E0E0;  /* Primary text (dark) */
-  --lcars-near-black:  #050505;  /* Layer 0 background */
+  --lcars-rust:        #C45B2D;
+  --lcars-tangerine:   #F5A623;
+  --lcars-maize:       #FFCC44;
+  --lcars-sage:        #4CAF73;
+  --lcars-teal:        #0FB8B8;
+  --lcars-blue:        #5EA3DE;
+  --lcars-indigo:      #4040C0;
+  --lcars-purple:      #9956D6;
+  --lcars-red:         #D50000;
+  --lcars-white:       #E0E0E0;
+  --lcars-near-black:  #050505;
 
-  /* ── Tier 2: Fluent 2 Light Theme semantic tokens ─────────────── */
   --bg-app:            #f3f2f1;
   --bg-sidebar:        rgba(243, 242, 241, 0.75);
   --bg-card:           #e1dfdd;
@@ -43,7 +38,6 @@
 }
 
 .ui-fluent {
-  /* ── Trek/LCARS Light Theme (Fluent 2 base) ───────────────────── */
   --bg-app:            #f3f2f1;
   --bg-sidebar:        rgba(243, 242, 241, 0.75);
   --bg-card:           rgba(255, 255, 255, 0.65);
@@ -61,24 +55,19 @@
   --scrollbar-thumb:   rgba(0, 0, 0, 0.2);
   --input-bg:          rgba(255, 255, 255, 0.55);
 
-  /* ── Tier 3: component tokens ────────────────────────────────── */
   --fluent-shadow:     0 4px 8px rgba(0, 0, 0, 0.04), 0 0 2px rgba(0, 0, 0, 0.06);
-  --fluent-radius:     24px 8px 24px 8px;       /* Asymmetric LCARS-like */
+  --fluent-radius:     24px 8px 24px 8px;
   --glow-accent:       0 0 8px rgba(15, 123, 15, 0.3);
   --glow-accent-strong:0 0 16px rgba(15, 123, 15, 0.5);
   --status-bar-bg:     rgba(243, 242, 241, 0.9);
-
   --layer1-blur:       blur(16px);
   --layer2-blur:       blur(8px);
-
   --font-sans:         "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono:         "Cascadia Mono", "Consolas", monospace;
-
   background-image: none;
 }
 
 .dark {
-  /* ── Fluent 2 Dark Theme baseline ─────────────────────────────── */
   --bg-app:            #1b1a19;
   --bg-sidebar:        #201f1e;
   --bg-card:           #323130;
@@ -99,14 +88,13 @@
 }
 
 .dark.ui-fluent {
-  /* ── Trek/LCARS Dark Theme ────────────────────────────────────── */
   --bg-app:            var(--lcars-near-black);
   --bg-sidebar:        rgba(12, 12, 12, 0.80);
   --bg-card:           rgba(22, 22, 22, 0.60);
   --border-color:      rgba(255, 255, 255, 0.07);
   --text-primary:      var(--lcars-white);
   --text-secondary:    #8a8a8a;
-  --accent-color:      var(--lcars-sage);   /* LCARS green = "ready" */
+  --accent-color:      var(--lcars-sage);
   --accent-color-rgb:  76, 175, 115;
   --on-accent-color:   #000000;
   --accent-warning:    var(--lcars-tangerine);
@@ -117,20 +105,16 @@
   --scrollbar-thumb:   rgba(255, 255, 255, 0.12);
   --input-bg:          rgba(22, 22, 22, 0.50);
 
-  /* ── Tier 3: component tokens ────────────────────────────────── */
   --fluent-shadow:     0 0 6px rgba(76, 175, 115, 0.12);
   --fluent-radius:     24px 4px 24px 4px;
   --glow-accent:       0 0 8px  rgba(76, 175, 115, 0.25);
   --glow-accent-strong:0 0 20px rgba(76, 175, 115, 0.45);
   --status-bar-bg:     rgba(8, 8, 8, 0.95);
-
   --layer1-blur:       blur(16px);
   --layer2-blur:       blur(8px);
-
   --font-sans:         "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono:         "Cascadia Mono", "Consolas", monospace;
 
-  /* Matte space-console texture */
   background-image:
     radial-gradient(ellipse at 30% 20%, rgba(76, 175, 115, 0.04) 0%, transparent 60%),
     radial-gradient(ellipse at 70% 80%, rgba(94, 163, 222, 0.03) 0%, transparent 60%),
@@ -138,13 +122,9 @@
   background-size: 100% 100%, 100% 100%, 100px 100px;
 }
 
-/* ===========================================================================
-   @theme mapping — Tailwind CSS custom properties
-   =========================================================================== */
 @theme {
   --font-sans: var(--font-sans, "Inter", ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, monospace);
-
   --color-fluent-bg:      var(--bg-app);
   --color-fluent-sidebar: var(--bg-sidebar);
   --color-fluent-card:    var(--bg-card);
@@ -152,9 +132,6 @@
   --color-fluent-accent:  var(--accent-color);
 }
 
-/* ===========================================================================
-   Glassmorphism Utilities
-   =========================================================================== */
 .glass-panel {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
@@ -164,14 +141,11 @@
   position: relative;
   overflow: hidden;
 }
-
 .dark .glass-panel {
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
-
-/* Subtle organic noise texture overlay */
 .glass-panel::before {
   content: "";
   position: absolute;
@@ -193,7 +167,6 @@
   position: relative;
   overflow: hidden;
 }
-
 .glass-button::after {
   content: "";
   position: absolute;
@@ -203,32 +176,23 @@
   transform: skewX(-20deg);
   transition: all 0.5s ease;
 }
-
 .glass-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
   transform: translateY(-1px);
 }
-
-.glass-button:hover:not(:disabled)::after {
-  left: 200%;
-}
-
+.glass-button:hover:not(:disabled)::after { left: 200%; }
 .dark .glass-button {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
-
 .dark .glass-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
-/* ===========================================================================
-   Base
-   =========================================================================== */
 body {
   background-color: var(--bg-app);
   color: var(--text-primary);
@@ -244,28 +208,16 @@ body {
   background-color: var(--scrollbar-thumb);
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(128, 128, 128, 0.3);
-}
+::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.3); }
 
-/* ===========================================================================
-   Acrylic / glass surfaces
-   =========================================================================== */
 .acrylic {
   background: var(--acrylic-bg);
   backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border-color);
 }
 
-/* ===========================================================================
-   Fluent 2 interactive elements
-   =========================================================================== */
-.fluent-button {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.fluent-button:active {
-  transform: scale(0.98);
-}
+.fluent-button { transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+.fluent-button:active { transform: scale(0.98); }
 
 @keyframes fluentSlideIn {
   from { opacity: 0; transform: translateY(12px) scale(0.98); }
@@ -282,7 +234,6 @@ body {
   .ui-fluent .fluent-animate-in { animation: none; opacity: 1; transform: none; }
 }
 
-/* ── Fluent 2 card ──────────────────────────────────────────────── */
 .ui-fluent .fluent-card {
   border-radius: var(--fluent-radius);
   box-shadow: var(--fluent-shadow);
@@ -297,7 +248,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* ── Fluent 2 sidebar ───────────────────────────────────────────── */
 .ui-fluent .fluent-sidebar {
   backdrop-filter: var(--layer1-blur);
   background-color: var(--bg-sidebar);
@@ -305,7 +255,6 @@ body {
   box-shadow: inset 1px 0 0 rgba(255,255,255,0.02);
 }
 
-/* ── Fluent 2 input ─────────────────────────────────────────────── */
 .ui-fluent .fluent-input {
   border-radius: 4px;
   border: 1px solid var(--border-color);
@@ -321,11 +270,6 @@ body {
   outline: none;
 }
 
-/* ===========================================================================
-   Trek / LCARS design language
-   =========================================================================== */
-
-/* ── LCARS asymmetric panel ─────────────────────────────────────── */
 .ui-fluent .lcars-panel {
   background-color: var(--bg-sidebar);
   backdrop-filter: var(--layer1-blur);
@@ -336,7 +280,9 @@ body {
   overflow: hidden;
 }
 
-/* ── LCARS section band (song card) ────────────────────────────── */
+/* ── LCARS section band ──────────────────────────────────────────
+   gap réduit: margin-bottom 4px au lieu de 8px
+   ─────────────────────────────────────────────────────────────── */
 .lcars-band {
   display: flex;
   align-items: stretch;
@@ -344,7 +290,7 @@ body {
   backdrop-filter: var(--layer2-blur);
   border-radius: 24px 4px 24px 4px;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   border: 1px solid var(--border-color);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
 }
@@ -352,68 +298,40 @@ body {
   border-color: rgba(76, 175, 115, 0.2);
   box-shadow: var(--glow-accent);
 }
-
 .dark .lcars-band {
   background-color: #000000;
   background-image: none;
   border-color: rgba(255, 255, 255, 0.06);
 }
 
+/* Section title — dark theme: pas de text-shadow sur fond sombre
+   (évite la bavure colorée derrière le texte des titres de section) */
+.dark .lcars-section-title {
+  text-shadow: none;
+}
+
 .lcars-band-stripe { width: 16px; flex-shrink: 0; }
 
-/* ── Lyrics scroll area ──────────────────────────────────────────── */
-/* Default (light theme): warm woven paper */
 .lcars-lyrics-area {
   background-color: #e8e6e3;
   background-image:
-    repeating-linear-gradient(
-      62deg, transparent 0px, transparent 3px,
-      rgba(0,0,0,0.022) 3px, rgba(0,0,0,0.022) 4px
-    ),
-    repeating-linear-gradient(
-      -62deg, transparent 0px, transparent 3px,
-      rgba(0,0,0,0.022) 3px, rgba(0,0,0,0.022) 4px
-    ),
-    repeating-linear-gradient(
-      62deg, transparent 0px, transparent 7px,
-      rgba(0,0,0,0.014) 7px, rgba(0,0,0,0.014) 8px,
-      transparent 8px, transparent 15px
-    ),
-    repeating-linear-gradient(
-      -62deg, transparent 0px, transparent 7px,
-      rgba(255,255,255,0.55) 7px, rgba(255,255,255,0.55) 8px,
-      transparent 8px, transparent 15px
-    ),
+    repeating-linear-gradient(62deg, transparent 0px, transparent 3px, rgba(0,0,0,0.022) 3px, rgba(0,0,0,0.022) 4px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 3px, rgba(0,0,0,0.022) 3px, rgba(0,0,0,0.022) 4px),
+    repeating-linear-gradient(62deg, transparent 0px, transparent 7px, rgba(0,0,0,0.014) 7px, rgba(0,0,0,0.014) 8px, transparent 8px, transparent 15px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, rgba(255,255,255,0.55) 7px, rgba(255,255,255,0.55) 8px, transparent 8px, transparent 15px),
     radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.6) 0%, transparent 70%);
   background-attachment: scroll;
 }
-
-/* Dark theme: black forged carbon */
 .dark .lcars-lyrics-area {
   background-color: #080808;
   background-image:
-    repeating-linear-gradient(
-      62deg, transparent 0px, transparent 3px,
-      rgba(255,255,255,0.018) 3px, rgba(255,255,255,0.018) 4px
-    ),
-    repeating-linear-gradient(
-      -62deg, transparent 0px, transparent 3px,
-      rgba(255,255,255,0.018) 3px, rgba(255,255,255,0.018) 4px
-    ),
-    repeating-linear-gradient(
-      62deg, transparent 0px, transparent 7px,
-      rgba(255,255,255,0.012) 7px, rgba(255,255,255,0.012) 8px,
-      transparent 8px, transparent 15px
-    ),
-    repeating-linear-gradient(
-      -62deg, transparent 0px, transparent 7px,
-      rgba(0,0,0,0.25) 7px, rgba(0,0,0,0.25) 8px,
-      transparent 8px, transparent 15px
-    ),
+    repeating-linear-gradient(62deg, transparent 0px, transparent 3px, rgba(255,255,255,0.018) 3px, rgba(255,255,255,0.018) 4px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 3px, rgba(255,255,255,0.018) 3px, rgba(255,255,255,0.018) 4px),
+    repeating-linear-gradient(62deg, transparent 0px, transparent 7px, rgba(255,255,255,0.012) 7px, rgba(255,255,255,0.012) 8px, transparent 8px, transparent 15px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, rgba(0,0,0,0.25) 7px, rgba(0,0,0,0.25) 8px, transparent 8px, transparent 15px),
     radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
 }
 
-/* ── LCARS HUD chip ─────────────────────────────────────────────── */
 .ui-fluent .lcars-hud-chip {
   background-color: rgba(22, 22, 22, 0.50);
   backdrop-filter: blur(8px);
@@ -422,10 +340,7 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* ── Top ribbon / navigation bar ───────────────────────────────── */
-.lcars-ribbon {
-  position: relative;
-}
+.lcars-ribbon { position: relative; }
 .dark .lcars-ribbon::after {
   content: '';
   position: absolute;
@@ -435,18 +350,12 @@ body {
   opacity: 0.3;
 }
 
-/* ── Suggestions panel ──────────────────────────────────────────── */
-.lcars-suggestions {
-  border: 1px solid var(--border-color);
-}
+.lcars-suggestions { border: 1px solid var(--border-color); }
 .dark .lcars-suggestions {
   border-color: rgba(76, 175, 115, 0.15);
   box-shadow: var(--glow-accent);
 }
 
-/* ===========================================================================
-   Status bar — starship console treatment
-   =========================================================================== */
 .lcars-status-bar {
   background: var(--status-bar-bg);
   border-top: 1px solid var(--border-color);
@@ -454,24 +363,15 @@ body {
   font-size: 10px;
   position: relative;
 }
-
-/* Subtle top accent stripe on the status bar */
 .dark .lcars-status-bar::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    var(--lcars-sage) 20%,
-    var(--lcars-teal) 50%,
-    var(--lcars-sage) 80%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg, transparent 0%, var(--lcars-sage) 20%, var(--lcars-teal) 50%, var(--lcars-sage) 80%, transparent 100%);
   opacity: 0.4;
 }
 
-/* Dividers in status bar */
 .lcars-divider {
   width: 1px;
   height: 12px;
@@ -480,7 +380,6 @@ body {
   margin: 0 4px;
 }
 
-/* Meta control buttons in status bar */
 .lcars-meta-btn {
   display: flex;
   align-items: center;
@@ -499,50 +398,30 @@ body {
   background: rgba(255, 255, 255, 0.05);
   box-shadow: var(--glow-accent);
 }
-
-/* Language switcher button — more prominent */
-.lcars-lang-btn {
-  border: 1px solid transparent;
-}
+.lcars-lang-btn { border: 1px solid transparent; }
 .dark .lcars-lang-btn:hover {
   border-color: var(--accent-color);
   color: var(--accent-color);
   box-shadow: var(--glow-accent);
 }
+.lcars-app-id { letter-spacing: 0.05em; }
+.dark .lcars-app-id:hover { color: var(--accent-color); }
 
-/* App ID / version label */
-.lcars-app-id {
-  letter-spacing: 0.05em;
-}
-.dark .lcars-app-id:hover {
-  color: var(--accent-color);
-}
-
-.lyrics-editor-zoom {
-  zoom: 0.85;
-}
-
+.lyrics-editor-zoom { zoom: 0.85; }
 @supports not (zoom: 1) {
   .lyrics-editor-zoom {
-    /* 1 / 0.85 keeps the scaled fallback aligned with the original layout width. */
     width: 117.647059%;
     transform: scale(0.85);
     transform-origin: top center;
   }
 }
 
-/* Pulsing ready indicator */
 @keyframes lcars-pulse {
   0%, 100% { opacity: 1;   box-shadow: 0 0 0   rgba(76, 175, 115, 0); }
   50%       { opacity: 0.7; box-shadow: 0 0 6px rgba(76, 175, 115, 0.6); }
 }
-.dark .lcars-pulse {
-  animation: lcars-pulse 3s ease-in-out infinite;
-}
+.dark .lcars-pulse { animation: lcars-pulse 3s ease-in-out infinite; }
 
-/* ===========================================================================
-   Typography — Trek FUI / Fluent 2 tokens
-   =========================================================================== */
 .ui-fluent .micro-label {
   font-family: var(--font-sans);
   text-transform: uppercase;
@@ -550,54 +429,37 @@ body {
   font-size: 10px;
   font-weight: 600;
 }
-
 .ui-fluent .telemetry-text {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
 
-/* Section header text (CHORUS, VERSE, etc.) */
 .lcars-section-title {
   font-family: var(--font-sans);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
-.dark .lcars-section-title {
-  text-shadow: 0 0 12px currentColor;
-}
+/* Dark theme section title: suppression du glow pour éviter la bavure */
+.dark .lcars-section-title { text-shadow: none; }
 
-/* ===========================================================================
-   Interactive glow effects (focus / hover)
-   =========================================================================== */
-
-/* Focus ring — replaces default browser outline */
 :focus-visible {
   outline: 2px solid var(--accent-color);
   outline-offset: 2px;
   border-radius: 4px;
 }
-
-/* Lyric line — active glow caret */
 .dark [data-line-active="true"] {
   text-shadow: 0 0 8px rgba(76, 175, 115, 0.3);
 }
-
-/* Section navigation chip hover */
 .dark .lcars-section-chip:hover {
   box-shadow: 0 0 10px rgba(76, 175, 115, 0.25);
   filter: brightness(1.1);
 }
 
-/* ===========================================================================
-   Animation utilities
-   =========================================================================== */
 .ui-fluent .temporal-trail {
   transition: transform 400ms cubic-bezier(0.1, 0.9, 0.2, 1);
 }
-
-/* Sensor sweep (used on loading states) */
 .ui-fluent .sensor-sweep {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 2px;
@@ -610,8 +472,6 @@ body {
   0%   { transform: translateY(0); }
   100% { transform: translateY(100vh); }
 }
-
-/* Grid overlay (holographic panels) */
 .ui-fluent .holo-overlay {
   opacity: 0.15;
   mix-blend-mode: screen;
@@ -622,11 +482,6 @@ body {
   filter: drop-shadow(0 0 4px var(--accent-color));
 }
 
-/* ===========================================================================
-   Native form controls — dark theme
-   =========================================================================== */
-
-/* Force all native selects to use dark OS rendering */
 .dark select,
 .dark select:focus {
   background-color: #161616;
@@ -638,15 +493,10 @@ body {
   background-color: #161616;
   color: var(--text-primary);
 }
-/* Section rhyme-scheme select is inline in the band header — keep transparent */
 .dark .lcars-band select {
   background-color: transparent;
   color: inherit;
 }
-
-/* ===========================================================================
-   Light theme — explicit .lcars-band light scoping
-   =========================================================================== */
 
 :root:not(.dark) .lcars-band {
   background-color: #ffffff;
@@ -654,44 +504,28 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
-/* ===========================================================================
-   Light theme — glass surface overrides
-   Glass panels and buttons are designed for dark backgrounds by default.
-   These overrides make them readable on light backgrounds.
-   =========================================================================== */
-
 html:not(.dark) .glass-panel {
   background: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(0, 0, 0, 0.09);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
-
 html:not(.dark) .glass-button {
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
 }
-
 html:not(.dark) .glass-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.95);
   border-color: rgba(0, 0, 0, 0.18);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
   transform: translateY(-1px);
 }
-
-/* Light theme: TopRibbon inline dividers */
-html:not(.dark) .bg-white\/10 {
-  background-color: var(--border-color) !important;
-}
-
-/* Light theme: section chip border on hover */
+html:not(.dark) .bg-white\/10 { background-color: var(--border-color) !important; }
 html:not(.dark) .lcars-section-chip:hover {
   border-color: var(--border-color) !important;
   background: rgba(0, 0, 0, 0.04) !important;
 }
-
-/* Light theme: LCARS HUD chip — invert for readability */
 html:not(.dark) .lcars-hud-chip {
   background-color: rgba(255, 255, 255, 0.75);
   border-color: var(--border-color);

@@ -7,11 +7,13 @@ import { IconButton } from '../ui/IconButton';
 import { Input } from '../ui/Input';
 import { useTranslation } from '../../i18n';
 import { getSectionColor, getSectionDotColor } from '../../utils/songUtils';
+import type { Section } from '../../types';
 
 interface Props {
   isStructureOpen: boolean;
   setIsStructureOpen: (v: boolean) => void;
   structure: string[];
+  song: Section[];
   newSectionName: string;
   setNewSectionName: (v: string) => void;
   isSectionDropdownOpen: boolean;
@@ -25,16 +27,17 @@ interface Props {
   removeStructureItem: (idx: number) => void;
   normalizeStructure: () => void;
   handleDrop: (idx: number) => void;
+  onScrollToSection: (sectionId: string) => void;
 }
 
 export function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
-  structure, newSectionName, setNewSectionName,
+  structure, song, newSectionName, setNewSectionName,
   isSectionDropdownOpen, setIsSectionDropdownOpen,
   draggedItemIndex, setDraggedItemIndex,
   dragOverIndex, setDragOverIndex,
   isGenerating, addStructureItem, removeStructureItem,
-  normalizeStructure, handleDrop,
+  normalizeStructure, handleDrop, onScrollToSection,
 }: Props) {
   const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -70,6 +73,8 @@ export function StructureSidebar({
                       const isIntro = item.toLowerCase() === 'intro';
                       const isOutro = item.toLowerCase() === 'outro';
                       const isDraggable = !isIntro && !isOutro;
+                      // Find matching section id for scroll target
+                      const sectionId = song[idx]?.id ?? null;
                       return (
                         <div
                           key={idx}
@@ -92,7 +97,15 @@ export function StructureSidebar({
                           ) : (
                             <div className="w-3.5" />
                           )}
-                          <span className="flex-1">{item}</span>
+                          {/* Clickable label scrolls to section */}
+                          <button
+                            type="button"
+                            className="flex-1 text-left truncate hover:text-[var(--accent-color)] transition-colors"
+                            onClick={() => sectionId && onScrollToSection(sectionId)}
+                            title={`Scroll to ${item}`}
+                          >
+                            {item}
+                          </button>
                           <Tooltip title={t.tooltips.removeSection}>
                             <button onClick={() => removeStructureItem(idx)} className="p-1 hover:bg-black/20 rounded transition-colors opacity-0 group-hover:opacity-100">
                               <X className="w-3 h-3" />

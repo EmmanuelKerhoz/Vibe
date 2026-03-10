@@ -7,10 +7,6 @@
 import type { Section } from '../types';
 import type { WebSimilarityCandidate, SearchTreeNode, SearchProvider } from '../types/webSimilarity';
 
-// ---------------------------------------------------------------------------
-// Text helpers
-// ---------------------------------------------------------------------------
-
 const normalize = (text: string) =>
   text
     .toLowerCase()
@@ -21,9 +17,7 @@ const normalize = (text: string) =>
     .trim();
 
 const tokenize = (text: string): string[] =>
-  normalize(text)
-    .split(' ')
-    .filter(t => t.length > 2);
+  normalize(text).split(' ').filter(t => t.length > 2);
 
 const ngramSet = (tokens: string[], n = 2): Set<string> => {
   const result = new Set<string>();
@@ -44,40 +38,22 @@ export const jaccardScore = (a: string, b: string): number => {
   return union > 0 ? intersection / union : 0;
 };
 
-// ---------------------------------------------------------------------------
-// Segment extraction — hook detection
-// ---------------------------------------------------------------------------
-
 export const extractSegments = (sections: Section[]): string[] => {
   const segments: string[] = [];
-
-  // Full text
-  const fullText = sections
-    .flatMap(s => s.lines.map(l => l.text))
-    .filter(Boolean)
-    .join(' ');
+  const fullText = sections.flatMap(s => s.lines.map(l => l.text)).filter(Boolean).join(' ');
   if (fullText.trim()) segments.push(fullText);
-
-  // Per section
   for (const section of sections) {
     const sectionText = section.lines.map(l => l.text).filter(Boolean).join(' ');
     if (sectionText.trim()) segments.push(sectionText);
   }
-
-  // Hooks: lines with highest token density (>= 4 tokens, deduplicated)
   const allLines = sections.flatMap(s => s.lines.map(l => l.text)).filter(Boolean);
   const hooks = allLines
     .filter(line => tokenize(line).length >= 4)
     .sort((a, b) => tokenize(b).length - tokenize(a).length)
     .slice(0, 5);
   segments.push(...hooks);
-
   return [...new Set(segments.filter(s => s.trim().length > 10))];
 };
-
-// ---------------------------------------------------------------------------
-// Search providers
-// ---------------------------------------------------------------------------
 
 const ddgSearch = async (query: string): Promise<SearchTreeNode[]> => {
   const url = `/api/ddg?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
@@ -86,24 +62,13 @@ const ddgSearch = async (query: string): Promise<SearchTreeNode[]> => {
     if (!res.ok) return [];
     const data = await res.json();
     const results: SearchTreeNode[] = [];
-
     if (data.AbstractText) {
-      results.push({
-        title: data.Heading ?? query,
-        snippet: data.AbstractText,
-        url: data.AbstractURL ?? '',
-        source: 'ddg',
-      });
+      results.push({ title: data.Heading ?? query, snippet: data.AbstractText, url: data.AbstractURL ?? '', source: 'ddg' });
     }
     if (data.RelatedTopics) {
       for (const topic of data.RelatedTopics.slice(0, 4)) {
         if (topic.Text) {
-          results.push({
-            title: topic.Text.split(' - ')[0] ?? '',
-            snippet: topic.Text,
-            url: topic.FirstURL ?? '',
-            source: 'ddg',
-          });
+          results.push({ title: topic.Text.split(' - ')[0] ?? '', snippet: topic.Text, url: topic.FirstURL ?? '', source: 'ddg' });
         }
       }
     }
@@ -115,13 +80,8 @@ const ddgSearch = async (query: string): Promise<SearchTreeNode[]> => {
 
 const wikipediaSearch = async (query: string): Promise<SearchTreeNode[]> => {
   const params = new URLSearchParams({
-    action: 'query',
-    list: 'search',
-    srsearch: query,
-    srlimit: '5',
-    srprop: 'snippet|titlesnippet',
-    format: 'json',
-    origin: '*',
+    action: 'query', list: 'search', srsearch: query,
+    srlimit: '5', srprop: 'snippet|titlesnippet', format: 'json', origin: '*',
   });
   const url = `https://en.wikipedia.org/w/api.php?${params}`;
   try {
@@ -144,11 +104,6 @@ export const PROVIDERS: Record<SearchProvider, (q: string) => Promise<SearchTree
   wikipedia: wikipediaSearch,
 };
 
-// ---------------------------------------------------------------------------
-// Search tree — progressive refinement
-// ---------------------------------------------------------------------------
-
-const SCORE_THRESHOLD = 0.08;
 const MAX_CANDIDATES = 20;
 
 const deduplicateNodes = (nodes: SearchTreeNode[]): SearchTreeNode[] => {
@@ -162,11 +117,8 @@ const deduplicateNodes = (nodes: SearchTreeNode[]): SearchTreeNode[] => {
 };
 
 /**
- * Run the search tree for a given set of segments.
- * Level 0: full text + top hook → broad candidates
- * Level 1: per-section queries → focused candidates
- * Level 2: re-score all collected candidates against full text
- * Returns top 3 WebSimilarityCandidate sorted by score desc.
+ * Run the search tree.
+ * Always returns the top 3 candidates sorted by score desc, regardless of score value.
  */
 export const runSearchTree = async (
   sections: Section[],
@@ -184,31 +136,23 @@ export const runSearchTree = async (
     allNodes.push(...nodes);
   };
 
-  // Level 0 — broad: full text + first hook via both providers in parallel
   const level0Queries = [fullText, segments[segments.length - 1]].filter(Boolean).slice(0, 2);
   await Promise.allSettled(
-    level0Queries.flatMap(q => [
-      safeSearch('ddg', q),
-      safeSearch('wikipedia', q),
-    ]),
+    level0Queries.flatMap(q => [safeSearch('ddg', q), safeSearch('wikipedia', q)]),
   );
 
   if (abortSignal?.aborted) return [];
 
-  // Level 1 — focused: one query per section
   const sectionQueries = segments.slice(1, sections.length + 1);
   await Promise.allSettled(
-    sectionQueries.flatMap(q => [
-      safeSearch('ddg', q),
-      safeSearch('wikipedia', q),
-    ]),
+    sectionQueries.flatMap(q => [safeSearch('ddg', q), safeSearch('wikipedia', q)]),
   );
 
   if (abortSignal?.aborted) return [];
 
-  // Level 2 — score all collected nodes against fullText
   const unique = deduplicateNodes(allNodes).slice(0, MAX_CANDIDATES);
 
+  // Score all nodes, keep top 3 unconditionally (no threshold filter)
   const candidates: WebSimilarityCandidate[] = unique
     .map(node => {
       const snippetScore = jaccardScore(fullText, node.snippet);
@@ -221,11 +165,10 @@ export const runSearchTree = async (
         source: node.source,
         score: Math.round(score * 100),
         matchedSegments: segments
-          .filter(s => jaccardScore(s, node.snippet) > SCORE_THRESHOLD)
+          .filter(s => jaccardScore(s, node.snippet) > 0)
           .map(s => s.slice(0, 60)),
       };
     })
-    .filter(c => c.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
