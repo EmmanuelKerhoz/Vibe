@@ -364,10 +364,6 @@ body {
 /* Black carbon fiber — forged look via cross-hatch chips */
 .lcars-lyrics-area {
   background-color: #080808;
-}
-
-.dark .lcars-lyrics-area {
-  background-color: #080808;
   background-image:
     /* Carbon weave layer 1: NE diagonal fine grain */
     repeating-linear-gradient(
@@ -411,7 +407,7 @@ body {
       rgba(255, 255, 255, 0.03) 0%,
       transparent 70%
     );
-  background-attachment: fixed;
+  background-attachment: scroll;
 }
 
 /* ── LCARS HUD chip ─────────────────────────────────────────────── */
