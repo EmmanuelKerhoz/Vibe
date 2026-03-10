@@ -1022,6 +1022,24 @@ export default function App() {
                         />
 
                         <div className="mt-3 space-y-3">
+                          {/* Column headers */}
+                          <div className="flex items-center gap-3 px-3 pb-1 border-b border-white/5 mb-1">
+                            {/* Left side spacers — mirror the line row left controls */}
+                            {/* grip */}        <div className="w-5 shrink-0" />
+                            {/* origin icon */} <div className="w-4 shrink-0" />
+                            {/* chevrons */}    <div className="w-4 shrink-0" />
+                            {/* line number */} <div className="w-8 shrink-0" />
+                            {/* lyric input */}
+                            <div className="flex-1" />
+                            {/* Right-side column headers — fixed widths matching data cells */}
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="micro-label text-zinc-600 dark:text-zinc-500 w-20 text-right truncate">{t.editor.rhymeSyllable}</span>
+                              <span className="micro-label text-zinc-600 dark:text-zinc-500 w-6 text-right">{t.editor.syllables}</span>
+                              <span className="micro-label text-zinc-600 dark:text-zinc-500 w-10 text-center">{t.editor.rhyme}</span>
+                            </div>
+                            {/* delete button spacer */}
+                            <div className="w-6 shrink-0" />
+                          </div>
                           {section.lines.map((line, index) => {
                             const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
                             const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
@@ -1118,23 +1136,23 @@ export default function App() {
                                   placeholder={`${section.name} line ${index + 1}`}
                                   className="flex-1 text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                                 />
-                                <div className="flex items-center gap-3 shrink-0 min-w-[120px] justify-end">
+                                <div className="flex items-center gap-3 shrink-0">
                                   {/* Rhyming syllables — the ending sound that rhymes */}
-                                  {line.rhymingSyllables && (
-                                    <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 tracking-wide opacity-80">
-                                      {line.rhymingSyllables}
-                                    </span>
-                                  )}
+                                  <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 w-20 text-right truncate">
+                                    {line.rhymingSyllables || ''}
+                                  </span>
                                   {/* Total syllable count */}
-                                  <span className="text-[11px] tabular-nums font-mono text-zinc-400 dark:text-zinc-500 w-5 text-right">
+                                  <span className="text-[11px] tabular-nums font-mono text-zinc-400 dark:text-zinc-500 w-6 text-right">
                                     {line.syllables > 0 ? line.syllables : ''}
                                   </span>
                                   {/* Rhyme group label */}
-                                  {line.rhyme && (
-                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
-                                      {line.rhyme}
-                                    </span>
-                                  )}
+                                  <span className="w-10 flex justify-center">
+                                    {line.rhyme ? (
+                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
+                                        {line.rhyme}
+                                      </span>
+                                    ) : null}
+                                  </span>
                                 </div>
 
                                 {/* Delete line button */}
