@@ -242,6 +242,10 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
     
     setIsGenerating(true);
     try {
+      const sectionIndex = song.findIndex(s => s.id === sectionId);
+      const prevSection = sectionIndex > 0 ? song[sectionIndex - 1] : null;
+      const nextSection = sectionIndex < song.length - 1 ? song[sectionIndex + 1] : null;
+
       let lineCountPrompt = "";
       const lowerName = sectionToRegenerate.name.toLowerCase();
       if (lowerName.includes('intro')) lineCountPrompt = "The section should have exactly 4 lines.";
@@ -250,18 +254,40 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
       else if (lowerName.includes('bridge')) lineCountPrompt = "The section should have exactly 6 lines.";
       else if (lowerName.includes('outro')) lineCountPrompt = "The section should have exactly 4 lines.";
 
-      const prompt = `Rewrite the following section of a song about "${topic}".
+      const songStructure = song.map(s => s.name).join(' → ');
+
+      const formatSectionLyrics = (sec: Section) =>
+        sec.lines.map(l => l.text).filter(Boolean).join('\n');
+
+      const prevContext = prevSection
+        ? `\nPrevious section context (${prevSection.name}):\n${formatSectionLyrics(prevSection)}`
+        : '';
+      const nextContext = nextSection
+        ? `\nNext section context (${nextSection.name}):\n${formatSectionLyrics(nextSection)}`
+        : '';
+
+      const creativeDirectives = [
+        ...(sectionToRegenerate.preInstructions || []),
+        ...(sectionToRegenerate.postInstructions || []),
+      ];
+      const directivesPrompt = creativeDirectives.length > 0
+        ? `\nCreative directives:\n${creativeDirectives.map(d => `- ${d}`).join('\n')}`
+        : '';
+
+      const prompt = `Rewrite the following section of a song titled "${title}" about "${topic}".
 Mood: ${mood}
 Target Syllables per line: ${targetSyllables}
 Section Name: ${sectionToRegenerate.name}
 Rhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}
 Mood: ${sectionToRegenerate.mood || mood}
 ${lineCountPrompt}
+Song structure: ${songStructure}
+${prevContext}${nextContext}${directivesPrompt}
 
 Current Section:
 ${JSON.stringify([sectionToRegenerate], null, 2)}
 
-Provide a new creative version of this section.
+Provide a new creative version of this section that fits seamlessly with the surrounding sections.
 Return the updated section in the exact same JSON structure (as an array with one section).`;
 
       const response = await getAi().models.generateContent({

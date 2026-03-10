@@ -32,7 +32,7 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile }: 
       <div className="relative w-full max-w-md flex flex-col animate-in zoom-in-95 duration-300 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden">
 
         {/* Header */}
-        <div className={`px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0 ${hasExistingWork ? 'bg-amber-500/5' : 'bg-[var(--bg-sidebar)]'}`}>
+        <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0 bg-[var(--bg-sidebar)]">
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${hasExistingWork ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20'}`}>
               {hasExistingWork
