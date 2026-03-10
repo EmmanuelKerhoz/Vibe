@@ -50,6 +50,48 @@ type VersionSnapshot = {
   mood: string;
 };
 
+const getDefaultLineCount = (name: string) =>
+  name.toLowerCase().includes('verse') || name.toLowerCase().includes('bridge')
+    ? 6
+    : 4;
+
+const createEmptySong = (structure: string[], defaultRhymeScheme: string): Section[] =>
+  structure.map(name => ({
+    id: generateId(),
+    name,
+    rhymeScheme: defaultRhymeScheme,
+    lines: Array(getDefaultLineCount(name))
+      .fill(null)
+      .map(() => ({
+        id: generateId(),
+        text: '',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 0,
+        concept: 'New line',
+      })),
+  }));
+
+const isPristineDraft = (song: Section[], structure: string[], defaultRhymeScheme: string) => (
+  structure.length === DEFAULT_STRUCTURE.length
+  && structure.every((name, index) => name === DEFAULT_STRUCTURE[index])
+  && song.length === structure.length
+  && song.every((section, sectionIndex) =>
+    section.name === structure[sectionIndex]
+    && (section.rhymeScheme || defaultRhymeScheme) === defaultRhymeScheme
+    && (!section.preInstructions || section.preInstructions.length === 0)
+    && (!section.postInstructions || section.postInstructions.length === 0)
+    && section.lines.length === getDefaultLineCount(section.name)
+    && section.lines.every(line =>
+      line.text === ''
+      && line.rhymingSyllables === ''
+      && line.rhyme === ''
+      && line.syllables === 0
+      && line.concept === 'New line'
+    )
+  )
+);
+
 export default function App() {
   const { t } = useTranslation();
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -68,11 +110,12 @@ export default function App() {
   const [dragOverLineInfo, setDragOverLineInfo] = useState<{sectionId: string, lineId: string} | null>(null);
   const [audioFeedback, setAudioFeedback] = useState(true);
   const [isSavingToLibrary, setIsSavingToLibrary] = useState(false);
+  const [isSessionHydrated, setIsSessionHydrated] = useState(false);
   
   const {
     song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
     updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory, undo, redo,
-  } = useSongHistoryState([], DEFAULT_STRUCTURE);
+  } = useSongHistoryState(createEmptySong(DEFAULT_STRUCTURE, rhymeScheme), DEFAULT_STRUCTURE);
   const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>('lyrics');
   const [genre, setGenre] = useState('');
   const [tempo, setTempo] = useState('120');
@@ -231,10 +274,11 @@ export default function App() {
         console.error('Failed to parse saved session', e);
       }
     }
+    setIsSessionHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (song.length > 0) {
+    if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
       const sessionData = {
         song, structure, title, topic, mood, rhymeScheme, targetSyllables,
         genre, tempo, instrumentation, musicalPrompt
@@ -242,7 +286,7 @@ export default function App() {
       localStorage.setItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
     }
-  }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, musicalPrompt]);
+  }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, musicalPrompt, isSessionHydrated]);
 
   const { playAudioFeedback } = useAudioFeedback(audioFeedback);
 
@@ -336,7 +380,9 @@ export default function App() {
   }, []);
 
   const resetSong = () => {
-    updateSongAndStructureWithHistory([], DEFAULT_STRUCTURE);
+    updateSongAndStructureWithHistory(createEmptySong(DEFAULT_STRUCTURE, rhymeScheme), DEFAULT_STRUCTURE);
+    localStorage.removeItem('lyricist_session');
+    setHasSavedSession(false);
     clearSelection();
     setIsResetModalOpen(false);
   };
@@ -425,6 +471,7 @@ export default function App() {
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
   const hasExistingWork = song.length > 0
+    && !isPristineDraft(song, structure, rhymeScheme)
     || topic !== DEFAULT_TOPIC
     || mood !== DEFAULT_MOOD
     || (isMarkupMode && markupText.trim().length > 0);
@@ -734,8 +781,108 @@ export default function App() {
             <div className="lyrics-editor-zoom h-full">
             {activeTab === 'lyrics' ? (
               <div className="max-w-4xl mx-auto space-y-8 pb-32">
-                {/* CONTENT OMITTED FOR BREVITY - Same as before */}
-                {song.length === 0 ? <div>Empty state UI</div> : isMarkupMode ? <div>Markup mode UI</div> : <div>Song sections UI</div>}
+                {isMarkupMode ? (
+                  <MarkupInput
+                    value={markupText}
+                    onChange={(e) => setMarkupText(e.target.value)}
+                    textareaRef={markupTextareaRef}
+                    className="w-full min-h-[70vh] rounded-2xl border border-black/10 bg-white/70 p-5 font-mono text-sm leading-7 text-zinc-800 shadow-[0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-100"
+                    spellCheck={false}
+                  />
+                ) : (
+                  song.map((section) => (
+                    <section
+                      key={section.id}
+                      id={`section-${section.id}`}
+                      className="rounded-3xl border border-black/10 bg-white/80 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-white/[0.03]"
+                    >
+                      <div className="mb-5 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getSectionDotColor(section.name) }} />
+                          <div>
+                            <h2 className="text-lg font-semibold uppercase tracking-[0.25em]" style={{ color: getSectionTextColor(section.name) }}>
+                              {section.name}
+                            </h2>
+                            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+                              {section.lines.length} lines
+                              {section.rhymeScheme ? ` • ${section.rhymeScheme}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <Tooltip title={t.tooltips.regenerateSection}>
+                          <button
+                            onClick={() => regenerateSection(section.id)}
+                            disabled={isGenerating || isAnalyzing}
+                            className="flex items-center gap-2 rounded-full border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                            {t.editor.regenerateSection}
+                          </button>
+                        </Tooltip>
+                      </div>
+
+                      <InstructionEditor
+                        instructions={section.preInstructions}
+                        sectionId={section.id}
+                        type="pre"
+                        onChange={handleInstructionChange}
+                        onAdd={addInstruction}
+                        onRemove={removeInstruction}
+                      />
+
+                      <div className="mt-5 space-y-3">
+                        {section.lines.map((line, index) => (
+                          <div
+                            key={line.id}
+                            className={`group rounded-2xl border px-4 py-3 transition ${
+                              selectedLineId === line.id
+                                ? 'border-[var(--accent-color)]/60 bg-[var(--accent-color)]/10 shadow-[0_0_0_1px_rgba(var(--accent-color-rgb),0.15)]'
+                                : 'border-black/10 bg-black/[0.02] hover:border-black/20 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => handleLineClick(line.id)}
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white/70 text-[11px] font-semibold text-zinc-500 transition group-hover:text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-zinc-200"
+                              >
+                                {index + 1}
+                              </button>
+                              <LyricInput
+                                value={line.text}
+                                onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
+                                onKeyDown={(e) => handleLineKeyDown(e, section.id, line.id)}
+                                onClick={() => handleLineClick(line.id)}
+                                data-line-id={line.id}
+                                placeholder={`${section.name} line ${index + 1}`}
+                                className="flex-1 text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                              />
+                              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
+                                <span>{line.syllables}</span>
+                                {line.rhyme && (
+                                  <span className="rounded-full px-2 py-1" style={{ color: getRhymeColor(line.rhyme), backgroundColor: `${getRhymeColor(line.rhyme)}1A` }}>
+                                    {line.rhyme}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-5">
+                        <InstructionEditor
+                          instructions={section.postInstructions}
+                          sectionId={section.id}
+                          type="post"
+                          onChange={handleInstructionChange}
+                          onAdd={addInstruction}
+                          onRemove={removeInstruction}
+                        />
+                      </div>
+                    </section>
+                  ))
+                )}
               </div>
             ) : (
               <div>Musical tab UI</div>
