@@ -149,6 +149,25 @@ const en: Translations = {
     matchedSections: 'Matched sections',
     sharedKeywords: 'Shared keywords',
     thresholdHint: 'Only songs above 50% similarity are shown, ordered from most to least similar.',
+    webTitle: 'Web Similarity',
+    webSubtitle: 'Results from DuckDuckGo and Wikipedia',
+    webIdle: 'No search run yet. The engine triggers automatically after 30 s of inactivity (≥ 20 % text change), or click Refresh.',
+    webRunning: 'Searching DuckDuckGo + Wikipedia…',
+    webNoMatches: '✓ No significant external matches found. Your lyrics appear original.',
+    webRefresh: 'Refresh',
+    nGramScoring: 'Jaccard n-gram scoring',
+    libraryTitle: 'Library Similarity',
+  },
+
+  saveToLibrary: {
+    title: 'Save to Library',
+    save: 'Save Current Song',
+    saving: 'Saving…',
+    saved: 'Saved!',
+    saveDescription: 'Add this song to your personal library',
+    yourLibrary: 'Your Library',
+    empty: 'No songs in library yet. Save this song to start building your collection.',
+    close: 'Close',
   },
 
   paste: {

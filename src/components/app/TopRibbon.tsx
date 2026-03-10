@@ -98,7 +98,7 @@ export function TopRibbon({
             {t.ribbon.exportMd}
           </Button>
         </Tooltip>
-        <div className="w-px h-4 bg-white/10 mx-2" />
+        <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
         <Tooltip title={t.tooltips.versions}>
           <IconButton onClick={() => setIsVersionsModalOpen(true)} size="small" style={{ color: 'var(--text-secondary)' }}>
             <History className="w-4 h-4" />
@@ -128,13 +128,13 @@ export function TopRibbon({
             <Redo2 className="w-4 h-4" />
           </IconButton>
         </Tooltip>
-        <div className="w-px h-4 bg-white/10 mx-2" />
+        <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
         <Tooltip title={t.tooltips.reset}>
           <IconButton onClick={() => setIsResetModalOpen(true)} disabled={song.length === 0} size="small" style={{ color: 'var(--accent-critical)' }}>
             <Trash2 className="w-4 h-4" />
           </IconButton>
         </Tooltip>
-        <div className="w-px h-4 bg-white/10 mx-2" />
+        <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
         {!hasApiKey && (
           <Tooltip title={t.tooltips.aiUnavailableHelp}>
             <button onClick={handleApiKeyHelp} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold rounded-lg flex items-center gap-2 hover:bg-amber-500/20 transition-all">
