@@ -186,6 +186,7 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -351,7 +352,37 @@ body {
   box-shadow: var(--glow-accent);
 }
 
+.dark .lcars-band {
+  background-color: #000000;
+  background-image: none;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
 .lcars-band-stripe { width: 16px; flex-shrink: 0; }
+
+/* ── Lyrics scroll area (carbon fiber texture) ──────────────────── */
+.lcars-lyrics-area {
+  background-color: #050505;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.015) 0px,
+      rgba(255,255,255,0.015) 1px,
+      transparent 1px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255,255,255,0.015) 0px,
+      rgba(255,255,255,0.015) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+}
+
+.dark .lcars-lyrics-area {
+  background-color: #050505;
+}
 
 /* ── LCARS HUD chip ─────────────────────────────────────────────── */
 .ui-fluent .lcars-hud-chip {
