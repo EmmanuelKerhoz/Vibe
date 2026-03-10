@@ -6,8 +6,8 @@ import { AI_KEY_ENV_VAR, AI_MODEL_NAME } from '../../../utils/aiUtils';
 import { Button } from '../../ui/Button';
 import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
 
-const BANNER_WIDTH = 1366;
-const BANNER_HEIGHT = 580;
+const BANNER_WIDTH = 1200;
+const BANNER_HEIGHT = 630;
 
 interface Props {
   isOpen: boolean;
@@ -33,8 +33,12 @@ export function AboutModal({ isOpen, onClose }: Props) {
       </div>
 
       {/* Modal panel */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden">
-
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.app.name}
+        className="relative w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -52,6 +56,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
           </div>
           <button
             onClick={onClose}
+            aria-label={t.about.close}
             className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors"
           >
             <X className="w-4 h-4" />

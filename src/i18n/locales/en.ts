@@ -210,8 +210,9 @@ const en: Translations = {
     },
     audio: {
       label: 'Audio',
-      enable: 'Enable sound',
+      enable: 'Enable',
       volume: 'Volume',
+      disable: 'Disable',
     },
     language: {
       label: 'Language',
