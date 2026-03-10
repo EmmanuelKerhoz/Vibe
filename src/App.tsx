@@ -774,7 +774,7 @@ export default function App() {
           />
 
           {activeTab === 'lyrics' && song.length > 0 && (
-            <div className="border-b border-white/10 bg-white/[0.03] px-4 py-3 z-10">
+            <div className="border-b border-white/10 bg-white/[0.03] px-4 py-2 z-10">
               <div className="lyrics-editor-zoom flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -837,32 +837,32 @@ export default function App() {
 
                 <div className="flex items-center gap-2 ml-4">
                   <Tooltip title="Save current song to library for similarity detection">
-                    <button onClick={handleSaveToLibrary} disabled={isSavingToLibrary || song.length === 0} className="px-4 py-2 glass-button text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={handleSaveToLibrary} disabled={isSavingToLibrary || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       {isSavingToLibrary ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                       Save to Library
                     </button>
                   </Tooltip>
                   <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
-                    <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-4 py-2 glass-button text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       <Layout className="w-3.5 h-3.5" />
                       {isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}
                     </button>
                   </Tooltip>
                   <Tooltip title={t.tooltips.analyzeTheme}>
-                    <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-4 py-2 glass-button text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       <BarChart2 className="w-3.5 h-3.5" />
                       {t.editor.analyze}
                     </button>
                   </Tooltip>
                   <Tooltip title={`Check similarity with ${libraryCount} songs in library`}>
-                    <button onClick={() => setIsSimilarityModalOpen(true)} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-4 py-2 glass-button text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative">
+                    <button onClick={() => setIsSimilarityModalOpen(true)} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative">
                       <Search className="w-3.5 h-3.5" />
                       {t.ribbon?.similarity || 'Similarity'}
                       {libraryCount > 0 && <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded text-[9px]">{libraryCount}</span>}
                     </button>
                   </Tooltip>
                   <Tooltip title={t.tooltips.regenerate}>
-                    <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-4 py-2 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-white text-xs rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap">
+                    <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap">
                       {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                       {t.editor.regenerateGlobal}
                     </button>
@@ -876,7 +876,7 @@ export default function App() {
           <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative p-8">
             <div className="lyrics-editor-zoom h-full">
             {activeTab === 'lyrics' ? (
-              <div className="max-w-4xl mx-auto space-y-8 pb-32">
+              <div className="w-full space-y-6 pb-32">
                 {isMarkupMode ? (
                   <MarkupInput
                     value={markupText}
@@ -919,34 +919,10 @@ export default function App() {
                       {/* LCARS asymmetric colored left stripe */}
                       <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
 
-                      <div className="flex-1 p-6">
+                      <div className="flex-1 p-4">
                         {/* Section header */}
-                        <div className="mb-5 flex items-center justify-between gap-4 flex-wrap">
+                        <div className="mb-3 flex items-center justify-between gap-4 flex-wrap">
                           <div className="flex items-center gap-3">
-                            <Tooltip title={isSectionDraggable ? 'Drag to reorder section' : 'Intro and Outro stay anchored'}>
-                              <div
-                                draggable={isSectionDraggable}
-                                onDragStart={() => {
-                                  if (!isSectionDraggable) return;
-                                  setDraggedItemIndex(sectionIndex);
-                                  setDraggableSectionIndex(sectionIndex);
-                                  playAudioFeedback('drag');
-                                }}
-                                onDragEnd={() => {
-                                  setDraggedItemIndex(null);
-                                  setDragOverIndex(null);
-                                  setDraggableSectionIndex(null);
-                                }}
-                                className={`flex h-11 w-8 shrink-0 items-center justify-center rounded-[999px] border border-white/10 bg-white/[0.03] text-zinc-500 transition ${
-                                  isSectionDraggable
-                                    ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:text-[var(--accent-color)]'
-                                    : 'cursor-not-allowed opacity-40'
-                                }`}
-                              >
-                                <GripVertical className="h-4 w-4" />
-                              </div>
-                            </Tooltip>
-
                             {/* Section move up/down */}
                             <div className="flex flex-col gap-0.5">
                               <Tooltip title="Move section up">
@@ -1003,16 +979,37 @@ export default function App() {
                             </div>
                           </div>
 
-                          <Tooltip title={t.tooltips.regenerateSection}>
-                            <button
-                              onClick={() => regenerateSection(section.id)}
-                              disabled={isGenerating || isAnalyzing}
-                              className="flex items-center gap-2 rounded-full border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                              {t.editor.regenerateSection}
-                            </button>
-                          </Tooltip>
+                          <div className="flex items-center gap-2">
+                            <Tooltip title={t.tooltips.regenerateSection}>
+                              <button
+                                onClick={() => regenerateSection(section.id)}
+                                disabled={isGenerating || isAnalyzing}
+                                className="flex items-center gap-2 rounded-tl-xl rounded-br-xl rounded-tr-sm rounded-bl-sm border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                                {t.editor.regenerateSection}
+                              </button>
+                            </Tooltip>
+                            <Tooltip title={isSectionDraggable ? 'Drag to reorder section' : 'Intro and Outro stay anchored'}>
+                              <div
+                                draggable={isSectionDraggable}
+                                onDragStart={() => {
+                                  if (!isSectionDraggable) return;
+                                  setDraggedItemIndex(sectionIndex);
+                                  setDraggableSectionIndex(sectionIndex);
+                                  playAudioFeedback('drag');
+                                }}
+                                onDragEnd={() => {
+                                  setDraggedItemIndex(null);
+                                  setDragOverIndex(null);
+                                  setDraggableSectionIndex(null);
+                                }}
+                                className={`cursor-grab active:cursor-grabbing text-zinc-500 hover:text-zinc-300 transition-colors ${!isSectionDraggable ? 'cursor-not-allowed opacity-40' : ''}`}
+                              >
+                                <GripVertical className="h-5 w-5" />
+                              </div>
+                            </Tooltip>
+                          </div>
                         </div>
 
                         <InstructionEditor
@@ -1024,7 +1021,7 @@ export default function App() {
                           onRemove={removeInstruction}
                         />
 
-                        <div className="mt-5 space-y-3">
+                        <div className="mt-3 space-y-3">
                           {section.lines.map((line, index) => {
                             const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
                             const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
@@ -1052,13 +1049,12 @@ export default function App() {
                                 e.stopPropagation();
                                 handleLineDrop(section.id, line.id);
                               }}
-                              className={`group rounded-2xl border px-4 py-3 transition ${
+                              className={`group flex items-center gap-3 px-3 py-1.5 rounded transition-colors ${
                                 selectedLineId === line.id
-                                  ? 'border-[var(--accent-color)]/60 bg-[var(--accent-color)]/10 shadow-[0_0_0_1px_rgba(var(--accent-color-rgb),0.15)]'
-                                  : 'border-black/10 bg-black/[0.02] hover:border-black/20 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20'
+                                  ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
+                                  : 'hover:bg-white/[0.025]'
                               } ${isLineDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
                             >
-                              <div className="flex items-center gap-3">
                                 <Tooltip title="Drag to reorder line">
                                   <div
                                     draggable
@@ -1141,7 +1137,6 @@ export default function App() {
                                     <Trash2 className="h-3 w-3" />
                                   </button>
                                 </Tooltip>
-                              </div>
                             </div>
                           )})}
                         </div>
@@ -1151,14 +1146,14 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => addLineToSection(section.id)}
-                            className="flex items-center gap-2 rounded-full border border-dashed border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500 transition hover:border-white/30 hover:text-zinc-300 dark:hover:text-zinc-200"
+                            className="flex items-center gap-2 rounded border border-dashed border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500 transition hover:border-white/30 hover:text-zinc-300 dark:hover:text-zinc-200"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             Add Line
                           </button>
                         </div>
 
-                        <div className="mt-5">
+                        <div className="mt-3">
                           <InstructionEditor
                             instructions={section.postInstructions}
                             sectionId={section.id}

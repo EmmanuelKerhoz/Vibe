@@ -459,14 +459,14 @@ body {
 }
 
 .lyrics-editor-zoom {
-  zoom: 0.75;
+  zoom: 0.85;
 }
 
 @supports not (zoom: 1) {
   .lyrics-editor-zoom {
-    /* 1 / 0.75 keeps the scaled fallback aligned with the original layout width. */
-    width: 133.333333%;
-    transform: scale(0.75);
+    /* 1 / 0.85 keeps the scaled fallback aligned with the original layout width. */
+    width: 117.647059%;
+    transform: scale(0.85);
     transform-origin: top center;
   }
 }
