@@ -72,23 +72,29 @@ const createEmptySong = (structure: string[], defaultRhymeScheme: string): Secti
       })),
   }));
 
+const isPristineLine = (line: Section['lines'][number]) => (
+  line.text === ''
+  && line.rhymingSyllables === ''
+  && line.rhyme === ''
+  && line.syllables === 0
+  && line.concept === 'New line'
+);
+
+const isPristineSection = (section: Section, structureName: string, defaultRhymeScheme: string) => (
+  section.name === structureName
+  && (section.rhymeScheme ?? defaultRhymeScheme) === defaultRhymeScheme
+  && (!section.preInstructions || section.preInstructions.length === 0)
+  && (!section.postInstructions || section.postInstructions.length === 0)
+  && section.lines.length === getDefaultLineCount(section.name)
+  && section.lines.every(isPristineLine)
+);
+
 const isPristineDraft = (song: Section[], structure: string[], defaultRhymeScheme: string) => (
   structure.length === DEFAULT_STRUCTURE.length
   && structure.every((name, index) => name === DEFAULT_STRUCTURE[index])
   && song.length === structure.length
   && song.every((section, sectionIndex) =>
-    section.name === structure[sectionIndex]
-    && (section.rhymeScheme || defaultRhymeScheme) === defaultRhymeScheme
-    && (!section.preInstructions || section.preInstructions.length === 0)
-    && (!section.postInstructions || section.postInstructions.length === 0)
-    && section.lines.length === getDefaultLineCount(section.name)
-    && section.lines.every(line =>
-      line.text === ''
-      && line.rhymingSyllables === ''
-      && line.rhyme === ''
-      && line.syllables === 0
-      && line.concept === 'New line'
-    )
+    isPristineSection(section, structure[sectionIndex], defaultRhymeScheme)
   )
 );
 
@@ -470,8 +476,10 @@ export default function App() {
   const sectionCount = song.length;
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
-  const hasExistingWork = song.length > 0
+  const hasExistingWork = (
+    song.length > 0
     && !isPristineDraft(song, structure, rhymeScheme)
+  )
     || topic !== DEFAULT_TOPIC
     || mood !== DEFAULT_MOOD
     || (isMarkupMode && markupText.trim().length > 0);
