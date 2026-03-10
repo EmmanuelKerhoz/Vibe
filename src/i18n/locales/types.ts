@@ -154,6 +154,25 @@ export interface Translations {
     matchedSections: string;
     sharedKeywords: string;
     thresholdHint: string;
+    webTitle: string;
+    webSubtitle: string;
+    webIdle: string;
+    webRunning: string;
+    webNoMatches: string;
+    webRefresh: string;
+    nGramScoring: string;
+    libraryTitle: string;
+  };
+
+  saveToLibrary: {
+    title: string;
+    save: string;
+    saving: string;
+    saved: string;
+    saveDescription: string;
+    yourLibrary: string;
+    empty: string;
+    close: string;
   };
 
   paste: {

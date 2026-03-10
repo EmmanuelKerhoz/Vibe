@@ -149,6 +149,25 @@ const es: Translations = {
     matchedSections: 'Secciones coincidentes',
     sharedKeywords: 'Palabras clave compartidas',
     thresholdHint: 'Solo se muestran las canciones con más del 50% de similitud, ordenadas de mayor a menor.',
+    webTitle: 'Similitud Web',
+    webSubtitle: 'Resultados de DuckDuckGo y Wikipedia',
+    webIdle: 'No se ha realizado ninguna búsqueda. El motor se activa automáticamente tras 30 s de inactividad (≥ 20 % de cambio de texto), o haz clic en Actualizar.',
+    webRunning: 'Buscando en DuckDuckGo + Wikipedia…',
+    webNoMatches: '✓ No se encontraron coincidencias externas significativas. Tus letras parecen originales.',
+    webRefresh: 'Actualizar',
+    nGramScoring: 'Puntuación Jaccard n-grama',
+    libraryTitle: 'Similitud de Biblioteca',
+  },
+
+  saveToLibrary: {
+    title: 'Guardar en Biblioteca',
+    save: 'Guardar canción actual',
+    saving: 'Guardando…',
+    saved: '¡Guardado!',
+    saveDescription: 'Añadir esta canción a tu biblioteca personal',
+    yourLibrary: 'Tu Biblioteca',
+    empty: 'No hay canciones en la biblioteca. Guarda esta canción para empezar tu colección.',
+    close: 'Cerrar',
   },
 
   paste: {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Sparkles, Loader2, RefreshCw, Music, Lightbulb, ClipboardPaste, Ruler, BarChart2, GripVertical, Waves, Volume2, Wand2, History, Bot, User, FileText, Layout, Languages, Globe, Search, Save, ChevronUp, ChevronDown, Plus, Trash2, ScanText } from 'lucide-react';
+import { Sparkles, Loader2, RefreshCw, Music, Lightbulb, ClipboardPaste, Ruler, BarChart2, GripVertical, Waves, Volume2, Wand2, History, Bot, User, FileText, Layout, Languages, Search, Save, ChevronUp, ChevronDown, Plus, Trash2, ScanText } from 'lucide-react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 
 import { Section, SongVersion } from './types';
@@ -25,7 +25,6 @@ import { MarkupInput } from './components/editor/MarkupInput';
 import { InstructionEditor } from './components/editor/InstructionEditor';
 import { VersionsModal } from './components/modals/VersionsModal';
 import { ResetModal } from './components/modals/ResetModal';
-import { WebSimilarityModal } from './components/modals/WebSimilarityModal';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -35,9 +34,10 @@ import { AboutModal } from './components/app/modals/AboutModal';
 import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
 import { SimilarityModal } from './components/app/modals/SimilarityModal';
+import { SaveToLibraryModal } from './components/app/modals/SaveToLibraryModal';
 import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
 import { getTopSimilarSongMatches, SimilarityMatch } from './utils/similarityUtils';
-import { findSimilarAssetsInLibrary, saveAssetToLibrary } from './utils/libraryUtils';
+import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, LibraryAsset } from './utils/libraryUtils';
 
 const DEFAULT_TITLE = 'Untitled Song';
 const DEFAULT_TOPIC = 'A neon city in the rain';
@@ -118,6 +118,8 @@ export default function App() {
   const [dragOverLineInfo, setDragOverLineInfo] = useState<{sectionId: string, lineId: string} | null>(null);
   const [audioFeedback, setAudioFeedback] = useState(true);
   const [isSavingToLibrary, setIsSavingToLibrary] = useState(false);
+  const [isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen] = useState(false);
+  const [libraryAssets, setLibraryAssets] = useState<LibraryAsset[]>([]);
   const [isSessionHydrated, setIsSessionHydrated] = useState(false);
   
   const {
@@ -147,7 +149,7 @@ export default function App() {
 
   // Web similarity engine (external — DDG + Wikipedia)
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity } = useSimilarityEngine(song);
-  const [isWebSimilarityModalOpen, setIsWebSimilarityModalOpen] = useState(false);
+  const [isSimilarityModalOpen, setIsSimilarityModalOpen] = useState(false);
   
   useEffect(() => {
     fetch('/api/status')
@@ -208,11 +210,15 @@ export default function App() {
     alert(t.tooltips.aiUnavailableHelp);
   };
 
+  const handleOpenSaveToLibraryModal = async () => {
+    if (song.length === 0) return;
+    const assets = await loadLibraryAssets();
+    setLibraryAssets(assets);
+    setIsSaveToLibraryModalOpen(true);
+  };
+
   const handleSaveToLibrary = async () => {
-    if (song.length === 0) {
-      alert('Cannot save empty song to library');
-      return;
-    }
+    if (song.length === 0) return;
     
     setIsSavingToLibrary(true);
     try {
@@ -229,17 +235,12 @@ export default function App() {
         },
       });
       
-      // Refresh library count
-      const cached = localStorage.getItem('lyricist_library');
-      if (cached) {
-        const library = JSON.parse(cached);
-        setLibraryCount(library.length);
-      }
-      
-      alert(`"${title}" saved to library!`);
+      // Refresh library count and assets
+      const updatedAssets = await loadLibraryAssets();
+      setLibraryCount(updatedAssets.length);
+      setLibraryAssets(updatedAssets);
     } catch (error) {
       console.error('Failed to save to library:', error);
-      alert('Failed to save to library');
     } finally {
       setIsSavingToLibrary(false);
     }
@@ -355,7 +356,6 @@ export default function App() {
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [isSimilarityModalOpen, setIsSimilarityModalOpen] = useState(false);
   const [shouldAutoGenerateTitle, setShouldAutoGenerateTitle] = useState(false);
   const previousLyricsSnapshotRef = useRef<VersionSnapshot | null>(null);
 
@@ -803,15 +803,15 @@ export default function App() {
           />
 
           {activeTab === 'lyrics' && song.length > 0 && (
-            <div className="border-b border-white/10 bg-white/[0.03] px-4 py-2 z-10">
+            <div className="border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-4 py-2 z-10">
               <div className="lyrics-editor-zoom flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <h3 className="micro-label text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+                  <h3 className="micro-label text-[var(--text-secondary)] flex items-center gap-2">
                     <BarChart2 className="w-3.5 h-3.5" />
                     {t.insights.title}
                   </h3>
-                  <div className="h-4 w-px bg-white/10" />
+                  <div className="h-4 w-px bg-[var(--border-color)]" />
                   <div className="flex items-center gap-2">
                     <Select value={targetLanguage} onChange={(e: { target: { value?: string } }) => setTargetLanguage(e.target.value ?? '')} size="small" style={{ height: 24, fontSize: '10px', color: 'var(--colorNeutralForeground2)', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '4px' }}>
                       {SUPPORTED_ADAPTATION_LANGUAGES.map(lang => (
@@ -865,51 +865,47 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-2 ml-4">
-                  <Tooltip title="Save current song to library for similarity detection">
-                    <button onClick={handleSaveToLibrary} disabled={isSavingToLibrary || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                      {isSavingToLibrary ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                      Save to Library
+                  <Tooltip title={t.saveToLibrary.saveDescription}>
+                    <button onClick={handleOpenSaveToLibraryModal} disabled={song.length === 0} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                      <Save className="w-3.5 h-3.5" />
+                      {t.saveToLibrary.title}
                     </button>
                   </Tooltip>
                   <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
-                    <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       <Layout className="w-3.5 h-3.5" />
                       {isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}
                     </button>
                   </Tooltip>
                   <Tooltip title={t.tooltips.analyzeTheme}>
-                    <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                       <BarChart2 className="w-3.5 h-3.5" />
                       {t.editor.analyze}
                     </button>
                   </Tooltip>
-                  <Tooltip title={`Check similarity with ${libraryCount} songs in library`}>
-                    <button onClick={() => setIsSimilarityModalOpen(true)} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative">
-                      <Search className="w-3.5 h-3.5" />
-                      {t.ribbon?.similarity || 'Similarity'}
-                      {libraryCount > 0 && <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>}
-                    </button>
-                  </Tooltip>
-                  {/* Web Similarity button */}
-                  <Tooltip title="Check similarity against the web (DuckDuckGo + Wikipedia) — auto-runs in background">
+                  {/* Unified Similarity button (Web + Library) */}
+                  <Tooltip title={t.tooltips.checkSimilarity}>
                     <button
-                      onClick={() => setIsWebSimilarityModalOpen(true)}
-                      disabled={song.length === 0}
-                      className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
+                      onClick={() => setIsSimilarityModalOpen(true)}
+                      disabled={isGenerating || isAnalyzing || song.length === 0}
+                      className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
                     >
                       {webSimilarityIndex.status === 'running'
                         ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
-                        : <Globe className="w-3.5 h-3.5" />}
-                      Web
+                        : <Search className="w-3.5 h-3.5" />}
+                      {t.ribbon?.similarity || 'Similarity'}
                       {webBadgeLabel && (
                         <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">
                           {webBadgeLabel}
                         </span>
                       )}
+                      {!webBadgeLabel && libraryCount > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>
+                      )}
                     </button>
                   </Tooltip>
                   <Tooltip title={t.tooltips.regenerate}>
-                    <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap">
+                    <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-[11px] rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap text-[var(--accent-color)]">
                       {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                       {t.editor.regenerateGlobal}
                     </button>
@@ -1325,13 +1321,17 @@ export default function App() {
         onClose={() => setIsSimilarityModalOpen(false)}
         matches={similarityMatches}
         candidateCount={libraryCount}
+        webIndex={webSimilarityIndex}
+        onWebRefresh={triggerWebSimilarity}
       />
 
-      <WebSimilarityModal
-        isOpen={isWebSimilarityModalOpen}
-        onClose={() => setIsWebSimilarityModalOpen(false)}
-        index={webSimilarityIndex}
-        onRefresh={triggerWebSimilarity}
+      <SaveToLibraryModal
+        isOpen={isSaveToLibraryModalOpen}
+        onClose={() => setIsSaveToLibraryModalOpen(false)}
+        onSave={handleSaveToLibrary}
+        isSaving={isSavingToLibrary}
+        currentTitle={title}
+        libraryAssets={libraryAssets}
       />
 
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />

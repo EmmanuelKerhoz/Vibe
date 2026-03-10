@@ -149,6 +149,25 @@ const pt: Translations = {
     matchedSections: 'Secções correspondentes',
     sharedKeywords: 'Palavras-chave partilhadas',
     thresholdHint: 'Só são mostradas músicas acima de 50% de similaridade, ordenadas da mais próxima para a menos próxima.',
+    webTitle: 'Similaridade Web',
+    webSubtitle: 'Resultados do DuckDuckGo e Wikipedia',
+    webIdle: 'Nenhuma pesquisa executada ainda. O motor dispara automaticamente após 30 s de inatividade (≥ 20 % de alteração de texto), ou clique em Atualizar.',
+    webRunning: 'A pesquisar no DuckDuckGo + Wikipedia…',
+    webNoMatches: '✓ Nenhuma correspondência externa significativa encontrada. As suas letras parecem originais.',
+    webRefresh: 'Atualizar',
+    nGramScoring: 'Pontuação Jaccard n-grama',
+    libraryTitle: 'Similaridade da Biblioteca',
+  },
+
+  saveToLibrary: {
+    title: 'Guardar na Biblioteca',
+    save: 'Guardar música atual',
+    saving: 'A guardar…',
+    saved: 'Guardado!',
+    saveDescription: 'Adicionar esta música à sua biblioteca pessoal',
+    yourLibrary: 'A sua Biblioteca',
+    empty: 'Nenhuma música na biblioteca. Guarde esta música para começar a sua coleção.',
+    close: 'Fechar',
   },
 
   paste: {

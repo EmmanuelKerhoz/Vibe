@@ -149,6 +149,25 @@ const zh: Translations = {
     matchedSections: '匹配段落',
     sharedKeywords: '共享关键词',
     thresholdHint: '只显示相似度高于 50% 的歌曲，并按从高到低排序。',
+    webTitle: '网络相似度',
+    webSubtitle: '来自 DuckDuckGo 和 Wikipedia 的结果',
+    webIdle: '尚未运行搜索。引擎在 30 秒不活动后自动触发（文本变化 ≥ 20%），或点击刷新。',
+    webRunning: '正在搜索 DuckDuckGo + Wikipedia…',
+    webNoMatches: '✓ 未发现显著的外部匹配。您的歌词似乎是原创的。',
+    webRefresh: '刷新',
+    nGramScoring: 'Jaccard n-gram 评分',
+    libraryTitle: '库相似度',
+  },
+
+  saveToLibrary: {
+    title: '保存到库',
+    save: '保存当前歌曲',
+    saving: '保存中…',
+    saved: '已保存！',
+    saveDescription: '将此歌曲添加到您的个人库',
+    yourLibrary: '您的库',
+    empty: '库中还没有歌曲。保存此歌曲以开始建立您的收藏。',
+    close: '关闭',
   },
 
   paste: {

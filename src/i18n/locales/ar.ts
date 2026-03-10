@@ -149,6 +149,25 @@ const ar: Translations = {
     matchedSections: 'الأقسام المتطابقة',
     sharedKeywords: 'الكلمات المفتاحية المشتركة',
     thresholdHint: 'يتم عرض الأغاني التي تتجاوز 50٪ فقط، مرتبة من الأكثر تشابهًا إلى الأقل.',
+    webTitle: 'تشابه الويب',
+    webSubtitle: 'نتائج من DuckDuckGo وWikipedia',
+    webIdle: 'لم يتم تشغيل أي بحث بعد. يعمل المحرك تلقائيًا بعد 30 ثانية من عدم النشاط (تغيير نص ≥ 20٪)، أو انقر فوق تحديث.',
+    webRunning: 'جارٍ البحث على DuckDuckGo + Wikipedia…',
+    webNoMatches: '✓ لم يتم العثور على تطابقات خارجية مهمة. تبدو كلماتك أصلية.',
+    webRefresh: 'تحديث',
+    nGramScoring: 'تسجيل Jaccard n-gram',
+    libraryTitle: 'تشابه المكتبة',
+  },
+
+  saveToLibrary: {
+    title: 'حفظ في المكتبة',
+    save: 'حفظ الأغنية الحالية',
+    saving: 'جارٍ الحفظ…',
+    saved: 'تم الحفظ!',
+    saveDescription: 'أضف هذه الأغنية إلى مكتبتك الشخصية',
+    yourLibrary: 'مكتبتك',
+    empty: 'لا توجد أغانٍ في المكتبة. احفظ هذه الأغنية لبدء مجموعتك.',
+    close: 'إغلاق',
   },
 
   paste: {
