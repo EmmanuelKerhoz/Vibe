@@ -216,7 +216,10 @@ export interface Translations {
     audio: {
       label: string;
       enable: string;
+      /** @deprecated replaced by the enable/disable toggle buttons */
       volume: string;
+      /** Optional: falls back to the English value via LanguageProvider deep-merge */
+      disable?: string;
     };
     language: {
       label: string;
