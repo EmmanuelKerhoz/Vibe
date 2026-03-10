@@ -31,6 +31,7 @@ import { StructureSidebar } from './components/app/StructureSidebar';
 import { StatusBar } from './components/app/StatusBar';
 import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { AboutModal } from './components/app/modals/AboutModal';
+import { ImportModal } from './components/app/modals/ImportModal';
 import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
 import { SimilarityModal } from './components/app/modals/SimilarityModal';
@@ -134,6 +135,7 @@ export default function App() {
   const [isStructureOpen, setIsStructureOpen] = useState(true);
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
   const sectionDropdownRef = useRef<HTMLDivElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -513,15 +515,12 @@ export default function App() {
     loadFileForAnalysis(file);
   };
 
-  const triggerImportFilePicker = async () => {
-    if (hasExistingWork) {
-      const shouldContinue = window.confirm(
-        `${t.importDialog.replaceDescription}\n\n${t.importDialog.warning}\n${t.importDialog.supportedFiles}`
-      );
-      if (!shouldContinue) {
-        return;
-      }
-    }
+  const triggerImportFilePicker = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const handleImportChooseFile = async () => {
+    setIsImportModalOpen(false);
 
     const pickerWindow = window as Window & {
       showOpenFilePicker?: (options: {
@@ -798,7 +797,7 @@ export default function App() {
             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-            onImportClick={triggerImportFilePicker} exportTxt={exportTxt} exportMd={exportMd}
+            onImportClick={() => setIsImportModalOpen(true)} exportTxt={exportTxt} exportMd={exportMd}
             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
           />
 
@@ -921,13 +920,34 @@ export default function App() {
             {activeTab === 'lyrics' ? (
               <div className="w-full space-y-6 pb-32">
                 {isMarkupMode ? (
-                  <MarkupInput
-                    value={markupText}
-                    onChange={(e) => setMarkupText(e.target.value)}
-                    textareaRef={markupTextareaRef}
-                    className="w-full min-h-[70vh] rounded-sm border border-black/10 bg-white/70 p-5 font-mono text-sm leading-7 text-zinc-800 shadow-[0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-100"
-                    spellCheck={false}
-                  />
+                  <div className="w-full rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden">
+                    {/* Markup mode header */}
+                    <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
+                        <Layout className="w-4 h-4 text-[var(--accent-color)]" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
+                          {t.editor.markupMode.title}
+                        </h3>
+                        <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
+                          {t.editor.markupMode.description}
+                        </p>
+                      </div>
+                    </div>
+                    {/* Editor surface */}
+                    <MarkupInput
+                      value={markupText}
+                      onChange={(e) => setMarkupText(e.target.value)}
+                      textareaRef={markupTextareaRef}
+                      className="w-full min-h-[60vh] font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
+                      spellCheck={false}
+                    />
+                    {/* Markup mode footer hint */}
+                    <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
+                      <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
+                    </div>
+                  </div>
                 ) : (
                   song.map((section, sectionIndex) => {
                     const isSectionDraggable = section.name.toLowerCase() !== 'intro' && section.name.toLowerCase() !== 'outro';
@@ -1294,6 +1314,13 @@ export default function App() {
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        hasExistingWork={hasExistingWork}
+        onClose={() => setIsImportModalOpen(false)}
+        onChooseFile={handleImportChooseFile}
+      />
 
       <SuggestionsPanel
         selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
