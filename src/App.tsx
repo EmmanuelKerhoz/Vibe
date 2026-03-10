@@ -31,6 +31,7 @@ import { StructureSidebar } from './components/app/StructureSidebar';
 import { StatusBar } from './components/app/StatusBar';
 import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { AboutModal } from './components/app/modals/AboutModal';
+import { ImportModal } from './components/app/modals/ImportModal';
 import { PasteModal } from './components/app/modals/PasteModal';
 import { ImportModal } from './components/app/modals/ImportModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
@@ -797,7 +798,7 @@ export default function App() {
             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-            onImportClick={triggerImportFilePicker} exportTxt={exportTxt} exportMd={exportMd}
+            onImportClick={openImportModal} exportTxt={exportTxt} exportMd={exportMd}
             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
           />
 

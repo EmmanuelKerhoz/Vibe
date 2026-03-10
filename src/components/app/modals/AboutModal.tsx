@@ -5,6 +5,7 @@ import { APP_VERSION } from '../../../version';
 import { AI_KEY_ENV_VAR, AI_MODEL_NAME } from '../../../utils/aiUtils';
 import { Button } from '../../ui/Button';
 import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
+import { Button } from '../../ui/Button';
 
 const BANNER_WIDTH = 1366;
 const BANNER_HEIGHT = 580;
