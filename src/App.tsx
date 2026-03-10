@@ -1040,7 +1040,7 @@ export default function App() {
                           {/* Column headers */}
                           <div
                             className="px-3 pb-1 border-b border-white/5 mb-1"
-                            style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 80px 28px 40px 24px', alignItems: 'center', columnGap: '4px' }}
+                            style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 90px 32px 44px 24px', alignItems: 'center', columnGap: '8px' }}
                           >
                             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
                             <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1088,10 +1088,11 @@ export default function App() {
                               } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
                               style={{
                                 display: 'grid',
-                                gridTemplateColumns: '20px 16px 16px 32px 1fr 80px 28px 40px 24px',
+                                gridTemplateColumns: '20px 16px 16px 32px 1fr 90px 32px 44px 24px',
                                 alignItems: 'center',
-                                columnGap: '4px',
-                                padding: '2px 12px',
+                                columnGap: '8px',
+                                paddingLeft: '12px',
+                                paddingRight: '12px',
                                 minHeight: '36px',
                               }}
                             >
@@ -1177,7 +1178,7 @@ export default function App() {
                                 </span>
 
                                 {/* cell 8: rhyme badge */}
-                                <span style={{ display: 'flex', justifyContent: 'center' }}>
+                                <span style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                   {line.rhyme ? (
                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
                                       {line.rhyme}
