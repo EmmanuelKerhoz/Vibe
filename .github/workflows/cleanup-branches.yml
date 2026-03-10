@@ -1,6 +1,9 @@
-name: Cleanup Merged Branches
+name: Cleanup Dead Branches
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -10,16 +13,68 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v7
+      - name: Delete all dead branches
+        uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const branches = [
+              // Previously listed in cleanup-merged-branches.yml (may already be deleted)
+              'copilot/add-gemini-proxy-endpoint',
+              'copilot/audit-copilot-app-tsx-cleanup',
+              'copilot/audit-main-and-fix-inconsistencies',
+              'copilot/fix-build-and-typecheck-issues',
+              'copilot/fix-github-pages-deployment',
+              'copilot/regenerate-package-lock-file',
+              'copilot/restore-src-app-tsx-version',
+              'copilot/update-gemini-model-unification',
+              'refactor/auto-split-phase1',
+              'refactor/modularize-app',
+              'refactor/type-safety-phase2',
+              // Previously listed in cleanup-branches.yml (may already be deleted)
               'copilot/add-tooltips-to-ui-elements',
               'copilot/remove-obsolete-merged-branches',
               'copilot/restore-lcars-ui-features',
-              'copilot/update-adaptation-function-prompts'
+              'copilot/update-adaptation-function-prompts',
+              // Dead branches from closed/unmerged PRs
+              'copilot/add-apple-link-in-about',
+              'copilot/add-column-headers-to-lyric-cards',
+              'copilot/add-light-theme-override-lcars-lyrics-area',
+              'copilot/add-links-and-transparency-to-about',
+              'copilot/add-multilingual-support',
+              'copilot/add-similarity-index-calculation',
+              'copilot/add-version-control-for-lyrics',
+              'copilot/check-code-lines',
+              'copilot/check-last-pr-errors',
+              'copilot/check-project-anomalies',
+              'copilot/fix-algorithmic-texture-lyrics-area',
+              'copilot/fix-banner-visibility-issue',
+              'copilot/fix-border-radius-issues',
+              'copilot/fix-ci-job-error-relationship-prop',
+              'copilot/fix-code-anomalies-and-bugs',
+              'copilot/fix-empty-lyrics-area',
+              'copilot/fix-issue-58-audit-hooks',
+              'copilot/fix-language-switcher-dropdown',
+              'copilot/fix-lcars-lyrics-area-scope',
+              'copilot/fix-lyric-column-header-overlap',
+              'copilot/fix-multiple-targeted-issues',
+              'copilot/fix-ui-corrections',
+              'copilot/fix-ui-regression-star-trek',
+              'copilot/implement-similarity-check-function',
+              'copilot/merge-warning-and-open-dialog',
+              'copilot/proceed-all-prs-in-order',
+              'copilot/remove-dead-branches',
+              'copilot/remove-rounded-box-drag-grip',
+              'copilot/update-about-banner-image',
+              'copilot/update-about-banner-visibility',
+              'copilot/update-lyrics-analysis-and-ui',
+              'fix/ui-refinements',
+              'hotfix/vercel-build',
+              'work',
             ];
-            
+
+            let deleted = 0;
+            let skipped = 0;
             for (const branch of branches) {
               try {
                 await github.rest.git.deleteRef({
@@ -28,11 +83,14 @@ jobs:
                   ref: `heads/${branch}`,
                 });
                 console.log(`✓ Deleted ${branch}`);
+                deleted++;
               } catch (error) {
                 if (error.status === 404 || error.status === 422) {
                   console.log(`⊘ ${branch} already deleted`);
+                  skipped++;
                 } else {
-                  throw error;
+                  console.error(`✗ Failed to delete ${branch}: ${error.message}`);
                 }
               }
             }
+            console.log(`\nSummary: ${deleted} deleted, ${skipped} already gone.`);
