@@ -13,6 +13,7 @@ import { useSongComposer } from './hooks/useSongComposer';
 import { useSongHistoryState } from './hooks/useSongHistoryState';
 import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
+import { useSimilarityEngine } from './hooks/useSimilarityEngine';
 import { Label } from './components/ui/Label';
 import { Input } from './components/ui/Input';
 import { Select } from './components/ui/Select';
@@ -24,6 +25,7 @@ import { MarkupInput } from './components/editor/MarkupInput';
 import { InstructionEditor } from './components/editor/InstructionEditor';
 import { VersionsModal } from './components/modals/VersionsModal';
 import { ResetModal } from './components/modals/ResetModal';
+import { WebSimilarityModal } from './components/modals/WebSimilarityModal';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -139,9 +141,13 @@ export default function App() {
   const markupTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [hasApiKey, setHasApiKey] = useState(true);
   
-  // Similarity detection: use library instead of local versions
+  // Library similarity (internal)
   const [similarityMatches, setSimilarityMatches] = useState<SimilarityMatch[]>([]);
   const [libraryCount, setLibraryCount] = useState(0);
+
+  // Web similarity engine (external — DDG + Wikipedia)
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity } = useSimilarityEngine(song);
+  const [isWebSimilarityModalOpen, setIsWebSimilarityModalOpen] = useState(false);
   
   useEffect(() => {
     fetch('/api/status')
@@ -760,6 +766,14 @@ export default function App() {
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
+  // Web similarity badge label
+  const webBadgeLabel = (() => {
+    const { status, candidates } = webSimilarityIndex;
+    if (status === 'running') return null; // spinner shown separately
+    if (status === 'done' && candidates.length > 0) return `${candidates[0].score}%`;
+    return null;
+  })();
+
   return (
     <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
     <div className={`h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
@@ -874,6 +888,24 @@ export default function App() {
                       <Search className="w-3.5 h-3.5" />
                       {t.ribbon?.similarity || 'Similarity'}
                       {libraryCount > 0 && <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>}
+                    </button>
+                  </Tooltip>
+                  {/* Web Similarity button */}
+                  <Tooltip title="Check similarity against the web (DuckDuckGo + Wikipedia) — auto-runs in background">
+                    <button
+                      onClick={() => setIsWebSimilarityModalOpen(true)}
+                      disabled={song.length === 0}
+                      className="px-3 py-1.5 glass-button text-white text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
+                    >
+                      {webSimilarityIndex.status === 'running'
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
+                        : <Globe className="w-3.5 h-3.5" />}
+                      Web
+                      {webBadgeLabel && (
+                        <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">
+                          {webBadgeLabel}
+                        </span>
+                      )}
                     </button>
                   </Tooltip>
                   <Tooltip title={t.tooltips.regenerate}>
@@ -1287,11 +1319,19 @@ export default function App() {
         applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems}
         versions={versions} rollbackToVersion={rollbackToVersion}
       />
+
       <SimilarityModal
         isOpen={isSimilarityModalOpen}
         onClose={() => setIsSimilarityModalOpen(false)}
         matches={similarityMatches}
         candidateCount={libraryCount}
+      />
+
+      <WebSimilarityModal
+        isOpen={isWebSimilarityModalOpen}
+        onClose={() => setIsWebSimilarityModalOpen(false)}
+        index={webSimilarityIndex}
+        onRefresh={triggerWebSimilarity}
       />
 
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />
