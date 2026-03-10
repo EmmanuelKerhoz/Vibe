@@ -61,16 +61,16 @@ export function StatusBar({
           </span>
         </div>
 
-        {/* Right: version + theme + settings */}
+        {/* Right: settings + theme + version */}
         <div className="flex items-center gap-1">
-          <Tooltip title={t.tooltips.appInfo}>
+          <Tooltip title={t.statusBar.settings}>
             <button
-              onClick={onOpenAbout}
-              aria-label={t.settings.about.version}
-              className="lcars-meta-btn lcars-app-id"
+              onClick={() => setIsSettingsOpen(true)}
+              aria-label={t.statusBar.settings}
+              className="lcars-meta-btn"
             >
-              <Info className="w-3.5 h-3.5" />
-              <span>{APP_VERSION}</span>
+              <Settings className="w-3.5 h-3.5" />
+              <span>{t.statusBar.settings}</span>
             </button>
           </Tooltip>
           <Tooltip title={t.tooltips.theme}>
@@ -83,14 +83,14 @@ export function StatusBar({
               <span>{theme === 'dark' ? t.settings.theme.light : t.settings.theme.dark}</span>
             </button>
           </Tooltip>
-          <Tooltip title={t.statusBar.settings}>
+          <Tooltip title={t.tooltips.appInfo}>
             <button
-              onClick={() => setIsSettingsOpen(true)}
-              aria-label={t.statusBar.settings}
-              className="lcars-meta-btn"
+              onClick={onOpenAbout}
+              aria-label={t.settings.about.version}
+              className="lcars-meta-btn lcars-app-id"
             >
-              <Settings className="w-3.5 h-3.5" />
-              <span>{t.statusBar.settings}</span>
+              <Info className="w-3.5 h-3.5" />
+              <span>{APP_VERSION}</span>
             </button>
           </Tooltip>
         </div>
