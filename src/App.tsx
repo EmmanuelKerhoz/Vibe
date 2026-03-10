@@ -431,7 +431,8 @@ export default function App() {
   };
 
   const {
-    isGenerating, isGeneratingMusicalPrompt, selectedLineId, setSelectedLineId,
+    isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt,
+    selectedLineId, setSelectedLineId,
     suggestions, isSuggesting, generateSong, regenerateSection, quantizeSyllables,
     generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
     generateMusicalPrompt, handleLineClick, handleInstructionChange,
@@ -768,7 +769,7 @@ export default function App() {
   // Web similarity badge label
   const webBadgeLabel = (() => {
     const { status, candidates } = webSimilarityIndex;
-    if (status === 'running') return null; // spinner shown separately
+    if (status === 'running') return null;
     if (status === 'done' && candidates.length > 0) return `${candidates[0].score}%`;
     return null;
   })();
@@ -882,7 +883,6 @@ export default function App() {
                       {t.editor.analyze}
                     </button>
                   </Tooltip>
-                  {/* Unified Similarity button (Web + Library) */}
                   <Tooltip title={t.tooltips.checkSimilarity}>
                     <button
                       onClick={() => setIsSimilarityModalOpen(true)}
@@ -918,10 +918,11 @@ export default function App() {
           <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative p-8 lcars-lyrics-area">
             <div className="lyrics-editor-zoom h-full">
             {activeTab === 'lyrics' ? (
-              <div className="w-full space-y-6 pb-32">
+              {/* FIX: flex flex-col (instead of space-y-6) so flex-1 child works */}
+              <div className="w-full flex flex-col gap-6 pb-32">
                 {isMarkupMode ? (
-                  <div className="w-full flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden">
-                    {/* Markup mode header */}
+                  {/* FIX: flex-1 min-h-0 so MarkupInput fills available height */}
+                  <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden">
                     <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
                         <Layout className="w-4 h-4 text-[var(--accent-color)]" />
@@ -935,15 +936,13 @@ export default function App() {
                         </p>
                       </div>
                     </div>
-                    {/* Editor surface */}
                     <MarkupInput
                       value={markupText}
                       onChange={(e) => setMarkupText(e.target.value)}
                       textareaRef={markupTextareaRef}
-                      className="w-full flex-1 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
+                      className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
                       spellCheck={false}
                     />
-                    {/* Markup mode footer hint */}
                     <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
                       <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
                     </div>
@@ -979,14 +978,11 @@ export default function App() {
                       }}
                       className={`lcars-band ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
                     >
-                      {/* LCARS asymmetric colored left stripe */}
                       <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
 
                       <div className="flex-1 p-4">
-                        {/* Section header */}
                         <div className="mb-3 flex items-center justify-between gap-4 flex-wrap">
                           <div className="flex items-center gap-3">
-                            {/* Section move up/down */}
                             <div className="flex flex-col gap-0.5">
                               <Tooltip title="Move section up">
                                 <button
@@ -1011,7 +1007,6 @@ export default function App() {
                             </div>
 
                             <div>
-                              {/* Section type selector */}
                               <select
                                 value={section.name}
                                 onChange={(e) => setSectionName(section.id, e.target.value)}
@@ -1029,7 +1024,6 @@ export default function App() {
                                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
                                   {section.lines.length} lines
                                 </p>
-                                {/* Per-section rhyme scheme selector */}
                                 <select
                                   value={section.rhymeScheme || rhymeScheme}
                                   onChange={(e) => setSectionRhymeScheme(section.id, e.target.value)}
@@ -1047,10 +1041,11 @@ export default function App() {
                             <Tooltip title={t.tooltips.regenerateSection}>
                               <button
                                 onClick={() => regenerateSection(section.id)}
-                                disabled={isGenerating || isAnalyzing}
+                                {/* FIX: spinner/disabled scoped to this section only */}
+                                disabled={isGenerating || isAnalyzing || isRegeneratingSection(section.id)}
                                 className="flex items-center gap-2 rounded border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20 disabled:cursor-not-allowed disabled:opacity-50"
                               >
-                                {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                                {isRegeneratingSection(section.id) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
                                 {t.editor.regenerateSection}
                               </button>
                             </Tooltip>
@@ -1086,7 +1081,6 @@ export default function App() {
                         />
 
                         <div className="mt-3 space-y-3">
-                          {/* Column headers */}
                           <div
                             className="px-3 pb-1 border-b border-white/5 mb-1"
                             style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px', alignItems: 'center', columnGap: '10px' }}
@@ -1145,7 +1139,6 @@ export default function App() {
                                 minHeight: '36px',
                               }}
                             >
-                                {/* cell 1: grip */}
                                 {isSectionDraggable ? (
                                   <Tooltip title="Drag to reorder line">
                                     <div
@@ -1162,7 +1155,6 @@ export default function App() {
                                   </Tooltip>
                                 ) : <div />}
 
-                                {/* cell 2: origin icon */}
                                 <Tooltip title={line.isManual ? 'Human' : 'AI'}>
                                   <span className="flex items-center justify-center w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity">
                                     {line.isManual
@@ -1171,7 +1163,6 @@ export default function App() {
                                   </span>
                                 </Tooltip>
 
-                                {/* cell 3: chevrons */}
                                 <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Tooltip title="Move line up">
                                     <button
@@ -1195,7 +1186,6 @@ export default function App() {
                                   </Tooltip>
                                 </div>
 
-                                {/* cell 4: line number */}
                                 <button
                                   type="button"
                                   onClick={() => handleLineClick(line.id)}
@@ -1204,7 +1194,6 @@ export default function App() {
                                   {index + 1}
                                 </button>
 
-                                {/* cell 5: lyric input */}
                                 <LyricInput
                                   value={line.text}
                                   onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
@@ -1216,7 +1205,6 @@ export default function App() {
                                   style={{ width: '100%', minWidth: 0 }}
                                 />
 
-                                {/* cell 6: rhyme badge */}
                                 <span style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                   {line.rhyme ? (
                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
@@ -1225,17 +1213,14 @@ export default function App() {
                                   ) : null}
                                 </span>
 
-                                {/* cell 7: syllable count */}
                                 <span style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                                   {line.syllables > 0 ? line.syllables : ''}
                                 </span>
 
-                                {/* cell 8: rhyming syllables */}
                                 <span style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
                                   {line.rhymingSyllables || '\u00a0'}
                                 </span>
 
-                                {/* cell 9: delete */}
                                 <Tooltip title="Delete line">
                                   <button
                                     type="button"
@@ -1249,7 +1234,6 @@ export default function App() {
                           )})}
                         </div>
 
-                        {/* Post instructions (existing items only — add button is in the footer row) */}
                         {section.postInstructions && section.postInstructions.length > 0 && (
                           <div className="mt-2 px-3">
                             <InstructionEditor
@@ -1264,7 +1248,6 @@ export default function App() {
                           </div>
                         )}
 
-                        {/* Section footer: ADD LINE + Add Musical on same row */}
                         <div className="flex items-center gap-2 pt-1 pb-2 px-3">
                           <button
                             type="button"
