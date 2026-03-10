@@ -115,9 +115,6 @@ const calculateSimilarity = (currentSong: Section[], candidateSong: Section[]) =
   return Math.round((tokenScore * 0.6 + lineScore * 0.3 + structureScore * 0.1) * 100);
 };
 
-/**
- * Calculate similarity with full metadata (exported for library use)
- */
 export const calculateSimilarityWithMetadata = (
   currentSong: Section[],
   candidateSong: Section[],
@@ -125,7 +122,7 @@ export const calculateSimilarityWithMetadata = (
   const currentTokens = getSongTokens(currentSong);
   const candidateTokens = getSongTokens(candidateSong);
   const candidateTokenSet = new Set(candidateTokens);
-  
+
   const currentLines = getSongLines(currentSong);
   const candidateLines = getSongLines(candidateSong);
   const candidateLineSet = new Set(candidateLines);
@@ -143,12 +140,13 @@ export const calculateSimilarityWithMetadata = (
 };
 
 /**
- * Get top similar matches from version history (original behavior)
+ * Get top 3 similar matches from version history.
+ * Always returns up to 3 results regardless of score — low similarity is shown.
  */
 export const getTopSimilarSongMatches = (
   currentSong: Section[],
   versions: SongVersion[],
-  threshold = 50,
+  _threshold = 0,
   limit = 3,
 ): SimilarityMatch[] => {
   if (currentSong.length === 0) return [];
@@ -179,7 +177,6 @@ export const getTopSimilarSongMatches = (
         matchedSections: getMatchedSections(currentSong, version.song).slice(0, 3),
       };
     })
-    .filter(match => match.score > threshold)
     .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp)
     .slice(0, limit);
 };

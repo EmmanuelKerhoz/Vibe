@@ -40,8 +40,7 @@ type AnalysisReport = {
 const mapSongWithPreservedIds = (newSongData: any[], song: Section[], language?: string): Section[] => {
   return newSongData.map((s: any, idx: number) => {
     const existingSection = (song[idx] || {}) as any;
-  
-  return {
+    return {
       ...existingSection,
       ...s,
       id: existingSection.id || generateId(),
@@ -439,10 +438,6 @@ CRITICAL GUIDELINES:
    - Update rhymingSyllables to reflect actual ${newLanguage} rhymes
    - Adjust syllable counts to match the adapted lyrics
 
-EXAMPLE MINDSET:
-Instead of translating "I'm feeling blue" → "Je me sens bleu" (literal, awkward)
-Adapt to → "J'ai le cafard" or "J'ai le cœur gros" (natural, culturally authentic)
-
 Current Song Data:
 ${JSON.stringify(song)}
 
@@ -504,46 +499,11 @@ Return the fully adapted song that feels native to ${newLanguage} speakers while
     try {
       const prompt = `You are an expert lyricist specializing in creative song adaptation across languages.
 
-Your task: Adapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.
-
-CRITICAL GUIDELINES:
-
-1. EMOTIONAL IMPACT FIRST
-   - Preserve the emotional tone and core message of this section
-   - Prioritize how the lyrics make people FEEL over word-for-word accuracy
-   - Maintain the section's role in the song's narrative arc
-
-2. NATURAL LANGUAGE
-   - Write as if the section was originally composed in ${newLanguage}
-   - Use idioms, expressions, and cultural references native to ${newLanguage}
-   - Avoid "translation-speak" - make it sound authentic and poetic
-   - Respect ${newLanguage} grammar, syntax, and natural word order
-
-3. POETIC STRUCTURE
-   - Maintain rhyme scheme quality (e.g., if AABB, keep clean rhymes in ${newLanguage})
-   - Match syllable counts when possible, but prioritize natural phrasing
-   - Preserve rhythm and singability
-   - Adapt imagery and metaphors to resonate in the target culture
-
-4. CULTURAL ADAPTATION
-   - Replace culture-specific references with equivalent concepts in ${newLanguage} culture
-   - Adapt humor, wordplay, and double meanings creatively
-   - Ensure themes make sense to ${newLanguage} speakers
-
-5. TECHNICAL REQUIREMENTS
-   - Return ONLY the updated section in the same JSON format as input
-   - Keep the section name unchanged
-   - Update rhymingSyllables to reflect actual ${newLanguage} rhymes
-   - Adjust syllable counts to match the adapted lyrics
-
-EXAMPLE MINDSET:
-Instead of translating "I'm feeling blue" → "Je me sens bleu" (literal, awkward)
-Adapt to → "J'ai le cafard" or "J'ai le cœur gros" (natural, culturally authentic)
+Adapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.
+Keep section name unchanged. Update rhymingSyllables. Adjust syllable counts.
 
 Current Section Data:
-${JSON.stringify(section)}
-
-Return the fully adapted section that feels native to ${newLanguage} speakers while preserving the soul of the original.`;
+${JSON.stringify(section)}`;
 
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
@@ -591,6 +551,10 @@ Return the fully adapted section that feels native to ${newLanguage} speakers wh
     }
   };
 
+  /**
+   * Import + parse pasted lyrics.
+   * Order: structure sections → detect language → update topic/mood → request title
+   */
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
     setIsAnalyzing(true);
@@ -610,12 +574,13 @@ CRITICAL INSTRUCTIONS:
 3. DO NOT continue the song.
 4. Stop immediately when you reach the end of the provided lyrics.
 5. Keep concepts very short (1-3 words).
+6. Detect the language of the lyrics and return it as "language" (e.g. "English", "French", "Yoruba").
 
-Do NOT use any other section names (like "Meta", "Instruction", "Instrumental", etc.). If a block of text is an instruction or meta-text, either ignore it or include it in the nearest valid section.
+Do NOT use any other section names. If a block of text is an instruction or meta-text, ignore it.
 
 Extract the overall topic/theme and mood/vibe.
 For each section, identify the rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
-For each line, provide the exact lyric text, the rhyming syllables (the actual syllables that rhyme, e.g., "ain", "ight"), the rhyme identifier (e.g., A, B), the exact syllable count, and a short core concept.
+For each line: exact lyric text, rhyming syllables, rhyme identifier, exact syllable count, short core concept.
 
 Lyrics:
 ${pastedText}`;
@@ -630,6 +595,7 @@ ${pastedText}`;
             properties: {
               topic: { type: Type.STRING },
               mood: { type: Type.STRING },
+              language: { type: Type.STRING },
               sections: {
                 type: Type.ARRAY,
                 items: {
@@ -638,7 +604,7 @@ ${pastedText}`;
                     name: { type: Type.STRING },
                     rhymeScheme: {
                       type: Type.STRING,
-                      description: 'The rhyme scheme for this section, e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE',
+                      description: 'Rhyme scheme for this section, e.g. AABB, ABAB, FREE',
                     },
                     lines: {
                       type: Type.ARRAY,
@@ -659,14 +625,22 @@ ${pastedText}`;
                 },
               },
             },
-            required: ['topic', 'mood', 'sections'],
+            required: ['topic', 'mood', 'language', 'sections'],
           },
         },
       });
 
       const data = safeJsonParse<any>(response.text || '{}', {});
+
+      // 1. Set topic / mood
       if (data.topic) setTopic(data.topic);
       if (data.mood) setMood(data.mood);
+
+      // 2. Set detected language BEFORE title generation
+      if (data.language) {
+        setSongLanguage(data.language);
+        setTargetLanguage(data.language);
+      }
 
       const sections = data.sections || [];
       if (sections.length === 0) {
@@ -687,6 +661,8 @@ ${pastedText}`;
 
       const newStructure = sections.map((s: any) => cleanSectionName(s.name));
       updateSongAndStructureWithHistory(songWithIds, newStructure);
+
+      // 3. Title generation AFTER language is set
       requestAutoTitleGeneration();
       clearLineSelection();
       setIsPasteModalOpen(false);
@@ -697,7 +673,6 @@ ${pastedText}`;
       setIsAnalyzing(false);
     }
   };
-
 
   const clearAppliedAnalysisItems = () => {
     setAppliedAnalysisItems(new Set());

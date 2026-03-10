@@ -24,22 +24,10 @@ export type LibrarySearchResult = SimilarityMatch & {
   metadata?: LibraryAsset['metadata'];
 };
 
-/**
- * Load all assets from localStorage (cached library)
- * In production, this would call an API endpoint or load from IndexedDB
- */
 export const loadLibraryAssets = async (): Promise<LibraryAsset[]> => {
   try {
-    // Check localStorage first
     const cached = localStorage.getItem('lyricist_library');
-    if (cached) {
-      return JSON.parse(cached);
-    }
-
-    // In production, fetch from API:
-    // const response = await fetch('/api/library/assets');
-    // return await response.json();
-
+    if (cached) return JSON.parse(cached);
     return [];
   } catch (error) {
     console.error('Failed to load library assets:', error);
@@ -47,9 +35,6 @@ export const loadLibraryAssets = async (): Promise<LibraryAsset[]> => {
   }
 };
 
-/**
- * Save an asset to the library
- */
 export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'timestamp'>): Promise<LibraryAsset> => {
   const newAsset: LibraryAsset = {
     ...asset,
@@ -61,14 +46,6 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
     const library = await loadLibraryAssets();
     library.push(newAsset);
     localStorage.setItem('lyricist_library', JSON.stringify(library));
-
-    // In production, also sync with API:
-    // await fetch('/api/library/assets', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(newAsset),
-    // });
-
     return newAsset;
   } catch (error) {
     console.error('Failed to save asset to library:', error);
@@ -77,11 +54,12 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
 };
 
 /**
- * Find top similar assets from the entire library
+ * Find top 3 similar assets in library.
+ * Always returns up to 3 results regardless of score — low similarity shown.
  */
 export const findSimilarAssetsInLibrary = async (
   currentSong: Section[],
-  threshold = 30,
+  _threshold = 0,
   limit = 3,
 ): Promise<LibrarySearchResult[]> => {
   if (currentSong.length === 0) return [];
@@ -89,11 +67,10 @@ export const findSimilarAssetsInLibrary = async (
   const library = await loadLibraryAssets();
   if (library.length === 0) return [];
 
-  const results = library
+  return library
     .filter(asset => asset.sections.length > 0)
     .map((asset) => {
       const similarityData = calculateSimilarityWithMetadata(currentSong, asset.sections);
-
       return {
         ...similarityData,
         versionId: asset.id,
@@ -105,23 +82,16 @@ export const findSimilarAssetsInLibrary = async (
         metadata: asset.metadata,
       };
     })
-    .filter(match => match.score >= threshold)
     .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp)
     .slice(0, limit);
-
-  return results;
 };
 
-/**
- * Import assets from various formats (txt, md, json)
- */
 export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> => {
   const text = await file.text();
   const assets: LibraryAsset[] = [];
 
   try {
     if (file.name.endsWith('.json')) {
-      // Assume JSON array of assets
       const parsed = JSON.parse(text);
       if (Array.isArray(parsed)) {
         return parsed.map((item, idx) => ({
@@ -135,7 +105,6 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
         }));
       }
     } else {
-      // Parse plain text/markdown as single asset
       const sections = parseTextToSections(text);
       assets.push({
         id: `import_${Date.now()}`,
@@ -152,9 +121,6 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
   return assets;
 };
 
-/**
- * Parse plain text into sections
- */
 const parseTextToSections = (text: string): Section[] => {
   const blocks = text.split(/\n\s*\n/);
   const sections: Section[] = [];
@@ -166,7 +132,6 @@ const parseTextToSections = (text: string): Section[] => {
     let sectionName = 'Verse';
     let contentLines = lines;
 
-    // Check if first line is a section header
     const firstLine = lines[0].trim();
     if ((firstLine.startsWith('[') && firstLine.endsWith(']')) || (firstLine.startsWith('**[') && firstLine.endsWith(']**'))) {
       sectionName = firstLine.replace(/^\*\*?\[|\]\*\*?$/g, '');
@@ -202,9 +167,6 @@ const parseTextToSections = (text: string): Section[] => {
   return sections;
 };
 
-/**
- * Export library to JSON file
- */
 export const exportLibraryToJson = async (): Promise<Blob> => {
   const library = await loadLibraryAssets();
   const json = JSON.stringify(library, null, 2);
