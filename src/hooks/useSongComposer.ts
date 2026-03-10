@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Type } from '@google/genai';
 import type { Line, Section } from '../types';
@@ -71,9 +71,6 @@ const alignGeneratedSongToStructure = (generatedSong: Section[], structure: stri
     const matchingIndex = remainingSections.findIndex(section => sectionNamesMatch(section.name, sectionName));
     let matchedSection: Section | undefined;
 
-    // Prefer an exact section-name match. If the model renamed a section or produced unexpected
-    // duplicates, fall back to the next remaining generated section so the requested structure order
-    // still wins over the raw AI response order.
     if (matchingIndex === -1) {
       matchedSection = remainingSections.length > 0 ? remainingSections.shift() : undefined;
     } else {
@@ -152,6 +149,13 @@ export const useSongComposer = ({
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
+  // Per-section regeneration tracking — does NOT affect global isGenerating
+  const [regeneratingSections, setRegeneratingSections] = useState<Set<string>>(new Set());
+
+  const isRegeneratingSection = useCallback(
+    (sectionId: string) => regeneratingSections.has(sectionId),
+    [regeneratingSections],
+  );
 
   const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
     updateState(current => ({
@@ -239,20 +243,21 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
   const regenerateSection = async (sectionId: string) => {
     const sectionToRegenerate = song.find(s => s.id === sectionId);
     if (!sectionToRegenerate) return;
-    
-    setIsGenerating(true);
+
+    // Mark only this section as regenerating — global isGenerating stays false
+    setRegeneratingSections(prev => new Set(prev).add(sectionId));
     try {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       const prevSection = sectionIndex > 0 ? song[sectionIndex - 1] : null;
       const nextSection = sectionIndex < song.length - 1 ? song[sectionIndex + 1] : null;
 
-      let lineCountPrompt = "";
+      let lineCountPrompt = '';
       const lowerName = sectionToRegenerate.name.toLowerCase();
-      if (lowerName.includes('intro')) lineCountPrompt = "The section should have exactly 4 lines.";
-      else if (lowerName.includes('verse')) lineCountPrompt = "The section should have exactly 6 lines.";
-      else if (lowerName.includes('chorus')) lineCountPrompt = "The section should have exactly 4 lines.";
-      else if (lowerName.includes('bridge')) lineCountPrompt = "The section should have exactly 6 lines.";
-      else if (lowerName.includes('outro')) lineCountPrompt = "The section should have exactly 4 lines.";
+      if (lowerName.includes('intro')) lineCountPrompt = 'The section should have exactly 4 lines.';
+      else if (lowerName.includes('verse')) lineCountPrompt = 'The section should have exactly 6 lines.';
+      else if (lowerName.includes('chorus')) lineCountPrompt = 'The section should have exactly 4 lines.';
+      else if (lowerName.includes('bridge')) lineCountPrompt = 'The section should have exactly 6 lines.';
+      else if (lowerName.includes('outro')) lineCountPrompt = 'The section should have exactly 4 lines.';
 
       const songStructure = song.map(s => s.name).join(' → ');
 
@@ -279,7 +284,6 @@ Mood: ${mood}
 Target Syllables per line: ${targetSyllables}
 Section Name: ${sectionToRegenerate.name}
 Rhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}
-Mood: ${sectionToRegenerate.mood || mood}
 ${lineCountPrompt}
 Song structure: ${songStructure}
 ${prevContext}${nextContext}${directivesPrompt}
@@ -301,7 +305,7 @@ Return the updated section in the exact same JSON structure (as an array with on
               type: Type.OBJECT,
               properties: {
                 name: { type: Type.STRING },
-                rhymeScheme: { type: Type.STRING, description: "The rhyme scheme for this section" },
+                rhymeScheme: { type: Type.STRING, description: 'The rhyme scheme for this section' },
                 lines: {
                   type: Type.ARRAY,
                   items: {
@@ -313,11 +317,11 @@ Return the updated section in the exact same JSON structure (as an array with on
                       syllables: { type: Type.INTEGER },
                       concept: { type: Type.STRING }
                     },
-                    required: ["text", "rhymingSyllables", "rhyme", "syllables", "concept"]
+                    required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept']
                   }
                 }
               },
-              required: ["name", "lines", "rhymeScheme"]
+              required: ['name', 'lines', 'rhymeScheme']
             }
           }
         }
@@ -333,9 +337,13 @@ Return the updated section in the exact same JSON structure (as an array with on
         );
       }
     } catch (error: any) {
-      handleApiError(error, "Failed to regenerate section. Please try again.");
+      handleApiError(error, 'Failed to regenerate section. Please try again.');
     } finally {
-      setIsGenerating(false);
+      setRegeneratingSections(prev => {
+        const next = new Set(prev);
+        next.delete(sectionId);
+        return next;
+      });
     }
   };
 
@@ -374,7 +382,7 @@ Return the updated song in the exact same JSON structure.`;
               type: Type.OBJECT,
               properties: {
                 name: { type: Type.STRING },
-                rhymeScheme: { type: Type.STRING, description: "The rhyme scheme for this section" },
+                rhymeScheme: { type: Type.STRING, description: 'The rhyme scheme for this section' },
                 lines: {
                   type: Type.ARRAY,
                   items: {
@@ -386,11 +394,11 @@ Return the updated song in the exact same JSON structure.`;
                       syllables: { type: Type.INTEGER },
                       concept: { type: Type.STRING }
                     },
-                    required: ["text", "rhymingSyllables", "rhyme", "syllables", "concept"]
+                    required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept']
                   }
                 }
               },
-              required: ["name", "lines", "rhymeScheme"]
+              required: ['name', 'lines', 'rhymeScheme']
             }
           }
         }
@@ -421,11 +429,11 @@ Return the updated song in the exact same JSON structure.`;
   const generateSuggestions = async (lineId: string) => {
     setIsSuggesting(true);
     setSuggestions([]);
-    
+
     let currentLine: Line | null = null;
     let previousLine: Line | null = null;
     let nextLine: Line | null = null;
-    let sectionName = "";
+    let sectionName = '';
 
     for (let s = 0; s < song.length; s++) {
       const section = song[s];
@@ -475,7 +483,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       const data = safeJsonParse(response.text || '[]', []);
       setSuggestions(data);
     } catch (error) {
-      handleApiError(error, "Failed to generate suggestions.");
+      handleApiError(error, 'Failed to generate suggestions.');
     } finally {
       setIsSuggesting(false);
     }
@@ -510,146 +518,87 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     if (e.key === 'Delete' && selectionStart === value.length && selectionEnd === value.length) {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-      
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
-      
       if (lineIndex === -1 || lineIndex === section.lines.length - 1) return;
-
       e.preventDefault();
       const nextLine = section.lines[lineIndex + 1];
       const mergedText = value + nextLine.text;
-
       updateSong(currentSong =>
         currentSong.map(s => {
           if (s.id !== sectionId) return s;
           const newLines = [...s.lines];
-          newLines[lineIndex] = {
-            ...newLines[lineIndex],
-            text: mergedText,
-            syllables: computeSyllables(mergedText),
-            isManual: true
-          };
+          newLines[lineIndex] = { ...newLines[lineIndex], text: mergedText, syllables: computeSyllables(mergedText), isManual: true };
           newLines.splice(lineIndex + 1, 1);
           return { ...s, lines: newLines };
         })
       );
-
       setTimeout(() => {
         const currentInput = document.querySelector(`input[data-line-id="${lineId}"]`) as HTMLInputElement;
-        if (currentInput) {
-          currentInput.focus();
-          currentInput.setSelectionRange(value.length, value.length);
-        }
+        if (currentInput) { currentInput.focus(); currentInput.setSelectionRange(value.length, value.length); }
       }, 0);
     } else if (e.key === 'Backspace' && selectionStart === 0 && selectionEnd === 0) {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-      
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
-      
       if (lineIndex <= 0) return;
-
       e.preventDefault();
       const prevLine = section.lines[lineIndex - 1];
       const mergedText = prevLine.text + value;
       const prevLineId = prevLine.id;
-
       updateSong(currentSong =>
         currentSong.map(s => {
           if (s.id !== sectionId) return s;
           const newLines = [...s.lines];
-          newLines[lineIndex - 1] = {
-            ...newLines[lineIndex - 1],
-            text: mergedText,
-            syllables: computeSyllables(mergedText),
-            isManual: true
-          };
+          newLines[lineIndex - 1] = { ...newLines[lineIndex - 1], text: mergedText, syllables: computeSyllables(mergedText), isManual: true };
           newLines.splice(lineIndex, 1);
           return { ...s, lines: newLines };
         })
       );
       setSelectedLineId(prevLineId);
-      
       setTimeout(() => {
         const prevInput = document.querySelector(`input[data-line-id="${prevLineId}"]`) as HTMLInputElement;
-        if (prevInput) {
-          prevInput.focus();
-          prevInput.setSelectionRange(prevLine.text.length, prevLine.text.length);
-        }
+        if (prevInput) { prevInput.focus(); prevInput.setSelectionRange(prevLine.text.length, prevLine.text.length); }
       }, 0);
     } else if (e.key === 'Enter') {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-      
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
       if (lineIndex === -1) return;
-
       e.preventDefault();
-      
       const textBefore = value.substring(0, selectionStart || 0);
       const textAfter = value.substring(selectionEnd || 0);
       const newLineId = generateId();
-
       updateSong(currentSong =>
         currentSong.map(s => {
           if (s.id !== sectionId) return s;
           const newLines = [...s.lines];
-          newLines[lineIndex] = {
-            ...newLines[lineIndex],
-            text: textBefore,
-            syllables: computeSyllables(textBefore),
-            isManual: true
-          };
-          newLines.splice(lineIndex + 1, 0, {
-            id: newLineId,
-            text: textAfter,
-            rhymingSyllables: '',
-            rhyme: '',
-            syllables: computeSyllables(textAfter),
-            concept: 'New line',
-            isManual: true
-          });
+          newLines[lineIndex] = { ...newLines[lineIndex], text: textBefore, syllables: computeSyllables(textBefore), isManual: true };
+          newLines.splice(lineIndex + 1, 0, { id: newLineId, text: textAfter, rhymingSyllables: '', rhyme: '', syllables: computeSyllables(textAfter), concept: 'New line', isManual: true });
           return { ...s, lines: newLines };
         })
       );
       setSelectedLineId(newLineId);
-
       setTimeout(() => {
         const nextInput = document.querySelector(`input[data-line-id="${newLineId}"]`) as HTMLInputElement;
-        if (nextInput) {
-          nextInput.focus();
-          nextInput.setSelectionRange(0, 0);
-        }
+        if (nextInput) { nextInput.focus(); nextInput.setSelectionRange(0, 0); }
       }, 0);
     } else if (e.key === 'ArrowUp') {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
-      
       let targetLineId = '';
-      if (lineIndex > 0) {
-        targetLineId = section.lines[lineIndex - 1].id;
-      } else if (sectionIndex > 0) {
-        const prevSection = song[sectionIndex - 1];
-        if (prevSection.lines.length > 0) {
-          targetLineId = prevSection.lines[prevSection.lines.length - 1].id;
-        }
-      }
-
+      if (lineIndex > 0) { targetLineId = section.lines[lineIndex - 1].id; }
+      else if (sectionIndex > 0) { const prevSection = song[sectionIndex - 1]; if (prevSection.lines.length > 0) targetLineId = prevSection.lines[prevSection.lines.length - 1].id; }
       if (targetLineId) {
         e.preventDefault();
         setSelectedLineId(targetLineId);
         setTimeout(() => {
           const input = document.querySelector(`input[data-line-id="${targetLineId}"]`) as HTMLInputElement;
-          if (input) {
-            input.focus();
-            const pos = Math.min(selectionStart || 0, input.value.length);
-            input.setSelectionRange(pos, pos);
-          }
+          if (input) { input.focus(); const pos = Math.min(selectionStart || 0, input.value.length); input.setSelectionRange(pos, pos); }
         }, 0);
       }
     } else if (e.key === 'ArrowDown') {
@@ -657,27 +606,15 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       if (sectionIndex === -1) return;
       const section = song[sectionIndex];
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
-      
       let targetLineId = '';
-      if (lineIndex < section.lines.length - 1) {
-        targetLineId = section.lines[lineIndex + 1].id;
-      } else if (sectionIndex < song.length - 1) {
-        const nextSection = song[sectionIndex + 1];
-        if (nextSection.lines.length > 0) {
-          targetLineId = nextSection.lines[0].id;
-        }
-      }
-
+      if (lineIndex < section.lines.length - 1) { targetLineId = section.lines[lineIndex + 1].id; }
+      else if (sectionIndex < song.length - 1) { const nextSection = song[sectionIndex + 1]; if (nextSection.lines.length > 0) targetLineId = nextSection.lines[0].id; }
       if (targetLineId) {
         e.preventDefault();
         setSelectedLineId(targetLineId);
         setTimeout(() => {
           const input = document.querySelector(`input[data-line-id="${targetLineId}"]`) as HTMLInputElement;
-          if (input) {
-            input.focus();
-            const pos = Math.min(selectionStart || 0, input.value.length);
-            input.setSelectionRange(pos, pos);
-          }
+          if (input) { input.focus(); const pos = Math.min(selectionStart || 0, input.value.length); input.setSelectionRange(pos, pos); }
         }, 0);
       }
     }
@@ -685,18 +622,12 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
 
   const applySuggestion = (newText: string) => {
     if (!selectedLineId) return;
-    
     updateSong(currentSong =>
       currentSong.map(section => ({
         ...section,
         lines: section.lines.map(line => {
           if (line.id === selectedLineId) {
-            return {
-              ...line,
-              text: newText,
-              syllables: computeSyllables(newText),
-              isManual: true,
-            };
+            return { ...line, text: newText, syllables: computeSyllables(newText), isManual: true };
           }
           return line;
         })
@@ -723,7 +654,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
       });
       setMusicalPrompt(response.text || '');
     } catch (error) {
-      handleApiError(error, "Error generating musical prompt.");
+      handleApiError(error, 'Error generating musical prompt.');
     } finally {
       setIsGeneratingMusicalPrompt(false);
     }
@@ -776,6 +707,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
 
   return {
     isGenerating,
+    isRegeneratingSection,
     isGeneratingMusicalPrompt,
     selectedLineId,
     setSelectedLineId,
