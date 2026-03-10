@@ -41,7 +41,6 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
     id: `asset_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     timestamp: Date.now(),
   };
-
   try {
     const library = await loadLibraryAssets();
     library.push(newAsset);
@@ -53,9 +52,20 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
   }
 };
 
+export const deleteAssetFromLibrary = async (assetId: string): Promise<void> => {
+  try {
+    const library = await loadLibraryAssets();
+    const updated = library.filter(a => a.id !== assetId);
+    localStorage.setItem('lyricist_library', JSON.stringify(updated));
+  } catch (error) {
+    console.error('Failed to delete asset from library:', error);
+    throw error;
+  }
+};
+
 /**
  * Find top 3 similar assets in library.
- * Always returns up to 3 results regardless of score — low similarity shown.
+ * Always returns up to 3 results regardless of score.
  */
 export const findSimilarAssetsInLibrary = async (
   currentSong: Section[],
@@ -63,10 +73,8 @@ export const findSimilarAssetsInLibrary = async (
   limit = 3,
 ): Promise<LibrarySearchResult[]> => {
   if (currentSong.length === 0) return [];
-
   const library = await loadLibraryAssets();
   if (library.length === 0) return [];
-
   return library
     .filter(asset => asset.sections.length > 0)
     .map((asset) => {
@@ -89,7 +97,6 @@ export const findSimilarAssetsInLibrary = async (
 export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> => {
   const text = await file.text();
   const assets: LibraryAsset[] = [];
-
   try {
     if (file.name.endsWith('.json')) {
       const parsed = JSON.parse(text);
@@ -117,27 +124,22 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
   } catch (error) {
     console.error('Failed to import assets:', error);
   }
-
   return assets;
 };
 
 const parseTextToSections = (text: string): Section[] => {
   const blocks = text.split(/\n\s*\n/);
   const sections: Section[] = [];
-
   blocks.forEach((block) => {
     const lines = block.trim().split('\n');
     if (lines.length === 0) return;
-
     let sectionName = 'Verse';
     let contentLines = lines;
-
     const firstLine = lines[0].trim();
     if ((firstLine.startsWith('[') && firstLine.endsWith(']')) || (firstLine.startsWith('**[') && firstLine.endsWith(']**'))) {
       sectionName = firstLine.replace(/^\*\*?\[|\]\*\*?$/g, '');
       contentLines = lines.slice(1);
     }
-
     const sectionLines = contentLines
       .filter(line => line.trim().length > 0)
       .map((text, idx) => ({
@@ -149,7 +151,6 @@ const parseTextToSections = (text: string): Section[] => {
         concept: '',
         isManual: true,
       }));
-
     if (sectionLines.length > 0) {
       sections.push({
         id: `section_${Date.now()}_${sections.length}`,
@@ -163,7 +164,6 @@ const parseTextToSections = (text: string): Section[] => {
       });
     }
   });
-
   return sections;
 };
 

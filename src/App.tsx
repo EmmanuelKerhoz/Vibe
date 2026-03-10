@@ -38,7 +38,7 @@ import { SimilarityModal } from './components/app/modals/SimilarityModal';
 import { SaveToLibraryModal } from './components/app/modals/SaveToLibraryModal';
 import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
 import { getTopSimilarSongMatches, SimilarityMatch } from './utils/similarityUtils';
-import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, LibraryAsset } from './utils/libraryUtils';
+import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, LibraryAsset } from './utils/libraryUtils';
 
 const DEFAULT_TITLE = 'Untitled Song';
 const DEFAULT_TOPIC = 'A neon city in the rain';
@@ -223,6 +223,16 @@ export default function App() {
       setIsSavingToLibrary(false);
     }
   };
+
+  const handleDeleteLibraryAsset = useCallback(async (versionId: string) => {
+    try {
+      await deleteAssetFromLibrary(versionId);
+      setSimilarityMatches(prev => prev.filter(m => m.versionId !== versionId));
+      setLibraryCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Failed to delete library asset:', error);
+    }
+  }, []);
 
   const loadSavedSession = () => {
     const savedSession = localStorage.getItem('lyricist_session');
@@ -537,6 +547,12 @@ export default function App() {
       }
     }
   };
+
+  // Scroll to section by id — used by StructureSidebar
+  const handleScrollToSection = useCallback((sectionId: string) => {
+    const section = song.find(s => s.id === sectionId);
+    if (section) scrollToSection(section);
+  }, [song, isMarkupMode, markupText]);
 
   const handleMarkupToggle = () => {
     if (isMarkupMode) {
@@ -1104,12 +1120,15 @@ export default function App() {
 
         <StructureSidebar
           isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-          structure={structure} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
+          structure={structure} song={song}
+          newSectionName={newSectionName} setNewSectionName={setNewSectionName}
           isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
           draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
-          dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
+          dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex}
+          isGenerating={isGenerating}
           addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
           normalizeStructure={normalizeStructure} handleDrop={handleDrop}
+          onScrollToSection={handleScrollToSection}
         />
       </div>
 
@@ -1125,7 +1144,15 @@ export default function App() {
       <SuggestionsPanel selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId} suggestions={suggestions} isSuggesting={isSuggesting} applySuggestion={applySuggestion} generateSuggestions={generateSuggestions} />
       <PasteModal isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)} pastedText={pastedText} setPastedText={setPastedText} isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics} />
       <AnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps} appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems} isApplyingAnalysis={isApplyingAnalysis} toggleAnalysisItemSelection={toggleAnalysisItemSelection} applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems} versions={versions} rollbackToVersion={rollbackToVersion} />
-      <SimilarityModal isOpen={isSimilarityModalOpen} onClose={() => setIsSimilarityModalOpen(false)} matches={similarityMatches} candidateCount={libraryCount} webIndex={webSimilarityIndex} onWebRefresh={triggerWebSimilarity} />
+      <SimilarityModal
+        isOpen={isSimilarityModalOpen}
+        onClose={() => setIsSimilarityModalOpen(false)}
+        matches={similarityMatches}
+        candidateCount={libraryCount}
+        webIndex={webSimilarityIndex}
+        onWebRefresh={triggerWebSimilarity}
+        onDeleteLibraryAsset={handleDeleteLibraryAsset}
+      />
       <SaveToLibraryModal isOpen={isSaveToLibraryModalOpen} onClose={() => setIsSaveToLibraryModalOpen(false)} onSave={handleSaveToLibrary} isSaving={isSavingToLibrary} currentTitle={title} libraryAssets={libraryAssets} />
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
