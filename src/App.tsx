@@ -145,11 +145,9 @@ export default function App() {
   const markupTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [hasApiKey, setHasApiKey] = useState(true);
   
-  // Library similarity (internal)
   const [similarityMatches, setSimilarityMatches] = useState<SimilarityMatch[]>([]);
   const [libraryCount, setLibraryCount] = useState(0);
 
-  // Web similarity engine (external — DDG + Wikipedia)
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity } = useSimilarityEngine(song);
   const [isSimilarityModalOpen, setIsSimilarityModalOpen] = useState(false);
   
@@ -160,7 +158,6 @@ export default function App() {
       .catch(() => setHasApiKey(false));
   }, []);
 
-  // Load library count and update similarity matches whenever song changes
   useEffect(() => {
     let isCancelled = false;
     
@@ -169,20 +166,14 @@ export default function App() {
         setSimilarityMatches([]);
         return;
       }
-      
-      const matches = await findSimilarAssetsInLibrary(song, 30, 3);
-      if (!isCancelled) {
-        setSimilarityMatches(matches);
-      }
+      const matches = await findSimilarAssetsInLibrary(song, 0, 3);
+      if (!isCancelled) setSimilarityMatches(matches);
     };
     
     const loadLibraryCount = async () => {
       try {
         const cached = localStorage.getItem('lyricist_library');
-        if (cached) {
-          const library = JSON.parse(cached);
-          setLibraryCount(library.length);
-        }
+        if (cached) setLibraryCount(JSON.parse(cached).length);
       } catch (e) {
         console.error('Failed to load library count:', e);
       }
@@ -190,27 +181,21 @@ export default function App() {
     
     void updateSimilarity();
     void loadLibraryCount();
-    
-    return () => {
-      isCancelled = true;
-    };
+    return () => { isCancelled = true; };
   }, [song]);
 
   useEffect(() => {
-    if (song.length > 0) {
-      const needsCleanup = song.some(s => s.name !== cleanSectionName(s.name)) || structure.some(s => s !== cleanSectionName(s));
-      if (needsCleanup) {
-        replaceStateWithoutHistory(
-          song.map(s => ({ ...s, name: cleanSectionName(s.name) })),
-          structure.map(s => cleanSectionName(s))
-        );
-      }
+    if (song.length === 0) return;
+    const needsCleanup = song.some(s => s.name !== cleanSectionName(s.name)) || structure.some(s => s !== cleanSectionName(s));
+    if (needsCleanup) {
+      replaceStateWithoutHistory(
+        song.map(s => ({ ...s, name: cleanSectionName(s.name) })),
+        structure.map(s => cleanSectionName(s))
+      );
     }
   }, []);
 
-  const handleApiKeyHelp = () => {
-    alert(t.tooltips.aiUnavailableHelp);
-  };
+  const handleApiKeyHelp = () => alert(t.tooltips.aiUnavailableHelp);
 
   const handleOpenSaveToLibraryModal = async () => {
     if (song.length === 0) return;
@@ -221,23 +206,14 @@ export default function App() {
 
   const handleSaveToLibrary = async () => {
     if (song.length === 0) return;
-    
     setIsSavingToLibrary(true);
     try {
       await saveAssetToLibrary({
         title: title || 'Untitled Song',
         type: 'song',
         sections: song,
-        metadata: {
-          topic,
-          mood,
-          genre,
-          tempo: parseInt(tempo) || 120,
-          instrumentation,
-        },
+        metadata: { topic, mood, genre, tempo: parseInt(tempo) || 120, instrumentation },
       });
-      
-      // Refresh library count and assets
       const updatedAssets = await loadLibraryAssets();
       setLibraryCount(updatedAssets.length);
       setLibraryAssets(updatedAssets);
@@ -294,10 +270,7 @@ export default function App() {
 
   useEffect(() => {
     if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
-      const sessionData = {
-        song, structure, title, topic, mood, rhymeScheme, targetSyllables,
-        genre, tempo, instrumentation, musicalPrompt
-      };
+      const sessionData = { song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, musicalPrompt };
       localStorage.setItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
     }
@@ -316,14 +289,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    if (theme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
   }, [theme]);
 
-  // Ensure Intro is always first and Outro is always last
   useEffect(() => {
     if (song.length === 0) return;
     const introIdx = song.findIndex(s => s.name.toLowerCase() === 'intro');
@@ -369,40 +338,25 @@ export default function App() {
   ): SongVersion[] => {
     const latestVersion = previousVersions[0];
     const normalizedSnapshot = JSON.stringify({
-      song: snapshot.song,
-      structure: snapshot.structure,
-      title: snapshot.title,
-      titleOrigin: snapshot.titleOrigin,
-      topic: snapshot.topic,
-      mood: snapshot.mood,
+      song: snapshot.song, structure: snapshot.structure,
+      title: snapshot.title, titleOrigin: snapshot.titleOrigin,
+      topic: snapshot.topic, mood: snapshot.mood,
     });
-
     if (!options?.allowDuplicate && latestVersion) {
       const normalizedLatest = JSON.stringify({
-        song: latestVersion.song,
-        structure: latestVersion.structure,
-        title: latestVersion.title,
-        titleOrigin: latestVersion.titleOrigin,
-        topic: latestVersion.topic,
-        mood: latestVersion.mood,
+        song: latestVersion.song, structure: latestVersion.structure,
+        title: latestVersion.title, titleOrigin: latestVersion.titleOrigin,
+        topic: latestVersion.topic, mood: latestVersion.mood,
       });
-
-      if (normalizedLatest === normalizedSnapshot) {
-        return previousVersions;
-      }
+      if (normalizedLatest === normalizedSnapshot) return previousVersions;
     }
-
     return [
       {
-        id: generateId(),
-        timestamp: Date.now(),
+        id: generateId(), timestamp: Date.now(),
         song: JSON.parse(JSON.stringify(snapshot.song)),
         structure: [...snapshot.structure],
-        title: snapshot.title,
-        titleOrigin: snapshot.titleOrigin,
-        topic: snapshot.topic,
-        mood: snapshot.mood,
-        name,
+        title: snapshot.title, titleOrigin: snapshot.titleOrigin,
+        topic: snapshot.topic, mood: snapshot.mood, name,
       },
       ...previousVersions,
     ];
@@ -481,20 +435,16 @@ export default function App() {
 
   useEffect(() => {
     const currentSnapshot = { song, structure, title, titleOrigin, topic, mood };
-
     if (!previousLyricsSnapshotRef.current) {
       previousLyricsSnapshotRef.current = currentSnapshot;
       return;
     }
-
     const previousSnapshot = previousLyricsSnapshotRef.current;
     const lyricsChanged = JSON.stringify(previousSnapshot.song) !== JSON.stringify(song)
       || JSON.stringify(previousSnapshot.structure) !== JSON.stringify(structure);
-
     if (lyricsChanged && previousSnapshot.song.length > 0) {
       setVersions(prev => createVersion(previousSnapshot, 'Auto Restore Point', prev));
     }
-
     previousLyricsSnapshotRef.current = currentSnapshot;
   }, [createVersion, song, structure, title, titleOrigin, topic, mood]);
 
@@ -502,12 +452,8 @@ export default function App() {
   const wordCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0), 0);
   const charCount = song.reduce((acc, sec) => acc + sec.lines.reduce((lAcc, line) => lAcc + line.text.length, 0), 0);
   const hasExistingWork = (
-    song.length > 0
-    && !isPristineDraft(song, structure, rhymeScheme)
-  )
-    || topic !== DEFAULT_TOPIC
-    || mood !== DEFAULT_MOOD
-    || (isMarkupMode && markupText.trim().length > 0);
+    song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)
+  ) || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
 
   const handleImportInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -517,35 +463,21 @@ export default function App() {
     loadFileForAnalysis(file);
   };
 
-  const triggerImportFilePicker = () => {
-    setIsImportModalOpen(true);
-  };
+  const triggerImportFilePicker = () => setIsImportModalOpen(true);
 
   const handleImportChooseFile = async () => {
     const pickerWindow = window as Window & {
       showOpenFilePicker?: (options: {
         multiple?: boolean;
         excludeAcceptAllOption?: boolean;
-        types?: Array<{
-          description?: string;
-          accept: Record<string, string[]>;
-        }>;
+        types?: Array<{ description?: string; accept: Record<string, string[]> }>;
       }) => Promise<Array<{ getFile: () => Promise<File> }>>;
     };
-
     if (pickerWindow.showOpenFilePicker) {
       try {
         const [handle] = await pickerWindow.showOpenFilePicker({
           multiple: false,
-          types: [
-            {
-              description: 'Lyrics files',
-              accept: {
-                'text/plain': ['.txt', '.md'],
-                'text/markdown': ['.md'],
-              },
-            },
-          ],
+          types: [{ description: 'Lyrics files', accept: { 'text/plain': ['.txt', '.md'], 'text/markdown': ['.md'] } }],
         });
         if (!handle) return;
         const file = await handle.getFile();
@@ -558,50 +490,30 @@ export default function App() {
       }
       return;
     }
-
     importInputRef.current?.click();
   };
 
   const handleGenerateTitle = async () => {
     const newTitle = await generateTitle();
-    if (newTitle) {
-      setTitle(newTitle);
-      setTitleOrigin('ai');
-    }
+    if (newTitle) { setTitle(newTitle); setTitleOrigin('ai'); }
   };
 
   useEffect(() => {
     if (!shouldAutoGenerateTitle || song.length === 0) return;
-
     let isCancelled = false;
-
     const run = async () => {
       const newTitle = await generateTitle();
-      if (!isCancelled && newTitle) {
-        setTitle(newTitle);
-        setTitleOrigin('ai');
-      }
-      if (!isCancelled) {
-        setShouldAutoGenerateTitle(false);
-      }
+      if (!isCancelled && newTitle) { setTitle(newTitle); setTitleOrigin('ai'); }
+      if (!isCancelled) setShouldAutoGenerateTitle(false);
     };
-
     void run();
-
-    return () => {
-      isCancelled = true;
-    };
+    return () => { isCancelled = true; };
   }, [generateTitle, shouldAutoGenerateTitle, song.length]);
 
-  const handleTitleChange = (value: string) => {
-    setTitle(value);
-    setTitleOrigin('user');
-  };
+  const handleTitleChange = (value: string) => { setTitle(value); setTitleOrigin('user'); };
 
   const handleGlobalRegenerate = () => {
-    if (song.length > 0 && !window.confirm(t.editor.regenerateWarning)) {
-      return;
-    }
+    if (song.length > 0 && !window.confirm(t.editor.regenerateWarning)) return;
     void generateSong();
   };
 
@@ -620,8 +532,8 @@ export default function App() {
       const el = document.getElementById(`section-${section.id}`);
       if (el) {
         const container = el.closest('.overflow-y-auto');
-        if (container) { container.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' }); }
-        else { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        if (container) container.scrollTo({ top: (el as HTMLElement).offsetTop - 20, behavior: 'smooth' });
+        else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
   };
@@ -666,7 +578,7 @@ export default function App() {
             if (usedLineIds.has(lineId)) lineId = generateId();
             usedLineIds.add(lineId);
             return { id: lineId, text, rhymingSyllables: existingLine?.rhymingSyllables || '', rhyme: existingLine?.rhyme || '', syllables: text.split(/\s+/).reduce((acc, word) => acc + (word ? countSyllables(word) : 0), 0), concept: existingLine?.concept || 'New line', isManual: true };
-          })
+          }),
         };
       }).filter(s => s !== null) as Section[];
       if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
@@ -684,7 +596,6 @@ export default function App() {
   };
 
   const RHYME_KEYS = Object.keys(t.rhymeSchemes) as Array<keyof typeof t.rhymeSchemes>;
-
   const SECTION_TYPE_OPTIONS = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Breakdown', 'Outro'];
 
   const moveSectionUp = useCallback((sectionId: string) => {
@@ -735,10 +646,7 @@ export default function App() {
     updateState((current) => ({
       song: current.song.map(s => {
         if (s.id !== sectionId) return s;
-        return {
-          ...s,
-          lines: [...s.lines, { id: generateId(), text: '', rhymingSyllables: '', rhyme: '', syllables: 0, concept: '', isManual: true }],
-        };
+        return { ...s, lines: [...s.lines, { id: generateId(), text: '', rhymingSyllables: '', rhyme: '', syllables: 0, concept: '', isManual: true }] };
       }),
       structure: current.structure,
     }));
@@ -766,7 +674,6 @@ export default function App() {
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
-  // Web similarity badge label
   const webBadgeLabel = (() => {
     const { status, candidates } = webSimilarityIndex;
     if (status === 'running') return null;
@@ -805,476 +712,392 @@ export default function App() {
           {activeTab === 'lyrics' && song.length > 0 && (
             <div className="border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-4 py-2 z-10">
               <div className="lyrics-editor-zoom flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <h3 className="micro-label text-[var(--text-secondary)] flex items-center gap-2">
-                    <BarChart2 className="w-3.5 h-3.5" />
-                    {t.insights.title}
-                  </h3>
-                  <div className="h-4 w-px bg-[var(--border-color)]" />
-                  <div className="flex items-center gap-2">
-                    <Select value={targetLanguage} onChange={(e: { target: { value?: string } }) => setTargetLanguage(e.target.value ?? '')} size="small" style={{ height: 24, fontSize: '10px', color: 'var(--colorNeutralForeground2)', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '4px' }}>
-                      {SUPPORTED_ADAPTATION_LANGUAGES.map(lang => (
-                        <MenuItem key={lang.code} value={lang.aiName} style={{ fontSize: '10px' }}>
-                          {adaptationLanguageLabel(lang)}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
-                      <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
-                        {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
-                        {t.editor.adaptation}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <h3 className="micro-label text-[var(--text-secondary)] flex items-center gap-2">
+                      <BarChart2 className="w-3.5 h-3.5" />
+                      {t.insights.title}
+                    </h3>
+                    <div className="h-4 w-px bg-[var(--border-color)]" />
+                    <div className="flex items-center gap-2">
+                      <Select value={targetLanguage} onChange={(e: { target: { value?: string } }) => setTargetLanguage(e.target.value ?? '')} size="small" style={{ height: 24, fontSize: '10px', color: 'var(--colorNeutralForeground2)', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '4px' }}>
+                        {SUPPORTED_ADAPTATION_LANGUAGES.map(lang => (
+                          <MenuItem key={lang.code} value={lang.aiName} style={{ fontSize: '10px' }}>
+                            {adaptationLanguageLabel(lang)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
+                        <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
+                          {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
+                          {t.editor.adaptation}
+                        </button>
+                      </Tooltip>
+                      <Tooltip title={songLanguage ? `Detected: ${songLanguage} — click to re-detect` : 'Detect song language'}>
+                        <button onClick={() => void detectLanguage()} disabled={isDetectingLanguage || song.length === 0} className="px-3 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50 border border-white/10">
+                          {isDetectingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanText className="w-3 h-3" />}
+                          {songLanguage || 'Detect'}
+                        </button>
+                      </Tooltip>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.sections}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{sectionCount}</span></div>
+                    <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.words}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{wordCount}</span></div>
+                    <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.characters}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{charCount}</span></div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                    {song.map((section) => {
+                      const sectionWordCount = section.lines.reduce((acc, line) => acc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0);
+                      return (
+                        <Tooltip key={section.id} title={
+                          <div className="flex flex-col gap-1 text-xs">
+                            <div><span>{t.editor.sectionTooltip.lines}:</span> {section.lines.length}</div>
+                            <div><span>{t.editor.sectionTooltip.words}:</span> {sectionWordCount}</div>
+                          </div>
+                        }>
+                          <button
+                            onClick={() => scrollToSection(section)}
+                            className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-white/20 transition-all lcars-section-chip glass-button"
+                            style={{ color: getSectionColorHex(section.name) }}
+                          >
+                            <div className={`w-1.5 h-1.5 rounded-full ${getSectionDotColor(section.name)}`} />
+                            {section.name}
+                          </button>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <Tooltip title={t.saveToLibrary.saveDescription}>
+                      <button onClick={handleOpenSaveToLibraryModal} disabled={song.length === 0} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                        <Save className="w-3.5 h-3.5" />
+                        {t.saveToLibrary.title}
                       </button>
                     </Tooltip>
-                    <Tooltip title={songLanguage ? `Detected: ${songLanguage} — click to re-detect` : 'Detect song language'}>
-                      <button onClick={() => void detectLanguage()} disabled={isDetectingLanguage || song.length === 0} className="px-3 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50 border border-white/10">
-                        {isDetectingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanText className="w-3 h-3" />}
-                        {songLanguage || 'Detect'}
+                    <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
+                      <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                        <Layout className="w-3.5 h-3.5" />
+                        {isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}
+                      </button>
+                    </Tooltip>
+                    <Tooltip title={t.tooltips.analyzeTheme}>
+                      <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                        <BarChart2 className="w-3.5 h-3.5" />
+                        {t.editor.analyze}
+                      </button>
+                    </Tooltip>
+                    <Tooltip title={t.tooltips.checkSimilarity}>
+                      <button
+                        onClick={() => setIsSimilarityModalOpen(true)}
+                        disabled={isGenerating || isAnalyzing || song.length === 0}
+                        className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
+                      >
+                        {webSimilarityIndex.status === 'running'
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
+                          : <Search className="w-3.5 h-3.5" />}
+                        {t.ribbon?.similarity || 'Similarity'}
+                        {webBadgeLabel && (
+                          <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">
+                            {webBadgeLabel}
+                          </span>
+                        )}
+                        {!webBadgeLabel && libraryCount > 0 && (
+                          <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>
+                        )}
+                      </button>
+                    </Tooltip>
+                    <Tooltip title={t.tooltips.regenerate}>
+                      <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-[11px] rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap text-[var(--accent-color)]">
+                        {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                        {t.editor.regenerateGlobal}
                       </button>
                     </Tooltip>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.sections}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{sectionCount}</span></div>
-                  <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.words}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{wordCount}</span></div>
-                  <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.characters}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{charCount}</span></div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                  {song.map((section) => {
-                    const sectionWordCount = section.lines.reduce((acc, line) => acc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0);
-                    return (
-                      <Tooltip key={section.id} title={
-                        <div className="flex flex-col gap-1 text-xs">
-                          <div><span>{t.editor.sectionTooltip.lines}:</span> {section.lines.length}</div>
-                          <div><span>{t.editor.sectionTooltip.words}:</span> {sectionWordCount}</div>
-                        </div>
-                      }>
-                        <button
-                          onClick={() => scrollToSection(section)}
-                          className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-white/20 transition-all lcars-section-chip glass-button"
-                          style={{ color: getSectionColorHex(section.name) }}
-                        >
-                          <div className={`w-1.5 h-1.5 rounded-full ${getSectionDotColor(section.name)}`} />
-                          {section.name}
-                        </button>
-                      </Tooltip>
-                    );
-                  })}
-                </div>
-
-                <div className="flex items-center gap-2 ml-4">
-                  <Tooltip title={t.saveToLibrary.saveDescription}>
-                    <button onClick={handleOpenSaveToLibraryModal} disabled={song.length === 0} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                      <Save className="w-3.5 h-3.5" />
-                      {t.saveToLibrary.title}
-                    </button>
-                  </Tooltip>
-                  <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
-                    <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                      <Layout className="w-3.5 h-3.5" />
-                      {isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}
-                    </button>
-                  </Tooltip>
-                  <Tooltip title={t.tooltips.analyzeTheme}>
-                    <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                      <BarChart2 className="w-3.5 h-3.5" />
-                      {t.editor.analyze}
-                    </button>
-                  </Tooltip>
-                  <Tooltip title={t.tooltips.checkSimilarity}>
-                    <button
-                      onClick={() => setIsSimilarityModalOpen(true)}
-                      disabled={isGenerating || isAnalyzing || song.length === 0}
-                      className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
-                    >
-                      {webSimilarityIndex.status === 'running'
-                        ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
-                        : <Search className="w-3.5 h-3.5" />}
-                      {t.ribbon?.similarity || 'Similarity'}
-                      {webBadgeLabel && (
-                        <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">
-                          {webBadgeLabel}
-                        </span>
-                      )}
-                      {!webBadgeLabel && libraryCount > 0 && (
-                        <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>
-                      )}
-                    </button>
-                  </Tooltip>
-                  <Tooltip title={t.tooltips.regenerate}>
-                    <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-[11px] rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap text-[var(--accent-color)]">
-                      {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                      {t.editor.regenerateGlobal}
-                    </button>
-                  </Tooltip>
-                </div>
-              </div>
               </div>
             </div>
           )}
 
           <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative p-8 lcars-lyrics-area">
-            <div className="lyrics-editor-zoom h-full">
-            {activeTab === 'lyrics' ? (
-              {/* FIX: flex flex-col (instead of space-y-6) so flex-1 child works */}
-              <div className="w-full flex flex-col gap-6 pb-32">
-                {isMarkupMode ? (
-                  {/* FIX: flex-1 min-h-0 so MarkupInput fills available height */}
-                  <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden">
-                    <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
-                        <Layout className="w-4 h-4 text-[var(--accent-color)]" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
-                          {t.editor.markupMode.title}
-                        </h3>
-                        <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
-                          {t.editor.markupMode.description}
-                        </p>
-                      </div>
-                    </div>
-                    <MarkupInput
-                      value={markupText}
-                      onChange={(e) => setMarkupText(e.target.value)}
-                      textareaRef={markupTextareaRef}
-                      className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
-                      spellCheck={false}
-                    />
-                    <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
-                      <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
-                    </div>
-                  </div>
-                ) : (
-                  song.map((section, sectionIndex) => {
-                    const isSectionDraggable = section.name.toLowerCase() !== 'intro' && section.name.toLowerCase() !== 'outro';
-                    const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
-
-                    return (
-                    <section
-                      key={section.id}
-                      id={`section-${section.id}`}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (draggedItemIndex === null || draggedItemIndex === sectionIndex) return;
-                        setDragOverIndex(sectionIndex);
-                      }}
-                      onDragEnter={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onDragLeave={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (dragOverIndex === sectionIndex) setDragOverIndex(null);
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleDrop(sectionIndex);
-                      }}
-                      className={`lcars-band ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
-                    >
-                      <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
-
-                      <div className="flex-1 p-4">
-                        <div className="mb-3 flex items-center justify-between gap-4 flex-wrap">
-                          <div className="flex items-center gap-3">
-                            <div className="flex flex-col gap-0.5">
-                              <Tooltip title="Move section up">
-                                <button
-                                  type="button"
-                                  onClick={() => moveSectionUp(section.id)}
-                                  disabled={sectionIndex === 0 || section.name.toLowerCase() === 'intro'}
-                                  className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed"
-                                >
-                                  <ChevronUp className="h-3 w-3" />
-                                </button>
-                              </Tooltip>
-                              <Tooltip title="Move section down">
-                                <button
-                                  type="button"
-                                  onClick={() => moveSectionDown(section.id)}
-                                  disabled={sectionIndex === song.length - 1 || section.name.toLowerCase() === 'outro'}
-                                  className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed"
-                                >
-                                  <ChevronDown className="h-3 w-3" />
-                                </button>
-                              </Tooltip>
-                            </div>
-
-                            <div>
-                              <select
-                                value={section.name}
-                                onChange={(e) => setSectionName(section.id, e.target.value)}
-                                className={`lcars-section-title text-lg font-semibold uppercase tracking-[0.25em] bg-transparent border-none outline-none cursor-pointer ${getSectionTextColor(section.name)}`}
-                                style={{ color: getSectionColorHex(section.name) }}
-                              >
-                                {SECTION_TYPE_OPTIONS.map(opt => (
-                                  <option key={opt} value={opt}>{opt.toUpperCase()}</option>
-                                ))}
-                                {!SECTION_TYPE_OPTIONS.includes(section.name) && (
-                                  <option value={section.name}>{section.name.toUpperCase()}</option>
-                                )}
-                              </select>
-                              <div className="mt-1 flex items-center gap-2">
-                                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
-                                  {section.lines.length} lines
-                                </p>
-                                <select
-                                  value={section.rhymeScheme || rhymeScheme}
-                                  onChange={(e) => setSectionRhymeScheme(section.id, e.target.value)}
-                                  className="text-[10px] uppercase tracking-[0.15em] bg-transparent border border-white/10 rounded px-1.5 py-0.5 text-zinc-500 dark:text-zinc-400 hover:border-white/25 transition cursor-pointer outline-none"
-                                >
-                                  {RHYME_KEYS.map(key => (
-                                    <option key={key} value={key}>{key}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Tooltip title={t.tooltips.regenerateSection}>
-                              <button
-                                onClick={() => regenerateSection(section.id)}
-                                {/* FIX: spinner/disabled scoped to this section only */}
-                                disabled={isGenerating || isAnalyzing || isRegeneratingSection(section.id)}
-                                className="flex items-center gap-2 rounded border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20 disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                {isRegeneratingSection(section.id) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                                {t.editor.regenerateSection}
-                              </button>
-                            </Tooltip>
-                            <Tooltip title={isSectionDraggable ? 'Drag to reorder section' : 'Intro and Outro stay anchored'}>
-                              <div
-                                draggable={isSectionDraggable}
-                                onDragStart={() => {
-                                  if (!isSectionDraggable) return;
-                                  setDraggedItemIndex(sectionIndex);
-                                  setDraggableSectionIndex(sectionIndex);
-                                  playAudioFeedback('drag');
-                                }}
-                                onDragEnd={() => {
-                                  setDraggedItemIndex(null);
-                                  setDragOverIndex(null);
-                                  setDraggableSectionIndex(null);
-                                }}
-                                className={`cursor-grab active:cursor-grabbing text-zinc-500 hover:text-zinc-300 transition-colors ${!isSectionDraggable ? 'cursor-not-allowed opacity-40' : ''}`}
-                              >
-                                <GripVertical className="h-5 w-5" />
-                              </div>
-                            </Tooltip>
-                          </div>
+            <div className="lyrics-editor-zoom h-full flex flex-col">
+              {activeTab === 'lyrics' ? (
+                <div className="w-full flex flex-col gap-6 pb-32">
+                  {isMarkupMode ? (
+                    <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden" style={{ minHeight: 'calc(100vh - 280px)' }}>
+                      <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
+                          <Layout className="w-4 h-4 text-[var(--accent-color)]" />
                         </div>
+                        <div>
+                          <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
+                            {t.editor.markupMode.title}
+                          </h3>
+                          <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
+                            {t.editor.markupMode.description}
+                          </p>
+                        </div>
+                      </div>
+                      <MarkupInput
+                        value={markupText}
+                        onChange={(e) => setMarkupText(e.target.value)}
+                        textareaRef={markupTextareaRef}
+                        className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
+                        spellCheck={false}
+                      />
+                      <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
+                        <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    song.map((section, sectionIndex) => {
+                      const isSectionDraggable = section.name.toLowerCase() !== 'intro' && section.name.toLowerCase() !== 'outro';
+                      const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
 
-                        <InstructionEditor
-                          instructions={section.preInstructions}
-                          sectionId={section.id}
-                          type="pre"
-                          onChange={handleInstructionChange}
-                          onAdd={addInstruction}
-                          onRemove={removeInstruction}
-                        />
+                      return (
+                        <section
+                          key={section.id}
+                          id={`section-${section.id}`}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (draggedItemIndex === null || draggedItemIndex === sectionIndex) return;
+                            setDragOverIndex(sectionIndex);
+                          }}
+                          onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (dragOverIndex === sectionIndex) setDragOverIndex(null); }}
+                          onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(sectionIndex); }}
+                          className={`lcars-band ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
+                        >
+                          <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
 
-                        <div className="mt-3 space-y-3">
-                          <div
-                            className="px-3 pb-1 border-b border-white/5 mb-1"
-                            style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px', alignItems: 'center', columnGap: '10px' }}
-                          >
-                            <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
-                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>
-                              {t.editor.rhyme}
-                            </span>
-                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>
-                              {t.editor.syllables}
-                            </span>
-                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-                              {t.editor.rhymeSyllable}
-                            </span>
-                            <div/>
-                          </div>
-                          {section.lines.map((line, index) => {
-                            const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
-                            const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
-
-                            return (
-                            <div
-                              key={line.id}
-                              onDragOver={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (!draggedLineInfo || isDraggedLine) return;
-                                setDragOverLineInfo({ sectionId: section.id, lineId: line.id });
-                              }}
-                              onDragEnter={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                              }}
-                              onDragLeave={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (isLineDropTarget) setDragOverLineInfo(null);
-                              }}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleLineDrop(section.id, line.id);
-                              }}
-                              className={`group transition-colors ${
-                                selectedLineId === line.id
-                                  ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
-                                  : 'hover:bg-white/[0.025]'
-                              } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
-                              style={{
-                                display: 'grid',
-                                gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px',
-                                alignItems: 'center',
-                                columnGap: '10px',
-                                paddingLeft: '12px',
-                                paddingRight: '12px',
-                                minHeight: '36px',
-                              }}
-                            >
-                                {isSectionDraggable ? (
-                                  <Tooltip title="Drag to reorder line">
-                                    <div
-                                      draggable
-                                      onDragStart={() => handleLineDragStart(section.id, line.id)}
-                                      onDragEnd={() => {
-                                        setDraggedLineInfo(null);
-                                        setDragOverLineInfo(null);
-                                      }}
-                                      className="flex h-8 w-5 items-center justify-center text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-zinc-300"
-                                    >
-                                      <GripVertical className="h-3.5 w-3.5" />
-                                    </div>
-                                  </Tooltip>
-                                ) : <div />}
-
-                                <Tooltip title={line.isManual ? 'Human' : 'AI'}>
-                                  <span className="flex items-center justify-center w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                                    {line.isManual
-                                      ? <User className="h-3.5 w-3.5 text-emerald-400" />
-                                      : <Bot className="h-3.5 w-3.5 text-[var(--accent-color)]" />}
-                                  </span>
-                                </Tooltip>
-
-                                <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Tooltip title="Move line up">
-                                    <button
-                                      type="button"
-                                      onClick={() => moveLineUp(section.id, line.id)}
-                                      disabled={index === 0}
-                                      className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed"
-                                    >
-                                      <ChevronUp className="h-2.5 w-2.5" />
+                          <div className="flex-1 p-4">
+                            <div className="mb-3 flex items-center justify-between gap-4 flex-wrap">
+                              <div className="flex items-center gap-3">
+                                <div className="flex flex-col gap-0.5">
+                                  <Tooltip title="Move section up">
+                                    <button type="button" onClick={() => moveSectionUp(section.id)} disabled={sectionIndex === 0 || section.name.toLowerCase() === 'intro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                                      <ChevronUp className="h-3 w-3" />
                                     </button>
                                   </Tooltip>
-                                  <Tooltip title="Move line down">
-                                    <button
-                                      type="button"
-                                      onClick={() => moveLineDown(section.id, line.id)}
-                                      disabled={index === section.lines.length - 1}
-                                      className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed"
-                                    >
-                                      <ChevronDown className="h-2.5 w-2.5" />
+                                  <Tooltip title="Move section down">
+                                    <button type="button" onClick={() => moveSectionDown(section.id)} disabled={sectionIndex === song.length - 1 || section.name.toLowerCase() === 'outro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                                      <ChevronDown className="h-3 w-3" />
                                     </button>
                                   </Tooltip>
                                 </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleLineClick(line.id)}
-                                  className="flex h-8 w-8 items-center justify-center rounded-sm border border-black/10 bg-white/70 text-[11px] font-semibold text-zinc-500 transition group-hover:text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-zinc-200"
-                                >
-                                  {index + 1}
-                                </button>
-
-                                <LyricInput
-                                  value={line.text}
-                                  onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
-                                  onKeyDown={(e) => handleLineKeyDown(e, section.id, line.id)}
-                                  onClick={() => handleLineClick(line.id)}
-                                  data-line-id={line.id}
-                                  placeholder={`${section.name} line ${index + 1}`}
-                                  className="text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
-                                  style={{ width: '100%', minWidth: 0 }}
-                                />
-
-                                <span style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                  {line.rhyme ? (
-                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
-                                      {line.rhyme}
-                                    </span>
-                                  ) : null}
-                                </span>
-
-                                <span style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                                  {line.syllables > 0 ? line.syllables : ''}
-                                </span>
-
-                                <span style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
-                                  {line.rhymingSyllables || '\u00a0'}
-                                </span>
-
-                                <Tooltip title="Delete line">
-                                  <button
-                                    type="button"
-                                    onClick={() => deleteLineFromSection(section.id, line.id)}
-                                    className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
+                                <div>
+                                  <select
+                                    value={section.name}
+                                    onChange={(e) => setSectionName(section.id, e.target.value)}
+                                    className={`lcars-section-title text-lg font-semibold uppercase tracking-[0.25em] bg-transparent border-none outline-none cursor-pointer ${getSectionTextColor(section.name)}`}
+                                    style={{ color: getSectionColorHex(section.name) }}
                                   >
-                                    <Trash2 className="h-3 w-3" />
+                                    {SECTION_TYPE_OPTIONS.map(opt => (
+                                      <option key={opt} value={opt}>{opt.toUpperCase()}</option>
+                                    ))}
+                                    {!SECTION_TYPE_OPTIONS.includes(section.name) && (
+                                      <option value={section.name}>{section.name.toUpperCase()}</option>
+                                    )}
+                                  </select>
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">{section.lines.length} lines</p>
+                                    <select
+                                      value={section.rhymeScheme || rhymeScheme}
+                                      onChange={(e) => setSectionRhymeScheme(section.id, e.target.value)}
+                                      className="text-[10px] uppercase tracking-[0.15em] bg-transparent border border-white/10 rounded px-1.5 py-0.5 text-zinc-500 dark:text-zinc-400 hover:border-white/25 transition cursor-pointer outline-none"
+                                    >
+                                      {RHYME_KEYS.map(key => (
+                                        <option key={key} value={key}>{key}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Tooltip title={t.tooltips.regenerateSection}>
+                                  <button
+                                    onClick={() => regenerateSection(section.id)}
+                                    disabled={isGenerating || isAnalyzing || isRegeneratingSection(section.id)}
+                                    className="flex items-center gap-2 rounded border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {isRegeneratingSection(section.id) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                                    {t.editor.regenerateSection}
                                   </button>
                                 </Tooltip>
+                                <Tooltip title={isSectionDraggable ? 'Drag to reorder section' : 'Intro and Outro stay anchored'}>
+                                  <div
+                                    draggable={isSectionDraggable}
+                                    onDragStart={() => {
+                                      if (!isSectionDraggable) return;
+                                      setDraggedItemIndex(sectionIndex);
+                                      setDraggableSectionIndex(sectionIndex);
+                                      playAudioFeedback('drag');
+                                    }}
+                                    onDragEnd={() => { setDraggedItemIndex(null); setDragOverIndex(null); setDraggableSectionIndex(null); }}
+                                    className={`cursor-grab active:cursor-grabbing text-zinc-500 hover:text-zinc-300 transition-colors ${!isSectionDraggable ? 'cursor-not-allowed opacity-40' : ''}`}
+                                  >
+                                    <GripVertical className="h-5 w-5" />
+                                  </div>
+                                </Tooltip>
+                              </div>
                             </div>
-                          )})}
-                        </div>
 
-                        {section.postInstructions && section.postInstructions.length > 0 && (
-                          <div className="mt-2 px-3">
                             <InstructionEditor
-                              instructions={section.postInstructions}
+                              instructions={section.preInstructions}
                               sectionId={section.id}
-                              type="post"
+                              type="pre"
                               onChange={handleInstructionChange}
                               onAdd={addInstruction}
                               onRemove={removeInstruction}
-                              showAddButton={false}
                             />
-                          </div>
-                        )}
 
-                        <div className="flex items-center gap-2 pt-1 pb-2 px-3">
-                          <button
-                            type="button"
-                            onClick={() => addLineToSection(section.id)}
-                            className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded"
-                          >
-                            <Plus className="w-3 h-3" />
-                            Add Line
-                          </button>
-                          <span className="text-zinc-700 dark:text-zinc-600 text-[10px]">|</span>
-                          <button
-                            type="button"
-                            onClick={() => addInstruction(section.id, 'post')}
-                            className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded"
-                          >
-                            <Plus className="w-3 h-3" />
-                            Add Musical / Modulation / Effect
-                          </button>
-                        </div>
-                      </div>
-                    </section>
-                  )})
-                )}
-              </div>
-            ) : (
-              <div>Musical tab UI</div>
-            )}
+                            <div className="mt-3 space-y-3">
+                              <div
+                                className="px-3 pb-1 border-b border-white/5 mb-1"
+                                style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px', alignItems: 'center', columnGap: '10px' }}
+                              >
+                                <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
+                                <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhyme}</span>
+                                <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.syllables}</span>
+                                <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhymeSyllable}</span>
+                                <div/>
+                              </div>
+                              {section.lines.map((line, index) => {
+                                const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
+                                const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
+                                return (
+                                  <div
+                                    key={line.id}
+                                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (!draggedLineInfo || isDraggedLine) return; setDragOverLineInfo({ sectionId: section.id, lineId: line.id }); }}
+                                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (isLineDropTarget) setDragOverLineInfo(null); }}
+                                    onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleLineDrop(section.id, line.id); }}
+                                    className={`group transition-colors ${
+                                      selectedLineId === line.id
+                                        ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
+                                        : 'hover:bg-white/[0.025]'
+                                    } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
+                                    style={{
+                                      display: 'grid',
+                                      gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px',
+                                      alignItems: 'center',
+                                      columnGap: '10px',
+                                      paddingLeft: '12px',
+                                      paddingRight: '12px',
+                                      minHeight: '36px',
+                                    }}
+                                  >
+                                    {isSectionDraggable ? (
+                                      <Tooltip title="Drag to reorder line">
+                                        <div
+                                          draggable
+                                          onDragStart={() => handleLineDragStart(section.id, line.id)}
+                                          onDragEnd={() => { setDraggedLineInfo(null); setDragOverLineInfo(null); }}
+                                          className="flex h-8 w-5 items-center justify-center text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-zinc-300"
+                                        >
+                                          <GripVertical className="h-3.5 w-3.5" />
+                                        </div>
+                                      </Tooltip>
+                                    ) : <div />}
+
+                                    <Tooltip title={line.isManual ? 'Human' : 'AI'}>
+                                      <span className="flex items-center justify-center w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity">
+                                        {line.isManual
+                                          ? <User className="h-3.5 w-3.5 text-emerald-400" />
+                                          : <Bot className="h-3.5 w-3.5 text-[var(--accent-color)]" />}
+                                      </span>
+                                    </Tooltip>
+
+                                    <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Tooltip title="Move line up">
+                                        <button type="button" onClick={() => moveLineUp(section.id, line.id)} disabled={index === 0} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                                          <ChevronUp className="h-2.5 w-2.5" />
+                                        </button>
+                                      </Tooltip>
+                                      <Tooltip title="Move line down">
+                                        <button type="button" onClick={() => moveLineDown(section.id, line.id)} disabled={index === section.lines.length - 1} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                                          <ChevronDown className="h-2.5 w-2.5" />
+                                        </button>
+                                      </Tooltip>
+                                    </div>
+
+                                    <button type="button" onClick={() => handleLineClick(line.id)} className="flex h-8 w-8 items-center justify-center rounded-sm border border-black/10 bg-white/70 text-[11px] font-semibold text-zinc-500 transition group-hover:text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-zinc-200">
+                                      {index + 1}
+                                    </button>
+
+                                    <LyricInput
+                                      value={line.text}
+                                      onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
+                                      onKeyDown={(e) => handleLineKeyDown(e, section.id, line.id)}
+                                      onClick={() => handleLineClick(line.id)}
+                                      data-line-id={line.id}
+                                      placeholder={`${section.name} line ${index + 1}`}
+                                      className="text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                                      style={{ width: '100%', minWidth: 0 }}
+                                    />
+
+                                    <span style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                      {line.rhyme ? (
+                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
+                                          {line.rhyme}
+                                        </span>
+                                      ) : null}
+                                    </span>
+                                    <span style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                                      {line.syllables > 0 ? line.syllables : ''}
+                                    </span>
+                                    <span style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
+                                      {line.rhymingSyllables || '\u00a0'}
+                                    </span>
+
+                                    <Tooltip title="Delete line">
+                                      <button type="button" onClick={() => deleteLineFromSection(section.id, line.id)} className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300">
+                                        <Trash2 className="h-3 w-3" />
+                                      </button>
+                                    </Tooltip>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {section.postInstructions && section.postInstructions.length > 0 && (
+                              <div className="mt-2 px-3">
+                                <InstructionEditor
+                                  instructions={section.postInstructions}
+                                  sectionId={section.id}
+                                  type="post"
+                                  onChange={handleInstructionChange}
+                                  onAdd={addInstruction}
+                                  onRemove={removeInstruction}
+                                  showAddButton={false}
+                                />
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-2 pt-1 pb-2 px-3">
+                              <button type="button" onClick={() => addLineToSection(section.id)} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded">
+                                <Plus className="w-3 h-3" />
+                                Add Line
+                              </button>
+                              <span className="text-zinc-700 dark:text-zinc-600 text-[10px]">|</span>
+                              <button type="button" onClick={() => addInstruction(section.id, 'post')} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded">
+                                <Plus className="w-3 h-3" />
+                                Add Musical / Modulation / Effect
+                              </button>
+                            </div>
+                          </div>
+                        </section>
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                <div>Musical tab UI</div>
+              )}
             </div>
           </div>
         </div>
@@ -1298,53 +1121,12 @@ export default function App() {
       />
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
-
-      <ImportModal
-        isOpen={isImportModalOpen}
-        hasExistingWork={hasExistingWork}
-        onClose={() => setIsImportModalOpen(false)}
-        onChooseFile={handleImportChooseFile}
-      />
-
-      <SuggestionsPanel
-        selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
-        suggestions={suggestions} isSuggesting={isSuggesting}
-        applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
-      />
-
-      <PasteModal
-        isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)}
-        pastedText={pastedText} setPastedText={setPastedText}
-        isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics}
-      />
-
-      <AnalysisModal
-        isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)}
-        isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps}
-        appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
-        isApplyingAnalysis={isApplyingAnalysis} toggleAnalysisItemSelection={toggleAnalysisItemSelection}
-        applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems}
-        versions={versions} rollbackToVersion={rollbackToVersion}
-      />
-
-      <SimilarityModal
-        isOpen={isSimilarityModalOpen}
-        onClose={() => setIsSimilarityModalOpen(false)}
-        matches={similarityMatches}
-        candidateCount={libraryCount}
-        webIndex={webSimilarityIndex}
-        onWebRefresh={triggerWebSimilarity}
-      />
-
-      <SaveToLibraryModal
-        isOpen={isSaveToLibraryModalOpen}
-        onClose={() => setIsSaveToLibraryModalOpen(false)}
-        onSave={handleSaveToLibrary}
-        isSaving={isSavingToLibrary}
-        currentTitle={title}
-        libraryAssets={libraryAssets}
-      />
-
+      <ImportModal isOpen={isImportModalOpen} hasExistingWork={hasExistingWork} onClose={() => setIsImportModalOpen(false)} onChooseFile={handleImportChooseFile} />
+      <SuggestionsPanel selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId} suggestions={suggestions} isSuggesting={isSuggesting} applySuggestion={applySuggestion} generateSuggestions={generateSuggestions} />
+      <PasteModal isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)} pastedText={pastedText} setPastedText={setPastedText} isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics} />
+      <AnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps} appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems} isApplyingAnalysis={isApplyingAnalysis} toggleAnalysisItemSelection={toggleAnalysisItemSelection} applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems} versions={versions} rollbackToVersion={rollbackToVersion} />
+      <SimilarityModal isOpen={isSimilarityModalOpen} onClose={() => setIsSimilarityModalOpen(false)} matches={similarityMatches} candidateCount={libraryCount} webIndex={webSimilarityIndex} onWebRefresh={triggerWebSimilarity} />
+      <SaveToLibraryModal isOpen={isSaveToLibraryModalOpen} onClose={() => setIsSaveToLibraryModalOpen(false)} onSave={handleSaveToLibrary} isSaving={isSavingToLibrary} currentTitle={title} libraryAssets={libraryAssets} />
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
       <input ref={importInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportInputChange} />
