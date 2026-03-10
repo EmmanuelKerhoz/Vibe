@@ -75,6 +75,8 @@ export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll,
           color: 'transparent',
           caretColor: 'var(--text-primary)',
           minHeight: 'inherit',
+          height: '100%',
+          resize: 'none',
         }}
       />
     </div>

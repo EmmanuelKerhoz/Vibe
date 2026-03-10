@@ -43,19 +43,52 @@ export function AnalysisModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="acrylic w-full max-w-3xl shadow-[0_32px_64px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 lcars-panel">
-        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-          <h3 className="text-lg text-zinc-100 flex items-center gap-2.5">
-            <BarChart2 className="w-5 h-5 text-[var(--accent-color)]" />
-            {t.analysis.title}
-          </h3>
-          <button onClick={onClose} className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors">
-            <X className="w-5 h-5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+        onClick={!isAnalyzing && isApplyingAnalysis === null ? onClose : undefined}
+      />
+
+      {/* Ambient glow – dark theme only */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden items-center justify-center hidden dark:flex">
+        <div className="w-[600px] h-[400px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
+      </div>
+
+      {/* Modal panel */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.analysis.title}
+        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 bg-[var(--bg-app)] border border-[var(--border-color)] rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden"
+      >
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
+              <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
+                {t.analysis.title}
+              </h3>
+              <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
+                {isAnalyzing ? t.analysis.deepAnalysis : analysisReport ? t.analysis.summary : ''}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={isAnalyzing || isApplyingAnalysis !== null}
+            aria-label={t.analysis.close}
+            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
+        {/* Body */}
+        <div className="p-8 flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-app)]">
           {isAnalyzing ? (
             <div className="h-full flex flex-col items-center justify-center space-y-8 py-20">
               <div className="relative">
@@ -149,7 +182,7 @@ export function AnalysisModal({
           )}
         </div>
 
-        <div className="p-6 border-t border-white/5 bg-white/[0.02] flex justify-between items-center">
+        <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-between items-center flex-shrink-0">
           <div className="flex items-center gap-4">
             {appliedAnalysisItems.size > 0 && (
               <Tooltip title={t.tooltips.revertAnalysis}>

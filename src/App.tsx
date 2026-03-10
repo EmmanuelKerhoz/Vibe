@@ -4,7 +4,7 @@ import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-com
 
 import { Section, SongVersion } from './types';
 import { DEFAULT_STRUCTURE } from './constants/editor';
-import { cleanSectionName, getSectionColor, getSectionTextColor, getSectionDotColor, getRhymeColor, countSyllables } from './utils/songUtils';
+import { cleanSectionName, getSectionColor, getSectionTextColor, getSectionColorHex, getSectionDotColor, getRhymeColor, countSyllables } from './utils/songUtils';
 import { generateId } from './utils/idUtils';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
@@ -512,6 +512,7 @@ export default function App() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    setIsImportModalOpen(false);
     loadFileForAnalysis(file);
   };
 
@@ -520,8 +521,6 @@ export default function App() {
   };
 
   const handleImportChooseFile = async () => {
-    setIsImportModalOpen(false);
-
     const pickerWindow = window as Window & {
       showOpenFilePicker?: (options: {
         multiple?: boolean;
@@ -549,6 +548,7 @@ export default function App() {
         });
         if (!handle) return;
         const file = await handle.getFile();
+        setIsImportModalOpen(false);
         loadFileForAnalysis(file);
       } catch (error) {
         if (!(error instanceof DOMException && error.name === 'AbortError')) {
@@ -853,7 +853,7 @@ export default function App() {
                         <button
                           onClick={() => scrollToSection(section)}
                           className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-white/20 transition-all lcars-section-chip glass-button"
-                          style={{ color: getSectionTextColor(section.name) }}
+                          style={{ color: getSectionColorHex(section.name) }}
                         >
                           <div className={`w-1.5 h-1.5 rounded-full ${getSectionDotColor(section.name)}`} />
                           {section.name}
@@ -920,7 +920,7 @@ export default function App() {
             {activeTab === 'lyrics' ? (
               <div className="w-full space-y-6 pb-32">
                 {isMarkupMode ? (
-                  <div className="w-full rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden">
+                  <div className="w-full flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden">
                     {/* Markup mode header */}
                     <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
@@ -940,7 +940,7 @@ export default function App() {
                       value={markupText}
                       onChange={(e) => setMarkupText(e.target.value)}
                       textareaRef={markupTextareaRef}
-                      className="w-full min-h-[60vh] font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
+                      className="w-full flex-1 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
                       spellCheck={false}
                     />
                     {/* Markup mode footer hint */}
@@ -1016,6 +1016,7 @@ export default function App() {
                                 value={section.name}
                                 onChange={(e) => setSectionName(section.id, e.target.value)}
                                 className={`lcars-section-title text-lg font-semibold uppercase tracking-[0.25em] bg-transparent border-none outline-none cursor-pointer ${getSectionTextColor(section.name)}`}
+                                style={{ color: getSectionColorHex(section.name) }}
                               >
                                 {SECTION_TYPE_OPTIONS.map(opt => (
                                   <option key={opt} value={opt}>{opt.toUpperCase()}</option>
@@ -1088,17 +1089,17 @@ export default function App() {
                           {/* Column headers */}
                           <div
                             className="px-3 pb-1 border-b border-white/5 mb-1"
-                            style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 90px 32px 44px 24px', alignItems: 'center', columnGap: '8px' }}
+                            style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px', alignItems: 'center', columnGap: '10px' }}
                           >
                             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
-                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {t.editor.rhymeSyllable}
+                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>
+                              {t.editor.rhyme}
                             </span>
-                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>
                               {t.editor.syllables}
                             </span>
-                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-                              {t.editor.rhyme}
+                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                              {t.editor.rhymeSyllable}
                             </span>
                             <div/>
                           </div>
@@ -1136,9 +1137,9 @@ export default function App() {
                               } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
                               style={{
                                 display: 'grid',
-                                gridTemplateColumns: '20px 16px 16px 32px 1fr 90px 32px 44px 24px',
+                                gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px',
                                 alignItems: 'center',
-                                columnGap: '8px',
+                                columnGap: '10px',
                                 paddingLeft: '12px',
                                 paddingRight: '12px',
                                 minHeight: '36px',
@@ -1215,9 +1216,13 @@ export default function App() {
                                   style={{ width: '100%', minWidth: 0 }}
                                 />
 
-                                {/* cell 6: rhyming syllables */}
-                                <span style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
-                                  {line.rhymingSyllables || '\u00a0'}
+                                {/* cell 6: rhyme badge */}
+                                <span style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                  {line.rhyme ? (
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
+                                      {line.rhyme}
+                                    </span>
+                                  ) : null}
                                 </span>
 
                                 {/* cell 7: syllable count */}
@@ -1225,13 +1230,9 @@ export default function App() {
                                   {line.syllables > 0 ? line.syllables : ''}
                                 </span>
 
-                                {/* cell 8: rhyme badge */}
-                                <span style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                  {line.rhyme ? (
-                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
-                                      {line.rhyme}
-                                    </span>
-                                  ) : null}
+                                {/* cell 8: rhyming syllables */}
+                                <span style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
+                                  {line.rhymingSyllables || '\u00a0'}
                                 </span>
 
                                 {/* cell 9: delete */}

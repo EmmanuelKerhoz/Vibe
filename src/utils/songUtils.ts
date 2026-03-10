@@ -18,6 +18,16 @@ export const getSectionTextColor = (name: string) => {
   return 'text-zinc-600 dark:text-zinc-400';
 };
 
+export const getSectionColorHex = (name: string): string => {
+  const n = name.toLowerCase();
+  if (n.includes('pre-chorus') || n.includes('prechorus')) return '#f97316';
+  if (n.includes('chorus')) return '#f59e0b';
+  if (n.includes('verse')) return '#3b82f6';
+  if (n.includes('bridge') || n.includes('breakdown')) return '#a855f7';
+  if (n.includes('intro') || n.includes('outro')) return '#10b981';
+  return '#71717a';
+};
+
 export const getSectionDotColor = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500';
