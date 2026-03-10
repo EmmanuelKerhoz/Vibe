@@ -35,7 +35,7 @@ export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll,
   return (
     <div className="relative w-full h-full flex flex-col">
       <div 
-        className={`${className} pointer-events-none whitespace-pre-wrap overflow-hidden absolute inset-0 border-transparent bg-transparent`}
+        className={`${className} pointer-events-none whitespace-pre-wrap overflow-hidden absolute inset-0 border-transparent`}
         aria-hidden="true"
         style={{ 
           font: 'inherit', 
@@ -53,7 +53,7 @@ export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll,
         value={value}
         onChange={onChange}
         onScroll={onScroll}
-        className={`${className} !text-transparent caret-zinc-900 dark:caret-white relative z-10 bg-transparent focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] whitespace-pre-wrap`}
+        className={`${className} !text-transparent caret-[var(--text-primary)] relative z-10 bg-transparent focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] whitespace-pre-wrap`}
         style={{ 
           font: 'inherit', 
           letterSpacing: 'inherit', 
