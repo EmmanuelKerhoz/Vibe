@@ -895,7 +895,6 @@ export default function App() {
                       key={section.id}
                       id={`section-${section.id}`}
                       onDragOver={(e) => {
-                        if (!isSectionDraggable && draggedItemIndex === sectionIndex) return;
                         e.preventDefault();
                         e.stopPropagation();
                         if (draggedItemIndex === null || draggedItemIndex === sectionIndex) return;
