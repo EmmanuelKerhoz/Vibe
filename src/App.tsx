@@ -1042,7 +1042,7 @@ export default function App() {
                             className="px-3 pb-1 border-b border-white/5 mb-1"
                             style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 80px 28px 40px 24px', alignItems: 'center', columnGap: '4px' }}
                           >
-                            <div/><div/><div/><div/><div/>
+                            <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
                             <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {t.editor.rhymeSyllable}
                             </span>

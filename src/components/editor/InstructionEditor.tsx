@@ -55,7 +55,7 @@ export const InstructionEditor = ({
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-colors border border-dashed border-[var(--accent-color)]/30 w-full justify-center"
         >
           <Plus className="w-3.5 h-3.5" />
-          + Add Musical / Modulation / Effect
+          Add Musical / Modulation / Effect
         </button>
       )}
     </div>
