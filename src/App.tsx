@@ -314,6 +314,21 @@ export default function App() {
     }
   }, [theme]);
 
+  // Ensure Intro is always first and Outro is always last
+  useEffect(() => {
+    if (song.length === 0) return;
+    const introIdx = song.findIndex(s => s.name.toLowerCase() === 'intro');
+    const outroIdx = song.findIndex(s => s.name.toLowerCase() === 'outro');
+    const isIntroMisplaced = introIdx > 0;
+    const isOutroMisplaced = outroIdx !== -1 && outroIdx !== song.length - 1;
+    if (!isIntroMisplaced && !isOutroMisplaced) return;
+    const others = song.filter(s => s.name.toLowerCase() !== 'intro' && s.name.toLowerCase() !== 'outro');
+    const intro = introIdx !== -1 ? [song[introIdx]] : [];
+    const outro = outroIdx !== -1 ? [song[outroIdx]] : [];
+    const sorted = [...intro, ...others, ...outro];
+    updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
+  }, [song, updateSongAndStructureWithHistory]);
+
   const updateSongInHistory = (transform: (currentSong: Section[]) => Section[]) => {
     updateState(current => ({ song: transform(current.song), structure: current.structure }));
   };
@@ -929,7 +944,7 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={() => moveSectionUp(section.id)}
-                                  disabled={sectionIndex === 0}
+                                  disabled={sectionIndex === 0 || section.name.toLowerCase() === 'intro'}
                                   className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed"
                                 >
                                   <ChevronUp className="h-3 w-3" />
@@ -939,7 +954,7 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={() => moveSectionDown(section.id)}
-                                  disabled={sectionIndex === song.length - 1}
+                                  disabled={sectionIndex === song.length - 1 || section.name.toLowerCase() === 'outro'}
                                   className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed"
                                 >
                                   <ChevronDown className="h-3 w-3" />
@@ -1023,26 +1038,21 @@ export default function App() {
 
                         <div className="mt-3 space-y-3">
                           {/* Column headers */}
-                          <div className="flex items-center px-3 pb-1 border-b border-white/5 mb-1">
-                            {/* Left spacers — must mirror EXACTLY the line row left-side controls */}
-                            <div className="w-5 shrink-0" />   {/* grip */}
-                            <div className="w-4 shrink-0" />   {/* origin icon */}
-                            <div className="w-4 shrink-0" />   {/* chevrons up/down */}
-                            <div className="w-8 shrink-0" />   {/* line number button */}
-                            <div className="flex-1" />          {/* LyricInput */}
-                            {/* Column headers — fixed, non-shrinkable widths with explicit gap */}
-                            <div className="flex items-center shrink-0" style={{ gap: '12px' }}>
-                              <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ width: '80px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {t.editor.rhymeSyllable}
-                              </span>
-                              <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ width: '28px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                {t.editor.syllables}
-                              </span>
-                              <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ width: '40px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                                {t.editor.rhyme}
-                              </span>
-                            </div>
-                            <div className="w-6 shrink-0" />   {/* delete button spacer */}
+                          <div
+                            className="px-3 pb-1 border-b border-white/5 mb-1"
+                            style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 80px 28px 40px 24px', alignItems: 'center', columnGap: '4px' }}
+                          >
+                            <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
+                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {t.editor.rhymeSyllable}
+                            </span>
+                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              {t.editor.syllables}
+                            </span>
+                            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              {t.editor.rhyme}
+                            </span>
+                            <div/>
                           </div>
                           {section.lines.map((line, index) => {
                             const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
@@ -1071,37 +1081,48 @@ export default function App() {
                                 e.stopPropagation();
                                 handleLineDrop(section.id, line.id);
                               }}
-                              className={`group flex items-center gap-3 px-3 py-1.5 rounded transition-colors ${
+                              className={`group transition-colors ${
                                 selectedLineId === line.id
                                   ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
                                   : 'hover:bg-white/[0.025]'
-                              } ${isLineDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
+                              } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '20px 16px 16px 32px 1fr 80px 28px 40px 24px',
+                                alignItems: 'center',
+                                columnGap: '4px',
+                                padding: '2px 12px',
+                                minHeight: '36px',
+                              }}
                             >
-                                <Tooltip title="Drag to reorder line">
-                                  <div
-                                    draggable
-                                    onDragStart={() => handleLineDragStart(section.id, line.id)}
-                                    onDragEnd={() => {
-                                      setDraggedLineInfo(null);
-                                      setDragOverLineInfo(null);
-                                    }}
-                                    className="flex h-8 w-5 shrink-0 items-center justify-center text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-zinc-300"
-                                  >
-                                    <GripVertical className="h-3.5 w-3.5" />
-                                  </div>
-                                </Tooltip>
+                                {/* cell 1: grip */}
+                                {isSectionDraggable ? (
+                                  <Tooltip title="Drag to reorder line">
+                                    <div
+                                      draggable
+                                      onDragStart={() => handleLineDragStart(section.id, line.id)}
+                                      onDragEnd={() => {
+                                        setDraggedLineInfo(null);
+                                        setDragOverLineInfo(null);
+                                      }}
+                                      className="flex h-8 w-5 items-center justify-center text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-zinc-300"
+                                    >
+                                      <GripVertical className="h-3.5 w-3.5" />
+                                    </div>
+                                  </Tooltip>
+                                ) : <div />}
 
-                                {/* Origin icon */}
+                                {/* cell 2: origin icon */}
                                 <Tooltip title={line.isManual ? 'Human' : 'AI'}>
-                                  <span className="shrink-0 flex items-center justify-center w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity">
+                                  <span className="flex items-center justify-center w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity">
                                     {line.isManual
                                       ? <User className="h-3.5 w-3.5 text-emerald-400" />
                                       : <Bot className="h-3.5 w-3.5 text-[var(--accent-color)]" />}
                                   </span>
                                 </Tooltip>
 
-                                {/* Line move up/down */}
-                                <div className="flex flex-col gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {/* cell 3: chevrons */}
+                                <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Tooltip title="Move line up">
                                     <button
                                       type="button"
@@ -1124,13 +1145,16 @@ export default function App() {
                                   </Tooltip>
                                 </div>
 
+                                {/* cell 4: line number */}
                                 <button
                                   type="button"
                                   onClick={() => handleLineClick(line.id)}
-                                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-black/10 bg-white/70 text-[11px] font-semibold text-zinc-500 transition group-hover:text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-zinc-200"
+                                  className="flex h-8 w-8 items-center justify-center rounded-sm border border-black/10 bg-white/70 text-[11px] font-semibold text-zinc-500 transition group-hover:text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-zinc-200"
                                 >
                                   {index + 1}
                                 </button>
+
+                                {/* cell 5: lyric input */}
                                 <LyricInput
                                   value={line.text}
                                   onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
@@ -1138,33 +1162,35 @@ export default function App() {
                                   onClick={() => handleLineClick(line.id)}
                                   data-line-id={line.id}
                                   placeholder={`${section.name} line ${index + 1}`}
-                                  className="flex-1 text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                                  className="text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                                  style={{ width: '100%', minWidth: 0 }}
                                 />
-                                <div className="flex items-center shrink-0" style={{ gap: '12px' }}>
-                                  {/* Rhyming syllables — the ending sound that rhymes */}
-                                  <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500" style={{ width: '80px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {line.rhymingSyllables || ''}
-                                  </span>
-                                  {/* Total syllable count */}
-                                  <span className="text-[11px] tabular-nums font-mono text-zinc-400 dark:text-zinc-500" style={{ width: '28px', textAlign: 'right' }}>
-                                    {line.syllables > 0 ? line.syllables : ''}
-                                  </span>
-                                  {/* Rhyme group label */}
-                                  <span style={{ width: '40px', display: 'flex', justifyContent: 'center' }}>
-                                    {line.rhyme ? (
-                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
-                                        {line.rhyme}
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                </div>
 
-                                {/* Delete line button */}
+                                {/* cell 6: rhyming syllables */}
+                                <span style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
+                                  {line.rhymingSyllables || '\u00a0'}
+                                </span>
+
+                                {/* cell 7: syllable count */}
+                                <span style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                                  {line.syllables > 0 ? line.syllables : ''}
+                                </span>
+
+                                {/* cell 8: rhyme badge */}
+                                <span style={{ display: 'flex', justifyContent: 'center' }}>
+                                  {line.rhyme ? (
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
+                                      {line.rhyme}
+                                    </span>
+                                  ) : null}
+                                </span>
+
+                                {/* cell 9: delete */}
                                 <Tooltip title="Delete line">
                                   <button
                                     type="button"
                                     onClick={() => deleteLineFromSection(section.id, line.id)}
-                                    className="shrink-0 opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
+                                    className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </button>
@@ -1173,27 +1199,40 @@ export default function App() {
                           )})}
                         </div>
 
-                        {/* Add line button */}
-                        <div className="mt-3">
+                        {/* Post instructions (existing items only — add button is in the footer row) */}
+                        {section.postInstructions && section.postInstructions.length > 0 && (
+                          <div className="mt-2 px-3">
+                            <InstructionEditor
+                              instructions={section.postInstructions}
+                              sectionId={section.id}
+                              type="post"
+                              onChange={handleInstructionChange}
+                              onAdd={addInstruction}
+                              onRemove={removeInstruction}
+                              showAddButton={false}
+                            />
+                          </div>
+                        )}
+
+                        {/* Section footer: ADD LINE + Add Musical on same row */}
+                        <div className="flex items-center gap-2 pt-1 pb-2 px-3">
                           <button
                             type="button"
                             onClick={() => addLineToSection(section.id)}
-                            className="flex items-center gap-2 rounded border border-dashed border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500 transition hover:border-white/30 hover:text-zinc-300 dark:hover:text-zinc-200"
+                            className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded"
                           >
-                            <Plus className="h-3.5 w-3.5" />
+                            <Plus className="w-3 h-3" />
                             Add Line
                           </button>
-                        </div>
-
-                        <div className="mt-3">
-                          <InstructionEditor
-                            instructions={section.postInstructions}
-                            sectionId={section.id}
-                            type="post"
-                            onChange={handleInstructionChange}
-                            onAdd={addInstruction}
-                            onRemove={removeInstruction}
-                          />
+                          <span className="text-zinc-700 dark:text-zinc-600 text-[10px]">|</span>
+                          <button
+                            type="button"
+                            onClick={() => addInstruction(section.id, 'post')}
+                            className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Add Musical / Modulation / Effect
+                          </button>
                         </div>
                       </div>
                     </section>

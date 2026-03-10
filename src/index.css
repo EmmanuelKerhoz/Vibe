@@ -95,6 +95,7 @@
   --acrylic-bg:        rgba(27, 26, 25, 0.8);
   --scrollbar-thumb:   rgba(255, 255, 255, 0.1);
   --input-bg:          rgba(50, 49, 48, 0.55);
+  color-scheme: dark;
 }
 
 .dark.ui-fluent {
@@ -617,4 +618,73 @@ body {
     linear-gradient(90deg, var(--accent-color) 1px, transparent 1px);
   background-size: 20px 20px;
   filter: drop-shadow(0 0 4px var(--accent-color));
+}
+
+/* ===========================================================================
+   Native form controls — dark theme
+   =========================================================================== */
+
+/* Force all native selects to use dark OS rendering */
+.dark select,
+.dark select:focus {
+  background-color: #161616;
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  color-scheme: dark;
+}
+.dark select option {
+  background-color: #161616;
+  color: var(--text-primary);
+}
+/* Section rhyme-scheme select is inline in the band header — keep transparent */
+.dark .lcars-band select {
+  background-color: transparent;
+  color: inherit;
+}
+
+/* ===========================================================================
+   Light theme — inverted carbon look for lyrics area
+   =========================================================================== */
+
+:not(.dark) .lcars-lyrics-area {
+  background-color: #e8e6e3;
+  background-image:
+    repeating-linear-gradient(
+      62deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(0,0,0,0.022) 3px,
+      rgba(0,0,0,0.022) 4px
+    ),
+    repeating-linear-gradient(
+      -62deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(0,0,0,0.022) 3px,
+      rgba(0,0,0,0.022) 4px
+    ),
+    repeating-linear-gradient(
+      62deg,
+      transparent 0px,
+      transparent 7px,
+      rgba(0,0,0,0.014) 7px,
+      rgba(0,0,0,0.014) 8px,
+      transparent 8px,
+      transparent 15px
+    ),
+    repeating-linear-gradient(
+      -62deg,
+      transparent 0px,
+      transparent 7px,
+      rgba(255,255,255,0.55) 7px,
+      rgba(255,255,255,0.55) 8px,
+      transparent 8px,
+      transparent 15px
+    ),
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.6) 0%, transparent 70%);
+}
+:not(.dark) .lcars-band {
+  background-color: #ffffff;
+  border-color: rgba(0,0,0,0.07);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
