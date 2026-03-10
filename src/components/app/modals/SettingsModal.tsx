@@ -21,23 +21,23 @@ export function SettingsModal({
   audioFeedback,
   setAudioFeedback,
 }: Props) {
-  const { t, locale, setLocale } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
   const [draftTheme, setDraftTheme] = useState(theme);
   const [draftAudioFeedback, setDraftAudioFeedback] = useState(audioFeedback);
-  const [draftLanguage, setDraftLanguage] = useState(locale);
+  const [draftLanguage, setDraftLanguage] = useState(language);
 
   useEffect(() => {
     if (isOpen) {
       setDraftTheme(theme);
       setDraftAudioFeedback(audioFeedback);
-      setDraftLanguage(locale);
+      setDraftLanguage(language);
     }
-  }, [isOpen, theme, audioFeedback, locale]);
+  }, [isOpen, theme, audioFeedback, language]);
 
   const handleApply = () => {
     setTheme(draftTheme);
     setAudioFeedback(draftAudioFeedback);
-    setLocale(draftLanguage);
+    setLanguage(draftLanguage);
     onClose();
   };
 
@@ -114,7 +114,9 @@ export function SettingsModal({
                       } disabled:opacity-40 disabled:cursor-not-allowed`}
                     >
                       {opt === 'light' ? <Sun className="w-3.5 h-3.5" /> : opt === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
-                      <span className="capitalize">{opt === 'light' ? t.settings.theme.light : opt === 'dark' ? t.settings.theme.dark : t.settings.theme.system}</span>
+                      <span className="capitalize">
+                        {opt === 'light' ? t.settings.theme.light : opt === 'dark' ? t.settings.theme.dark : t.settings.theme.system}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -127,7 +129,7 @@ export function SettingsModal({
                   {t.settings.audio.label}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {[true, false].map((val) => (
+                  {([true, false] as const).map((val) => (
                     <button
                       key={String(val)}
                       onClick={() => setDraftAudioFeedback(val)}
@@ -138,7 +140,7 @@ export function SettingsModal({
                       }`}
                     >
                       {val ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-                      <span>{val ? t.settings.audio.on : t.settings.audio.off}</span>
+                      <span>{val ? t.settings.audio.enable : t.settings.audio.disable}</span>
                     </button>
                   ))}
                 </div>
@@ -151,19 +153,19 @@ export function SettingsModal({
                   {t.settings.language.label}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {SUPPORTED_UI_LOCALES.map((locale) => (
+                  {SUPPORTED_UI_LOCALES.map((loc) => (
                     <button
-                      key={locale.code}
-                      onClick={() => setDraftLanguage(locale.code)}
+                      key={loc.code}
+                      onClick={() => setDraftLanguage(loc.code)}
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs transition-all ${
-                        draftLanguage === locale.code
+                        draftLanguage === loc.code
                           ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/40 text-[var(--accent-color)]'
                           : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-color)]/20 hover:text-[var(--text-primary)]'
                       }`}
                     >
-                      <span className="text-base leading-none">{locale.flag}</span>
-                      <span className="font-medium truncate">{locale.label}</span>
-                      {locale.code === draftLanguage && (
+                      <span className="text-base leading-none">{loc.flag}</span>
+                      <span className="font-medium truncate">{loc.label}</span>
+                      {loc.code === draftLanguage && (
                         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] flex-shrink-0" />
                       )}
                     </button>
@@ -212,10 +214,10 @@ export function SettingsModal({
               </Button>
               <div className="flex gap-2">
                 <Button onClick={onClose} variant="outlined" color="inherit">
-                  {t.settings.actions.cancel}
+                  {t.settings.actions.close}
                 </Button>
                 <Button onClick={handleApply} variant="contained" color="primary">
-                  {t.settings.actions.apply}
+                  {t.settings.actions.save}
                 </Button>
               </div>
             </div>

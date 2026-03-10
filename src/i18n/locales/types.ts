@@ -216,7 +216,9 @@ export interface Translations {
     audio: {
       label: string;
       enable: string;
+      /** @deprecated use enable/disable */
       volume: string;
+      disable: string;
     };
     language: {
       label: string;
