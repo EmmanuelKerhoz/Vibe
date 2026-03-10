@@ -926,7 +926,7 @@ export default function App() {
                             <div>
                               {/* Section type selector */}
                               <select
-                                value={SECTION_TYPE_OPTIONS.includes(section.name) ? section.name : section.name}
+                                value={section.name}
                                 onChange={(e) => setSectionName(section.id, e.target.value)}
                                 className={`lcars-section-title text-lg font-semibold uppercase tracking-[0.25em] bg-transparent border-none outline-none cursor-pointer ${getSectionTextColor(section.name)}`}
                               >
