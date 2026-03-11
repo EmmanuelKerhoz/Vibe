@@ -127,7 +127,6 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     suggestions,
     isSuggesting,
     setSuggestions,
-    setIsSuggesting,
     generateSuggestions,
     applySuggestion,
   };
