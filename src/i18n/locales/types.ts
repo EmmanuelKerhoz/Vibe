@@ -108,6 +108,16 @@ export interface Translations {
     addLine?: string;
     /** Button label to add a musical/modulation/effect marker */
     addMusicalEffect?: string;
+    moveSectionUp?: string;
+    moveSectionDown?: string;
+    dragToReorder?: string;
+    anchoredSection?: string;
+    dragToReorderLine?: string;
+    humanLine?: string;
+    aiLine?: string;
+    moveLineUp?: string;
+    moveLineDown?: string;
+    deleteLine?: string;
   };
 
   suggestions: {

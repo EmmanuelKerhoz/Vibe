@@ -99,6 +99,16 @@ const pt: Translations = {
     adapt: 'ADAPTAR',
     moodPlaceholder: 'Humor...',
     regenerateWarning: 'Isto regenerará totalmente a letra atual. Deseja continuar?',
+    moveSectionUp: 'Mover seção para cima',
+    moveSectionDown: 'Mover seção para baixo',
+    dragToReorder: 'Arrastar para reordenar a seção',
+    anchoredSection: 'Intro e Outro estão ancoradas',
+    dragToReorderLine: 'Arrastar para reordenar a linha',
+    humanLine: 'Linha humana',
+    aiLine: 'Linha gerada por IA',
+    moveLineUp: 'Mover linha para cima',
+    moveLineDown: 'Mover linha para baixo',
+    deleteLine: 'Excluir linha',
   },
 
   suggestions: {

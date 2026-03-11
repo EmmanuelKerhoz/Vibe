@@ -101,6 +101,16 @@ const en: Translations = {
     regenerateWarning: 'This will fully regenerate the current lyrics. Do you want to continue?',
     addLine: 'Add Line',
     addMusicalEffect: 'Add Musical / Modulation / Effect',
+    moveSectionUp: 'Move section up',
+    moveSectionDown: 'Move section down',
+    dragToReorder: 'Drag to reorder section',
+    anchoredSection: 'Intro and Outro stay anchored',
+    dragToReorderLine: 'Drag to reorder line',
+    humanLine: 'Human line',
+    aiLine: 'AI-generated line',
+    moveLineUp: 'Move line up',
+    moveLineDown: 'Move line down',
+    deleteLine: 'Delete line',
   },
 
   suggestions: {
