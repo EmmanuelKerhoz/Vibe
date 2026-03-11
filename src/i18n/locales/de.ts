@@ -142,6 +142,12 @@ const de: Translations = {
     copyPrompt: 'Prompt kopieren',
     copied: 'Kopiert!',
     contextInfo: 'Kontext: Texte, Thema und Stimmung werden berücksichtigt',
+    metronome: 'Metronom',
+    metronomeStart: 'Metronom starten',
+    metronomeStop: 'Metronom stoppen',
+    instruments: 'INSTRUMENTE',
+    instrumentsPlaceholder: 'Instrumentenfamilien auswählen...',
+    rhythmPresets: 'RHYTHMUS-VOREINSTELLUNGEN',
   },
 
   analysis: {

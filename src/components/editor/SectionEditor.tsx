@@ -145,7 +145,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                 <select
                   value={section.rhymeScheme || rhymeScheme}
                   onChange={(e) => setSectionRhymeScheme(section.id, e.target.value)}
-                  className="text-[10px] uppercase tracking-[0.15em] bg-transparent border border-white/10 rounded px-1.5 py-0.5 text-zinc-500 dark:text-zinc-400 hover:border-white/25 transition cursor-pointer outline-none"
+                  className="text-[10px] uppercase tracking-[0.15em] lcars-select cursor-pointer"
                 >
                   {RHYME_KEYS.map(key => (
                     <option key={key} value={key}>{key}</option>

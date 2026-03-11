@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, Languages, ScanText, Save, Layout, Search, RefreshCw } from 'lucide-react';
+import { Loader2, BarChart2, Languages, ScanText, Save, Layout, Search, RefreshCw, Timer } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
 import { Select } from '../ui/Select';
@@ -33,6 +33,9 @@ interface InsightsBarProps {
   handleMarkupToggle: () => void;
   setIsSimilarityModalOpen: (open: boolean) => void;
   scrollToSection: (section: Section) => void;
+  /** Metronome controls — optional so existing callers keep working */
+  isMetronomeActive?: boolean;
+  toggleMetronome?: () => void;
 }
 
 export function InsightsBar({
@@ -59,6 +62,8 @@ export function InsightsBar({
   handleMarkupToggle,
   setIsSimilarityModalOpen,
   scrollToSection,
+  isMetronomeActive,
+  toggleMetronome,
 }: InsightsBarProps) {
   const { t } = useTranslation();
   const supportedAdaptationLanguages = SUPPORTED_ADAPTATION_LANGUAGES;
@@ -127,6 +132,23 @@ export function InsightsBar({
             })}
           </div>
           <div className="flex items-center gap-1.5 lg:gap-2 ml-2 flex-shrink-0">
+            {/* Metronome button (B4) — shown when toggle is provided */}
+            {toggleMetronome && (
+              <Tooltip title={t.musical?.metronome ?? 'Metronome'}>
+                <button
+                  onClick={toggleMetronome}
+                  className={`px-2 lg:px-2.5 py-1.5 text-[11px] rounded transition-all flex items-center justify-center gap-1.5 whitespace-nowrap border ${
+                    isMetronomeActive
+                      ? 'border-transparent metronome-active'
+                      : 'glass-button'
+                  }`}
+                  style={isMetronomeActive ? { background: '#f59e0b', color: '#000', borderColor: '#f59e0b' } : {}}
+                  title={isMetronomeActive ? (t.musical?.metronomeStop ?? 'Stop Metronome') : (t.musical?.metronomeStart ?? 'Start Metronome')}
+                >
+                  <Timer className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
+            )}
             <Tooltip title={t.saveToLibrary.saveDescription}>
               <button onClick={handleOpenSaveToLibraryModal} disabled={song.length === 0} className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 <Save className="w-3.5 h-3.5" />

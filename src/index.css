@@ -629,6 +629,89 @@ html:not(.dark) .lcars-hud-chip {
 }
 
 /* ===========================================================================
+   LCARS Glow utilities (A1)
+   =========================================================================== */
+
+.lcars-glow {
+  box-shadow: 0 0 8px 1px var(--accent-color);
+}
+.lcars-glow-accent {
+  box-shadow: 0 0 12px 2px var(--accent-color);
+}
+.lcars-glow-focus:focus {
+  box-shadow: 0 0 12px 2px var(--accent-color);
+  outline: none;
+}
+.dark .lcars-glow {
+  box-shadow: 0 0 8px 1px rgba(var(--accent-color-rgb), 0.6);
+}
+.dark .lcars-glow-accent {
+  box-shadow: 0 0 12px 2px rgba(var(--accent-color-rgb), 0.7);
+}
+.dark .lcars-glow-focus:focus {
+  box-shadow: 0 0 12px 2px rgba(var(--accent-color-rgb), 0.7);
+  outline: none;
+}
+
+/* Apply glow on focus for interactive elements */
+input:focus, textarea:focus, button:focus-visible {
+  box-shadow: 0 0 8px 1px rgba(var(--accent-color-rgb), 0.4);
+  outline: none;
+}
+
+/* ===========================================================================
+   LCARS Select utility (A2)
+   =========================================================================== */
+
+.lcars-select {
+  border-radius: 6px 2px 6px 2px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  transition: box-shadow 0.2s;
+  appearance: auto;
+}
+.lcars-select:focus {
+  box-shadow: 0 0 10px 1px var(--accent-color);
+  outline: none;
+  border-color: var(--accent-color);
+}
+.dark .lcars-select {
+  background-color: #161616;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  color-scheme: dark;
+}
+.dark .lcars-select option {
+  background-color: #161616;
+  color: var(--text-primary);
+}
+.dark .lcars-select:focus {
+  box-shadow: 0 0 10px 1px rgba(var(--accent-color-rgb), 0.6);
+  border-color: var(--accent-color);
+}
+
+/* ===========================================================================
+   Metronome pulse animation (B4)
+   =========================================================================== */
+
+@keyframes metronome-beat {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.9); }
+}
+@keyframes amber-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
+  50%       { box-shadow: 0 0 10px 3px rgba(245, 158, 11, 0.5); }
+}
+.metronome-active {
+  animation: amber-pulse 0.5s ease-in-out infinite;
+}
+.metronome-beat-flash {
+  animation: metronome-beat 0.1s ease-out forwards;
+}
+
+/* ===========================================================================
    RESPONSIVE — Lyric editor line row
    =========================================================================== */
 
