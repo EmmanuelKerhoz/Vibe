@@ -42,6 +42,8 @@ import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
 import { SimilarityModal } from './components/app/modals/SimilarityModal';
 import { SaveToLibraryModal } from './components/app/modals/SaveToLibraryModal';
+import { ConfirmModal } from './components/app/modals/ConfirmModal';
+import { PromptModal } from './components/app/modals/PromptModal';
 import { useTranslation, useLanguage, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
 import { getTopSimilarSongMatches, SimilarityMatch } from './utils/similarityUtils';
 import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, LibraryAsset } from './utils/libraryUtils';
@@ -348,6 +350,8 @@ export default function App() {
   const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [shouldAutoGenerateTitle, setShouldAutoGenerateTitle] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; onConfirm: () => void } | null>(null);
+  const [promptModal, setPromptModal] = useState<{ open: boolean; onConfirm: (value: string) => void } | null>(null);
   const previousLyricsSnapshotRef = useRef<VersionSnapshot | null>(null);
 
   const createVersion = useCallback((
@@ -402,6 +406,13 @@ export default function App() {
     setTopic(version.topic);
     setMood(version.mood);
     setIsVersionsModalOpen(false);
+  };
+
+  const handleRequestVersionName = (callback: (name: string) => void) => {
+    setPromptModal({
+      open: true,
+      onConfirm: (name) => { setPromptModal(null); callback(name); },
+    });
   };
 
   // --- Analysis hook (must come before Composer to expose songLanguage) ---
@@ -537,8 +548,14 @@ export default function App() {
   const handleTitleChange = (value: string) => { setTitle(value); setTitleOrigin('user'); };
 
   const handleGlobalRegenerate = () => {
-    if (song.length > 0 && !window.confirm(t.editor.regenerateWarning)) return;
-    void generateSong();
+    if (song.length > 0) {
+      setConfirmModal({
+        open: true,
+        onConfirm: () => { setConfirmModal(null); void generateSong(); },
+      });
+    } else {
+      void generateSong();
+    }
   };
 
   const scrollToSection = useCallback((section: Section) => {
@@ -712,7 +729,7 @@ export default function App() {
 
   return (
     <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
-    <div className={`h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
+    <div className={`fui-FluentProvider h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
       <div className="flex-1 flex overflow-hidden">
         <LeftSettingsPanel
           title={title} setTitle={handleTitleChange}
@@ -905,13 +922,36 @@ export default function App() {
         onDeleteLibraryAsset={handleDeleteLibraryAsset}
       />
       <SaveToLibraryModal isOpen={isSaveToLibraryModalOpen} onClose={() => setIsSaveToLibraryModalOpen(false)} onSave={handleSaveToLibrary} isSaving={isSavingToLibrary} currentTitle={title} libraryAssets={libraryAssets} />
-      <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />
+      <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={(name) => { saveVersion(name); }} onRollback={rollbackToVersion} onRequestVersionName={handleRequestVersionName} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
       <ApiErrorModal
         isOpen={apiErrorModal.open}
         onClose={() => setApiErrorModal({ open: false, message: '' })}
         message={apiErrorModal.message}
       />
+      {confirmModal && (
+        <ConfirmModal
+          isOpen={confirmModal.open}
+          title="Regenerate Song"
+          message={t.editor.regenerateWarning}
+          confirmLabel="Regenerate"
+          cancelLabel="Cancel"
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
+      {promptModal && (
+        <PromptModal
+          isOpen={promptModal.open}
+          title="Save Version"
+          message="Enter a name for this version:"
+          placeholder="Version name"
+          confirmLabel="Save"
+          cancelLabel="Cancel"
+          onConfirm={promptModal.onConfirm}
+          onCancel={() => setPromptModal(null)}
+        />
+      )}
       <input ref={importInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportInputChange} />
     </div>
     </FluentProvider>
