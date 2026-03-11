@@ -22,12 +22,12 @@ export const RegenerateConfirmModal = ({ isOpen, onClose, onConfirm, message }: 
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-200">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="regen-dialog-title"
-        className="acrylic w-full max-w-sm shadow-[0_32px_64px_rgba(0,0,0,0.5)] rounded-[24px_8px_24px_8px] border border-white/10 overflow-hidden animate-in zoom-in-95 duration-300"
+        className="acrylic w-full sm:max-w-sm h-full sm:h-auto shadow-[0_32px_64px_rgba(0,0,0,0.5)] rounded-none sm:rounded-[24px_8px_24px_8px] border border-white/10 overflow-hidden animate-in zoom-in-95 duration-300"
       >
         <div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
           <h3 id="regen-dialog-title" className="text-sm font-bold text-zinc-100 uppercase tracking-widest flex items-center gap-2">

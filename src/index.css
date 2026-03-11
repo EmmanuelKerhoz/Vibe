@@ -627,3 +627,41 @@ html:not(.dark) .lcars-hud-chip {
   animation: lcars-scanline 6s ease-in-out infinite;
   pointer-events: none;
 }
+
+/* ===========================================================================
+   RESPONSIVE — Lyric editor line row
+   =========================================================================== */
+
+/* Desktop grid: drag | origin | move-arrows | line-num | text | rhyme | syllables | rhyming-syl | delete */
+.lyric-row {
+  display: grid;
+  grid-template-columns: 20px 16px 16px 32px 1fr 72px 40px 52px 24px;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 36px;
+}
+
+/* Mobile (< 768px): hide auxiliary columns (rhyme badge, syllable count, rhyming syllable) */
+@media (max-width: 767px) {
+  .lyric-row {
+    grid-template-columns: 16px 16px 32px 1fr 24px;
+  }
+  /* Hide drag handle, rhyme badge, syllable count, rhyming syllable */
+  .lyric-row > *:nth-child(1),
+  .lyric-col-aux {
+    display: none !important;
+  }
+}
+
+/* ===========================================================================
+   RESPONSIVE — StructureSidebar overlay on mobile
+   =========================================================================== */
+@media (max-width: 1023px) {
+  .structure-sidebar-mobile-overlay {
+    position: fixed !important;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+  }
+}

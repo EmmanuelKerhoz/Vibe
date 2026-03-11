@@ -40,7 +40,24 @@ export function LeftSettingsPanel({
   const { t } = useTranslation();
 
   return (
-    <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col z-10 shadow-2xl transition-all duration-300 ease-in-out flex-shrink-0 lcars-panel !rounded-none ${isLeftPanelOpen ? 'w-80' : 'w-0 overflow-hidden border-r-0'}`}>
+    <>
+      {/* Mobile backdrop — covers main content when drawer is open */}
+      {isLeftPanelOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsLeftPanelOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel !rounded-none
+        fixed inset-y-0 left-0 z-50 w-80
+        lg:relative lg:z-10 lg:flex-shrink-0
+        transition-all duration-300 ease-in-out
+        ${isLeftPanelOpen
+          ? 'translate-x-0 lg:w-80'
+          : '-translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-r-0'
+        }`}
+      >
       <div className="w-80 flex flex-col h-full">
         <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -177,5 +194,6 @@ export function LeftSettingsPanel({
         </div>
       </div>
     </div>
+    </>
   );
 }

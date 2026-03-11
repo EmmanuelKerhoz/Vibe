@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  Sparkles, Download, Upload, Undo2, Redo2, Trash2, History, PanelLeft, PanelRight
+  Sparkles, Download, Upload, Undo2, Redo2, Trash2, History, PanelLeft, PanelRight, MoreHorizontal
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
@@ -45,14 +45,30 @@ export function TopRibbon({
   const { t } = useTranslation();
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
+  const [isOverflowOpen, setIsOverflowOpen] = useState(false);
+  const overflowRef = useRef<HTMLDivElement>(null);
+
+  // Close overflow menu when clicking outside
+  useEffect(() => {
+    if (!isOverflowOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+        setIsOverflowOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [isOverflowOpen]);
 
   return (
-    <div className="h-16 border-b border-fluent-border flex items-center justify-between px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0">
-      <div className="flex items-center gap-6 pl-3">
+    <div className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0">
+      {/* Left: sidebar toggle + tab switcher */}
+      <div className="flex items-center gap-3 lg:gap-6 pl-1 lg:pl-3">
         <Tooltip title={isLeftPanelOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}>
           <button
             onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
-            className="p-2 -ml-4 text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all duration-200"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all duration-200"
+            aria-label={isLeftPanelOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}
           >
             <PanelLeft className="w-5 h-5" />
           </button>
@@ -82,69 +98,164 @@ export function TopRibbon({
         </Tooltip>
       </div>
 
+      {/* Right: action buttons */}
       <div className="flex items-center gap-2">
-        <Tooltip title={t.tooltips.import}>
-          <Button onClick={onImportClick} variant="outlined" color="info" size="small" startIcon={<Upload className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-            {t.ribbon.import}
-          </Button>
-        </Tooltip>
-        <Tooltip title={t.tooltips.exportTxt}>
-          <Button onClick={exportTxt} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-            {t.ribbon.exportTxt}
-          </Button>
-        </Tooltip>
-        <Tooltip title={t.tooltips.exportMd}>
-          <Button onClick={exportMd} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-            {t.ribbon.exportMd}
-          </Button>
-        </Tooltip>
-        <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
-        <Tooltip title={t.tooltips.versions}>
-          <IconButton onClick={() => setIsVersionsModalOpen(true)} size="small" style={{ color: 'var(--text-secondary)' }}>
-            <History className="w-4 h-4" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t.tooltips.undo}>
+        {/* Desktop-only: full action row */}
+        <div className="hidden lg:flex items-center gap-2">
+          <Tooltip title={t.tooltips.import}>
+            <Button onClick={onImportClick} variant="outlined" color="info" size="small" startIcon={<Upload className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
+              {t.ribbon.import}
+            </Button>
+          </Tooltip>
+          <Tooltip title={t.tooltips.exportTxt}>
+            <Button onClick={exportTxt} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
+              {t.ribbon.exportTxt}
+            </Button>
+          </Tooltip>
+          <Tooltip title={t.tooltips.exportMd}>
+            <Button onClick={exportMd} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
+              {t.ribbon.exportMd}
+            </Button>
+          </Tooltip>
+          <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
+          <Tooltip title={t.tooltips.versions}>
+            <IconButton onClick={() => setIsVersionsModalOpen(true)} size="small" style={{ color: 'var(--text-secondary)' }}>
+              <History className="w-4 h-4" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t.tooltips.undo}>
+            <IconButton
+              onClick={undo}
+              disabled={!canUndo}
+              size="small"
+              style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
+              className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
+              aria-disabled={!canUndo}
+            >
+              <Undo2 className="w-4 h-4" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t.tooltips.redo}>
+            <IconButton
+              onClick={redo}
+              disabled={!canRedo}
+              size="small"
+              style={{ color: canRedo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
+              className={canRedo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
+              aria-disabled={!canRedo}
+            >
+              <Redo2 className="w-4 h-4" />
+            </IconButton>
+          </Tooltip>
+          <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
+          <Tooltip title={t.tooltips.reset}>
+            <IconButton onClick={() => setIsResetModalOpen(true)} disabled={song.length === 0} size="small" style={{ color: 'var(--accent-critical)' }}>
+              <Trash2 className="w-4 h-4" />
+            </IconButton>
+          </Tooltip>
+          <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
+          {!hasApiKey && (
+            <Tooltip title={t.tooltips.aiUnavailableHelp}>
+              <button onClick={handleApiKeyHelp} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold rounded-lg flex items-center gap-2 hover:bg-amber-500/20 transition-all">
+                <Sparkles className="w-3 h-3" />
+                {t.ribbon.aiUnavailable}
+              </button>
+            </Tooltip>
+          )}
+        </div>
+
+        {/* Mobile-only: compact undo/redo + overflow menu */}
+        <div className="flex lg:hidden items-center gap-1">
+          {!hasApiKey && (
+            <button onClick={handleApiKeyHelp} className="min-w-[44px] min-h-[44px] flex items-center justify-center px-2 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg hover:bg-amber-500/20 transition-all">
+              <Sparkles className="w-4 h-4" />
+            </button>
+          )}
           <IconButton
             onClick={undo}
             disabled={!canUndo}
             size="small"
-            style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
+            style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 44, minHeight: 44 }}
             className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
             aria-disabled={!canUndo}
+            aria-label={t.tooltips.undo}
           >
             <Undo2 className="w-4 h-4" />
           </IconButton>
-        </Tooltip>
-        <Tooltip title={t.tooltips.redo}>
           <IconButton
             onClick={redo}
             disabled={!canRedo}
             size="small"
-            style={{ color: canRedo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
+            style={{ color: canRedo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 44, minHeight: 44 }}
             className={canRedo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
             aria-disabled={!canRedo}
+            aria-label={t.tooltips.redo}
           >
             <Redo2 className="w-4 h-4" />
           </IconButton>
-        </Tooltip>
-        <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
-        <Tooltip title={t.tooltips.reset}>
-          <IconButton onClick={() => setIsResetModalOpen(true)} disabled={song.length === 0} size="small" style={{ color: 'var(--accent-critical)' }}>
-            <Trash2 className="w-4 h-4" />
-          </IconButton>
-        </Tooltip>
-        <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
-        {!hasApiKey && (
-          <Tooltip title={t.tooltips.aiUnavailableHelp}>
-            <button onClick={handleApiKeyHelp} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold rounded-lg flex items-center gap-2 hover:bg-amber-500/20 transition-all">
-              <Sparkles className="w-3 h-3" />
-              {t.ribbon.aiUnavailable}
+
+          {/* Overflow "..." menu */}
+          <div className="relative" ref={overflowRef}>
+            <button
+              onClick={() => setIsOverflowOpen(v => !v)}
+              aria-label="More actions"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all"
+            >
+              <MoreHorizontal className="w-5 h-5" />
             </button>
-          </Tooltip>
-        )}
+            {isOverflowOpen && (
+              <div className="absolute right-0 top-full mt-1 w-48 glass-panel border border-[var(--border-color)] rounded-lg shadow-2xl z-50 py-1 overflow-hidden">
+                <button
+                  onClick={() => { onImportClick(); setIsOverflowOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-[11px] text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
+                >
+                  <Upload className="w-4 h-4 text-[var(--text-secondary)]" />
+                  {t.ribbon.import}
+                </button>
+                <button
+                  onClick={() => { exportTxt(); setIsOverflowOpen(false); }}
+                  disabled={song.length === 0}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-[11px] text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4 text-[var(--text-secondary)]" />
+                  {t.ribbon.exportTxt}
+                </button>
+                <button
+                  onClick={() => { exportMd(); setIsOverflowOpen(false); }}
+                  disabled={song.length === 0}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-[11px] text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4 text-[var(--text-secondary)]" />
+                  {t.ribbon.exportMd}
+                </button>
+                <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
+                <button
+                  onClick={() => { setIsVersionsModalOpen(true); setIsOverflowOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-[11px] text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
+                >
+                  <History className="w-4 h-4 text-[var(--text-secondary)]" />
+                  {t.ribbon.versions}
+                </button>
+                <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
+                <button
+                  onClick={() => { setIsResetModalOpen(true); setIsOverflowOpen(false); }}
+                  disabled={song.length === 0}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-[11px] text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {t.ribbon.reset}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <Tooltip title={isStructureOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}>
-          <button onClick={() => setIsStructureOpen(!isStructureOpen)} className="p-2 text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-colors">
+          <button
+            onClick={() => setIsStructureOpen(!isStructureOpen)}
+            aria-label={isStructureOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-colors"
+          >
             <PanelRight className="w-5 h-5" />
           </button>
         </Tooltip>
