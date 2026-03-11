@@ -12,10 +12,13 @@
   --lcars-maize:       #FFCC44;
   --lcars-sage:        #4CAF73;
   --lcars-teal:        #0FB8B8;
+  --lcars-cyan:        #06b6d4;
   --lcars-blue:        #5EA3DE;
   --lcars-indigo:      #4040C0;
+  --lcars-violet:      #a78bfa;
   --lcars-purple:      #9956D6;
-  --lcars-red:         #D50000;
+  --lcars-amber:       #f59e0b;
+  --lcars-red:         #ef4444;
   --lcars-white:       #E0E0E0;
   --lcars-near-black:  #050505;
 
@@ -134,8 +137,8 @@
 
 .glass-panel {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   position: relative;
@@ -179,7 +182,7 @@
 .glass-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 12px currentColor, 0 0 15px rgba(255, 255, 255, 0.05);
   transform: translateY(-1px);
 }
 .glass-button:hover:not(:disabled)::after { left: 200%; }
@@ -190,7 +193,20 @@
 .dark .glass-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 12px currentColor, 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+/* LCARS ribbon left rail */
+.lcars-ribbon-rail {
+  position: relative;
+}
+.lcars-ribbon-rail::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--lcars-amber, #f59e0b) 0%, var(--lcars-cyan, #06b6d4) 50%, var(--lcars-violet, #a78bfa) 100%);
+  opacity: 0.9;
 }
 
 body {
@@ -368,8 +384,8 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, var(--lcars-sage) 20%, var(--lcars-teal) 50%, var(--lcars-sage) 80%, transparent 100%);
-  opacity: 0.4;
+  background: linear-gradient(90deg, transparent 0%, var(--lcars-amber, #f59e0b) 15%, var(--lcars-cyan, #06b6d4) 50%, var(--lcars-violet, #a78bfa) 85%, transparent 100%);
+  opacity: 0.5;
 }
 
 .lcars-divider {
@@ -421,6 +437,44 @@ body {
   50%       { opacity: 0.7; box-shadow: 0 0 6px rgba(76, 175, 115, 0.6); }
 }
 .dark .lcars-pulse { animation: lcars-pulse 3s ease-in-out infinite; }
+
+@keyframes lcars-scanline {
+  0%   { opacity: 0; transform: translateY(0); }
+  30%  { opacity: 0.05; }
+  60%  { opacity: 0.05; }
+  100% { opacity: 0; transform: translateY(100%); }
+}
+
+@keyframes lcars-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.lcars-scanline-overlay {
+  position: relative;
+  overflow: hidden;
+}
+.lcars-scanline-overlay::after {
+  content: '';
+  position: absolute;
+  inset-x: 0;
+  top: 0;
+  height: 2px;
+  background: currentColor;
+  animation: lcars-scanline 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.lcars-cursor-blink {
+  display: inline-block;
+  width: 6px;
+  height: 10px;
+  background: currentColor;
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: lcars-cursor-blink 1s step-end infinite;
+}
 
 .ui-fluent .micro-label {
   font-family: var(--font-sans);
@@ -530,4 +584,46 @@ html:not(.dark) .lcars-hud-chip {
   background-color: rgba(255, 255, 255, 0.75);
   border-color: var(--border-color);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* ── LCARS sidebar pill anchors ──────────────────────────────── */
+.lcars-sidebar-pill {
+  border-radius: 999px 4px 999px 4px;
+  transition: all 0.2s ease;
+}
+.dark .lcars-sidebar-pill:hover {
+  box-shadow: 0 0 12px currentColor;
+}
+
+/* ── LCARS band — enhanced glass overlay ─────────────────────── */
+.dark .lcars-band {
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+/* ── Asymmetric pill buttons ─────────────────────────────────── */
+.lcars-pill-btn {
+  border-radius: 24px 4px 24px 4px;
+  transition: all 0.2s ease;
+}
+.lcars-pill-btn:hover:not(:disabled) {
+  box-shadow: 0 0 12px currentColor;
+}
+
+/* ── LCARS section header scanline (dark mode only) ──────────── */
+.dark .lcars-section-header {
+  position: relative;
+  overflow: hidden;
+}
+.dark .lcars-section-header::before {
+  content: '';
+  position: absolute;
+  inset-x: 0;
+  top: 0;
+  height: 1.5px;
+  background: currentColor;
+  opacity: 0;
+  animation: lcars-scanline 6s ease-in-out infinite;
+  pointer-events: none;
 }

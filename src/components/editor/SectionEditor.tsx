@@ -111,7 +111,7 @@ export const SectionEditor = React.memo(function SectionEditor({
 
       {/* pt-3 pb-2 instead of p-4: reduces bottom padding inside each section container */}
       <div className="flex-1 pt-3 px-4 pb-2">
-        <div className="mb-3 flex items-center justify-between gap-4 flex-wrap">
+        <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: getSectionColorHex(section.name) }}>
           <div className="flex items-center gap-3">
             <div className="flex flex-col gap-0.5">
               <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>

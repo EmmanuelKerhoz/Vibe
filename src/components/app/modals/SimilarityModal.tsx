@@ -57,7 +57,7 @@ export function SimilarityModal({
         <div className="w-[700px] h-[500px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
       </div>
 
-      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8">
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">

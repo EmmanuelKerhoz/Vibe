@@ -52,6 +52,11 @@ export function LeftSettingsPanel({
         </div>
 
         <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
+          {/* LCARS section indicator — Song Info */}
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-amber,#f59e0b)] opacity-80" />
+            <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Song Info</span>
+          </div>
           <div className="space-y-4">
             <div>
               <Label>
@@ -113,6 +118,11 @@ export function LeftSettingsPanel({
 
           <div className="h-px bg-white/5 mx-1" />
 
+          {/* LCARS section indicator — Composition */}
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-cyan,#06b6d4)] opacity-80" />
+            <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Composition</span>
+          </div>
           <div className="space-y-4">
             <div>
               <Label>{t.leftPanel.rhymeScheme}</Label>
