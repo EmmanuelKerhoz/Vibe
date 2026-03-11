@@ -37,7 +37,7 @@ import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
 import { SimilarityModal } from './components/app/modals/SimilarityModal';
 import { SaveToLibraryModal } from './components/app/modals/SaveToLibraryModal';
-import { useTranslation, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
+import { useTranslation, useLanguage, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
 import { getTopSimilarSongMatches, SimilarityMatch } from './utils/similarityUtils';
 import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, LibraryAsset } from './utils/libraryUtils';
 
@@ -104,6 +104,7 @@ const isPristineDraft = (song: Section[], structure: string[], defaultRhymeSchem
 
 export default function App() {
   const { t } = useTranslation();
+  const { language } = useLanguage();
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   
   const [title, setTitle] = useState('Untitled Song');
@@ -399,6 +400,24 @@ export default function App() {
     setIsVersionsModalOpen(false);
   };
 
+  // --- Analysis hook (must come before Composer to expose songLanguage) ---
+  const {
+    isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
+    isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
+    appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
+    songLanguage, targetLanguage, setTargetLanguage, sectionTargetLanguages, setSectionTargetLanguages,
+    isAdaptingLanguage, isDetectingLanguage, isAnalyzingTheme,
+    toggleAnalysisItemSelection, applySelectedAnalysisItems, applyAnalysisItem,
+    analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
+  } = useSongAnalysis({
+    song, topic, mood, rhymeScheme,
+    uiLanguage: language,
+    setTopic, setMood, saveVersion,
+    updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
+    clearLineSelection: () => clearSelection(),
+    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
+  });
+
   const {
     isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
     selectedLineId, setSelectedLineId,
@@ -409,23 +428,10 @@ export default function App() {
   } = useSongComposer({
     song, structure, topic, mood, rhymeScheme, targetSyllables, title,
     genre, tempo, instrumentation, rhythm, narrative,
+    songLanguage,
+    uiLanguage: language,
     setMusicalPrompt, setGenre, setTempo, setInstrumentation, setRhythm, setNarrative,
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory, saveVersion,
-    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
-  });
-
-  const {
-    isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
-    isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
-    appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
-    songLanguage, targetLanguage, setTargetLanguage, sectionTargetLanguages, setSectionTargetLanguages,
-    isAdaptingLanguage, isDetectingLanguage, isAnalyzingTheme,
-    toggleAnalysisItemSelection, applySelectedAnalysisItems, applyAnalysisItem,
-    analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
-  } = useSongAnalysis({
-    song, topic, mood, rhymeScheme, setTopic, setMood, saveVersion,
-    updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
-    clearLineSelection: clearSelection,
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
@@ -445,7 +451,7 @@ export default function App() {
     playAudioFeedback,
   });
 
-  const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood);
+  const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood, songLanguage);
 
   useTopicMoodSuggester(topic, mood, setTopic, setMood);
 
@@ -554,7 +560,6 @@ export default function App() {
     }
   };
 
-  // Scroll to section by id — used by StructureSidebar
   const handleScrollToSection = useCallback((sectionId: string) => {
     const section = song.find(s => s.id === sectionId);
     if (section) scrollToSection(section);
@@ -760,6 +765,7 @@ export default function App() {
                           {isDetectingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanText className="w-3 h-3" />}
                           {songLanguage || 'Detect'}
                         </button>
+
                       </Tooltip>
                     </div>
                   </div>
@@ -899,15 +905,16 @@ export default function App() {
                             <div className="mb-3 flex items-center justify-between gap-4 flex-wrap">
                               <div className="flex items-center gap-3">
                                 <div className="flex flex-col gap-0.5">
-                                  <Tooltip title="Move section up">
+                                  <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>
                                     <button type="button" onClick={() => moveSectionUp(section.id)} disabled={sectionIndex === 0 || section.name.toLowerCase() === 'intro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                                       <ChevronUp className="h-3 w-3" />
                                     </button>
                                   </Tooltip>
-                                  <Tooltip title="Move section down">
+                                  <Tooltip title={t.editor.moveSectionDown ?? 'Move section down'}>
                                     <button type="button" onClick={() => moveSectionDown(section.id)} disabled={sectionIndex === song.length - 1 || section.name.toLowerCase() === 'outro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                                       <ChevronDown className="h-3 w-3" />
                                     </button>
+
                                   </Tooltip>
                                 </div>
                                 <div>
@@ -925,7 +932,7 @@ export default function App() {
                                     )}
                                   </select>
                                   <div className="mt-1 flex items-center gap-2">
-                                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">{section.lines.length} lines</p>
+                                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">{section.lines.length} {t.editor.lines ?? 'lines'}</p>
                                     <select
                                       value={section.rhymeScheme || rhymeScheme}
                                       onChange={(e) => setSectionRhymeScheme(section.id, e.target.value)}
@@ -950,7 +957,7 @@ export default function App() {
                                     {t.editor.regenerateSection}
                                   </button>
                                 </Tooltip>
-                                <Tooltip title={isSectionDraggable ? 'Drag to reorder section' : 'Intro and Outro stay anchored'}>
+                                <Tooltip title={isSectionDraggable ? (t.editor.dragToReorder ?? 'Drag to reorder section') : (t.editor.anchoredSection ?? 'Intro and Outro stay anchored')}>
                                   <div
                                     draggable={isSectionDraggable}
                                     onDragStart={() => {
@@ -1014,7 +1021,7 @@ export default function App() {
                                     }}
                                   >
                                     {isSectionDraggable ? (
-                                      <Tooltip title="Drag to reorder line">
+                                      <Tooltip title={t.editor.dragToReorderLine ?? 'Drag to reorder line'}>
                                         <div
                                           draggable
                                           onDragStart={() => handleLineDragStart(section.id, line.id)}
@@ -1026,7 +1033,7 @@ export default function App() {
                                       </Tooltip>
                                     ) : <div />}
 
-                                    <Tooltip title={line.isManual ? 'Human' : 'AI'}>
+                                    <Tooltip title={line.isManual ? (t.editor.humanLine ?? 'Human') : (t.editor.aiLine ?? 'AI')}>
                                       <span className="flex items-center justify-center w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity">
                                         {line.isManual
                                           ? <User className="h-3.5 w-3.5 text-emerald-400" />
@@ -1035,12 +1042,12 @@ export default function App() {
                                     </Tooltip>
 
                                     <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <Tooltip title="Move line up">
+                                      <Tooltip title={t.editor.moveLineUp ?? 'Move line up'}>
                                         <button type="button" onClick={() => moveLineUp(section.id, line.id)} disabled={index === 0} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                                           <ChevronUp className="h-2.5 w-2.5" />
                                         </button>
                                       </Tooltip>
-                                      <Tooltip title="Move line down">
+                                      <Tooltip title={t.editor.moveLineDown ?? 'Move line down'}>
                                         <button type="button" onClick={() => moveLineDown(section.id, line.id)} disabled={index === section.lines.length - 1} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                                           <ChevronDown className="h-2.5 w-2.5" />
                                         </button>
@@ -1076,7 +1083,7 @@ export default function App() {
                                       {line.rhymingSyllables || '\u00a0'}
                                     </span>
 
-                                    <Tooltip title="Delete line">
+                                    <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
                                       <button type="button" onClick={() => deleteLineFromSection(section.id, line.id)} className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300">
                                         <Trash2 className="h-3 w-3" />
                                       </button>
@@ -1103,12 +1110,12 @@ export default function App() {
                             <div className="flex items-center gap-2 pt-1 pb-2 px-3">
                               <button type="button" onClick={() => addLineToSection(section.id)} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded">
                                 <Plus className="w-3 h-3" />
-                                Add Line
+                                {t.editor.addLine ?? 'Add Line'}
                               </button>
                               <span className="text-zinc-700 dark:text-zinc-600 text-[10px]">|</span>
                               <button type="button" onClick={() => addInstruction(section.id, 'post')} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded">
                                 <Plus className="w-3 h-3" />
-                                Add Musical / Modulation / Effect
+                                {t.editor.addMusicalEffect ?? 'Add Musical / Modulation / Effect'}
                               </button>
                             </div>
                           </div>
