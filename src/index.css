@@ -281,7 +281,7 @@ body {
 }
 
 /* ── LCARS section band ──────────────────────────────────────────
-   gap réduit: margin-bottom 2px (était 4px)
+   gap réduit: margin-bottom 2px (was 4px)
    ─────────────────────────────────────────────────────────────── */
 .lcars-band {
   display: flex;
