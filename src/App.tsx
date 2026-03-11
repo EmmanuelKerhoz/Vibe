@@ -35,6 +35,7 @@ import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { MusicalTab } from './components/app/MusicalTab';
 import { InsightsBar } from './components/app/InsightsBar';
 import { AboutModal } from './components/app/modals/AboutModal';
+import { ApiErrorModal } from './components/app/modals/ApiErrorModal';
 import { ImportModal } from './components/app/modals/ImportModal';
 import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
@@ -142,6 +143,7 @@ export default function App() {
   const [isStructureOpen, setIsStructureOpen] = useState(true);
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [apiErrorModal, setApiErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
   const sectionDropdownRef = useRef<HTMLDivElement>(null);
@@ -163,6 +165,15 @@ export default function App() {
       .then(r => r.json())
       .then((data: { available?: boolean }) => setHasApiKey(data.available === true))
       .catch(() => setHasApiKey(false));
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ message: string }>).detail;
+      setApiErrorModal({ open: true, message: detail.message });
+    };
+    window.addEventListener('vibe:apierror', handler);
+    return () => window.removeEventListener('vibe:apierror', handler);
   }, []);
 
   useEffect(() => {
@@ -895,6 +906,11 @@ export default function App() {
       <SaveToLibraryModal isOpen={isSaveToLibraryModalOpen} onClose={() => setIsSaveToLibraryModalOpen(false)} onSave={handleSaveToLibrary} isSaving={isSavingToLibrary} currentTitle={title} libraryAssets={libraryAssets} />
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={() => { const name = prompt('Enter version name:'); if (name !== null) saveVersion(name); }} onRollback={rollbackToVersion} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
+      <ApiErrorModal
+        isOpen={apiErrorModal.open}
+        onClose={() => setApiErrorModal({ open: false, message: '' })}
+        message={apiErrorModal.message}
+      />
       <input ref={importInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportInputChange} />
     </div>
     </FluentProvider>
