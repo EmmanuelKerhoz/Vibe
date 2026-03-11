@@ -45,6 +45,7 @@ export function StatusBar({
             <span className="telemetry-text uppercase tracking-wider text-zinc-900 dark:text-zinc-300">
               {statusLabel}
             </span>
+            {isBusy && <span className="lcars-cursor-blink text-[var(--accent-warning)]" />}
           </div>
           <div className="lcars-divider" />
           <span className="telemetry-text text-zinc-600 dark:text-zinc-400">

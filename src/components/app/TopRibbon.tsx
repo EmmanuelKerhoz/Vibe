@@ -47,12 +47,12 @@ export function TopRibbon({
   const canRedo = future.length > 0;
 
   return (
-    <div className="h-16 border-b border-fluent-border flex items-center justify-between px-8 z-10 glass-panel lcars-ribbon rounded-none border-t-0 border-l-0 border-r-0">
-      <div className="flex items-center gap-6">
+    <div className="h-16 border-b border-fluent-border flex items-center justify-between px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0">
+      <div className="flex items-center gap-6 pl-3">
         <Tooltip title={isLeftPanelOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}>
           <button
             onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
-            className="p-2 -ml-4 text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-colors"
+            className="p-2 -ml-4 text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all duration-200"
           >
             <PanelLeft className="w-5 h-5" />
           </button>
@@ -61,7 +61,7 @@ export function TopRibbon({
         <Tooltip title={t.tooltips.lyricsTab}>
           <button
             onClick={() => setActiveTab('lyrics')}
-            className={`text-sm tracking-widest transition-all relative py-5 ${activeTab === 'lyrics' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'}`}
+            className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${activeTab === 'lyrics' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'}`}
           >
             {t.ribbon.lyrics}
             {activeTab === 'lyrics' && (
@@ -72,7 +72,7 @@ export function TopRibbon({
         <Tooltip title={t.tooltips.musicalTab}>
           <button
             onClick={() => setActiveTab('musical')}
-            className={`text-sm tracking-widest transition-all relative py-5 ${activeTab === 'musical' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'}`}
+            className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${activeTab === 'musical' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'}`}
           >
             {t.ribbon.musical}
             {activeTab === 'musical' && (

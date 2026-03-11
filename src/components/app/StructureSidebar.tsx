@@ -61,7 +61,7 @@ export function StructureSidebar({
             <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">
               <h3 className="micro-label text-zinc-400 flex items-center gap-2">
                 <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />
-                {t.structure.title}
+                <span className="text-[10px] uppercase tracking-widest font-semibold">{t.structure.title}</span>
               </h3>
             </div>
 
@@ -90,7 +90,7 @@ export function StructureSidebar({
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                           onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
                           onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }}
-                          className={`group flex items-center gap-2 border rounded-md pl-2 pr-1 py-2 text-xs transition-all duration-150 ${getSectionColor(item)} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/50' : 'cursor-default'} ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                          className={`group flex items-center gap-2 border lcars-sidebar-pill pl-3 pr-1 py-2 text-xs transition-all duration-200 ${getSectionColor(item)} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/50' : 'cursor-default'} ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                         >
                           {isDraggable ? (
                             <GripVertical className="w-3.5 h-3.5 opacity-30 group-hover:opacity-60 transition-opacity" />

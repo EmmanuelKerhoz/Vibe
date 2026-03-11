@@ -2,8 +2,8 @@ export const getSectionColor = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500/10 border-orange-500/20 text-orange-500';
   if (n.includes('chorus')) return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
-  if (n.includes('verse')) return 'bg-blue-500/10 border-blue-500/20 text-blue-500';
-  if (n.includes('bridge') || n.includes('breakdown')) return 'bg-purple-500/10 border-purple-500/20 text-purple-500';
+  if (n.includes('verse')) return 'bg-cyan-500/10 border-cyan-500/20 text-cyan-500';
+  if (n.includes('bridge') || n.includes('breakdown')) return 'bg-violet-500/10 border-violet-500/20 text-violet-500';
   if (n.includes('intro') || n.includes('outro')) return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500';
   return 'bg-zinc-800/50 border-white/10 text-zinc-400';
 };
@@ -12,8 +12,8 @@ export const getSectionTextColor = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'text-orange-500';
   if (n.includes('chorus')) return 'text-amber-500';
-  if (n.includes('verse')) return 'text-blue-500';
-  if (n.includes('bridge') || n.includes('breakdown')) return 'text-purple-500';
+  if (n.includes('verse')) return 'text-cyan-400';
+  if (n.includes('bridge') || n.includes('breakdown')) return 'text-violet-500';
   if (n.includes('intro') || n.includes('outro')) return 'text-emerald-500';
   return 'text-zinc-600 dark:text-zinc-400';
 };
@@ -22,8 +22,8 @@ export const getSectionColorHex = (name: string): string => {
   const n = name.toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return '#f97316';
   if (n.includes('chorus')) return '#f59e0b';
-  if (n.includes('verse')) return '#3b82f6';
-  if (n.includes('bridge') || n.includes('breakdown')) return '#a855f7';
+  if (n.includes('verse')) return '#06b6d4';
+  if (n.includes('bridge') || n.includes('breakdown')) return '#a78bfa';
   if (n.includes('intro') || n.includes('outro')) return '#10b981';
   return '#71717a';
 };
@@ -32,8 +32,8 @@ export const getSectionDotColor = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500';
   if (n.includes('chorus')) return 'bg-amber-500';
-  if (n.includes('verse')) return 'bg-blue-500';
-  if (n.includes('bridge') || n.includes('breakdown')) return 'bg-purple-500';
+  if (n.includes('verse')) return 'bg-cyan-500';
+  if (n.includes('bridge') || n.includes('breakdown')) return 'bg-violet-500';
   if (n.includes('intro') || n.includes('outro')) return 'bg-emerald-500';
   return 'bg-zinc-500';
 };
