@@ -160,6 +160,10 @@ export interface Translations {
     instrumentsPlaceholder?: string;
     /** Rhythm presets (B3) */
     rhythmPresets?: string;
+    /** Vibe Board feature */
+    vibeBoard?: string;
+    vibeBoardDescription?: string;
+    subStyle?: string;
   };
 
   analysis: {

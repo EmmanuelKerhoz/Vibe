@@ -148,6 +148,9 @@ const fr: Translations = {
     instruments: 'INSTRUMENTS',
     instrumentsPlaceholder: 'Sélectionner des familles d\'instruments...',
     rhythmPresets: 'RYTHMES PRÉDÉFINIS',
+    vibeBoard: 'VIBE BOARD',
+    vibeBoardDescription: 'Sélectionnez votre genre pour définir automatiquement le BPM et les instruments',
+    subStyle: 'SOUS-STYLE',
   },
 
   analysis: {

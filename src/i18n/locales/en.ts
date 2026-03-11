@@ -150,6 +150,9 @@ const en: Translations = {
     instruments: 'INSTRUMENTS',
     instrumentsPlaceholder: 'Select instrument families...',
     rhythmPresets: 'RHYTHM PRESETS',
+    vibeBoard: 'VIBE BOARD',
+    vibeBoardDescription: 'Select your genre to auto-set BPM & instruments',
+    subStyle: 'SUB-STYLE',
   },
 
   analysis: {
