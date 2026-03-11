@@ -63,39 +63,8 @@ export const safeJsonParse = <T>(text: string, fallback: T): T => {
   try {
     return JSON.parse(text) as T;
   } catch (e) {
-    console.warn('JSON parse failed, attempting to fix truncation...', e);
-    let fixedText = text;
-    const quotes = (fixedText.match(/"/g) || []).length;
-    if (quotes % 2 !== 0) {
-      fixedText += '"';
-    }
-
-    let openBraces = (fixedText.match(/\{/g) || []).length;
-    let closeBraces = (fixedText.match(/\}/g) || []).length;
-    let openBrackets = (fixedText.match(/\[/g) || []).length;
-    let closeBrackets = (fixedText.match(/\]/g) || []).length;
-
-    for (let i = 0; i < openBraces - closeBraces; i++) fixedText += '}';
-    for (let i = 0; i < openBrackets - closeBrackets; i++) fixedText += ']';
-
-    try {
-      return JSON.parse(fixedText) as T;
-    } catch (e2) {
-      console.warn('First fix attempt failed, trying aggressive truncation...', e2);
-      fixedText = text.replace(/,[^}]*$/, '');
-      openBraces = (fixedText.match(/\{/g) || []).length;
-      closeBraces = (fixedText.match(/\}/g) || []).length;
-      openBrackets = (fixedText.match(/\[/g) || []).length;
-      closeBrackets = (fixedText.match(/\]/g) || []).length;
-      for (let i = 0; i < openBraces - closeBraces; i++) fixedText += '}';
-      for (let i = 0; i < openBrackets - closeBrackets; i++) fixedText += ']';
-      try {
-        return JSON.parse(fixedText) as T;
-      } catch (e3) {
-        console.error('Failed to fix JSON:', e3);
-        return fallback;
-      }
-    }
+    console.warn('[safeJsonParse] Failed to parse JSON response, using fallback.', e);
+    return fallback;
   }
 };
 
