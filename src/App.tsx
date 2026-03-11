@@ -6,6 +6,7 @@ import { Section, SongVersion } from './types';
 import { DEFAULT_STRUCTURE } from './constants/editor';
 import { cleanSectionName, getSectionColor, getSectionTextColor, getSectionColorHex, getSectionDotColor, getRhymeColor, countSyllables } from './utils/songUtils';
 import { generateId } from './utils/idUtils';
+import { safeSetItem, safeRemoveItem } from './utils/storageUtils';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
@@ -290,7 +291,7 @@ export default function App() {
   useEffect(() => {
     if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
       const sessionData = { song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt };
-      localStorage.setItem('lyricist_session', JSON.stringify(sessionData));
+      safeSetItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
     }
   }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, isSessionHydrated]);
@@ -383,7 +384,7 @@ export default function App() {
 
   const resetSong = () => {
     updateSongAndStructureWithHistory(createEmptySong(DEFAULT_STRUCTURE, rhymeScheme), DEFAULT_STRUCTURE);
-    localStorage.removeItem('lyricist_session');
+    safeRemoveItem('lyricist_session');
     setHasSavedSession(false);
     clearSelection();
     setIsResetModalOpen(false);
