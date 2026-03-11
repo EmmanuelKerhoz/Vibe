@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fluentui/react-components": "^9.73.1",
+    "@google/genai": "^1.29.0",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "react": "^19.0.0",
@@ -19,7 +20,6 @@
     "react-markdown": "^10.1.0"
   },
   "devDependencies": {
-    "@google/genai": "^1.29.0",
     "@tailwindcss/vite": "^4.1.14",
     "@types/node": "^22.14.0",
     "@vercel/node": "^5.6.11",

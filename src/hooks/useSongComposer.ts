@@ -5,6 +5,7 @@ import type { Line, Section } from '../types';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../utils/aiUtils';
 import { cleanSectionName, countSyllables } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
+import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../utils/songMergeUtils';
 
 type UseSongComposerParams = {
   song: Section[];
@@ -97,48 +98,6 @@ const alignGeneratedSongToStructure = (generatedSong: Section[], structure: stri
   });
 };
 
-const mapSongWithPreservedIds = (newSongData: any[], song: Section[]): Section[] => {
-  return newSongData.map((section: any, sectionIndex: number) => {
-    const existingSection = song[sectionIndex];
-
-    return {
-      ...existingSection,
-      ...section,
-      id: existingSection?.id || generateId(),
-      name: cleanSectionName(section.name),
-      lines: (section.lines || []).map((line: any, lineIndex: number) => ({
-        ...line,
-        id: existingSection?.lines?.[lineIndex]?.id || generateId(),
-      })),
-    };
-  });
-};
-
-const mergeAiSectionIntoCurrent = (currentSection: Section, aiSection: any): Section => {
-  const mergedName = cleanSectionName(aiSection?.name || currentSection.name);
-  const mergedRhymeScheme = aiSection?.rhymeScheme || currentSection.rhymeScheme;
-  const mergedLinesSource = Array.isArray(aiSection?.lines) ? aiSection.lines : currentSection.lines;
-
-  return {
-    ...currentSection,
-    ...aiSection,
-    id: currentSection.id,
-    name: mergedName,
-    rhymeScheme: mergedRhymeScheme,
-    lines: mergedLinesSource.map((line: any, index: number) => ({
-      ...(currentSection.lines[index] || {}),
-      ...line,
-      id: currentSection.lines[index]?.id || generateId(),
-      text: line?.text ?? currentSection.lines[index]?.text ?? '',
-      rhymingSyllables: line?.rhymingSyllables ?? currentSection.lines[index]?.rhymingSyllables ?? '',
-      rhyme: line?.rhyme ?? currentSection.lines[index]?.rhyme ?? '',
-      syllables: typeof line?.syllables === 'number'
-        ? line.syllables
-        : computeSyllables(line?.text ?? currentSection.lines[index]?.text ?? ''),
-      concept: line?.concept ?? currentSection.lines[index]?.concept ?? 'New line',
-    })),
-  };
-};
 
 export const useSongComposer = ({
   song,

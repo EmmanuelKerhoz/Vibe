@@ -4,6 +4,7 @@ import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../utils/ai
 import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
 import type { Section } from '../types';
+import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../utils/songMergeUtils';
 
 type UseSongAnalysisParams = {
   song: Section[];
@@ -38,46 +39,6 @@ type AnalysisReport = {
   summary: string;
 };
 
-const mapSongWithPreservedIds = (newSongData: any[], song: Section[], language?: string): Section[] => {
-  return newSongData.map((s: any, idx: number) => {
-    const existingSection = (song[idx] || {}) as any;
-    return {
-      ...existingSection,
-      ...s,
-      id: existingSection.id || generateId(),
-      language: language ?? existingSection.language,
-      lines: s.lines.map((l: any, lIdx: number) => ({
-        ...l,
-        id: (existingSection.lines && existingSection.lines[lIdx]?.id) || generateId(),
-      })),
-    };
-  });
-};
-
-const mergeAiSectionIntoCurrent = (currentSection: Section, aiSection: any, language?: string): Section => {
-  const mergedName = cleanSectionName(aiSection?.name || currentSection.name);
-  const mergedRhymeScheme = aiSection?.rhymeScheme || currentSection.rhymeScheme;
-  const mergedLinesSource = Array.isArray(aiSection?.lines) ? aiSection.lines : currentSection.lines;
-
-  return {
-    ...currentSection,
-    ...aiSection,
-    id: currentSection.id,
-    name: mergedName,
-    rhymeScheme: mergedRhymeScheme,
-    language: language ?? currentSection.language,
-    lines: mergedLinesSource.map((line: any, index: number) => ({
-      ...(currentSection.lines[index] || {}),
-      ...line,
-      id: currentSection.lines[index]?.id || generateId(),
-      text: line?.text ?? currentSection.lines[index]?.text ?? '',
-      rhymingSyllables: line?.rhymingSyllables ?? currentSection.lines[index]?.rhymingSyllables ?? '',
-      rhyme: line?.rhyme ?? currentSection.lines[index]?.rhyme ?? '',
-      syllables: typeof line?.syllables === 'number' ? line.syllables : currentSection.lines[index]?.syllables ?? 0,
-      concept: line?.concept ?? currentSection.lines[index]?.concept ?? 'New line',
-    })),
-  };
-};
 
 export const useSongAnalysis = ({
   song,
@@ -111,6 +72,7 @@ export const useSongAnalysis = ({
   const [isAdaptingLanguage, setIsAdaptingLanguage] = useState(false);
 
   const lastAnalyzedSongRef = useRef<string>('');
+  const backoffUntilRef = useRef<number>(0);
 
   const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
     updateState(current => ({
@@ -135,6 +97,8 @@ export const useSongAnalysis = ({
     if (currentSongStr === lastAnalyzedSongRef.current) return;
 
     const timer = setTimeout(async () => {
+      if (Date.now() < backoffUntilRef.current) return;
+      if (isAnalyzingTheme) return; // already running
       setIsAnalyzingTheme(true);
       try {
         const prompt = `Analyze the following song lyrics.
@@ -168,7 +132,15 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
         if (data.mood && data.mood !== mood) setMood(data.mood);
         lastAnalyzedSongRef.current = currentSongStr;
       } catch (e) {
-        handleApiError(e, 'Background analysis failed.');
+        const msg = e instanceof Error ? e.message : '';
+        const isQuota = (e as any)?.code === 429 || msg.includes('429') || msg.includes('quota');
+        if (isQuota) {
+          // Backoff 5 minutes on quota exhaustion
+          backoffUntilRef.current = Date.now() + 5 * 60 * 1000;
+          console.warn('[useSongAnalysis] Quota exceeded — background analysis paused for 5 minutes.');
+        } else {
+          handleApiError(e, 'Background analysis failed.');
+        }
       } finally {
         setIsAnalyzingTheme(false);
       }
