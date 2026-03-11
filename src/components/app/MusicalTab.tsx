@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Music, Activity, Wand2, ListMusic, Sparkles, Loader2, Copy, Check, Zap, Guitar, Drum, Radio, Timer, Play, Pause } from 'lucide-react';
+import { Music, Activity, Wand2, ListMusic, Sparkles, Loader2, Copy, Check, Zap, Guitar, Drum, Radio, Play, Pause } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { useMetronome } from '../../hooks/useMetronome';
 import type { Section } from '../../types';
@@ -459,7 +459,7 @@ export function MusicalTab({
         {/* Empty prompt placeholder */}
         {!musicalPrompt && !isGeneratingMusicalPrompt && (
           <div className="glass-panel rounded-xl p-6 text-center space-y-2 border-dashed">
-            <Timer className="w-8 h-8 opacity-30 mx-auto" style={{ color: AMBER_PRIMARY }} />
+            <Music className="w-8 h-8 opacity-30 mx-auto" style={{ color: AMBER_PRIMARY }} />
             <p className="text-sm text-[var(--text-secondary)] opacity-50">{m.promptPlaceholder}</p>
           </div>
         )}

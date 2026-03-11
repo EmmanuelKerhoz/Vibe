@@ -145,7 +145,7 @@ export function InsightsBar({
                   style={isMetronomeActive ? { background: '#f59e0b', color: '#000', borderColor: '#f59e0b' } : {}}
                   title={isMetronomeActive ? (t.musical?.metronomeStop ?? 'Stop Metronome') : (t.musical?.metronomeStart ?? 'Start Metronome')}
                 >
-                  <Timer className={`w-3.5 h-3.5 ${isMetronomeActive ? '' : ''}`} />
+                  <Timer className="w-3.5 h-3.5" />
                 </button>
               </Tooltip>
             )}
