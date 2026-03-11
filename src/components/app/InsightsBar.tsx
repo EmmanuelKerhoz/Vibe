@@ -64,15 +64,16 @@ export function InsightsBar({
   const supportedAdaptationLanguages = SUPPORTED_ADAPTATION_LANGUAGES;
   const adaptLangLabel = adaptationLanguageLabel;
   return (
-    <div className="border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-4 py-2 z-10">
-      <div className="lyrics-editor-zoom flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h3 className="micro-label text-[var(--text-secondary)] flex items-center gap-2">
+    <div className="border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10">
+      <div className="lyrics-editor-zoom flex flex-col gap-2 lg:gap-4">
+        {/* Row 1: Language tools + KPIs */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 lg:gap-4 flex-wrap">
+            <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2">
               <BarChart2 className="w-3.5 h-3.5" />
               {t.insights.title}
             </h3>
-            <div className="h-4 w-px bg-[var(--border-color)]" />
+            <div className="hidden lg:block h-4 w-px bg-[var(--border-color)]" />
             <div className="flex items-center gap-2">
               <Select value={targetLanguage} onChange={(e: { target: { value?: string } }) => setTargetLanguage(e.target.value ?? '')} size="small" style={{ height: 24, fontSize: '10px', color: 'var(--colorNeutralForeground2)', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '4px' }}>
                 {supportedAdaptationLanguages.map(lang => (
@@ -84,7 +85,7 @@ export function InsightsBar({
               <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
                 <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
                   {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
-                  {t.editor.adaptation}
+                  <span className="hidden sm:inline">{t.editor.adaptation}</span>
                 </button>
               </Tooltip>
               <Tooltip title={songLanguage ? `Detected: ${songLanguage} — click to re-detect` : 'Detect song language'}>
@@ -92,18 +93,18 @@ export function InsightsBar({
                   {isDetectingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanText className="w-3 h-3" />}
                   {songLanguage || 'Detect'}
                 </button>
-
               </Tooltip>
             </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 lg:gap-6">
             <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.sections}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{sectionCount}</span></div>
             <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.words}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{wordCount}</span></div>
-            <div className="flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.characters}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{charCount}</span></div>
+            <div className="hidden sm:flex flex-col items-end"><span className="micro-label text-zinc-500">{t.insights.characters}</span><span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{charCount}</span></div>
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+        {/* Row 2: Section chips + action buttons */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar min-w-0 flex-1">
             {song.map((section) => {
               const sectionWordCount = section.lines.reduce((acc, line) => acc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0);
               return (
@@ -125,35 +126,35 @@ export function InsightsBar({
               );
             })}
           </div>
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex items-center gap-1.5 lg:gap-2 ml-2 flex-shrink-0">
             <Tooltip title={t.saveToLibrary.saveDescription}>
-              <button onClick={handleOpenSaveToLibraryModal} disabled={song.length === 0} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={handleOpenSaveToLibraryModal} disabled={song.length === 0} className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 <Save className="w-3.5 h-3.5" />
-                {t.saveToLibrary.title}
+                <span className="hidden lg:inline">{t.saveToLibrary.title}</span>
               </button>
             </Tooltip>
             <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
-              <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 <Layout className="w-3.5 h-3.5" />
-                {isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}
+                <span className="hidden lg:inline">{isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}</span>
               </button>
             </Tooltip>
             <Tooltip title={t.tooltips.analyzeTheme}>
-              <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={analyzeCurrentSong} disabled={isGenerating || isAnalyzing || song.length === 0} className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 <BarChart2 className="w-3.5 h-3.5" />
-                {t.editor.analyze}
+                <span className="hidden lg:inline">{t.editor.analyze}</span>
               </button>
             </Tooltip>
             <Tooltip title={t.tooltips.checkSimilarity}>
               <button
                 onClick={() => setIsSimilarityModalOpen(true)}
                 disabled={isGenerating || isAnalyzing || song.length === 0}
-                className="px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
+                className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
               >
                 {webSimilarityIndex.status === 'running'
                   ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
                   : <Search className="w-3.5 h-3.5" />}
-                {t.ribbon?.similarity || 'Similarity'}
+                <span className="hidden lg:inline">{t.ribbon?.similarity || 'Similarity'}</span>
                 {webBadgeLabel && (
                   <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">
                     {webBadgeLabel}
@@ -165,9 +166,9 @@ export function InsightsBar({
               </button>
             </Tooltip>
             <Tooltip title={t.tooltips.regenerate}>
-              <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-[11px] rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap text-[var(--accent-color)]">
+              <button onClick={handleGlobalRegenerate} disabled={isGenerating || isAnalyzing} className="px-2 lg:px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-[11px] rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap text-[var(--accent-color)]">
                 {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                {t.editor.regenerateGlobal}
+                <span className="hidden lg:inline">{t.editor.regenerateGlobal}</span>
               </button>
             </Tooltip>
           </div>

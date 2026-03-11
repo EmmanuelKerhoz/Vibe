@@ -10,8 +10,8 @@ export const ResetModal = ({ isOpen, onClose, onConfirm }: ResetModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="acrylic rounded-2xl w-full max-w-md shadow-[0_32px_64px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-200">
+      <div className="acrylic rounded-none sm:rounded-2xl w-full sm:max-w-md h-full sm:h-auto shadow-[0_32px_64px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
         <div className="p-6 border-b border-white/5 flex items-center justify-between bg-[var(--accent-critical)]/[0.02]">
           <h3 className="text-lg text-[var(--accent-critical)] flex items-center gap-2.5">
             <Trash2 className="w-5 h-5" />

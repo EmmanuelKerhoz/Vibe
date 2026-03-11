@@ -195,13 +195,12 @@ export const SectionEditor = React.memo(function SectionEditor({
 
         <div className="mt-3 space-y-3">
           <div
-            className="px-3 pb-1 border-b border-white/5 mb-1"
-            style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px', alignItems: 'center', columnGap: '10px' }}
+            className="lyric-row px-3 pb-1 border-b border-white/5 mb-1"
           >
             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
-            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhyme}</span>
-            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.syllables}</span>
-            <span className="micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhymeSyllable}</span>
+            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhyme}</span>
+            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.syllables}</span>
+            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhymeSyllable}</span>
             <div/>
           </div>
           {section.lines.map((line, index) => {
@@ -214,19 +213,14 @@ export const SectionEditor = React.memo(function SectionEditor({
                 onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (isLineDropTarget) setDragOverLineInfo(null); }}
                 onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleLineDrop(section.id, line.id); }}
-                className={`group transition-colors ${
+                className={`group lyric-row transition-colors ${
                   selectedLineId === line.id
                     ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
                     : 'hover:bg-white/[0.025]'
                 } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px',
-                  alignItems: 'center',
-                  columnGap: '10px',
                   paddingLeft: '12px',
                   paddingRight: '12px',
-                  minHeight: '36px',
                 }}
               >
                 {isSectionDraggable ? (
@@ -278,17 +272,17 @@ export const SectionEditor = React.memo(function SectionEditor({
                   style={{ width: '100%', minWidth: 0 }}
                 />
 
-                <span style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <span className="lyric-col-aux" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   {line.rhyme ? (
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
                       {line.rhyme}
                     </span>
                   ) : null}
                 </span>
-                <span style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                <span className="lyric-col-aux" style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                   {line.syllables > 0 ? line.syllables : ''}
                 </span>
-                <span style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
+                <span className="lyric-col-aux" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
                   {line.rhymingSyllables || '\u00a0'}
                 </span>
 

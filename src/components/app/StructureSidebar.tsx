@@ -50,13 +50,20 @@ export function StructureSidebar({
   return (
     <AnimatePresence>
       {isStructureOpen && (
-        <motion.div
-          initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 280, opacity: 1 }}
-          exit={{ width: 0, opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="border-l border-fluent-border bg-fluent-sidebar flex flex-col z-10 shadow-2xl overflow-hidden lcars-panel !rounded-none"
-        >
+        <>
+          {/* Mobile backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setIsStructureOpen(false)}
+            aria-hidden="true"
+          />
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl overflow-hidden lcars-panel !rounded-none structure-sidebar-mobile-overlay"
+          >
           <div className="w-[280px] flex flex-col h-full">
             <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">
               <h3 className="micro-label text-zinc-400 flex items-center gap-2">
@@ -191,6 +198,7 @@ export function StructureSidebar({
             </div>
           </div>
         </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

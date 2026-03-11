@@ -249,7 +249,7 @@ export default function App() {
               setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
             />
           )}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative p-8 lcars-lyrics-area">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative p-4 lg:p-8 lcars-lyrics-area">
             <div className="lyrics-editor-zoom h-full flex flex-col">
               {activeTab === 'lyrics' ? (
                 <LyricsView

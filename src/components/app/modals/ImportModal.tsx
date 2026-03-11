@@ -16,7 +16,7 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile }: 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-xl animate-in fade-in duration-200"
@@ -29,7 +29,7 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile }: 
       </div>
 
       {/* Modal panel */}
-      <div className="relative w-full max-w-md flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8">
+      <div className="relative w-full sm:max-w-md h-full sm:h-auto flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8">
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0 bg-[var(--bg-sidebar)]">
