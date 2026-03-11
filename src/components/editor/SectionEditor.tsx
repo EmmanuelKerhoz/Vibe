@@ -47,7 +47,6 @@ interface SectionEditorProps {
   setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   playAudioFeedback: (type: string) => void;
   handleDrop: (targetIndex: number) => void;
-  t: ReturnType<typeof useTranslation>['t'];
 }
 
 export const SectionEditor = React.memo(function SectionEditor({
@@ -89,8 +88,8 @@ export const SectionEditor = React.memo(function SectionEditor({
   setDragOverLineInfo,
   playAudioFeedback,
   handleDrop,
-  t,
 }: SectionEditorProps) {
+  const { t } = useTranslation();
   const isSectionDraggable = section.name.toLowerCase() !== 'intro' && section.name.toLowerCase() !== 'outro';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
 

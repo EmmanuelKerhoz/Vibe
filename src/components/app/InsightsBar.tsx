@@ -33,9 +33,6 @@ interface InsightsBarProps {
   handleMarkupToggle: () => void;
   setIsSimilarityModalOpen: (open: boolean) => void;
   scrollToSection: (section: Section) => void;
-  t: ReturnType<typeof useTranslation>['t'];
-  SUPPORTED_ADAPTATION_LANGUAGES: typeof SUPPORTED_ADAPTATION_LANGUAGES;
-  adaptationLanguageLabel: typeof adaptationLanguageLabel;
 }
 
 export function InsightsBar({
@@ -62,10 +59,10 @@ export function InsightsBar({
   handleMarkupToggle,
   setIsSimilarityModalOpen,
   scrollToSection,
-  t,
-  SUPPORTED_ADAPTATION_LANGUAGES: supportedAdaptationLanguages,
-  adaptationLanguageLabel: adaptLangLabel,
 }: InsightsBarProps) {
+  const { t } = useTranslation();
+  const supportedAdaptationLanguages = SUPPORTED_ADAPTATION_LANGUAGES;
+  const adaptLangLabel = adaptationLanguageLabel;
   return (
     <div className="border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-4 py-2 z-10">
       <div className="lyrics-editor-zoom flex flex-col gap-4">
