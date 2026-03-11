@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Layout } from 'lucide-react';
+import { Layout, Music, Play } from 'lucide-react';
 import { Section } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
 import { MarkupInput } from '../editor/MarkupInput';
@@ -174,6 +174,22 @@ export function LyricsView({
           <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
             <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
           </div>
+        </div>
+      ) : song.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center py-24 text-center select-none" role="status" aria-label={t.editor.emptyState.title}>
+          <div className="w-16 h-16 rounded-[16px_4px_16px_4px] bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center mb-6" aria-hidden="true">
+            <Music className="w-8 h-8 text-[var(--accent-color)]/40" />
+          </div>
+          <h2 className="text-sm font-bold tracking-widest uppercase text-[var(--text-primary)] mb-3">
+            {t.editor.emptyState.title}
+          </h2>
+          <p className="text-xs text-[var(--text-secondary)] max-w-xs mb-2 leading-relaxed">
+            {t.editor.emptyState.description}
+          </p>
+          <p className="text-[10px] text-[var(--text-secondary)]/60 flex items-center gap-1.5 tracking-wider uppercase">
+            <Play className="w-3 h-3 fill-current" aria-hidden="true" />
+            {t.editor.emptyState.generateSong}
+          </p>
         </div>
       ) : (
         song.map((section, sectionIndex) => (

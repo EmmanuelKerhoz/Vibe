@@ -88,11 +88,11 @@ export function TopRibbon({
         <Tooltip title={t.tooltips.musicalTab}>
           <button
             onClick={() => setActiveTab('musical')}
-            className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${activeTab === 'musical' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'}`}
+            className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${activeTab === 'musical' ? 'text-[#f59e0b]' : 'text-zinc-500 hover:text-[#f59e0b]'}`}
           >
             {t.ribbon.musical}
             {activeTab === 'musical' && (
-              <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent-color)]" />
+              <motion.div layoutId="activeMusicalTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#f59e0b]" />
             )}
           </button>
         </Tooltip>
