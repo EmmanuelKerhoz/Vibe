@@ -122,10 +122,21 @@ export interface Translations {
     tempo: string;
     instrumentation: string;
     instrumentationPlaceholder: string;
+    rhythm: string;
+    rhythmPlaceholder: string;
+    narrative: string;
+    narrativePlaceholder: string;
+    analyzeLyrics: string;
+    analyzeLyricsShort: string;
+    analyzing: string;
+    autoSuggestLabel: string;
     generatePrompt: string;
     promptLabel: string;
     promptPlaceholder: string;
     optimizedFor: string;
+    copyPrompt: string;
+    copied: string;
+    contextInfo: string;
   };
 
   analysis: {

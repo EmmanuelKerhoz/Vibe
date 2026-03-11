@@ -30,6 +30,7 @@ import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
 import { StatusBar } from './components/app/StatusBar';
 import { SuggestionsPanel } from './components/app/SuggestionsPanel';
+import { MusicalTab } from './components/app/MusicalTab';
 import { AboutModal } from './components/app/modals/AboutModal';
 import { ImportModal } from './components/app/modals/ImportModal';
 import { PasteModal } from './components/app/modals/PasteModal';
@@ -131,6 +132,8 @@ export default function App() {
   const [genre, setGenre] = useState('');
   const [tempo, setTempo] = useState('120');
   const [instrumentation, setInstrumentation] = useState('');
+  const [rhythm, setRhythm] = useState('');
+  const [narrative, setNarrative] = useState('');
   const [musicalPrompt, setMusicalPrompt] = useState('');
   const [isStructureOpen, setIsStructureOpen] = useState(true);
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
@@ -254,6 +257,8 @@ export default function App() {
         if (parsed.genre) setGenre(parsed.genre);
         if (parsed.tempo) setTempo(parsed.tempo);
         if (parsed.instrumentation) setInstrumentation(parsed.instrumentation);
+        if (parsed.rhythm) setRhythm(parsed.rhythm);
+        if (parsed.narrative) setNarrative(parsed.narrative);
         if (parsed.musicalPrompt) setMusicalPrompt(parsed.musicalPrompt);
         clearHistory();
       } catch (e) {
@@ -280,11 +285,11 @@ export default function App() {
 
   useEffect(() => {
     if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
-      const sessionData = { song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, musicalPrompt };
+      const sessionData = { song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt };
       localStorage.setItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
     }
-  }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, musicalPrompt, isSessionHydrated]);
+  }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, isSessionHydrated]);
 
   const { playAudioFeedback } = useAudioFeedback(audioFeedback);
 
@@ -395,15 +400,16 @@ export default function App() {
   };
 
   const {
-    isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt,
+    isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
     selectedLineId, setSelectedLineId,
     suggestions, isSuggesting, generateSong, regenerateSection, quantizeSyllables,
     generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
-    generateMusicalPrompt, handleLineClick, handleInstructionChange,
+    generateMusicalPrompt, analyzeLyricsForMusic, handleLineClick, handleInstructionChange,
     addInstruction, removeInstruction, clearSelection,
   } = useSongComposer({
     song, structure, topic, mood, rhymeScheme, targetSyllables, title,
-    genre, tempo, instrumentation, setMusicalPrompt,
+    genre, tempo, instrumentation, rhythm, narrative,
+    setMusicalPrompt, setGenre, setTempo, setInstrumentation, setRhythm, setNarrative,
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory, saveVersion,
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
@@ -1112,7 +1118,23 @@ export default function App() {
                   )}
                 </div>
               ) : (
-                <div>Musical tab UI</div>
+                <MusicalTab
+                  song={song}
+                  title={title}
+                  topic={topic}
+                  mood={mood}
+                  genre={genre} setGenre={setGenre}
+                  tempo={tempo} setTempo={setTempo}
+                  instrumentation={instrumentation} setInstrumentation={setInstrumentation}
+                  rhythm={rhythm} setRhythm={setRhythm}
+                  narrative={narrative} setNarrative={setNarrative}
+                  musicalPrompt={musicalPrompt} setMusicalPrompt={setMusicalPrompt}
+                  isGeneratingMusicalPrompt={isGeneratingMusicalPrompt}
+                  isAnalyzingLyrics={isAnalyzingLyrics}
+                  hasApiKey={hasApiKey}
+                  generateMusicalPrompt={generateMusicalPrompt}
+                  analyzeLyricsForMusic={analyzeLyricsForMusic}
+                />
               )}
             </div>
           </div>

@@ -17,7 +17,14 @@ type UseSongComposerParams = {
   genre: string;
   tempo: string;
   instrumentation: string;
+  rhythm: string;
+  narrative: string;
   setMusicalPrompt: (value: string) => void;
+  setGenre: (value: string) => void;
+  setTempo: (value: string) => void;
+  setInstrumentation: (value: string) => void;
+  setRhythm: (value: string) => void;
+  setNarrative: (value: string) => void;
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
   updateSongWithHistory: (newSong: Section[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
@@ -37,6 +44,11 @@ const computeSyllables = (text: string) =>
     .split(/\s+/)
     .filter(Boolean)
     .reduce((acc, word) => acc + countSyllables(word), 0);
+
+const extractLyricsText = (sections: Section[], limit?: number): string =>
+  (limit ? sections.slice(0, limit) : sections)
+    .map(s => s.lines.map(l => l.text).join('\n'))
+    .join('\n\n');
 
 const SHORT_SECTION_LINE_COUNT = 4;
 const LONG_SECTION_LINE_COUNT = 6;
@@ -137,7 +149,14 @@ export const useSongComposer = ({
   genre,
   tempo,
   instrumentation,
+  rhythm,
+  narrative,
   setMusicalPrompt,
+  setGenre,
+  setTempo,
+  setInstrumentation,
+  setRhythm,
+  setNarrative,
   updateState,
   updateSongWithHistory,
   updateSongAndStructureWithHistory,
@@ -146,6 +165,7 @@ export const useSongComposer = ({
 }: UseSongComposerParams) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingMusicalPrompt, setIsGeneratingMusicalPrompt] = useState(false);
+  const [isAnalyzingLyrics, setIsAnalyzingLyrics] = useState(false);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -639,6 +659,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     if (!title && !topic) return;
     setIsGeneratingMusicalPrompt(true);
     try {
+      const lyricsSnippet = extractLyricsText(song, 3);
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
         contents: `Generate a detailed musical production prompt for an AI music generator (like Suno or Udio).
@@ -647,16 +668,58 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
         Mood: ${mood}
         Genre: ${genre}
         Tempo: ${tempo} BPM
+        Rhythm & Groove: ${rhythm}
         Instrumentation: ${instrumentation}
-        Lyrics Snippet: ${song.slice(0, 2).map(s => s.lines.map(l => l.text).join('\n')).join('\n\n')}
+        Narrative / Vibe: ${narrative}
+        Lyrics:
+        ${lyricsSnippet}
         
-        Provide a concise, highly descriptive prompt that captures the essence of the song's production style, vocal characteristics, and sonic atmosphere.`,
+        Produce a single, concise, highly descriptive prompt (max 200 words) optimized for AI music generators. Capture production style, sonic atmosphere, vocal texture, emotional arc, and arrangement. Do NOT include headers or bullet points -- output only the prompt text.`,
       });
       setMusicalPrompt(response.text || '');
     } catch (error) {
       handleApiError(error, 'Error generating musical prompt.');
     } finally {
       setIsGeneratingMusicalPrompt(false);
+    }
+  };
+
+  const analyzeLyricsForMusic = async () => {
+    if (song.length === 0 && !topic && !mood) return;
+    setIsAnalyzingLyrics(true);
+    try {
+      const lyricsText = extractLyricsText(song);
+      const response = await getAi().models.generateContent({
+        model: AI_MODEL_NAME,
+        contents: `Analyze these song lyrics and metadata to suggest detailed musical production parameters for an AI music generator.
+
+Song Title: ${title || '(untitled)'}
+Topic/Theme: ${topic || '(not specified)'}
+Mood: ${mood || '(not specified)'}
+Lyrics:
+${lyricsText || '(no lyrics yet)'}
+
+Based on this, provide JSON with exactly these keys:
+{
+  "genre": "(string) specific genre/style (e.g. Cinematic Pop, Dark Trap, Indie Folk)",
+  "tempo": "(string) BPM as a number string (e.g. 95)",
+  "instrumentation": "(string) key instruments and sounds (e.g. Warm piano, ambient pads, sparse percussion, distant strings)",
+  "rhythm": "(string) rhythmic character (e.g. Slow half-time groove with sparse hi-hats)",
+  "narrative": "(string) sonic story arc and vibe (e.g. Starts intimate and raw, builds to an anthemic climax)"
+}
+Return only valid JSON, no markdown, no explanations.`,
+        config: { responseMimeType: 'application/json' },
+      });
+      const parsed = safeJsonParse<{ genre?: string; tempo?: string; instrumentation?: string; rhythm?: string; narrative?: string }>(response.text || '{}', {});
+      if (parsed.genre) setGenre(parsed.genre);
+      if (parsed.tempo) setTempo(parsed.tempo);
+      if (parsed.instrumentation) setInstrumentation(parsed.instrumentation);
+      if (parsed.rhythm) setRhythm(parsed.rhythm);
+      if (parsed.narrative) setNarrative(parsed.narrative);
+    } catch (error) {
+      handleApiError(error, 'Error analyzing lyrics for music suggestions.');
+    } finally {
+      setIsAnalyzingLyrics(false);
     }
   };
 
@@ -709,6 +772,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     isGenerating,
     isRegeneratingSection,
     isGeneratingMusicalPrompt,
+    isAnalyzingLyrics,
     selectedLineId,
     setSelectedLineId,
     suggestions,
@@ -721,6 +785,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     handleLineKeyDown,
     applySuggestion,
     generateMusicalPrompt,
+    analyzeLyricsForMusic,
     handleLineClick,
     handleInstructionChange,
     addInstruction,
