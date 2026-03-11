@@ -99,6 +99,16 @@ const fr: Translations = {
     adapt: 'ADAPTER',
     moodPlaceholder: 'Ambiance...',
     regenerateWarning: 'Cela régénérera entièrement les paroles actuelles. Voulez-vous continuer ?',
+    moveSectionUp: 'Monter la section',
+    moveSectionDown: 'Descendre la section',
+    dragToReorder: 'Glisser pour réordonner la section',
+    anchoredSection: 'Intro et Outro sont ancrées',
+    dragToReorderLine: 'Glisser pour réordonner la ligne',
+    humanLine: 'Ligne humaine',
+    aiLine: 'Ligne générée par l\'IA',
+    moveLineUp: 'Monter la ligne',
+    moveLineDown: 'Descendre la ligne',
+    deleteLine: 'Supprimer la ligne',
   },
 
   suggestions: {

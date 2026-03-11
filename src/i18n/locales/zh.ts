@@ -99,6 +99,16 @@ const zh: Translations = {
     adapt: '适配',
     moodPlaceholder: '情感...',
     regenerateWarning: '这将完全重新生成当前歌词。是否继续？',
+    moveSectionUp: '上移段落',
+    moveSectionDown: '下移段落',
+    dragToReorder: '拖动以重新排序段落',
+    anchoredSection: '前奏和尾声已锁定',
+    dragToReorderLine: '拖动以重新排序行',
+    humanLine: '人工编写的行',
+    aiLine: 'AI生成的行',
+    moveLineUp: '上移行',
+    moveLineDown: '下移行',
+    deleteLine: '删除行',
   },
 
   suggestions: {

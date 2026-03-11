@@ -99,6 +99,16 @@ const ar: Translations = {
     adapt: 'تكييف',
     moodPlaceholder: 'المزاج...',
     regenerateWarning: 'سيؤدي هذا إلى إعادة توليد كلمات الأغنية الحالية بالكامل. هل تريد المتابعة؟',
+    moveSectionUp: 'تحريك المقطع لأعلى',
+    moveSectionDown: 'تحريك المقطع لأسفل',
+    dragToReorder: 'اسحب لإعادة ترتيب المقطع',
+    anchoredSection: 'المقدمة والخاتمة ثابتتان',
+    dragToReorderLine: 'اسحب لإعادة ترتيب السطر',
+    humanLine: 'سطر بشري',
+    aiLine: 'سطر مولّد بالذكاء الاصطناعي',
+    moveLineUp: 'تحريك السطر لأعلى',
+    moveLineDown: 'تحريك السطر لأسفل',
+    deleteLine: 'حذف السطر',
   },
 
   suggestions: {

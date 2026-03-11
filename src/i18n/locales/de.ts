@@ -99,6 +99,16 @@ const de: Translations = {
     adapt: 'ANPASSEN',
     moodPlaceholder: 'Stimmung...',
     regenerateWarning: 'Dadurch wird der aktuelle Liedtext vollständig neu generiert. Möchtest du fortfahren?',
+    moveSectionUp: 'Abschnitt nach oben',
+    moveSectionDown: 'Abschnitt nach unten',
+    dragToReorder: 'Ziehen zum Neuanordnen des Abschnitts',
+    anchoredSection: 'Intro und Outro bleiben verankert',
+    dragToReorderLine: 'Ziehen zum Neuanordnen der Zeile',
+    humanLine: 'Menschliche Zeile',
+    aiLine: 'KI-generierte Zeile',
+    moveLineUp: 'Zeile nach oben',
+    moveLineDown: 'Zeile nach unten',
+    deleteLine: 'Zeile löschen',
   },
 
   suggestions: {
