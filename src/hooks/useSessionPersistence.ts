@@ -1,0 +1,97 @@
+import { useEffect } from 'react';
+import { Section } from '../types';
+import { cleanSectionName } from '../utils/songUtils';
+import { DEFAULT_STRUCTURE } from '../constants/editor';
+import { safeSetItem } from '../utils/storageUtils';
+import { isPristineDraft } from '../utils/songDefaults';
+
+interface UseSessionPersistenceParams {
+  song: Section[];
+  structure: string[];
+  title: string;
+  topic: string;
+  mood: string;
+  rhymeScheme: string;
+  targetSyllables: number;
+  genre: string;
+  tempo: string;
+  instrumentation: string;
+  rhythm: string;
+  narrative: string;
+  musicalPrompt: string;
+  isSessionHydrated: boolean;
+  setIsSessionHydrated: (v: boolean) => void;
+  setHasSavedSession: (v: boolean) => void;
+  replaceStateWithoutHistory: (song: Section[], structure: string[]) => void;
+  clearHistory: () => void;
+  setTitle: (v: string) => void;
+  setTitleOrigin: (v: 'user' | 'ai') => void;
+  setTopic: (v: string) => void;
+  setMood: (v: string) => void;
+  setRhymeScheme: (v: string) => void;
+  setTargetSyllables: (v: number) => void;
+  setGenre: (v: string) => void;
+  setTempo: (v: string) => void;
+  setInstrumentation: (v: string) => void;
+  setRhythm: (v: string) => void;
+  setNarrative: (v: string) => void;
+  setMusicalPrompt: (v: string) => void;
+}
+
+export function useSessionPersistence(params: UseSessionPersistenceParams): void {
+  const {
+    song, structure, title, topic, mood, rhymeScheme, targetSyllables,
+    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
+    isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
+    replaceStateWithoutHistory, clearHistory,
+    setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme, setTargetSyllables,
+    setGenre, setTempo, setInstrumentation, setRhythm, setNarrative, setMusicalPrompt,
+  } = params;
+
+  // Mount-only: hydrate state from localStorage.
+  // All deps used here are stable useState/useReducer dispatchers that never change identity,
+  // so an empty dep array is correct and intentional.
+  useEffect(() => {
+    const savedRaw = localStorage.getItem('lyricist_session');
+    if (savedRaw) {
+      try {
+        const parsed = JSON.parse(savedRaw);
+        if (parsed.song && parsed.song.length > 0) {
+          setHasSavedSession(true);
+          const cleanedSong = parsed.song.map((s: Section) => ({ ...s, name: cleanSectionName(s.name) }));
+          const nextStructure = cleanedSong.length > 0
+            ? cleanedSong.map((s: Section) => s.name)
+            : (parsed.structure ? parsed.structure.map((s: string) => cleanSectionName(s)) : DEFAULT_STRUCTURE);
+          replaceStateWithoutHistory(cleanedSong, nextStructure);
+          if (parsed.title) setTitle(parsed.title);
+          if (parsed.topic) setTopic(parsed.topic);
+          if (parsed.mood) setMood(parsed.mood);
+          if (parsed.rhymeScheme) setRhymeScheme(parsed.rhymeScheme);
+          if (parsed.targetSyllables) setTargetSyllables(parsed.targetSyllables);
+          if (parsed.genre) setGenre(parsed.genre);
+          if (parsed.tempo) setTempo(parsed.tempo);
+          if (parsed.instrumentation) setInstrumentation(parsed.instrumentation);
+          if (parsed.rhythm) setRhythm(parsed.rhythm);
+          if (parsed.narrative) setNarrative(parsed.narrative);
+          if (parsed.musicalPrompt) setMusicalPrompt(parsed.musicalPrompt);
+          clearHistory();
+        }
+      } catch (e) {
+        console.error('Failed to parse saved session', e);
+      }
+    }
+    setIsSessionHydrated(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount-only; all refs are stable dispatchers
+
+  // Save session on every relevant change
+  useEffect(() => {
+    if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
+      const sessionData = {
+        song, structure, title, topic, mood, rhymeScheme, targetSyllables,
+        genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
+      };
+      safeSetItem('lyricist_session', JSON.stringify(sessionData));
+      setHasSavedSession(true);
+    }
+  }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, isSessionHydrated, setHasSavedSession]);
+}
