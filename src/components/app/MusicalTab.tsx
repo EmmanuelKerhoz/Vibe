@@ -367,7 +367,7 @@ export function MusicalTab({
                 {m.subStyle ?? 'SUB-STYLE'}
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {(SUB_STYLES[selectedVibeTile.name] ?? []).map(sub => {
+                {(SUB_STYLES[selectedVibeTile.name] as string[]).map(sub => {
                   const isSel = selectedSubStyle === sub;
                   return (
                     <button
