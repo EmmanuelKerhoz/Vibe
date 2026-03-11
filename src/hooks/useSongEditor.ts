@@ -155,14 +155,14 @@ export const useSongEditor = ({
 
     const maxVPC = Math.max(verses.length, choruses.length);
     for (let i = 0; i < maxVPC; i++) {
-      if (i < verses.length) newStructure.push(verses[i]);
+      if (i < verses.length) newStructure.push(verses[i]!);
 
       if (i < choruses.length) {
         if (hasPreChorus) {
           preChorusCount++;
           newStructure.push(`Pre-Chorus ${preChorusCount}`);
         }
-        newStructure.push(choruses[i]);
+        newStructure.push(choruses[i]!);
       }
     }
 
@@ -176,7 +176,7 @@ export const useSongEditor = ({
       newStructure.forEach(structName => {
         const index = songCopy.findIndex(s => s.name === structName);
         if (index !== -1) {
-          newSong.push(songCopy[index]);
+          newSong.push(songCopy[index]!);
           songCopy.splice(index, 1);
         } else {
           newSong.push({
@@ -205,11 +205,12 @@ export const useSongEditor = ({
     if (draggedItemIndex === null || draggedItemIndex === dropIndex) return;
 
     const draggedItemName = structure[draggedItemIndex];
+    if (!draggedItemName) return;
 
     const getBaseAndNumber = (name: string) => {
       const match = name.match(/^(.+?)\s+(\d+)$/);
       if (match) {
-        return { base: match[1], num: parseInt(match[2], 10) };
+        return { base: match[1]!, num: parseInt(match[2]!, 10) };
       }
       return { base: name, num: null };
     };
@@ -238,19 +239,19 @@ export const useSongEditor = ({
         .filter(item => item.base === draggedInfo.base && item.num !== null);
 
       for (let i = 0; i < sameBaseSections.length - 1; i++) {
-        if (sameBaseSections[i].num! > sameBaseSections[i + 1].num!) {
+        if (sameBaseSections[i]!.num! > sameBaseSections[i + 1]!.num!) {
           return;
         }
       }
     }
 
     const newStructure = [...structure];
-    const [draggedItem] = newStructure.splice(draggedItemIndex, 1);
+    const draggedItem = newStructure.splice(draggedItemIndex, 1)[0]!;
     newStructure.splice(dropIndex, 0, draggedItem);
 
     const newSong = [...song];
     if (newSong.length > 0) {
-      const [draggedSection] = newSong.splice(draggedItemIndex, 1);
+      const draggedSection = newSong.splice(draggedItemIndex, 1)[0]!;
       newSong.splice(dropIndex, 0, draggedSection);
     }
 
@@ -280,8 +281,8 @@ export const useSongEditor = ({
       }
 
       const newSong = [...currentSong];
-      const sourceSection = { ...newSong[sourceSectionIndex], lines: [...newSong[sourceSectionIndex].lines] };
-      const targetSection = sourceSectionIndex === targetSectionIndex ? sourceSection : { ...newSong[targetSectionIndex], lines: [...newSong[targetSectionIndex].lines] };
+      const sourceSection = { ...newSong[sourceSectionIndex]!, lines: [...newSong[sourceSectionIndex]!.lines] };
+      const targetSection = sourceSectionIndex === targetSectionIndex ? sourceSection : { ...newSong[targetSectionIndex]!, lines: [...newSong[targetSectionIndex]!.lines] };
 
       const sourceLineIndex = sourceSection.lines.findIndex(l => l.id === draggedLineInfo.lineId);
       const targetLineIndex = targetSection.lines.findIndex(l => l.id === targetLineId);
@@ -290,7 +291,7 @@ export const useSongEditor = ({
         return currentSong;
       }
 
-      const [draggedLine] = sourceSection.lines.splice(sourceLineIndex, 1);
+      const draggedLine = sourceSection.lines.splice(sourceLineIndex, 1)[0]!;
       targetSection.lines.splice(targetLineIndex, 0, draggedLine);
 
       newSong[sourceSectionIndex] = sourceSection;

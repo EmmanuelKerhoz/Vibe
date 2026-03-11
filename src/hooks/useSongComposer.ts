@@ -424,13 +424,13 @@ Return the updated song in the exact same JSON structure.`;
     let sectionName = '';
 
     for (let s = 0; s < song.length; s++) {
-      const section = song[s];
+      const section = song[s]!;
       for (let l = 0; l < section.lines.length; l++) {
-        if (section.lines[l].id === lineId) {
-          currentLine = section.lines[l];
+        if (section.lines[l]!.id === lineId) {
+          currentLine = section.lines[l]!;
           sectionName = section.name;
-          if (l > 0) previousLine = section.lines[l - 1];
-          if (l < section.lines.length - 1) nextLine = section.lines[l + 1];
+          if (l > 0) previousLine = section.lines[l - 1]!;
+          if (l < section.lines.length - 1) nextLine = section.lines[l + 1]!;
           break;
         }
       }
@@ -508,17 +508,17 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     if (e.key === 'Delete' && selectionStart === value.length && selectionEnd === value.length) {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-      const section = song[sectionIndex];
+      const section = song[sectionIndex]!;
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
       if (lineIndex === -1 || lineIndex === section.lines.length - 1) return;
       e.preventDefault();
-      const nextLine = section.lines[lineIndex + 1];
+      const nextLine = section.lines[lineIndex + 1]!;
       const mergedText = value + nextLine.text;
       updateSong(currentSong =>
         currentSong.map(s => {
           if (s.id !== sectionId) return s;
           const newLines = [...s.lines];
-          newLines[lineIndex] = { ...newLines[lineIndex], text: mergedText, syllables: computeSyllables(mergedText), isManual: true };
+          newLines[lineIndex] = { ...newLines[lineIndex]!, text: mergedText, syllables: computeSyllables(mergedText), isManual: true };
           newLines.splice(lineIndex + 1, 1);
           return { ...s, lines: newLines };
         })
@@ -530,18 +530,18 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     } else if (e.key === 'Backspace' && selectionStart === 0 && selectionEnd === 0) {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-      const section = song[sectionIndex];
+      const section = song[sectionIndex]!;
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
       if (lineIndex <= 0) return;
       e.preventDefault();
-      const prevLine = section.lines[lineIndex - 1];
+      const prevLine = section.lines[lineIndex - 1]!;
       const mergedText = prevLine.text + value;
       const prevLineId = prevLine.id;
       updateSong(currentSong =>
         currentSong.map(s => {
           if (s.id !== sectionId) return s;
           const newLines = [...s.lines];
-          newLines[lineIndex - 1] = { ...newLines[lineIndex - 1], text: mergedText, syllables: computeSyllables(mergedText), isManual: true };
+          newLines[lineIndex - 1] = { ...newLines[lineIndex - 1]!, text: mergedText, syllables: computeSyllables(mergedText), isManual: true };
           newLines.splice(lineIndex, 1);
           return { ...s, lines: newLines };
         })
@@ -554,7 +554,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     } else if (e.key === 'Enter') {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-      const section = song[sectionIndex];
+      const section = song[sectionIndex]!;
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
       if (lineIndex === -1) return;
       e.preventDefault();
@@ -565,7 +565,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
         currentSong.map(s => {
           if (s.id !== sectionId) return s;
           const newLines = [...s.lines];
-          newLines[lineIndex] = { ...newLines[lineIndex], text: textBefore, syllables: computeSyllables(textBefore), isManual: true };
+          newLines[lineIndex] = { ...newLines[lineIndex]!, text: textBefore, syllables: computeSyllables(textBefore), isManual: true };
           newLines.splice(lineIndex + 1, 0, { id: newLineId, text: textAfter, rhymingSyllables: '', rhyme: '', syllables: computeSyllables(textAfter), concept: 'New line', isManual: true });
           return { ...s, lines: newLines };
         })
@@ -578,11 +578,11 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     } else if (e.key === 'ArrowUp') {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-      const section = song[sectionIndex];
+      const section = song[sectionIndex]!;
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
       let targetLineId = '';
-      if (lineIndex > 0) { targetLineId = section.lines[lineIndex - 1].id; }
-      else if (sectionIndex > 0) { const prevSection = song[sectionIndex - 1]; if (prevSection.lines.length > 0) targetLineId = prevSection.lines[prevSection.lines.length - 1].id; }
+      if (lineIndex > 0) { targetLineId = section.lines[lineIndex - 1]!.id; }
+      else if (sectionIndex > 0) { const prevSection = song[sectionIndex - 1]!; if (prevSection.lines.length > 0) targetLineId = prevSection.lines[prevSection.lines.length - 1]!.id; }
       if (targetLineId) {
         e.preventDefault();
         setSelectedLineId(targetLineId);
@@ -594,11 +594,11 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     } else if (e.key === 'ArrowDown') {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
       if (sectionIndex === -1) return;
-      const section = song[sectionIndex];
+      const section = song[sectionIndex]!;
       const lineIndex = section.lines.findIndex(l => l.id === lineId);
       let targetLineId = '';
-      if (lineIndex < section.lines.length - 1) { targetLineId = section.lines[lineIndex + 1].id; }
-      else if (sectionIndex < song.length - 1) { const nextSection = song[sectionIndex + 1]; if (nextSection.lines.length > 0) targetLineId = nextSection.lines[0].id; }
+      if (lineIndex < section.lines.length - 1) { targetLineId = section.lines[lineIndex + 1]!.id; }
+      else if (sectionIndex < song.length - 1) { const nextSection = song[sectionIndex + 1]!; if (nextSection.lines.length > 0) targetLineId = nextSection.lines[0]!.id; }
       if (targetLineId) {
         e.preventDefault();
         setSelectedLineId(targetLineId);

@@ -45,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sortedMatches = uniqueMatches
       .sort((a, b) => {
         const riskWeight = { high: 3, medium: 2, low: 1 };
-        const riskDiff = riskWeight[b.riskLevel] - riskWeight[a.riskLevel];
+        const riskDiff = riskWeight[b.riskLevel as keyof typeof riskWeight] - riskWeight[a.riskLevel as keyof typeof riskWeight];
         if (riskDiff !== 0) return riskDiff;
         return b.score - a.score;
       })

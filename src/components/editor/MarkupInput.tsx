@@ -4,7 +4,7 @@ import { getSectionTextColor } from '../../utils/songUtils';
 interface MarkupInputProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'onScroll'> {
   value: string;
   onChange: React.ChangeEventHandler<HTMLTextAreaElement>;
-  textareaRef?: React.RefObject<HTMLTextAreaElement>;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   className: string;
   onScroll?: React.UIEventHandler<HTMLTextAreaElement>;
 }

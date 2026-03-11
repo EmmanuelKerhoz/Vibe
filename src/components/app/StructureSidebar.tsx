@@ -83,8 +83,8 @@ export function StructureSidebar({
                           onDragOver={(e) => {
                             e.preventDefault(); e.stopPropagation();
                             if (draggedItemIndex === null || draggedItemIndex === idx) return;
-                            if (idx === 0 && structure[0].toLowerCase() === 'intro') return;
-                            if (idx === structure.length - 1 && structure[structure.length - 1].toLowerCase() === 'outro') return;
+                            if (idx === 0 && structure[0]?.toLowerCase() === 'intro') return;
+                            if (idx === structure.length - 1 && structure[structure.length - 1]?.toLowerCase() === 'outro') return;
                             setDragOverIndex(idx);
                           }}
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}

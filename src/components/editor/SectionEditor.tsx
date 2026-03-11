@@ -45,7 +45,7 @@ interface SectionEditorProps {
   setDraggableSectionIndex: (i: number | null) => void;
   setDraggedLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
-  playAudioFeedback: (type: string) => void;
+  playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
 }
 

@@ -74,6 +74,7 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     setState(current => {
       if (current.past.length === 0) return current;
       const previous = current.past[current.past.length - 1];
+      if (!previous) return current;
       return {
         song: previous.song,
         structure: previous.structure,
@@ -87,6 +88,7 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     setState(current => {
       if (current.future.length === 0) return current;
       const next = current.future[0];
+      if (!next) return current;
       return {
         song: next.song,
         structure: next.structure,

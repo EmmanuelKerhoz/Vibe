@@ -44,5 +44,5 @@ export const isPristineDraft = (song: Section[], structure: string[], defaultRhy
   structure.length === DEFAULT_STRUCTURE.length
   && structure.every((name, index) => name === DEFAULT_STRUCTURE[index])
   && song.length === structure.length
-  && song.every((section, sectionIndex) => isPristineSection(section, structure[sectionIndex], defaultRhymeScheme))
+  && song.every((section, sectionIndex) => isPristineSection(section, structure[sectionIndex] ?? '', defaultRhymeScheme))
 );

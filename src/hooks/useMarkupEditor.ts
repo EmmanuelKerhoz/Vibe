@@ -7,7 +7,7 @@ interface UseMarkupEditorParams {
   song: Section[];
   isMarkupMode: boolean;
   markupText: string;
-  markupTextareaRef: React.RefObject<HTMLTextAreaElement>;
+  markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
   setIsMarkupMode: (v: boolean) => void;
   setMarkupText: (v: string) => void;
   updateSongAndStructureWithHistory: (song: Section[], structure: string[]) => void;
@@ -47,10 +47,10 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       const usedLineIds = new Set<string>();
       const newSections: Section[] = blocks.map((block, index) => {
         const lines = block.trim().split('\n');
-        if (lines.length === 0 || (lines.length === 1 && !lines[0].trim())) return null;
+        if (lines.length === 0 || (lines.length === 1 && !(lines[0] ?? '').trim())) return null;
         let name = 'Verse';
         let remainingLines = lines;
-        const firstLine = lines[0].trim();
+        const firstLine = (lines[0] ?? '').trim();
         if ((firstLine.startsWith('**[') && firstLine.endsWith(']**')) || (firstLine.startsWith('[') && firstLine.endsWith(']'))) {
           name = cleanSectionName(firstLine);
           remainingLines = lines.slice(1);
