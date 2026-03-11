@@ -45,6 +45,11 @@ const computeSyllables = (text: string) =>
     .filter(Boolean)
     .reduce((acc, word) => acc + countSyllables(word), 0);
 
+const extractLyricsText = (sections: Section[], limit?: number): string =>
+  (limit ? sections.slice(0, limit) : sections)
+    .map(s => s.lines.map(l => l.text).join('\n'))
+    .join('\n\n');
+
 const SHORT_SECTION_LINE_COUNT = 4;
 const LONG_SECTION_LINE_COUNT = 6;
 
@@ -654,7 +659,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     if (!title && !topic) return;
     setIsGeneratingMusicalPrompt(true);
     try {
-      const lyricsSnippet = song.slice(0, 3).map(s => s.lines.map(l => l.text).join('\n')).join('\n\n');
+      const lyricsSnippet = extractLyricsText(song, 3);
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
         contents: `Generate a detailed musical production prompt for an AI music generator (like Suno or Udio).
@@ -669,7 +674,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
         Lyrics:
         ${lyricsSnippet}
         
-        Produce a single, concise, highly descriptive prompt (max 200 words) optimized for AI music generators. Capture production style, sonic atmosphere, vocal texture, emotional arc, and arrangement. Do NOT include headers or bullet points — output only the prompt text.`,
+        Produce a single, concise, highly descriptive prompt (max 200 words) optimized for AI music generators. Capture production style, sonic atmosphere, vocal texture, emotional arc, and arrangement. Do NOT include headers or bullet points -- output only the prompt text.`,
       });
       setMusicalPrompt(response.text || '');
     } catch (error) {
@@ -683,7 +688,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
     if (song.length === 0 && !topic && !mood) return;
     setIsAnalyzingLyrics(true);
     try {
-      const lyricsText = song.map(s => s.lines.map(l => l.text).join('\n')).join('\n\n');
+      const lyricsText = extractLyricsText(song);
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
         contents: `Analyze these song lyrics and metadata to suggest detailed musical production parameters for an AI music generator.
@@ -696,11 +701,11 @@ ${lyricsText || '(no lyrics yet)'}
 
 Based on this, provide JSON with exactly these keys:
 {
-  "genre": "string — specific genre/style (e.g. 'Cinematic Pop', 'Dark Trap', 'Indie Folk')",
-  "tempo": "string — BPM as a number string (e.g. '95')",
-  "instrumentation": "string — key instruments and sounds (e.g. 'Warm piano, ambient pads, sparse percussion, distant strings')",
-  "rhythm": "string — rhythmic character (e.g. 'Slow half-time groove with sparse hi-hats')",
-  "narrative": "string — sonic story arc and vibe (e.g. 'Starts intimate and raw, builds to an anthemic climax')"
+  "genre": "(string) specific genre/style (e.g. Cinematic Pop, Dark Trap, Indie Folk)",
+  "tempo": "(string) BPM as a number string (e.g. 95)",
+  "instrumentation": "(string) key instruments and sounds (e.g. Warm piano, ambient pads, sparse percussion, distant strings)",
+  "rhythm": "(string) rhythmic character (e.g. Slow half-time groove with sparse hi-hats)",
+  "narrative": "(string) sonic story arc and vibe (e.g. Starts intimate and raw, builds to an anthemic climax)"
 }
 Return only valid JSON, no markdown, no explanations.`,
         config: { responseMimeType: 'application/json' },
