@@ -14,3 +14,6 @@ export function useTranslation() {
   }
   return context;
 }
+
+/** Alias — same context, named for clarity at call-site. */
+export const useLanguage = useTranslation;
