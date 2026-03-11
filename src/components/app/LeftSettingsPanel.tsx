@@ -116,7 +116,7 @@ export function LeftSettingsPanel({
           <div className="space-y-4">
             <div>
               <Label>{t.leftPanel.rhymeScheme}</Label>
-              <Select value={rhymeScheme} onChange={e => setRhymeScheme(e.target.value)}>
+              <Select value={rhymeScheme} onChange={e => setRhymeScheme(e.target.value ?? '')}>
                 <MenuItem value="AABB">{t.rhymeSchemes.AABB}</MenuItem>
                 <MenuItem value="ABAB">{t.rhymeSchemes.ABAB}</MenuItem>
                 <MenuItem value="AAAA">{t.rhymeSchemes.AAAA}</MenuItem>

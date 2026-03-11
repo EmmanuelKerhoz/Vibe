@@ -136,7 +136,7 @@ const parseTextToSections = (text: string): Section[] => {
     if (lines.length === 0) return;
     let sectionName = 'Verse';
     let contentLines = lines;
-    const firstLine = lines[0].trim();
+    const firstLine = (lines[0] ?? '').trim();
     if ((firstLine.startsWith('[') && firstLine.endsWith(']')) || (firstLine.startsWith('**[') && firstLine.endsWith(']**'))) {
       sectionName = firstLine.replace(/^\*\*?\[|\]\*\*?$/g, '');
       contentLines = lines.slice(1);

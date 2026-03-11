@@ -136,7 +136,7 @@ export const runSearchTree = async (
     allNodes.push(...nodes);
   };
 
-  const level0Queries = [fullText, segments[segments.length - 1]].filter(Boolean).slice(0, 2);
+  const level0Queries = [fullText, segments[segments.length - 1]].filter((q): q is string => !!q).slice(0, 2);
   await Promise.allSettled(
     level0Queries.flatMap(q => [safeSearch('ddg', q), safeSearch('wikipedia', q)]),
   );

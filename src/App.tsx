@@ -97,7 +97,7 @@ export default function App() {
     const outroIdx = song.findIndex(s => s.name.toLowerCase() === 'outro');
     if (introIdx <= 0 && (outroIdx === -1 || outroIdx === song.length - 1)) return;
     const others = song.filter(s => s.name.toLowerCase() !== 'intro' && s.name.toLowerCase() !== 'outro');
-    const sorted = [...(introIdx !== -1 ? [song[introIdx]] : []), ...others, ...(outroIdx !== -1 ? [song[outroIdx]] : [])];
+    const sorted = [...(introIdx !== -1 ? [song[introIdx]!] : []), ...others, ...(outroIdx !== -1 ? [song[outroIdx]!] : [])];
     const key = JSON.stringify(sorted.map(s => s.id));
     if (key === introOutroSortedRef.current) return;
     introOutroSortedRef.current = key;
@@ -158,7 +158,7 @@ export default function App() {
   const hasExistingWork = (song.length > 0 && !isPristineDraft(song, structure, rhymeScheme))
     || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
   const webBadgeLabel = webSimilarityIndex.status === 'done' && webSimilarityIndex.candidates.length > 0
-    ? `${webSimilarityIndex.candidates[0].score}%` : null;
+    ? `${webSimilarityIndex.candidates[0]?.score}%` : null;
   const handleApiKeyHelp = () => alert(t.tooltips.aiUnavailableHelp);
   const handleTitleChange = (value: string) => { setTitle(value); setTitleOrigin('user'); };
   const handleGenerateTitle = async () => { const t2 = await generateTitle(); if (t2) { setTitle(t2); setTitleOrigin('ai'); } };

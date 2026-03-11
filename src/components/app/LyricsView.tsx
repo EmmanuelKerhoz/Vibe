@@ -31,7 +31,7 @@ interface LyricsViewProps {
   setDraggableSectionIndex: (i: number | null) => void;
   setDraggedLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
-  playAudioFeedback: (type: string) => void;
+  playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
   handleLineDrop: (sectionId: string, lineId: string) => void;
@@ -39,7 +39,7 @@ interface LyricsViewProps {
   setIsMarkupMode: (v: boolean) => void;
   markupText: string;
   setMarkupText: (v: string) => void;
-  markupTextareaRef: React.RefObject<HTMLTextAreaElement>;
+  markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export function LyricsView({
@@ -63,7 +63,10 @@ export function LyricsView({
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx <= 0) return;
     const newSong = [...song];
-    [newSong[idx - 1], newSong[idx]] = [newSong[idx], newSong[idx - 1]];
+    const a = newSong[idx - 1]!;
+    const b = newSong[idx]!;
+    newSong[idx - 1] = b;
+    newSong[idx] = a;
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
@@ -71,7 +74,10 @@ export function LyricsView({
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx < 0 || idx >= song.length - 1) return;
     const newSong = [...song];
-    [newSong[idx], newSong[idx + 1]] = [newSong[idx + 1], newSong[idx]];
+    const a = newSong[idx]!;
+    const b = newSong[idx + 1]!;
+    newSong[idx] = b;
+    newSong[idx + 1] = a;
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
@@ -82,7 +88,10 @@ export function LyricsView({
         const idx = s.lines.findIndex(l => l.id === lineId);
         if (idx <= 0) return s;
         const newLines = [...s.lines];
-        [newLines[idx - 1], newLines[idx]] = [newLines[idx], newLines[idx - 1]];
+        const a = newLines[idx - 1]!;
+        const b = newLines[idx]!;
+        newLines[idx - 1] = b;
+        newLines[idx] = a;
         return { ...s, lines: newLines };
       });
       return { song: newSong, structure: current.structure };
@@ -96,7 +105,10 @@ export function LyricsView({
         const idx = s.lines.findIndex(l => l.id === lineId);
         if (idx < 0 || idx >= s.lines.length - 1) return s;
         const newLines = [...s.lines];
-        [newLines[idx], newLines[idx + 1]] = [newLines[idx + 1], newLines[idx]];
+        const a = newLines[idx]!;
+        const b = newLines[idx + 1]!;
+        newLines[idx] = b;
+        newLines[idx + 1] = a;
         return { ...s, lines: newLines };
       });
       return { song: newSong, structure: current.structure };
