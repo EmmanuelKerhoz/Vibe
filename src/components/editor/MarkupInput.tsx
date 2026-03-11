@@ -30,7 +30,7 @@ export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll,
       let colorClass = '';
       if (isSection) {
         const name = trimmed.replace(/[\[\]\*]/g, '');
-        colorClass = `${getSectionTextColor(name)} font-bold text-base uppercase tracking-wider lcars-section-title`;
+        colorClass = `${getSectionTextColor(name)} font-bold`;
       }
       
       return (
