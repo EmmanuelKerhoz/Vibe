@@ -1,15 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { History, Layout, Plus, Sparkles, Undo2, X } from 'lucide-react';
-import {
-  Dialog,
-  DialogSurface,
-  DialogTitle,
-  DialogBody,
-  DialogActions,
-  DialogContent,
-  Input as FluentInput,
-  Label as FluentLabel,
-} from '@fluentui/react-components';
 import { Button } from '../ui/Button';
 import type { SongVersion } from '../../types';
 
@@ -19,34 +9,20 @@ type VersionsModalProps = {
   onClose: () => void;
   onSaveCurrent: (name: string) => void;
   onRollback: (version: SongVersion) => void;
+  onRequestVersionName: (callback: (name: string) => void) => void;
 };
 
-export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRollback }: VersionsModalProps) => {
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [versionName, setVersionName] = useState('');
-
+export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRollback, onRequestVersionName }: VersionsModalProps) => {
   const handleOpenSaveDialog = () => {
-    setVersionName(`Version ${versions.length + 1}`);
-    setIsSaveDialogOpen(true);
-  };
-
-  const handleConfirmSave = () => {
-    const name = versionName.trim() || `Version ${versions.length + 1}`;
-    onSaveCurrent(name);
-    setIsSaveDialogOpen(false);
-    setVersionName('');
-  };
-
-  const handleCancelSave = () => {
-    setIsSaveDialogOpen(false);
-    setVersionName('');
+    onRequestVersionName((name) => {
+      if (name) onSaveCurrent(name);
+    });
   };
 
   if (!isOpen) return null;
 
   return (
-    <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-in fade-in duration-200">
         <div className="acrylic w-full max-w-2xl shadow-[0_32px_64px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-300 lcars-panel">
           <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
             <h3 className="text-lg text-zinc-100 flex items-center gap-2.5">
@@ -123,34 +99,7 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
               Close
             </Button>
           </div>
-        </div>
       </div>
-
-      {/* Fluent UI Dialog — replaces prompt() */}
-      <Dialog open={isSaveDialogOpen} onOpenChange={(_, data) => { if (!data.open) handleCancelSave(); }}>
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>Save Version</DialogTitle>
-            <DialogContent>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                <FluentLabel htmlFor="version-name-input">Version name</FluentLabel>
-                <FluentInput
-                  id="version-name-input"
-                  value={versionName}
-                  onChange={(_, d) => setVersionName(d.value)}
-                  placeholder={`Version ${versions.length + 1}`}
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleConfirmSave(); if (e.key === 'Escape') handleCancelSave(); }}
-                />
-              </div>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCancelSave} variant="outlined" color="inherit" size="small">Cancel</Button>
-              <Button onClick={handleConfirmSave} variant="contained" color="primary" size="small">Save</Button>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
-    </>
+    </div>
   );
 };
