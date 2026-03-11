@@ -191,17 +191,6 @@ export default function App() {
     return () => { isCancelled = true; };
   }, [song]);
 
-  useEffect(() => {
-    if (song.length === 0) return;
-    const needsCleanup = song.some(s => s.name !== cleanSectionName(s.name)) || structure.some(s => s !== cleanSectionName(s));
-    if (needsCleanup) {
-      replaceStateWithoutHistory(
-        song.map(s => ({ ...s, name: cleanSectionName(s.name) })),
-        structure.map(s => cleanSectionName(s))
-      );
-    }
-  }, []);
-
   const handleApiKeyHelp = () => alert(t.tooltips.aiUnavailableHelp);
 
   const handleOpenSaveToLibraryModal = async () => {
@@ -540,7 +529,7 @@ export default function App() {
     void generateSong();
   };
 
-  const scrollToSection = (section: Section) => {
+  const scrollToSection = useCallback((section: Section) => {
     if (isMarkupMode) {
       if (!markupTextareaRef.current) return;
       let searchStr = `**[${section.name}]**`;
@@ -559,12 +548,12 @@ export default function App() {
         else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
-  };
+  }, [isMarkupMode, markupText, markupTextareaRef]);
 
   const handleScrollToSection = useCallback((sectionId: string) => {
     const section = song.find(s => s.id === sectionId);
     if (section) scrollToSection(section);
-  }, [song, isMarkupMode, markupText]);
+  }, [song, isMarkupMode, markupText, scrollToSection]);
 
   const handleMarkupToggle = () => {
     if (isMarkupMode) {
