@@ -99,6 +99,8 @@ const en: Translations = {
     adapt: 'ADAPT',
     moodPlaceholder: 'Mood...',
     regenerateWarning: 'This will fully regenerate the current lyrics. Do you want to continue?',
+    addLine: 'Add Line',
+    addMusicalEffect: 'Add Musical / Modulation / Effect',
   },
 
   suggestions: {

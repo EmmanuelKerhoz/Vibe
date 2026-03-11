@@ -104,6 +104,10 @@ export interface Translations {
     adapt: string;
     moodPlaceholder: string;
     regenerateWarning: string;
+    /** Button label to add a lyric line to a section */
+    addLine?: string;
+    /** Button label to add a musical/modulation/effect marker */
+    addMusicalEffect?: string;
   };
 
   suggestions: {
