@@ -1,6 +1,6 @@
 # Rapport d'anomalies du projet
 
-Date de vérification : 2026-03-10
+Date de vérification : 2026-03-11
 
 ## Méthode de contrôle
 
@@ -14,15 +14,15 @@ Les vérifications suivantes ont été exécutées sur le dépôt :
 
 ## Résultat global
 
-Le projet est actuellement **compilable** et passe la vérification TypeScript disponible (`npm run lint`), mais plusieurs anomalies et fragilités ont été détectées.
+Le projet est actuellement **compilable** et passe `npm run lint` ainsi que `npm run build`, mais plusieurs anomalies et fragilités ont été détectées.
 
 ## Anomalies détectées
 
 ### 1. Vulnérabilités de dépendances
 
-`npm audit --json` remonte **8 vulnérabilités** :
+`npm audit --json` remonte **9 vulnérabilités** :
 
-- **5 élevées**
+- **6 élevées**
 - **3 modérées**
 
 Chaîne principalement concernée :
@@ -34,6 +34,7 @@ Chaîne principalement concernée :
 - `path-to-regexp`
 - `undici`
 - `ajv`
+- `tar`
 
 Observation :
 
@@ -47,14 +48,14 @@ Les scripts disponibles dans `package.json` sont :
 - `npm run build`
 - `npm run preview`
 - `npm run clean`
-- `npm run lint` (`tsc --noEmit`)
+- `npm run lint` (`eslint src --ext .ts,.tsx && tsc --noEmit`)
 
 Anomalies constatées :
 
 - **aucun test automatisé** détecté dans le dépôt
 - **aucun script `test`**
-- **aucun ESLint**
 - **aucun Prettier**
+- `npm run lint` passe mais remonte actuellement **1 warning React Hooks** dans `src/hooks/analysis/useSongAnalysisEngine.ts`
 
 Impact :
 
@@ -75,16 +76,15 @@ Cette anomalie n'est pas bloquante, mais elle peut signaler :
 
 ### 4. Gestion d'erreur bloquante côté interface
 
-Dans `/home/runner/work/Vibe/Vibe/src/utils/aiUtils.ts`, la fonction `handleApiError()` :
+Le flux principal d'erreur API s'appuie désormais sur `ApiErrorModal`, mais un `alert()` bloquant reste présent dans `/home/runner/work/Vibe/Vibe/src/App.tsx` :
 
-- s'appuie sur une variable globale `isErrorDialogOpen`
-- ouvre des messages via `alert()`
+- `handleApiKeyHelp()` ouvre encore un message via `alert(t.tooltips.aiUnavailableHelp)`
 
 Risques :
 
 - UX bloquante
-- logique globale difficile à fiabiliser et à tester
-- comportement potentiellement fragile si plusieurs erreurs arrivent rapidement
+- comportement différent du reste de l'application, qui utilise déjà une modal non bloquante
+- logique plus difficile à tester qu'un composant UI piloté par l'état
 
 ### 5. Timers DOM sans stratégie de nettoyage
 
@@ -112,6 +112,26 @@ Impact :
 - diagnostic hétérogène
 - risque d'exposer trop d'informations techniques dans la console
 
+### 7. Typage et validation trop permissifs dans l'API copyright
+
+Dans `/home/runner/work/Vibe/Vibe/api/copyright/check.ts`, l'endpoint utilisait plusieurs `any` pour :
+
+- les erreurs serveur (`catch (error: any)`)
+- les sections reçues dans le body
+- les résultats intermédiaires renvoyés par la recherche Genius
+
+Risques :
+
+- perte de garanties TypeScript sur un endpoint exposé
+- erreurs 500 déclenchées par des payloads mal formés
+- maintenance plus difficile sur une route orientée sécurité/comparaison de contenu
+
+Remédiation appliquée le 2026-03-11 :
+
+- ajout de types dédiés pour le payload et les résultats
+- validation explicite du body avant traitement
+- suppression des `any` principaux dans cet endpoint
+
 ## Points vérifiés sans anomalie immédiate
 
 - le projet **passe** `npm run lint`
@@ -123,8 +143,8 @@ Impact :
 
 1. Traiter les vulnérabilités liées à `@vercel/node` après vérification de compatibilité.
 2. Ajouter une base minimale de tests automatisés.
-3. Ajouter un vrai linter de qualité de code (ESLint).
-4. Remplacer progressivement les `alert()` et le verrou global d'erreur par un mécanisme UI non bloquant.
+3. Corriger le warning React Hooks dans `useSongAnalysisEngine`.
+4. Remplacer l'`alert()` restant de `handleApiKeyHelp()` par le mécanisme modal déjà utilisé ailleurs.
 5. Réduire les manipulations DOM différées dans `useSongComposer`.
 6. Rationaliser les logs runtime.
 
