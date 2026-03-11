@@ -10,6 +10,7 @@ type UseSongAnalysisParams = {
   topic: string;
   mood: string;
   rhymeScheme: string;
+  uiLanguage: string;
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
   saveVersion: (name: string, snapshot?: {
@@ -83,6 +84,7 @@ export const useSongAnalysis = ({
   topic,
   mood,
   rhymeScheme,
+  uiLanguage,
   setTopic,
   setMood,
   saveVersion,
@@ -117,6 +119,15 @@ export const useSongAnalysis = ({
     }));
   };
 
+  // Resolve the full language name for the UI language code
+  const uiLang = uiLanguage === 'fr' ? 'French'
+    : uiLanguage === 'es' ? 'Spanish'
+    : uiLanguage === 'de' ? 'German'
+    : uiLanguage === 'pt' ? 'Portuguese'
+    : uiLanguage === 'ar' ? 'Arabic'
+    : uiLanguage === 'zh' ? 'Chinese'
+    : 'English';
+
   useEffect(() => {
     if (song.length === 0) return;
 
@@ -131,6 +142,7 @@ Current Topic: "${topic}"
 Current Mood: "${mood}"
 
 If the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.
+IMPORTANT: Return the topic and mood values in ${uiLang}.
 Return JSON with "topic" and "mood" strings.
 
 Lyrics:
@@ -163,7 +175,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [song, topic, mood, setTopic, setMood]);
+  }, [song, topic, mood, uiLang, setTopic, setMood]);
 
   const toggleAnalysisItemSelection = (itemText: string) => {
     setSelectedAnalysisItems(prev => {
@@ -193,6 +205,8 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
       2. Only update the lyrics as suggested.
       3. Return the FULL updated song in the same JSON format as the input.
       4. Do not change the section names unless specifically requested by the improvements.
+      5. Preserve the original song language in all lyric text fields.
+      6. Write the "concept" field for each line in ${uiLang}.
 
       Current Song Data:
       ${JSON.stringify(song)}`;
@@ -264,6 +278,8 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
       2. Only update the lyrics as suggested.
       3. Return the FULL updated song in the same JSON format as the input.
       4. Do not change the section names unless specifically requested by the improvement.
+      5. Preserve the original song language in all lyric text fields.
+      6. Write the "concept" field for each line in ${uiLang}.
 
       Current Song Data:
       ${JSON.stringify(song)}`;
@@ -335,6 +351,8 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
       5. Actionable Improvements: Specific suggestions to improve the lyrics, structure, or impact.
       6. Musical Suggestions: Ideas for instrumentation or vocal delivery based on the lyrics.
 
+      IMPORTANT: Write the ENTIRE analysis report in ${uiLang}.
+
       Song Lyrics:
       ${songText}`;
 
@@ -387,7 +405,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
       const songText = song.map(s => s.lines.map(l => l.text).join('\n')).join('\n');
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
-        contents: `Detect the language of these lyrics. Return ONLY the name of the language (e.g., "English", "French", "Spanish").\n\nLyrics:\n${songText.substring(0, 1000)}`,
+        contents: `Detect the language of these lyrics. Return ONLY the name of the language in English (e.g., "English", "French", "Spanish").\n\nLyrics:\n${songText.substring(0, 1000)}`,
       });
       const detected = response.text?.trim() || 'English';
       setSongLanguage(detected);
@@ -437,6 +455,7 @@ CRITICAL GUIDELINES:
    - Return the FULL updated song in the same JSON format as input
    - Update rhymingSyllables to reflect actual ${newLanguage} rhymes
    - Adjust syllable counts to match the adapted lyrics
+   - Write the "concept" field for each line in ${uiLang}
 
 Current Song Data:
 ${JSON.stringify(song)}
@@ -501,6 +520,7 @@ Return the fully adapted song that feels native to ${newLanguage} speakers while
 
 Adapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.
 Keep section name unchanged. Update rhymingSyllables. Adjust syllable counts.
+Write the "concept" field for each line in ${uiLang}.
 
 Current Section Data:
 ${JSON.stringify(section)}`;
@@ -573,8 +593,9 @@ CRITICAL INSTRUCTIONS:
 2. DO NOT generate new lyrics.
 3. DO NOT continue the song.
 4. Stop immediately when you reach the end of the provided lyrics.
-5. Keep concepts very short (1-3 words).
+5. Keep concepts very short (1-3 words) and write them in ${uiLang}.
 6. Detect the language of the lyrics and return it as "language" (e.g. "English", "French", "Yoruba").
+7. Return the topic and mood in ${uiLang}.
 
 Do NOT use any other section names. If a block of text is an instruction or meta-text, ignore it.
 
@@ -632,11 +653,9 @@ ${pastedText}`;
 
       const data = safeJsonParse<any>(response.text || '{}', {});
 
-      // 1. Set topic / mood
       if (data.topic) setTopic(data.topic);
       if (data.mood) setMood(data.mood);
 
-      // 2. Set detected language BEFORE title generation
       if (data.language) {
         setSongLanguage(data.language);
         setTargetLanguage(data.language);
@@ -662,7 +681,6 @@ ${pastedText}`;
       const newStructure = sections.map((s: any) => cleanSectionName(s.name));
       updateSongAndStructureWithHistory(songWithIds, newStructure);
 
-      // 3. Title generation AFTER language is set
       requestAutoTitleGeneration();
       clearLineSelection();
       setIsPasteModalOpen(false);

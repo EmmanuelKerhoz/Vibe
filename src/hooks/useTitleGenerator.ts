@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { AI_MODEL_NAME, getAi, handleApiError } from '../utils/aiUtils';
 import type { Section } from '../types';
 
-export function useTitleGenerator(song: Section[], topic: string, mood: string) {
+export function useTitleGenerator(
+  song: Section[],
+  topic: string,
+  mood: string,
+  songLanguage: string = 'English',
+) {
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
 
   const generateTitle = async (): Promise<string | null> => {
@@ -16,7 +21,14 @@ export function useTitleGenerator(song: Section[], topic: string, mood: string) 
         .join('\n\n')
         .substring(0, 500);
 
-      const prompt = `Generate a creative, concise song title (max 6 words) based on:\nTopic: ${topic}\nMood: ${mood}\nLyrics excerpt:\n${lyricsSnippet}\n\nReturn ONLY the title as plain text, no quotes, no explanation.`;
+      const prompt = `Generate a creative, concise song title (max 6 words) based on:
+Topic: ${topic}
+Mood: ${mood}
+Lyrics excerpt:
+${lyricsSnippet}
+
+IMPORTANT: The title MUST be written in ${songLanguage}.
+Return ONLY the title as plain text, no quotes, no explanation.`;
 
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,

@@ -19,6 +19,8 @@ type UseSongComposerParams = {
   instrumentation: string;
   rhythm: string;
   narrative: string;
+  songLanguage: string;
+  uiLanguage: string;
   setMusicalPrompt: (value: string) => void;
   setGenre: (value: string) => void;
   setTempo: (value: string) => void;
@@ -151,6 +153,8 @@ export const useSongComposer = ({
   instrumentation,
   rhythm,
   narrative,
+  songLanguage,
+  uiLanguage,
   setMusicalPrompt,
   setGenre,
   setTempo,
@@ -169,7 +173,6 @@ export const useSongComposer = ({
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
-  // Per-section regeneration tracking — does NOT affect global isGenerating
   const [regeneratingSections, setRegeneratingSections] = useState<Set<string>>(new Set());
 
   const isRegeneratingSection = useCallback(
@@ -187,13 +190,14 @@ export const useSongComposer = ({
   const generateSong = async () => {
     setIsGenerating(true);
     try {
-      const prompt = `Write a song about "${topic}". 
+      const lang = songLanguage || 'English';
+      const prompt = `Write a song about "${topic}".
 Mood: ${mood}
 Default Rhyme Scheme: ${rhymeScheme}
 Target Syllables per line: ${targetSyllables}
 Structure: ${structure.join(', ')}
 
-IMPORTANT: You MUST follow the provided structure EXACTLY. Generate exactly the sections listed in the Structure field, in that specific order.
+IMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY. Generate exactly the sections listed in the Structure field, in that specific order.
 
 Line counts for sections:
 - Intro: 4 lines
@@ -203,7 +207,7 @@ Line counts for sections:
 - Outro: 4 lines
 
 For each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
-For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight'), the rhyme identifier (e.g., A, B), the exact syllable count, and a short core concept.`;
+For each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${uiLanguage}).`;
 
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
@@ -264,7 +268,6 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
     const sectionToRegenerate = song.find(s => s.id === sectionId);
     if (!sectionToRegenerate) return;
 
-    // Mark only this section as regenerating — global isGenerating stays false
     setRegeneratingSections(prev => new Set(prev).add(sectionId));
     try {
       const sectionIndex = song.findIndex(s => s.id === sectionId);
@@ -280,6 +283,7 @@ For each line, provide the lyric text, the rhyming syllables (e.g., 'ain', 'ight
       else if (lowerName.includes('outro')) lineCountPrompt = 'The section should have exactly 4 lines.';
 
       const songStructure = song.map(s => s.name).join(' → ');
+      const lang = songLanguage || 'English';
 
       const formatSectionLyrics = (sec: Section) =>
         sec.lines.map(l => l.text).filter(Boolean).join('\n');
@@ -307,6 +311,8 @@ Rhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}
 ${lineCountPrompt}
 Song structure: ${songStructure}
 ${prevContext}${nextContext}${directivesPrompt}
+
+IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${uiLanguage}.
 
 Current Section:
 ${JSON.stringify([sectionToRegenerate], null, 2)}
@@ -370,6 +376,7 @@ Return the updated section in the exact same JSON structure (as an array with on
   const quantizeSyllables = async (sectionId?: string) => {
     if (song.length === 0) return;
     setIsGenerating(true);
+    const lang = songLanguage || 'English';
     try {
       let prompt = '';
       if (sectionId) {
@@ -377,6 +384,7 @@ Return the updated section in the exact same JSON structure (as an array with on
         if (!sectionToQuantize) return;
         const syllables = sectionToQuantize.targetSyllables ?? targetSyllables;
         prompt = `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables. Maintain the original meaning, rhyme scheme, and section structure.
+Write ALL lyrics in ${lang}.
 
 Current Section:
 ${JSON.stringify([sectionToQuantize], null, 2)}
@@ -384,6 +392,7 @@ ${JSON.stringify([sectionToQuantize], null, 2)}
 Return the updated section in the exact same JSON structure (as an array with one section).`;
       } else {
         prompt = `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its section's targetSyllables (or ${targetSyllables} if not specified). Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
+Write ALL lyrics in ${lang}.
 
 Current Song:
 ${JSON.stringify(song, null, 2)}
@@ -474,6 +483,7 @@ Return the updated song in the exact same JSON structure.`;
       return;
     }
 
+    const lang = songLanguage || 'English';
     try {
       const prompt = `Generate 3 creative alternative versions for a lyric line.
 Context:
@@ -486,6 +496,7 @@ Context:
 - Current Line to replace: "${currentLine.text}" (Rhyme: ${currentLine.rhyme}, Concept: ${currentLine.concept})
 - Next Line: "${nextLine?.text || ''}" (Rhyme: ${nextLine?.rhyme || ''})
 
+IMPORTANT: All 3 alternatives MUST be written in ${lang}.
 Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
 
       const response = await getAi().models.generateContent({
@@ -658,6 +669,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
   const generateMusicalPrompt = async () => {
     if (!title && !topic) return;
     setIsGeneratingMusicalPrompt(true);
+    const lang = songLanguage || 'English';
     try {
       const lyricsSnippet = extractLyricsText(song, 3);
       const response = await getAi().models.generateContent({
@@ -671,10 +683,11 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
         Rhythm & Groove: ${rhythm}
         Instrumentation: ${instrumentation}
         Narrative / Vibe: ${narrative}
+        Song Language: ${lang}
         Lyrics:
         ${lyricsSnippet}
         
-        Produce a single, concise, highly descriptive prompt (max 200 words) optimized for AI music generators. Capture production style, sonic atmosphere, vocal texture, emotional arc, and arrangement. Do NOT include headers or bullet points -- output only the prompt text.`,
+        Produce a single, concise, highly descriptive prompt (max 200 words) optimized for AI music generators. Capture production style, sonic atmosphere, vocal texture, emotional arc, and arrangement. The prompt output language should be English (required by music AI tools). Do NOT include headers or bullet points -- output only the prompt text.`,
       });
       setMusicalPrompt(response.text || '');
     } catch (error) {
@@ -687,6 +700,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
   const analyzeLyricsForMusic = async () => {
     if (song.length === 0 && !topic && !mood) return;
     setIsAnalyzingLyrics(true);
+    const lang = songLanguage || 'English';
     try {
       const lyricsText = extractLyricsText(song);
       const response = await getAi().models.generateContent({
@@ -696,6 +710,7 @@ Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme
 Song Title: ${title || '(untitled)'}
 Topic/Theme: ${topic || '(not specified)'}
 Mood: ${mood || '(not specified)'}
+Song Language: ${lang}
 Lyrics:
 ${lyricsText || '(no lyrics yet)'}
 
