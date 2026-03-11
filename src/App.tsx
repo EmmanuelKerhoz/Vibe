@@ -15,6 +15,7 @@ import { useAppState } from './hooks/useAppState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
+import { useMetronome } from './hooks/useMetronome';
 import { VersionsModal } from './components/modals/VersionsModal';
 import { ResetModal } from './components/modals/ResetModal';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
@@ -76,6 +77,8 @@ export default function App() {
   const { scrollToSection, handleMarkupToggle } = useMarkupEditor({
     song, isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   });
+  const bpmValue = parseInt(tempo) || 120;
+  const metronome = useMetronome(bpmValue);
   useEffect(() => {
     let isCancelled = false;
     const runSimilarity = async () => {
@@ -247,6 +250,7 @@ export default function App() {
               analyzeCurrentSong={analyzeCurrentSong} handleGlobalRegenerate={handleGlobalRegenerate}
               handleOpenSaveToLibraryModal={handleOpenSaveToLibraryModal} handleMarkupToggle={handleMarkupToggle}
               setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
+              isMetronomeActive={metronome.isPlaying} toggleMetronome={metronome.toggle}
             />
           )}
           <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative p-4 lg:p-8 lcars-lyrics-area">

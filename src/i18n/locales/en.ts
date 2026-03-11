@@ -144,6 +144,12 @@ const en: Translations = {
     copyPrompt: 'Copy Prompt',
     copied: 'Copied!',
     contextInfo: 'Context: lyrics, topic & mood are taken into account',
+    metronome: 'Metronome',
+    metronomeStart: 'Start Metronome',
+    metronomeStop: 'Stop Metronome',
+    instruments: 'INSTRUMENTS',
+    instrumentsPlaceholder: 'Select instrument families...',
+    rhythmPresets: 'RHYTHM PRESETS',
   },
 
   analysis: {

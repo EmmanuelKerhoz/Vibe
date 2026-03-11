@@ -151,6 +151,15 @@ export interface Translations {
     copyPrompt: string;
     copied: string;
     contextInfo: string;
+    /** Metronome feature (B4) */
+    metronome?: string;
+    metronomeStart?: string;
+    metronomeStop?: string;
+    /** Instrument builder (B2) */
+    instruments?: string;
+    instrumentsPlaceholder?: string;
+    /** Rhythm presets (B3) */
+    rhythmPresets?: string;
   };
 
   analysis: {

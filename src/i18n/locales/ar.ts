@@ -142,6 +142,12 @@ const ar: Translations = {
     copyPrompt: 'نسخ الموجّه',
     copied: 'تم النسخ!',
     contextInfo: 'السياق: الكلمات والموضوع والمزاج مأخوذة بعين الاعتبار',
+    metronome: 'ميترونوم',
+    metronomeStart: 'تشغيل الميترونوم',
+    metronomeStop: 'إيقاف الميترونوم',
+    instruments: 'الآلات الموسيقية',
+    instrumentsPlaceholder: 'اختر عائلات الآلات...',
+    rhythmPresets: 'أنماط الإيقاع',
   },
 
   analysis: {

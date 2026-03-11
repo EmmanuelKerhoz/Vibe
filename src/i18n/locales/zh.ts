@@ -142,6 +142,12 @@ const zh: Translations = {
     copyPrompt: '复制提示词',
     copied: '已复制！',
     contextInfo: '上下文：歌词、主题和情感均已纳入考量',
+    metronome: '节拍器',
+    metronomeStart: '启动节拍器',
+    metronomeStop: '停止节拍器',
+    instruments: '乐器',
+    instrumentsPlaceholder: '选择乐器组合...',
+    rhythmPresets: '节奏预设',
   },
 
   analysis: {
