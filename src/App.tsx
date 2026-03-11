@@ -114,10 +114,10 @@ export default function App() {
   const { language } = useLanguage();
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   
-  const [title, setTitle] = useState('Untitled Song');
+  const [title, setTitle] = useState(DEFAULT_TITLE);
   const [titleOrigin, setTitleOrigin] = useState<'user' | 'ai'>('user');
-  const [topic, setTopic] = useState('A neon city in the rain');
-  const [mood, setMood] = useState('Cyberpunk, nostalgic, bittersweet, reflective');
+  const [topic, setTopic] = useState(DEFAULT_TOPIC);
+  const [mood, setMood] = useState(DEFAULT_MOOD);
   const [rhymeScheme, setRhymeScheme] = useState('AABB');
   const [targetSyllables, setTargetSyllables] = useState(10);
   const [newSectionName, setNewSectionName] = useState('');
@@ -151,6 +151,7 @@ export default function App() {
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
   const sectionDropdownRef = useRef<HTMLDivElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const introOutroSortedRef = useRef<string | null>(null);
   const [hasSavedSession, setHasSavedSession] = useState(false);
   const [isMarkupMode, setIsMarkupMode] = useState(false);
   const [markupText, setMarkupText] = useState('');
@@ -326,6 +327,9 @@ export default function App() {
     const intro = introIdx !== -1 ? [song[introIdx]] : [];
     const outro = outroIdx !== -1 ? [song[outroIdx]] : [];
     const sorted = [...intro, ...others, ...outro];
+    const sortedKey = JSON.stringify(sorted.map(s => s.id));
+    if (sortedKey === introOutroSortedRef.current) return;
+    introOutroSortedRef.current = sortedKey;
     updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
@@ -582,7 +586,7 @@ export default function App() {
   const handleScrollToSection = useCallback((sectionId: string) => {
     const section = song.find(s => s.id === sectionId);
     if (section) scrollToSection(section);
-  }, [song, isMarkupMode, markupText, scrollToSection]);
+  }, [song, scrollToSection]);
 
   const handleMarkupToggle = () => {
     if (isMarkupMode) {
@@ -780,9 +784,6 @@ export default function App() {
               handleMarkupToggle={handleMarkupToggle}
               setIsSimilarityModalOpen={setIsSimilarityModalOpen}
               scrollToSection={scrollToSection}
-              t={t}
-              SUPPORTED_ADAPTATION_LANGUAGES={SUPPORTED_ADAPTATION_LANGUAGES}
-              adaptationLanguageLabel={adaptationLanguageLabel}
             />
           )}
 
@@ -858,7 +859,6 @@ export default function App() {
                         setDragOverLineInfo={setDragOverLineInfo}
                         playAudioFeedback={playAudioFeedback}
                         handleDrop={handleDrop}
-                        t={t}
                       />
                     ))
                   )}
