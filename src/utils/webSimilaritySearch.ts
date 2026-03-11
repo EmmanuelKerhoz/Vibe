@@ -7,6 +7,15 @@
 import type { Section } from '../types';
 import type { WebSimilarityCandidate, SearchTreeNode, SearchProvider } from '../types/webSimilarity';
 
+const decodeHtmlEntities = (html: string): string =>
+  html
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+
 const normalize = (text: string) =>
   text
     .toLowerCase()
@@ -63,12 +72,12 @@ const ddgSearch = async (query: string): Promise<SearchTreeNode[]> => {
     const data = await res.json();
     const results: SearchTreeNode[] = [];
     if (data.AbstractText) {
-      results.push({ title: data.Heading ?? query, snippet: data.AbstractText, url: data.AbstractURL ?? '', source: 'ddg' });
+      results.push({ title: data.Heading ?? query, snippet: decodeHtmlEntities(data.AbstractText), url: data.AbstractURL ?? '', source: 'ddg' });
     }
     if (data.RelatedTopics) {
       for (const topic of data.RelatedTopics.slice(0, 4)) {
         if (topic.Text) {
-          results.push({ title: topic.Text.split(' - ')[0] ?? '', snippet: topic.Text, url: topic.FirstURL ?? '', source: 'ddg' });
+          results.push({ title: topic.Text.split(' - ')[0] ?? '', snippet: decodeHtmlEntities(topic.Text), url: topic.FirstURL ?? '', source: 'ddg' });
         }
       }
     }
@@ -90,7 +99,7 @@ const wikipediaSearch = async (query: string): Promise<SearchTreeNode[]> => {
     const data = await res.json();
     return (data.query?.search ?? []).map((item: { title: string; snippet: string }) => ({
       title: item.title,
-      snippet: item.snippet.replace(/<[^>]+>/g, ''),
+      snippet: decodeHtmlEntities(item.snippet.replace(/<[^>]+>/g, '')),
       url: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title)}`,
       source: 'wikipedia' as const,
     }));
@@ -118,7 +127,7 @@ const deduplicateNodes = (nodes: SearchTreeNode[]): SearchTreeNode[] => {
 
 /**
  * Run the search tree.
- * Always returns the top 3 candidates sorted by score desc, regardless of score value.
+ * Returns up to 3 candidates with score > 5%, sorted by score desc.
  */
 export const runSearchTree = async (
   sections: Section[],
@@ -152,7 +161,7 @@ export const runSearchTree = async (
 
   const unique = deduplicateNodes(allNodes).slice(0, MAX_CANDIDATES);
 
-  // Score all nodes, keep top 3 unconditionally (no threshold filter)
+  // Score all nodes, filter to score > 5% (discard noise), keep top 3
   const candidates: WebSimilarityCandidate[] = unique
     .map(node => {
       const snippetScore = jaccardScore(fullText, node.snippet);
@@ -170,6 +179,7 @@ export const runSearchTree = async (
       };
     })
     .sort((a, b) => b.score - a.score)
+    .filter(c => c.score > 5)
     .slice(0, 3);
 
   return candidates;
