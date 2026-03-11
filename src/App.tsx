@@ -44,6 +44,7 @@ import { SaveToLibraryModal } from './components/app/modals/SaveToLibraryModal';
 import { useTranslation, useLanguage, SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from './i18n';
 import { getTopSimilarSongMatches, SimilarityMatch } from './utils/similarityUtils';
 import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, LibraryAsset } from './utils/libraryUtils';
+import { safeSetItem, safeGetItem, safeRemoveItem } from './utils/storageUtils';
 
 const DEFAULT_TITLE = 'Untitled Song';
 const DEFAULT_TOPIC = 'A neon city in the rain';
@@ -190,7 +191,7 @@ export default function App() {
     
     const loadLibraryCount = async () => {
       try {
-        const cached = localStorage.getItem('lyricist_library');
+        const cached = safeGetItem('lyricist_library');
         if (cached) setLibraryCount(JSON.parse(cached).length);
       } catch (e) {
         console.error('Failed to load library count:', e);
@@ -242,7 +243,7 @@ export default function App() {
   }, []);
 
   const loadSavedSession = () => {
-    const savedSession = localStorage.getItem('lyricist_session');
+    const savedSession = safeGetItem('lyricist_session');
     if (savedSession) {
       try {
         const parsed = JSON.parse(savedSession);
@@ -272,7 +273,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const savedSession = localStorage.getItem('lyricist_session');
+    const savedSession = safeGetItem('lyricist_session');
     if (savedSession) {
       try {
         const parsed = JSON.parse(savedSession);
@@ -290,7 +291,7 @@ export default function App() {
   useEffect(() => {
     if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
       const sessionData = { song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt };
-      localStorage.setItem('lyricist_session', JSON.stringify(sessionData));
+      safeSetItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
     }
   }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, isSessionHydrated]);
@@ -383,7 +384,7 @@ export default function App() {
 
   const resetSong = () => {
     updateSongAndStructureWithHistory(createEmptySong(DEFAULT_STRUCTURE, rhymeScheme), DEFAULT_STRUCTURE);
-    localStorage.removeItem('lyricist_session');
+    safeRemoveItem('lyricist_session');
     setHasSavedSession(false);
     clearSelection();
     setIsResetModalOpen(false);
