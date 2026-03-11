@@ -852,7 +852,7 @@ export default function App() {
           <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative p-8 lcars-lyrics-area">
             <div className="lyrics-editor-zoom h-full flex flex-col">
               {activeTab === 'lyrics' ? (
-                <div className="w-full flex flex-col gap-6 pb-32">
+                <div className="w-full flex flex-col gap-4 pb-32">
                   {isMarkupMode ? (
                     <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden" style={{ minHeight: 'calc(100vh - 280px)' }}>
                       <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
@@ -901,7 +901,7 @@ export default function App() {
                         >
                           <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
 
-                          <div className="flex-1 p-4">
+                          <div className="flex-1 px-4 pt-4 pb-2">
                             <div className="mb-3 flex items-center justify-between gap-4 flex-wrap">
                               <div className="flex items-center gap-3">
                                 <div className="flex flex-col gap-0.5">
@@ -984,7 +984,7 @@ export default function App() {
                               onRemove={removeInstruction}
                             />
 
-                            <div className="mt-3 space-y-3">
+                            <div className="mt-3 space-y-2">
                               <div
                                 className="px-3 pb-1 border-b border-white/5 mb-1"
                                 style={{ display: 'grid', gridTemplateColumns: '20px 16px 16px 32px 1fr 72px 40px 52px 24px', alignItems: 'center', columnGap: '10px' }}
@@ -1107,7 +1107,7 @@ export default function App() {
                               </div>
                             )}
 
-                            <div className="flex items-center gap-2 pt-1 pb-2 px-3">
+                            <div className="flex items-center gap-2 pt-0.5 pb-1 px-3">
                               <button type="button" onClick={() => addLineToSection(section.id)} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded">
                                 <Plus className="w-3 h-3" />
                                 {t.editor.addLine ?? 'Add Line'}
