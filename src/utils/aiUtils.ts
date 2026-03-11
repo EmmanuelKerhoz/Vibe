@@ -99,26 +99,27 @@ export const safeJsonParse = <T>(text: string, fallback: T): T => {
   }
 };
 
-let isErrorDialogOpen = false;
 export const handleApiError = (error: unknown, defaultMessage: string) => {
   console.error(defaultMessage, error);
-  if (isErrorDialogOpen) return;
 
   const errorMessage = getErrorMessage(error);
   const errorCode = getErrorCode(error);
 
-  if (errorCode === 429 || errorCode === 'RESOURCE_EXHAUSTED' || errorMessage.includes('429') || errorMessage.includes('quota')) {
-    isErrorDialogOpen = true;
-    const confirmMsg = `You've exceeded your current ${AI_PROVIDER_NAME} API quota. Please verify your plan/billing and API key in your local environment.`;
-    alert(confirmMsg);
-    isErrorDialogOpen = false;
+  let message: string;
+  if (
+    errorCode === 429 ||
+    errorCode === 'RESOURCE_EXHAUSTED' ||
+    errorMessage.includes('429') ||
+    errorMessage.includes('quota')
+  ) {
+    message = `You've exceeded your current ${AI_PROVIDER_NAME} API quota. Please verify your plan/billing and API key in your local environment.`;
   } else if (errorMessage.includes('Requested entity was not found')) {
-    isErrorDialogOpen = true;
-    alert(`API key error. Please check ${AI_KEY_ENV_VAR} in your server environment.`);
-    isErrorDialogOpen = false;
+    message = `API key error. Please check ${AI_KEY_ENV_VAR} in your server environment.`;
   } else {
-    isErrorDialogOpen = true;
-    alert(errorMessage || defaultMessage);
-    isErrorDialogOpen = false;
+    message = errorMessage || defaultMessage;
   }
+
+  window.dispatchEvent(
+    new CustomEvent('vibe:apierror', { detail: { message } })
+  );
 };
