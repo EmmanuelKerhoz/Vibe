@@ -901,7 +901,8 @@ export default function App() {
                         >
                           <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
 
-                          <div className="flex-1 p-4">
+                          {/* pt-3 pb-2 instead of p-4: reduces bottom padding inside each section container */}
+                          <div className="flex-1 pt-3 px-4 pb-2">
                             <div className="mb-3 flex items-center justify-between gap-4 flex-wrap">
                               <div className="flex items-center gap-3">
                                 <div className="flex flex-col gap-0.5">
@@ -1107,7 +1108,8 @@ export default function App() {
                               </div>
                             )}
 
-                            <div className="flex items-center gap-2 pt-1 pb-2 px-3">
+                            {/* pt-1 pb-1 instead of pt-1 pb-2: tighter bottom clearance before border */}
+                            <div className="flex items-center gap-2 pt-1 pb-1 px-3">
                               <button type="button" onClick={() => addLineToSection(section.id)} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded">
                                 <Plus className="w-3 h-3" />
                                 {t.editor.addLine ?? 'Add Line'}
