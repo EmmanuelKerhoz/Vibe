@@ -1,6 +1,7 @@
 import type { Section } from '../types';
 import type { SimilarityMatch } from './similarityUtils';
 import { calculateSimilarityWithMetadata } from './similarityUtils';
+import { safeSetItem } from './storageUtils';
 
 export type LibraryAsset = {
   id: string;
@@ -44,7 +45,7 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
   try {
     const library = await loadLibraryAssets();
     library.push(newAsset);
-    localStorage.setItem('lyricist_library', JSON.stringify(library));
+    safeSetItem('lyricist_library', JSON.stringify(library));
     return newAsset;
   } catch (error) {
     console.error('Failed to save asset to library:', error);
@@ -56,7 +57,7 @@ export const deleteAssetFromLibrary = async (assetId: string): Promise<void> => 
   try {
     const library = await loadLibraryAssets();
     const updated = library.filter(a => a.id !== assetId);
-    localStorage.setItem('lyricist_library', JSON.stringify(updated));
+    safeSetItem('lyricist_library', JSON.stringify(updated));
   } catch (error) {
     console.error('Failed to delete asset from library:', error);
     throw error;
