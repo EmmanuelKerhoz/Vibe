@@ -15,8 +15,8 @@ import { useAppState } from './hooks/useAppState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
-import { VersionsModal } from './components/modals/VersionsModal';
-import { ResetModal } from './components/modals/ResetModal';
+import { VersionsModal } from './components/app/modals/VersionsModal';
+import { ResetModal } from './components/app/modals/ResetModal';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -34,6 +34,7 @@ import { SimilarityModal } from './components/app/modals/SimilarityModal';
 import { SaveToLibraryModal } from './components/app/modals/SaveToLibraryModal';
 import { ConfirmModal } from './components/app/modals/ConfirmModal';
 import { PromptModal } from './components/app/modals/PromptModal';
+import { SettingsModal } from './components/app/modals/SettingsModal';
 import { useTranslation, useLanguage } from './i18n';
 import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary } from './utils/libraryUtils';
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
@@ -54,7 +55,8 @@ export default function App() {
     draggedLineInfo, setDraggedLineInfo, dragOverLineInfo, setDragOverLineInfo,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
     isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
-    isAboutOpen, setIsAboutOpen, apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
+    isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
+    apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
     isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
     isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
     isResetModalOpen, setIsResetModalOpen, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
@@ -159,7 +161,10 @@ export default function App() {
     || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
   const webBadgeLabel = webSimilarityIndex.status === 'done' && webSimilarityIndex.candidates.length > 0
     ? `${webSimilarityIndex.candidates[0]?.score}%` : null;
-  const handleApiKeyHelp = () => alert(t.tooltips.aiUnavailableHelp);
+  const handleApiKeyHelp = () => setApiErrorModal({
+    open: true,
+    message: t.tooltips.aiUnavailableHelp,
+  });
   const handleTitleChange = (value: string) => { setTitle(value); setTitleOrigin('user'); };
   const handleGenerateTitle = async () => { const t2 = await generateTitle(); if (t2) { setTitle(t2); setTitleOrigin('ai'); } };
   const handleGlobalRegenerate = () => {
@@ -250,37 +255,39 @@ export default function App() {
             />
           )}
           <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative p-4 lg:p-8 lcars-lyrics-area">
-            <div className="lyrics-editor-zoom h-full flex flex-col">
-              {activeTab === 'lyrics' ? (
-                <LyricsView
-                  song={song} rhymeScheme={rhymeScheme}
-                  updateState={updateState} updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
-                  selectedLineId={selectedLineId} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-                  isRegeneratingSection={isRegeneratingSection} handleLineClick={handleLineClick}
-                  updateLineText={updateLineText} handleLineKeyDown={handleLineKeyDown}
-                  handleInstructionChange={handleInstructionChange} addInstruction={addInstruction}
-                  removeInstruction={removeInstruction} regenerateSection={regenerateSection}
-                  draggedItemIndex={draggedItemIndex} dragOverIndex={dragOverIndex}
-                  draggedLineInfo={draggedLineInfo} dragOverLineInfo={dragOverLineInfo}
-                  setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
-                  setDraggableSectionIndex={setDraggableSectionIndex}
-                  setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
-                  playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
-                  handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
-                  isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
-                  markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
-                />
-              ) : (
-                <MusicalTab
-                  song={song} title={title} topic={topic} mood={mood}
-                  genre={genre} setGenre={setGenre} tempo={tempo} setTempo={setTempo}
-                  instrumentation={instrumentation} setInstrumentation={setInstrumentation}
-                  rhythm={rhythm} setRhythm={setRhythm} narrative={narrative} setNarrative={setNarrative}
-                  musicalPrompt={musicalPrompt} setMusicalPrompt={setMusicalPrompt}
-                  isGeneratingMusicalPrompt={isGeneratingMusicalPrompt} isAnalyzingLyrics={isAnalyzingLyrics}
-                  hasApiKey={hasApiKey} generateMusicalPrompt={generateMusicalPrompt} analyzeLyricsForMusic={analyzeLyricsForMusic}
-                />
-              )}
+            <div className="lyrics-editor-zoom-wrapper">
+              <div className="lyrics-editor-zoom">
+                {activeTab === 'lyrics' ? (
+                  <LyricsView
+                    song={song} rhymeScheme={rhymeScheme}
+                    updateState={updateState} updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
+                    selectedLineId={selectedLineId} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+                    isRegeneratingSection={isRegeneratingSection} handleLineClick={handleLineClick}
+                    updateLineText={updateLineText} handleLineKeyDown={handleLineKeyDown}
+                    handleInstructionChange={handleInstructionChange} addInstruction={addInstruction}
+                    removeInstruction={removeInstruction} regenerateSection={regenerateSection}
+                    draggedItemIndex={draggedItemIndex} dragOverIndex={dragOverIndex}
+                    draggedLineInfo={draggedLineInfo} dragOverLineInfo={dragOverLineInfo}
+                    setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
+                    setDraggableSectionIndex={setDraggableSectionIndex}
+                    setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
+                    playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
+                    handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
+                    isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
+                    markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
+                  />
+                ) : (
+                  <MusicalTab
+                    song={song} title={title} topic={topic} mood={mood}
+                    genre={genre} setGenre={setGenre} tempo={tempo} setTempo={setTempo}
+                    instrumentation={instrumentation} setInstrumentation={setInstrumentation}
+                    rhythm={rhythm} setRhythm={setRhythm} narrative={narrative} setNarrative={setNarrative}
+                    musicalPrompt={musicalPrompt} setMusicalPrompt={setMusicalPrompt}
+                    isGeneratingMusicalPrompt={isGeneratingMusicalPrompt} isAnalyzingLyrics={isAnalyzingLyrics}
+                    hasApiKey={hasApiKey} generateMusicalPrompt={generateMusicalPrompt} analyzeLyricsForMusic={analyzeLyricsForMusic}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -297,9 +304,19 @@ export default function App() {
       <StatusBar
         song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
         isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
-        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback} onOpenAbout={() => setIsAboutOpen(true)}
+        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+        onOpenAbout={() => setIsAboutOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        theme={theme}
+        setTheme={setTheme}
+        audioFeedback={audioFeedback}
+        setAudioFeedback={setAudioFeedback}
+      />
       <ImportModal isOpen={isImportModalOpen} hasExistingWork={hasExistingWork} onClose={() => setIsImportModalOpen(false)} onChooseFile={handleImportChooseFile} />
       <SuggestionsPanel selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId} suggestions={suggestions} isSuggesting={isSuggesting} applySuggestion={applySuggestion} generateSuggestions={generateSuggestions} />
       <PasteModal isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)} pastedText={pastedText} setPastedText={setPastedText} isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics} />

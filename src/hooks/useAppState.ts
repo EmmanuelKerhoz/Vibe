@@ -34,6 +34,7 @@ export function useAppState() {
   const [isMarkupMode, setIsMarkupMode] = useState(false);
   const [markupText, setMarkupText] = useState('');
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiErrorModal, setApiErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
@@ -100,7 +101,9 @@ export function useAppState() {
     libraryAssets, setLibraryAssets, isSavingToLibrary, setIsSavingToLibrary,
     audioFeedback, setAudioFeedback,
     isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
-    isAboutOpen, setIsAboutOpen, apiErrorModal, setApiErrorModal,
+    isAboutOpen, setIsAboutOpen,
+    isSettingsOpen, setIsSettingsOpen,
+    apiErrorModal, setApiErrorModal,
     isImportModalOpen, setIsImportModalOpen,
     isSectionDropdownOpen, setIsSectionDropdownOpen,
     isSimilarityModalOpen, setIsSimilarityModalOpen,

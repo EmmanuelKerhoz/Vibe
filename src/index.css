@@ -423,13 +423,22 @@ body {
 .lcars-app-id { letter-spacing: 0.05em; }
 .dark .lcars-app-id:hover { color: var(--accent-color); }
 
-.lyrics-editor-zoom { zoom: 0.85; }
-@supports not (zoom: 1) {
-  .lyrics-editor-zoom {
-    width: 117.647059%;
-    transform: scale(0.85);
-    transform-origin: top center;
-  }
+/* ── Lyrics editor zoom — standard transform (replaces non-standard zoom property) ── */
+.lyrics-editor-zoom-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.lyrics-editor-zoom {
+  transform: scale(0.85);
+  transform-origin: top center;
+  width: 117.647059%; /* 100% / 0.85 — compensates the scale shrink */
+  margin-left: -8.823529%; /* (117.647059% - 100%) / 2 — re-centers */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes lcars-pulse {
