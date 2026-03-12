@@ -127,6 +127,7 @@ export function SaveToLibraryModal({
                     <button
                       type="button"
                       onClick={() => onDeleteAsset(asset.id)}
+                      aria-label={`Remove ${asset.title} from library`}
                       title="Remove from library"
                       className="flex h-7 w-7 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
                     >
