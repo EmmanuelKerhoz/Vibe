@@ -192,6 +192,7 @@ const es: Translations = {
     saving: 'Guardando…',
     saved: '¡Guardado!',
     saveDescription: 'Añadir esta canción a tu biblioteca personal',
+    browseDescription: 'Abrir la biblioteca y gestionar las canciones guardadas',
     yourLibrary: 'Tu Biblioteca',
     empty: 'No hay canciones en la biblioteca. Guarda esta canción para empezar tu colección.',
     close: 'Cerrar',

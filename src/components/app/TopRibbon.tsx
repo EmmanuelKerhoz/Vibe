@@ -113,7 +113,7 @@ export function TopRibbon({
               {t.ribbon.export}
             </Button>
           </Tooltip>
-          <Tooltip title={t.saveToLibrary.saveDescription}>
+          <Tooltip title={t.saveToLibrary.browseDescription}>
             <Button onClick={onOpenLibraryClick} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
               {t.saveToLibrary.title}
             </Button>

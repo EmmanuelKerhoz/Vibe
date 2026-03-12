@@ -208,6 +208,7 @@ export interface Translations {
     saving: string;
     saved: string;
     saveDescription: string;
+    browseDescription: string;
     yourLibrary: string;
     empty: string;
     close: string;

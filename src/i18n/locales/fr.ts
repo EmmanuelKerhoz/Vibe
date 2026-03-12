@@ -195,6 +195,7 @@ const fr: Translations = {
     saving: 'Enregistrement…',
     saved: 'Enregistré !',
     saveDescription: 'Ajouter cette chanson à votre bibliothèque personnelle',
+    browseDescription: 'Ouvrir la bibliothèque et gérer les chansons enregistrées',
     yourLibrary: 'Votre bibliothèque',
     empty: 'Aucune chanson dans la bibliothèque. Enregistrez cette chanson pour commencer votre collection.',
     close: 'Fermer',

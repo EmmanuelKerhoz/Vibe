@@ -192,6 +192,7 @@ const de: Translations = {
     saving: 'Speichert…',
     saved: 'Gespeichert!',
     saveDescription: 'Diesen Song zur persönlichen Bibliothek hinzufügen',
+    browseDescription: 'Bibliothek öffnen und gespeicherte Songs verwalten',
     yourLibrary: 'Deine Bibliothek',
     empty: 'Noch keine Songs in der Bibliothek. Speichere diesen Song, um deine Sammlung zu beginnen.',
     close: 'Schließen',

@@ -192,6 +192,7 @@ const ar: Translations = {
     saving: 'جارٍ الحفظ…',
     saved: 'تم الحفظ!',
     saveDescription: 'أضف هذه الأغنية إلى مكتبتك الشخصية',
+    browseDescription: 'افتح المكتبة وأدر الأغاني المحفوظة',
     yourLibrary: 'مكتبتك',
     empty: 'لا توجد أغانٍ في المكتبة. احفظ هذه الأغنية لبدء مجموعتك.',
     close: 'إغلاق',

@@ -197,6 +197,7 @@ const en: Translations = {
     saving: 'Saving…',
     saved: 'Saved!',
     saveDescription: 'Add this song to your personal library',
+    browseDescription: 'Open your library and manage saved songs',
     yourLibrary: 'Your Library',
     empty: 'No songs in library yet. Save this song to start building your collection.',
     close: 'Close',
