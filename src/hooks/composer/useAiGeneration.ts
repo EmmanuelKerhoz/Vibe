@@ -3,6 +3,7 @@ import { Type } from '@google/genai';
 import type { Section } from '../../types';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { cleanSectionName } from '../../utils/songUtils';
+import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
 import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
 
@@ -38,24 +39,30 @@ const alignGeneratedSongToStructure = (
   defaultRhymeScheme: string,
 ): Section[] => {
   const remainingSections = [...generatedSong];
-
   return structure.map(sectionName => {
     const matchingIndex = remainingSections.findIndex(section =>
       sectionNamesMatch(section.name, sectionName),
     );
     let matchedSection: Section | undefined;
-
     if (matchingIndex === -1) {
       matchedSection = remainingSections.length > 0 ? remainingSections.shift() : undefined;
     } else {
       matchedSection = remainingSections.splice(matchingIndex, 1)[0];
     }
-
     return matchedSection
       ? { ...matchedSection, name: sectionName }
       : createEmptySection(sectionName, defaultRhymeScheme);
   });
 };
+
+/** Flags isMeta on lines returned by the AI generator */
+const flagMetaLines = (lines: any[]): any[] =>
+  lines.map(line => ({
+    ...line,
+    isMeta: isPureMetaLine(line.text ?? ''),
+  }));
+
+const META_INSTRUCTION_HINT = `You may include performance/production meta-instructions on their own line using square brackets, e.g. [Guitar solo], [Whispered], [Anthemic], [Ad-lib], [Key change]. These are NOT section headers — they are preserved and displayed as special directives in the song editor.`;
 
 type UseAiGenerationParams = {
   song: Section[];
@@ -119,6 +126,8 @@ Structure: ${structure.join(', ')}
 
 IMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY. Generate exactly the sections listed in the Structure field, in that specific order.
 
+${META_INSTRUCTION_HINT}
+
 Line counts for sections:
 - Intro: 4 lines
 - Verse: 6 lines
@@ -142,8 +151,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
                 name: { type: Type.STRING },
                 rhymeScheme: {
                   type: Type.STRING,
-                  description:
-                    'The rhyme scheme for this section, e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE',
+                  description: 'The rhyme scheme for this section, e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE',
                 },
                 lines: {
                   type: Type.ARRAY,
@@ -172,7 +180,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
         name: cleanSectionName(section.name),
         id: generateId(),
         rhymeScheme: section.rhymeScheme || rhymeScheme,
-        lines: section.lines.map((line: any) => ({
+        lines: flagMetaLines(section.lines).map((line: any) => ({
           ...line,
           id: generateId(),
         })),
@@ -237,6 +245,8 @@ ${lineCountPrompt}
 Song structure: ${songStructure}
 ${prevContext}${nextContext}${directivesPrompt}
 
+${META_INSTRUCTION_HINT}
+
 IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${uiLanguage}.
 
 Current Section:
@@ -280,10 +290,12 @@ Return the updated section in the exact same JSON structure (as an array with on
 
       const data = safeJsonParse(response.text || '[]', []);
       if (data.length > 0) {
+        // Patch isMeta on the returned lines before merging
+        const patchedSection = { ...data[0], lines: flagMetaLines(data[0].lines ?? []) };
         updateSong(currentSong =>
           currentSong.map(section => {
             if (section.id !== sectionId) return section;
-            return mergeAiSectionIntoCurrent(section, data[0]);
+            return mergeAiSectionIntoCurrent(section, patchedSection);
           }),
         );
       }
@@ -310,6 +322,7 @@ Return the updated section in the exact same JSON structure (as an array with on
         const syllables = sectionToQuantize.targetSyllables ?? targetSyllables;
         prompt = `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables. Maintain the original meaning, rhyme scheme, and section structure.
 Write ALL lyrics in ${lang}.
+Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.
 
 Current Section:
 ${JSON.stringify([sectionToQuantize], null, 2)}
@@ -318,6 +331,7 @@ Return the updated section in the exact same JSON structure (as an array with on
       } else {
         prompt = `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its section's targetSyllables (or ${targetSyllables} if not specified). Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
 Write ALL lyrics in ${lang}.
+Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.
 
 Current Song:
 ${JSON.stringify(song, null, 2)}
@@ -362,16 +376,22 @@ Return the updated song in the exact same JSON structure.`;
 
       if (sectionId) {
         if (data.length > 0) {
+          const patchedSection = { ...data[0], lines: flagMetaLines(data[0].lines ?? []) };
           updateSong(currentSong =>
             currentSong.map(section => {
               if (section.id !== sectionId) return section;
-              return mergeAiSectionIntoCurrent(section, data[0]);
+              return mergeAiSectionIntoCurrent(section, patchedSection);
             }),
           );
         }
       } else {
         const updatedSong = mapSongWithPreservedIds(data, song);
-        updateSongWithHistory(updatedSong);
+        // Re-flag isMeta after syllable quantization (AI may rewrite meta lines)
+        const reflagged = updatedSong.map(sec => ({
+          ...sec,
+          lines: flagMetaLines(sec.lines),
+        }));
+        updateSongWithHistory(reflagged);
       }
     } catch (error: any) {
       handleApiError(error, 'Failed to quantize syllables. Please try again.');

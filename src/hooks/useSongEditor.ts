@@ -57,7 +57,6 @@ export const useSongEditor = ({
 
   const removeStructureItem = (index: number) => {
     const newStructure = structure.filter((_, i) => i !== index);
-
     if (song.length > index) {
       const newSong = song.filter((_, i) => i !== index);
       updateSongAndStructureWithHistory(newSong, newStructure);
@@ -71,42 +70,30 @@ export const useSongEditor = ({
     if (!itemToAdd) return;
 
     if (['Intro', 'Bridge', 'Outro'].includes(itemToAdd)) {
-      if (structure.some(s => s.toLowerCase() === itemToAdd.toLowerCase())) {
-        return;
-      }
+      if (structure.some(s => s.toLowerCase() === itemToAdd.toLowerCase())) return;
     }
 
     let finalName = itemToAdd;
     if (['Verse', 'Pre-Chorus', 'Chorus'].includes(itemToAdd)) {
       const count = structure.filter(s => s.startsWith(itemToAdd)).length;
-      if (itemToAdd === 'Verse' || count > 0) {
-        finalName = `${itemToAdd} ${count + 1}`;
-      }
+      if (itemToAdd === 'Verse' || count > 0) finalName = `${itemToAdd} ${count + 1}`;
     }
 
     let insertIndex = structure.length;
-
     if (itemToAdd === 'Intro') {
       insertIndex = 0;
     } else if (itemToAdd === 'Pre-Chorus') {
       const nextChorusIndex = structure.findIndex(s => s.startsWith('Chorus'));
-      if (nextChorusIndex !== -1) {
-        insertIndex = nextChorusIndex;
-      }
+      if (nextChorusIndex !== -1) insertIndex = nextChorusIndex;
     } else if (itemToAdd === 'Chorus') {
       const lastPreChorusIndex = [...structure].reverse().findIndex(s => s.startsWith('Pre-Chorus'));
       const lastVerseIndex = [...structure].reverse().findIndex(s => s.startsWith('Verse'));
-      if (lastPreChorusIndex !== -1) {
-        insertIndex = structure.length - 1 - lastPreChorusIndex + 1;
-      } else if (lastVerseIndex !== -1) {
-        insertIndex = structure.length - 1 - lastVerseIndex + 1;
-      }
+      if (lastPreChorusIndex !== -1) insertIndex = structure.length - 1 - lastPreChorusIndex + 1;
+      else if (lastVerseIndex !== -1) insertIndex = structure.length - 1 - lastVerseIndex + 1;
     }
 
     const outroIndex = structure.findIndex(s => s.toLowerCase().includes('outro'));
-    if (outroIndex !== -1 && insertIndex > outroIndex) {
-      insertIndex = outroIndex;
-    }
+    if (outroIndex !== -1 && insertIndex > outroIndex) insertIndex = outroIndex;
 
     const newStructure = [...structure];
     const newSong = [...song];
@@ -114,23 +101,19 @@ export const useSongEditor = ({
     const newSection: Section = {
       id: generateId(),
       name: finalName,
-      lines: Array(4)
-        .fill(null)
-        .map(() => ({
-          id: generateId(),
-          text: '',
-          rhymingSyllables: '',
-          rhyme: '',
-          syllables: 0,
-          concept: 'New line',
-        })),
+      lines: Array(4).fill(null).map(() => ({
+        id: generateId(),
+        text: '',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 0,
+        concept: 'New line',
+      })),
     };
 
     newStructure.splice(insertIndex, 0, finalName);
     newSong.splice(insertIndex, 0, newSection);
-
     updateSongAndStructureWithHistory(newSong, newStructure);
-
     if (!name) setNewSectionName('');
   };
 
@@ -141,7 +124,6 @@ export const useSongEditor = ({
     const choruses = structure.filter(s => s.toLowerCase().includes('chorus') && !s.toLowerCase().includes('pre'));
     const bridges = structure.filter(s => s.toLowerCase().includes('bridge'));
     const outros = structure.filter(s => s.toLowerCase().includes('outro'));
-
     const others = structure.filter(s => {
       const l = s.toLowerCase();
       return !l.includes('intro') && !l.includes('verse') && !l.includes('pre-chorus') && !l.includes('prechorus') && !l.includes('chorus') && !l.includes('bridge') && !l.includes('outro');
@@ -149,26 +131,17 @@ export const useSongEditor = ({
 
     const newStructure: string[] = [];
     newStructure.push(...intros);
-
     const hasPreChorus = preChoruses.length > 0;
     let preChorusCount = 0;
-
     const maxVPC = Math.max(verses.length, choruses.length);
     for (let i = 0; i < maxVPC; i++) {
       if (i < verses.length) newStructure.push(verses[i]!);
-
       if (i < choruses.length) {
-        if (hasPreChorus) {
-          preChorusCount++;
-          newStructure.push(`Pre-Chorus ${preChorusCount}`);
-        }
+        if (hasPreChorus) { preChorusCount++; newStructure.push(`Pre-Chorus ${preChorusCount}`); }
         newStructure.push(choruses[i]!);
       }
     }
-
-    newStructure.push(...bridges);
-    newStructure.push(...others);
-    newStructure.push(...outros);
+    newStructure.push(...bridges, ...others, ...outros);
 
     let newSong: Section[] = [];
     if (song.length > 0) {
@@ -182,43 +155,28 @@ export const useSongEditor = ({
           newSong.push({
             id: generateId(),
             name: structName,
-            lines: Array(4)
-              .fill(null)
-              .map(() => ({
-                id: generateId(),
-                text: '',
-                rhymingSyllables: '',
-                rhyme: '',
-                syllables: 0,
-                concept: 'New line',
-              })),
+            lines: Array(4).fill(null).map(() => ({
+              id: generateId(), text: '', rhymingSyllables: '', rhyme: '', syllables: 0, concept: 'New line',
+            })),
           });
         }
       });
     }
-
     updateSongAndStructureWithHistory(newSong, newStructure);
   };
 
   const handleDrop = (dropIndex: number) => {
     setDragOverIndex(null);
     if (draggedItemIndex === null || draggedItemIndex === dropIndex) return;
-
     const draggedItemName = structure[draggedItemIndex];
     if (!draggedItemName) return;
-
     const getBaseAndNumber = (name: string) => {
       const match = name.match(/^(.+?)\s+(\d+)$/);
-      if (match) {
-        return { base: match[1]!, num: parseInt(match[2]!, 10) };
-      }
+      if (match) return { base: match[1]!, num: parseInt(match[2]!, 10) };
       return { base: name, num: null };
     };
-
     const draggedInfo = getBaseAndNumber(draggedItemName);
-
     if (draggedItemName.toLowerCase().includes('intro') && dropIndex !== 0) return;
-
     if (draggedItemName.toLowerCase().includes('outro')) {
       if (dropIndex !== structure.length - 1) return;
     } else {
@@ -228,33 +186,25 @@ export const useSongEditor = ({
         if (draggedItemIndex === outroIndex && dropIndex !== structure.length - 1) return;
       }
     }
-
     const tempStructure = [...structure];
     tempStructure.splice(draggedItemIndex, 1);
     tempStructure.splice(dropIndex, 0, draggedItemName);
-
     if (draggedInfo.num !== null) {
       const sameBaseSections = tempStructure
         .map((name, index) => ({ name, index, ...getBaseAndNumber(name) }))
         .filter(item => item.base === draggedInfo.base && item.num !== null);
-
       for (let i = 0; i < sameBaseSections.length - 1; i++) {
-        if (sameBaseSections[i]!.num! > sameBaseSections[i + 1]!.num!) {
-          return;
-        }
+        if (sameBaseSections[i]!.num! > sameBaseSections[i + 1]!.num!) return;
       }
     }
-
     const newStructure = [...structure];
     const draggedItem = newStructure.splice(draggedItemIndex, 1)[0]!;
     newStructure.splice(dropIndex, 0, draggedItem);
-
     const newSong = [...song];
     if (newSong.length > 0) {
       const draggedSection = newSong.splice(draggedItemIndex, 1)[0]!;
       newSong.splice(dropIndex, 0, draggedSection);
     }
-
     updateSongAndStructureWithHistory(newSong, newStructure);
     setDraggedItemIndex(null);
   };
@@ -271,34 +221,20 @@ export const useSongEditor = ({
       setDraggedLineInfo(null);
       return;
     }
-
     updateSong(currentSong => {
       const sourceSectionIndex = currentSong.findIndex(s => s.id === draggedLineInfo.sectionId);
       const targetSectionIndex = currentSong.findIndex(s => s.id === targetSectionId);
-
-      if (sourceSectionIndex === -1 || targetSectionIndex === -1) {
-        return currentSong;
-      }
-
+      if (sourceSectionIndex === -1 || targetSectionIndex === -1) return currentSong;
       const newSong = [...currentSong];
       const sourceSection = { ...newSong[sourceSectionIndex]!, lines: [...newSong[sourceSectionIndex]!.lines] };
       const targetSection = sourceSectionIndex === targetSectionIndex ? sourceSection : { ...newSong[targetSectionIndex]!, lines: [...newSong[targetSectionIndex]!.lines] };
-
       const sourceLineIndex = sourceSection.lines.findIndex(l => l.id === draggedLineInfo.lineId);
       const targetLineIndex = targetSection.lines.findIndex(l => l.id === targetLineId);
-
-      if (sourceLineIndex === -1 || targetLineIndex === -1) {
-        return currentSong;
-      }
-
+      if (sourceLineIndex === -1 || targetLineIndex === -1) return currentSong;
       const draggedLine = sourceSection.lines.splice(sourceLineIndex, 1)[0]!;
       targetSection.lines.splice(targetLineIndex, 0, draggedLine);
-
       newSong[sourceSectionIndex] = sourceSection;
-      if (sourceSectionIndex !== targetSectionIndex) {
-        newSong[targetSectionIndex] = targetSection;
-      }
-
+      if (sourceSectionIndex !== targetSectionIndex) newSong[targetSectionIndex] = targetSection;
       return newSong;
     });
     setDraggedLineInfo(null);
@@ -311,11 +247,11 @@ export const useSongEditor = ({
     song.forEach(section => {
       content += `[${section.name}]\n`;
       section.lines.forEach(line => {
+        // isMeta lines already contain their brackets in line.text — output verbatim
         content += `${line.text}\n`;
       });
       content += '\n';
     });
-
     const blob = new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -330,15 +266,18 @@ export const useSongEditor = ({
     let content = `# ${title}\n\n`;
     content += `**Topic:** ${topic}\n`;
     content += `**Mood:** ${mood}\n\n`;
-
     song.forEach(section => {
       content += `### ${section.name}\n\n`;
       section.lines.forEach(line => {
-        content += `${line.text}  \n`;
+        if (line.isMeta) {
+          // Render meta lines in italic in markdown
+          content += `*${line.text}*  \n`;
+        } else {
+          content += `${line.text}  \n`;
+        }
       });
       content += '\n';
     });
-
     const blob = new Blob([content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -352,9 +291,7 @@ export const useSongEditor = ({
     const reader = new FileReader();
     reader.onload = event => {
       const text = event.target?.result as string;
-      if (text) {
-        openPasteModalWithText(text);
-      }
+      if (text) openPasteModalWithText(text);
     };
     reader.readAsText(file);
   };
