@@ -4,6 +4,8 @@
 
 # Lyricist Pro
 
+[![Tests](https://github.com/EmmanuelKerhoz/Vibe/actions/workflows/test.yml/badge.svg)](https://github.com/EmmanuelKerhoz/Vibe/actions/workflows/test.yml)
+
 Lyricist Pro est une application React/Vite/Fluent pour générer, éditer et analyser des paroles avec Gemini.
 
 ## Prérequis
@@ -77,6 +79,8 @@ Si votre navigateur affiche `localhost refused to connect` :
 - `npm run preview` : prévisualisation locale du build
 - `npm run lint` : vérification TypeScript (`tsc --noEmit`)
 - `npm run clean` : suppression du dossier `dist`
+- `npm test` : lance la suite Vitest
+- `npm run test:coverage` : tests + rapport de couverture lcov
 
 ## Stack
 
@@ -84,4 +88,4 @@ Si votre navigateur affiche `localhost refused to connect` :
 - Fluent UI 2 (`@fluentui/react-components`)
 - Tailwind CSS
 - Gemini via proxy serverless (`/api/generate`)
-
+- Vitest + Testing Library (tests unitaires)
