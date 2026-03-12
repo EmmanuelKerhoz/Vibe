@@ -192,7 +192,7 @@ const en: Translations = {
   },
 
   saveToLibrary: {
-    title: 'Save to Library',
+    title: 'Library',
     save: 'Save Current Song',
     saving: 'Saving…',
     saved: 'Saved!',
@@ -328,6 +328,7 @@ const en: Translations = {
     chorus: 'Chorus',
     bridge: 'Bridge',
     breakdown: 'Breakdown',
+    finalChorus: 'Final Chorus',
     outro: 'Outro',
   },
 

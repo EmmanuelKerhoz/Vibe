@@ -190,7 +190,7 @@ const fr: Translations = {
   },
 
   saveToLibrary: {
-    title: 'Enregistrer dans la bibliothèque',
+    title: 'Bibliothèque',
     save: 'Enregistrer la chanson',
     saving: 'Enregistrement…',
     saved: 'Enregistré !',
@@ -326,6 +326,7 @@ const fr: Translations = {
     chorus: 'Refrain',
     bridge: 'Pont',
     breakdown: 'Breakdown',
+    finalChorus: 'Refrain final',
     outro: 'Outro',
   },
 

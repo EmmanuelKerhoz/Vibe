@@ -52,6 +52,7 @@ IMPORTANT: You MUST ONLY use the following section names (you can append numbers
 - Verse
 - Pre-Chorus
 - Chorus
+- Final Chorus
 - Bridge
 - Outro
 

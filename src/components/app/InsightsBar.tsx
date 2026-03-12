@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, Languages, ScanText, Save, Layout, Search, RefreshCw, Timer } from 'lucide-react';
+import { Loader2, BarChart2, Languages, ScanText, Layout, Search, RefreshCw, Timer } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
 import { LcarsSelect } from '../ui/LcarsSelect';
@@ -28,7 +28,6 @@ interface InsightsBarProps {
   detectLanguage: () => void;
   analyzeCurrentSong: () => void;
   handleGlobalRegenerate: () => void;
-  handleOpenSaveToLibraryModal: () => void;
   handleMarkupToggle: () => void;
   setIsSimilarityModalOpen: (open: boolean) => void;
   scrollToSection: (section: Section) => void;
@@ -57,7 +56,6 @@ export function InsightsBar({
   detectLanguage,
   analyzeCurrentSong,
   handleGlobalRegenerate,
-  handleOpenSaveToLibraryModal,
   handleMarkupToggle,
   setIsSimilarityModalOpen,
   scrollToSection,
@@ -146,12 +144,6 @@ export function InsightsBar({
                 </button>
               </Tooltip>
             )}
-            <Tooltip title={t.saveToLibrary.saveDescription}>
-              <button onClick={handleOpenSaveToLibraryModal} disabled={song.length === 0} className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                <Save className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">{t.saveToLibrary.title}</span>
-              </button>
-            </Tooltip>
             <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
               <button onClick={handleMarkupToggle} disabled={isGenerating || isAnalyzing} className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 <Layout className="w-3.5 h-3.5" />

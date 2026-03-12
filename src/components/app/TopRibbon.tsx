@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Sparkles, Download, Upload, Undo2, Redo2, Trash2, History, PanelLeft, PanelRight, MoreHorizontal
+  Sparkles, Download, Upload, Undo2, Redo2, Trash2, History, PanelLeft, PanelRight, MoreHorizontal, Library
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
@@ -27,6 +27,7 @@ interface Props {
   handleApiKeyHelp: () => void;
   onImportClick: () => void;
   onExportClick: () => void;
+  onOpenLibraryClick: () => void;
   isGenerating: boolean;
   isAnalyzing: boolean;
 }
@@ -39,6 +40,7 @@ export function TopRibbon({
   isStructureOpen, setIsStructureOpen,
   hasApiKey, handleApiKeyHelp,
   onImportClick, onExportClick,
+  onOpenLibraryClick,
   isGenerating, isAnalyzing,
 }: Props) {
   const { t } = useTranslation();
@@ -109,6 +111,11 @@ export function TopRibbon({
           <Tooltip title={t.tooltips.export}>
             <Button onClick={onExportClick} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
               {t.ribbon.export}
+            </Button>
+          </Tooltip>
+          <Tooltip title={t.saveToLibrary.saveDescription}>
+            <Button onClick={onOpenLibraryClick} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
+              {t.saveToLibrary.title}
             </Button>
           </Tooltip>
           <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
@@ -213,6 +220,14 @@ export function TopRibbon({
                 >
                   <Download className="w-4 h-4 text-[var(--text-secondary)]" />
                   {t.ribbon.export}
+                </button>
+                <button
+                  onClick={() => { onOpenLibraryClick(); setIsOverflowOpen(false); }}
+                  disabled={song.length === 0}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-[11px] text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50"
+                >
+                  <Library className="w-4 h-4 text-[var(--text-secondary)]" />
+                  {t.saveToLibrary.title}
                 </button>
                 <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
                 <button

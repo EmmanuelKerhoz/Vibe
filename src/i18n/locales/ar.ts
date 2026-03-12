@@ -187,7 +187,7 @@ const ar: Translations = {
   },
 
   saveToLibrary: {
-    title: 'حفظ في المكتبة',
+    title: 'المكتبة',
     save: 'حفظ الأغنية الحالية',
     saving: 'جارٍ الحفظ…',
     saved: 'تم الحفظ!',
@@ -323,6 +323,7 @@ const ar: Translations = {
     chorus: 'لازمة',
     bridge: 'جسر',
     breakdown: 'انهيار',
+    finalChorus: 'لازمة أخيرة',
     outro: 'خاتمة',
   },
 

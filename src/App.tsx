@@ -107,17 +107,6 @@ export default function App() {
     introOutroSortedRef.current = key;
     updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-      e.preventDefault();
-      if (e.shiftKey) redo(); else undo();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [undo, redo]);
   const { isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
     isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, songLanguage, targetLanguage, setTargetLanguage,
@@ -152,6 +141,63 @@ export default function App() {
     const suggestion = await handleSurprise();
     if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }
   }, [handleSurprise, setTopic, setMood]);
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.key === 'Escape') {
+        if (promptModal?.open) { setPromptModal(null); return; }
+        if (confirmModal?.open) { setConfirmModal(null); return; }
+        if (apiErrorModal.open) { setApiErrorModal({ open: false, message: '' }); return; }
+        if (isResetModalOpen) { setIsResetModalOpen(false); return; }
+        if (isVersionsModalOpen) { setIsVersionsModalOpen(false); return; }
+        if (isSaveToLibraryModalOpen) { setIsSaveToLibraryModalOpen(false); return; }
+        if (isSimilarityModalOpen) { setIsSimilarityModalOpen(false); return; }
+        if (isAnalysisModalOpen) { setIsAnalysisModalOpen(false); return; }
+        if (isPasteModalOpen) { setIsPasteModalOpen(false); return; }
+        if (isExportModalOpen) { setIsExportModalOpen(false); return; }
+        if (isImportModalOpen) { setIsImportModalOpen(false); return; }
+        if (isSettingsOpen) { setIsSettingsOpen(false); return; }
+        if (isAboutOpen) setIsAboutOpen(false);
+        return;
+      }
+      if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    apiErrorModal.open,
+    confirmModal,
+    isAboutOpen,
+    isAnalysisModalOpen,
+    isExportModalOpen,
+    isImportModalOpen,
+    isPasteModalOpen,
+    isResetModalOpen,
+    isSaveToLibraryModalOpen,
+    isSettingsOpen,
+    isSimilarityModalOpen,
+    isVersionsModalOpen,
+    promptModal,
+    redo,
+    setApiErrorModal,
+    setConfirmModal,
+    setIsAboutOpen,
+    setIsAnalysisModalOpen,
+    setIsExportModalOpen,
+    setIsImportModalOpen,
+    setIsPasteModalOpen,
+    setIsResetModalOpen,
+    setIsSaveToLibraryModalOpen,
+    setIsSettingsOpen,
+    setIsSimilarityModalOpen,
+    setIsVersionsModalOpen,
+    setPromptModal,
+    undo,
+  ]);
   useEffect(() => {
     if (!shouldAutoGenerateTitle || song.length === 0) return;
     let isCancelled = false;
@@ -196,13 +242,14 @@ export default function App() {
       const updated = await loadLibraryAssets(); setLibraryCount(updated.length); setLibraryAssets(updated);
     } catch (e) { console.error('Failed to save to library:', e); } finally { setIsSavingToLibrary(false); }
   };
-  const handleDeleteLibraryAsset = useCallback(async (versionId: string) => {
+  const handleDeleteLibraryAsset = useCallback(async (assetId: string) => {
     try {
-      await deleteAssetFromLibrary(versionId);
-      setSimilarityMatches(prev => prev.filter(m => m.versionId !== versionId));
+      await deleteAssetFromLibrary(assetId);
+      setLibraryAssets(prev => prev.filter(asset => asset.id !== assetId));
+      setSimilarityMatches(prev => prev.filter(m => m.versionId !== assetId));
       setLibraryCount(prev => Math.max(0, prev - 1));
     } catch (e) { console.error('Failed to delete library asset:', e); }
-  }, [setSimilarityMatches, setLibraryCount]);
+  }, [setLibraryAssets, setSimilarityMatches, setLibraryCount]);
   const handleImportInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; e.target.value = '';
     if (!file) return;
@@ -248,9 +295,10 @@ export default function App() {
              setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
              hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-             onImportClick={() => setIsImportModalOpen(true)} onExportClick={() => setIsExportModalOpen(true)}
-             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-           />
+              onImportClick={() => setIsImportModalOpen(true)} onExportClick={() => setIsExportModalOpen(true)}
+              onOpenLibraryClick={handleOpenSaveToLibraryModal}
+              isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+            />
           {activeTab === 'lyrics' && song.length > 0 && (
             <InsightsBar
               song={song} sectionCount={sectionCount} wordCount={wordCount} charCount={charCount}
@@ -260,7 +308,7 @@ export default function App() {
               isMarkupMode={isMarkupMode} webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel}
               libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage} detectLanguage={detectLanguage}
               analyzeCurrentSong={analyzeCurrentSong} handleGlobalRegenerate={handleGlobalRegenerate}
-              handleOpenSaveToLibraryModal={handleOpenSaveToLibraryModal} handleMarkupToggle={handleMarkupToggle}
+              handleMarkupToggle={handleMarkupToggle}
               setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
             />
           )}
@@ -333,7 +381,7 @@ export default function App() {
       <PasteModal isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)} pastedText={pastedText} setPastedText={setPastedText} isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics} />
       <AnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps} appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems} isApplyingAnalysis={isApplyingAnalysis} toggleAnalysisItemSelection={toggleAnalysisItemSelection} applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems} versions={versions} rollbackToVersion={rollbackToVersion} />
       <SimilarityModal isOpen={isSimilarityModalOpen} onClose={() => setIsSimilarityModalOpen(false)} matches={similarityMatches} candidateCount={libraryCount} webIndex={webSimilarityIndex} onWebRefresh={triggerWebSimilarity} onDeleteLibraryAsset={handleDeleteLibraryAsset} />
-      <SaveToLibraryModal isOpen={isSaveToLibraryModalOpen} onClose={() => setIsSaveToLibraryModalOpen(false)} onSave={handleSaveToLibrary} isSaving={isSavingToLibrary} currentTitle={title} libraryAssets={libraryAssets} />
+      <SaveToLibraryModal isOpen={isSaveToLibraryModalOpen} onClose={() => setIsSaveToLibraryModalOpen(false)} onSave={handleSaveToLibrary} onDeleteAsset={handleDeleteLibraryAsset} isSaving={isSavingToLibrary} currentTitle={title} libraryAssets={libraryAssets} />
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={saveVersion} onRollback={rollbackToVersion} onRequestVersionName={handleRequestVersionName} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
       <ApiErrorModal isOpen={apiErrorModal.open} onClose={() => setApiErrorModal({ open: false, message: '' })} message={apiErrorModal.message} />

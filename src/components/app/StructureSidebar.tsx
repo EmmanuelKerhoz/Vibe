@@ -44,7 +44,7 @@ export function StructureSidebar({
 
   const sectionOptions = [
     t.sections.intro, t.sections.verse, t.sections.preChorus,
-    t.sections.chorus, t.sections.bridge, t.sections.breakdown, t.sections.outro,
+    t.sections.chorus, t.sections.bridge, t.sections.breakdown, t.sections.finalChorus, t.sections.outro,
   ];
 
   return (

@@ -343,6 +343,7 @@ export interface Translations {
     chorus: string;
     bridge: string;
     breakdown: string;
+    finalChorus: string;
     outro: string;
   };
 

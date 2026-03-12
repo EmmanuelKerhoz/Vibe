@@ -107,6 +107,16 @@ describe('useSongEditor', () => {
       expect(newSong[1]?.name).toBe('Bridge');
     });
 
+    it('adds Final Chorus as a valid unique section', () => {
+      const song = [makeSection('s1', 'Verse 1')];
+      const { result, updateSongAndStructureWithHistory } = buildHook(song, ['Verse 1']);
+      act(() => result.current.addStructureItem('Final Chorus'));
+      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
+      const [newSong, newStructure] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
+      expect(newSong[1]?.name).toBe('Final Chorus');
+      expect(newStructure).toEqual(['Verse 1', 'Final Chorus']);
+    });
+
     it('does nothing when name is empty', () => {
       const song = [makeSection('s1', 'Verse 1')];
       const { result, updateSongAndStructureWithHistory } = buildHook(song, ['Verse 1']);

@@ -187,7 +187,7 @@ const es: Translations = {
   },
 
   saveToLibrary: {
-    title: 'Guardar en Biblioteca',
+    title: 'Biblioteca',
     save: 'Guardar canción actual',
     saving: 'Guardando…',
     saved: '¡Guardado!',
@@ -323,6 +323,7 @@ const es: Translations = {
     chorus: 'Estribillo',
     bridge: 'Puente',
     breakdown: 'Breakdown',
+    finalChorus: 'Estribillo final',
     outro: 'Outro',
   },
 
