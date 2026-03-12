@@ -148,7 +148,7 @@ export const runSearchTree = async (
   };
 
   const level0Queries = [title, fullText, segments[segments.length - 1]]
-    .filter((q): q is string => q.trim().length > 0)
+    .filter((q): q is string => typeof q === 'string' && q.trim().length > 0)
     .slice(0, 3);
   await Promise.allSettled(
     level0Queries.flatMap(q => [safeSearch('ddg', q), safeSearch('wikipedia', q)]),
@@ -169,7 +169,7 @@ export const runSearchTree = async (
   const candidates: WebSimilarityCandidate[] = unique
     .map(node => {
       const snippetScore = jaccardScore(fullText, node.snippet);
-      const lyricsTitleScore = jaccardScore(fullText, node.title);
+      const lyricsToResultTitleScore = jaccardScore(fullText, node.title);
       const exactTitleMatch = normalizedTitle.length > 0 && normalizedTitle === normalize(node.title);
       const titleScore = normalizedTitle.length > 0
         ? Math.max(
@@ -178,7 +178,7 @@ export const runSearchTree = async (
           jaccardScore(title, node.snippet) * 0.8,
         )
         : 0;
-      const lyricScore = Math.min(1, snippetScore * 0.6 + lyricsTitleScore * 0.4);
+      const lyricScore = Math.min(1, snippetScore * 0.6 + lyricsToResultTitleScore * 0.4);
       const score = Math.min(1, Math.max(lyricScore, titleScore));
       return {
         title: node.title,

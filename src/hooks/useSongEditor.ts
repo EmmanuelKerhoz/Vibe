@@ -4,6 +4,20 @@ import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
 import { createSongExport, type ExportFormat } from '../utils/exportUtils';
 
+type SaveFilePickerOptions = {
+  suggestedName: string;
+  startIn?: 'downloads';
+  types?: Array<{ description: string; accept: Record<string, string[]> }>;
+};
+
+type SaveFilePickerHandle = {
+  createWritable: () => Promise<{ write: (data: Blob) => Promise<void>; close: () => Promise<void> }>;
+};
+
+type WindowWithSaveFilePicker = Window & {
+  showSaveFilePicker?: (options: SaveFilePickerOptions) => Promise<SaveFilePickerHandle>;
+};
+
 type LineDragInfo = { sectionId: string; lineId: string } | null;
 
 type UseSongEditorParams = {
@@ -246,13 +260,7 @@ export const useSongEditor = ({
     if (song.length === 0) return;
     const { blob, filename } = createSongExport({ song, title, topic, mood, format });
     const saveWithPicker = async () => {
-      const filePicker = (window as Window & {
-        showSaveFilePicker?: (options: {
-          suggestedName: string;
-          startIn?: 'downloads';
-          types?: Array<{ description: string; accept: Record<string, string[]> }>;
-        }) => Promise<{ createWritable: () => Promise<{ write: (data: Blob) => Promise<void>; close: () => Promise<void> }> }>;
-      }).showSaveFilePicker;
+      const filePicker = (window as WindowWithSaveFilePicker).showSaveFilePicker;
       if (!filePicker) return false;
       try {
         const extension = filename.split('.').pop() ?? format;

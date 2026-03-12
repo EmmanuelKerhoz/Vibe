@@ -214,7 +214,7 @@ describe('useSongEditor', () => {
       expect(lastCreatedBlob()?.size).toBeGreaterThan(0);
     });
 
-    it('uses the native save dialog and starts in downloads when available', async () => {
+    it('uses the native save dialog with downloads as the starting directory when available', async () => {
       const writeMock = vi.fn(async () => {});
       const closeMock = vi.fn(async () => {});
       const showSaveFilePickerMock = vi.fn(async () => ({

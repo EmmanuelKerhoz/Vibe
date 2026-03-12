@@ -74,7 +74,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'LN', aiName: 'Lingala', sign: '🪘', region: 'Congo - Central Africa', isEthnical: true },
   { code: 'PT', aiName: 'Portuguese', sign: '🇵🇹' },
   { code: 'ES', aiName: 'Spanish', sign: '🇪🇸' },
-  { code: 'SW', aiName: 'Swahili', sign: '🌍', region: 'East Africa' },
+  { code: 'SW', aiName: 'Swahili', sign: '🇹🇿', region: 'East Africa' },
   { code: 'WO', aiName: 'Wolof', sign: '🪘', region: 'Senegal - West Africa', isEthnical: true },
   { code: 'YO', aiName: 'Yoruba', sign: '🪘', region: 'Nigeria - West Africa', isEthnical: true },
   { code: 'ZU', aiName: 'Zulu', sign: '🪘', region: 'South Africa', isEthnical: true },
@@ -92,6 +92,7 @@ type LanguageDisplay = {
   isEthnical?: boolean;
 };
 
+/** Normalize language codes and labels for case-insensitive display lookup. */
 const normalizeLanguageKey = (value: string) => value.trim().toLowerCase();
 
 const LANGUAGE_DISPLAY_INDEX = new Map<string, LanguageDisplay>([
