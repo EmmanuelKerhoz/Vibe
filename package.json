@@ -1,7 +1,11 @@
 {
   "name": "lyricist-pro",
   "private": true,
+<<<<<<< copilot/preserve-meta-instructions-import
   "version": "1.28.0",
+=======
+  "version": "1.27.0",
+>>>>>>> main
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",

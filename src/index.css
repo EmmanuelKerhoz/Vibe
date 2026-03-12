@@ -232,19 +232,6 @@ body {
   border: 1px solid var(--border-color);
 }
 
-/* Global LCARS-style select elements */
-select, .lcars-select {
-  border-radius: 6px 2px 6px 2px !important;
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
-  color: var(--text-primary);
-  transition: box-shadow 0.2s;
-}
-select:focus, .lcars-select:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--accent-color), 0 0 10px 1px var(--accent-color);
-}
-
 .fluent-button { transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
 .fluent-button:active { transform: scale(0.98); }
 

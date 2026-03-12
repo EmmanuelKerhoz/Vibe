@@ -4,8 +4,7 @@ import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Label } from '../ui/Label';
 import { Input } from '../ui/Input';
-import { Select } from '../ui/Select';
-import { MenuItem } from '../ui/MenuItem';
+import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 import type { Section } from '../../types';
 
@@ -120,12 +119,12 @@ export function LeftSettingsPanel({
                   placeholder={t.leftPanel.songMoodPlaceholder}
                   list="mood-suggestions"
                 />
-                <Select value="" onChange={e => { if (e.target.value) setMood(e.target.value); }} aria-label={t.leftPanel.songMoodPresets}>
-                  <MenuItem value="">{t.leftPanel.songMoodPresets}</MenuItem>
-                  {Object.entries(t.moods).map(([key, moodOption]) => (
-                    <MenuItem key={key} value={moodOption}>{moodOption}</MenuItem>
-                  ))}
-                </Select>
+                <LcarsSelect
+                  value=""
+                  onChange={(v) => { if (v) setMood(v); }}
+                  placeholder={t.leftPanel.songMoodPresets}
+                  options={Object.entries(t.moods).map(([, moodOption]) => ({ value: moodOption, label: moodOption }))}
+                />
               </div>
               <datalist id="mood-suggestions">
                 {Object.entries(t.moods).map(([key, moodOption]) => <option key={key} value={moodOption} />)}
@@ -143,17 +142,21 @@ export function LeftSettingsPanel({
           <div className="space-y-4">
             <div>
               <Label>{t.leftPanel.rhymeScheme}</Label>
-              <Select value={rhymeScheme} onChange={e => setRhymeScheme(e.target.value ?? '')}>
-                <MenuItem value="AABB">{t.rhymeSchemes.AABB}</MenuItem>
-                <MenuItem value="ABAB">{t.rhymeSchemes.ABAB}</MenuItem>
-                <MenuItem value="AAAA">{t.rhymeSchemes.AAAA}</MenuItem>
-                <MenuItem value="ABCB">{t.rhymeSchemes.ABCB}</MenuItem>
-                <MenuItem value="AAABBB">{t.rhymeSchemes.AAABBB}</MenuItem>
-                <MenuItem value="AABBCC">{t.rhymeSchemes.AABBCC}</MenuItem>
-                <MenuItem value="ABABAB">{t.rhymeSchemes.ABABAB}</MenuItem>
-                <MenuItem value="ABCABC">{t.rhymeSchemes.ABCABC}</MenuItem>
-                <MenuItem value="FREE">{t.rhymeSchemes.FREE}</MenuItem>
-              </Select>
+              <LcarsSelect
+                value={rhymeScheme}
+                onChange={setRhymeScheme}
+                options={[
+                  { value: 'AABB', label: t.rhymeSchemes.AABB },
+                  { value: 'ABAB', label: t.rhymeSchemes.ABAB },
+                  { value: 'AAAA', label: t.rhymeSchemes.AAAA },
+                  { value: 'ABCB', label: t.rhymeSchemes.ABCB },
+                  { value: 'AAABBB', label: t.rhymeSchemes.AAABBB },
+                  { value: 'AABBCC', label: t.rhymeSchemes.AABBCC },
+                  { value: 'ABABAB', label: t.rhymeSchemes.ABABAB },
+                  { value: 'ABCABC', label: t.rhymeSchemes.ABCABC },
+                  { value: 'FREE', label: t.rhymeSchemes.FREE },
+                ]}
+              />
             </div>
             <div>
               <Label>{t.leftPanel.targetSyllables}</Label>

@@ -2,8 +2,7 @@ import React from 'react';
 import { Loader2, BarChart2, Languages, ScanText, Save, Layout, Search, RefreshCw, Timer } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
-import { Select } from '../ui/Select';
-import { MenuItem } from '../ui/MenuItem';
+import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from '../../i18n';
@@ -80,13 +79,11 @@ export function InsightsBar({
             </h3>
             <div className="hidden lg:block h-4 w-px bg-[var(--border-color)]" />
             <div className="flex items-center gap-2">
-              <Select value={targetLanguage} onChange={(e: { target: { value?: string } }) => setTargetLanguage(e.target.value ?? '')} size="small" style={{ height: 24, fontSize: '10px', color: 'var(--colorNeutralForeground2)', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '4px' }}>
-                {supportedAdaptationLanguages.map(lang => (
-                  <MenuItem key={lang.code} value={lang.aiName} style={{ fontSize: '10px' }}>
-                    {adaptLangLabel(lang)}
-                  </MenuItem>
-                ))}
-              </Select>
+              <LcarsSelect
+                value={targetLanguage}
+                onChange={setTargetLanguage}
+                options={supportedAdaptationLanguages.map(lang => ({ value: lang.aiName, label: adaptLangLabel(lang) }))}
+              />
               <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
                 <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
                   {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
