@@ -187,11 +187,12 @@ const ar: Translations = {
   },
 
   saveToLibrary: {
-    title: 'حفظ في المكتبة',
+    title: 'المكتبة',
     save: 'حفظ الأغنية الحالية',
     saving: 'جارٍ الحفظ…',
     saved: 'تم الحفظ!',
     saveDescription: 'أضف هذه الأغنية إلى مكتبتك الشخصية',
+    browseDescription: 'افتح المكتبة وأدر الأغاني المحفوظة',
     yourLibrary: 'مكتبتك',
     empty: 'لا توجد أغانٍ في المكتبة. احفظ هذه الأغنية لبدء مجموعتك.',
     close: 'إغلاق',
@@ -323,6 +324,7 @@ const ar: Translations = {
     chorus: 'لازمة',
     bridge: 'جسر',
     breakdown: 'انهيار',
+    finalChorus: 'لازمة أخيرة',
     outro: 'خاتمة',
   },
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, X, BookOpen, Music, Clock, Loader2, Library } from 'lucide-react';
+import { Save, X, BookOpen, Music, Clock, Loader2, Library, Trash2 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { LibraryAsset } from '../../../utils/libraryUtils';
@@ -8,6 +8,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => Promise<void>;
+  onDeleteAsset?: (assetId: string) => void;
   isSaving: boolean;
   currentTitle: string;
   libraryAssets: LibraryAsset[];
@@ -17,6 +18,7 @@ export function SaveToLibraryModal({
   isOpen,
   onClose,
   onSave,
+  onDeleteAsset,
   isSaving,
   currentTitle,
   libraryAssets,
@@ -121,6 +123,17 @@ export function SaveToLibraryModal({
                   <div className="text-[10px] text-[var(--text-secondary)] flex-shrink-0">
                     {asset.sections.length} section{asset.sections.length !== 1 ? 's' : ''}
                   </div>
+                  {onDeleteAsset && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteAsset(asset.id)}
+                      aria-label={`Remove ${asset.title} from library`}
+                      title="Remove from library"
+                      className="flex h-7 w-7 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

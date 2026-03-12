@@ -192,11 +192,12 @@ const en: Translations = {
   },
 
   saveToLibrary: {
-    title: 'Save to Library',
+    title: 'Library',
     save: 'Save Current Song',
     saving: 'Saving…',
     saved: 'Saved!',
     saveDescription: 'Add this song to your personal library',
+    browseDescription: 'Open your library and manage saved songs',
     yourLibrary: 'Your Library',
     empty: 'No songs in library yet. Save this song to start building your collection.',
     close: 'Close',
@@ -328,6 +329,7 @@ const en: Translations = {
     chorus: 'Chorus',
     bridge: 'Bridge',
     breakdown: 'Breakdown',
+    finalChorus: 'Final Chorus',
     outro: 'Outro',
   },
 

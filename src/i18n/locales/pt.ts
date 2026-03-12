@@ -187,11 +187,12 @@ const pt: Translations = {
   },
 
   saveToLibrary: {
-    title: 'Guardar na Biblioteca',
+    title: 'Biblioteca',
     save: 'Guardar música atual',
     saving: 'A guardar…',
     saved: 'Guardado!',
     saveDescription: 'Adicionar esta música à sua biblioteca pessoal',
+    browseDescription: 'Abrir a biblioteca e gerir as músicas guardadas',
     yourLibrary: 'A sua Biblioteca',
     empty: 'Nenhuma música na biblioteca. Guarde esta música para começar a sua coleção.',
     close: 'Fechar',
@@ -323,6 +324,7 @@ const pt: Translations = {
     chorus: 'Refrão',
     bridge: 'Ponte',
     breakdown: 'Breakdown',
+    finalChorus: 'Refrão final',
     outro: 'Outro',
   },
 

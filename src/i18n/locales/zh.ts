@@ -187,11 +187,12 @@ const zh: Translations = {
   },
 
   saveToLibrary: {
-    title: '保存到库',
+    title: '资料库',
     save: '保存当前歌曲',
     saving: '保存中…',
     saved: '已保存！',
     saveDescription: '将此歌曲添加到您的个人库',
+    browseDescription: '打开资料库并管理已保存的歌曲',
     yourLibrary: '您的库',
     empty: '库中还没有歌曲。保存此歌曲以开始建立您的收藏。',
     close: '关闭',
@@ -323,6 +324,7 @@ const zh: Translations = {
     chorus: '副歌',
     bridge: '桥段',
     breakdown: '间奏',
+    finalChorus: '最终副歌',
     outro: '尾奏',
   },
 

@@ -57,7 +57,7 @@ export function LyricsView({
   const { t } = useTranslation();
 
   const RHYME_KEYS = Object.keys(t.rhymeSchemes) as Array<keyof typeof t.rhymeSchemes>;
-  const SECTION_TYPE_OPTIONS = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Breakdown', 'Outro'];
+  const SECTION_TYPE_OPTIONS = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Breakdown', 'Final Chorus', 'Outro'];
 
   const moveSectionUp = useCallback((sectionId: string) => {
     const idx = song.findIndex(s => s.id === sectionId);

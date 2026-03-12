@@ -190,11 +190,12 @@ const fr: Translations = {
   },
 
   saveToLibrary: {
-    title: 'Enregistrer dans la bibliothèque',
+    title: 'Bibliothèque',
     save: 'Enregistrer la chanson',
     saving: 'Enregistrement…',
     saved: 'Enregistré !',
     saveDescription: 'Ajouter cette chanson à votre bibliothèque personnelle',
+    browseDescription: 'Ouvrir la bibliothèque et gérer les chansons enregistrées',
     yourLibrary: 'Votre bibliothèque',
     empty: 'Aucune chanson dans la bibliothèque. Enregistrez cette chanson pour commencer votre collection.',
     close: 'Fermer',
@@ -326,6 +327,7 @@ const fr: Translations = {
     chorus: 'Refrain',
     bridge: 'Pont',
     breakdown: 'Breakdown',
+    finalChorus: 'Refrain final',
     outro: 'Outro',
   },
 

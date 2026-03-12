@@ -192,9 +192,9 @@ export const SectionEditor = React.memo(function SectionEditor({
           {/* Column headers — hidden for meta-only sections */}
           <div className="lyric-row px-3 pb-1 border-b border-white/5 mb-1">
             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
-            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>Schema</span>
-            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>Count</span>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Syllables</span>
+            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>Count</span>
+            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Schema</span>
             <div/>
           </div>
 
@@ -313,6 +313,12 @@ export const SectionEditor = React.memo(function SectionEditor({
                   style={{ width: '100%', minWidth: 0 }}
                 />
 
+                <span className="lyric-col-aux" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
+                  {line.rhymingSyllables || '\u00a0'}
+                </span>
+                <span className="lyric-col-aux" style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                  {line.syllables > 0 ? line.syllables : ''}
+                </span>
                 <span className="lyric-col-aux" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   {(() => {
                     const lyricIndex = lyricLineIndexMap.get(line.id) ?? 0;
@@ -323,12 +329,6 @@ export const SectionEditor = React.memo(function SectionEditor({
                       </span>
                     ) : null;
                   })()}
-                </span>
-                <span className="lyric-col-aux" style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                  {line.syllables > 0 ? line.syllables : ''}
-                </span>
-                <span className="lyric-col-aux" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
-                  {line.rhymingSyllables || '\u00a0'}
                 </span>
 
                 <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>

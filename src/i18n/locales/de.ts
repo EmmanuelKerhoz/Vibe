@@ -187,11 +187,12 @@ const de: Translations = {
   },
 
   saveToLibrary: {
-    title: 'In Bibliothek speichern',
+    title: 'Bibliothek',
     save: 'Aktuellen Song speichern',
     saving: 'Speichert…',
     saved: 'Gespeichert!',
     saveDescription: 'Diesen Song zur persönlichen Bibliothek hinzufügen',
+    browseDescription: 'Bibliothek öffnen und gespeicherte Songs verwalten',
     yourLibrary: 'Deine Bibliothek',
     empty: 'Noch keine Songs in der Bibliothek. Speichere diesen Song, um deine Sammlung zu beginnen.',
     close: 'Schließen',
@@ -323,6 +324,7 @@ const de: Translations = {
     chorus: 'Refrain',
     bridge: 'Bridge',
     breakdown: 'Breakdown',
+    finalChorus: 'Finaler Refrain',
     outro: 'Outro',
   },
 

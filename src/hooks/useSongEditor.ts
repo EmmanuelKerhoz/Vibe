@@ -70,7 +70,7 @@ export const useSongEditor = ({
     const itemToAdd = cleanSectionName(name || newSectionName.trim());
     if (!itemToAdd) return;
 
-    if (['Intro', 'Bridge', 'Outro'].includes(itemToAdd)) {
+    if (['Intro', 'Bridge', 'Outro', 'Final Chorus', 'Refrain final'].includes(itemToAdd)) {
       if (structure.some(s => s.toLowerCase() === itemToAdd.toLowerCase())) return;
     }
 
