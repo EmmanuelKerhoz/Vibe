@@ -488,7 +488,7 @@ export function MusicalTab({
                     Sub-style clues
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {suggestedSubStyles.slice(0, 4).map(sub => (
+                    {suggestedSubStyles.map(sub => (
                       <span
                         key={sub}
                         className="rounded-full px-2 py-1 text-[10px] font-medium"
