@@ -5,6 +5,7 @@ import { getSectionDotColor, getSectionColorHex, getSectionTextColor, getRhymeCo
 import { LyricInput } from './LyricInput';
 import { InstructionEditor } from './InstructionEditor';
 import { Tooltip } from '../ui/Tooltip';
+import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 
 interface SectionEditorProps {
@@ -127,30 +128,24 @@ export const SectionEditor = React.memo(function SectionEditor({
               </Tooltip>
             </div>
             <div>
-              <select
+              <LcarsSelect
                 value={section.name}
-                onChange={(e) => setSectionName(section.id, e.target.value)}
-                className={`lcars-section-title text-lg font-semibold uppercase tracking-[0.25em] bg-transparent border-none outline-none cursor-pointer ${getSectionTextColor(section.name)}`}
+                onChange={(v) => setSectionName(section.id, v)}
+                options={[
+                  ...SECTION_TYPE_OPTIONS.map(opt => ({ value: opt, label: opt.toUpperCase() })),
+                  ...(!SECTION_TYPE_OPTIONS.includes(section.name)
+                    ? [{ value: section.name, label: section.name.toUpperCase() }]
+                    : []),
+                ]}
                 style={{ color: getSectionColorHex(section.name) }}
-              >
-                {SECTION_TYPE_OPTIONS.map(opt => (
-                  <option key={opt} value={opt}>{opt.toUpperCase()}</option>
-                ))}
-                {!SECTION_TYPE_OPTIONS.includes(section.name) && (
-                  <option value={section.name}>{section.name.toUpperCase()}</option>
-                )}
-              </select>
+              />
               <div className="mt-1 flex items-center gap-2">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">{section.lines.length} {t.editor.lines ?? 'lines'}</p>
-                <select
+                <LcarsSelect
                   value={section.rhymeScheme || rhymeScheme}
-                  onChange={(e) => setSectionRhymeScheme(section.id, e.target.value)}
-                  className="text-[10px] uppercase tracking-[0.15em] lcars-select cursor-pointer"
-                >
-                  {RHYME_KEYS.map(key => (
-                    <option key={key} value={key}>{key}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setSectionRhymeScheme(section.id, v)}
+                  options={RHYME_KEYS.map(key => ({ value: key, label: key }))}
+                />
               </div>
             </div>
           </div>
