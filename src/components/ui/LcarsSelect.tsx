@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback, type CSSProperties } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  type CSSProperties,
+  createPortal,
+} from 'react';
 import { ChevronDown } from 'lucide-react';
 
 interface LcarsSelectProps {
@@ -24,6 +31,7 @@ export function LcarsSelect({
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
 
   const selectedLabel =
     options.find((o) => o.value === value)?.label ??
@@ -33,6 +41,12 @@ export function LcarsSelect({
   const close = useCallback(() => {
     setIsOpen(false);
     setFocusedIndex(-1);
+  }, []);
+
+  const updateTriggerRect = useCallback(() => {
+    if (containerRef.current) {
+      setTriggerRect(containerRef.current.getBoundingClientRect());
+    }
   }, []);
 
   // Close on outside click
@@ -55,11 +69,23 @@ export function LcarsSelect({
     }
   }, [isOpen, focusedIndex]);
 
+  // Update trigger rect on open + window resize
+  useEffect(() => {
+    if (isOpen) {
+      updateTriggerRect();
+      const handleResize = () => updateTriggerRect();
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+    return undefined;
+  }, [isOpen, updateTriggerRect]);
+
   const handleTriggerClick = () => {
     if (disabled) return;
     const nextOpen = !isOpen;
     setIsOpen(nextOpen);
     if (nextOpen) {
+      updateTriggerRect();
       const idx = options.findIndex((o) => o.value === value);
       setFocusedIndex(idx >= 0 ? idx : 0);
     }
@@ -81,6 +107,7 @@ export function LcarsSelect({
           if (opt) handleSelect(opt.value);
         } else {
           setIsOpen(true);
+          updateTriggerRect();
           const idx = options.findIndex((o) => o.value === value);
           setFocusedIndex(idx >= 0 ? idx : 0);
         }
@@ -93,6 +120,7 @@ export function LcarsSelect({
         e.preventDefault();
         if (!isOpen) {
           setIsOpen(true);
+          updateTriggerRect();
           setFocusedIndex(0);
         } else {
           setFocusedIndex((i) => Math.min(i + 1, options.length - 1));
@@ -102,6 +130,7 @@ export function LcarsSelect({
         e.preventDefault();
         if (!isOpen) {
           setIsOpen(true);
+          updateTriggerRect();
           setFocusedIndex(options.length - 1);
         } else {
           setFocusedIndex((i) => Math.max(i - 1, 0));
@@ -113,7 +142,10 @@ export function LcarsSelect({
   };
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+    <div
+      ref={containerRef}
+      style={{ position: 'relative', display: 'inline-block', width: '100%' }}
+    >
       {/* Trigger button */}
       <button
         type="button"
@@ -176,69 +208,71 @@ export function LcarsSelect({
         />
       </button>
 
-      {/* Dropdown panel */}
-      {isOpen && (
-        <ul
-          ref={listRef}
-          role="listbox"
-          aria-activedescendant={focusedIndex >= 0 ? `lcars-opt-${focusedIndex}` : undefined}
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-            marginTop: 2,
-            borderRadius: '2px 6px 6px 2px',
-            border: '1px solid var(--accent-color)',
-            background: 'var(--bg-card)',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 0 20px 2px color-mix(in srgb, var(--accent-color) 30%, transparent)',
-            maxHeight: 260,
-            overflowY: 'auto',
-            listStyle: 'none',
-            margin: 0,
-            padding: 0,
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'var(--accent-color) transparent',
-          }}
-        >
-          {options.map((opt, idx) => {
-            const isSelected = opt.value === value;
-            const isFocused = idx === focusedIndex;
-            return (
-              <li
-                key={opt.value}
-                id={`lcars-opt-${idx}`}
-                role="option"
-                aria-selected={isSelected}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleSelect(opt.value);
-                }}
-                onMouseEnter={() => setFocusedIndex(idx)}
-                style={{
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  color: isSelected || isFocused ? 'var(--accent-color)' : 'var(--text-primary)',
-                  background:
-                    isFocused
-                      ? 'color-mix(in srgb, var(--accent-color) 15%, transparent)'
-                      : 'transparent',
-                  borderLeft: isSelected ? '3px solid var(--accent-color)' : '3px solid transparent',
-                  transition: 'background 0.1s, color 0.1s',
-                  fontSize: 'inherit',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {opt.label}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {/* Dropdown panel — portaled to document.body to escape any overflow/z-index clip */}
+      {isOpen &&
+        createPortal(
+          <ul
+            ref={listRef}
+            role="listbox"
+            aria-activedescendant={focusedIndex >= 0 ? `lcars-opt-${focusedIndex}` : undefined}
+            style={{
+              position: 'fixed',
+              top: (triggerRect ? triggerRect.bottom : 0),
+              left: triggerRect?.left ?? 0,
+              width: triggerRect?.width ?? 'auto',
+              zIndex: 9999,
+              marginTop: 2,
+              borderRadius: '2px 6px 6px 2px',
+              border: '1px solid var(--accent-color)',
+              background: 'var(--bg-card)',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 0 20px 2px color-mix(in srgb, var(--accent-color) 30%, transparent)',
+              maxHeight: 260,
+              overflowY: 'auto',
+              listStyle: 'none',
+              margin: 0,
+              padding: 0,
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'var(--accent-color) transparent',
+            }}
+          >
+            {options.map((opt, idx) => {
+              const isSelected = opt.value === value;
+              const isFocused = idx === focusedIndex;
+              return (
+                <li
+                  key={opt.value}
+                  id={`lcars-opt-${idx}`}
+                  role="option"
+                  aria-selected={isSelected}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(opt.value);
+                  }}
+                  onMouseEnter={() => setFocusedIndex(idx)}
+                  style={{
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    color: isSelected || isFocused ? 'var(--accent-color)' : 'var(--text-primary)',
+                    background:
+                      isFocused
+                        ? 'color-mix(in srgb, var(--accent-color) 15%, transparent)'
+                        : 'transparent',
+                    borderLeft: isSelected ? '3px solid var(--accent-color)' : '3px solid transparent',
+                    transition: 'background 0.1s, color 0.1s',
+                    fontSize: 'inherit',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {opt.label}
+                </li>
+              );
+            })}
+          </ul>,
+          document.body
+        )}
     </div>
   );
 }

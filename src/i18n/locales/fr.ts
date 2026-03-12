@@ -93,6 +93,7 @@ const fr: Translations = {
     rhymeSyllable: 'Syllabe rimante',
     rhyme: 'Rime',
     syllables: 'Syllabes',
+    syllableCount: 'Compte',
     concept: 'Concept',
     lines: 'Lignes',
     chars: 'Caractères',
@@ -109,6 +110,8 @@ const fr: Translations = {
     moveLineUp: 'Monter la ligne',
     moveLineDown: 'Descendre la ligne',
     deleteLine: 'Supprimer la ligne',
+    addLine: 'Ajouter une ligne',
+    addMusicalEffect: 'Ajouter un effet musical / modulation / effet',
   },
 
   suggestions: {
@@ -208,7 +211,6 @@ const fr: Translations = {
     analyze: 'Analyser & Importer',
     analyzing: 'Analyse...',
   },
-
 
   importDialog: {
     title: 'Importer un fichier de paroles',
