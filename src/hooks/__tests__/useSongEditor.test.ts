@@ -74,6 +74,11 @@ describe('useSongEditor', () => {
       value: revokeObjectURLMock,
     });
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(clickMock);
+    Object.defineProperty(window, 'showSaveFilePicker', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
   });
 
   describe('removeStructureItem', () => {
@@ -145,12 +150,12 @@ describe('useSongEditor', () => {
   });
 
   describe('exportSong', () => {
-    it('downloads a txt file for a song with content', () => {
+    it('downloads a txt file for a song with content', async () => {
       const song = [
         makeSection('s1', 'Verse 1', [makeLine('l1', 'Hello world')]),
       ];
       const { result } = buildHook(song, ['Verse 1']);
-      act(() => result.current.exportSong('txt'));
+      await act(async () => { await result.current.exportSong('txt'); });
 
       expect(createObjectURLMock).toHaveBeenCalledOnce();
       expect(clickMock).toHaveBeenCalledOnce();
@@ -162,19 +167,18 @@ describe('useSongEditor', () => {
       expect(lastCreatedBlob()?.type).toBe('text/plain;charset=utf-8');
     });
 
-    it('does nothing for empty song export', () => {
+    it('does nothing for empty song export', async () => {
       const { result } = buildHook([], []);
-      const txt = result.current.exportSong('txt');
-      expect(txt).toBeUndefined();
+      await act(async () => { await result.current.exportSong('txt'); });
       expect(createObjectURLMock).not.toHaveBeenCalled();
     });
 
-    it('downloads markup with the section heading and lyrics', () => {
+    it('downloads markup with the section heading and lyrics', async () => {
       const song = [
         makeSection('s1', 'Chorus', [makeLine('l1', 'Sing along'), { ...makeLine('l2', '[drop]'), isMeta: true }]),
       ];
       const { result } = buildHook(song, ['Chorus']);
-      act(() => result.current.exportSong('markup'));
+      await act(async () => { await result.current.exportSong('markup'); });
 
       expect(createObjectURLMock).toHaveBeenCalledOnce();
       expect(clickMock).toHaveBeenCalledOnce();
@@ -184,12 +188,12 @@ describe('useSongEditor', () => {
       expect(lastCreatedBlob()?.type).toBe('text/markdown;charset=utf-8');
     });
 
-    it('downloads docx as a zip-based office document', () => {
+    it('downloads docx as a zip-based office document', async () => {
       const song = [
         makeSection('s1', 'Chorus', [makeLine('l1', 'Sing along')]),
       ];
       const { result } = buildHook(song, ['Chorus']);
-      act(() => result.current.exportSong('docx'));
+      await act(async () => { await result.current.exportSong('docx'); });
 
       const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
       expect(anchor.download).toBe('Test_Song.docx');
@@ -197,17 +201,46 @@ describe('useSongEditor', () => {
       expect(lastCreatedBlob()?.size).toBeGreaterThan(0);
     });
 
-    it('downloads odt as a zip-based open document', () => {
+    it('downloads odt as a zip-based open document', async () => {
       const song = [
         makeSection('s1', 'Verse 1', [makeLine('l1', 'Hello world')]),
       ];
       const { result } = buildHook(song, ['Verse 1']);
-      act(() => result.current.exportSong('odt'));
+      await act(async () => { await result.current.exportSong('odt'); });
 
       const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
       expect(anchor.download).toBe('Test_Song.odt');
       expect(lastCreatedBlob()?.type).toBe('application/vnd.oasis.opendocument.text');
       expect(lastCreatedBlob()?.size).toBeGreaterThan(0);
+    });
+
+    it('uses the native save dialog and starts in downloads when available', async () => {
+      const writeMock = vi.fn(async () => {});
+      const closeMock = vi.fn(async () => {});
+      const showSaveFilePickerMock = vi.fn(async () => ({
+        createWritable: async () => ({ write: writeMock, close: closeMock }),
+      }));
+      Object.defineProperty(window, 'showSaveFilePicker', {
+        configurable: true,
+        writable: true,
+        value: showSaveFilePickerMock,
+      });
+      const song = [
+        makeSection('s1', 'Verse 1', [makeLine('l1', 'Hello world')]),
+      ];
+      const { result } = buildHook(song, ['Verse 1']);
+
+      await act(async () => { await result.current.exportSong('txt'); });
+
+      expect(showSaveFilePickerMock).toHaveBeenCalledWith(expect.objectContaining({
+        suggestedName: 'Test_Song.txt',
+        startIn: 'downloads',
+      }));
+      expect(writeMock).toHaveBeenCalledOnce();
+      expect(writeMock).toHaveBeenCalledWith(expect.any(Blob));
+      expect(closeMock).toHaveBeenCalledOnce();
+      expect(createObjectURLMock).not.toHaveBeenCalled();
+      expect(clickMock).not.toHaveBeenCalled();
     });
   });
 });

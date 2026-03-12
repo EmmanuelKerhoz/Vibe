@@ -33,7 +33,7 @@ export function useAppState() {
   const [audioFeedback, setAudioFeedback] = useState(true);
   const [isMarkupMode, setIsMarkupMode] = useState(false);
   const [markupText, setMarkupText] = useState('');
-  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiErrorModal, setApiErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
