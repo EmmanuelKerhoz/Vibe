@@ -143,7 +143,13 @@ export default function App() {
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); }, playAudioFeedback,
   });
   const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood, songLanguage);
-  useTopicMoodSuggester(topic, mood, setTopic, setMood);
+  // Destructure hook return — generateSuggestion exposed as onSurprise for LeftSettingsPanel
+  const { generateSuggestion: handleSurprise, isGeneratingSuggestion: isSurprising } =
+    useTopicMoodSuggester(topic, mood, setTopic, setMood);
+  const handleSurpriseClick = useCallback(async () => {
+    const suggestion = await handleSurprise();
+    if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }
+  }, [handleSurprise, setTopic, setMood]);
   useEffect(() => {
     if (!shouldAutoGenerateTitle || song.length === 0) return;
     let isCancelled = false;
@@ -228,6 +234,8 @@ export default function App() {
           targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
           song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
           isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+          onSurprise={handleSurpriseClick}
+          isSurprising={isSurprising}
         />
         <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
