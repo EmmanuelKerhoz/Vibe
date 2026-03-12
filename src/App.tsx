@@ -28,6 +28,7 @@ import { LyricsView } from './components/app/LyricsView';
 import { AboutModal } from './components/app/modals/AboutModal';
 import { ApiErrorModal } from './components/app/modals/ApiErrorModal';
 import { ImportModal } from './components/app/modals/ImportModal';
+import { ExportModal } from './components/app/modals/ExportModal';
 import { PasteModal } from './components/app/modals/PasteModal';
 import { AnalysisModal } from './components/app/modals/AnalysisModal';
 import { SimilarityModal } from './components/app/modals/SimilarityModal';
@@ -56,8 +57,9 @@ export default function App() {
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
     isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
     isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
-    apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
-    isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
+     apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
+     isExportModalOpen, setIsExportModalOpen,
+     isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
     isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
     isResetModalOpen, setIsResetModalOpen, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     confirmModal, setConfirmModal, promptModal, setPromptModal,
@@ -136,7 +138,7 @@ export default function App() {
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
-    handleLineDragStart, handleLineDrop, exportTxt, exportMd, loadFileForAnalysis,
+    handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
   } = useSongEditor({ song, structure, newSectionName, setNewSectionName,
     draggedItemIndex, setDraggedItemIndex, setDragOverIndex, draggedLineInfo, setDraggedLineInfo, setDragOverLineInfo,
     updateState, updateSongWithHistory, updateStructureWithHistory, updateSongAndStructureWithHistory, title, topic, mood,
@@ -243,12 +245,12 @@ export default function App() {
             isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
             activeTab={activeTab} setActiveTab={setActiveTab}
             song={song} past={past} future={future} undo={undo} redo={redo}
-            setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
-            isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-            hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-            onImportClick={() => setIsImportModalOpen(true)} exportTxt={exportTxt} exportMd={exportMd}
-            isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-          />
+             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
+             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+             onImportClick={() => setIsImportModalOpen(true)} onExportClick={() => setIsExportModalOpen(true)}
+             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+           />
           {activeTab === 'lyrics' && song.length > 0 && (
             <InsightsBar
               song={song} sectionCount={sectionCount} wordCount={wordCount} charCount={charCount}
@@ -326,6 +328,7 @@ export default function App() {
         setAudioFeedback={setAudioFeedback}
       />
       <ImportModal isOpen={isImportModalOpen} hasExistingWork={hasExistingWork} onClose={() => setIsImportModalOpen(false)} onChooseFile={handleImportChooseFile} />
+      <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} onExport={exportSong} />
       <SuggestionsPanel selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId} suggestions={suggestions} isSuggesting={isSuggesting} applySuggestion={applySuggestion} generateSuggestions={generateSuggestions} />
       <PasteModal isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)} pastedText={pastedText} setPastedText={setPastedText} isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics} />
       <AnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps} appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems} isApplyingAnalysis={isApplyingAnalysis} toggleAnalysisItemSelection={toggleAnalysisItemSelection} applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems} versions={versions} rollbackToVersion={rollbackToVersion} />

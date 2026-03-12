@@ -137,13 +137,15 @@ export const SectionEditor = React.memo(function SectionEditor({
                 ]}
                 style={{ color: getSectionColorHex(section.name) }}
               />
-              <div className="mt-1 flex items-center gap-2">
+              <div className="mt-1 flex flex-wrap items-center gap-2">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">{section.lines.length} {t.editor.lines ?? 'lines'}</p>
-                <LcarsSelect
-                  value={section.rhymeScheme || rhymeScheme}
-                  onChange={(v) => setSectionRhymeScheme(section.id, v)}
-                  options={RHYME_KEYS.map(key => ({ value: key, label: key }))}
-                />
+                <div className="min-w-[15rem] max-w-full flex-1">
+                  <LcarsSelect
+                    value={section.rhymeScheme || rhymeScheme}
+                    onChange={(v) => setSectionRhymeScheme(section.id, v)}
+                    options={RHYME_KEYS.map(key => ({ value: key, label: t.rhymeSchemes[key as keyof typeof t.rhymeSchemes] }))}
+                  />
+                </div>
               </div>
             </div>
           </div>

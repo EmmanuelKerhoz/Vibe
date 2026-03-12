@@ -37,6 +37,7 @@ export function useAppState() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiErrorModal, setApiErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
   const [isSimilarityModalOpen, setIsSimilarityModalOpen] = useState(false);
   const [isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen] = useState(false);
@@ -105,6 +106,7 @@ export function useAppState() {
     isSettingsOpen, setIsSettingsOpen,
     apiErrorModal, setApiErrorModal,
     isImportModalOpen, setIsImportModalOpen,
+    isExportModalOpen, setIsExportModalOpen,
     isSectionDropdownOpen, setIsSectionDropdownOpen,
     isSimilarityModalOpen, setIsSimilarityModalOpen,
     isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen,

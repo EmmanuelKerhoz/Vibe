@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { IconButton } from '../ui/IconButton';
 import { Input } from '../ui/Input';
 import { useTranslation } from '../../i18n';
-import { getSectionColor, getSectionDotColor } from '../../utils/songUtils';
+import { getSectionColor, getSectionDotColor, getSectionTextColor } from '../../utils/songUtils';
 import type { Section } from '../../types';
 
 interface Props {
@@ -97,8 +97,9 @@ export function StructureSidebar({
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                           onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
                           onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }}
-                          className={`group flex items-center gap-2 border lcars-sidebar-pill pl-3 pr-1 py-2 text-xs transition-all duration-200 ${getSectionColor(item)} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/50' : 'cursor-default'} ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                          className={`group flex items-center gap-3 rounded-[16px_6px_16px_6px] border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(item)} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                         >
+                          <span className={`h-7 w-1.5 rounded-full ${getSectionDotColor(item)}`} aria-hidden="true" />
                           {isDraggable ? (
                             <GripVertical className="w-3.5 h-3.5 opacity-30 group-hover:opacity-60 transition-opacity" />
                           ) : (
@@ -107,7 +108,7 @@ export function StructureSidebar({
                           {/* Clickable label scrolls to section */}
                           <button
                             type="button"
-                            className="flex-1 text-left truncate hover:text-[var(--accent-color)] transition-colors"
+                            className={`flex-1 text-left truncate transition-colors ${getSectionTextColor(item)} hover:text-[var(--accent-color)]`}
                             onClick={() => sectionId && onScrollToSection(sectionId)}
                             title={`Scroll to ${item}`}
                           >
