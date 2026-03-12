@@ -93,6 +93,7 @@ const de: Translations = {
     rhymeSyllable: 'Reimsilbe',
     rhyme: 'Reim',
     syllables: 'Silben',
+    syllableCount: 'Anzahl',
     concept: 'Konzept',
     lines: 'Zeilen',
     chars: 'Zeichen',

@@ -93,6 +93,7 @@ const en: Translations = {
     rhymeSyllable: 'Rhyme Syllable',
     rhyme: 'Rhyme',
     syllables: 'Syllables',
+    syllableCount: 'Count',
     concept: 'Concept',
     lines: 'Lines',
     chars: 'Chars',

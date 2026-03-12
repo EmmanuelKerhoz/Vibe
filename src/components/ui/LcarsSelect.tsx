@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
 interface LcarsSelectProps {
@@ -22,6 +23,7 @@ export function LcarsSelect({
 }: LcarsSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -33,18 +35,33 @@ export function LcarsSelect({
   const close = useCallback(() => {
     setIsOpen(false);
     setFocusedIndex(-1);
+    setDropdownPos(null);
   }, []);
 
-  // Close on outside click
+  // Close on outside click – check both trigger container and portal list
   useEffect(() => {
     if (!isOpen) return;
     const handleOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        close();
-      }
+      if (
+        containerRef.current?.contains(e.target as Node) ||
+        listRef.current?.contains(e.target as Node)
+      ) return;
+      close();
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
+  }, [isOpen, close]);
+
+  // Close on window resize or any scroll (dropdown position would be stale)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleDismiss = () => close();
+    window.addEventListener('resize', handleDismiss, { passive: true });
+    window.addEventListener('scroll', handleDismiss, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener('resize', handleDismiss);
+      window.removeEventListener('scroll', handleDismiss, { capture: true });
+    };
   }, [isOpen, close]);
 
   // Scroll focused option into view
@@ -57,12 +74,18 @@ export function LcarsSelect({
 
   const handleTriggerClick = () => {
     if (disabled) return;
-    const nextOpen = !isOpen;
-    setIsOpen(nextOpen);
-    if (nextOpen) {
-      const idx = options.findIndex((o) => o.value === value);
-      setFocusedIndex(idx >= 0 ? idx : 0);
+    if (isOpen) {
+      close();
+      return;
     }
+    // Calculate position from the trigger element before opening
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownPos({ top: rect.bottom + 2, left: rect.left, width: rect.width });
+    }
+    setIsOpen(true);
+    const idx = options.findIndex((o) => o.value === value);
+    setFocusedIndex(idx >= 0 ? idx : 0);
   };
 
   const handleSelect = (optValue: string) => {
@@ -80,6 +103,10 @@ export function LcarsSelect({
           const opt = options[focusedIndex];
           if (opt) handleSelect(opt.value);
         } else {
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setDropdownPos({ top: rect.bottom + 2, left: rect.left, width: rect.width });
+          }
           setIsOpen(true);
           const idx = options.findIndex((o) => o.value === value);
           setFocusedIndex(idx >= 0 ? idx : 0);
@@ -92,6 +119,10 @@ export function LcarsSelect({
       case 'ArrowDown':
         e.preventDefault();
         if (!isOpen) {
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setDropdownPos({ top: rect.bottom + 2, left: rect.left, width: rect.width });
+          }
           setIsOpen(true);
           setFocusedIndex(0);
         } else {
@@ -101,6 +132,10 @@ export function LcarsSelect({
       case 'ArrowUp':
         e.preventDefault();
         if (!isOpen) {
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setDropdownPos({ top: rect.bottom + 2, left: rect.left, width: rect.width });
+          }
           setIsOpen(true);
           setFocusedIndex(options.length - 1);
         } else {
@@ -111,6 +146,69 @@ export function LcarsSelect({
         break;
     }
   };
+
+  const dropdownList = isOpen && dropdownPos ? createPortal(
+    <ul
+      ref={listRef}
+      role="listbox"
+      aria-activedescendant={focusedIndex >= 0 ? `lcars-opt-${focusedIndex}` : undefined}
+      style={{
+        position: 'fixed',
+        top: dropdownPos.top,
+        left: dropdownPos.left,
+        width: dropdownPos.width,
+        zIndex: 9999,
+        borderRadius: '2px 6px 6px 2px',
+        border: '1px solid var(--accent-color)',
+        background: 'var(--bg-card)',
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 0 20px 2px color-mix(in srgb, var(--accent-color) 30%, transparent)',
+        maxHeight: 260,
+        overflowY: 'auto',
+        listStyle: 'none',
+        margin: 0,
+        padding: 0,
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'var(--accent-color) transparent',
+      }}
+    >
+      {options.map((opt, idx) => {
+        const isSelected = opt.value === value;
+        const isFocused = idx === focusedIndex;
+        return (
+          <li
+            key={opt.value}
+            id={`lcars-opt-${idx}`}
+            role="option"
+            aria-selected={isSelected}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleSelect(opt.value);
+            }}
+            onMouseEnter={() => setFocusedIndex(idx)}
+            style={{
+              padding: '8px 12px',
+              cursor: 'pointer',
+              color: isSelected || isFocused ? 'var(--accent-color)' : 'var(--text-primary)',
+              background:
+                isFocused
+                  ? 'color-mix(in srgb, var(--accent-color) 15%, transparent)'
+                  : 'transparent',
+              borderLeft: isSelected ? '3px solid var(--accent-color)' : '3px solid transparent',
+              transition: 'background 0.1s, color 0.1s',
+              fontSize: 'inherit',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {opt.label}
+          </li>
+        );
+      })}
+    </ul>,
+    document.body
+  ) : null;
 
   return (
     <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
@@ -176,69 +274,8 @@ export function LcarsSelect({
         />
       </button>
 
-      {/* Dropdown panel */}
-      {isOpen && (
-        <ul
-          ref={listRef}
-          role="listbox"
-          aria-activedescendant={focusedIndex >= 0 ? `lcars-opt-${focusedIndex}` : undefined}
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-            marginTop: 2,
-            borderRadius: '2px 6px 6px 2px',
-            border: '1px solid var(--accent-color)',
-            background: 'var(--bg-card)',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 0 20px 2px color-mix(in srgb, var(--accent-color) 30%, transparent)',
-            maxHeight: 260,
-            overflowY: 'auto',
-            listStyle: 'none',
-            margin: 0,
-            padding: 0,
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'var(--accent-color) transparent',
-          }}
-        >
-          {options.map((opt, idx) => {
-            const isSelected = opt.value === value;
-            const isFocused = idx === focusedIndex;
-            return (
-              <li
-                key={opt.value}
-                id={`lcars-opt-${idx}`}
-                role="option"
-                aria-selected={isSelected}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleSelect(opt.value);
-                }}
-                onMouseEnter={() => setFocusedIndex(idx)}
-                style={{
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  color: isSelected || isFocused ? 'var(--accent-color)' : 'var(--text-primary)',
-                  background:
-                    isFocused
-                      ? 'color-mix(in srgb, var(--accent-color) 15%, transparent)'
-                      : 'transparent',
-                  borderLeft: isSelected ? '3px solid var(--accent-color)' : '3px solid transparent',
-                  transition: 'background 0.1s, color 0.1s',
-                  fontSize: 'inherit',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {opt.label}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {/* Dropdown panel – rendered via portal to escape overflow/transform stacking contexts */}
+      {dropdownList}
     </div>
   );
 }
