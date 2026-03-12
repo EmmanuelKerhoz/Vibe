@@ -17,6 +17,10 @@ const DEFAULT_STRUCTURE = ['Verse 1', 'Chorus'];
 const createObjectURLMock = vi.fn(() => 'blob:test');
 const revokeObjectURLMock = vi.fn();
 const clickMock = vi.fn();
+const lastCreatedBlob = () => {
+  const firstCall = createObjectURLMock.mock.calls[0] as [Blob] | undefined;
+  return firstCall ? firstCall[0] : undefined;
+};
 
 const buildHook = (song: Section[], structure = DEFAULT_STRUCTURE) => {
   const updateState = vi.fn();
@@ -130,13 +134,13 @@ describe('useSongEditor', () => {
     });
   });
 
-  describe('exportTxt', () => {
+  describe('exportSong', () => {
     it('downloads a txt file for a song with content', () => {
       const song = [
         makeSection('s1', 'Verse 1', [makeLine('l1', 'Hello world')]),
       ];
       const { result } = buildHook(song, ['Verse 1']);
-      act(() => result.current.exportTxt());
+      act(() => result.current.exportSong('txt'));
 
       expect(createObjectURLMock).toHaveBeenCalledOnce();
       expect(clickMock).toHaveBeenCalledOnce();
@@ -145,29 +149,55 @@ describe('useSongEditor', () => {
       const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
       expect(anchor.download).toBe('Test_Song.txt');
       expect(anchor.href).toContain('blob:test');
+      expect(lastCreatedBlob()?.type).toBe('text/plain;charset=utf-8');
     });
 
     it('does nothing for empty song export', () => {
       const { result } = buildHook([], []);
-      const txt = result.current.exportTxt();
+      const txt = result.current.exportSong('txt');
       expect(txt).toBeUndefined();
       expect(createObjectURLMock).not.toHaveBeenCalled();
     });
-  });
 
-  describe('exportMd', () => {
-    it('downloads markdown with the section heading and lyrics', () => {
+    it('downloads markup with the section heading and lyrics', () => {
       const song = [
-        makeSection('s1', 'Chorus', [makeLine('l1', 'Sing along')]),
+        makeSection('s1', 'Chorus', [makeLine('l1', 'Sing along'), { ...makeLine('l2', '[drop]'), isMeta: true }]),
       ];
       const { result } = buildHook(song, ['Chorus']);
-      act(() => result.current.exportMd());
+      act(() => result.current.exportSong('markup'));
 
       expect(createObjectURLMock).toHaveBeenCalledOnce();
       expect(clickMock).toHaveBeenCalledOnce();
       const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
       expect(anchor.download).toBe('Test_Song.md');
       expect(anchor.href).toContain('blob:test');
+      expect(lastCreatedBlob()?.type).toBe('text/markdown;charset=utf-8');
+    });
+
+    it('downloads docx as a zip-based office document', () => {
+      const song = [
+        makeSection('s1', 'Chorus', [makeLine('l1', 'Sing along')]),
+      ];
+      const { result } = buildHook(song, ['Chorus']);
+      act(() => result.current.exportSong('docx'));
+
+      const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
+      expect(anchor.download).toBe('Test_Song.docx');
+      expect(lastCreatedBlob()?.type).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      expect(lastCreatedBlob()?.size).toBeGreaterThan(0);
+    });
+
+    it('downloads odt as a zip-based open document', () => {
+      const song = [
+        makeSection('s1', 'Verse 1', [makeLine('l1', 'Hello world')]),
+      ];
+      const { result } = buildHook(song, ['Verse 1']);
+      act(() => result.current.exportSong('odt'));
+
+      const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
+      expect(anchor.download).toBe('Test_Song.odt');
+      expect(lastCreatedBlob()?.type).toBe('application/vnd.oasis.opendocument.text');
+      expect(lastCreatedBlob()?.size).toBeGreaterThan(0);
     });
   });
 });

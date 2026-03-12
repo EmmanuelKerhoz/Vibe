@@ -26,8 +26,7 @@ interface Props {
   hasApiKey: boolean;
   handleApiKeyHelp: () => void;
   onImportClick: () => void;
-  exportTxt: () => void;
-  exportMd: () => void;
+  onExportClick: () => void;
   isGenerating: boolean;
   isAnalyzing: boolean;
 }
@@ -39,7 +38,7 @@ export function TopRibbon({
   setIsVersionsModalOpen, setIsResetModalOpen,
   isStructureOpen, setIsStructureOpen,
   hasApiKey, handleApiKeyHelp,
-  onImportClick, exportTxt, exportMd,
+  onImportClick, onExportClick,
   isGenerating, isAnalyzing,
 }: Props) {
   const { t } = useTranslation();
@@ -107,14 +106,9 @@ export function TopRibbon({
               {t.ribbon.import}
             </Button>
           </Tooltip>
-          <Tooltip title={t.tooltips.exportTxt}>
-            <Button onClick={exportTxt} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-              {t.ribbon.exportTxt}
-            </Button>
-          </Tooltip>
-          <Tooltip title={t.tooltips.exportMd}>
-            <Button onClick={exportMd} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-              {t.ribbon.exportMd}
+          <Tooltip title={t.tooltips.export}>
+            <Button onClick={onExportClick} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
+              {t.ribbon.export}
             </Button>
           </Tooltip>
           <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
@@ -213,20 +207,12 @@ export function TopRibbon({
                   {t.ribbon.import}
                 </button>
                 <button
-                  onClick={() => { exportTxt(); setIsOverflowOpen(false); }}
+                  onClick={() => { onExportClick(); setIsOverflowOpen(false); }}
                   disabled={song.length === 0}
                   className="w-full flex items-center gap-3 px-4 py-3 text-[11px] text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50"
                 >
                   <Download className="w-4 h-4 text-[var(--text-secondary)]" />
-                  {t.ribbon.exportTxt}
-                </button>
-                <button
-                  onClick={() => { exportMd(); setIsOverflowOpen(false); }}
-                  disabled={song.length === 0}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-[11px] text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50"
-                >
-                  <Download className="w-4 h-4 text-[var(--text-secondary)]" />
-                  {t.ribbon.exportMd}
+                  {t.ribbon.export}
                 </button>
                 <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
                 <button

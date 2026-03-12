@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
+import { createSongExport, type ExportFormat } from '../utils/exportUtils';
 
 type LineDragInfo = { sectionId: string; lineId: string } | null;
 
@@ -241,48 +242,13 @@ export const useSongEditor = ({
     playAudioFeedback('drop');
   };
 
-  const exportTxt = () => {
+  const exportSong = (format: ExportFormat) => {
     if (song.length === 0) return;
-    let content = `${title}\n\n`;
-    song.forEach(section => {
-      content += `[${section.name}]\n`;
-      section.lines.forEach(line => {
-        // isMeta lines already contain their brackets in line.text — output verbatim
-        content += `${line.text}\n`;
-      });
-      content += '\n';
-    });
-    const blob = new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' });
+    const { blob, filename } = createSongExport({ song, title, topic, mood, format });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${title.replace(/\s+/g, '_')}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const exportMd = () => {
-    if (song.length === 0) return;
-    let content = `# ${title}\n\n`;
-    content += `**Topic:** ${topic}\n`;
-    content += `**Mood:** ${mood}\n\n`;
-    song.forEach(section => {
-      content += `### ${section.name}\n\n`;
-      section.lines.forEach(line => {
-        if (line.isMeta) {
-          // Render meta lines in italic in markdown
-          content += `*${line.text}*  \n`;
-        } else {
-          content += `${line.text}  \n`;
-        }
-      });
-      content += '\n';
-    });
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${title.replace(/\s+/g, '_')}.md`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -303,8 +269,7 @@ export const useSongEditor = ({
     handleDrop,
     handleLineDragStart,
     handleLineDrop,
-    exportTxt,
-    exportMd,
+    exportSong,
     loadFileForAnalysis,
   };
 };

@@ -210,7 +210,7 @@ export function LcarsSelect({
             e.currentTarget.style.boxShadow = 'none';
         }}
       >
-        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span dir="auto" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {selectedLabel}
         </span>
         <ChevronDown
@@ -274,7 +274,9 @@ export function LcarsSelect({
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
+                  textAlign: 'start',
                 }}
+                dir="auto"
               >
                 {opt.label}
               </li>

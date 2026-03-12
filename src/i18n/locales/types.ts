@@ -33,8 +33,7 @@ export interface Translations {
     musical: string;
     similarity: string;
     import: string;
-    exportTxt: string;
-    exportMd: string;
+    export: string;
     versions: string;
     undo: string;
     redo: string;
@@ -233,6 +232,20 @@ export interface Translations {
     chooseFile: string;
   };
 
+  exportDialog: {
+    title: string;
+    description: string;
+    formatLabel: string;
+    cancel: string;
+    save: string;
+    formats: {
+      txt: string;
+      markup: string;
+      odt: string;
+      docx: string;
+    };
+  };
+
   about: {
     description: string;
     engine: string;
@@ -281,8 +294,7 @@ export interface Translations {
     lyricsTab: string;
     musicalTab: string;
     import: string;
-    exportTxt: string;
-    exportMd: string;
+    export: string;
     versions: string;
     undo: string;
     redo: string;
