@@ -187,11 +187,11 @@ export const SectionEditor = React.memo(function SectionEditor({
         />
 
         <div className="mt-3 space-y-3">
-          {/* Column headers — hidden for meta-only sections */}
+          {/* Column headers */}
           <div className="lyric-row px-3 pb-1 border-b border-white/5 mb-1">
             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhyme}</span>
-            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.syllables}</span>
+            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.syllableCount}</span>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhymeSyllable}</span>
             <div/>
           </div>
@@ -200,7 +200,7 @@ export const SectionEditor = React.memo(function SectionEditor({
             const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
             const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
 
-            // ── META LINE rendering ─────────────────────────────────────
+            // ── META LINE rendering ────────────────────────────────────────────
             if (line.isMeta) {
               return (
                 <div
@@ -208,13 +208,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                   className={`group lyric-row border-l-2 border-cyan-500/50 bg-cyan-500/5 transition-colors ${isDraggedLine ? 'opacity-50' : ''}`}
                   style={{ paddingLeft: '12px', paddingRight: '12px' }}
                 >
-                  {/* drag handle placeholder */}
                   <div />
-                  {/* origin icon placeholder */}
                   <div />
-                  {/* up/down placeholder */}
                   <div />
-                  {/* line number */}
                   <button
                     type="button"
                     onClick={() => handleLineClick(line.id)}
@@ -222,11 +218,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                   >
                     {index + 1}
                   </button>
-                  {/* meta text spanning remaining columns */}
                   <div className="col-span-5 flex items-center">
                     <MetaLine text={line.text} />
                   </div>
-                  {/* delete */}
                   <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
                     <button
                       type="button"
@@ -240,7 +234,7 @@ export const SectionEditor = React.memo(function SectionEditor({
               );
             }
 
-            // ── NORMAL LINE rendering ────────────────────────────────────
+            // ── NORMAL LINE rendering ────────────────────────────────────────────
             return (
               <div
                 key={line.id}
