@@ -114,6 +114,7 @@ export const PROVIDERS: Record<SearchProvider, (q: string) => Promise<SearchTree
 };
 
 const MAX_CANDIDATES = 20;
+const MAX_TITLE_SCORE_CONTRIBUTION = 0.03;
 
 const deduplicateNodes = (nodes: SearchTreeNode[]): SearchTreeNode[] => {
   const seen = new Set<string>();
@@ -179,7 +180,8 @@ export const runSearchTree = async (
         )
         : 0;
       const lyricScore = Math.min(1, snippetScore * 0.6 + lyricsToResultTitleScore * 0.4);
-      const score = Math.min(1, Math.max(lyricScore, titleScore));
+      const titleContribution = Math.min(MAX_TITLE_SCORE_CONTRIBUTION, titleScore * MAX_TITLE_SCORE_CONTRIBUTION);
+      const score = Math.min(1, lyricScore + titleContribution);
       return {
         title: node.title,
         snippet: node.snippet,
