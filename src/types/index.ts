@@ -6,6 +6,7 @@ export interface Line {
   syllables: number;
   concept: string;
   isManual?: boolean;
+  isMeta?: boolean;
 }
 
 export interface Section {

@@ -59,6 +59,17 @@ export const cleanSectionName = (name: string) => {
   return name.replace(/[\[\]\*]/g, '').trim();
 };
 
+const KNOWN_SECTION_HEADERS = [
+  'verse', 'chorus', 'bridge', 'intro', 'outro', 'pre-chorus', 'prechorus',
+  'breakdown', 'pont', 'couplet', 'refrain', 'hook', 'interlude', 'solo', 'fade',
+];
+
+/** Returns true if the given name matches a known section header (ignoring trailing numbers). */
+export const isKnownSectionHeader = (name: string): boolean => {
+  const n = name.toLowerCase().replace(/\s*\d+$/, '').trim();
+  return KNOWN_SECTION_HEADERS.some(h => n === h || n.startsWith(h + ' ') || n.startsWith(h + '-'));
+};
+
 export const countSyllables = (text: string) => {
   if (!text) return 0;
   const word = text.toLowerCase().replace(/[^a-z]/g, '');

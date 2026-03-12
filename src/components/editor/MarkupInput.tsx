@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { getSectionTextColor } from '../../utils/songUtils';
+import { getSectionTextColor, isKnownSectionHeader } from '../../utils/songUtils';
 
 interface MarkupInputProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'onScroll'> {
   value: string;
@@ -25,16 +25,22 @@ export const MarkupInput = ({ value, onChange, textareaRef, className, onScroll,
     const lines = text.split('\n');
     return lines.map((line, i) => {
       const trimmed = line.trim();
-      const isSection = (trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('**[') && trimmed.endsWith(']**'));
+      const isBracketed = (trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('**[') && trimmed.endsWith(']**'));
       
       let colorClass = '';
-      if (isSection) {
-        const name = trimmed.replace(/[\[\]\*]/g, '');
-        colorClass = `${getSectionTextColor(name)} font-bold`;
+      let style: React.CSSProperties | undefined;
+      if (isBracketed) {
+        const name = trimmed.replace(/^\*\*?\[|\]\*\*?$/g, '');
+        if (isKnownSectionHeader(name)) {
+          colorClass = `${getSectionTextColor(name)} font-bold`;
+        } else {
+          // Meta-instruction: render in cyan italic
+          style = { color: '#06b6d4', fontStyle: 'italic', fontSize: '0.85em', opacity: 0.85 };
+        }
       }
       
       return (
-        <div key={i} className={colorClass}>
+        <div key={i} className={colorClass} style={style}>
           {line || '\u00A0'}
         </div>
       );

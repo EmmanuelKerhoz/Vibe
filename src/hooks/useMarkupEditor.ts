@@ -55,13 +55,22 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
           name = cleanSectionName(firstLine);
           remainingLines = lines.slice(1);
         }
-        const preInstructions: string[] = [], postInstructions: string[] = [], lyricLines: string[] = [];
+        const preInstructions: string[] = [], allLines: Array<{ text: string; isMeta: boolean }> = [];
         let foundLyrics = false;
         remainingLines.forEach(line => {
           const trimmed = line.trim();
-          if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-            if (foundLyrics) postInstructions.push(trimmed); else preInstructions.push(trimmed);
-          } else if (trimmed !== '') { foundLyrics = true; lyricLines.push(line); }
+          const isBracketed = trimmed.startsWith('[') && trimmed.endsWith(']');
+          if (isBracketed) {
+            if (!foundLyrics) {
+              preInstructions.push(trimmed);
+            } else {
+              // Inline bracketed line after lyrics: treat as isMeta
+              allLines.push({ text: trimmed, isMeta: true });
+            }
+          } else if (trimmed !== '') {
+            foundLyrics = true;
+            allLines.push({ text: line, isMeta: false });
+          }
         });
         let existingSection = (song[index] && song[index].name === name) ? song[index] : song.find(s => s.name === name && !usedSectionIds.has(s.id));
         let sectionId = existingSection?.id || generateId();
@@ -73,8 +82,8 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
           targetSyllables: existingSection?.targetSyllables || 8,
           mood: existingSection?.mood || '',
           preInstructions: preInstructions.length > 0 ? preInstructions : (existingSection?.preInstructions || []),
-          postInstructions: postInstructions.length > 0 ? postInstructions : (existingSection?.postInstructions || []),
-          lines: lyricLines.map((text, lIdx) => {
+          postInstructions: existingSection?.postInstructions || [],
+          lines: allLines.map(({ text, isMeta }, lIdx) => {
             const existingLine = existingSection?.lines.find(l => l.text === text && !usedLineIds.has(l.id))
               || (existingSection?.lines[lIdx] && !usedLineIds.has(existingSection.lines[lIdx].id) ? existingSection.lines[lIdx] : null);
             let lineId = existingLine?.id || generateId();
@@ -82,11 +91,12 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
             usedLineIds.add(lineId);
             return {
               id: lineId, text,
-              rhymingSyllables: existingLine?.rhymingSyllables || '',
-              rhyme: existingLine?.rhyme || '',
-              syllables: text.split(/\s+/).reduce((acc, word) => acc + (word ? countSyllables(word) : 0), 0),
-              concept: existingLine?.concept || 'New line',
+              rhymingSyllables: isMeta ? '' : (existingLine?.rhymingSyllables || ''),
+              rhyme: isMeta ? '' : (existingLine?.rhyme || ''),
+              syllables: isMeta ? 0 : text.split(/\s+/).reduce((acc, word) => acc + (word ? countSyllables(word) : 0), 0),
+              concept: isMeta ? 'meta' : (existingLine?.concept || 'New line'),
               isManual: true,
+              isMeta: isMeta || undefined,
             };
           }),
         };

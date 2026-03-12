@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
-import { cleanSectionName } from '../../utils/songUtils';
+import { cleanSectionName, isKnownSectionHeader } from '../../utils/songUtils';
 import { generateId } from '../../utils/idUtils';
 import type { Section } from '../../types';
 
@@ -62,12 +62,14 @@ CRITICAL INSTRUCTIONS:
 5. Keep concepts very short (1-3 words) and write them in ${uiLang}.
 6. Detect the language of the lyrics and return it as "language" (e.g. "English", "French", "Yoruba").
 7. Return the topic and mood in ${uiLang}.
+8. PRESERVE performance meta-instructions in square brackets (e.g. [Guitar solo], [Whispered], [Anthemic], [Ad-lib], [Spoken]). Include them as lines with isMeta set to true, syllables set to 0, rhyme and rhymingSyllables as empty strings, concept as "meta".
 
-Do NOT use any other section names. If a block of text is an instruction or meta-text, ignore it.
+Do NOT use any other section names. If a block of text starts with a known section header in brackets, use it as the section name.
 
 Extract the overall topic/theme and mood/vibe.
 For each section, identify the rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
 For each line: exact lyric text, rhyming syllables, rhyme identifier, exact syllable count, short core concept.
+For meta-instruction lines (e.g. [Guitar solo]): set isMeta to true, text to the full bracketed instruction, syllables to 0, rhyme and rhymingSyllables to empty strings, concept to "meta".
 
 Lyrics:
 ${pastedText}`;
@@ -103,6 +105,7 @@ ${pastedText}`;
                           rhyme: { type: Type.STRING },
                           syllables: { type: Type.INTEGER },
                           concept: { type: Type.STRING },
+                          isMeta: { type: Type.BOOLEAN },
                         },
                         required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
                       },
@@ -137,11 +140,18 @@ ${pastedText}`;
         name: cleanSectionName(section.name),
         id: generateId(),
         rhymeScheme: section.rhymeScheme || rhymeScheme,
-        lines: section.lines.map((line: any) => ({
-          ...line,
-          id: generateId(),
-          isManual: true,
-        })),
+        lines: section.lines.map((line: any) => {
+          // Detect meta-instructions: bracketed text that is not a known section header
+          const trimmed = (line.text || '').trim();
+          const isPureBracketed = /^\[.+\]$/.test(trimmed);
+          const isMeta = line.isMeta === true || (isPureBracketed && !isKnownSectionHeader(trimmed.slice(1, -1)));
+          return {
+            ...line,
+            id: generateId(),
+            isManual: true,
+            isMeta: isMeta || undefined,
+          };
+        }),
       }));
 
       const newStructure = sections.map((s: any) => cleanSectionName(s.name));

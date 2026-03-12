@@ -206,6 +206,29 @@ export const SectionEditor = React.memo(function SectionEditor({
           {section.lines.map((line, index) => {
             const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
             const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
+
+            if (line.isMeta) {
+              return (
+                <div
+                  key={line.id}
+                  className={`group lyric-row transition-colors border-l-2 border-cyan-400/60 ${isDraggedLine ? 'opacity-50' : ''}`}
+                  style={{ paddingLeft: '12px', paddingRight: '12px' }}
+                >
+                  {/* Empty grid cells to maintain column alignment (drag handle, ai/human badge, move buttons) */}
+                  <div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" />
+                  <span className="text-[10px] font-bold px-1 py-0.5 rounded border border-cyan-400/40 bg-cyan-400/10 text-cyan-400 mr-1 select-none">[ ]</span>
+                  <span className="text-cyan-400 italic text-sm opacity-85 flex-1" style={{ minWidth: 0 }}>{line.text}</span>
+                  {/* Empty grid cells to maintain column alignment (rhyme, syllables, rhymingSyllables) */}
+                  <div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" />
+                  <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
+                    <button type="button" onClick={() => deleteLineFromSection(section.id, line.id)} className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </Tooltip>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={line.id}
