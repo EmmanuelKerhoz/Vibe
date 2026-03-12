@@ -38,6 +38,18 @@ export const getSectionDotColor = (name: string) => {
   return 'bg-zinc-500';
 };
 
+/**
+ * Returns the rhyme scheme letter (e.g. 'A', 'B', 'C') for a given line index
+ * within a scheme string (e.g. 'AABB', 'ABAB'). Returns null for FREE or missing schemes.
+ * If the line index exceeds the scheme length, it wraps around.
+ */
+export const getSchemeLetterForLine = (scheme: string | undefined, lineIndex: number): string | null => {
+  if (!scheme || scheme.toUpperCase() === 'FREE') return null;
+  const upper = scheme.toUpperCase();
+  if (upper.length === 0) return null;
+  return upper[lineIndex % upper.length] ?? null;
+};
+
 export const getRhymeColor = (rhyme: string) => {
   const r = rhyme.toUpperCase();
   if (r === 'A') return 'bg-blue-500/15 text-blue-500 border-blue-500/20';

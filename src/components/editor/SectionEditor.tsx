@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, Trash2 } from 'lucide-react';
 import { Section } from '../../types';
-import { getSectionDotColor, getSectionColorHex, getSectionTextColor, getRhymeColor } from '../../utils/songUtils';
+import { getSectionDotColor, getSectionColorHex, getSectionTextColor, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
 import { LyricInput } from './LyricInput';
 import { MetaLine } from './MetaLine';
 import { InstructionEditor } from './InstructionEditor';
@@ -198,7 +198,14 @@ export const SectionEditor = React.memo(function SectionEditor({
             <div/>
           </div>
 
-          {section.lines.map((line, index) => {
+          {(() => {
+            // Pre-compute lyric-only indices so meta lines don't skew the scheme position.
+            const lyricLineIndexMap = new Map<string, number>();
+            let lyricIdx = 0;
+            for (const l of section.lines) {
+              if (!l.isMeta) lyricLineIndexMap.set(l.id, lyricIdx++);
+            }
+            return section.lines.map((line, index) => {
             const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
             const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
 
@@ -307,11 +314,15 @@ export const SectionEditor = React.memo(function SectionEditor({
                 />
 
                 <span className="lyric-col-aux" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  {line.rhyme ? (
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(line.rhyme)}`}>
-                      {line.rhyme}
-                    </span>
-                  ) : null}
+                  {(() => {
+                    const lyricIndex = lyricLineIndexMap.get(line.id) ?? 0;
+                    const letter = getSchemeLetterForLine(section.rhymeScheme || rhymeScheme, lyricIndex);
+                    return letter ? (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(letter)}`}>
+                        {letter}
+                      </span>
+                    ) : null;
+                  })()}
                 </span>
                 <span className="lyric-col-aux" style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                   {line.syllables > 0 ? line.syllables : ''}
@@ -327,7 +338,8 @@ export const SectionEditor = React.memo(function SectionEditor({
                 </Tooltip>
               </div>
             );
-          })}
+          });
+          })()}
         </div>
 
         {section.postInstructions && section.postInstructions.length > 0 && (
