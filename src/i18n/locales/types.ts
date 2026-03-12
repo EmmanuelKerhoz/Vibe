@@ -98,6 +98,7 @@ export interface Translations {
     rhymeSyllable: string;
     rhyme: string;
     syllables: string;
+    syllableCount?: string;
     concept: string;
     lines: string;
     chars: string;

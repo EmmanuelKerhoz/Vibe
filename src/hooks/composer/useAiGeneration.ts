@@ -288,10 +288,11 @@ Return the updated section in the exact same JSON structure (as an array with on
         },
       });
 
-      const data = safeJsonParse(response.text || '[]', []);
-      if (data.length > 0) {
+      const data = safeJsonParse<Section[]>(response.text || '[]', []);
+      const firstSection = data[0];
+      if (firstSection) {
         // Patch isMeta on the returned lines before merging
-        const patchedSection = { ...data[0], lines: flagMetaLines(data[0].lines ?? []) };
+        const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
         updateSong(currentSong =>
           currentSong.map(section => {
             if (section.id !== sectionId) return section;
@@ -372,11 +373,12 @@ Return the updated song in the exact same JSON structure.`;
         },
       });
 
-      const data = safeJsonParse(response.text || '[]', []);
+      const data = safeJsonParse<Section[]>(response.text || '[]', []);
 
       if (sectionId) {
-        if (data.length > 0) {
-          const patchedSection = { ...data[0], lines: flagMetaLines(data[0].lines ?? []) };
+        const firstSection = data[0];
+        if (firstSection) {
+          const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
           updateSong(currentSong =>
             currentSong.map(section => {
               if (section.id !== sectionId) return section;

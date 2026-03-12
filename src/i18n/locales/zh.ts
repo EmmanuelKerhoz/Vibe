@@ -93,6 +93,7 @@ const zh: Translations = {
     rhymeSyllable: '押韵音节',
     rhyme: '韵脚',
     syllables: '音节',
+    syllableCount: '数量',
     concept: '概念',
     lines: '行数',
     chars: '字符',

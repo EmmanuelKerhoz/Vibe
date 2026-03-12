@@ -93,6 +93,7 @@ const pt: Translations = {
     rhymeSyllable: 'Sílaba rimante',
     rhyme: 'Rima',
     syllables: 'Sílabas',
+    syllableCount: 'Contagem',
     concept: 'Conceito',
     lines: 'Linhas',
     chars: 'Caracteres',

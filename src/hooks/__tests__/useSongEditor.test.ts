@@ -4,9 +4,19 @@ import { useSongEditor } from '../useSongEditor';
 import type { Section } from '../../types';
 
 const makeSection = (id: string, name: string, lines: Section['lines'] = []): Section => ({ id, name, lines });
-const makeLine = (id: string, text: string) => ({ id, text, rhyme: '', syllables: 0, instructions: [] });
+const makeLine = (id: string, text: string) => ({
+  id,
+  text,
+  rhymingSyllables: '',
+  rhyme: '',
+  syllables: 0,
+  concept: 'New line',
+});
 
 const DEFAULT_STRUCTURE = ['Verse 1', 'Chorus'];
+const createObjectURLMock = vi.fn(() => 'blob:test');
+const revokeObjectURLMock = vi.fn();
+const clickMock = vi.fn();
 
 const buildHook = (song: Section[], structure = DEFAULT_STRUCTURE) => {
   const updateState = vi.fn();
@@ -43,6 +53,25 @@ const buildHook = (song: Section[], structure = DEFAULT_STRUCTURE) => {
 };
 
 describe('useSongEditor', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    createObjectURLMock.mockClear();
+    revokeObjectURLMock.mockClear();
+    clickMock.mockClear();
+
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: createObjectURLMock,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revokeObjectURLMock,
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(clickMock);
+  });
+
   describe('removeStructureItem', () => {
     it('removes section by index and calls updateSongAndStructureWithHistory', () => {
       const song = [makeSection('s1', 'Verse 1'), makeSection('s2', 'Chorus')];
@@ -83,13 +112,14 @@ describe('useSongEditor', () => {
   });
 
   describe('normalizeStructure', () => {
-    it('removes structure entries that have no matching song section', () => {
+    it('preserves unmatched custom structure entries by creating missing sections', () => {
       const song = [makeSection('s1', 'Verse 1')];
-      const { result, updateStructureWithHistory } = buildHook(song, ['Verse 1', 'Ghost Section']);
+      const { result, updateSongAndStructureWithHistory } = buildHook(song, ['Verse 1', 'Ghost Section']);
       act(() => result.current.normalizeStructure());
-      expect(updateStructureWithHistory).toHaveBeenCalledOnce();
-      const [normalized] = updateStructureWithHistory.mock.calls[0] as [string[]];
-      expect(normalized).toEqual(['Verse 1']);
+      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
+      const [normalizedSong, normalized] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
+      expect(normalized).toEqual(['Verse 1', 'Ghost Section']);
+      expect(normalizedSong[1]?.name).toBe('Ghost Section');
     });
 
     it('is a no-op when structure is already clean', () => {
@@ -101,33 +131,43 @@ describe('useSongEditor', () => {
   });
 
   describe('exportTxt', () => {
-    it('returns a non-empty string for a song with content', () => {
+    it('downloads a txt file for a song with content', () => {
       const song = [
         makeSection('s1', 'Verse 1', [makeLine('l1', 'Hello world')]),
       ];
       const { result } = buildHook(song, ['Verse 1']);
-      const txt = result.current.exportTxt();
-      expect(typeof txt).toBe('string');
-      expect(txt.length).toBeGreaterThan(0);
-      expect(txt).toContain('Hello world');
+      act(() => result.current.exportTxt());
+
+      expect(createObjectURLMock).toHaveBeenCalledOnce();
+      expect(clickMock).toHaveBeenCalledOnce();
+      expect(revokeObjectURLMock).toHaveBeenCalledWith('blob:test');
+
+      const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
+      expect(anchor.download).toBe('Test_Song.txt');
+      expect(anchor.href).toContain('blob:test');
     });
 
-    it('returns empty string for empty song', () => {
+    it('does nothing for empty song export', () => {
       const { result } = buildHook([], []);
       const txt = result.current.exportTxt();
-      expect(txt).toBe('');
+      expect(txt).toBeUndefined();
+      expect(createObjectURLMock).not.toHaveBeenCalled();
     });
   });
 
   describe('exportMd', () => {
-    it('includes markdown heading for section name', () => {
+    it('downloads markdown with the section heading and lyrics', () => {
       const song = [
         makeSection('s1', 'Chorus', [makeLine('l1', 'Sing along')]),
       ];
       const { result } = buildHook(song, ['Chorus']);
-      const md = result.current.exportMd();
-      expect(md).toContain('## Chorus');
-      expect(md).toContain('Sing along');
+      act(() => result.current.exportMd());
+
+      expect(createObjectURLMock).toHaveBeenCalledOnce();
+      expect(clickMock).toHaveBeenCalledOnce();
+      const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
+      expect(anchor.download).toBe('Test_Song.md');
+      expect(anchor.href).toContain('blob:test');
     });
   });
 });
