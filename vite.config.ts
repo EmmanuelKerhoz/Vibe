@@ -40,4 +40,15 @@ export default defineConfig(({ mode }) => ({
     },
   },
   base: '/',
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: [],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/hooks/**'],
+    },
+  },
 }));
