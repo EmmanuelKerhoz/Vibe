@@ -192,9 +192,9 @@ export const SectionEditor = React.memo(function SectionEditor({
           {/* Column headers — hidden for meta-only sections */}
           <div className="lyric-row px-3 pb-1 border-b border-white/5 mb-1">
             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
-            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhyme}</span>
-            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.syllableCount ?? t.editor.syllables}</span>
-            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhymeSyllable}</span>
+            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>Schema</span>
+            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>Count</span>
+            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Syllables</span>
             <div/>
           </div>
 
