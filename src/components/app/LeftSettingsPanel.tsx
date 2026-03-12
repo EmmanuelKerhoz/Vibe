@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, PanelLeft, Ruler, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import { Music, PanelLeft, Ruler, Bot, User, Sparkles, Loader2, Shuffle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Label } from '../ui/Label';
@@ -27,6 +27,8 @@ interface Props {
   quantizeSyllables: () => void;
   isLeftPanelOpen: boolean;
   setIsLeftPanelOpen: (v: boolean) => void;
+  onSurprise: () => void;
+  isSurprising: boolean;
 }
 
 export function LeftSettingsPanel({
@@ -35,12 +37,13 @@ export function LeftSettingsPanel({
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   song, isGenerating, quantizeSyllables,
   isLeftPanelOpen, setIsLeftPanelOpen,
+  onSurprise, isSurprising,
 }: Props) {
   const { t } = useTranslation();
 
   return (
     <>
-      {/* Mobile backdrop — covers main content when drawer is open */}
+      {/* Mobile backdrop */}
       {isLeftPanelOpen && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
@@ -68,12 +71,13 @@ export function LeftSettingsPanel({
         </div>
 
         <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
-          {/* LCARS section indicator — Song Info */}
+          {/* Song Info section */}
           <div className="flex items-center gap-2 mb-1">
             <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-amber,#f59e0b)] opacity-80" />
             <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Song Info</span>
           </div>
           <div className="space-y-4">
+            {/* Title */}
             <div>
               <Label>
                 <div className="flex items-center gap-2">
@@ -97,44 +101,62 @@ export function LeftSettingsPanel({
                     disabled={isGeneratingTitle || song.length === 0}
                     className="px-2 py-1.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] rounded transition-all disabled:opacity-50"
                   >
-                    {isGeneratingTitle ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-3.5 h-3.5" />
-                    )}
+                    {isGeneratingTitle ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                   </button>
                 </Tooltip>
               </div>
             </div>
-            <div>
-              <Label>{t.leftPanel.songTopic}</Label>
-              <Input value={topic} onChange={e => setTopic(e.target.value)} placeholder={t.leftPanel.songTopicPlaceholder} />
-            </div>
-            <div>
-              <Label>{t.leftPanel.songMood}</Label>
-              <div className="space-y-2">
-                <Input
-                  value={mood}
-                  onChange={e => setMood(e.target.value)}
-                  placeholder={t.leftPanel.songMoodPlaceholder}
-                  list="mood-suggestions"
-                />
-                <LcarsSelect
-                  value=""
-                  onChange={(v) => { if (v) setMood(v); }}
-                  placeholder={t.leftPanel.songMoodPresets}
-                  options={Object.entries(t.moods).map(([, moodOption]) => ({ value: moodOption, label: moodOption }))}
-                />
+
+            {/* Topic + Mood with shared Surprise Me button */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Topic &amp; Mood</span>
+                <Tooltip title="Generate a random topic &amp; mood with AI">
+                  <button
+                    onClick={onSurprise}
+                    disabled={isSurprising || isGenerating}
+                    aria-label="Surprise me — generate random topic and mood"
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] uppercase tracking-wider font-semibold
+                      bg-[var(--accent-color)]/8 hover:bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/20
+                      text-[var(--accent-color)] transition-all disabled:opacity-40 disabled:cursor-not-allowed lcars-pill-btn"
+                  >
+                    {isSurprising
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : <Shuffle className="w-3 h-3" />}
+                    <span>Surprise</span>
+                  </button>
+                </Tooltip>
               </div>
-              <datalist id="mood-suggestions">
-                {Object.entries(t.moods).map(([key, moodOption]) => <option key={key} value={moodOption} />)}
-              </datalist>
+              <div>
+                <Label>{t.leftPanel.songTopic}</Label>
+                <Input value={topic} onChange={e => setTopic(e.target.value)} placeholder={t.leftPanel.songTopicPlaceholder} />
+              </div>
+              <div>
+                <Label>{t.leftPanel.songMood}</Label>
+                <div className="space-y-2">
+                  <Input
+                    value={mood}
+                    onChange={e => setMood(e.target.value)}
+                    placeholder={t.leftPanel.songMoodPlaceholder}
+                    list="mood-suggestions"
+                  />
+                  <LcarsSelect
+                    value=""
+                    onChange={(v) => { if (v) setMood(v); }}
+                    placeholder={t.leftPanel.songMoodPresets}
+                    options={Object.entries(t.moods).map(([, moodOption]) => ({ value: moodOption, label: moodOption }))}
+                  />
+                </div>
+                <datalist id="mood-suggestions">
+                  {Object.entries(t.moods).map(([key, moodOption]) => <option key={key} value={moodOption} />)}
+                </datalist>
+              </div>
             </div>
           </div>
 
           <div className="h-px bg-white/5 mx-1" />
 
-          {/* LCARS section indicator — Composition */}
+          {/* Composition section */}
           <div className="flex items-center gap-2 mb-1">
             <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-cyan,#06b6d4)] opacity-80" />
             <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Composition</span>
