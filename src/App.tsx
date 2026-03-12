@@ -242,11 +242,11 @@ export default function App() {
       const updated = await loadLibraryAssets(); setLibraryCount(updated.length); setLibraryAssets(updated);
     } catch (e) { console.error('Failed to save to library:', e); } finally { setIsSavingToLibrary(false); }
   };
-  const handleDeleteLibraryAsset = useCallback(async (assetId: string) => {
+  const handleDeleteLibraryAsset = useCallback(async (versionId: string) => {
     try {
-      await deleteAssetFromLibrary(assetId);
-      setLibraryAssets(prev => prev.filter(asset => asset.id !== assetId));
-      setSimilarityMatches(prev => prev.filter(m => m.versionId !== assetId));
+      await deleteAssetFromLibrary(versionId);
+      setLibraryAssets(prev => prev.filter(asset => asset.id !== versionId));
+      setSimilarityMatches(prev => prev.filter(m => m.versionId !== versionId));
       setLibraryCount(prev => Math.max(0, prev - 1));
     } catch (e) { console.error('Failed to delete library asset:', e); }
   }, [setLibraryAssets, setSimilarityMatches, setLibraryCount]);
