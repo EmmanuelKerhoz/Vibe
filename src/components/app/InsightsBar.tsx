@@ -5,7 +5,7 @@ import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
-import { SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from '../../i18n';
+import { SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel, formatLanguageDisplay } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 
 interface InsightsBarProps {
@@ -65,6 +65,8 @@ export function InsightsBar({
   const { t } = useTranslation();
   const supportedAdaptationLanguages = SUPPORTED_ADAPTATION_LANGUAGES;
   const adaptLangLabel = adaptationLanguageLabel;
+  const targetLanguageDisplay = formatLanguageDisplay(targetLanguage);
+  const detectedLanguageDisplay = songLanguage ? formatLanguageDisplay(songLanguage) : '🌐 Detect';
   return (
     <div className="border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10">
       <div className="lyrics-editor-zoom flex flex-col gap-2 lg:gap-4">
@@ -82,16 +84,16 @@ export function InsightsBar({
                 onChange={setTargetLanguage}
                 options={supportedAdaptationLanguages.map(lang => ({ value: lang.aiName, label: adaptLangLabel(lang) }))}
               />
-              <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguage)}>
+              <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplay)}>
                 <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
                   {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
                   <span className="hidden sm:inline">{t.editor.adaptation}</span>
                 </button>
               </Tooltip>
-              <Tooltip title={songLanguage ? `Detected: ${songLanguage} — click to re-detect` : 'Detect song language'}>
+              <Tooltip title={songLanguage ? `Detected: ${detectedLanguageDisplay} — click to re-detect` : '🌐 Detect song language'}>
                 <button onClick={() => void detectLanguage()} disabled={isDetectingLanguage || song.length === 0} className="px-3 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50 border border-white/10">
                   {isDetectingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanText className="w-3 h-3" />}
-                  {songLanguage || 'Detect'}
+                  {detectedLanguageDisplay}
                 </button>
               </Tooltip>
             </div>

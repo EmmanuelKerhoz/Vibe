@@ -7,13 +7,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Section } from '../types';
 import type { WebSimilarityIndex } from '../types/webSimilarity';
+import { DEFAULT_TITLE } from '../constants/editor';
 import { runSearchTree } from '../utils/webSimilaritySearch';
 
 const DEBOUNCE_MS = 30_000;        // 30s after last keystroke
 const DELTA_THRESHOLD = 0.20;     // retrigger if text changed by >20%
 
-const textFingerprint = (sections: Section[]): string =>
-  sections.flatMap(s => s.lines.map(l => l.text)).join('\n');
+const textFingerprint = (title: string, sections: Section[]): string =>
+  [title.trim(), ...sections.flatMap(s => s.lines.map(l => l.text))].join('\n');
 
 const changeDelta = (prev: string, next: string): number => {
   if (!prev) return 1;
@@ -33,13 +34,14 @@ const INITIAL_INDEX: WebSimilarityIndex = {
   error: null,
 };
 
-export const useSimilarityEngine = (sections: Section[]) => {
+export const useSimilarityEngine = (sections: Section[], title = '') => {
   const [index, setIndex] = useState<WebSimilarityIndex>(INITIAL_INDEX);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const lastFingerprintRef = useRef<string>('');
+  const effectiveTitle = title.trim() === DEFAULT_TITLE ? '' : title;
 
-  const runSearch = useCallback(async (currentSections: Section[]) => {
+  const runSearch = useCallback(async (currentSections: Section[], currentTitle: string) => {
     // Cancel any in-flight search
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -48,7 +50,7 @@ export const useSimilarityEngine = (sections: Section[]) => {
     setIndex(prev => ({ ...prev, status: 'running', error: null }));
 
     try {
-      const candidates = await runSearchTree(currentSections, controller.signal);
+      const candidates = await runSearchTree(currentSections, currentTitle, controller.signal);
       if (controller.signal.aborted) return;
       setIndex({
         candidates,
@@ -67,14 +69,14 @@ export const useSimilarityEngine = (sections: Section[]) => {
   }, []);
 
   useEffect(() => {
-    const fingerprint = textFingerprint(sections);
+    const fingerprint = textFingerprint(effectiveTitle, sections);
     const delta = changeDelta(lastFingerprintRef.current, fingerprint);
 
     // Skip if text hasn't changed enough
     if (delta < DELTA_THRESHOLD && lastFingerprintRef.current !== '') return;
 
     // Skip if sections are essentially empty
-    const hasContent = sections.some(s => s.lines.some(l => l.text.trim().length > 0));
+    const hasContent = effectiveTitle.trim().length > 0 || sections.some(s => s.lines.some(l => l.text.trim().length > 0));
     if (!hasContent) return;
 
     lastFingerprintRef.current = fingerprint;
@@ -82,13 +84,13 @@ export const useSimilarityEngine = (sections: Section[]) => {
     // Debounce
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      runSearch(sections);
+      runSearch(sections, effectiveTitle);
     }, DEBOUNCE_MS);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [sections, runSearch]);
+  }, [effectiveTitle, sections, runSearch]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -101,8 +103,8 @@ export const useSimilarityEngine = (sections: Section[]) => {
   /** Force immediate search (e.g. on user demand) */
   const triggerNow = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    runSearch(sections);
-  }, [sections, runSearch]);
+    runSearch(sections, effectiveTitle);
+  }, [effectiveTitle, sections, runSearch]);
 
   return { index, triggerNow };
 };

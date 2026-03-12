@@ -4,6 +4,20 @@ import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
 import { createSongExport, type ExportFormat } from '../utils/exportUtils';
 
+type SaveFilePickerOptions = {
+  suggestedName: string;
+  startIn?: 'downloads';
+  types?: Array<{ description: string; accept: Record<string, string[]> }>;
+};
+
+type SaveFilePickerHandle = {
+  createWritable: () => Promise<{ write: (data: Blob) => Promise<void>; close: () => Promise<void> }>;
+};
+
+type WindowWithSaveFilePicker = Window & {
+  showSaveFilePicker?: (options: SaveFilePickerOptions) => Promise<SaveFilePickerHandle>;
+};
+
 type LineDragInfo = { sectionId: string; lineId: string } | null;
 
 type UseSongEditorParams = {
@@ -242,9 +256,30 @@ export const useSongEditor = ({
     playAudioFeedback('drop');
   };
 
-  const exportSong = (format: ExportFormat) => {
+  const exportSong = async (format: ExportFormat) => {
     if (song.length === 0) return;
     const { blob, filename } = createSongExport({ song, title, topic, mood, format });
+    const saveWithPicker = async () => {
+      const filePicker = (window as WindowWithSaveFilePicker).showSaveFilePicker;
+      if (!filePicker) return false;
+      try {
+        const extension = filename.split('.').pop() ?? format;
+        const handle = await filePicker({
+          suggestedName: filename,
+          startIn: 'downloads',
+          types: [{ description: `${extension.toUpperCase()} file`, accept: { [blob.type || 'application/octet-stream']: [`.${extension}`] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return true;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return true;
+        return false;
+      }
+    };
+    const saved = await saveWithPicker();
+    if (saved) return;
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

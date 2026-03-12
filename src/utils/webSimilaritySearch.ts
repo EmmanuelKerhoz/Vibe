@@ -131,11 +131,13 @@ const deduplicateNodes = (nodes: SearchTreeNode[]): SearchTreeNode[] => {
  */
 export const runSearchTree = async (
   sections: Section[],
+  title = '',
   abortSignal?: AbortSignal,
 ): Promise<WebSimilarityCandidate[]> => {
-  if (sections.length === 0) return [];
+  if (sections.length === 0 && title.trim().length === 0) return [];
 
   const segments = extractSegments(sections);
+  const normalizedTitle = normalize(title);
   const fullText = segments[0] ?? '';
   const allNodes: SearchTreeNode[] = [];
 
@@ -145,7 +147,9 @@ export const runSearchTree = async (
     allNodes.push(...nodes);
   };
 
-  const level0Queries = [fullText, segments[segments.length - 1]].filter((q): q is string => !!q).slice(0, 2);
+  const level0Queries = [title, fullText, segments[segments.length - 1]]
+    .filter((q): q is string => typeof q === 'string' && q.trim().length > 0)
+    .slice(0, 3);
   await Promise.allSettled(
     level0Queries.flatMap(q => [safeSearch('ddg', q), safeSearch('wikipedia', q)]),
   );
@@ -165,17 +169,30 @@ export const runSearchTree = async (
   const candidates: WebSimilarityCandidate[] = unique
     .map(node => {
       const snippetScore = jaccardScore(fullText, node.snippet);
-      const titleScore = jaccardScore(fullText, node.title) * 0.5;
-      const score = Math.min(1, snippetScore * 0.6 + titleScore * 0.4);
+      const lyricsToResultTitleScore = jaccardScore(fullText, node.title);
+      const exactTitleMatch = normalizedTitle.length > 0 && normalizedTitle === normalize(node.title);
+      const titleScore = normalizedTitle.length > 0
+        ? Math.max(
+          exactTitleMatch ? 1 : 0,
+          jaccardScore(title, node.title),
+          jaccardScore(title, node.snippet) * 0.8,
+        )
+        : 0;
+      const lyricScore = Math.min(1, snippetScore * 0.6 + lyricsToResultTitleScore * 0.4);
+      const score = Math.min(1, Math.max(lyricScore, titleScore));
       return {
         title: node.title,
         snippet: node.snippet,
         url: node.url,
         source: node.source,
         score: Math.round(score * 100),
-        matchedSegments: segments
-          .filter(s => jaccardScore(s, node.snippet) > 0)
-          .map(s => s.slice(0, 60)),
+        matchedSegments: [
+          ...(titleScore > 0 && title.trim().length > 0 ? [`Title: ${title}`] : []),
+          ...segments
+            .filter(s => jaccardScore(s, node.snippet) > 0 || jaccardScore(s, node.title) > 0)
+            .map(s => s.slice(0, 60)),
+        ]
+          .filter((segment, index, list) => list.indexOf(segment) === index),
       };
     })
     .sort((a, b) => b.score - a.score)

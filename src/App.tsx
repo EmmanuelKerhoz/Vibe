@@ -210,7 +210,7 @@ export default function App() {
     return () => { isCancelled = true; };
   }, [generateTitle, shouldAutoGenerateTitle, song.length, setTitle, setTitleOrigin, setShouldAutoGenerateTitle]);
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
-  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity } = useSimilarityEngine(song);
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity } = useSimilarityEngine(song, title);
   const hasExistingWork = (song.length > 0 && !isPristineDraft(song, structure, rhymeScheme))
     || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
   const webBadgeLabel = webSimilarityIndex.status === 'done' && webSimilarityIndex.candidates.length > 0
