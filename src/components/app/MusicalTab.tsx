@@ -29,9 +29,10 @@ interface Props {
   analyzeLyricsForMusic: () => void;
 }
 
-// Amber palette for the Musical tab (B1)
-const AMBER_PRIMARY   = '#f59e0b';
-const AMBER_SECONDARY = '#fbbf24';
+// Orange-led palette for the Musical tab (B1)
+const AMBER_PRIMARY = '#f97316';
+const AMBER_SECONDARY = '#fb923c';
+const AMBER_MUTED = '#fdba74';
 
 // BPM presets
 const BPM_PRESETS = [
@@ -67,15 +68,42 @@ interface VibeCategory {
   id: string;
   label: string;
   color: string;
+  summary: string;
+  artists: string[];
+  moods: string[];
+  era: string;
   tiles: VibeTile[];
 }
+
+const MUSICAL_GUIDE_STEPS = [
+  {
+    title: 'Start broad',
+    description: 'Choose the family that gets closest to the track before refining the micro-scene.',
+  },
+  {
+    title: 'Refine the niche',
+    description: 'Use a sub-style to tell whether it leans indie, club-ready, cinematic, soulful, or hybrid.',
+  },
+  {
+    title: 'Give references',
+    description: 'Artist touchpoints, mood words, and era cues help define the intended lane instantly.',
+  },
+  {
+    title: 'Lock the production',
+    description: 'Confirm BPM, groove, and instruments so the prompt sounds intentional instead of generic.',
+  },
+];
 
 // Vibe Board categories
 const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'electronic',
     label: 'ÉLECTRONIQUE',
-    color: '#06b6d4',
+    color: '#fb923c',
+    summary: 'Synthetic textures, club energy, and precise pulse-driven production.',
+    artists: ['Fred again..', 'BICEP', 'Justice'],
+    moods: ['Driving', 'Futuristic', 'Late-night'],
+    era: '90s club DNA → modern festival polish',
     tiles: [
       { name: 'House',       emoji: '🏠', bpm: 128, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Sampler', 'TR-909'] },
       { name: 'Techno',      emoji: '⚙️', bpm: 140, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'TR-909', 'Electronic Kit'] },
@@ -87,7 +115,11 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'urban',
     label: 'URBAIN',
-    color: '#a78bfa',
+    color: '#f97316',
+    summary: 'Beat-first songwriting with vocal attitude, bounce, and contemporary crossover appeal.',
+    artists: ['SZA', 'Travis Scott', 'Burna Boy'],
+    moods: ['Confident', 'Sensual', 'Hypnotic'],
+    era: 'Streaming-era polish with roots in 90s/2000s rhythm culture',
     tiles: [
       { name: 'Hip-Hop',   emoji: '🎤', bpm: 90,  rhythm: 'Hip-Hop',  instruments: ['808', 'Electronic Kit', 'Sampler', 'Lead Vocals'] },
       { name: 'R&B',       emoji: '💜', bpm: 90,  rhythm: 'Funk',     instruments: ['Rhodes', 'Electronic Kit', 'Lead Vocals', 'Backing Vocals'] },
@@ -98,7 +130,11 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'rock',
     label: 'ROCK',
-    color: '#ef4444',
+    color: '#ea580c',
+    summary: 'Live-band impact, punchy drums, and guitar-forward arrangements with edge.',
+    artists: ['Arctic Monkeys', 'Foo Fighters', 'Paramore'],
+    moods: ['Raw', 'Anthemic', 'Restless'],
+    era: '70s riffs through 2000s alt-rock urgency',
     tiles: [
       { name: 'Rock',      emoji: '🎸', bpm: 120, rhythm: 'Rock',      instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar'] },
       { name: 'Hard Rock', emoji: '🤘', bpm: 140, rhythm: 'Hard Rock', instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar'] },
@@ -111,6 +147,10 @@ const VIBE_CATEGORIES: VibeCategory[] = [
     id: 'soul-jazz',
     label: 'SOUL / JAZZ',
     color: '#f59e0b',
+    summary: 'Expressive harmony, groove depth, and human warmth anchored by feel.',
+    artists: ['Amy Winehouse', 'Anderson .Paak', 'Esperanza Spalding'],
+    moods: ['Warm', 'Playful', 'Intimate'],
+    era: 'Timeless heritage with modern neo-soul finesse',
     tiles: [
       { name: 'Jazz',   emoji: '🎷', bpm: 165, rhythm: 'Jazz Swing', instruments: ['Saxophone', 'Piano', 'Double Bass', 'Standard Drum Kit'] },
       { name: 'Blues',  emoji: '🎵', bpm: 75,  rhythm: 'Blues',      instruments: ['Electric Guitar', 'Piano', 'Standard Drum Kit'] },
@@ -122,7 +162,11 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'world',
     label: 'WORLD',
-    color: '#4CAF73',
+    color: '#d97706',
+    summary: 'Regional rhythms and acoustic character blended with strong cultural signatures.',
+    artists: ['Buena Vista Social Club', 'Rosalía', 'Fela Kuti'],
+    moods: ['Organic', 'Sunlit', 'Transportive'],
+    era: 'Tradition-informed grooves with global-pop openness',
     tiles: [
       { name: 'Reggae',     emoji: '🌴', bpm: 75,  rhythm: 'Reggae',     instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar'] },
       { name: 'Samba',      emoji: '🥁', bpm: 100, rhythm: 'Samba',      instruments: ['Latin Percussion', 'Standard Drum Kit'] },
@@ -134,7 +178,11 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'pop',
     label: 'POP',
-    color: '#5EA3DE',
+    color: '#fbbf24',
+    summary: 'Direct hooks, polished toplines, and wide-audience accessibility.',
+    artists: ['Dua Lipa', 'The Weeknd', 'Caroline Polachek'],
+    moods: ['Bright', 'Catchy', 'Cinematic'],
+    era: '80s sheen to current chart-ready production',
     tiles: [
       { name: 'Pop',       emoji: '⭐', bpm: 120, rhythm: 'Disco',            instruments: ['Synthesizer', 'Electronic Kit', 'Lead Vocals', 'Backing Vocals'] },
       { name: 'Indie Pop', emoji: '🌟', bpm: 110, rhythm: 'Rock',             instruments: ['Acoustic Guitar', 'Electronic Kit', 'Lead Vocals'] },
@@ -145,7 +193,11 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'classical',
     label: 'CLASSIQUE',
-    color: '#9956D6',
+    color: '#c2410c',
+    summary: 'Composed dynamics, orchestral detail, and cinematic movement over groove-first writing.',
+    artists: ['Max Richter', 'Ólafur Arnalds', 'Hans Zimmer'],
+    moods: ['Elegant', 'Expansive', 'Reflective'],
+    era: 'Classical foundations with modern soundtrack sensibility',
     tiles: [
       { name: 'Orchestral',   emoji: '🎻', bpm: 100, rhythm: 'Waltz', instruments: ['Violin', 'Viola', 'Cello', 'French Horn', 'Trumpet'] },
       { name: 'Baroque',      emoji: '🎼', bpm: 120, rhythm: 'Waltz', instruments: ['Violin', 'Cello', 'Organ', 'Flute'] },
@@ -194,6 +246,15 @@ export function MusicalTab({
   const [expandedFamily, setExpandedFamily] = useState<string | null>(null);
   const [selectedVibeTile, setSelectedVibeTile] = useState<VibeTile | null>(null);
   const [selectedSubStyle, setSelectedSubStyle] = useState<string>('');
+  const selectedCategory = selectedVibeTile
+    ? VIBE_CATEGORIES.find(category => category.tiles.some(tile => tile.name === selectedVibeTile.name)) ?? null
+    : null;
+  const genreBlueprint = selectedVibeTile
+    ? selectedSubStyle
+      ? `${selectedVibeTile.name} / ${selectedSubStyle}`
+      : selectedVibeTile.name
+    : genre;
+  const suggestedSubStyles = selectedVibeTile ? (SUB_STYLES[selectedVibeTile.name] as string[] | undefined) ?? [] : [];
 
   const bpmValue   = parseInt(tempo) || 120;
   const metronome  = useMetronome(bpmValue);
@@ -245,8 +306,11 @@ export function MusicalTab({
   const handleSubStyleSelect = useCallback((subStyle: string) => {
     const next = selectedSubStyle === subStyle ? '' : subStyle;
     setSelectedSubStyle(next);
+    if (selectedVibeTile) {
+      setGenre(next ? `${selectedVibeTile.name} / ${next}` : selectedVibeTile.name);
+    }
     setRhythm(next || (selectedVibeTile?.rhythm ?? ''));
-  }, [selectedSubStyle, selectedVibeTile, setRhythm]);
+  }, [selectedSubStyle, selectedVibeTile, setGenre, setRhythm]);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -294,38 +358,61 @@ export function MusicalTab({
       </div>
 
       {/* Main controls grid */}
-      <div className="flex-1 p-6 space-y-5">
+        <div className="flex-1 p-6 space-y-5">
 
-        {/* Vibe Board — fuses Genre + Rhythm */}
-        <div className="glass-panel rounded-xl p-4 space-y-3">
+          <div className="grid gap-2 lg:grid-cols-4">
+            {MUSICAL_GUIDE_STEPS.map((step, index) => (
+              <div
+                key={step.title}
+                className="rounded-xl border px-3 py-2.5"
+                style={{ background: `${AMBER_PRIMARY}12`, borderColor: `${AMBER_PRIMARY}2f` }}
+              >
+                <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.18em] uppercase" style={{ color: index === 0 ? AMBER_PRIMARY : AMBER_SECONDARY }}>
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-[9px]" style={{ borderColor: `${AMBER_PRIMARY}3a` }}>
+                    {index + 1}
+                  </span>
+                  {step.title}
+                </div>
+                <p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+                  {step.description}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Vibe Board — fuses Genre + Rhythm */}
+          <div className="glass-panel rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Music className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
             <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">
               {m.vibeBoard ?? 'VIBE BOARD'}
             </label>
-            {selectedVibeTile && (
-              <span className="ml-auto flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-md"
-                style={{ background: `${AMBER_PRIMARY}22`, color: AMBER_PRIMARY }}>
-                {selectedVibeTile.emoji} {selectedVibeTile.name}
-                {selectedSubStyle && <span className="opacity-70">· {selectedSubStyle}</span>}
-              </span>
-            )}
+                {selectedVibeTile && (
+                  <span className="ml-auto flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-md"
+                    style={{ background: `${AMBER_PRIMARY}22`, color: AMBER_PRIMARY }}>
+                    {selectedVibeTile.emoji} {genreBlueprint}
+                  </span>
+                )}
           </div>
           <p className="text-[10px] text-[var(--text-secondary)] opacity-70">
             {m.vibeBoardDescription ?? 'Select your genre to auto-set BPM & instruments'}
           </p>
 
           {/* Genre categories */}
-          <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
-            {VIBE_CATEGORIES.map(category => (
-              <div key={category.id}>
-                {/* Category label */}
-                <div className="text-[9px] font-bold tracking-widest uppercase mb-1.5 px-0.5"
-                  style={{ color: category.color }}>
-                  {category.label}
-                </div>
-                {/* Genre tiles */}
-                <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+              {VIBE_CATEGORIES.map(category => (
+                <div key={category.id}>
+                  <div className="mb-1.5 flex items-end justify-between gap-3 px-0.5">
+                    <div className="text-[9px] font-bold tracking-widest uppercase"
+                      style={{ color: category.color }}>
+                      {category.label}
+                    </div>
+                    <p className="text-[10px] text-right leading-4 text-[var(--text-secondary)] opacity-75">
+                      {category.summary}
+                    </p>
+                  </div>
+                  {/* Genre tiles */}
+                  <div className="flex flex-wrap gap-1.5">
                   {category.tiles.map(tile => {
                     const isSelected = selectedVibeTile?.name === tile.name;
                     return (
@@ -361,9 +448,9 @@ export function MusicalTab({
           </div>
 
           {/* Sub-style selector */}
-          {selectedVibeTile && SUB_STYLES[selectedVibeTile.name] && (
-            <div className="pt-2 border-t border-[var(--border-color)]">
-              <div className="text-[9px] font-bold tracking-widest uppercase mb-1.5 text-[var(--text-secondary)]">
+            {selectedVibeTile && SUB_STYLES[selectedVibeTile.name] && (
+              <div className="pt-2 border-t border-[var(--border-color)]">
+                <div className="text-[9px] font-bold tracking-widest uppercase mb-1.5 text-[var(--text-secondary)]">
                 {m.subStyle ?? 'SUB-STYLE'}
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -383,10 +470,66 @@ export function MusicalTab({
                     </button>
                   );
                 })}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {selectedVibeTile && selectedCategory && (
+              <div className="grid gap-2 pt-2 border-t border-[var(--border-color)] lg:grid-cols-4 sm:grid-cols-2">
+                <div className="rounded-xl border px-3 py-2.5" style={{ background: `${selectedCategory.color}14`, borderColor: `${selectedCategory.color}40` }}>
+                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedCategory.color }}>
+                    Broad lane
+                  </div>
+                  <p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.label}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.summary}</p>
+                </div>
+                <div className="rounded-xl border px-3 py-2.5" style={{ background: `${AMBER_PRIMARY}10`, borderColor: `${AMBER_PRIMARY}33` }}>
+                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: AMBER_PRIMARY }}>
+                    Sub-style clues
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {suggestedSubStyles.map(sub => (
+                      <span
+                        key={sub}
+                        className="rounded-full px-2 py-1 text-[10px] font-medium"
+                        style={{ background: `${AMBER_PRIMARY}1c`, color: AMBER_PRIMARY }}
+                      >
+                        {sub}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border px-3 py-2.5" style={{ background: `${AMBER_MUTED}18`, borderColor: `${AMBER_SECONDARY}33` }}>
+                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: AMBER_SECONDARY }}>
+                    For fans of
+                  </div>
+                  <p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">
+                    {selectedCategory.artists.join(' · ')}
+                  </p>
+                  <p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">
+                    Use references to position the song quickly for collaborators and music tools.
+                  </p>
+                </div>
+                <div className="rounded-xl border px-3 py-2.5" style={{ background: `${selectedCategory.color}12`, borderColor: `${selectedCategory.color}33` }}>
+                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedCategory.color }}>
+                    Mood + era cues
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {selectedCategory.moods.map(moodTag => (
+                      <span
+                        key={moodTag}
+                        className="rounded-full px-2 py-1 text-[10px] font-medium"
+                        style={{ background: `${selectedCategory.color}1a`, color: selectedCategory.color }}
+                      >
+                        {moodTag}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.era}</p>
+                </div>
+              </div>
+            )}
+          </div>
 
         {/* Row 1: Tempo + Instruments */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -635,4 +778,3 @@ export function MusicalTab({
     </div>
   );
 }
-

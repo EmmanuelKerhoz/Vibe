@@ -148,7 +148,7 @@ export function LyricsView({
   }, [song, updateSongAndStructureWithHistory]);
 
   return (
-    <div className="w-full flex flex-col gap-6 pb-32">
+    <div className="w-full flex flex-col gap-1 pb-32">
       {isMarkupMode ? (
         <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden" style={{ minHeight: 'calc(100vh - 280px)' }}>
           <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
