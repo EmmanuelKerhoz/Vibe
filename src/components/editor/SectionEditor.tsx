@@ -3,6 +3,7 @@ import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, 
 import { Section } from '../../types';
 import { getSectionDotColor, getSectionColorHex, getSectionTextColor, getRhymeColor } from '../../utils/songUtils';
 import { LyricInput } from './LyricInput';
+import { MetaLine } from './MetaLine';
 import { InstructionEditor } from './InstructionEditor';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
@@ -22,7 +23,6 @@ interface SectionEditorProps {
   dragOverIndex: number | null;
   draggedLineInfo: { sectionId: string; lineId: string } | null;
   dragOverLineInfo: { sectionId: string; lineId: string } | null;
-  // callbacks
   moveSectionUp: (sectionId: string) => void;
   moveSectionDown: (sectionId: string) => void;
   moveLineUp: (sectionId: string, lineId: string) => void;
@@ -110,7 +110,6 @@ export const SectionEditor = React.memo(function SectionEditor({
     >
       <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
 
-      {/* pt-3 pb-2 instead of p-4: reduces bottom padding inside each section container */}
       <div className="flex-1 pt-3 px-4 pb-2">
         <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: getSectionColorHex(section.name) }}>
           <div className="flex items-center gap-3">
@@ -124,7 +123,6 @@ export const SectionEditor = React.memo(function SectionEditor({
                 <button type="button" onClick={() => moveSectionDown(section.id)} disabled={sectionIndex === songLength - 1 || section.name.toLowerCase() === 'outro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                   <ChevronDown className="h-3 w-3" />
                 </button>
-
               </Tooltip>
             </div>
             <div>
@@ -189,18 +187,60 @@ export const SectionEditor = React.memo(function SectionEditor({
         />
 
         <div className="mt-3 space-y-3">
-          <div
-            className="lyric-row px-3 pb-1 border-b border-white/5 mb-1"
-          >
+          {/* Column headers — hidden for meta-only sections */}
+          <div className="lyric-row px-3 pb-1 border-b border-white/5 mb-1">
             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhyme}</span>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.syllables}</span>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{t.editor.rhymeSyllable}</span>
             <div/>
           </div>
+
           {section.lines.map((line, index) => {
             const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
             const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
+
+            // ── META LINE rendering ─────────────────────────────────────
+            if (line.isMeta) {
+              return (
+                <div
+                  key={line.id}
+                  className={`group lyric-row border-l-2 border-cyan-500/50 bg-cyan-500/5 transition-colors ${isDraggedLine ? 'opacity-50' : ''}`}
+                  style={{ paddingLeft: '12px', paddingRight: '12px' }}
+                >
+                  {/* drag handle placeholder */}
+                  <div />
+                  {/* origin icon placeholder */}
+                  <div />
+                  {/* up/down placeholder */}
+                  <div />
+                  {/* line number */}
+                  <button
+                    type="button"
+                    onClick={() => handleLineClick(line.id)}
+                    className="flex h-8 w-8 items-center justify-center rounded-sm border border-cyan-500/20 bg-cyan-500/10 text-[11px] font-semibold text-cyan-500"
+                  >
+                    {index + 1}
+                  </button>
+                  {/* meta text spanning remaining columns */}
+                  <div className="col-span-5 flex items-center">
+                    <MetaLine text={line.text} />
+                  </div>
+                  {/* delete */}
+                  <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
+                    <button
+                      type="button"
+                      onClick={() => deleteLineFromSection(section.id, line.id)}
+                      className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </Tooltip>
+                </div>
+              );
+            }
+
+            // ── NORMAL LINE rendering ────────────────────────────────────
             return (
               <div
                 key={line.id}
@@ -213,10 +253,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                     ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
                     : 'hover:bg-white/[0.025]'
                 } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
-                style={{
-                  paddingLeft: '12px',
-                  paddingRight: '12px',
-                }}
+                style={{ paddingLeft: '12px', paddingRight: '12px' }}
               >
                 {isSectionDraggable ? (
                   <Tooltip title={t.editor.dragToReorderLine ?? 'Drag to reorder line'}>
@@ -305,7 +342,6 @@ export const SectionEditor = React.memo(function SectionEditor({
           </div>
         )}
 
-        {/* pt-1 pb-1 instead of pt-1 pb-2: tighter bottom clearance before border */}
         <div className="flex items-center gap-2 pt-1 pb-1 px-3">
           <button type="button" onClick={() => addLineToSection(section.id)} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded">
             <Plus className="w-3 h-3" />

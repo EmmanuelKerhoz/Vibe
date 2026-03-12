@@ -6,6 +6,8 @@ export interface Line {
   syllables: number;
   concept: string;
   isManual?: boolean;
+  /** True when this line is a pure production/performance meta-instruction, e.g. [Guitar solo] */
+  isMeta?: boolean;
 }
 
 export interface Section {

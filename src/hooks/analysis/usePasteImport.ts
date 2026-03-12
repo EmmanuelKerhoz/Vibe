@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { cleanSectionName } from '../../utils/songUtils';
+import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
 import type { Section } from '../../types';
 
@@ -62,12 +63,13 @@ CRITICAL INSTRUCTIONS:
 5. Keep concepts very short (1-3 words) and write them in ${uiLang}.
 6. Detect the language of the lyrics and return it as "language" (e.g. "English", "French", "Yoruba").
 7. Return the topic and mood in ${uiLang}.
+8. Performance/production meta-instructions in brackets (e.g. [Guitar solo], [Whispered], [Anthemic], [Ad-lib]) are NOT section headers — include them verbatim as lyric lines with their brackets preserved.
 
-Do NOT use any other section names. If a block of text is an instruction or meta-text, ignore it.
+Do NOT use any other section names. If a block of text is a structural section header (Verse, Chorus, Bridge, etc.), use it as the section name. If it is a performance meta-instruction, keep it as a line.
 
 Extract the overall topic/theme and mood/vibe.
 For each section, identify the rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
-For each line: exact lyric text, rhyming syllables, rhyme identifier, exact syllable count, short core concept.
+For each line: exact lyric text (preserve [meta] brackets), rhyming syllables, rhyme identifier, exact syllable count, short core concept.
 
 Lyrics:
 ${pastedText}`;
@@ -132,8 +134,9 @@ ${pastedText}`;
         throw new Error('No sections could be extracted. Please check the lyrics format.');
       }
 
-      const songWithIds = sections.map((section: any) => ({
+      const songWithIds: Section[] = sections.map((section: any) => ({
         ...section,
+        // cleanSectionName is correct here — only applied to section header names
         name: cleanSectionName(section.name),
         id: generateId(),
         rhymeScheme: section.rhymeScheme || rhymeScheme,
@@ -141,6 +144,10 @@ ${pastedText}`;
           ...line,
           id: generateId(),
           isManual: true,
+          // Detect pure meta lines AFTER the AI returns them — flag isMeta, never strip brackets
+          isMeta: isPureMetaLine(line.text ?? ''),
+          // Do NOT pass line.text through cleanSectionName — preserve [meta] brackets verbatim
+          text: (line.text ?? '') as string,
         })),
       }));
 
