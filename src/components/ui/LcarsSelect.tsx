@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback, type CSSProperties } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useId, type CSSProperties } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface LcarsSelectProps {
   value: string;
@@ -23,7 +24,10 @@ export function LcarsSelect({
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>();
+  const listboxId = useId();
 
   const selectedLabel =
     options.find((o) => o.value === value)?.label ??
@@ -35,17 +39,59 @@ export function LcarsSelect({
     setFocusedIndex(-1);
   }, []);
 
+  const updateDropdownPosition = useCallback(() => {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const viewportPadding = 8;
+    const dropdownGap = 2;
+    const maxDropdownHeight = 260;
+    const minDropdownHeight = 120;
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+    const openUpward = spaceBelow < minDropdownHeight && spaceAbove > spaceBelow;
+    const availableHeight = openUpward ? spaceAbove : spaceBelow;
+
+    setDropdownStyle({
+      position: 'fixed',
+      left: rect.left,
+      width: rect.width,
+      zIndex: 9999,
+      ...(openUpward
+        ? { bottom: window.innerHeight - rect.top + dropdownGap }
+        : { top: rect.bottom + dropdownGap }),
+      maxHeight: Math.max(minDropdownHeight, Math.min(maxDropdownHeight, availableHeight)),
+    });
+  }, []);
+
   // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
     const handleOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const clickedTrigger = containerRef.current?.contains(target);
+      const clickedList = listRef.current?.contains(target);
+      if (!clickedTrigger && !clickedList) {
         close();
       }
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [isOpen, close]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updateDropdownPosition();
+
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [isOpen, updateDropdownPosition]);
 
   // Scroll focused option into view
   useEffect(() => {
@@ -117,9 +163,11 @@ export function LcarsSelect({
       {/* Trigger button */}
       <button
         type="button"
+        ref={triggerRef}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
         onClick={handleTriggerClick}
         onKeyDown={handleKeyDown}
         className={className}
@@ -177,24 +225,19 @@ export function LcarsSelect({
       </button>
 
       {/* Dropdown panel */}
-      {isOpen && (
+      {isOpen && dropdownStyle && createPortal(
         <ul
           ref={listRef}
+          id={listboxId}
           role="listbox"
-          aria-activedescendant={focusedIndex >= 0 ? `lcars-opt-${focusedIndex}` : undefined}
+          aria-activedescendant={focusedIndex >= 0 ? `${listboxId}-opt-${focusedIndex}` : undefined}
           style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-            marginTop: 2,
+            ...dropdownStyle,
             borderRadius: '2px 6px 6px 2px',
             border: '1px solid var(--accent-color)',
             background: 'var(--bg-card)',
             backdropFilter: 'blur(12px)',
             boxShadow: '0 0 20px 2px color-mix(in srgb, var(--accent-color) 30%, transparent)',
-            maxHeight: 260,
             overflowY: 'auto',
             listStyle: 'none',
             margin: 0,
@@ -209,7 +252,7 @@ export function LcarsSelect({
             return (
               <li
                 key={opt.value}
-                id={`lcars-opt-${idx}`}
+                id={`${listboxId}-opt-${idx}`}
                 role="option"
                 aria-selected={isSelected}
                 onMouseDown={(e) => {
@@ -237,7 +280,8 @@ export function LcarsSelect({
               </li>
             );
           })}
-        </ul>
+        </ul>,
+        document.body,
       )}
     </div>
   );

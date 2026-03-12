@@ -93,6 +93,7 @@ const ar: Translations = {
     rhymeSyllable: 'مقطع القافية',
     rhyme: 'قافية',
     syllables: 'مقاطع',
+    syllableCount: 'العدد',
     concept: 'مفهوم',
     lines: 'أسطر',
     chars: 'حروف',
