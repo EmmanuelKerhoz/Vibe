@@ -40,6 +40,7 @@ export const useLanguageAdapter = ({
     : uiLanguage === 'pt' ? 'Portuguese'
     : uiLanguage === 'ar' ? 'Arabic'
     : uiLanguage === 'zh' ? 'Chinese'
+    : uiLanguage === 'ko' ? 'Korean'
     : 'English';
 
   const updateSong = (transform: (currentSong: Section[]) => Section[]) => {

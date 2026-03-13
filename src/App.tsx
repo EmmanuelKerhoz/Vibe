@@ -227,7 +227,6 @@ export default function App() {
     if (sec) scrollToSection(sec);
   }, [song, scrollToSection]);
   const handleOpenSaveToLibraryModal = async () => {
-    if (song.length === 0) return;
     setLibraryAssets(await loadLibraryAssets());
     setIsSaveToLibraryModalOpen(true);
   };
@@ -289,7 +288,7 @@ export default function App() {
 
   return (
     <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
-    <div className={`fui-FluentProvider h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
+    <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
 
       {showMobileBackdrop && (
         <div className="mobile-panel-backdrop" onClick={closeMobilePanels} aria-hidden="true" />
@@ -351,14 +350,17 @@ export default function App() {
                     removeInstruction={removeInstruction} regenerateSection={regenerateSection}
                     draggedItemIndex={draggedItemIndex} dragOverIndex={dragOverIndex}
                     draggedLineInfo={draggedLineInfo} dragOverLineInfo={dragOverLineInfo}
-                    setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
-                    setDraggableSectionIndex={setDraggableSectionIndex}
-                    setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
-                    playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
-                    handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
-                    isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
-                    markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
-                  />
+                     setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
+                     setDraggableSectionIndex={setDraggableSectionIndex}
+                     setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
+                     playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
+                     handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
+                     isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
+                     markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
+                     onOpenLibrary={handleOpenSaveToLibraryModal}
+                     onPasteLyrics={() => setIsPasteModalOpen(true)}
+                     onGenerateSong={handleGlobalRegenerate}
+                   />
                 ) : (
                   <MusicalTab
                     song={song} title={title} topic={topic} mood={mood}
@@ -434,7 +436,7 @@ export default function App() {
         handleDeleteLibraryAsset={handleDeleteLibraryAsset}
         isSaveToLibraryModalOpen={isSaveToLibraryModalOpen} setIsSaveToLibraryModalOpen={setIsSaveToLibraryModalOpen}
         handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
-        title={title} libraryAssets={libraryAssets} handleLoadLibraryAsset={handleLoadLibraryAsset}
+        title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0} handleLoadLibraryAsset={handleLoadLibraryAsset}
         isVersionsModalOpen={isVersionsModalOpen} setIsVersionsModalOpen={setIsVersionsModalOpen}
         saveVersion={saveVersion} handleRequestVersionName={handleRequestVersionName}
         isResetModalOpen={isResetModalOpen} setIsResetModalOpen={setIsResetModalOpen}

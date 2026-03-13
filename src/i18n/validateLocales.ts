@@ -17,6 +17,7 @@ import de from './locales/de';
 import pt from './locales/pt';
 import ar from './locales/ar';
 import zh from './locales/zh';
+import ko from './locales/ko';
 import type { Translations } from './locales/types';
 
 /** Recursively collect all dot-separated keys from an object. */
@@ -29,7 +30,7 @@ function collectKeys(obj: unknown, prefix = ''): string[] {
   );
 }
 
-const ALL_LOCALES: Record<string, Translations> = { fr, es, de, pt, ar, zh };
+const ALL_LOCALES: Record<string, Translations> = { fr, es, de, pt, ar, zh, ko };
 const BASE_KEYS = new Set(collectKeys(en));
 
 export interface LocaleValidationResult {

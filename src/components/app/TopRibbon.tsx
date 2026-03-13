@@ -62,7 +62,7 @@ export function TopRibbon({
   }, [isOverflowOpen]);
 
   return (
-    <div className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0">
+    <div className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0 fluent-animate-panel">
       {/* Left: sidebar toggle + tab switcher */}
       <div className="flex items-center gap-3 lg:gap-6 pl-1 lg:pl-3">
         <Tooltip title={isLeftPanelOpen ? t.tooltips.collapseLeft : t.tooltips.showSidebar}>
@@ -114,7 +114,7 @@ export function TopRibbon({
             </Button>
           </Tooltip>
           <Tooltip title={t.saveToLibrary.browseDescription}>
-            <Button onClick={onOpenLibraryClick} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
+            <Button onClick={onOpenLibraryClick} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
               {t.saveToLibrary.title}
             </Button>
           </Tooltip>
@@ -219,7 +219,6 @@ export function TopRibbon({
                 </button>
                 <button
                   onClick={() => { onExportClick(); setIsOverflowOpen(false); }}
-                  disabled={song.length === 0}
                   className="w-full flex items-center gap-3 px-4 py-3 text-[11px] text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50"
                 >
                   <Download className="w-4 h-4 text-[var(--text-secondary)]" />

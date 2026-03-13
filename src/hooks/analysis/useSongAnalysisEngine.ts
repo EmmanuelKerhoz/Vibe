@@ -63,6 +63,7 @@ export const useSongAnalysisEngine = ({
     : uiLanguage === 'pt' ? 'Portuguese'
     : uiLanguage === 'ar' ? 'Arabic'
     : uiLanguage === 'zh' ? 'Chinese'
+    : uiLanguage === 'ko' ? 'Korean'
     : 'English';
 
   useEffect(() => {
