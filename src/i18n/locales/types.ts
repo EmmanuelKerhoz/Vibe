@@ -41,6 +41,14 @@ export interface Translations {
     aiUnavailable: string;
   };
 
+  mobileNav: {
+    navigation: string;
+    settings: string;
+    lyrics: string;
+    music: string;
+    structure: string;
+  };
+
   leftPanel: {
     title: string;
     songTitle: string;

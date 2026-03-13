@@ -36,6 +36,14 @@ const ar: Translations = {
     aiUnavailable: 'الذكاء الاصطناعي غير متاح',
   },
 
+  mobileNav: {
+    navigation: 'التنقل على الجوال',
+    settings: 'الإعدادات',
+    lyrics: 'الكلمات',
+    music: 'الموسيقى',
+    structure: 'البنية',
+  },
+
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: 'عنوان الأغنية',

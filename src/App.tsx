@@ -68,21 +68,28 @@ export default function App() {
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
   } = useAppState();
 
-  // ── Mobile layout ────────────────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
+  const hasCollapsedCompactPanelsRef = useRef(false);
 
-  // Close both panels when switching to desktop
   useEffect(() => {
-    if (!isMobile && !isTablet) return;
-    // On mobile, ensure panels start closed
-  }, [isMobile, isTablet]);
+    const isCompactLayout = isMobile || isTablet;
+
+    if (isCompactLayout && !hasCollapsedCompactPanelsRef.current) {
+      setIsLeftPanelOpen(false);
+      setIsStructureOpen(false);
+      hasCollapsedCompactPanelsRef.current = true;
+      return;
+    }
+
+    if (!isCompactLayout) {
+      hasCollapsedCompactPanelsRef.current = false;
+    }
+  }, [isMobile, isTablet, setIsLeftPanelOpen, setIsStructureOpen]);
 
   const closeMobilePanels = useCallback(() => {
     setIsLeftPanelOpen(false);
     setIsStructureOpen(false);
   }, [setIsLeftPanelOpen, setIsStructureOpen]);
-
-  const showMobileBackdrop = (isMobile || isTablet) && (isLeftPanelOpen || isStructureOpen);
 
   useSessionPersistence({
     song, structure, title, topic, mood, rhymeScheme, targetSyllables,
@@ -273,31 +280,19 @@ export default function App() {
     <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
     <div className={`fui-FluentProvider h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
 
-      {/* ── MOBILE BACKDROP ── */}
-      {showMobileBackdrop && (
-        <div
-          className="mobile-panel-backdrop"
-          onClick={closeMobilePanels}
-          aria-hidden="true"
-        />
-      )}
-
       <div className="flex-1 flex overflow-hidden">
 
-        {/* ── LEFT PANEL — overlay on mobile ── */}
-        <div className={isMobile ? 'left-panel-mobile-overlay' : undefined}>
-          <LeftSettingsPanel
-            title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
-            onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-            song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
-            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-            onSurprise={handleSurpriseClick}
-            isSurprising={isSurprising}
-          />
-        </div>
+        <LeftSettingsPanel
+          title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
+          onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+          topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+          rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+          targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+          song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
+          isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+          onSurprise={handleSurpriseClick}
+          isSurprising={isSurprising}
+        />
 
         {/* ── MAIN CONTENT ── */}
         <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
@@ -364,18 +359,15 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── STRUCTURE SIDEBAR — overlay on mobile/tablet ── */}
-        <div className={isMobile || isTablet ? 'structure-sidebar-mobile-overlay' : undefined}>
-          <StructureSidebar
-            isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-            structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
-            isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-            draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
-            dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
-            addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-            normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
-          />
-        </div>
+        <StructureSidebar
+          isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+          structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
+          isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+          draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
+          dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
+          addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+          normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
+        />
       </div>
 
       {/* ── STATUS BAR (desktop) ── */}
@@ -390,38 +382,38 @@ export default function App() {
       </div>
 
       {/* ── MOBILE BOTTOM NAV BAR ── */}
-      <nav className="mobile-bottom-nav" aria-label="Navigation">
+      <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
         <button
           className={`mobile-bottom-nav-btn ${isLeftPanelOpen ? 'active' : ''}`}
           onClick={() => { setIsLeftPanelOpen(v => !v); setIsStructureOpen(false); }}
-          aria-label="Settings"
+          aria-label={t.mobileNav.settings}
         >
           <Settings size={20} />
-          <span>Settings</span>
+          <span>{t.mobileNav.settings}</span>
         </button>
         <button
           className={`mobile-bottom-nav-btn ${activeTab === 'lyrics' ? 'active' : ''}`}
           onClick={() => setActiveTab('lyrics')}
-          aria-label="Lyrics"
+          aria-label={t.mobileNav.lyrics}
         >
           <BookOpen size={20} />
-          <span>Lyrics</span>
+          <span>{t.mobileNav.lyrics}</span>
         </button>
         <button
           className={`mobile-bottom-nav-btn ${activeTab === 'musical' ? 'active' : ''}`}
           onClick={() => setActiveTab('musical')}
-          aria-label="Music"
+          aria-label={t.mobileNav.music}
         >
           <Music size={20} />
-          <span>Music</span>
+          <span>{t.mobileNav.music}</span>
         </button>
         <button
           className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
           onClick={() => { setIsStructureOpen(v => !v); setIsLeftPanelOpen(false); }}
-          aria-label="Structure"
+          aria-label={t.mobileNav.structure}
         >
           <Menu size={20} />
-          <span>Structure</span>
+          <span>{t.mobileNav.structure}</span>
         </button>
       </nav>
 

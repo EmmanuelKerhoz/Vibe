@@ -190,7 +190,7 @@ export const SectionEditor = React.memo(function SectionEditor({
 
         <div className="mt-3 space-y-3">
           {/* Column headers — hidden for meta-only sections */}
-          <div className="lyric-row px-3 pb-1 border-b border-white/5 mb-1">
+          <div className="lyric-row lyric-row-header px-3 pb-1 border-b border-white/5 mb-1">
             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Syllables</span>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>Count</span>
