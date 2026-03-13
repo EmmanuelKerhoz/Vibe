@@ -36,6 +36,14 @@ const zh: Translations = {
     aiUnavailable: 'AI 不可用',
   },
 
+  mobileNav: {
+    navigation: '移动导航',
+    settings: '设置',
+    lyrics: '歌词',
+    music: '音乐',
+    structure: '结构',
+  },
+
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: '歌曲标题',

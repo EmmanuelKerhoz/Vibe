@@ -278,6 +278,7 @@ export default function App() {
       )}
 
       <div className="flex-1 flex overflow-hidden">
+
         <LeftSettingsPanel
           className={isMobileOrTablet ? 'left-panel-mobile-overlay' : undefined}
           title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}

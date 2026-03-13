@@ -18,38 +18,38 @@ export function MobileBottomNav({
   const { t } = useTranslation();
 
   return (
-    <nav className="mobile-bottom-nav" aria-label="Navigation">
+    <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
       <button
         className={`mobile-bottom-nav-btn ${isLeftPanelOpen ? 'active' : ''}`}
         onClick={() => { setIsLeftPanelOpen(v => !v); setIsStructureOpen(() => false); }}
-        aria-label={t.nav.settings}
+        aria-label={t.mobileNav.settings}
       >
         <Settings size={20} />
-        <span>{t.nav.settings}</span>
+        <span>{t.mobileNav.settings}</span>
       </button>
       <button
         className={`mobile-bottom-nav-btn ${activeTab === 'lyrics' ? 'active' : ''}`}
         onClick={() => setActiveTab('lyrics')}
-        aria-label={t.nav.lyrics}
+        aria-label={t.mobileNav.lyrics}
       >
         <BookOpen size={20} />
-        <span>{t.nav.lyrics}</span>
+        <span>{t.mobileNav.lyrics}</span>
       </button>
       <button
         className={`mobile-bottom-nav-btn ${activeTab === 'musical' ? 'active' : ''}`}
         onClick={() => setActiveTab('musical')}
-        aria-label={t.nav.music}
+        aria-label={t.mobileNav.music}
       >
         <Music size={20} />
-        <span>{t.nav.music}</span>
+        <span>{t.mobileNav.music}</span>
       </button>
       <button
         className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
         onClick={() => { setIsStructureOpen(v => !v); setIsLeftPanelOpen(() => false); }}
-        aria-label={t.nav.structure}
+        aria-label={t.mobileNav.structure}
       >
         <Menu size={20} />
-        <span>{t.nav.structure}</span>
+        <span>{t.mobileNav.structure}</span>
       </button>
     </nav>
   );

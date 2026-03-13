@@ -36,6 +36,14 @@ const pt: Translations = {
     aiUnavailable: 'IA INDISPONÍVEL',
   },
 
+  mobileNav: {
+    navigation: 'Navegação móvel',
+    settings: 'Configurações',
+    lyrics: 'Letras',
+    music: 'Música',
+    structure: 'Estrutura',
+  },
+
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: 'TÍTULO DA MÚSICA',

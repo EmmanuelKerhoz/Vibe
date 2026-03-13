@@ -36,6 +36,14 @@ const de: Translations = {
     aiUnavailable: 'KI NICHT VERFÜGBAR',
   },
 
+  mobileNav: {
+    navigation: 'Mobile Navigation',
+    settings: 'Einstellungen',
+    lyrics: 'Texte',
+    music: 'Musik',
+    structure: 'Struktur',
+  },
+
   leftPanel: {
     title: 'Lyricist Pro',
     songTitle: 'SONGTITEL',
