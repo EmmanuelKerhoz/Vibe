@@ -17,12 +17,14 @@ interface Props {
   setAudioFeedback: (v: boolean) => void;
   onOpenAbout: () => void;
   onOpenSettings: () => void;
+  /** Extra class applied to the root element (e.g. for mobile hide/show). */
+  className?: string;
 }
 
 export function StatusBar({
   song, wordCount, isGenerating, isAnalyzing, isSuggesting,
   theme, setTheme, audioFeedback, setAudioFeedback,
-  onOpenAbout, onOpenSettings,
+  onOpenAbout, onOpenSettings, className,
 }: Props) {
   const { t, language } = useTranslation();
 
@@ -35,7 +37,7 @@ export function StatusBar({
   const statusBarDict = t.statusBar as Record<string, string | undefined>;
 
   return (
-    <div className="lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]">
+    <div className={`lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
       {/* Left: system status + KPIs */}
       <div className="flex items-center gap-2 lg:gap-4">
         <div className="flex items-center gap-1.5">

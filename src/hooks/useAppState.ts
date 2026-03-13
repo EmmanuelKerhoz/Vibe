@@ -3,6 +3,9 @@ import { SimilarityMatch } from '../utils/similarityUtils';
 import { LibraryAsset } from '../utils/libraryUtils';
 import { DEFAULT_TITLE, DEFAULT_TOPIC, DEFAULT_MOOD } from '../utils/songDefaults';
 
+/** Key used to track first-ever launch (splash shown once). */
+const SPLASH_SHOWN_KEY = 'vibe_splash_shown';
+
 export function useAppState() {
   const [title, setTitle] = useState(DEFAULT_TITLE);
   const [titleOrigin, setTitleOrigin] = useState<'user' | 'ai'>('user');
@@ -33,7 +36,11 @@ export function useAppState() {
   const [audioFeedback, setAudioFeedback] = useState(true);
   const [isMarkupMode, setIsMarkupMode] = useState(false);
   const [markupText, setMarkupText] = useState('');
-  const [isAboutOpen, setIsAboutOpen] = useState(true);
+
+  // FIX: was useState(true) → caused splash to open on every mount
+  // Now: open only on first ever launch, tracked via localStorage.
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiErrorModal, setApiErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -54,10 +61,24 @@ export function useAppState() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const markupTextareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Theme class on <html>
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [theme]);
+
+  // FIX: splash shown exactly once per browser profile, immune to React 18 Strict Mode double-mount.
+  // A ref gate prevents the second mount (Strict Mode) from re-setting the flag.
+  const splashCheckedRef = useRef(false);
+  useEffect(() => {
+    if (splashCheckedRef.current) return;
+    splashCheckedRef.current = true;
+    const shown = localStorage.getItem(SPLASH_SHOWN_KEY);
+    if (!shown) {
+      setIsAboutOpen(true);
+      localStorage.setItem(SPLASH_SHOWN_KEY, '1');
+    }
+  }, []);
 
   useEffect(() => {
     fetch('/api/status')

@@ -95,11 +95,61 @@ export const findSimilarAssetsInLibrary = async (
     .slice(0, limit);
 };
 
+/**
+ * Extract plain text from a .docx file (Office Open XML).
+ * Reads word/document.xml and strips all XML tags.
+ */
+const extractTextFromDocx = async (file: File): Promise<string> => {
+  try {
+    // Dynamic import of fflate (already in deps via exportUtils)
+    const { unzipSync, strFromU8 } = await import('fflate');
+    const buffer = await file.arrayBuffer();
+    const unzipped = unzipSync(new Uint8Array(buffer));
+    const docXml = unzipped['word/document.xml'];
+    if (!docXml) return '';
+    const xml = strFromU8(docXml);
+    // Extract text between <w:t> tags, add newlines between paragraphs
+    const paragraphs = xml.split(/<\/w:p>/);
+    return paragraphs
+      .map(p => {
+        const texts = [...p.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g)].map(m => m[1] ?? '');
+        return texts.join('');
+      })
+      .filter(t => t.trim().length > 0)
+      .join('\n');
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * Extract plain text from a .odt file (ODF).
+ * Reads content.xml and strips all XML tags.
+ */
+const extractTextFromOdt = async (file: File): Promise<string> => {
+  try {
+    const { unzipSync, strFromU8 } = await import('fflate');
+    const buffer = await file.arrayBuffer();
+    const unzipped = unzipSync(new Uint8Array(buffer));
+    const contentXml = unzipped['content.xml'];
+    if (!contentXml) return '';
+    const xml = strFromU8(contentXml);
+    // Split on paragraph tags, strip all other XML
+    const paragraphs = xml.split(/<\/text:p>/);
+    return paragraphs
+      .map(p => p.replace(/<[^>]+>/g, '').trim())
+      .filter(t => t.length > 0)
+      .join('\n');
+  } catch {
+    return '';
+  }
+};
+
 export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> => {
-  const text = await file.text();
   const assets: LibraryAsset[] = [];
   try {
     if (file.name.endsWith('.json')) {
+      const text = await file.text();
       const parsed = JSON.parse(text);
       if (Array.isArray(parsed)) {
         return parsed.map((item, idx) => ({
@@ -112,7 +162,33 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
           metadata: item.metadata,
         }));
       }
+    } else if (file.name.endsWith('.docx')) {
+      const text = await extractTextFromDocx(file);
+      if (text) {
+        const sections = parseTextToSections(text);
+        assets.push({
+          id: `import_${Date.now()}`,
+          title: file.name.replace(/\.docx$/, ''),
+          timestamp: Date.now(),
+          type: 'lyrics',
+          sections,
+        });
+      }
+    } else if (file.name.endsWith('.odt')) {
+      const text = await extractTextFromOdt(file);
+      if (text) {
+        const sections = parseTextToSections(text);
+        assets.push({
+          id: `import_${Date.now()}`,
+          title: file.name.replace(/\.odt$/, ''),
+          timestamp: Date.now(),
+          type: 'lyrics',
+          sections,
+        });
+      }
     } else {
+      // .txt / .md
+      const text = await file.text();
       const sections = parseTextToSections(text);
       assets.push({
         id: `import_${Date.now()}`,
