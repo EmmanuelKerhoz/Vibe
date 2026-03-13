@@ -5,7 +5,7 @@ import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
-import { SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel, formatLanguageDisplay } from '../../i18n';
+import { SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel, getLanguageDisplay } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 
 interface InsightsBarProps {
@@ -31,9 +31,28 @@ interface InsightsBarProps {
   handleMarkupToggle: () => void;
   setIsSimilarityModalOpen: (open: boolean) => void;
   scrollToSection: (section: Section) => void;
-  /** Metronome controls — optional so existing callers keep working */
   isMetronomeActive?: boolean;
   toggleMetronome?: () => void;
+}
+
+/**
+ * Renders an emoji sign (flag or cultural symbol) with a forced emoji font
+ * stack so it displays correctly on Windows desktop browsers.
+ */
+function EmojiSign({ sign }: { sign: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
+        lineHeight: 1,
+        display: 'inline-block',
+        fontSize: '1em',
+      }}
+    >
+      {sign}
+    </span>
+  );
 }
 
 export function InsightsBar({
@@ -63,10 +82,13 @@ export function InsightsBar({
   toggleMetronome,
 }: InsightsBarProps) {
   const { t } = useTranslation();
-  const supportedAdaptationLanguages = SUPPORTED_ADAPTATION_LANGUAGES;
-  const adaptLangLabel = adaptationLanguageLabel;
-  const targetLanguageDisplay = formatLanguageDisplay(targetLanguage);
-  const detectedLanguageDisplay = songLanguage ? formatLanguageDisplay(songLanguage) : '🌐 Detect';
+
+  // Resolved display info for target and detected languages
+  const targetDisplay = getLanguageDisplay(targetLanguage);
+  const detectedDisplay = songLanguage ? getLanguageDisplay(songLanguage) : null;
+
+  // Labels passed to tooltip strings (plain text, no emoji span needed)
+  const targetLanguageDisplayText = targetDisplay ? `${targetDisplay.sign} ${targetDisplay.label}` : targetLanguage;
 
   return (
     <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10 overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-none">
@@ -84,19 +106,34 @@ export function InsightsBar({
                 <LcarsSelect
                   value={targetLanguage}
                   onChange={setTargetLanguage}
-                  options={supportedAdaptationLanguages.map(lang => ({ value: lang.aiName, label: adaptLangLabel(lang) }))}
+                  options={SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
+                    value: lang.aiName,
+                    label: adaptationLanguageLabel(lang),
+                  }))}
                 />
               </div>
-              <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplay)}>
-                <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap min-w-fit">
+              <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText)}>
+                <button
+                  onClick={() => adaptSongLanguage(targetLanguage)}
+                  disabled={isAdaptingLanguage || song.length === 0}
+                  className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap min-w-fit"
+                >
                   {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
                   <span className="hidden sm:inline">{t.editor.adaptation}</span>
                 </button>
               </Tooltip>
-              <Tooltip title={songLanguage ? `Detected: ${detectedLanguageDisplay} — click to re-detect` : '🌐 Detect song language'}>
-                <button onClick={() => void detectLanguage()} disabled={isDetectingLanguage || song.length === 0} className="ux-interactive px-3.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap min-w-fit w-auto">
-                  {isDetectingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanText className="w-3 h-3" />}
-                  {detectedLanguageDisplay}
+              <Tooltip title={detectedDisplay ? `Detected: ${detectedDisplay.sign} ${detectedDisplay.label} — click to re-detect` : '🌐 Detect song language'}>
+                <button
+                  onClick={() => void detectLanguage()}
+                  disabled={isDetectingLanguage || song.length === 0}
+                  className="ux-interactive px-3.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap min-w-fit w-auto"
+                >
+                  {isDetectingLanguage
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <ScanText className="w-3 h-3" />}
+                  {detectedDisplay
+                    ? <><EmojiSign sign={detectedDisplay.sign} /><span>{detectedDisplay.label}</span></>
+                    : <><EmojiSign sign="🌐" /><span>Detect</span></>}
                 </button>
               </Tooltip>
             </div>
@@ -137,9 +174,7 @@ export function InsightsBar({
                 <button
                   onClick={toggleMetronome}
                   className={`px-2 lg:px-2.5 py-1.5 text-[11px] rounded transition-all flex items-center justify-center gap-1.5 whitespace-nowrap border ${
-                    isMetronomeActive
-                      ? 'border-transparent metronome-active'
-                      : 'glass-button'
+                    isMetronomeActive ? 'border-transparent metronome-active' : 'glass-button'
                   }`}
                   style={isMetronomeActive ? { background: '#f59e0b', color: '#000', borderColor: '#f59e0b' } : {}}
                   title={isMetronomeActive ? (t.musical?.metronomeStop ?? 'Stop Metronome') : (t.musical?.metronomeStart ?? 'Start Metronome')}
@@ -171,9 +206,7 @@ export function InsightsBar({
                   : <Search className="w-3.5 h-3.5" />}
                 <span className="hidden lg:inline">{t.ribbon?.similarity || 'Similarity'}</span>
                 {webBadgeLabel && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">
-                    {webBadgeLabel}
-                  </span>
+                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">{webBadgeLabel}</span>
                 )}
                 {!webBadgeLabel && libraryCount > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>
