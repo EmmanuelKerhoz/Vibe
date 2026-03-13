@@ -59,30 +59,46 @@ export default function App() {
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
     isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
     isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
-     apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
-     isExportModalOpen, setIsExportModalOpen,
-     isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
+    apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
+    isExportModalOpen, setIsExportModalOpen,
+    isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
     isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
     isResetModalOpen, setIsResetModalOpen, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     confirmModal, setConfirmModal, promptModal, setPromptModal,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
   } = useAppState();
 
-  // ── Mobile layout ────────────────────────────────────────────────────────
+  // ── Mobile layout ──────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
+  const isMobileOrTablet = isMobile || isTablet;
 
-  // Close both panels when switching to desktop
+  // FIX: close both panels when entering mobile/tablet breakpoint
+  const prevIsMobileOrTablet = useRef(isMobileOrTablet);
   useEffect(() => {
-    if (!isMobile && !isTablet) return;
-    // On mobile, ensure panels start closed
-  }, [isMobile, isTablet]);
+    if (isMobileOrTablet && !prevIsMobileOrTablet.current) {
+      setIsLeftPanelOpen(false);
+      setIsStructureOpen(false);
+    }
+    prevIsMobileOrTablet.current = isMobileOrTablet;
+  }, [isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen]);
+
+  // FIX: on mobile initial mount, ensure panels start closed
+  const mobileInitRef = useRef(false);
+  useEffect(() => {
+    if (mobileInitRef.current) return;
+    mobileInitRef.current = true;
+    if (isMobileOrTablet) {
+      setIsLeftPanelOpen(false);
+      setIsStructureOpen(false);
+    }
+  }, [isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen]);
 
   const closeMobilePanels = useCallback(() => {
     setIsLeftPanelOpen(false);
     setIsStructureOpen(false);
   }, [setIsLeftPanelOpen, setIsStructureOpen]);
 
-  const showMobileBackdrop = (isMobile || isTablet) && (isLeftPanelOpen || isStructureOpen);
+  const showMobileBackdrop = isMobileOrTablet && (isLeftPanelOpen || isStructureOpen);
 
   useSessionPersistence({
     song, structure, title, topic, mood, rhymeScheme, targetSyllables,
@@ -175,9 +191,8 @@ export default function App() {
         if (isExportModalOpen) { setIsExportModalOpen(false); return; }
         if (isImportModalOpen) { setIsImportModalOpen(false); return; }
         if (isSettingsOpen) { setIsSettingsOpen(false); return; }
-        if (isAboutOpen) setIsAboutOpen(false);
-        // On mobile, Escape closes open panels
-        if (isMobile || isTablet) { closeMobilePanels(); return; }
+        if (isAboutOpen) { setIsAboutOpen(false); return; }
+        if (isMobileOrTablet) { closeMobilePanels(); return; }
         return;
       }
       if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
@@ -192,7 +207,7 @@ export default function App() {
     apiErrorModal.open, confirmModal, isAboutOpen, isAnalysisModalOpen, isExportModalOpen,
     isImportModalOpen, isPasteModalOpen, isResetModalOpen, isSaveToLibraryModalOpen,
     isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen, promptModal,
-    isMobile, isTablet, closeMobilePanels,
+    isMobileOrTablet, closeMobilePanels,
     redo, setApiErrorModal, setConfirmModal, setIsAboutOpen, setIsAnalysisModalOpen,
     setIsExportModalOpen, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
     setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
@@ -284,20 +299,21 @@ export default function App() {
 
       <div className="flex-1 flex overflow-hidden">
 
-        {/* ── LEFT PANEL — overlay on mobile ── */}
-        <div className={isMobile ? 'left-panel-mobile-overlay' : undefined}>
-          <LeftSettingsPanel
-            title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
-            onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-            song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
-            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-            onSurprise={handleSurpriseClick}
-            isSurprising={isSurprising}
-          />
-        </div>
+        {/* ── LEFT PANEL
+            FIX: no wrapper div on desktop — renders directly in flex row.
+            On mobile/tablet: absolute overlay via CSS class on the component itself. ── */}
+        <LeftSettingsPanel
+          className={isMobileOrTablet ? 'left-panel-mobile-overlay' : undefined}
+          title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
+          onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+          topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+          rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+          targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+          song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
+          isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+          onSurprise={handleSurpriseClick}
+          isSurprising={isSurprising}
+        />
 
         {/* ── MAIN CONTENT ── */}
         <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
@@ -326,7 +342,8 @@ export default function App() {
               setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
             />
           )}
-          <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobile ? 'p-2 pb-[calc(60px+var(--sab))]' : 'p-4 lg:p-8'}`}>
+          <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}
+               style={isMobileOrTablet ? { paddingBottom: 'calc(60px + var(--sab))' } : undefined}>
             <div className="lyrics-editor-zoom-wrapper">
               <div className="lyrics-editor-zoom">
                 {activeTab === 'lyrics' ? (
@@ -364,30 +381,32 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── STRUCTURE SIDEBAR — overlay on mobile/tablet ── */}
-        <div className={isMobile || isTablet ? 'structure-sidebar-mobile-overlay' : undefined}>
-          <StructureSidebar
-            isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-            structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
-            isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-            draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
-            dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
-            addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-            normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
-          />
-        </div>
-      </div>
-
-      {/* ── STATUS BAR (desktop) ── */}
-      <div className="lcars-status-bar-desktop">
-        <StatusBar
-          song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-          isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
-          audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-          onOpenAbout={() => setIsAboutOpen(true)}
-          onOpenSettings={() => setIsSettingsOpen(true)}
+        {/* ── STRUCTURE SIDEBAR
+            FIX: no wrapper div on desktop — renders directly in flex row.
+            On mobile/tablet: absolute overlay via CSS class. ── */}
+        <StructureSidebar
+          className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+          isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+          structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
+          isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+          draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
+          dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
+          addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+          normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
         />
       </div>
+
+      {/* ── STATUS BAR (desktop) ──
+          FIX: was wrapped in a div without w-full → StatusBar lost justify-between.
+          Now rendered directly, hidden on mobile via CSS (.lcars-status-bar-desktop). ── */}
+      <StatusBar
+        className="lcars-status-bar-desktop"
+        song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+        isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
+        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+        onOpenAbout={() => setIsAboutOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
       {/* ── MOBILE BOTTOM NAV BAR ── */}
       <nav className="mobile-bottom-nav" aria-label="Navigation">
