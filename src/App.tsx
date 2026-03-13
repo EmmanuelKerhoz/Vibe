@@ -83,7 +83,7 @@ export default function App() {
     setIsStructureOpen(false);
   }, [setIsLeftPanelOpen, setIsStructureOpen]);
 
-  const showMobileBackdrop = isMobileOrTablet && (isLeftPanelOpen || isStructureOpen);
+  const showBackdrop = isLeftPanelOpen || (isMobileOrTablet && isStructureOpen);
 
   useSessionPersistence({
     song, structure, title, topic, mood, rhymeScheme, targetSyllables,
@@ -230,6 +230,38 @@ export default function App() {
     setLibraryAssets(await loadLibraryAssets());
     setIsSaveToLibraryModalOpen(true);
   };
+  const handleOpenNewGeneration = useCallback(() => {
+    setActiveTab('lyrics');
+    setIsLeftPanelOpen(true);
+    if (isMobileOrTablet) setIsStructureOpen(false);
+  }, [isMobileOrTablet, setActiveTab, setIsLeftPanelOpen, setIsStructureOpen]);
+  const handleCreateEmptySong = useCallback(() => {
+    replaceStateWithoutHistory(createEmptySong(DEFAULT_STRUCTURE, 'AABB'), DEFAULT_STRUCTURE);
+    clearHistory();
+    safeRemoveItem('lyricist_session');
+    setHasSavedSession(false);
+    clearSelection();
+    setTitle('');
+    setTitleOrigin('user');
+    setTopic(DEFAULT_TOPIC);
+    setMood(DEFAULT_MOOD);
+    setRhymeScheme('AABB');
+    setTargetSyllables(10);
+    setGenre('');
+    setTempo('120');
+    setInstrumentation('');
+    setRhythm('');
+    setNarrative('');
+    setMusicalPrompt('');
+    setMarkupText('');
+    setActiveTab('lyrics');
+    setIsLeftPanelOpen(false);
+  }, [
+    clearHistory, clearSelection, replaceStateWithoutHistory, setActiveTab, setGenre,
+    setHasSavedSession, setInstrumentation, setIsLeftPanelOpen, setMarkupText, setMood,
+    setMusicalPrompt, setNarrative, setRhymeScheme, setRhythm, setTargetSyllables,
+    setTempo, setTitle, setTitleOrigin, setTopic,
+  ]);
   const handleSaveToLibrary = async () => {
     if (song.length === 0) return;
     setIsSavingToLibrary(true);
@@ -273,7 +305,18 @@ export default function App() {
     const pw = window as Window & { showOpenFilePicker?: (o: object) => Promise<Array<{ getFile: () => Promise<File> }>> };
     if (pw.showOpenFilePicker) {
       try {
-        const [h] = await pw.showOpenFilePicker({ multiple: false, types: [{ description: 'Lyrics files', accept: { 'text/plain': ['.txt', '.md'], 'text/markdown': ['.md'] } }] });
+        const [h] = await pw.showOpenFilePicker({
+          multiple: false,
+          types: [{
+            description: 'Lyrics files',
+            accept: {
+              'text/plain': ['.txt', '.md'],
+              'text/markdown': ['.md'],
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+              'application/vnd.oasis.opendocument.text': ['.odt'],
+            },
+          }],
+        });
         if (!h) return;
         const file = await h.getFile(); setIsImportModalOpen(false); loadFileForAnalysis(file);
       } catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) console.error('Failed to open import file picker', e); }
@@ -283,14 +326,14 @@ export default function App() {
   };
   const resetSong = () => {
     updateSongAndStructureWithHistory(createEmptySong(DEFAULT_STRUCTURE, rhymeScheme), DEFAULT_STRUCTURE);
-    safeRemoveItem('lyricist_session'); setHasSavedSession(false); clearSelection(); setIsResetModalOpen(false);
+    safeRemoveItem('lyricist_session'); setHasSavedSession(false); clearSelection(); setMarkupText(''); setIsResetModalOpen(false);
   };
 
   return (
     <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
     <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
 
-      {showMobileBackdrop && (
+      {showBackdrop && (
         <div className="mobile-panel-backdrop" onClick={closeMobilePanels} aria-hidden="true" />
       )}
 
@@ -307,19 +350,23 @@ export default function App() {
           isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
           onSurprise={handleSurpriseClick}
           isSurprising={isSurprising}
+          onGenerateSong={() => { setIsLeftPanelOpen(false); handleGlobalRegenerate(); }}
         />
 
         <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
           <TopRibbon
-            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
             activeTab={activeTab} setActiveTab={setActiveTab}
             song={song} past={past} future={future} undo={undo} redo={redo}
             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+            onOpenNewGeneration={handleOpenNewGeneration}
+            onOpenNewEmpty={handleCreateEmptySong}
             onImportClick={() => setIsImportModalOpen(true)} onExportClick={() => setIsExportModalOpen(true)}
             onOpenLibraryClick={handleOpenSaveToLibraryModal}
+            onOpenSettingsClick={() => setIsSettingsOpen(true)}
+            onOpenAboutClick={() => setIsAboutOpen(true)}
             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
           />
           {activeTab === 'lyrics' && song.length > 0 && (
@@ -413,6 +460,7 @@ export default function App() {
         theme={theme} setTheme={setTheme} audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
         isImportModalOpen={isImportModalOpen} setIsImportModalOpen={setIsImportModalOpen}
         hasExistingWork={hasExistingWork} handleImportChooseFile={handleImportChooseFile}
+        onOpenPasteLyrics={() => { setIsImportModalOpen(false); setIsPasteModalOpen(true); }}
         importInputRef={importInputRef} handleImportInputChange={handleImportInputChange}
         isExportModalOpen={isExportModalOpen} setIsExportModalOpen={setIsExportModalOpen}
         exportSong={exportSong}

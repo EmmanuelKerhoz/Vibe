@@ -34,7 +34,7 @@ export function useAppState() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>('lyrics');
   const [isStructureOpen, setIsStructureOpen] = useState(true);
-  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [draggableSectionIndex, setDraggableSectionIndex] = useState<number | null>(null);

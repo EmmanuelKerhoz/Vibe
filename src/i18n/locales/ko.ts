@@ -233,7 +233,7 @@ const ko: Translations = {
     emptyDescription: '.txt 또는 .md 파일을 선택해 분석하고 편집기로 가져오세요.',
     replaceDescription: '.txt 또는 .md 파일을 선택해 가져오세요. 가져온 가사는 현재 가사, 구조, 분석 맥락을 대체합니다.',
     warning: '가져온 파일이 분석되면 현재 작업은 사라집니다.',
-    supportedFiles: '.txt 및 .md 파일 지원',
+    supportedFiles: 'TXT, Markup, ODT, DOCX 또는 붙여넣은 가사 지원',
     cancel: '취소',
     chooseFile: '파일 선택',
   },

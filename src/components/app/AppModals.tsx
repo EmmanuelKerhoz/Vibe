@@ -34,6 +34,7 @@ interface Props {
   setIsImportModalOpen: (v: boolean) => void;
   hasExistingWork: boolean;
   handleImportChooseFile: () => void;
+  onOpenPasteLyrics: () => void;
   importInputRef: React.RefObject<HTMLInputElement | null>;
   handleImportInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isExportModalOpen: boolean;
@@ -104,7 +105,7 @@ interface Props {
 export function AppModals({
   isAboutOpen, setIsAboutOpen,
   isSettingsOpen, setIsSettingsOpen, theme, setTheme, audioFeedback, setAudioFeedback,
-  isImportModalOpen, setIsImportModalOpen, hasExistingWork, handleImportChooseFile,
+  isImportModalOpen, setIsImportModalOpen, hasExistingWork, handleImportChooseFile, onOpenPasteLyrics,
   importInputRef, handleImportInputChange,
   isExportModalOpen, setIsExportModalOpen, exportSong,
   selectedLineId, setSelectedLineId, suggestions, isSuggesting, applySuggestion, generateSuggestions,
@@ -130,7 +131,7 @@ export function AppModals({
     <>
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} theme={theme} setTheme={setTheme} audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback} />
-      <ImportModal isOpen={isImportModalOpen} hasExistingWork={hasExistingWork} onClose={() => setIsImportModalOpen(false)} onChooseFile={handleImportChooseFile} />
+      <ImportModal isOpen={isImportModalOpen} hasExistingWork={hasExistingWork} onClose={() => setIsImportModalOpen(false)} onChooseFile={handleImportChooseFile} onPasteLyrics={onOpenPasteLyrics} />
       <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} onExport={exportSong} />
       <SuggestionsPanel selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId} suggestions={suggestions} isSuggesting={isSuggesting} applySuggestion={applySuggestion} generateSuggestions={generateSuggestions} />
       <PasteModal isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)} pastedText={pastedText} setPastedText={setPastedText} isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics} />

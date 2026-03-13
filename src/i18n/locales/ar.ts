@@ -223,7 +223,7 @@ const ar: Translations = {
     emptyDescription: 'اختر ملف ‎.txt أو ‎.md لتحليله واستيراده إلى المحرر.',
     replaceDescription: 'اختر ملف ‎.txt أو ‎.md لاستيراده. ستستبدل الكلمات المستوردة الكلمات الحالية والبنية وسياق التحليل.',
     warning: 'سيتم فقدان عملك الحالي بمجرد تحليل الملف المستورد.',
-    supportedFiles: 'يدعم ملفات ‎.txt و‎.md',
+    supportedFiles: 'يدعم TXT وMarkup وODT وDOCX أو لصق الكلمات',
     cancel: 'إلغاء',
     chooseFile: 'اختيار ملف',
   },
