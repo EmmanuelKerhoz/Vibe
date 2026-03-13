@@ -8,9 +8,10 @@ interface Props {
   hasExistingWork: boolean;
   onClose: () => void;
   onChooseFile: () => void;
+  onPasteLyrics: () => void;
 }
 
-export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile }: Props) {
+export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, onPasteLyrics }: Props) {
   const { t } = useTranslation();
 
   if (!isOpen) return null;
@@ -69,13 +70,16 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile }: 
               <p className="text-sm text-amber-500 leading-relaxed">{t.importDialog.warning}</p>
             </div>
           )}
-          <p className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{t.importDialog.supportedFiles}</p>
+          <p className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">Supports TXT, Markup, ODT, DOCX, or pasted lyrics</p>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-end gap-3 flex-shrink-0">
+        <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-end gap-3 flex-shrink-0 flex-wrap">
           <Button onClick={onClose} variant="outlined" color="inherit">
             {t.importDialog.cancel}
+          </Button>
+          <Button onClick={onPasteLyrics} variant="outlined" color="primary">
+            {t.editor.emptyState.pasteLyrics}
           </Button>
           <Button onClick={onChooseFile} variant="contained" color="primary">
             {t.importDialog.chooseFile}
