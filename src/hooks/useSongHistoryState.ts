@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { Section } from '../types';
+import { generateId } from '../utils/idUtils';
+import { isPureMetaLine } from '../utils/metaUtils';
 import { cleanSectionName } from '../utils/songUtils';
 
 type SongHistorySnapshot = {
@@ -12,7 +14,25 @@ type SongHistoryState = SongHistorySnapshot & {
   future: SongHistorySnapshot[];
 };
 
-const cleanSong = (song: Section[]): Section[] => song.map(section => ({ ...section, name: cleanSectionName(section.name) }));
+const cleanSong = (song: Section[]): Section[] => song.map((section) => ({
+  ...section,
+  id: section.id || generateId(),
+  name: cleanSectionName(section.name),
+  lines: (section.lines ?? []).map((line) => {
+    const text = line.text ?? '';
+    const isMeta = isPureMetaLine(text);
+    return {
+      ...line,
+      id: line.id || generateId(),
+      text,
+      rhymingSyllables: line.rhymingSyllables ?? '',
+      rhyme: line.rhyme ?? '',
+      syllables: typeof line.syllables === 'number' ? line.syllables : 0,
+      concept: line.concept ?? (isMeta ? 'Meta' : 'New line'),
+      isMeta,
+    };
+  }),
+}));
 const cleanStructure = (structure: string[]): string[] => structure.map(name => cleanSectionName(name));
 
 const normalizeSnapshot = (snapshot: SongHistorySnapshot): SongHistorySnapshot => ({

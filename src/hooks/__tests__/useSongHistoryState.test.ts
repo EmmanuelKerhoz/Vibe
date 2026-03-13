@@ -124,4 +124,42 @@ describe('useSongHistoryState', () => {
     expect(result.current.song[0]?.name).toBe('Verse 2');
     expect(result.current.structure[0]).toBe('Verse 2');
   });
+
+  it('normalises legacy loaded lines with missing ids and stale meta flags', () => {
+    const legacySong = [{
+      id: '',
+      name: ' Intro ',
+      lines: [
+        {
+          id: '',
+          text: '[Haunting] Cold stone towers piercing through the grey mist',
+          rhymingSyllables: 'mist',
+          rhyme: '',
+          syllables: 10,
+          concept: 'intro',
+          isMeta: true,
+        },
+        {
+          id: '',
+          text: '[Harmonica answer]',
+          rhymingSyllables: '',
+          rhyme: '',
+          syllables: 0,
+          concept: '',
+          isMeta: false,
+        },
+      ],
+    }] as Section[];
+
+    const { result } = renderHook(() =>
+      useSongHistoryState(legacySong, [' Intro '])
+    );
+
+    expect(result.current.song[0]?.id).toBeTruthy();
+    expect(result.current.song[0]?.name).toBe('Intro');
+    expect(result.current.song[0]?.lines[0]?.id).toBeTruthy();
+    expect(result.current.song[0]?.lines[0]?.isMeta).toBe(false);
+    expect(result.current.song[0]?.lines[1]?.isMeta).toBe(true);
+    expect(result.current.song[0]?.lines[1]?.concept).toBe('');
+  });
 });
