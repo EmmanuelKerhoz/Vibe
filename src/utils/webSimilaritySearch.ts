@@ -114,7 +114,7 @@ export const PROVIDERS: Record<SearchProvider, (q: string) => Promise<SearchTree
 };
 
 const MAX_CANDIDATES = 20;
-const MAX_TITLE_SCORE_CONTRIBUTION = 0.03;
+const MAX_TITLE_SCORE_CONTRIBUTION = 0.08;
 
 const deduplicateNodes = (nodes: SearchTreeNode[]): SearchTreeNode[] => {
   const seen = new Set<string>();
@@ -161,6 +161,18 @@ export const runSearchTree = async (
   await Promise.allSettled(
     sectionQueries.flatMap(q => [safeSearch('ddg', q), safeSearch('wikipedia', q)]),
   );
+
+  if (abortSignal?.aborted) return [];
+
+  // Title-specific lyrics search — when the title is non-trivial, search for
+  // lyrics behind identical or similar titles to detect shared song names.
+  if (normalizedTitle.length > 0) {
+    const titleLyricsQuery = `${title} lyrics`;
+    await Promise.allSettled([
+      safeSearch('ddg', titleLyricsQuery),
+      safeSearch('wikipedia', titleLyricsQuery),
+    ]);
+  }
 
   if (abortSignal?.aborted) return [];
 

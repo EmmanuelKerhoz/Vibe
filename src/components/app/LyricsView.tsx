@@ -150,7 +150,7 @@ export function LyricsView({
   return (
     <div className="w-full flex flex-col gap-1 pb-32">
       {isMarkupMode ? (
-        <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden" style={{ minHeight: 'calc(100vh - 280px)' }}>
+        <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
           <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
               <Layout className="w-4 h-4 text-[var(--accent-color)]" />
@@ -176,7 +176,7 @@ export function LyricsView({
           </div>
         </div>
       ) : song.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center py-24 text-center select-none" role="status" aria-label={t.editor.emptyState.title}>
+        <div className="flex-1 flex flex-col items-center justify-center py-24 text-center select-none fluent-animate-in" role="status" aria-label={t.editor.emptyState.title}>
           <div className="w-16 h-16 rounded-[16px_4px_16px_4px] bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center mb-6" aria-hidden="true">
             <Music className="w-8 h-8 text-[var(--accent-color)]/40" />
           </div>
@@ -193,8 +193,8 @@ export function LyricsView({
         </div>
       ) : (
         song.map((section, sectionIndex) => (
+          <div key={section.id} className={`fluent-animate-in fluent-stagger-${Math.min(sectionIndex + 1, 8)}`}>
           <SectionEditor
-            key={section.id}
             section={section}
             sectionIndex={sectionIndex}
             songLength={song.length}
@@ -234,6 +234,7 @@ export function LyricsView({
             playAudioFeedback={playAudioFeedback}
             handleDrop={handleDrop}
           />
+          </div>
         ))
       )}
     </div>

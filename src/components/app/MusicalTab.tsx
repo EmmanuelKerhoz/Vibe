@@ -314,7 +314,7 @@ export function MusicalTab({
   }, [selectedSubStyle, selectedVibeTile, setGenre, setRhythm]);
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="flex flex-col h-full overflow-y-auto fluent-fade-in">
       {/* Header */}
       <div className="px-6 pt-6 pb-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)]">
         <div className="flex items-start justify-between gap-4">

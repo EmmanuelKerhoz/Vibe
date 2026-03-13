@@ -26,7 +26,7 @@ describe('runSearchTree', () => {
     PROVIDERS.wikipedia = originalProviders.wikipedia;
   });
 
-  it('does not surface a candidate when only the title matches', async () => {
+  it('surfaces a low-score candidate when only the title matches (title impact < 10%)', async () => {
     const providerMock = vi.fn(async () => ([
       {
         title: 'Existing Title',
@@ -43,10 +43,14 @@ describe('runSearchTree', () => {
       'Existing Title',
     );
 
-    expect(candidates).toEqual([]);
+    // Title-only matches should now appear but with a limited score (< 10%)
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.score).toBeLessThanOrEqual(10);
+    expect(candidates[0]?.score).toBeGreaterThan(0);
+    expect(candidates[0]?.matchedSegments).toContain('Title: Existing Title');
   });
 
-  it('caps the title contribution at three percent when lyrics also overlap', async () => {
+  it('caps the title contribution at eight percent when lyrics also overlap', async () => {
     const title = 'Midnight Echoes';
     const lyrics = 'neon skyline midnight heartbeat and chrome reflections';
     const snippet = 'neon skyline midnight heartbeat under chrome reflections';
@@ -70,7 +74,22 @@ describe('runSearchTree', () => {
 
     expect(candidates).toHaveLength(1);
     expect(candidates[0]?.title).toBe(title);
-    expect(candidates[0]?.score).toBeLessThanOrEqual(Math.round(Math.min(1, lyricScore + 0.03) * 100));
+    expect(candidates[0]?.score).toBeLessThanOrEqual(Math.round(Math.min(1, lyricScore + 0.08) * 100));
+    expect(candidates[0]?.score).toBeGreaterThan(Math.round(lyricScore * 100));
     expect(candidates[0]?.matchedSegments).toContain(`Title: ${title}`);
+  });
+
+  it('triggers a title-specific lyrics search when title is provided', async () => {
+    const providerMock = vi.fn(async (_q: string) => ([] as never[]));
+    PROVIDERS.ddg = providerMock;
+    PROVIDERS.wikipedia = providerMock;
+
+    await runSearchTree(
+      [makeSection('verse-1', 'Verse 1', 'some lyrics about love')],
+      'My Song Title',
+    );
+
+    const queries = providerMock.mock.calls.map(c => c[0]);
+    expect(queries.some(q => q.includes('My Song Title') && q.includes('lyrics'))).toBe(true);
   });
 });
