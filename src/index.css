@@ -38,6 +38,22 @@
   --acrylic-bg:        rgba(243, 242, 241, 0.8);
   --scrollbar-thumb:   rgba(0, 0, 0, 0.1);
   --input-bg:          rgba(255, 255, 255, 0.55);
+
+  /* Safe-area insets (populated by JS / env()) */
+  --sab: 0;
+  --sat: 0;
+  --sal: 0;
+  --sar: 0;
+}
+
+/* Expose CSS env safe-area insets as custom properties */
+@supports (padding: env(safe-area-inset-bottom)) {
+  :root {
+    --sab: env(safe-area-inset-bottom);
+    --sat: env(safe-area-inset-top);
+    --sal: env(safe-area-inset-left);
+    --sar: env(safe-area-inset-right);
+  }
 }
 
 .ui-fluent {
@@ -215,6 +231,17 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* Prevent rubber-band overscroll on iOS */
+  overscroll-behavior: none;
+}
+
+/* ── PWA / Mobile viewport fix ───────────────────────────────── */
+html, body, #root {
+  height: 100%;
+  /* Use dvh when available for correct mobile viewport */
+  height: 100dvh;
+  overflow: hidden;
+  touch-action: pan-y;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -225,6 +252,10 @@ body {
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.3); }
+/* Hide scrollbars on mobile touch screens */
+@media (pointer: coarse) {
+  ::-webkit-scrollbar { width: 0; height: 0; }
+}
 
 .acrylic {
   background: var(--acrylic-bg);
@@ -250,6 +281,20 @@ body {
 }
 .ux-interactive:active:not(:disabled) {
   transform: translateY(0) scale(0.985);
+}
+/* Larger touch targets on coarse pointer (mobile) */
+@media (pointer: coarse) {
+  .ux-interactive {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Remove hover transforms on touch — prevents stuck states */
+  .ux-interactive:hover:not(:disabled) {
+    transform: none;
+  }
+  .ux-interactive:active:not(:disabled) {
+    transform: scale(0.96);
+  }
 }
 
 @keyframes fluentSlideIn {
@@ -329,9 +374,6 @@ body {
   overflow: hidden;
 }
 
-/* ── LCARS section band ──────────────────────────────────────────
-   gap réduit: margin-bottom 2px (was 4px)
-   ─────────────────────────────────────────────────────────────── */
 .lcars-band {
   display: flex;
   align-items: stretch;
@@ -353,8 +395,6 @@ body {
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-/* Section title — dark theme: pas de text-shadow sur fond sombre
-   (évite la bavure colorée derrière le texte des titres de section) */
 .dark .lcars-section-title {
   text-shadow: none;
 }
@@ -420,6 +460,10 @@ body {
   background: linear-gradient(90deg, transparent 0%, var(--lcars-amber, #f59e0b) 15%, var(--lcars-cyan, #06b6d4) 50%, var(--lcars-violet, #a78bfa) 85%, transparent 100%);
   opacity: 0.5;
 }
+/* Status bar: pad bottom for iOS home indicator */
+.lcars-status-bar {
+  padding-bottom: max(4px, var(--sab));
+}
 
 .lcars-divider {
   width: 1px;
@@ -456,7 +500,7 @@ body {
 .lcars-app-id { letter-spacing: 0.05em; }
 .dark .lcars-app-id:hover { color: var(--accent-color); }
 
-/* ── Lyrics editor zoom — standard transform (replaces non-standard zoom property) ── */
+/* ── Lyrics editor zoom — disabled on mobile (no transform distortion on small screens) ── */
 .lyrics-editor-zoom-wrapper {
   width: 100%;
   height: 100%;
@@ -467,11 +511,25 @@ body {
 .lyrics-editor-zoom {
   transform: scale(0.85);
   transform-origin: top center;
-  width: 117.647059%; /* 100% / 0.85 — compensates the scale shrink */
-  margin-left: -8.823529%; /* (117.647059% - 100%) / 2 — re-centers */
+  width: 117.647059%;
+  margin-left: -8.823529%;
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+@media (max-width: 767px) {
+  .lyrics-editor-zoom {
+    transform: none;
+    width: 100%;
+    margin-left: 0;
+  }
+  /* Lyrics area: full bleed, no horizontal padding waste */
+  .lcars-lyrics-area {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    /* Ensure content above mobile bottom nav */
+    padding-bottom: calc(60px + var(--sab)) !important;
+  }
 }
 
 @keyframes lcars-pulse {
@@ -537,7 +595,6 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
-/* Dark theme section title: suppression du glow pour éviter la bavure */
 .dark .lcars-section-title { text-shadow: none; }
 
 :focus-visible {
@@ -628,7 +685,6 @@ html:not(.dark) .lcars-hud-chip {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-/* ── LCARS sidebar pill anchors ──────────────────────────────── */
 .lcars-sidebar-pill {
   border-radius: 999px 4px 999px 4px;
   transition: all 0.2s ease;
@@ -637,14 +693,12 @@ html:not(.dark) .lcars-hud-chip {
   box-shadow: 0 0 12px currentColor;
 }
 
-/* ── LCARS band — enhanced glass overlay ─────────────────────── */
 .dark .lcars-band {
   background-color: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
 
-/* ── Asymmetric pill buttons ─────────────────────────────────── */
 .lcars-pill-btn {
   border-radius: 24px 4px 24px 4px;
   transition: all 0.2s ease;
@@ -653,7 +707,6 @@ html:not(.dark) .lcars-hud-chip {
   box-shadow: 0 0 12px currentColor;
 }
 
-/* ── LCARS section header scanline (dark mode only) ──────────── */
 .dark .lcars-section-header {
   position: relative;
   overflow: hidden;
@@ -671,7 +724,7 @@ html:not(.dark) .lcars-hud-chip {
 }
 
 /* ===========================================================================
-   LCARS Glow utilities (A1)
+   LCARS Glow utilities
    =========================================================================== */
 
 .lcars-glow {
@@ -695,14 +748,13 @@ html:not(.dark) .lcars-hud-chip {
   outline: none;
 }
 
-/* Apply glow on focus for interactive elements */
 input:focus, textarea:focus, button:focus-visible {
   box-shadow: 0 0 8px 1px rgba(var(--accent-color-rgb), 0.4);
   outline: none;
 }
 
 /* ===========================================================================
-   LCARS Select utility (A2)
+   LCARS Select utility
    =========================================================================== */
 
 .lcars-select {
@@ -735,7 +787,7 @@ input:focus, textarea:focus, button:focus-visible {
 }
 
 /* ===========================================================================
-   Metronome pulse animation (B4)
+   Metronome pulse animation
    =========================================================================== */
 
 @keyframes metronome-beat {
@@ -766,20 +818,30 @@ input:focus, textarea:focus, button:focus-visible {
   min-height: 36px;
 }
 
-/* Mobile (< 768px): hide auxiliary columns (rhyme badge, syllable count, rhyming syllable) */
+/* Mobile (< 768px): simplified 3-col grid — move | text | delete */
 @media (max-width: 767px) {
   .lyric-row {
-    grid-template-columns: 16px 16px 32px 1fr 24px;
+    grid-template-columns: 32px 1fr 36px;
+    column-gap: 6px;
+    min-height: 44px;  /* WCAG touch target */
   }
-  /* Hide drag handle, rhyme badge, syllable count, rhyming syllable */
-  .lyric-row > *:nth-child(1),
-  .lyric-col-aux {
+  /* Hide: drag handle, origin badge, line-num, rhyme badge, syllables, rhyming-syllable */
+  .lyric-col-drag,
+  .lyric-col-origin,
+  .lyric-col-linenum,
+  .lyric-col-rhyme,
+  .lyric-col-syllables,
+  .lyric-col-rhyming-syl,
+  .lyric-row > *:nth-child(1) {
+    display: none !important;
+  }
+  .lyric-row > *:nth-child(2) {
     display: none !important;
   }
 }
 
 /* ===========================================================================
-   RESPONSIVE — StructureSidebar overlay on mobile
+   RESPONSIVE — StructureSidebar overlay on mobile / tablet
    =========================================================================== */
 @media (max-width: 1023px) {
   .structure-sidebar-mobile-overlay {
@@ -788,5 +850,106 @@ input:focus, textarea:focus, button:focus-visible {
     right: 0;
     bottom: 0;
     z-index: 50;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ===========================================================================
+   MOBILE LAYOUT — Left panel overlay on mobile
+   =========================================================================== */
+@media (max-width: 767px) {
+  .left-panel-mobile-overlay {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+    width: min(320px, 85vw) !important;
+    max-width: 85vw;
+  }
+  /* Backdrop for mobile panels */
+  .mobile-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  /* TopRibbon: compact on mobile */
+  .top-ribbon-mobile {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  /* InsightsBar: horizontal scroll on mobile */
+  .insights-bar-mobile {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .insights-bar-mobile::-webkit-scrollbar { display: none; }
+  /* Mobile bottom nav bar */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    height: calc(56px + var(--sab));
+    padding-bottom: var(--sab);
+    background: var(--status-bar-bg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+  .dark .mobile-bottom-nav::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--lcars-amber) 15%, var(--lcars-cyan) 50%, var(--lcars-violet) 85%, transparent 100%);
+    opacity: 0.5;
+  }
+  .mobile-bottom-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    transition: color 0.15s, background 0.15s;
+    padding: 4px 8px;
+  }
+  .mobile-bottom-nav-btn.active {
+    color: var(--accent-color);
+  }
+  .dark .mobile-bottom-nav-btn.active {
+    text-shadow: 0 0 8px var(--accent-color);
+  }
+  .mobile-bottom-nav-btn span {
+    font-size: 9px;
+    font-family: var(--font-sans);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+  /* StatusBar hidden on mobile — replaced by bottom nav */
+  .lcars-status-bar-desktop {
+    display: none;
+  }
+}
+@media (min-width: 768px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+  .lcars-status-bar-desktop {
+    display: flex;
   }
 }
