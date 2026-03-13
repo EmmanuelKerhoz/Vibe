@@ -29,10 +29,10 @@ interface Props {
   analyzeLyricsForMusic: () => void;
 }
 
-// Orange-led palette for the Musical tab (B1)
-const AMBER_PRIMARY = '#f97316';
-const AMBER_SECONDARY = '#fb923c';
-const AMBER_MUTED = '#fdba74';
+// Curated palette for the Musical tab: keep orange as the lead, but balance it with cooler accents.
+const AMBER_PRIMARY = '#f59e0b';
+const AMBER_SECONDARY = '#38bdf8';
+const AMBER_MUTED = '#c4b5fd';
 
 // BPM presets
 const BPM_PRESETS = [
@@ -99,7 +99,7 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'electronic',
     label: 'ÉLECTRONIQUE',
-    color: '#fb923c',
+    color: '#06b6d4',
     summary: 'Synthetic textures, club energy, and precise pulse-driven production.',
     artists: ['Fred again..', 'BICEP', 'Justice'],
     moods: ['Driving', 'Futuristic', 'Late-night'],
@@ -115,7 +115,7 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'urban',
     label: 'URBAIN',
-    color: '#f97316',
+    color: '#ec4899',
     summary: 'Beat-first songwriting with vocal attitude, bounce, and contemporary crossover appeal.',
     artists: ['SZA', 'Travis Scott', 'Burna Boy'],
     moods: ['Confident', 'Sensual', 'Hypnotic'],
@@ -130,7 +130,7 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'rock',
     label: 'ROCK',
-    color: '#ea580c',
+    color: '#ef4444',
     summary: 'Live-band impact, punchy drums, and guitar-forward arrangements with edge.',
     artists: ['Arctic Monkeys', 'Foo Fighters', 'Paramore'],
     moods: ['Raw', 'Anthemic', 'Restless'],
@@ -146,7 +146,7 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'soul-jazz',
     label: 'SOUL / JAZZ',
-    color: '#f59e0b',
+    color: '#8b5cf6',
     summary: 'Expressive harmony, groove depth, and human warmth anchored by feel.',
     artists: ['Amy Winehouse', 'Anderson .Paak', 'Esperanza Spalding'],
     moods: ['Warm', 'Playful', 'Intimate'],
@@ -162,7 +162,7 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'world',
     label: 'WORLD',
-    color: '#d97706',
+    color: '#14b8a6',
     summary: 'Regional rhythms and acoustic character blended with strong cultural signatures.',
     artists: ['Buena Vista Social Club', 'Rosalía', 'Fela Kuti'],
     moods: ['Organic', 'Sunlit', 'Transportive'],
@@ -178,7 +178,7 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'pop',
     label: 'POP',
-    color: '#fbbf24',
+    color: '#f59e0b',
     summary: 'Direct hooks, polished toplines, and wide-audience accessibility.',
     artists: ['Dua Lipa', 'The Weeknd', 'Caroline Polachek'],
     moods: ['Bright', 'Catchy', 'Cinematic'],
@@ -193,7 +193,7 @@ const VIBE_CATEGORIES: VibeCategory[] = [
   {
     id: 'classical',
     label: 'CLASSIQUE',
-    color: '#c2410c',
+    color: '#6366f1',
     summary: 'Composed dynamics, orchestral detail, and cinematic movement over groove-first writing.',
     artists: ['Max Richter', 'Ólafur Arnalds', 'Hans Zimmer'],
     moods: ['Elegant', 'Expansive', 'Reflective'],
@@ -249,6 +249,7 @@ export function MusicalTab({
   const selectedCategory = selectedVibeTile
     ? VIBE_CATEGORIES.find(category => category.tiles.some(tile => tile.name === selectedVibeTile.name)) ?? null
     : null;
+  const selectedAccent = selectedCategory?.color ?? AMBER_PRIMARY;
   const genreBlueprint = selectedVibeTile
     ? selectedSubStyle
       ? `${selectedVibeTile.name} / ${selectedSubStyle}`
@@ -333,7 +334,7 @@ export function MusicalTab({
             <button
               onClick={analyzeLyricsForMusic}
               disabled={isAnalyzingLyrics || isGeneratingMusicalPrompt}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium tracking-wide transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border"
+              className="ux-interactive flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium tracking-wide shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border"
               style={{ background: `${AMBER_PRIMARY}1a`, borderColor: `${AMBER_PRIMARY}55`, color: AMBER_PRIMARY }}
             >
               {isAnalyzingLyrics ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
@@ -364,11 +365,11 @@ export function MusicalTab({
             {MUSICAL_GUIDE_STEPS.map((step, index) => (
               <div
                 key={step.title}
-                className="rounded-xl border px-3 py-2.5"
-                style={{ background: `${AMBER_PRIMARY}12`, borderColor: `${AMBER_PRIMARY}2f` }}
+                className="ux-interactive rounded-xl border px-3 py-2.5"
+                style={{ background: `${AMBER_SECONDARY}10`, borderColor: `${AMBER_SECONDARY}30` }}
               >
                 <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.18em] uppercase" style={{ color: index === 0 ? AMBER_PRIMARY : AMBER_SECONDARY }}>
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-[9px]" style={{ borderColor: `${AMBER_PRIMARY}3a` }}>
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-[9px]" style={{ borderColor: `${AMBER_SECONDARY}45` }}>
                     {index + 1}
                   </span>
                   {step.title}
@@ -389,7 +390,7 @@ export function MusicalTab({
             </label>
                 {selectedVibeTile && (
                   <span className="ml-auto flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-md"
-                    style={{ background: `${AMBER_PRIMARY}22`, color: AMBER_PRIMARY }}>
+                    style={{ background: `${selectedAccent}22`, color: selectedAccent }}>
                     {selectedVibeTile.emoji} {genreBlueprint}
                   </span>
                 )}
@@ -419,7 +420,7 @@ export function MusicalTab({
                       <button
                         key={tile.name}
                         onClick={() => handleVibeTileSelect(tile)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide transition-all border"
+                        className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border"
                         style={isSelected
                           ? {
                               borderRadius: '12px 4px 12px 4px',
@@ -460,9 +461,9 @@ export function MusicalTab({
                     <button
                       key={sub}
                       onClick={() => handleSubStyleSelect(sub)}
-                      className="px-2.5 py-1 text-[10px] font-medium tracking-wide transition-all border"
+                      className="ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border"
                       style={isSel
-                        ? { borderRadius: '6px 2px 6px 2px', background: AMBER_PRIMARY, borderColor: AMBER_PRIMARY, color: '#000' }
+                        ? { borderRadius: '6px 2px 6px 2px', background: selectedAccent, borderColor: selectedAccent, color: '#000' }
                         : { borderRadius: '6px 2px 6px 2px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }
                       }
                     >
@@ -483,8 +484,8 @@ export function MusicalTab({
                   <p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.label}</p>
                   <p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.summary}</p>
                 </div>
-                <div className="rounded-xl border px-3 py-2.5" style={{ background: `${AMBER_PRIMARY}10`, borderColor: `${AMBER_PRIMARY}33` }}>
-                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: AMBER_PRIMARY }}>
+                <div className="rounded-xl border px-3 py-2.5" style={{ background: `${selectedAccent}10`, borderColor: `${selectedAccent}33` }}>
+                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedAccent }}>
                     Sub-style clues
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -492,7 +493,7 @@ export function MusicalTab({
                       <span
                         key={sub}
                         className="rounded-full px-2 py-1 text-[10px] font-medium"
-                        style={{ background: `${AMBER_PRIMARY}1c`, color: AMBER_PRIMARY }}
+                        style={{ background: `${selectedAccent}1c`, color: selectedAccent }}
                       >
                         {sub}
                       </span>
@@ -564,7 +565,7 @@ export function MusicalTab({
                 <button
                   onClick={metronome.toggle}
                   title={metronome.isPlaying ? (m.metronomeStop ?? 'Stop Metronome') : (m.metronomeStart ?? 'Start Metronome')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium tracking-wide transition-all border ${
+                  className={`ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium tracking-wide border ${
                     metronome.isPlaying
                       ? 'border-transparent metronome-active'
                       : 'border-[var(--border-color)] text-[var(--text-secondary)]'
@@ -595,7 +596,7 @@ export function MusicalTab({
                 <button
                   key={value}
                   onClick={() => setTempo(value)}
-                  className={`px-2.5 py-1 rounded-md text-[10px] font-medium tracking-wide transition-all border ${
+                  className={`ux-interactive px-2.5 py-1 rounded-md text-[10px] font-medium tracking-wide border ${
                     tempo === value
                       ? 'border-transparent'
                       : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]'
@@ -628,7 +629,7 @@ export function MusicalTab({
                   <div key={family.label}>
                     <button
                       onClick={() => setExpandedFamily(isExpanded ? null : family.label)}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-medium tracking-wide transition-all border text-left"
+                      className="ux-interactive w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-medium tracking-wide border text-left"
                       style={familySelected.length > 0
                         ? { background: `${AMBER_PRIMARY}1a`, borderColor: `${AMBER_PRIMARY}55`, color: AMBER_PRIMARY }
                         : { background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }
@@ -652,7 +653,7 @@ export function MusicalTab({
                             <button
                               key={instrument}
                               onClick={() => toggleInstrument(instrument)}
-                              className={`px-2.5 py-1 rounded-md text-[10px] font-medium tracking-wide transition-all border ${
+                              className={`ux-interactive px-2.5 py-1 rounded-md text-[10px] font-medium tracking-wide border ${
                                 sel
                                   ? 'border-transparent'
                                   : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]'
@@ -718,7 +719,7 @@ export function MusicalTab({
         <button
           onClick={generateMusicalPrompt}
           disabled={!canGenerate || isGeneratingMusicalPrompt || isAnalyzingLyrics}
-          className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99]"
+          className="ux-interactive w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-semibold text-sm tracking-wide disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99]"
           style={{ background: AMBER_PRIMARY, color: '#000' }}
         >
           {isGeneratingMusicalPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -736,10 +737,10 @@ export function MusicalTab({
               <div className="flex items-center gap-2">
                 <span className="text-[9px] text-[var(--text-secondary)] opacity-60">{m.optimizedFor}</span>
                 {musicalPrompt && (
-                  <button
-                    onClick={handleCopy}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium tracking-wide transition-all border border-[var(--border-color)] text-[var(--text-secondary)]"
-                  >
+                    <button
+                      onClick={handleCopy}
+                      className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium tracking-wide border border-[var(--border-color)] text-[var(--text-secondary)]"
+                    >
                     {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     {copied ? m.copied : m.copyPrompt}
                   </button>

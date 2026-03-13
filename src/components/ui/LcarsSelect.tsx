@@ -51,11 +51,14 @@ export function LcarsSelect({
     const spaceAbove = rect.top - viewportPadding;
     const openUpward = spaceBelow < minDropdownHeight && spaceAbove > spaceBelow;
     const availableHeight = openUpward ? spaceAbove : spaceBelow;
+    const maxDropdownWidth = window.innerWidth - viewportPadding * 2;
+    const dropdownWidth = Math.min(maxDropdownWidth, Math.max(rect.width, 320));
+    const dropdownLeft = Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - viewportPadding - dropdownWidth));
 
     setDropdownStyle({
       position: 'fixed',
-      left: rect.left,
-      width: rect.width,
+      left: dropdownLeft,
+      width: dropdownWidth,
       zIndex: 9999,
       ...(openUpward
         ? { bottom: window.innerHeight - rect.top + dropdownGap }
@@ -170,7 +173,7 @@ export function LcarsSelect({
         aria-controls={isOpen ? listboxId : undefined}
         onClick={handleTriggerClick}
         onKeyDown={handleKeyDown}
-        className={className}
+        className={['ux-interactive', className].filter(Boolean).join(' ')}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -261,7 +264,7 @@ export function LcarsSelect({
                 }}
                 onMouseEnter={() => setFocusedIndex(idx)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '10px 14px',
                   cursor: 'pointer',
                   color: isSelected || isFocused ? 'var(--accent-color)' : 'var(--text-primary)',
                   background:
@@ -271,9 +274,10 @@ export function LcarsSelect({
                   borderLeft: isSelected ? '3px solid var(--accent-color)' : '3px solid transparent',
                   transition: 'background 0.1s, color 0.1s',
                   fontSize: 'inherit',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  whiteSpace: 'normal',
+                  overflow: 'visible',
+                  textOverflow: 'clip',
+                  lineHeight: 1.4,
                   textAlign: 'start',
                 }}
                 dir="auto"

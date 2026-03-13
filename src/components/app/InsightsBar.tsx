@@ -79,19 +79,21 @@ export function InsightsBar({
             </h3>
             <div className="hidden lg:block h-4 w-px bg-[var(--border-color)]" />
             <div className="flex items-center gap-2">
-              <LcarsSelect
-                value={targetLanguage}
-                onChange={setTargetLanguage}
-                options={supportedAdaptationLanguages.map(lang => ({ value: lang.aiName, label: adaptLangLabel(lang) }))}
-              />
+              <div className="w-full min-w-[15rem] sm:min-w-[19rem] lg:min-w-[22rem] sm:w-auto">
+                <LcarsSelect
+                  value={targetLanguage}
+                  onChange={setTargetLanguage}
+                  options={supportedAdaptationLanguages.map(lang => ({ value: lang.aiName, label: adaptLangLabel(lang) }))}
+                />
+              </div>
               <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplay)}>
-                <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50">
+                <button onClick={() => adaptSongLanguage(targetLanguage)} disabled={isAdaptingLanguage || song.length === 0} className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap min-w-fit">
                   {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
                   <span className="hidden sm:inline">{t.editor.adaptation}</span>
                 </button>
               </Tooltip>
               <Tooltip title={songLanguage ? `Detected: ${detectedLanguageDisplay} — click to re-detect` : '🌐 Detect song language'}>
-                <button onClick={() => void detectLanguage()} disabled={isDetectingLanguage || song.length === 0} className="px-3 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded transition-all flex items-center gap-1.5 disabled:opacity-50 border border-white/10">
+                <button onClick={() => void detectLanguage()} disabled={isDetectingLanguage || song.length === 0} className="ux-interactive px-3.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap min-w-fit w-auto">
                   {isDetectingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanText className="w-3 h-3" />}
                   {detectedLanguageDisplay}
                 </button>
