@@ -2,6 +2,14 @@ import React, { useState, useRef, useEffect, useCallback, useId, type CSSPropert
 import { ChevronDown } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
+/**
+ * Font stack that guarantees emoji rendering on Windows desktop (Segoe UI Emoji)
+ * and macOS/iOS (Apple Color Emoji). Applied to both the trigger and the dropdown
+ * so flag/symbol chars display correctly regardless of the host OS system font.
+ */
+const EMOJI_FONT_STACK =
+  '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif';
+
 interface LcarsSelectProps {
   value: string;
   onChange: (value: string) => void;
@@ -41,7 +49,6 @@ export function LcarsSelect({
 
   const updateDropdownPosition = useCallback(() => {
     if (!triggerRef.current) return;
-
     const rect = triggerRef.current.getBoundingClientRect();
     const viewportPadding = 8;
     const dropdownGap = 2;
@@ -54,7 +61,6 @@ export function LcarsSelect({
     const maxDropdownWidth = window.innerWidth - viewportPadding * 2;
     const dropdownWidth = Math.min(maxDropdownWidth, Math.max(rect.width, 320));
     const dropdownLeft = Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - viewportPadding - dropdownWidth));
-
     setDropdownStyle({
       position: 'fixed',
       left: dropdownLeft,
@@ -67,16 +73,11 @@ export function LcarsSelect({
     });
   }, []);
 
-  // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
     const handleOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      const clickedTrigger = containerRef.current?.contains(target);
-      const clickedList = listRef.current?.contains(target);
-      if (!clickedTrigger && !clickedList) {
-        close();
-      }
+      if (!containerRef.current?.contains(target) && !listRef.current?.contains(target)) close();
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
@@ -84,19 +85,15 @@ export function LcarsSelect({
 
   useEffect(() => {
     if (!isOpen) return;
-
     updateDropdownPosition();
-
     window.addEventListener('resize', updateDropdownPosition);
     window.addEventListener('scroll', updateDropdownPosition, true);
-
     return () => {
       window.removeEventListener('resize', updateDropdownPosition);
       window.removeEventListener('scroll', updateDropdownPosition, true);
     };
   }, [isOpen, updateDropdownPosition]);
 
-  // Scroll focused option into view
   useEffect(() => {
     if (isOpen && focusedIndex >= 0 && listRef.current) {
       const item = listRef.current.children[focusedIndex] as HTMLElement | undefined;
@@ -140,21 +137,13 @@ export function LcarsSelect({
         break;
       case 'ArrowDown':
         e.preventDefault();
-        if (!isOpen) {
-          setIsOpen(true);
-          setFocusedIndex(0);
-        } else {
-          setFocusedIndex((i) => Math.min(i + 1, options.length - 1));
-        }
+        if (!isOpen) { setIsOpen(true); setFocusedIndex(0); }
+        else setFocusedIndex((i) => Math.min(i + 1, options.length - 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        if (!isOpen) {
-          setIsOpen(true);
-          setFocusedIndex(options.length - 1);
-        } else {
-          setFocusedIndex((i) => Math.max(i - 1, 0));
-        }
+        if (!isOpen) { setIsOpen(true); setFocusedIndex(options.length - 1); }
+        else setFocusedIndex((i) => Math.max(i - 1, 0));
         break;
       default:
         break;
@@ -163,7 +152,6 @@ export function LcarsSelect({
 
   return (
     <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
-      {/* Trigger button */}
       <button
         type="button"
         ref={triggerRef}
@@ -190,44 +178,21 @@ export function LcarsSelect({
           outline: 'none',
           gap: '6px',
           fontSize: 'inherit',
-          fontFamily: 'inherit',
+          fontFamily: EMOJI_FONT_STACK,
           textAlign: 'left',
           ...style,
         }}
-        onFocus={(e) => {
-          e.currentTarget.style.boxShadow =
-            '0 0 0 2px var(--accent-color), 0 0 10px 1px var(--accent-color)';
-        }}
-        onBlur={(e) => {
-          if (!containerRef.current?.contains(e.relatedTarget as Node)) {
-            e.currentTarget.style.boxShadow = 'none';
-          }
-        }}
-        onMouseEnter={(e) => {
-          if (!disabled)
-            e.currentTarget.style.boxShadow =
-              '0 0 0 2px var(--accent-color), 0 0 10px 1px var(--accent-color)';
-        }}
-        onMouseLeave={(e) => {
-          if (!e.currentTarget.matches(':focus'))
-            e.currentTarget.style.boxShadow = 'none';
-        }}
+        onFocus={(e) => { e.currentTarget.style.boxShadow = '0 0 0 2px var(--accent-color), 0 0 10px 1px var(--accent-color)'; }}
+        onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) e.currentTarget.style.boxShadow = 'none'; }}
+        onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.boxShadow = '0 0 0 2px var(--accent-color), 0 0 10px 1px var(--accent-color)'; }}
+        onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) e.currentTarget.style.boxShadow = 'none'; }}
       >
-        <span dir="auto" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span dir="auto" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: EMOJI_FONT_STACK }}>
           {selectedLabel}
         </span>
-        <ChevronDown
-          style={{
-            width: 14,
-            height: 14,
-            flexShrink: 0,
-            transition: 'transform 0.2s',
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
-        />
+        <ChevronDown style={{ width: 14, height: 14, flexShrink: 0, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
       </button>
 
-      {/* Dropdown panel */}
       {isOpen && dropdownStyle && createPortal(
         <ul
           ref={listRef}
@@ -236,6 +201,7 @@ export function LcarsSelect({
           aria-activedescendant={focusedIndex >= 0 ? `${listboxId}-opt-${focusedIndex}` : undefined}
           style={{
             ...dropdownStyle,
+            fontFamily: EMOJI_FONT_STACK,
             borderRadius: '2px 6px 6px 2px',
             border: '1px solid var(--accent-color)',
             background: 'var(--bg-card)',
@@ -258,19 +224,14 @@ export function LcarsSelect({
                 id={`${listboxId}-opt-${idx}`}
                 role="option"
                 aria-selected={isSelected}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleSelect(opt.value);
-                }}
+                onMouseDown={(e) => { e.preventDefault(); handleSelect(opt.value); }}
                 onMouseEnter={() => setFocusedIndex(idx)}
                 style={{
                   padding: '10px 14px',
                   cursor: 'pointer',
+                  fontFamily: EMOJI_FONT_STACK,
                   color: isSelected || isFocused ? 'var(--accent-color)' : 'var(--text-primary)',
-                  background:
-                    isFocused
-                      ? 'color-mix(in srgb, var(--accent-color) 15%, transparent)'
-                      : 'transparent',
+                  background: isFocused ? 'color-mix(in srgb, var(--accent-color) 15%, transparent)' : 'transparent',
                   borderLeft: isSelected ? '3px solid var(--accent-color)' : '3px solid transparent',
                   transition: 'background 0.1s, color 0.1s',
                   fontSize: 'inherit',

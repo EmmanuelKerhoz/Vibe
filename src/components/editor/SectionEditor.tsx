@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, Trash2 } from 'lucide-react';
 import { Section } from '../../types';
-import { getSectionDotColor, getSectionColorHex, getSectionTextColor, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
+import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
 import { LyricInput } from './LyricInput';
 import { MetaLine } from './MetaLine';
 import { InstructionEditor } from './InstructionEditor';
@@ -97,12 +97,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   return (
     <section
       id={`section-${section.id}`}
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (draggedItemIndex === null || draggedItemIndex === sectionIndex) return;
-        setDragOverIndex(sectionIndex);
-      }}
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (draggedItemIndex === null || draggedItemIndex === sectionIndex) return; setDragOverIndex(sectionIndex); }}
       onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
       onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (dragOverIndex === sectionIndex) setDragOverIndex(null); }}
       onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(sectionIndex); }}
@@ -164,12 +159,7 @@ export const SectionEditor = React.memo(function SectionEditor({
             <Tooltip title={isSectionDraggable ? (t.editor.dragToReorder ?? 'Drag to reorder section') : (t.editor.anchoredSection ?? 'Intro and Outro stay anchored')}>
               <div
                 draggable={isSectionDraggable}
-                onDragStart={() => {
-                  if (!isSectionDraggable) return;
-                  setDraggedItemIndex(sectionIndex);
-                  setDraggableSectionIndex(sectionIndex);
-                  playAudioFeedback('drag');
-                }}
+                onDragStart={() => { if (!isSectionDraggable) return; setDraggedItemIndex(sectionIndex); setDraggableSectionIndex(sectionIndex); playAudioFeedback('drag'); }}
                 onDragEnd={() => { setDraggedItemIndex(null); setDragOverIndex(null); setDraggableSectionIndex(null); }}
                 className={`cursor-grab active:cursor-grabbing text-zinc-500 hover:text-zinc-300 transition-colors ${!isSectionDraggable ? 'cursor-not-allowed opacity-40' : ''}`}
               >
@@ -189,7 +179,6 @@ export const SectionEditor = React.memo(function SectionEditor({
         />
 
         <div className="mt-3 space-y-3">
-          {/* Column headers */}
           <div className="lyric-row lyric-row-header px-3 pb-1 border-b border-white/5 mb-1">
             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Syllables</span>
@@ -208,10 +197,6 @@ export const SectionEditor = React.memo(function SectionEditor({
               const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
               const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
 
-              // ── META LINE ────────────────────────────────────────────────
-              // The lyric-row grid has 9 columns:
-              // [drag] [ai/human] [up/down] [num] [lyric] [syl] [count] [schema] [delete]
-              // Meta occupies: 3 spacers + num + content(col-span-4) + delete
               if (line.isMeta) {
                 return (
                   <div
@@ -219,11 +204,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                     className={`group lyric-row border-l-2 border-cyan-500/50 bg-cyan-500/5 transition-colors ${isDraggedLine ? 'opacity-50' : ''}`}
                     style={{ paddingLeft: '12px', paddingRight: '12px' }}
                   >
-                    {/* slots 1-3: spacers */}
-                    <div />
-                    <div />
-                    <div />
-                    {/* slot 4: line number badge */}
+                    <div /><div /><div />
                     <button
                       type="button"
                       onClick={() => handleLineClick(line.id)}
@@ -231,11 +212,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                     >
                       {index + 1}
                     </button>
-                    {/* slots 5-8: meta content spanning 4 columns */}
                     <div style={{ gridColumn: 'span 4', display: 'flex', alignItems: 'center', minWidth: 0 }}>
                       <MetaLine text={line.text} />
                     </div>
-                    {/* slot 9: delete */}
                     <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
                       <button
                         type="button"
@@ -249,7 +228,6 @@ export const SectionEditor = React.memo(function SectionEditor({
                 );
               }
 
-              // ── NORMAL LINE ──────────────────────────────────────────────
               return (
                 <div
                   key={line.id}
@@ -323,8 +301,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                   <span className="lyric-col-aux" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     {(() => {
                       const lyricIndex = lyricLineIndexMap.get(line.id) ?? 0;
-                      const effectiveScheme = section.rhymeScheme || rhymeScheme;
-                      if (effectiveScheme.toUpperCase() === 'FREE') {
+                      // Fallback chain: section scheme → global scheme → 'AABB'
+                      const effectiveScheme = (section.rhymeScheme || rhymeScheme || 'AABB').toUpperCase();
+                      if (effectiveScheme === 'FREE') {
                         return <span className="text-[10px] text-zinc-600 dark:text-zinc-700 select-none" aria-label="Free verse">—</span>;
                       }
                       const letter = getSchemeLetterForLine(effectiveScheme, lyricIndex);
