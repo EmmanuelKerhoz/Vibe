@@ -3,7 +3,7 @@ import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Setti
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
 import { Button } from '../../ui/Button';
-import { emojiToTwemojiUrl } from '../../../utils/emojiUtils';
+import { emojiToTwemojiUrl, isPlainAscii } from '../../../utils/emojiUtils';
 
 interface Props {
   isOpen: boolean;
@@ -21,8 +21,10 @@ interface Props {
  */
 function FlagEmoji({ flag, code }: { flag: string; code: string }) {
   const [useFallback, setUseFallback] = React.useState(false);
+  const display = flag || code.toUpperCase();
 
-  if (useFallback) {
+  // Only attempt the Twemoji image for real emoji characters, not plain ASCII
+  if (useFallback || isPlainAscii(display)) {
     return (
       <span
         aria-hidden="true"
@@ -33,15 +35,15 @@ function FlagEmoji({ flag, code }: { flag: string; code: string }) {
           display: 'inline-block',
         }}
       >
-        {flag || code.toUpperCase()}
+        {display}
       </span>
     );
   }
 
   return (
     <img
-      src={emojiToTwemojiUrl(flag || code.toUpperCase())}
-      alt={flag || code.toUpperCase()}
+      src={emojiToTwemojiUrl(display)}
+      alt={display}
       aria-hidden="true"
       onError={() => setUseFallback(true)}
       style={{ width: '1.125rem', height: '1.125rem', display: 'inline-block', verticalAlign: '-0.1em' }}
