@@ -178,7 +178,7 @@ const fr: Translations = {
 
   similarity: {
     title: 'Vérification de similarité',
-    subtitle: 'Top 3 des chansons enregistrées avec un taux de similarité supérieur à 50%.',
+    subtitle: 'Top 3 des chansons découvertes avec un taux de similarité quelconque.',
     empty: 'Aucune chanson enregistrée ne dépasse le seuil de similarité de 50%.',
     noCandidates: 'Enregistrez ou générez au moins une version de chanson pour comparer les similarités.',
     score: 'Similarité',
@@ -186,7 +186,7 @@ const fr: Translations = {
     sharedLines: 'Lignes communes',
     matchedSections: 'Sections correspondantes',
     sharedKeywords: 'Mots-clés partagés',
-    thresholdHint: 'Seules les chansons au-dessus de 50% de similarité sont affichées, de la plus proche à la moins proche.',
+    thresholdHint: 'Les chansons sont classées de la plus proche à la moins proche, quel que soit le score.',
     webTitle: 'Similarité Web',
     webSubtitle: 'Résultats de DuckDuckGo et Wikipedia',
     webIdle: 'Aucune recherche effectuée. Le moteur se déclenche automatiquement après 30 s d\'inactivité (≥ 20 % de changement de texte), ou cliquez sur Actualiser.',

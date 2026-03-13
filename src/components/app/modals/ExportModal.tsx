@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Download, FileBadge, FileBadge2, FileCode2, FileText, X } from 'lucide-react';
+import { Download, FileCode2, FileText, FileType, FileType2, X } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { ExportFormat } from '../../../utils/exportUtils';
@@ -41,7 +41,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
       value: 'odt' as const,
       label: t.exportDialog.formats.odt,
       extension: '.odt',
-      icon: FileBadge2,
+      icon: FileType,
       accent: '#22c55e',
       surface: 'rgba(34, 197, 94, 0.14)',
       border: 'rgba(34, 197, 94, 0.28)',
@@ -50,7 +50,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
       value: 'docx' as const,
       label: t.exportDialog.formats.docx,
       extension: '.docx',
-      icon: FileBadge,
+      icon: FileType2,
       accent: '#2563eb',
       surface: 'rgba(37, 99, 235, 0.14)',
       border: 'rgba(37, 99, 235, 0.28)',
@@ -126,7 +126,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
                         color: isSelected ? format.accent : 'var(--text-secondary)',
                       }}
                     >
-                      <Icon className="w-4.5 h-4.5" />
+                      <Icon className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-[var(--text-primary)]">{format.label}</p>

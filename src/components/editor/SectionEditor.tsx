@@ -189,7 +189,7 @@ export const SectionEditor = React.memo(function SectionEditor({
         />
 
         <div className="mt-3 space-y-3">
-          {/* Column headers — hidden for meta-only sections */}
+          {/* Column headers */}
           <div className="lyric-row lyric-row-header px-3 pb-1 border-b border-white/5 mb-1">
             <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Syllables</span>
@@ -217,13 +217,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                   className={`group lyric-row border-l-2 border-cyan-500/50 bg-cyan-500/5 transition-colors ${isDraggedLine ? 'opacity-50' : ''}`}
                   style={{ paddingLeft: '12px', paddingRight: '12px' }}
                 >
-                  {/* drag handle placeholder */}
                   <div />
-                  {/* origin icon placeholder */}
                   <div />
-                  {/* up/down placeholder */}
                   <div />
-                  {/* line number */}
                   <button
                     type="button"
                     onClick={() => handleLineClick(line.id)}
@@ -231,11 +227,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                   >
                     {index + 1}
                   </button>
-                  {/* meta text spanning remaining columns */}
                   <div className="col-span-5 flex items-center">
                     <MetaLine text={line.text} />
                   </div>
-                  {/* delete */}
                   <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
                     <button
                       type="button"
@@ -319,10 +313,18 @@ export const SectionEditor = React.memo(function SectionEditor({
                 <span className="lyric-col-aux" style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                   {line.syllables > 0 ? line.syllables : ''}
                 </span>
+
+                {/* Schema column: letter badge for known schemes, dash for FREE */}
                 <span className="lyric-col-aux" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   {(() => {
                     const lyricIndex = lyricLineIndexMap.get(line.id) ?? 0;
-                    const letter = getSchemeLetterForLine(section.rhymeScheme || rhymeScheme, lyricIndex);
+                    const effectiveScheme = section.rhymeScheme || rhymeScheme;
+                    if (effectiveScheme.toUpperCase() === 'FREE') {
+                      return (
+                        <span className="text-[10px] text-zinc-600 dark:text-zinc-700 select-none" aria-label="Free verse">—</span>
+                      );
+                    }
+                    const letter = getSchemeLetterForLine(effectiveScheme, lyricIndex);
                     return letter ? (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(letter)}`}>
                         {letter}

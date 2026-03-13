@@ -13,6 +13,27 @@ interface Props {
   setAudioFeedback: (value: boolean) => void;
 }
 
+/**
+ * Renders a flag emoji in a <span> with a forced emoji font stack so it
+ * displays correctly on Windows desktop (which doesn't render regional
+ * indicator pairs in most system fonts by default).
+ */
+function FlagEmoji({ flag, code }: { flag: string; code: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
+        fontSize: '1.125rem',
+        lineHeight: 1,
+        display: 'inline-block',
+      }}
+    >
+      {flag || code.toUpperCase()}
+    </span>
+  );
+}
+
 export function SettingsModal({
   isOpen,
   onClose,
@@ -163,7 +184,7 @@ export function SettingsModal({
                           : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-color)]/20 hover:text-[var(--text-primary)]'
                       }`}
                     >
-                      <span className="text-base leading-none">{loc.flag}</span>
+                      <FlagEmoji flag={loc.flag} code={loc.code} />
                       <span className="font-medium truncate">{loc.label}</span>
                       {loc.code === draftLanguage && (
                         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] flex-shrink-0" />

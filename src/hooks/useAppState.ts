@@ -6,6 +6,17 @@ import { DEFAULT_TITLE, DEFAULT_TOPIC, DEFAULT_MOOD } from '../utils/songDefault
 /** Key used to track first-ever launch (splash shown once). */
 const SPLASH_SHOWN_KEY = 'vibe_splash_shown';
 
+/** Read splash guard synchronously so the initial state is correct before any render. */
+const shouldShowSplash = (): boolean => {
+  try {
+    if (localStorage.getItem(SPLASH_SHOWN_KEY)) return false;
+    localStorage.setItem(SPLASH_SHOWN_KEY, '1');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export function useAppState() {
   const [title, setTitle] = useState(DEFAULT_TITLE);
   const [titleOrigin, setTitleOrigin] = useState<'user' | 'ai'>('user');
@@ -37,8 +48,8 @@ export function useAppState() {
   const [isMarkupMode, setIsMarkupMode] = useState(false);
   const [markupText, setMarkupText] = useState('');
 
-  // Splash shown exactly once per browser profile
-  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  // Splash shown exactly once — initialised synchronously to avoid double render
+  const [isAboutOpen, setIsAboutOpen] = useState<boolean>(() => shouldShowSplash());
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiErrorModal, setApiErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
@@ -65,18 +76,6 @@ export function useAppState() {
     if (theme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [theme]);
-
-  // Splash guard: immune to React 18 Strict Mode double-mount via ref
-  const splashCheckedRef = useRef(false);
-  useEffect(() => {
-    if (splashCheckedRef.current) return;
-    splashCheckedRef.current = true;
-    const shown = localStorage.getItem(SPLASH_SHOWN_KEY);
-    if (!shown) {
-      setIsAboutOpen(true);
-      localStorage.setItem(SPLASH_SHOWN_KEY, '1');
-    }
-  }, []);
 
   useEffect(() => {
     fetch('/api/status')

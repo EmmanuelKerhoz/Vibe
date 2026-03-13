@@ -180,7 +180,7 @@ const en: Translations = {
 
   similarity: {
     title: 'Similarity Check',
-    subtitle: 'Top 3 saved songs with a similarity score above 50%.',
+    subtitle: 'Top 3 songs discovered with any similarity score.',
     empty: 'No saved song exceeded the 50% similarity threshold.',
     noCandidates: 'Save or generate at least one song version to compare similarities.',
     score: 'Similarity',
@@ -188,7 +188,7 @@ const en: Translations = {
     sharedLines: 'Shared lines',
     matchedSections: 'Matched sections',
     sharedKeywords: 'Shared keywords',
-    thresholdHint: 'Only songs above 50% similarity are shown, ordered from most to least similar.',
+    thresholdHint: 'Songs are ordered from most to least similar, regardless of score.',
     webTitle: 'Web Similarity',
     webSubtitle: 'Results from DuckDuckGo and Wikipedia',
     webIdle: 'No search run yet. The engine triggers automatically after 30 s of inactivity (≥ 20 % text change), or click Refresh.',
