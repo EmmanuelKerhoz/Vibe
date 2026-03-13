@@ -3,11 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lyricist Pro</title>
+    <title>VIBE — Lyricist Pro</title>
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Theme color (LCARS dark) -->
+    <meta name="theme-color" content="#0a0a1a" />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="VIBE" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- Android / general -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="VIBE" />
+
+    <!-- SEO / Open Graph -->
+    <meta name="description" content="AI-powered lyric writing assistant with Star Trek LCARS interface" />
+    <meta property="og:title" content="VIBE — Lyricist Pro" />
+    <meta property="og:description" content="AI-powered lyric writing assistant" />
+    <meta property="og:type" content="website" />
+
+    <!-- Favicon fallback -->
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
