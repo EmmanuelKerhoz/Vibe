@@ -53,9 +53,9 @@ describe('LyricsView empty state', () => {
       </LanguageProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Library' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Paste Lyrics' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Generate Song' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open your library and manage saved songs' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Import and analyze existing lyrics' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Generate a new song with AI' }));
 
     expect(onOpenLibrary).toHaveBeenCalledTimes(1);
     expect(onPasteLyrics).toHaveBeenCalledTimes(1);

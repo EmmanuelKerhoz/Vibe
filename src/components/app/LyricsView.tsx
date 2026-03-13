@@ -192,13 +192,13 @@ export function LyricsView({
             {t.editor.emptyState.description}
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            <Button onClick={onOpenLibrary} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+            <Button onClick={onOpenLibrary} aria-label={t.saveToLibrary.browseDescription} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
               {t.saveToLibrary.title}
             </Button>
-            <Button onClick={onPasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+            <Button onClick={onPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
               {t.editor.emptyState.pasteLyrics}
             </Button>
-            <Button onClick={onGenerateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+            <Button onClick={onGenerateSong} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
               {t.editor.emptyState.generateSong}
             </Button>
           </div>

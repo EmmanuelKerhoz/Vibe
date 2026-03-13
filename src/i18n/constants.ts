@@ -116,6 +116,9 @@ for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
     isEthnical: lang.isEthnical,
   };
   const normalizedCode = normalizeLanguageKey(lang.code);
+  // UI locale codes and adaptation codes can overlap (for example `ko` vs `KO`).
+  // Preserve the UI-locale display entry for code-based lookups, while still
+  // indexing the adaptation language by its human-readable name.
   if (!LANGUAGE_DISPLAY_INDEX.has(normalizedCode)) {
     LANGUAGE_DISPLAY_INDEX.set(normalizedCode, adaptationDisplay);
   }
