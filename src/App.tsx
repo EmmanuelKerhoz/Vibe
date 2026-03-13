@@ -15,6 +15,7 @@ import { useAppState } from './hooks/useAppState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
+import { useMobileLayout } from './hooks/useMobileLayout';
 import { VersionsModal } from './components/app/modals/VersionsModal';
 import { ResetModal } from './components/app/modals/ResetModal';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
@@ -39,6 +40,7 @@ import { SettingsModal } from './components/app/modals/SettingsModal';
 import { useTranslation, useLanguage } from './i18n';
 import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary } from './utils/libraryUtils';
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
+import { Menu, BookOpen, Music, Settings } from 'lucide-react';
 
 export default function App() {
   const { t } = useTranslation();
@@ -65,6 +67,23 @@ export default function App() {
     confirmModal, setConfirmModal, promptModal, setPromptModal,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
   } = useAppState();
+
+  // ── Mobile layout ────────────────────────────────────────────────────────
+  const { isMobile, isTablet } = useMobileLayout();
+
+  // Close both panels when switching to desktop
+  useEffect(() => {
+    if (!isMobile && !isTablet) return;
+    // On mobile, ensure panels start closed
+  }, [isMobile, isTablet]);
+
+  const closeMobilePanels = useCallback(() => {
+    setIsLeftPanelOpen(false);
+    setIsStructureOpen(false);
+  }, [setIsLeftPanelOpen, setIsStructureOpen]);
+
+  const showMobileBackdrop = (isMobile || isTablet) && (isLeftPanelOpen || isStructureOpen);
+
   useSessionPersistence({
     song, structure, title, topic, mood, rhymeScheme, targetSyllables,
     genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
@@ -134,7 +153,6 @@ export default function App() {
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); }, playAudioFeedback,
   });
   const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood, songLanguage);
-  // Destructure hook return — generateSuggestion exposed as onSurprise for LeftSettingsPanel
   const { generateSuggestion: handleSurprise, isGeneratingSuggestion: isSurprising } =
     useTopicMoodSuggester(topic, mood, setTopic, setMood);
   const handleSurpriseClick = useCallback(async () => {
@@ -158,6 +176,8 @@ export default function App() {
         if (isImportModalOpen) { setIsImportModalOpen(false); return; }
         if (isSettingsOpen) { setIsSettingsOpen(false); return; }
         if (isAboutOpen) setIsAboutOpen(false);
+        // On mobile, Escape closes open panels
+        if (isMobile || isTablet) { closeMobilePanels(); return; }
         return;
       }
       if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
@@ -169,34 +189,14 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [
-    apiErrorModal.open,
-    confirmModal,
-    isAboutOpen,
-    isAnalysisModalOpen,
-    isExportModalOpen,
-    isImportModalOpen,
-    isPasteModalOpen,
-    isResetModalOpen,
-    isSaveToLibraryModalOpen,
-    isSettingsOpen,
-    isSimilarityModalOpen,
-    isVersionsModalOpen,
-    promptModal,
-    redo,
-    setApiErrorModal,
-    setConfirmModal,
-    setIsAboutOpen,
-    setIsAnalysisModalOpen,
-    setIsExportModalOpen,
-    setIsImportModalOpen,
-    setIsPasteModalOpen,
-    setIsResetModalOpen,
-    setIsSaveToLibraryModalOpen,
-    setIsSettingsOpen,
-    setIsSimilarityModalOpen,
-    setIsVersionsModalOpen,
-    setPromptModal,
-    undo,
+    apiErrorModal.open, confirmModal, isAboutOpen, isAnalysisModalOpen, isExportModalOpen,
+    isImportModalOpen, isPasteModalOpen, isResetModalOpen, isSaveToLibraryModalOpen,
+    isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen, promptModal,
+    isMobile, isTablet, closeMobilePanels,
+    redo, setApiErrorModal, setConfirmModal, setIsAboutOpen, setIsAnalysisModalOpen,
+    setIsExportModalOpen, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
+    setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
+    setPromptModal, undo,
   ]);
   useEffect(() => {
     if (!shouldAutoGenerateTitle || song.length === 0) return;
@@ -215,10 +215,7 @@ export default function App() {
     || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
   const webBadgeLabel = webSimilarityIndex.status === 'done' && webSimilarityIndex.candidates.length > 0
     ? `${webSimilarityIndex.candidates[0]?.score}%` : null;
-  const handleApiKeyHelp = () => setApiErrorModal({
-    open: true,
-    message: t.tooltips.aiUnavailableHelp,
-  });
+  const handleApiKeyHelp = () => setApiErrorModal({ open: true, message: t.tooltips.aiUnavailableHelp });
   const handleTitleChange = (value: string) => { setTitle(value); setTitleOrigin('user'); };
   const handleGenerateTitle = async () => { const t2 = await generateTitle(); if (t2) { setTitle(t2); setTitleOrigin('ai'); } };
   const handleGlobalRegenerate = () => {
@@ -271,34 +268,51 @@ export default function App() {
     updateSongAndStructureWithHistory(createEmptySong(DEFAULT_STRUCTURE, rhymeScheme), DEFAULT_STRUCTURE);
     safeRemoveItem('lyricist_session'); setHasSavedSession(false); clearSelection(); setIsResetModalOpen(false);
   };
+
   return (
     <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
     <div className={`fui-FluentProvider h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
-      <div className="flex-1 flex overflow-hidden">
-        <LeftSettingsPanel
-          title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
-          onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-          topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-          rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-          targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-          song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
-          isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-          onSurprise={handleSurpriseClick}
-          isSurprising={isSurprising}
+
+      {/* ── MOBILE BACKDROP ── */}
+      {showMobileBackdrop && (
+        <div
+          className="mobile-panel-backdrop"
+          onClick={closeMobilePanels}
+          aria-hidden="true"
         />
+      )}
+
+      <div className="flex-1 flex overflow-hidden">
+
+        {/* ── LEFT PANEL — overlay on mobile ── */}
+        <div className={isMobile ? 'left-panel-mobile-overlay' : undefined}>
+          <LeftSettingsPanel
+            title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
+            onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+            song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
+            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+            onSurprise={handleSurpriseClick}
+            isSurprising={isSurprising}
+          />
+        </div>
+
+        {/* ── MAIN CONTENT ── */}
         <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
           <TopRibbon
             isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
             activeTab={activeTab} setActiveTab={setActiveTab}
             song={song} past={past} future={future} undo={undo} redo={redo}
-             setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
-             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-              onImportClick={() => setIsImportModalOpen(true)} onExportClick={() => setIsExportModalOpen(true)}
-              onOpenLibraryClick={handleOpenSaveToLibraryModal}
-              isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-            />
+            setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
+            isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+            hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+            onImportClick={() => setIsImportModalOpen(true)} onExportClick={() => setIsExportModalOpen(true)}
+            onOpenLibraryClick={handleOpenSaveToLibraryModal}
+            isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+          />
           {activeTab === 'lyrics' && song.length > 0 && (
             <InsightsBar
               song={song} sectionCount={sectionCount} wordCount={wordCount} charCount={charCount}
@@ -312,7 +326,7 @@ export default function App() {
               setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
             />
           )}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative p-4 lg:p-8 lcars-lyrics-area">
+          <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobile ? 'p-2 pb-[calc(60px+var(--sab))]' : 'p-4 lg:p-8'}`}>
             <div className="lyrics-editor-zoom-wrapper">
               <div className="lyrics-editor-zoom">
                 {activeTab === 'lyrics' ? (
@@ -349,32 +363,71 @@ export default function App() {
             </div>
           </div>
         </div>
-        <StructureSidebar
-          isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-          structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
-          isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-          draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
-          dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
-          addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-          normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
+
+        {/* ── STRUCTURE SIDEBAR — overlay on mobile/tablet ── */}
+        <div className={isMobile || isTablet ? 'structure-sidebar-mobile-overlay' : undefined}>
+          <StructureSidebar
+            isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+            structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
+            isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+            draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
+            dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
+            addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+            normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
+          />
+        </div>
+      </div>
+
+      {/* ── STATUS BAR (desktop) ── */}
+      <div className="lcars-status-bar-desktop">
+        <StatusBar
+          song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+          isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
+          audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+          onOpenAbout={() => setIsAboutOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
       </div>
-      <StatusBar
-        song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-        isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
-        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-        onOpenAbout={() => setIsAboutOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-      />
+
+      {/* ── MOBILE BOTTOM NAV BAR ── */}
+      <nav className="mobile-bottom-nav" aria-label="Navigation">
+        <button
+          className={`mobile-bottom-nav-btn ${isLeftPanelOpen ? 'active' : ''}`}
+          onClick={() => { setIsLeftPanelOpen(v => !v); setIsStructureOpen(false); }}
+          aria-label="Settings"
+        >
+          <Settings size={20} />
+          <span>Settings</span>
+        </button>
+        <button
+          className={`mobile-bottom-nav-btn ${activeTab === 'lyrics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('lyrics')}
+          aria-label="Lyrics"
+        >
+          <BookOpen size={20} />
+          <span>Lyrics</span>
+        </button>
+        <button
+          className={`mobile-bottom-nav-btn ${activeTab === 'musical' ? 'active' : ''}`}
+          onClick={() => setActiveTab('musical')}
+          aria-label="Music"
+        >
+          <Music size={20} />
+          <span>Music</span>
+        </button>
+        <button
+          className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
+          onClick={() => { setIsStructureOpen(v => !v); setIsLeftPanelOpen(false); }}
+          aria-label="Structure"
+        >
+          <Menu size={20} />
+          <span>Structure</span>
+        </button>
+      </nav>
+
+      {/* ── MODALS ── */}
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        theme={theme}
-        setTheme={setTheme}
-        audioFeedback={audioFeedback}
-        setAudioFeedback={setAudioFeedback}
-      />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} theme={theme} setTheme={setTheme} audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback} />
       <ImportModal isOpen={isImportModalOpen} hasExistingWork={hasExistingWork} onClose={() => setIsImportModalOpen(false)} onChooseFile={handleImportChooseFile} />
       <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} onExport={exportSong} />
       <SuggestionsPanel selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId} suggestions={suggestions} isSuggesting={isSuggesting} applySuggestion={applySuggestion} generateSuggestions={generateSuggestions} />
