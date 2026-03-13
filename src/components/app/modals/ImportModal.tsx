@@ -70,7 +70,7 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, on
               <p className="text-sm text-amber-500 leading-relaxed">{t.importDialog.warning}</p>
             </div>
           )}
-          <p className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">Supports TXT, Markup, ODT, DOCX, or pasted lyrics</p>
+          <p className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{t.importDialog.supportedFiles}</p>
         </div>
 
         {/* Footer */}

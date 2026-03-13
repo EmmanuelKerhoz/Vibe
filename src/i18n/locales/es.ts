@@ -223,7 +223,7 @@ const es: Translations = {
     emptyDescription: 'Elige un archivo .txt o .md para analizarlo e importarlo al editor.',
     replaceDescription: 'Elige un archivo .txt o .md para importar. La letra importada reemplazará la letra, la estructura y el contexto de análisis actuales.',
     warning: 'Tu trabajo actual se perderá una vez que se analice el archivo importado.',
-    supportedFiles: 'Admite archivos .txt y .md',
+    supportedFiles: 'Admite TXT, Markup, ODT, DOCX o letras pegadas',
     cancel: 'Cancelar',
     chooseFile: 'Elegir archivo',
   },

@@ -226,7 +226,7 @@ const fr: Translations = {
     emptyDescription: 'Choisissez un fichier .txt ou .md à analyser et à importer dans l\'éditeur.',
     replaceDescription: 'Choisissez un fichier .txt ou .md à importer. Les paroles importées remplaceront les paroles, la structure et le contexte d\'analyse actuels.',
     warning: 'Votre travail actuel sera perdu une fois le fichier importé analysé.',
-    supportedFiles: 'Prend en charge les fichiers .txt et .md',
+    supportedFiles: 'Prend en charge TXT, Markup, ODT, DOCX ou des paroles collées',
     cancel: 'Annuler',
     chooseFile: 'Choisir un fichier',
   },

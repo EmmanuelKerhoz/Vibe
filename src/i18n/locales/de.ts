@@ -223,7 +223,7 @@ const de: Translations = {
     emptyDescription: 'Wähle eine .txt- oder .md-Datei aus, um sie zu analysieren und in den Editor zu importieren.',
     replaceDescription: 'Wähle eine .txt- oder .md-Datei zum Importieren aus. Die importierten Texte ersetzen die aktuellen Texte, die Struktur und den Analysekontext.',
     warning: 'Deine aktuelle Arbeit geht verloren, sobald die importierte Datei analysiert wurde.',
-    supportedFiles: 'Unterstützt .txt- und .md-Dateien',
+    supportedFiles: 'Unterstützt TXT, Markup, ODT, DOCX oder eingefügte Liedtexte',
     cancel: 'Abbrechen',
     chooseFile: 'Datei wählen',
   },
