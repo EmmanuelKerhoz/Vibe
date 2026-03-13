@@ -458,11 +458,11 @@ export function MusicalTab({
                 {(SUB_STYLES[selectedVibeTile.name] as string[]).map(sub => {
                   const isSel = selectedSubStyle === sub;
                   return (
-                      <button
-                        key={sub}
-                        onClick={() => handleSubStyleSelect(sub)}
-                        className="ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border"
-                        style={isSel
+                    <button
+                      key={sub}
+                      onClick={() => handleSubStyleSelect(sub)}
+                      className="ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border"
+                      style={isSel
                         ? { borderRadius: '6px 2px 6px 2px', background: selectedAccent, borderColor: selectedAccent, color: '#000' }
                         : { borderRadius: '6px 2px 6px 2px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }
                       }
