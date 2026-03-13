@@ -10,4 +10,13 @@ describe('validateLocales', () => {
 
     expect(localesMissingSyllableCount).toEqual([]);
   });
+
+  it('reports no missing mobile navigation keys across supported locales', () => {
+    const report = validateLocales();
+    const localesMissingMobileNav = Object.entries(report)
+      .filter(([, result]) => result.missing.some(key => key.startsWith('mobileNav.')))
+      .map(([locale]) => locale);
+
+    expect(localesMissingMobileNav).toEqual([]);
+  });
 });

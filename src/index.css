@@ -241,7 +241,6 @@ html, body, #root {
   /* Use dvh when available for correct mobile viewport */
   height: 100dvh;
   overflow: hidden;
-  touch-action: pan-y;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -825,17 +824,16 @@ input:focus, textarea:focus, button:focus-visible {
     column-gap: 6px;
     min-height: 44px;  /* WCAG touch target */
   }
-  /* Hide: drag handle, origin badge, line-num, rhyme badge, syllables, rhyming-syllable */
-  .lyric-col-drag,
-  .lyric-col-origin,
-  .lyric-col-linenum,
-  .lyric-col-rhyme,
-  .lyric-col-syllables,
-  .lyric-col-rhyming-syl,
-  .lyric-row > *:nth-child(1) {
-    display: none !important;
+  .lyric-row-header {
+    display: none;
   }
-  .lyric-row > *:nth-child(2) {
+  /* Keep move controls, lyric text, and delete action only. */
+  .lyric-row > *:nth-child(1),
+  .lyric-row > *:nth-child(2),
+  .lyric-row > *:nth-child(4),
+  .lyric-row > *:nth-child(6),
+  .lyric-row > *:nth-child(7),
+  .lyric-row > *:nth-child(8) {
     display: none !important;
   }
 }
@@ -855,28 +853,9 @@ input:focus, textarea:focus, button:focus-visible {
 }
 
 /* ===========================================================================
-   MOBILE LAYOUT — Left panel overlay on mobile
+   MOBILE LAYOUT
    =========================================================================== */
 @media (max-width: 767px) {
-  .left-panel-mobile-overlay {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 50;
-    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
-    width: min(320px, 85vw) !important;
-    max-width: 85vw;
-  }
-  /* Backdrop for mobile panels */
-  .mobile-panel-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 49;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-  }
   /* TopRibbon: compact on mobile */
   .top-ribbon-mobile {
     padding-left: 8px !important;
