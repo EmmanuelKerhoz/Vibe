@@ -16,31 +16,18 @@ import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
 import { useMobileLayout } from './hooks/useMobileLayout';
-import { VersionsModal } from './components/app/modals/VersionsModal';
-import { ResetModal } from './components/app/modals/ResetModal';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
 import { StatusBar } from './components/app/StatusBar';
-import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { MusicalTab } from './components/app/MusicalTab';
 import { InsightsBar } from './components/app/InsightsBar';
 import { LyricsView } from './components/app/LyricsView';
-import { AboutModal } from './components/app/modals/AboutModal';
-import { ApiErrorModal } from './components/app/modals/ApiErrorModal';
-import { ImportModal } from './components/app/modals/ImportModal';
-import { ExportModal } from './components/app/modals/ExportModal';
-import { PasteModal } from './components/app/modals/PasteModal';
-import { AnalysisModal } from './components/app/modals/AnalysisModal';
-import { SimilarityModal } from './components/app/modals/SimilarityModal';
-import { SaveToLibraryModal } from './components/app/modals/SaveToLibraryModal';
-import { ConfirmModal } from './components/app/modals/ConfirmModal';
-import { PromptModal } from './components/app/modals/PromptModal';
-import { SettingsModal } from './components/app/modals/SettingsModal';
+import { AppModals } from './components/app/AppModals';
+import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
 import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary } from './utils/libraryUtils';
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
-import { Menu, BookOpen, Music, Settings } from 'lucide-react';
 
 export default function App() {
   const { t } = useTranslation();
@@ -59,37 +46,44 @@ export default function App() {
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
     isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
     isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
-     apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
-     isExportModalOpen, setIsExportModalOpen,
-     isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
+    apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
+    isExportModalOpen, setIsExportModalOpen,
+    isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
     isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
     isResetModalOpen, setIsResetModalOpen, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     confirmModal, setConfirmModal, promptModal, setPromptModal,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
   } = useAppState();
 
+  // ── Mobile layout ──────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
-  const hasCollapsedCompactPanelsRef = useRef(false);
+  const isMobileOrTablet = isMobile || isTablet;
 
+  const prevIsMobileOrTablet = useRef(isMobileOrTablet);
   useEffect(() => {
-    const isCompactLayout = isMobile || isTablet;
-
-    if (isCompactLayout && !hasCollapsedCompactPanelsRef.current) {
+    if (isMobileOrTablet && !prevIsMobileOrTablet.current) {
       setIsLeftPanelOpen(false);
       setIsStructureOpen(false);
-      hasCollapsedCompactPanelsRef.current = true;
-      return;
     }
+    prevIsMobileOrTablet.current = isMobileOrTablet;
+  }, [isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen]);
 
-    if (!isCompactLayout) {
-      hasCollapsedCompactPanelsRef.current = false;
+  const mobileInitRef = useRef(false);
+  useEffect(() => {
+    if (mobileInitRef.current) return;
+    mobileInitRef.current = true;
+    if (isMobileOrTablet) {
+      setIsLeftPanelOpen(false);
+      setIsStructureOpen(false);
     }
-  }, [isMobile, isTablet, setIsLeftPanelOpen, setIsStructureOpen]);
+  }, [isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen]);
 
   const closeMobilePanels = useCallback(() => {
     setIsLeftPanelOpen(false);
     setIsStructureOpen(false);
   }, [setIsLeftPanelOpen, setIsStructureOpen]);
+
+  const showMobileBackdrop = isMobileOrTablet && (isLeftPanelOpen || isStructureOpen);
 
   useSessionPersistence({
     song, structure, title, topic, mood, rhymeScheme, targetSyllables,
@@ -182,9 +176,8 @@ export default function App() {
         if (isExportModalOpen) { setIsExportModalOpen(false); return; }
         if (isImportModalOpen) { setIsImportModalOpen(false); return; }
         if (isSettingsOpen) { setIsSettingsOpen(false); return; }
-        if (isAboutOpen) setIsAboutOpen(false);
-        // On mobile, Escape closes open panels
-        if (isMobile || isTablet) { closeMobilePanels(); return; }
+        if (isAboutOpen) { setIsAboutOpen(false); return; }
+        if (isMobileOrTablet) { closeMobilePanels(); return; }
         return;
       }
       if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
@@ -199,7 +192,7 @@ export default function App() {
     apiErrorModal.open, confirmModal, isAboutOpen, isAnalysisModalOpen, isExportModalOpen,
     isImportModalOpen, isPasteModalOpen, isResetModalOpen, isSaveToLibraryModalOpen,
     isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen, promptModal,
-    isMobile, isTablet, closeMobilePanels,
+    isMobileOrTablet, closeMobilePanels,
     redo, setApiErrorModal, setConfirmModal, setIsAboutOpen, setIsAnalysisModalOpen,
     setIsExportModalOpen, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
     setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
@@ -280,9 +273,14 @@ export default function App() {
     <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
     <div className={`fui-FluentProvider h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
 
+      {showMobileBackdrop && (
+        <div className="mobile-panel-backdrop" onClick={closeMobilePanels} aria-hidden="true" />
+      )}
+
       <div className="flex-1 flex overflow-hidden">
 
         <LeftSettingsPanel
+          className={isMobileOrTablet ? 'left-panel-mobile-overlay' : undefined}
           title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
           onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
           topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
@@ -294,7 +292,6 @@ export default function App() {
           isSurprising={isSurprising}
         />
 
-        {/* ── MAIN CONTENT ── */}
         <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
           <TopRibbon
@@ -321,7 +318,8 @@ export default function App() {
               setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
             />
           )}
-          <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobile ? 'p-2 pb-[calc(60px+var(--sab))]' : 'p-4 lg:p-8'}`}>
+          <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}
+               style={isMobileOrTablet ? { paddingBottom: 'calc(60px + var(--sab))' } : undefined}>
             <div className="lyrics-editor-zoom-wrapper">
               <div className="lyrics-editor-zoom">
                 {activeTab === 'lyrics' ? (
@@ -360,6 +358,7 @@ export default function App() {
         </div>
 
         <StructureSidebar
+          className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
           isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
           structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
           isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
@@ -370,69 +369,62 @@ export default function App() {
         />
       </div>
 
-      {/* ── STATUS BAR (desktop) ── */}
-      <div className="lcars-status-bar-desktop">
-        <StatusBar
-          song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-          isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
-          audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-          onOpenAbout={() => setIsAboutOpen(true)}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-        />
-      </div>
+      <StatusBar
+        className="lcars-status-bar-desktop"
+        song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+        isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
+        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+        onOpenAbout={() => setIsAboutOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
-      {/* ── MOBILE BOTTOM NAV BAR ── */}
-      <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
-        <button
-          className={`mobile-bottom-nav-btn ${isLeftPanelOpen ? 'active' : ''}`}
-          onClick={() => { setIsLeftPanelOpen(v => !v); setIsStructureOpen(false); }}
-          aria-label={t.mobileNav.settings}
-        >
-          <Settings size={20} />
-          <span>{t.mobileNav.settings}</span>
-        </button>
-        <button
-          className={`mobile-bottom-nav-btn ${activeTab === 'lyrics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('lyrics')}
-          aria-label={t.mobileNav.lyrics}
-        >
-          <BookOpen size={20} />
-          <span>{t.mobileNav.lyrics}</span>
-        </button>
-        <button
-          className={`mobile-bottom-nav-btn ${activeTab === 'musical' ? 'active' : ''}`}
-          onClick={() => setActiveTab('musical')}
-          aria-label={t.mobileNav.music}
-        >
-          <Music size={20} />
-          <span>{t.mobileNav.music}</span>
-        </button>
-        <button
-          className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
-          onClick={() => { setIsStructureOpen(v => !v); setIsLeftPanelOpen(false); }}
-          aria-label={t.mobileNav.structure}
-        >
-          <Menu size={20} />
-          <span>{t.mobileNav.structure}</span>
-        </button>
-      </nav>
+      <MobileBottomNav
+        isLeftPanelOpen={isLeftPanelOpen}
+        isStructureOpen={isStructureOpen}
+        activeTab={activeTab}
+        setIsLeftPanelOpen={setIsLeftPanelOpen}
+        setIsStructureOpen={setIsStructureOpen}
+        setActiveTab={setActiveTab}
+      />
 
-      {/* ── MODALS ── */}
-      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} theme={theme} setTheme={setTheme} audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback} />
-      <ImportModal isOpen={isImportModalOpen} hasExistingWork={hasExistingWork} onClose={() => setIsImportModalOpen(false)} onChooseFile={handleImportChooseFile} />
-      <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} onExport={exportSong} />
-      <SuggestionsPanel selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId} suggestions={suggestions} isSuggesting={isSuggesting} applySuggestion={applySuggestion} generateSuggestions={generateSuggestions} />
-      <PasteModal isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)} pastedText={pastedText} setPastedText={setPastedText} isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics} />
-      <AnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps} appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems} isApplyingAnalysis={isApplyingAnalysis} toggleAnalysisItemSelection={toggleAnalysisItemSelection} applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems} versions={versions} rollbackToVersion={rollbackToVersion} />
-      <SimilarityModal isOpen={isSimilarityModalOpen} onClose={() => setIsSimilarityModalOpen(false)} matches={similarityMatches} candidateCount={libraryCount} webIndex={webSimilarityIndex} onWebRefresh={triggerWebSimilarity} onDeleteLibraryAsset={handleDeleteLibraryAsset} />
-      <SaveToLibraryModal isOpen={isSaveToLibraryModalOpen} onClose={() => setIsSaveToLibraryModalOpen(false)} onSave={handleSaveToLibrary} onDeleteAsset={handleDeleteLibraryAsset} isSaving={isSavingToLibrary} currentTitle={title} libraryAssets={libraryAssets} />
-      <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={saveVersion} onRollback={rollbackToVersion} onRequestVersionName={handleRequestVersionName} />
-      <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
-      <ApiErrorModal isOpen={apiErrorModal.open} onClose={() => setApiErrorModal({ open: false, message: '' })} message={apiErrorModal.message} />
-      {confirmModal && <ConfirmModal isOpen={confirmModal.open} title="Regenerate Song" message={t.editor.regenerateWarning} confirmLabel="Regenerate" cancelLabel="Cancel" onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal(null)} />}
-      {promptModal && <PromptModal isOpen={promptModal.open} title="Save Version" message="Enter a name for this version:" placeholder="Version name" confirmLabel="Save" cancelLabel="Cancel" onConfirm={promptModal.onConfirm} onCancel={() => setPromptModal(null)} />}
-      <input ref={importInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportInputChange} />
+      <AppModals
+        isAboutOpen={isAboutOpen} setIsAboutOpen={setIsAboutOpen}
+        isSettingsOpen={isSettingsOpen} setIsSettingsOpen={setIsSettingsOpen}
+        theme={theme} setTheme={setTheme} audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+        isImportModalOpen={isImportModalOpen} setIsImportModalOpen={setIsImportModalOpen}
+        hasExistingWork={hasExistingWork} handleImportChooseFile={handleImportChooseFile}
+        importInputRef={importInputRef} handleImportInputChange={handleImportInputChange}
+        isExportModalOpen={isExportModalOpen} setIsExportModalOpen={setIsExportModalOpen}
+        exportSong={exportSong}
+        selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
+        suggestions={suggestions} isSuggesting={isSuggesting}
+        applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
+        isPasteModalOpen={isPasteModalOpen} setIsPasteModalOpen={setIsPasteModalOpen}
+        pastedText={pastedText} setPastedText={setPastedText}
+        isAnalyzing={isAnalyzing} analyzePastedLyrics={analyzePastedLyrics}
+        isAnalysisModalOpen={isAnalysisModalOpen} setIsAnalysisModalOpen={setIsAnalysisModalOpen}
+        analysisReport={analysisReport} analysisSteps={analysisSteps}
+        appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
+        isApplyingAnalysis={isApplyingAnalysis}
+        toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+        applySelectedAnalysisItems={applySelectedAnalysisItems}
+        clearAppliedAnalysisItems={clearAppliedAnalysisItems}
+        versions={versions} rollbackToVersion={rollbackToVersion}
+        isSimilarityModalOpen={isSimilarityModalOpen} setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+        similarityMatches={similarityMatches} libraryCount={libraryCount}
+        webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
+        handleDeleteLibraryAsset={handleDeleteLibraryAsset}
+        isSaveToLibraryModalOpen={isSaveToLibraryModalOpen} setIsSaveToLibraryModalOpen={setIsSaveToLibraryModalOpen}
+        handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
+        title={title} libraryAssets={libraryAssets}
+        isVersionsModalOpen={isVersionsModalOpen} setIsVersionsModalOpen={setIsVersionsModalOpen}
+        saveVersion={saveVersion} handleRequestVersionName={handleRequestVersionName}
+        isResetModalOpen={isResetModalOpen} setIsResetModalOpen={setIsResetModalOpen}
+        resetSong={resetSong}
+        apiErrorModal={apiErrorModal} setApiErrorModal={setApiErrorModal}
+        confirmModal={confirmModal} setConfirmModal={setConfirmModal}
+        promptModal={promptModal} setPromptModal={setPromptModal}
+      />
     </div>
     </FluentProvider>
   );
