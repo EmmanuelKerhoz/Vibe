@@ -26,7 +26,7 @@ import { LyricsView } from './components/app/LyricsView';
 import { AppModals } from './components/app/AppModals';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
-import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary } from './utils/libraryUtils';
+import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, loadAssetIntoEditor, type LibraryAsset } from './utils/libraryUtils';
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
 
 export default function App() {
@@ -235,10 +235,28 @@ export default function App() {
     if (song.length === 0) return;
     setIsSavingToLibrary(true);
     try {
-      await saveAssetToLibrary({ title: title || 'Untitled Song', type: 'song', sections: song, metadata: { topic, mood, genre, tempo: parseInt(tempo) || 120, instrumentation } });
+      await saveAssetToLibrary({ title: title || 'Untitled Song', type: 'song', sections: song, metadata: { topic, mood, genre, tempo: parseInt(tempo) || 120, instrumentation, rhythm, narrative, musicalPrompt } });
       const updated = await loadLibraryAssets(); setLibraryCount(updated.length); setLibraryAssets(updated);
     } catch (e) { console.error('Failed to save to library:', e); } finally { setIsSavingToLibrary(false); }
   };
+  const handleLoadLibraryAsset = useCallback((asset: LibraryAsset) => {
+    const loadedAsset = loadAssetIntoEditor(asset);
+    replaceStateWithoutHistory(loadedAsset.song, loadedAsset.structure);
+    clearHistory();
+    setTitle(loadedAsset.title);
+    setTitleOrigin('user');
+    setTopic(loadedAsset.topic);
+    setMood(loadedAsset.mood);
+    setRhymeScheme(loadedAsset.rhymeScheme);
+    setTargetSyllables(loadedAsset.targetSyllables);
+    setGenre(loadedAsset.genre);
+    setTempo(loadedAsset.tempo);
+    setInstrumentation(loadedAsset.instrumentation);
+    setRhythm(loadedAsset.rhythm);
+    setNarrative(loadedAsset.narrative);
+    setMusicalPrompt(loadedAsset.musicalPrompt);
+    setIsSaveToLibraryModalOpen(false);
+  }, [clearHistory, replaceStateWithoutHistory, setGenre, setInstrumentation, setMood, setMusicalPrompt, setNarrative, setRhymeScheme, setRhythm, setTargetSyllables, setTempo, setTitle, setTitleOrigin, setTopic, setIsSaveToLibraryModalOpen]);
   const handleDeleteLibraryAsset = useCallback(async (versionId: string) => {
     try {
       await deleteAssetFromLibrary(versionId);
@@ -416,7 +434,7 @@ export default function App() {
         handleDeleteLibraryAsset={handleDeleteLibraryAsset}
         isSaveToLibraryModalOpen={isSaveToLibraryModalOpen} setIsSaveToLibraryModalOpen={setIsSaveToLibraryModalOpen}
         handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
-        title={title} libraryAssets={libraryAssets}
+        title={title} libraryAssets={libraryAssets} handleLoadLibraryAsset={handleLoadLibraryAsset}
         isVersionsModalOpen={isVersionsModalOpen} setIsVersionsModalOpen={setIsVersionsModalOpen}
         saveVersion={saveVersion} handleRequestVersionName={handleRequestVersionName}
         isResetModalOpen={isResetModalOpen} setIsResetModalOpen={setIsResetModalOpen}

@@ -203,6 +203,8 @@ const es: Translations = {
     browseDescription: 'Abrir la biblioteca y gestionar las canciones guardadas',
     yourLibrary: 'Tu Biblioteca',
     empty: 'No hay canciones en la biblioteca. Guarda esta canción para empezar tu colección.',
+    load: 'Cargar',
+    loadDescription: 'Cargar esta canción en el editor',
     close: 'Cerrar',
   },
 

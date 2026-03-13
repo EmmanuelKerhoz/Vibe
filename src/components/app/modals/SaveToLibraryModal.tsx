@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, X, BookOpen, Music, Clock, Loader2, Library, Trash2 } from 'lucide-react';
+import { Save, X, BookOpen, Music, Clock, Loader2, Library, Trash2, FolderOpen } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { LibraryAsset } from '../../../utils/libraryUtils';
@@ -8,6 +8,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => Promise<void>;
+  onLoadAsset?: (asset: LibraryAsset) => void;
   onDeleteAsset?: (assetId: string) => void;
   isSaving: boolean;
   currentTitle: string;
@@ -18,6 +19,7 @@ export function SaveToLibraryModal({
   isOpen,
   onClose,
   onSave,
+  onLoadAsset,
   onDeleteAsset,
   isSaving,
   currentTitle,
@@ -120,20 +122,34 @@ export function SaveToLibraryModal({
                       </p>
                     </div>
                   </div>
-                  <div className="text-[10px] text-[var(--text-secondary)] flex-shrink-0">
-                    {asset.sections.length} section{asset.sections.length !== 1 ? 's' : ''}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="text-[10px] text-[var(--text-secondary)]">
+                      {asset.sections.length} section{asset.sections.length !== 1 ? 's' : ''}
+                    </div>
+                    {onLoadAsset && (
+                      <button
+                        type="button"
+                        onClick={() => onLoadAsset(asset)}
+                        aria-label={`${t.saveToLibrary.load}: ${asset.title}`}
+                        title={t.saveToLibrary.loadDescription}
+                        className="flex items-center gap-1 rounded border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20"
+                      >
+                        <FolderOpen className="h-3.5 w-3.5" />
+                        {t.saveToLibrary.load}
+                      </button>
+                    )}
+                    {onDeleteAsset && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteAsset(asset.id)}
+                        aria-label={`Remove ${asset.title} from library`}
+                        title="Remove from library"
+                        className="flex h-7 w-7 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
-                  {onDeleteAsset && (
-                    <button
-                      type="button"
-                      onClick={() => onDeleteAsset(asset.id)}
-                      aria-label={`Remove ${asset.title} from library`}
-                      title="Remove from library"
-                      className="flex h-7 w-7 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
                 </div>
               ))}
             </div>

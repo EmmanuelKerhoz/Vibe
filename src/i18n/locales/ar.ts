@@ -203,6 +203,8 @@ const ar: Translations = {
     browseDescription: 'افتح المكتبة وأدر الأغاني المحفوظة',
     yourLibrary: 'مكتبتك',
     empty: 'لا توجد أغانٍ في المكتبة. احفظ هذه الأغنية لبدء مجموعتك.',
+    load: 'تحميل',
+    loadDescription: 'تحميل هذه الأغنية في المحرر',
     close: 'إغلاق',
   },
 

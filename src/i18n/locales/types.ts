@@ -219,6 +219,8 @@ export interface Translations {
     browseDescription: string;
     yourLibrary: string;
     empty: string;
+    load: string;
+    loadDescription: string;
     close: string;
   };
 

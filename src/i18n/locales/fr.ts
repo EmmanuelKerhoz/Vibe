@@ -206,6 +206,8 @@ const fr: Translations = {
     browseDescription: 'Ouvrir la bibliothèque et gérer les chansons enregistrées',
     yourLibrary: 'Votre bibliothèque',
     empty: 'Aucune chanson dans la bibliothèque. Enregistrez cette chanson pour commencer votre collection.',
+    load: 'Charger',
+    loadDescription: 'Charger cette chanson dans l’éditeur',
     close: 'Fermer',
   },
 
