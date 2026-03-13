@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Download, FileCode2, FileText, FileType2, X } from 'lucide-react';
+import { Download, FileBadge, FileBadge2, FileCode2, FileText, X } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { ExportFormat } from '../../../utils/exportUtils';
@@ -24,24 +24,36 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
       label: t.exportDialog.formats.txt,
       extension: '.txt',
       icon: FileText,
+      accent: '#38bdf8',
+      surface: 'rgba(56, 189, 248, 0.14)',
+      border: 'rgba(56, 189, 248, 0.28)',
     },
     {
       value: 'markup' as const,
       label: t.exportDialog.formats.markup,
       extension: '.md',
       icon: FileCode2,
+      accent: '#a855f7',
+      surface: 'rgba(168, 85, 247, 0.14)',
+      border: 'rgba(168, 85, 247, 0.28)',
     },
     {
       value: 'odt' as const,
       label: t.exportDialog.formats.odt,
       extension: '.odt',
-      icon: FileType2,
+      icon: FileBadge2,
+      accent: '#22c55e',
+      surface: 'rgba(34, 197, 94, 0.14)',
+      border: 'rgba(34, 197, 94, 0.28)',
     },
     {
       value: 'docx' as const,
       label: t.exportDialog.formats.docx,
       extension: '.docx',
-      icon: FileType2,
+      icon: FileBadge,
+      accent: '#2563eb',
+      surface: 'rgba(37, 99, 235, 0.14)',
+      border: 'rgba(37, 99, 235, 0.28)',
     },
   ]), [t]);
 
@@ -72,7 +84,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
           <button
             onClick={onClose}
             aria-label={t.exportDialog.cancel}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors"
+            className="ux-interactive p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg"
           >
             <X className="w-4 h-4" />
           </button>
@@ -91,23 +103,44 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
                   key={format.value}
                   type="button"
                   onClick={() => setSelectedFormat(format.value)}
-                  className={`text-left rounded-[16px_6px_16px_6px] border px-4 py-4 transition-all ${
-                    isSelected
-                      ? 'border-[var(--accent-color)] bg-[var(--accent-color)]/10 shadow-[0_0_0_1px_var(--accent-color)]'
-                      : 'border-[var(--border-color)] bg-[var(--bg-card)] hover:border-[var(--accent-color)]/40'
-                  }`}
+                  aria-pressed={isSelected}
+                  aria-label={`${format.label} ${format.extension}`}
+                  className="ux-interactive text-left rounded-[16px_6px_16px_6px] border px-4 py-4"
+                  style={isSelected
+                    ? {
+                        borderColor: format.accent,
+                        background: format.surface,
+                        boxShadow: `0 0 0 1px ${format.accent}, 0 12px 30px -24px ${format.accent}`,
+                      }
+                    : {
+                        borderColor: 'var(--border-color)',
+                        background: 'var(--bg-card)',
+                      }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-9 h-9 rounded-[12px_4px_12px_4px] border flex items-center justify-center ${
-                      isSelected
-                        ? 'border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 text-[var(--accent-color)]'
-                        : 'border-[var(--border-color)] text-[var(--text-secondary)]'
-                    }`}>
-                      <Icon className="w-4 h-4" />
+                    <div
+                      className="w-11 h-11 rounded-[12px_4px_12px_4px] border flex items-center justify-center shrink-0"
+                      style={{
+                        borderColor: isSelected ? format.border : 'var(--border-color)',
+                        background: isSelected ? format.surface : 'transparent',
+                        color: isSelected ? format.accent : 'var(--text-secondary)',
+                      }}
+                    >
+                      <Icon className="w-4.5 h-4.5" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-[var(--text-primary)]">{format.label}</p>
-                      <p className="text-xs text-[var(--text-secondary)] mt-1">{format.extension}</p>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
+                        <span
+                          className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] uppercase"
+                          style={{ background: format.surface, color: format.accent }}
+                        >
+                          {format.extension}
+                        </span>
+                        <span className="text-xs text-[var(--text-secondary)]">
+                          {format.value.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -117,7 +150,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
         </div>
 
         <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-end gap-3">
-          <Button onClick={onClose} variant="outlined" color="inherit">
+          <Button onClick={onClose} variant="outlined" color="inherit" className="ux-interactive">
             {t.exportDialog.cancel}
           </Button>
           <Button
@@ -127,6 +160,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
             }}
             variant="contained"
             color="primary"
+            className="ux-interactive"
           >
             {t.exportDialog.save}
           </Button>
