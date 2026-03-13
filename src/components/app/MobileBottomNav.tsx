@@ -6,8 +6,9 @@ interface Props {
   isLeftPanelOpen: boolean;
   isStructureOpen: boolean;
   activeTab: 'lyrics' | 'musical';
-  setIsLeftPanelOpen: (fn: (v: boolean) => boolean) => void;
-  setIsStructureOpen: (fn: (v: boolean) => boolean) => void;
+  /** Accept both direct boolean setter and functional updater */
+  setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
+  setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
 }
 
@@ -21,32 +22,50 @@ export function MobileBottomNav({
     <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
       <button
         className={`mobile-bottom-nav-btn ${isLeftPanelOpen ? 'active' : ''}`}
-        onClick={() => { setIsLeftPanelOpen(v => !v); setIsStructureOpen(() => false); }}
+        onClick={() => {
+          setIsLeftPanelOpen(v => !v);
+          setIsStructureOpen(false);
+        }}
         aria-label={t.mobileNav.settings}
+        aria-pressed={isLeftPanelOpen}
       >
         <Settings size={20} />
         <span>{t.mobileNav.settings}</span>
       </button>
       <button
         className={`mobile-bottom-nav-btn ${activeTab === 'lyrics' ? 'active' : ''}`}
-        onClick={() => setActiveTab('lyrics')}
+        onClick={() => {
+          setActiveTab('lyrics');
+          setIsLeftPanelOpen(false);
+          setIsStructureOpen(false);
+        }}
         aria-label={t.mobileNav.lyrics}
+        aria-pressed={activeTab === 'lyrics'}
       >
         <BookOpen size={20} />
         <span>{t.mobileNav.lyrics}</span>
       </button>
       <button
         className={`mobile-bottom-nav-btn ${activeTab === 'musical' ? 'active' : ''}`}
-        onClick={() => setActiveTab('musical')}
+        onClick={() => {
+          setActiveTab('musical');
+          setIsLeftPanelOpen(false);
+          setIsStructureOpen(false);
+        }}
         aria-label={t.mobileNav.music}
+        aria-pressed={activeTab === 'musical'}
       >
         <Music size={20} />
         <span>{t.mobileNav.music}</span>
       </button>
       <button
         className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
-        onClick={() => { setIsStructureOpen(v => !v); setIsLeftPanelOpen(() => false); }}
+        onClick={() => {
+          setIsStructureOpen(v => !v);
+          setIsLeftPanelOpen(false);
+        }}
         aria-label={t.mobileNav.structure}
+        aria-pressed={isStructureOpen}
       >
         <Menu size={20} />
         <span>{t.mobileNav.structure}</span>

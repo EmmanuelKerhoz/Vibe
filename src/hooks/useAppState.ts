@@ -37,8 +37,7 @@ export function useAppState() {
   const [isMarkupMode, setIsMarkupMode] = useState(false);
   const [markupText, setMarkupText] = useState('');
 
-  // FIX: was useState(true) → caused splash to open on every mount
-  // Now: open only on first ever launch, tracked via localStorage.
+  // Splash shown exactly once per browser profile
   const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -53,8 +52,8 @@ export function useAppState() {
   const [shouldAutoGenerateTitle, setShouldAutoGenerateTitle] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; onConfirm: () => void } | null>(null);
   const [promptModal, setPromptModal] = useState<{ open: boolean; onConfirm: (value: string) => void } | null>(null);
-  const [hasSavedSession, setHasSavedSession] = useState(false);
   const [isSessionHydrated, setIsSessionHydrated] = useState(false);
+  const [hasSavedSession, setHasSavedSession] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(true);
 
   const sectionDropdownRef = useRef<HTMLDivElement>(null);
@@ -67,8 +66,7 @@ export function useAppState() {
     else document.documentElement.classList.remove('dark');
   }, [theme]);
 
-  // FIX: splash shown exactly once per browser profile, immune to React 18 Strict Mode double-mount.
-  // A ref gate prevents the second mount (Strict Mode) from re-setting the flag.
+  // Splash guard: immune to React 18 Strict Mode double-mount via ref
   const splashCheckedRef = useRef(false);
   useEffect(() => {
     if (splashCheckedRef.current) return;
@@ -135,7 +133,8 @@ export function useAppState() {
     isResetModalOpen, setIsResetModalOpen,
     shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     confirmModal, setConfirmModal, promptModal, setPromptModal,
-    hasSavedSession, setHasSavedSession, isSessionHydrated, setIsSessionHydrated,
+    hasSavedSession, setHasSavedSession,
+    isSessionHydrated, setIsSessionHydrated,
     hasApiKey,
     sectionDropdownRef, importInputRef, markupTextareaRef,
   };

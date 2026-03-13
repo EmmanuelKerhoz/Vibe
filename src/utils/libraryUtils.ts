@@ -15,7 +15,7 @@ export type LibraryAsset = {
     year?: number;
     genre?: string;
     language?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 };
 
@@ -28,7 +28,7 @@ export type LibrarySearchResult = SimilarityMatch & {
 export const loadLibraryAssets = async (): Promise<LibraryAsset[]> => {
   try {
     const cached = localStorage.getItem('lyricist_library');
-    if (cached) return JSON.parse(cached);
+    if (cached) return JSON.parse(cached) as LibraryAsset[];
     return [];
   } catch (error) {
     console.error('Failed to load library assets:', error);
@@ -97,18 +97,15 @@ export const findSimilarAssetsInLibrary = async (
 
 /**
  * Extract plain text from a .docx file (Office Open XML).
- * Reads word/document.xml and strips all XML tags.
  */
 const extractTextFromDocx = async (file: File): Promise<string> => {
   try {
-    // Dynamic import of fflate (already in deps via exportUtils)
     const { unzipSync, strFromU8 } = await import('fflate');
     const buffer = await file.arrayBuffer();
     const unzipped = unzipSync(new Uint8Array(buffer));
     const docXml = unzipped['word/document.xml'];
     if (!docXml) return '';
     const xml = strFromU8(docXml);
-    // Extract text between <w:t> tags, add newlines between paragraphs
     const paragraphs = xml.split(/<\/w:p>/);
     return paragraphs
       .map(p => {
@@ -124,7 +121,6 @@ const extractTextFromDocx = async (file: File): Promise<string> => {
 
 /**
  * Extract plain text from a .odt file (ODF).
- * Reads content.xml and strips all XML tags.
  */
 const extractTextFromOdt = async (file: File): Promise<string> => {
   try {
@@ -134,7 +130,6 @@ const extractTextFromOdt = async (file: File): Promise<string> => {
     const contentXml = unzipped['content.xml'];
     if (!contentXml) return '';
     const xml = strFromU8(contentXml);
-    // Split on paragraph tags, strip all other XML
     const paragraphs = xml.split(/<\/text:p>/);
     return paragraphs
       .map(p => p.replace(/<[^>]+>/g, '').trim())
@@ -150,52 +145,51 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
   try {
     if (file.name.endsWith('.json')) {
       const text = await file.text();
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(text) as unknown[];
       if (Array.isArray(parsed)) {
-        return parsed.map((item, idx) => ({
-          id: item.id || `import_${Date.now()}_${idx}`,
-          title: item.title || `Imported ${idx + 1}`,
-          timestamp: item.timestamp || Date.now(),
-          type: item.type || 'lyrics',
-          sections: item.sections || [],
-          artist: item.artist,
-          metadata: item.metadata,
-        }));
+        return parsed.map((item, idx) => {
+          const it = item as Record<string, unknown>;
+          return {
+            id: (it['id'] as string) || `import_${Date.now()}_${idx}`,
+            title: (it['title'] as string) || `Imported ${idx + 1}`,
+            timestamp: (it['timestamp'] as number) || Date.now(),
+            type: (it['type'] as LibraryAsset['type']) || 'lyrics',
+            sections: (it['sections'] as Section[]) || [],
+            artist: it['artist'] as string | undefined,
+            metadata: it['metadata'] as LibraryAsset['metadata'],
+          };
+        });
       }
     } else if (file.name.endsWith('.docx')) {
       const text = await extractTextFromDocx(file);
       if (text) {
-        const sections = parseTextToSections(text);
         assets.push({
           id: `import_${Date.now()}`,
           title: file.name.replace(/\.docx$/, ''),
           timestamp: Date.now(),
           type: 'lyrics',
-          sections,
+          sections: parseTextToSections(text),
         });
       }
     } else if (file.name.endsWith('.odt')) {
       const text = await extractTextFromOdt(file);
       if (text) {
-        const sections = parseTextToSections(text);
         assets.push({
           id: `import_${Date.now()}`,
           title: file.name.replace(/\.odt$/, ''),
           timestamp: Date.now(),
           type: 'lyrics',
-          sections,
+          sections: parseTextToSections(text),
         });
       }
     } else {
-      // .txt / .md
       const text = await file.text();
-      const sections = parseTextToSections(text);
       assets.push({
         id: `import_${Date.now()}`,
         title: file.name.replace(/\.(txt|md)$/, ''),
         timestamp: Date.now(),
         type: 'lyrics',
-        sections,
+        sections: parseTextToSections(text),
       });
     }
   } catch (error) {
@@ -207,6 +201,9 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
 const parseTextToSections = (text: string): Section[] => {
   const blocks = text.split(/\n\s*\n/);
   const sections: Section[] = [];
+  // Use a counter instead of Date.now() to guarantee unique IDs within the same parse call
+  let uid = Date.now();
+
   blocks.forEach((block) => {
     const lines = block.trim().split('\n');
     if (lines.length === 0) return;
@@ -219,9 +216,9 @@ const parseTextToSections = (text: string): Section[] => {
     }
     const sectionLines = contentLines
       .filter(line => line.trim().length > 0)
-      .map((text, idx) => ({
-        id: `line_${Date.now()}_${idx}`,
-        text,
+      .map((lineText, idx) => ({
+        id: `line_${uid++}_${idx}`,
+        text: lineText,
         rhymingSyllables: '',
         rhyme: '',
         syllables: 0,
@@ -230,7 +227,7 @@ const parseTextToSections = (text: string): Section[] => {
       }));
     if (sectionLines.length > 0) {
       sections.push({
-        id: `section_${Date.now()}_${sections.length}`,
+        id: `section_${uid++}_${sections.length}`,
         name: sectionName,
         rhymeScheme: 'AABB',
         targetSyllables: 8,

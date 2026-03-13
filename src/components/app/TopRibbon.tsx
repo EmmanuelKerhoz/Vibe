@@ -46,10 +46,10 @@ export function TopRibbon({
   const { t } = useTranslation();
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
+  const isBusy = isGenerating || isAnalyzing;
   const [isOverflowOpen, setIsOverflowOpen] = useState(false);
   const overflowRef = useRef<HTMLDivElement>(null);
 
-  // Close overflow menu when clicking outside
   useEffect(() => {
     if (!isOverflowOpen) return;
     const handleOutside = (e: MouseEvent) => {
@@ -65,11 +65,11 @@ export function TopRibbon({
     <div className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0">
       {/* Left: sidebar toggle + tab switcher */}
       <div className="flex items-center gap-3 lg:gap-6 pl-1 lg:pl-3">
-        <Tooltip title={isLeftPanelOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}>
+        <Tooltip title={isLeftPanelOpen ? t.tooltips.collapseLeft : t.tooltips.showSidebar}>
           <button
             onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
             className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all duration-200"
-            aria-label={isLeftPanelOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}
+            aria-label={isLeftPanelOpen ? t.tooltips.collapseLeft : t.tooltips.showSidebar}
           >
             <PanelLeft className="w-5 h-5" />
           </button>
@@ -165,8 +165,11 @@ export function TopRibbon({
           )}
         </div>
 
-        {/* Mobile-only: compact undo/redo + overflow menu */}
+        {/* Mobile-only: compact undo/redo + busy indicator + overflow menu */}
         <div className="flex lg:hidden items-center gap-1">
+          {isBusy && (
+            <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-hidden="true" />
+          )}
           {!hasApiKey && (
             <button onClick={handleApiKeyHelp} className="min-w-[44px] min-h-[44px] flex items-center justify-center px-2 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg hover:bg-amber-500/20 transition-all">
               <Sparkles className="w-4 h-4" />
@@ -200,6 +203,7 @@ export function TopRibbon({
             <button
               onClick={() => setIsOverflowOpen(v => !v)}
               aria-label="More actions"
+              aria-expanded={isOverflowOpen}
               className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all"
             >
               <MoreHorizontal className="w-5 h-5" />
@@ -251,10 +255,10 @@ export function TopRibbon({
           </div>
         </div>
 
-        <Tooltip title={isStructureOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}>
+        <Tooltip title={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}>
           <button
             onClick={() => setIsStructureOpen(!isStructureOpen)}
-            aria-label={isStructureOpen ? t.tooltips.hideSidebar : t.tooltips.showSidebar}
+            aria-label={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}
             className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-colors"
           >
             <PanelRight className="w-5 h-5" />

@@ -67,9 +67,10 @@ export function InsightsBar({
   const adaptLangLabel = adaptationLanguageLabel;
   const targetLanguageDisplay = formatLanguageDisplay(targetLanguage);
   const detectedLanguageDisplay = songLanguage ? formatLanguageDisplay(songLanguage) : '🌐 Detect';
+
   return (
-    <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10">
-      <div className="lyrics-editor-zoom flex flex-col gap-2 lg:gap-4">
+    <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10 overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-none">
+      <div className="lyrics-editor-zoom flex flex-col gap-2 lg:gap-4 min-w-max lg:min-w-0">
         {/* Row 1: Language tools + KPIs */}
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 lg:gap-4 flex-wrap">
@@ -131,7 +132,6 @@ export function InsightsBar({
             })}
           </div>
           <div className="flex items-center gap-1.5 lg:gap-2 ml-2 flex-shrink-0">
-            {/* Metronome button (B4) — shown when toggle is provided */}
             {toggleMetronome && (
               <Tooltip title={t.musical?.metronome ?? 'Metronome'}>
                 <button
