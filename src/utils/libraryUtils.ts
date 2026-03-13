@@ -74,7 +74,7 @@ export const loadAssetIntoEditor = (asset: LibraryAsset): LoadedLibraryAssetStat
     rhymeScheme: firstSection?.rhymeScheme || 'AABB',
     targetSyllables: firstSection?.targetSyllables || 10,
     genre: typeof metadata?.genre === 'string' ? metadata.genre : '',
-    tempo: typeof metadata?.tempo === 'number' || typeof metadata?.tempo === 'string' ? String(metadata.tempo) : '120',
+    tempo: (typeof metadata?.tempo === 'number' || typeof metadata?.tempo === 'string') ? String(metadata.tempo) : '120',
     instrumentation: typeof metadata?.instrumentation === 'string' ? metadata.instrumentation : '',
     rhythm: typeof metadata?.rhythm === 'string' ? metadata.rhythm : '',
     narrative: typeof metadata?.narrative === 'string' ? metadata.narrative : '',
