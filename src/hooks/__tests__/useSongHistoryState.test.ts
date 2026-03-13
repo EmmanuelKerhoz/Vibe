@@ -159,6 +159,7 @@ describe('useSongHistoryState', () => {
     expect(result.current.song[0]?.name).toBe('Intro');
     expect(result.current.song[0]?.lines[0]?.id).toBeTruthy();
     expect(result.current.song[0]?.lines[0]?.isMeta).toBe(false);
+    expect(result.current.song[0]?.lines[0]?.concept).toBe('intro');
     expect(result.current.song[0]?.lines[1]?.isMeta).toBe(true);
     expect(result.current.song[0]?.lines[1]?.concept).toBe('');
   });
