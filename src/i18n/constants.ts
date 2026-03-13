@@ -50,6 +50,7 @@ export const SUPPORTED_UI_LOCALES: readonly UiLocaleInfo[] = [
   { code: 'pt', label: 'Português',  flag: '🇵🇹', dir: 'ltr' },
   { code: 'ar', label: 'العربية',    flag: '🇸🇦', dir: 'rtl' },
   { code: 'zh', label: '中文',        flag: '🇨🇳', dir: 'ltr' },
+  { code: 'ko', label: '한국어',      flag: '🇰🇷', dir: 'ltr' },
 ] as const;
 
 export type SupportedUiLocaleCode = typeof SUPPORTED_UI_LOCALES[number]['code'];
@@ -66,6 +67,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'CB', aiName: 'Calabari', sign: '🪘', region: 'Niger Delta - Nigeria', isEthnical: true },
   { code: 'ZH', aiName: 'Chinese', sign: '🇨🇳', region: 'Mandarin' },
   { code: 'DI', aiName: 'Dioula', sign: '🪘', region: 'Ivory Coast/Burkina Faso - West Africa', isEthnical: true },
+  { code: 'EW', aiName: 'Ewe', sign: '🪘', region: 'Togo - Volta Region', isEthnical: true },
   { code: 'EN', aiName: 'English', sign: '🇬🇧' },
   { code: 'FR', aiName: 'French', sign: '🇫🇷' },
   { code: 'DE', aiName: 'German', sign: '🇩🇪' },
@@ -99,16 +101,29 @@ type LanguageDisplay = {
 /** Normalize language codes and labels for case-insensitive display lookup. */
 const normalizeLanguageKey = (value: string) => value.trim().toLowerCase();
 
-const LANGUAGE_DISPLAY_INDEX = new Map<string, LanguageDisplay>([
-  ...SUPPORTED_UI_LOCALES.flatMap((locale) => [
+const LANGUAGE_DISPLAY_INDEX = new Map<string, LanguageDisplay>(
+  SUPPORTED_UI_LOCALES.flatMap((locale) => [
     [normalizeLanguageKey(locale.code), { label: locale.label, sign: locale.flag }],
     [normalizeLanguageKey(locale.label), { label: locale.label, sign: locale.flag }],
   ] as const),
-  ...SUPPORTED_ADAPTATION_LANGUAGES.flatMap((lang) => [
-    [normalizeLanguageKey(lang.code), { label: lang.aiName, sign: lang.sign, region: lang.region, isEthnical: lang.isEthnical }],
-    [normalizeLanguageKey(lang.aiName), { label: lang.aiName, sign: lang.sign, region: lang.region, isEthnical: lang.isEthnical }],
-  ] as const),
-]);
+);
+
+for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
+  const adaptationDisplay = {
+    label: lang.aiName,
+    sign: lang.sign,
+    region: lang.region,
+    isEthnical: lang.isEthnical,
+  };
+  const normalizedCode = normalizeLanguageKey(lang.code);
+  // UI locale codes and adaptation codes can overlap (for example `ko` vs `KO`).
+  // Preserve the UI-locale display entry for code-based lookups, while still
+  // indexing the adaptation language by its human-readable name.
+  if (!LANGUAGE_DISPLAY_INDEX.has(normalizedCode)) {
+    LANGUAGE_DISPLAY_INDEX.set(normalizedCode, adaptationDisplay);
+  }
+  LANGUAGE_DISPLAY_INDEX.set(normalizeLanguageKey(lang.aiName), adaptationDisplay);
+}
 
 export function getLanguageDisplay(value: string): LanguageDisplay {
   const fallbackLabel = value.trim() || 'Unknown';

@@ -4,7 +4,7 @@ import { LanguageProvider } from '../../../i18n';
 import { SaveToLibraryModal } from './SaveToLibraryModal';
 
 describe('SaveToLibraryModal', () => {
-  it('renders load actions for library songs and forwards the asset payload', () => {
+  it('renders load actions for library songs even when there is no current song', () => {
     const onLoadAsset = vi.fn();
     const asset = {
       id: 'asset-1',
@@ -24,6 +24,7 @@ describe('SaveToLibraryModal', () => {
           isSaving={false}
           currentTitle="Current Song"
           libraryAssets={[asset]}
+          hasCurrentSong={false}
         />
       </LanguageProvider>,
     );
@@ -31,6 +32,7 @@ describe('SaveToLibraryModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Load: Saved Song' }));
 
     expect(onLoadAsset).toHaveBeenCalledWith(asset);
+    expect(screen.queryByRole('button', { name: 'Save Current Song' })).toBeNull();
   });
 
   it('renders delete actions for library songs and forwards the asset id', () => {

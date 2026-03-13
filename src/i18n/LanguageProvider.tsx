@@ -7,12 +7,13 @@ import de from './locales/de';
 import pt from './locales/pt';
 import ar from './locales/ar';
 import zh from './locales/zh';
+import ko from './locales/ko';
 import { SUPPORTED_UI_LOCALES } from './constants';
 
 // Re-export legacy alias so existing consumers don't break
 export { SUPPORTED_UI_LOCALES as SUPPORTED_LANGUAGES } from './constants';
 
-const locales: Record<string, Translations> = { en, fr, es, de, pt, ar, zh };
+const locales: Record<string, Translations> = { en, fr, es, de, pt, ar, zh, ko };
 
 // ---------------------------------------------------------------------------
 // Missing-key safety: deep-merge any locale over the English base so that

@@ -46,7 +46,7 @@ export function LeftSettingsPanel({
 
   // NOTE: backdrop removed — App.tsx owns the single shared mobile backdrop.
   return (
-    <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel !rounded-none
+    <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel !rounded-none
       fixed inset-y-0 left-0 z-50 w-80
       lg:relative lg:z-10 lg:flex-shrink-0
       transition-all duration-300 ease-in-out

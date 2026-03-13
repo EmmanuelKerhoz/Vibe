@@ -59,7 +59,7 @@ export function StructureSidebar({
           animate={{ width: 280, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className={`border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl overflow-hidden lcars-panel !rounded-none${className ? ` ${className}` : ''}`}
+          className={`border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl overflow-hidden lcars-panel fluent-animate-panel !rounded-none${className ? ` ${className}` : ''}`}
         >
           <div className="w-[280px] flex flex-col h-full">
             <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">

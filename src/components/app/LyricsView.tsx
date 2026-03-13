@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react';
-import { Layout, Music, Play } from 'lucide-react';
+import { ClipboardPaste, Layout, Library, Music, Sparkles } from 'lucide-react';
 import { Section } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
 import { MarkupInput } from '../editor/MarkupInput';
+import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
 
@@ -40,6 +41,9 @@ interface LyricsViewProps {
   markupText: string;
   setMarkupText: (v: string) => void;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  onOpenLibrary: () => void;
+  onPasteLyrics: () => void;
+  onGenerateSong: () => void;
 }
 
 export function LyricsView({
@@ -53,6 +57,7 @@ export function LyricsView({
   setDraggedLineInfo, setDragOverLineInfo,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
   isMarkupMode, setIsMarkupMode, markupText, setMarkupText, markupTextareaRef,
+  onOpenLibrary, onPasteLyrics, onGenerateSong,
 }: LyricsViewProps) {
   const { t } = useTranslation();
 
@@ -186,10 +191,17 @@ export function LyricsView({
           <p className="text-xs text-[var(--text-secondary)] max-w-xs mb-2 leading-relaxed">
             {t.editor.emptyState.description}
           </p>
-          <p className="text-[10px] text-[var(--text-secondary)]/60 flex items-center gap-1.5 tracking-wider uppercase">
-            <Play className="w-3 h-3 fill-current" aria-hidden="true" />
-            {t.editor.emptyState.generateSong}
-          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <Button onClick={onOpenLibrary} aria-label={t.saveToLibrary.browseDescription} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+              {t.saveToLibrary.title}
+            </Button>
+            <Button onClick={onPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+              {t.editor.emptyState.pasteLyrics}
+            </Button>
+            <Button onClick={onGenerateSong} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+              {t.editor.emptyState.generateSong}
+            </Button>
+          </div>
         </div>
       ) : (
         song.map((section, sectionIndex) => (

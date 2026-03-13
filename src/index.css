@@ -81,6 +81,10 @@
   --status-bar-bg:     rgba(243, 242, 241, 0.9);
   --layer1-blur:       blur(16px);
   --layer2-blur:       blur(8px);
+  --motion-duration-fast: 180ms;
+  --motion-duration-normal: 320ms;
+  --motion-duration-slow: 480ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   --font-sans:         "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono:         "Cascadia Mono", "Consolas", monospace;
   background-image: none;
@@ -305,11 +309,32 @@ html, body, #root {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+@keyframes fluentPanelFloatIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .ui-fluent .fluent-animate-in {
-  animation: fluentSlideIn 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+  animation: fluentSlideIn var(--motion-duration-normal) var(--motion-ease-standard) both;
 }
 .ui-fluent .fluent-fade-in {
-  animation: fluentFadeIn 0.35s ease both;
+  animation: fluentFadeIn var(--motion-duration-normal) ease both;
+}
+.ui-fluent .fluent-animate-panel {
+  animation: fluentPanelFloatIn var(--motion-duration-normal) var(--motion-ease-standard) both;
+}
+.ui-fluent .fluent-animate-pressable {
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) ease,
+    border-color var(--motion-duration-fast) ease,
+    background-color var(--motion-duration-fast) ease,
+    opacity var(--motion-duration-fast) ease;
+}
+.ui-fluent .fluent-animate-pressable:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.ui-fluent .fluent-animate-pressable:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
 }
 .ui-fluent .fluent-stagger-1 { animation-delay: 0.04s; }
 .ui-fluent .fluent-stagger-2 { animation-delay: 0.08s; }
@@ -325,13 +350,17 @@ html, body, #root {
     transition-duration: 0.01ms !important;
   }
   .ui-fluent .fluent-animate-in,
-  .ui-fluent .fluent-fade-in { animation: none; opacity: 1; transform: none; }
+  .ui-fluent .fluent-fade-in,
+  .ui-fluent .fluent-animate-panel { animation: none; opacity: 1; transform: none; }
+  .ui-fluent .fluent-animate-pressable,
+  .ui-fluent .fluent-animate-pressable:hover:not(:disabled),
+  .ui-fluent .fluent-animate-pressable:active:not(:disabled) { transform: none; }
 }
 
 .ui-fluent .fluent-card {
   border-radius: var(--fluent-radius);
   box-shadow: var(--fluent-shadow);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow var(--motion-duration-fast) ease, transform var(--motion-duration-fast) ease;
   background-color: var(--bg-card);
   backdrop-filter: var(--layer2-blur);
   border: 1px solid var(--border-color);
@@ -353,7 +382,7 @@ html, body, #root {
   border-radius: 4px;
   border: 1px solid var(--border-color);
   background-color: var(--input-bg);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--motion-duration-fast) ease, box-shadow var(--motion-duration-fast) ease;
   backdrop-filter: var(--layer2-blur);
   color: var(--text-primary);
 }
