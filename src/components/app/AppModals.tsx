@@ -129,7 +129,7 @@ export function AppModals({
       <ApiErrorModal isOpen={apiErrorModal.open} onClose={() => setApiErrorModal({ open: false, message: '' })} message={apiErrorModal.message} />
       {confirmModal && <ConfirmModal isOpen={confirmModal.open} title="Regenerate Song" message={t.editor.regenerateWarning} confirmLabel="Regenerate" cancelLabel="Cancel" onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal(null)} />}
       {promptModal && <PromptModal isOpen={promptModal.open} title="Save Version" message="Enter a name for this version:" placeholder="Version name" confirmLabel="Save" cancelLabel="Cancel" onConfirm={promptModal.onConfirm} onCancel={() => setPromptModal(null)} />}
-      <input ref={importInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportInputChange} />
+      <input ref={importInputRef} type="file" accept=".txt,.md,.json,.docx,.odt" className="hidden" onChange={handleImportInputChange} />
     </>
   );
 }
