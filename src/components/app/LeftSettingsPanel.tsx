@@ -29,7 +29,7 @@ interface Props {
   setIsLeftPanelOpen: (v: boolean | ((v: boolean) => boolean)) => void;
   onSurprise: () => void;
   isSurprising: boolean;
-  /** Extra class applied to the outer wrapper (e.g. mobile overlay). */
+  /** Extra class applied to the panel root (e.g. mobile overlay). */
   className?: string;
 }
 
@@ -44,18 +44,17 @@ export function LeftSettingsPanel({
 }: Props) {
   const { t } = useTranslation();
 
+  // NOTE: backdrop removed — App.tsx owns the single shared mobile backdrop.
   return (
-    <>
-      {/* Mobile backdrop — owned by App, not duplicated here */}
-      <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel !rounded-none
-        fixed inset-y-0 left-0 z-50 w-80
-        lg:relative lg:z-10 lg:flex-shrink-0
-        transition-all duration-300 ease-in-out
-        ${isLeftPanelOpen
-          ? 'translate-x-0 lg:w-80'
-          : '-translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-r-0'
-        }${className ? ` ${className}` : ''}`}
-      >
+    <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel !rounded-none
+      fixed inset-y-0 left-0 z-50 w-80
+      lg:relative lg:z-10 lg:flex-shrink-0
+      transition-all duration-300 ease-in-out
+      ${isLeftPanelOpen
+        ? 'translate-x-0 lg:w-80'
+        : '-translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-r-0'
+      }${className ? ` ${className}` : ''}`}
+    >
       <div className="w-80 flex flex-col h-full">
         <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -67,13 +66,11 @@ export function LeftSettingsPanel({
         </div>
 
         <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
-          {/* Song Info section */}
           <div className="flex items-center gap-2 mb-1">
             <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-amber,#f59e0b)] opacity-80" />
             <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Song Info</span>
           </div>
           <div className="space-y-4">
-            {/* Title */}
             <div>
               <Label>
                 <div className="flex items-center gap-2">
@@ -103,7 +100,6 @@ export function LeftSettingsPanel({
               </div>
             </div>
 
-            {/* Topic + Mood with shared Surprise Me button */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Topic &amp; Mood</span>
@@ -150,7 +146,6 @@ export function LeftSettingsPanel({
 
           <div className="h-px bg-white/5 mx-1" />
 
-          {/* Composition section */}
           <div className="flex items-center gap-2 mb-1">
             <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-cyan,#06b6d4)] opacity-80" />
             <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Composition</span>
@@ -213,6 +208,5 @@ export function LeftSettingsPanel({
         </div>
       </div>
     </div>
-    </>
   );
 }

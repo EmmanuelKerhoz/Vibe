@@ -28,6 +28,8 @@ interface Props {
   normalizeStructure: () => void;
   handleDrop: (idx: number) => void;
   onScrollToSection: (sectionId: string) => void;
+  /** Extra class applied to the motion panel root (e.g. mobile overlay). */
+  className?: string;
 }
 
 export function StructureSidebar({
@@ -38,6 +40,7 @@ export function StructureSidebar({
   dragOverIndex, setDragOverIndex,
   isGenerating, addStructureItem, removeStructureItem,
   normalizeStructure, handleDrop, onScrollToSection,
+  className,
 }: Props) {
   const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,23 +50,17 @@ export function StructureSidebar({
     t.sections.chorus, t.sections.bridge, t.sections.breakdown, t.sections.finalChorus, t.sections.outro,
   ];
 
+  // NOTE: backdrop removed — App.tsx owns the single shared mobile backdrop.
   return (
     <AnimatePresence>
       {isStructureOpen && (
-        <>
-          {/* Mobile backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
-            onClick={() => setIsStructureOpen(false)}
-            aria-hidden="true"
-          />
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl overflow-hidden lcars-panel !rounded-none structure-sidebar-mobile-overlay"
-          >
+        <motion.div
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: 280, opacity: 1 }}
+          exit={{ width: 0, opacity: 0 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          className={`border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl overflow-hidden lcars-panel !rounded-none${className ? ` ${className}` : ''}`}
+        >
           <div className="w-[280px] flex flex-col h-full">
             <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">
               <h3 className="micro-label text-zinc-400 flex items-center gap-2">
@@ -80,7 +77,6 @@ export function StructureSidebar({
                       const isIntro = item.toLowerCase() === 'intro';
                       const isOutro = item.toLowerCase() === 'outro';
                       const isDraggable = !isIntro && !isOutro;
-                      // Find matching section id for scroll target
                       const sectionId = song[idx]?.id ?? null;
                       return (
                         <div
@@ -105,7 +101,6 @@ export function StructureSidebar({
                           ) : (
                             <div className="w-3.5" />
                           )}
-                          {/* Clickable label scrolls to section */}
                           <button
                             type="button"
                             className={`flex-1 text-left truncate transition-colors ${getSectionTextColor(item)} hover:text-[var(--accent-color)]`}
@@ -199,7 +194,6 @@ export function StructureSidebar({
             </div>
           </div>
         </motion.div>
-        </>
       )}
     </AnimatePresence>
   );
