@@ -199,148 +199,149 @@ export const SectionEditor = React.memo(function SectionEditor({
           </div>
 
           {(() => {
-            // Pre-compute lyric-only indices so meta lines don't skew the scheme position.
             const lyricLineIndexMap = new Map<string, number>();
             let lyricIdx = 0;
             for (const l of section.lines) {
               if (!l.isMeta) lyricLineIndexMap.set(l.id, lyricIdx++);
             }
             return section.lines.map((line, index) => {
-            const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
-            const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
+              const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
+              const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
 
-            // ── META LINE rendering ─────────────────────────────────────
-            if (line.isMeta) {
+              // ── META LINE ────────────────────────────────────────────────
+              // The lyric-row grid has 9 columns:
+              // [drag] [ai/human] [up/down] [num] [lyric] [syl] [count] [schema] [delete]
+              // Meta occupies: 3 spacers + num + content(col-span-4) + delete
+              if (line.isMeta) {
+                return (
+                  <div
+                    key={line.id}
+                    className={`group lyric-row border-l-2 border-cyan-500/50 bg-cyan-500/5 transition-colors ${isDraggedLine ? 'opacity-50' : ''}`}
+                    style={{ paddingLeft: '12px', paddingRight: '12px' }}
+                  >
+                    {/* slots 1-3: spacers */}
+                    <div />
+                    <div />
+                    <div />
+                    {/* slot 4: line number badge */}
+                    <button
+                      type="button"
+                      onClick={() => handleLineClick(line.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-sm border border-cyan-500/20 bg-cyan-500/10 text-[11px] font-semibold text-cyan-500"
+                    >
+                      {index + 1}
+                    </button>
+                    {/* slots 5-8: meta content spanning 4 columns */}
+                    <div style={{ gridColumn: 'span 4', display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                      <MetaLine text={line.text} />
+                    </div>
+                    {/* slot 9: delete */}
+                    <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
+                      <button
+                        type="button"
+                        onClick={() => deleteLineFromSection(section.id, line.id)}
+                        className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </Tooltip>
+                  </div>
+                );
+              }
+
+              // ── NORMAL LINE ──────────────────────────────────────────────
               return (
                 <div
                   key={line.id}
-                  className={`group lyric-row border-l-2 border-cyan-500/50 bg-cyan-500/5 transition-colors ${isDraggedLine ? 'opacity-50' : ''}`}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (!draggedLineInfo || isDraggedLine) return; setDragOverLineInfo({ sectionId: section.id, lineId: line.id }); }}
+                  onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (isLineDropTarget) setDragOverLineInfo(null); }}
+                  onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleLineDrop(section.id, line.id); }}
+                  className={`group lyric-row transition-colors ${
+                    selectedLineId === line.id
+                      ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
+                      : 'hover:bg-white/[0.025]'
+                  } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
                   style={{ paddingLeft: '12px', paddingRight: '12px' }}
                 >
-                  <div />
-                  <div />
-                  <div />
-                  <button
-                    type="button"
-                    onClick={() => handleLineClick(line.id)}
-                    className="flex h-8 w-8 items-center justify-center rounded-sm border border-cyan-500/20 bg-cyan-500/10 text-[11px] font-semibold text-cyan-500"
-                  >
+                  {isSectionDraggable ? (
+                    <Tooltip title={t.editor.dragToReorderLine ?? 'Drag to reorder line'}>
+                      <div
+                        draggable
+                        onDragStart={() => handleLineDragStart(section.id, line.id)}
+                        onDragEnd={() => { setDraggedLineInfo(null); setDragOverLineInfo(null); }}
+                        className="flex h-8 w-5 items-center justify-center text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-zinc-300"
+                      >
+                        <GripVertical className="h-3.5 w-3.5" />
+                      </div>
+                    </Tooltip>
+                  ) : <div />}
+
+                  <Tooltip title={line.isManual ? (t.editor.humanLine ?? 'Human') : (t.editor.aiLine ?? 'AI')}>
+                    <span className="flex items-center justify-center w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity">
+                      {line.isManual
+                        ? <User className="h-3.5 w-3.5 text-emerald-400" />
+                        : <Bot className="h-3.5 w-3.5 text-[var(--accent-color)]" />}
+                    </span>
+                  </Tooltip>
+
+                  <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Tooltip title={t.editor.moveLineUp ?? 'Move line up'}>
+                      <button type="button" onClick={() => moveLineUp(section.id, line.id)} disabled={index === 0} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                        <ChevronUp className="h-2.5 w-2.5" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip title={t.editor.moveLineDown ?? 'Move line down'}>
+                      <button type="button" onClick={() => moveLineDown(section.id, line.id)} disabled={index === section.lines.length - 1} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                        <ChevronDown className="h-2.5 w-2.5" />
+                      </button>
+                    </Tooltip>
+                  </div>
+
+                  <button type="button" onClick={() => handleLineClick(line.id)} className="flex h-8 w-8 items-center justify-center rounded-sm border border-black/10 bg-white/70 text-[11px] font-semibold text-zinc-500 transition group-hover:text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-zinc-200">
                     {index + 1}
                   </button>
-                  <div className="col-span-5 flex items-center">
-                    <MetaLine text={line.text} />
-                  </div>
+
+                  <LyricInput
+                    value={line.text}
+                    onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
+                    onKeyDown={(e) => handleLineKeyDown(e, section.id, line.id)}
+                    onClick={() => handleLineClick(line.id)}
+                    data-line-id={line.id}
+                    placeholder={`${section.name} line ${index + 1}`}
+                    className="text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                    style={{ width: '100%', minWidth: 0 }}
+                  />
+
+                  <span className="lyric-col-aux" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
+                    {line.rhymingSyllables || '\u00a0'}
+                  </span>
+                  <span className="lyric-col-aux" style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                    {line.syllables > 0 ? line.syllables : ''}
+                  </span>
+
+                  <span className="lyric-col-aux" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {(() => {
+                      const lyricIndex = lyricLineIndexMap.get(line.id) ?? 0;
+                      const effectiveScheme = section.rhymeScheme || rhymeScheme;
+                      if (effectiveScheme.toUpperCase() === 'FREE') {
+                        return <span className="text-[10px] text-zinc-600 dark:text-zinc-700 select-none" aria-label="Free verse">—</span>;
+                      }
+                      const letter = getSchemeLetterForLine(effectiveScheme, lyricIndex);
+                      return letter ? (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(letter)}`}>{letter}</span>
+                      ) : null;
+                    })()}
+                  </span>
+
                   <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
-                    <button
-                      type="button"
-                      onClick={() => deleteLineFromSection(section.id, line.id)}
-                      className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300"
-                    >
+                    <button type="button" onClick={() => deleteLineFromSection(section.id, line.id)} className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300">
                       <Trash2 className="h-3 w-3" />
                     </button>
                   </Tooltip>
                 </div>
               );
-            }
-
-            // ── NORMAL LINE rendering ────────────────────────────────────
-            return (
-              <div
-                key={line.id}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (!draggedLineInfo || isDraggedLine) return; setDragOverLineInfo({ sectionId: section.id, lineId: line.id }); }}
-                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (isLineDropTarget) setDragOverLineInfo(null); }}
-                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleLineDrop(section.id, line.id); }}
-                className={`group lyric-row transition-colors ${
-                  selectedLineId === line.id
-                    ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
-                    : 'hover:bg-white/[0.025]'
-                } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
-                style={{ paddingLeft: '12px', paddingRight: '12px' }}
-              >
-                {isSectionDraggable ? (
-                  <Tooltip title={t.editor.dragToReorderLine ?? 'Drag to reorder line'}>
-                    <div
-                      draggable
-                      onDragStart={() => handleLineDragStart(section.id, line.id)}
-                      onDragEnd={() => { setDraggedLineInfo(null); setDragOverLineInfo(null); }}
-                      className="flex h-8 w-5 items-center justify-center text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-zinc-300"
-                    >
-                      <GripVertical className="h-3.5 w-3.5" />
-                    </div>
-                  </Tooltip>
-                ) : <div />}
-
-                <Tooltip title={line.isManual ? (t.editor.humanLine ?? 'Human') : (t.editor.aiLine ?? 'AI')}>
-                  <span className="flex items-center justify-center w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                    {line.isManual
-                      ? <User className="h-3.5 w-3.5 text-emerald-400" />
-                      : <Bot className="h-3.5 w-3.5 text-[var(--accent-color)]" />}
-                  </span>
-                </Tooltip>
-
-                <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Tooltip title={t.editor.moveLineUp ?? 'Move line up'}>
-                    <button type="button" onClick={() => moveLineUp(section.id, line.id)} disabled={index === 0} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
-                      <ChevronUp className="h-2.5 w-2.5" />
-                    </button>
-                  </Tooltip>
-                  <Tooltip title={t.editor.moveLineDown ?? 'Move line down'}>
-                    <button type="button" onClick={() => moveLineDown(section.id, line.id)} disabled={index === section.lines.length - 1} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
-                      <ChevronDown className="h-2.5 w-2.5" />
-                    </button>
-                  </Tooltip>
-                </div>
-
-                <button type="button" onClick={() => handleLineClick(line.id)} className="flex h-8 w-8 items-center justify-center rounded-sm border border-black/10 bg-white/70 text-[11px] font-semibold text-zinc-500 transition group-hover:text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-zinc-200">
-                  {index + 1}
-                </button>
-
-                <LyricInput
-                  value={line.text}
-                  onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
-                  onKeyDown={(e) => handleLineKeyDown(e, section.id, line.id)}
-                  onClick={() => handleLineClick(line.id)}
-                  data-line-id={line.id}
-                  placeholder={`${section.name} line ${index + 1}`}
-                  className="text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
-                  style={{ width: '100%', minWidth: 0 }}
-                />
-
-                <span className="lyric-col-aux" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
-                  {line.rhymingSyllables || '\u00a0'}
-                </span>
-                <span className="lyric-col-aux" style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                  {line.syllables > 0 ? line.syllables : ''}
-                </span>
-
-                {/* Schema column: letter badge for known schemes, dash for FREE */}
-                <span className="lyric-col-aux" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  {(() => {
-                    const lyricIndex = lyricLineIndexMap.get(line.id) ?? 0;
-                    const effectiveScheme = section.rhymeScheme || rhymeScheme;
-                    if (effectiveScheme.toUpperCase() === 'FREE') {
-                      return (
-                        <span className="text-[10px] text-zinc-600 dark:text-zinc-700 select-none" aria-label="Free verse">—</span>
-                      );
-                    }
-                    const letter = getSchemeLetterForLine(effectiveScheme, lyricIndex);
-                    return letter ? (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(letter)}`}>
-                        {letter}
-                      </span>
-                    ) : null;
-                  })()}
-                </span>
-
-                <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
-                  <button type="button" onClick={() => deleteLineFromSection(section.id, line.id)} className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300">
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </Tooltip>
-              </div>
-            );
-          });
+            });
           })()}
         </div>
 

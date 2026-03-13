@@ -10,15 +10,9 @@ interface MarkupInputProps {
   spellCheck?: boolean;
 }
 
-/**
- * Markup mode editor with a syntax-highlight preview overlay for meta-instructions.
- * Architecture: invisible textarea (input) + read-only div mirror (highlight layer).
- * The mirror is pixel-aligned on top; the textarea sits in front for input.
- */
 export function MarkupInput({ value, onChange, textareaRef, className = '', spellCheck = false }: MarkupInputProps) {
   const mirrorRef = useRef<HTMLDivElement>(null);
 
-  // Sync scroll position of mirror to textarea
   const syncScroll = () => {
     if (textareaRef.current && mirrorRef.current) {
       mirrorRef.current.scrollTop = textareaRef.current.scrollTop;
@@ -33,10 +27,6 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
     return () => ta.removeEventListener('scroll', syncScroll);
   }, [textareaRef]);
 
-  /**
-   * Converts raw markup text into highlighted HTML for the mirror layer.
-   * Section headers get their characteristic color; meta tokens get cyan styling.
-   */
   const buildHighlightedHtml = (text: string): string => {
     return text
       .split('\n')
@@ -45,17 +35,14 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
-        // Check if this is a section header line (e.g. [Verse 1], [Chorus])
         const headerMatch = line.trim().match(/^\[(.+)\]$/);
         if (headerMatch && headerMatch[1] && isSectionHeader(headerMatch[1])) {
           const color = getSectionColorHex(headerMatch[1]);
           return `<span class="markup-section-header" style="color:${color}">${escaped}</span>`;
         }
         if (isPureMetaLine(line)) {
-          // Entire line is a meta instruction
           return `<span class="markup-meta-line">${escaped}</span>`;
         }
-        // Inline meta tokens within a normal line
         const parts = tokenizeMetaInline(line);
         if (parts.some(p => p.isMeta)) {
           return parts
@@ -74,7 +61,6 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
 
   return (
     <div className="relative flex-1 min-h-0 overflow-hidden">
-      {/* Highlight mirror — read-only, sits behind the textarea */}
       <div
         ref={mirrorRef}
         aria-hidden="true"
@@ -82,7 +68,6 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
         style={{ caretColor: 'transparent', userSelect: 'none', padding: '1.5rem' }}
         dangerouslySetInnerHTML={{ __html: highlightedHtml + '\n' }}
       />
-      {/* Actual textarea — transparent background so mirror shows through */}
       <textarea
         ref={textareaRef as React.RefObject<HTMLTextAreaElement>}
         value={value}
@@ -98,7 +83,6 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
         }
         .markup-meta-line {
           color: #22d3ee;
-          font-style: italic;
           opacity: 0.85;
         }
         .markup-meta-token {

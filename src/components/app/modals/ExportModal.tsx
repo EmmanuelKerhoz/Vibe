@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Download, FileCode2, FileText, FileType, FileType2, X } from 'lucide-react';
+import { Download, FileCode2, FileText, X } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { ExportFormat } from '../../../utils/exportUtils';
@@ -8,6 +8,27 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onExport: (format: ExportFormat) => void;
+}
+
+/** Minimal SVG badge used as a format icon when lucide has no suitable equivalent. */
+function FormatBadge({ label, color }: { label: string; color: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="1" y="1" width="18" height="18" rx="3" stroke={color} strokeWidth="1.5" fill="none" />
+      <text
+        x="10"
+        y="13.5"
+        textAnchor="middle"
+        fontSize="7"
+        fontWeight="700"
+        fontFamily="monospace"
+        fill={color}
+        letterSpacing="0.5"
+      >
+        {label}
+      </text>
+    </svg>
+  );
 }
 
 export function ExportModal({ isOpen, onClose, onExport }: Props) {
@@ -23,7 +44,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
       value: 'txt' as const,
       label: t.exportDialog.formats.txt,
       extension: '.txt',
-      icon: FileText,
+      icon: <FileText className="w-5 h-5" />,
       accent: '#38bdf8',
       surface: 'rgba(56, 189, 248, 0.14)',
       border: 'rgba(56, 189, 248, 0.28)',
@@ -32,7 +53,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
       value: 'markup' as const,
       label: t.exportDialog.formats.markup,
       extension: '.md',
-      icon: FileCode2,
+      icon: <FileCode2 className="w-5 h-5" />,
       accent: '#a855f7',
       surface: 'rgba(168, 85, 247, 0.14)',
       border: 'rgba(168, 85, 247, 0.28)',
@@ -41,7 +62,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
       value: 'odt' as const,
       label: t.exportDialog.formats.odt,
       extension: '.odt',
-      icon: FileType,
+      icon: <FormatBadge label="ODT" color="#22c55e" />,
       accent: '#22c55e',
       surface: 'rgba(34, 197, 94, 0.14)',
       border: 'rgba(34, 197, 94, 0.28)',
@@ -50,7 +71,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
       value: 'docx' as const,
       label: t.exportDialog.formats.docx,
       extension: '.docx',
-      icon: FileType2,
+      icon: <FormatBadge label="DOC" color="#2563eb" />,
       accent: '#2563eb',
       surface: 'rgba(37, 99, 235, 0.14)',
       border: 'rgba(37, 99, 235, 0.28)',
@@ -96,7 +117,6 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {formats.map(format => {
-              const Icon = format.icon;
               const isSelected = format.value === selectedFormat;
               return (
                 <button
@@ -126,7 +146,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
                         color: isSelected ? format.accent : 'var(--text-secondary)',
                       }}
                     >
-                      <Icon className="w-5 h-5" />
+                      {format.icon}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-[var(--text-primary)]">{format.label}</p>
@@ -154,10 +174,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
             {t.exportDialog.cancel}
           </Button>
           <Button
-            onClick={() => {
-              onExport(selectedFormat);
-              onClose();
-            }}
+            onClick={() => { onExport(selectedFormat); onClose(); }}
             variant="contained"
             color="primary"
             className="ux-interactive"
