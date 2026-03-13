@@ -194,7 +194,7 @@ export default function App() {
     isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen, promptModal,
     isMobileOrTablet, closeMobilePanels,
     redo, setApiErrorModal, setConfirmModal, setIsAboutOpen, setIsAnalysisModalOpen,
-    setIsExportModalOut, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
+    setIsExportModalOpen, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
     setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
     setPromptModal, undo,
   ]);

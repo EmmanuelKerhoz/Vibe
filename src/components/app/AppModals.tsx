@@ -13,51 +13,42 @@ import { ApiErrorModal } from './modals/ApiErrorModal';
 import { ConfirmModal } from './modals/ConfirmModal';
 import { PromptModal } from './modals/PromptModal';
 import { SuggestionsPanel } from './SuggestionsPanel';
-import type { SongSection } from '../../types';
-import type { LibraryAsset } from '../../utils/libraryUtils';
-import type { SimilarityMatch } from '../../utils/libraryUtils';
+import type { LibraryAsset, SimilarityMatch } from '../../utils/libraryUtils';
 import type { SongVersion } from '../../hooks/useVersionManager';
 import type { WebSimilarityIndex } from '../../hooks/useSimilarityEngine';
 import type { AnalysisReport, AnalysisStep } from '../../hooks/useSongAnalysis';
 import { useTranslation } from '../../i18n';
 
 interface Props {
-  // About
   isAboutOpen: boolean;
   setIsAboutOpen: (v: boolean) => void;
-  // Settings
   isSettingsOpen: boolean;
   setIsSettingsOpen: (v: boolean) => void;
   theme: 'light' | 'dark';
   setTheme: (v: 'light' | 'dark') => void;
   audioFeedback: boolean;
   setAudioFeedback: (v: boolean) => void;
-  // Import
   isImportModalOpen: boolean;
   setIsImportModalOpen: (v: boolean) => void;
   hasExistingWork: boolean;
   handleImportChooseFile: () => void;
   importInputRef: React.RefObject<HTMLInputElement>;
   handleImportInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  // Export
   isExportModalOpen: boolean;
   setIsExportModalOpen: (v: boolean) => void;
   exportSong: (format: string) => void;
-  // Suggestions
   selectedLineId: string | null;
   setSelectedLineId: (v: string | null) => void;
   suggestions: string[];
   isSuggesting: boolean;
   applySuggestion: (s: string) => void;
   generateSuggestions: () => void;
-  // Paste
   isPasteModalOpen: boolean;
   setIsPasteModalOpen: (v: boolean) => void;
   pastedText: string;
   setPastedText: (v: string) => void;
   isAnalyzing: boolean;
   analyzePastedLyrics: () => void;
-  // Analysis
   isAnalysisModalOpen: boolean;
   setIsAnalysisModalOpen: (v: boolean) => void;
   analysisReport: AnalysisReport | null;
@@ -70,7 +61,6 @@ interface Props {
   clearAppliedAnalysisItems: () => void;
   versions: SongVersion[];
   rollbackToVersion: (id: string) => void;
-  // Similarity
   isSimilarityModalOpen: boolean;
   setIsSimilarityModalOpen: (v: boolean) => void;
   similarityMatches: SimilarityMatch[];
@@ -78,26 +68,21 @@ interface Props {
   webSimilarityIndex: WebSimilarityIndex;
   triggerWebSimilarity: () => void;
   handleDeleteLibraryAsset: (id: string) => void;
-  // Save to library
   isSaveToLibraryModalOpen: boolean;
   setIsSaveToLibraryModalOpen: (v: boolean) => void;
   handleSaveToLibrary: () => void;
   isSavingToLibrary: boolean;
   title: string;
   libraryAssets: LibraryAsset[];
-  // Versions
   isVersionsModalOpen: boolean;
   setIsVersionsModalOpen: (v: boolean) => void;
   saveVersion: () => void;
   handleRequestVersionName: () => void;
-  // Reset
   isResetModalOpen: boolean;
   setIsResetModalOpen: (v: boolean) => void;
   resetSong: () => void;
-  // API error
   apiErrorModal: { open: boolean; message: string };
   setApiErrorModal: (v: { open: boolean; message: string }) => void;
-  // Confirm / Prompt
   confirmModal: { open: boolean; onConfirm: () => void } | null;
   setConfirmModal: (v: { open: boolean; onConfirm: () => void } | null) => void;
   promptModal: { open: boolean; onConfirm: (v: string) => void } | null;
@@ -142,7 +127,7 @@ export function AppModals({
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={saveVersion} onRollback={rollbackToVersion} onRequestVersionName={handleRequestVersionName} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
       <ApiErrorModal isOpen={apiErrorModal.open} onClose={() => setApiErrorModal({ open: false, message: '' })} message={apiErrorModal.message} />
-      {confirmModal && <ConfirmModal isOpen={confirmModal.open} title={t.editor.regenerateWarning} message={t.editor.regenerateWarning} confirmLabel="Regenerate" cancelLabel="Cancel" onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal(null)} />}
+      {confirmModal && <ConfirmModal isOpen={confirmModal.open} title="Regenerate Song" message={t.editor.regenerateWarning} confirmLabel="Regenerate" cancelLabel="Cancel" onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal(null)} />}
       {promptModal && <PromptModal isOpen={promptModal.open} title="Save Version" message="Enter a name for this version:" placeholder="Version name" confirmLabel="Save" cancelLabel="Cancel" onConfirm={promptModal.onConfirm} onCancel={() => setPromptModal(null)} />}
       <input ref={importInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleImportInputChange} />
     </>
