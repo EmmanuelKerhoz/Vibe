@@ -133,7 +133,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                 style={{ color: getSectionColorHex(section.name) }}
               />
               <div className="mt-1 flex flex-wrap items-center gap-2">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">{section.lines.length} {t.editor.lines ?? 'lines'}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">{section.lines.filter(l => !l.isMeta).length} {t.editor.lines ?? 'lines'}</p>
                 <div className="min-w-[15rem] max-w-full flex-1">
                   <LcarsSelect
                     value={section.rhymeScheme || rhymeScheme}

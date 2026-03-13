@@ -3,6 +3,7 @@ import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Setti
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
 import { Button } from '../../ui/Button';
+import { emojiToTwemojiUrl } from '../../../utils/emojiUtils';
 
 interface Props {
   isOpen: boolean;
@@ -14,23 +15,37 @@ interface Props {
 }
 
 /**
- * Renders a flag emoji in a <span> with a forced emoji font stack so it
- * displays correctly on Windows desktop (which doesn't render regional
- * indicator pairs in most system fonts by default).
+ * Renders a flag emoji as a Twemoji SVG image so it displays correctly on
+ * every platform (Windows doesn't render flag-emoji natively).
+ * Falls back to the raw emoji character (or country code) if the image fails.
  */
 function FlagEmoji({ flag, code }: { flag: string; code: string }) {
+  const [useFallback, setUseFallback] = React.useState(false);
+
+  if (useFallback) {
+    return (
+      <span
+        aria-hidden="true"
+        style={{
+          fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
+          fontSize: '1.125rem',
+          lineHeight: 1,
+          display: 'inline-block',
+        }}
+      >
+        {flag || code.toUpperCase()}
+      </span>
+    );
+  }
+
   return (
-    <span
+    <img
+      src={emojiToTwemojiUrl(flag || code.toUpperCase())}
+      alt={flag || code.toUpperCase()}
       aria-hidden="true"
-      style={{
-        fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
-        fontSize: '1.125rem',
-        lineHeight: 1,
-        display: 'inline-block',
-      }}
-    >
-      {flag || code.toUpperCase()}
-    </span>
+      onError={() => setUseFallback(true)}
+      style={{ width: '1.125rem', height: '1.125rem', display: 'inline-block', verticalAlign: '-0.1em' }}
+    />
   );
 }
 

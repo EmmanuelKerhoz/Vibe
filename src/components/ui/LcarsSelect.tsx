@@ -13,7 +13,7 @@ const EMOJI_FONT_STACK =
 interface LcarsSelectProps {
   value: string;
   onChange: (value: string) => void;
-  options: { value: string; label: string }[];
+  options: { value: string; label: React.ReactNode }[];
   placeholder?: string;
   className?: string;
   style?: CSSProperties;
@@ -37,10 +37,10 @@ export function LcarsSelect({
   const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>();
   const listboxId = useId();
 
-  const selectedLabel =
+  const selectedLabel: React.ReactNode =
     options.find((o) => o.value === value)?.label ??
     placeholder ??
-    (options[0]?.label || '');
+    options[0]?.label ?? '';
 
   const close = useCallback(() => {
     setIsOpen(false);

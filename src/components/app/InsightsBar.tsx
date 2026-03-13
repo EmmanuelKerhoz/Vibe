@@ -5,7 +5,8 @@ import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
-import { SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel, getLanguageDisplay } from '../../i18n';
+import { SUPPORTED_ADAPTATION_LANGUAGES, getLanguageDisplay } from '../../i18n';
+import { emojiToTwemojiUrl } from '../../utils/emojiUtils';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 
 interface InsightsBarProps {
@@ -36,22 +37,37 @@ interface InsightsBarProps {
 }
 
 /**
- * Renders an emoji sign (flag or cultural symbol) with a forced emoji font
- * stack so it displays correctly on Windows desktop browsers.
+ * Renders an emoji sign as a Twemoji SVG image so it displays correctly on
+ * every platform (Windows doesn't render flag-emoji natively).
+ * Falls back to the raw emoji character if the image fails to load.
  */
 function EmojiSign({ sign }: { sign: string }) {
+  const [useFallback, setUseFallback] = React.useState(false);
+
+  if (useFallback) {
+    return (
+      <span
+        aria-hidden="true"
+        style={{
+          fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
+          lineHeight: 1,
+          display: 'inline-block',
+          fontSize: '1em',
+        }}
+      >
+        {sign}
+      </span>
+    );
+  }
+
   return (
-    <span
+    <img
+      src={emojiToTwemojiUrl(sign)}
+      alt={sign}
       aria-hidden="true"
-      style={{
-        fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
-        lineHeight: 1,
-        display: 'inline-block',
-        fontSize: '1em',
-      }}
-    >
-      {sign}
-    </span>
+      onError={() => setUseFallback(true)}
+      style={{ width: '1em', height: '1em', display: 'inline-block', verticalAlign: '-0.1em' }}
+    />
   );
 }
 
@@ -108,7 +124,7 @@ export function InsightsBar({
                   onChange={setTargetLanguage}
                   options={SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
                     value: lang.aiName,
-                    label: adaptationLanguageLabel(lang),
+                    label: <><EmojiSign sign={lang.sign} /> {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</>,
                   }))}
                 />
               </div>
@@ -148,11 +164,11 @@ export function InsightsBar({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar min-w-0 flex-1">
             {song.map((section) => {
-              const sectionWordCount = section.lines.reduce((acc, line) => acc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0);
+              const sectionWordCount = section.lines.filter(l => !l.isMeta).reduce((acc, line) => acc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0);
               return (
                 <Tooltip key={section.id} title={
                   <div className="flex flex-col gap-1 text-xs">
-                    <div><span>{t.editor.sectionTooltip.lines}:</span> {section.lines.length}</div>
+                    <div><span>{t.editor.sectionTooltip.lines}:</span> {section.lines.filter(l => !l.isMeta).length}</div>
                     <div><span>{t.editor.sectionTooltip.words}:</span> {sectionWordCount}</div>
                   </div>
                 }>
