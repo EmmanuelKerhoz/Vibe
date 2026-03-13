@@ -99,7 +99,7 @@ export function LeftSettingsPanel({
                   <button
                     onClick={onGenerateTitle}
                     disabled={isGeneratingTitle || song.length === 0}
-                    className="px-2 py-1.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] rounded transition-all disabled:opacity-50"
+                    className="ux-interactive px-2 py-1.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] rounded transition-all disabled:opacity-50"
                   >
                     {isGeneratingTitle ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                   </button>
@@ -112,19 +112,17 @@ export function LeftSettingsPanel({
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Topic &amp; Mood</span>
                 <Tooltip title="Generate a random topic &amp; mood with AI">
-                  <button
+                  <Button
                     onClick={onSurprise}
                     disabled={isSurprising || isGenerating}
-                    aria-label="Surprise me — generate random topic and mood"
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] uppercase tracking-wider font-semibold
-                      bg-[var(--accent-color)]/8 hover:bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/20
-                      text-[var(--accent-color)] transition-all disabled:opacity-40 disabled:cursor-not-allowed lcars-pill-btn"
-                  >
-                    {isSurprising
+                    variant="outlined" color="primary"
+                    startIcon={isSurprising
                       ? <Loader2 className="w-3 h-3 animate-spin" />
                       : <Shuffle className="w-3 h-3" />}
-                    <span>Surprise</span>
-                  </button>
+                    style={{ fontSize: '10px', padding: '2px 8px' }}
+                  >
+                    Surprise
+                  </Button>
                 </Tooltip>
               </div>
               <div>

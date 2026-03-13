@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { isPureMetaLine, tokenizeMetaInline } from '../../utils/metaUtils';
+import { isPureMetaLine, isSectionHeader, tokenizeMetaInline } from '../../utils/metaUtils';
+import { getSectionColorHex } from '../../utils/songUtils';
 
 interface MarkupInputProps {
   value: string;
@@ -34,7 +35,7 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
 
   /**
    * Converts raw markup text into highlighted HTML for the mirror layer.
-   * Meta tokens [like this] get cyan styling; section headers stay neutral.
+   * Section headers get their characteristic color; meta tokens get cyan styling.
    */
   const buildHighlightedHtml = (text: string): string => {
     return text
@@ -44,6 +45,12 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
+        // Check if this is a section header line (e.g. [Verse 1], [Chorus])
+        const headerMatch = line.trim().match(/^\[(.+)\]$/);
+        if (headerMatch && headerMatch[1] && isSectionHeader(headerMatch[1])) {
+          const color = getSectionColorHex(headerMatch[1]);
+          return `<span class="markup-section-header" style="color:${color}">${escaped}</span>`;
+        }
         if (isPureMetaLine(line)) {
           // Entire line is a meta instruction
           return `<span class="markup-meta-line">${escaped}</span>`;
@@ -72,7 +79,7 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
         ref={mirrorRef}
         aria-hidden="true"
         className={`markup-mirror pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words ${className}`}
-        style={{ color: 'transparent', caretColor: 'transparent', userSelect: 'none', padding: '1.5rem' }}
+        style={{ caretColor: 'transparent', userSelect: 'none', padding: '1.5rem' }}
         dangerouslySetInnerHTML={{ __html: highlightedHtml + '\n' }}
       />
       {/* Actual textarea — transparent background so mirror shows through */}
@@ -82,9 +89,13 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
         onChange={onChange}
         spellCheck={spellCheck}
         className={`absolute inset-0 w-full h-full resize-none bg-transparent caret-[var(--text-primary)] outline-none ${className}`}
-        style={{ padding: '1.5rem', color: 'var(--text-primary)' }}
+        style={{ padding: '1.5rem', color: 'transparent' }}
       />
       <style>{`
+        .markup-section-header {
+          font-weight: 700;
+          letter-spacing: 0.05em;
+        }
         .markup-meta-line {
           color: #22d3ee;
           font-style: italic;

@@ -256,15 +256,31 @@ body {
   from { opacity: 0; transform: translateY(12px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
+@keyframes fluentFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 .ui-fluent .fluent-animate-in {
   animation: fluentSlideIn 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) both;
 }
+.ui-fluent .fluent-fade-in {
+  animation: fluentFadeIn 0.35s ease both;
+}
+.ui-fluent .fluent-stagger-1 { animation-delay: 0.04s; }
+.ui-fluent .fluent-stagger-2 { animation-delay: 0.08s; }
+.ui-fluent .fluent-stagger-3 { animation-delay: 0.12s; }
+.ui-fluent .fluent-stagger-4 { animation-delay: 0.16s; }
+.ui-fluent .fluent-stagger-5 { animation-delay: 0.20s; }
+.ui-fluent .fluent-stagger-6 { animation-delay: 0.24s; }
+.ui-fluent .fluent-stagger-7 { animation-delay: 0.28s; }
+.ui-fluent .fluent-stagger-8 { animation-delay: 0.32s; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-  .ui-fluent .fluent-animate-in { animation: none; opacity: 1; transform: none; }
+  .ui-fluent .fluent-animate-in,
+  .ui-fluent .fluent-fade-in { animation: none; opacity: 1; transform: none; }
 }
 
 .ui-fluent .fluent-card {
