@@ -208,6 +208,8 @@ const en: Translations = {
     browseDescription: 'Open your library and manage saved songs',
     yourLibrary: 'Your Library',
     empty: 'No songs in library yet. Save this song to start building your collection.',
+    load: 'Load',
+    loadDescription: 'Load this song into the editor',
     close: 'Close',
   },
 

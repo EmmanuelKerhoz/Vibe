@@ -203,6 +203,8 @@ const de: Translations = {
     browseDescription: 'Bibliothek öffnen und gespeicherte Songs verwalten',
     yourLibrary: 'Deine Bibliothek',
     empty: 'Noch keine Songs in der Bibliothek. Speichere diesen Song, um deine Sammlung zu beginnen.',
+    load: 'Laden',
+    loadDescription: 'Diesen Song in den Editor laden',
     close: 'Schließen',
   },
 

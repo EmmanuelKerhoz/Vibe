@@ -203,6 +203,8 @@ const pt: Translations = {
     browseDescription: 'Abrir a biblioteca e gerir as músicas guardadas',
     yourLibrary: 'A sua Biblioteca',
     empty: 'Nenhuma música na biblioteca. Guarde esta música para começar a sua coleção.',
+    load: 'Carregar',
+    loadDescription: 'Carregar esta música no editor',
     close: 'Fechar',
   },
 

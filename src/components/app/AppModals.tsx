@@ -81,6 +81,7 @@ interface Props {
   isSaveToLibraryModalOpen: boolean;
   setIsSaveToLibraryModalOpen: (v: boolean) => void;
   handleSaveToLibrary: () => Promise<void>;
+  handleLoadLibraryAsset: (asset: LibraryAsset) => void;
   isSavingToLibrary: boolean;
   title: string;
   libraryAssets: LibraryAsset[];
@@ -114,7 +115,7 @@ export function AppModals({
   isSimilarityModalOpen, setIsSimilarityModalOpen, similarityMatches, libraryCount,
   webSimilarityIndex, triggerWebSimilarity, handleDeleteLibraryAsset,
   isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, handleSaveToLibrary,
-  isSavingToLibrary, title, libraryAssets,
+  handleLoadLibraryAsset, isSavingToLibrary, title, libraryAssets,
   isVersionsModalOpen, setIsVersionsModalOpen, saveVersion, handleRequestVersionName,
   isResetModalOpen, setIsResetModalOpen, resetSong,
   apiErrorModal, setApiErrorModal,
@@ -133,7 +134,7 @@ export function AppModals({
       <PasteModal isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)} pastedText={pastedText} setPastedText={setPastedText} isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics} />
       <AnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps} appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems} isApplyingAnalysis={isApplyingAnalysis} toggleAnalysisItemSelection={toggleAnalysisItemSelection} applySelectedAnalysisItems={applySelectedAnalysisItems} clearAppliedAnalysisItems={clearAppliedAnalysisItems} versions={versions} rollbackToVersion={rollbackToVersion} />
       <SimilarityModal isOpen={isSimilarityModalOpen} onClose={() => setIsSimilarityModalOpen(false)} matches={similarityMatches} candidateCount={libraryCount} webIndex={webSimilarityIndex} onWebRefresh={triggerWebSimilarity} onDeleteLibraryAsset={handleDeleteLibraryAsset} />
-      <SaveToLibraryModal isOpen={isSaveToLibraryModalOpen} onClose={() => setIsSaveToLibraryModalOpen(false)} onSave={handleSaveToLibrary} onDeleteAsset={handleDeleteLibraryAsset} isSaving={isSavingToLibrary} currentTitle={title} libraryAssets={libraryAssets} />
+      <SaveToLibraryModal isOpen={isSaveToLibraryModalOpen} onClose={() => setIsSaveToLibraryModalOpen(false)} onSave={handleSaveToLibrary} onLoadAsset={handleLoadLibraryAsset} onDeleteAsset={handleDeleteLibraryAsset} isSaving={isSavingToLibrary} currentTitle={title} libraryAssets={libraryAssets} />
       <VersionsModal isOpen={isVersionsModalOpen} versions={versions} onClose={() => setIsVersionsModalOpen(false)} onSaveCurrent={saveVersion} onRollback={rollbackToVersion} onRequestVersionName={handleRequestVersionName} />
       <ResetModal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)} onConfirm={resetSong} />
       <ApiErrorModal isOpen={apiErrorModal.open} onClose={() => setApiErrorModal({ open: false, message: '' })} message={apiErrorModal.message} />

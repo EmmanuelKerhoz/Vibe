@@ -1,7 +1,8 @@
 import type { Section } from '../types';
 import type { SimilarityMatch } from './similarityUtils';
 import { calculateSimilarityWithMetadata } from './similarityUtils';
-import { safeSetItem } from './storageUtils';
+import { DEFAULT_MOOD, DEFAULT_TOPIC } from './songDefaults';
+import { safeGetItem, safeSetItem } from './storageUtils';
 
 export type LibraryAsset = {
   id: string;
@@ -15,6 +16,13 @@ export type LibraryAsset = {
     year?: number;
     genre?: string;
     language?: string;
+    topic?: string;
+    mood?: string;
+    tempo?: number;
+    instrumentation?: string;
+    rhythm?: string;
+    narrative?: string;
+    musicalPrompt?: string;
     [key: string]: unknown;
   };
 };
@@ -27,13 +35,51 @@ export type LibrarySearchResult = SimilarityMatch & {
 
 export const loadLibraryAssets = async (): Promise<LibraryAsset[]> => {
   try {
-    const cached = localStorage.getItem('lyricist_library');
+    const cached = safeGetItem('lyricist_library');
     if (cached) return JSON.parse(cached) as LibraryAsset[];
     return [];
   } catch (error) {
     console.error('Failed to load library assets:', error);
     return [];
   }
+};
+
+export type LoadedLibraryAssetState = {
+  song: Section[];
+  structure: string[];
+  title: string;
+  topic: string;
+  mood: string;
+  rhymeScheme: string;
+  targetSyllables: number;
+  genre: string;
+  tempo: string;
+  instrumentation: string;
+  rhythm: string;
+  narrative: string;
+  musicalPrompt: string;
+};
+
+export const loadAssetIntoEditor = (asset: LibraryAsset): LoadedLibraryAssetState => {
+  const song = JSON.parse(JSON.stringify(asset.sections)) as Section[];
+  const firstSection = song[0];
+  const metadata = asset.metadata;
+
+  return {
+    song,
+    structure: song.map(section => section.name),
+    title: asset.title,
+    topic: typeof metadata?.topic === 'string' ? metadata.topic : DEFAULT_TOPIC,
+    mood: typeof metadata?.mood === 'string' ? metadata.mood : DEFAULT_MOOD,
+    rhymeScheme: firstSection?.rhymeScheme || 'AABB',
+    targetSyllables: firstSection?.targetSyllables || 10,
+    genre: typeof metadata?.genre === 'string' ? metadata.genre : '',
+    tempo: (typeof metadata?.tempo === 'number' || typeof metadata?.tempo === 'string') ? String(metadata.tempo) : '120',
+    instrumentation: typeof metadata?.instrumentation === 'string' ? metadata.instrumentation : '',
+    rhythm: typeof metadata?.rhythm === 'string' ? metadata.rhythm : '',
+    narrative: typeof metadata?.narrative === 'string' ? metadata.narrative : '',
+    musicalPrompt: typeof metadata?.musicalPrompt === 'string' ? metadata.musicalPrompt : '',
+  };
 };
 
 export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'timestamp'>): Promise<LibraryAsset> => {

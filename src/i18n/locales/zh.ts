@@ -203,6 +203,8 @@ const zh: Translations = {
     browseDescription: '打开资料库并管理已保存的歌曲',
     yourLibrary: '您的库',
     empty: '库中还没有歌曲。保存此歌曲以开始建立您的收藏。',
+    load: '加载',
+    loadDescription: '将这首歌加载到编辑器中',
     close: '关闭',
   },
 
