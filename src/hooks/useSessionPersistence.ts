@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
 import { DEFAULT_STRUCTURE } from '../constants/editor';
-import { safeSetItem } from '../utils/storageUtils';
+import { safeSetItem } from '../utils/safeStorage';
 import { isPristineDraft } from '../utils/songDefaults';
 
 interface UseSessionPersistenceParams {
