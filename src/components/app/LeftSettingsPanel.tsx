@@ -35,6 +35,11 @@ interface Props {
   isMobileOverlay?: boolean;
 }
 
+// Solid background applied inline with !important-level specificity via style=
+// to override .ui-fluent .lcars-panel { background-color: rgba(12,12,12,0.80) }
+// which is semi-transparent and causes backdrop-filter bleed.
+const SOLID_BG_DARK = 'var(--bg-app, #0c0c0c)';
+
 export function LeftSettingsPanel({
   title, setTitle, titleOrigin, onGenerateTitle, isGeneratingTitle,
   topic, setTopic, mood, setMood,
@@ -59,7 +64,10 @@ export function LeftSettingsPanel({
         style={{
           position: 'fixed',
           overflow: 'hidden',
-          background: 'var(--fluent-sidebar, #16161e)',
+          // Override semi-transparent .lcars-panel bg for the overlay (fixed, has its own stacking context)
+          backgroundColor: 'color-mix(in srgb, var(--bg-app, #0c0c0c) 98%, transparent)',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
           borderRight: '1px solid var(--border-color, rgba(255,255,255,0.08))',
         }}
       >
@@ -85,8 +93,8 @@ export function LeftSettingsPanel({
   }
 
   // ── Desktop: animated inline sidebar ──────────────────────────────────
-  // Inserted in flex flow — no z-index, no overlay, solid background.
-  // Inner wrapper is 352px wide so content doesn’t compress during width animation.
+  // Key fix: backgroundColor + backdropFilter inline override the .ui-fluent .lcars-panel
+  // CSS rule (rgba semi-transparent + blur) that caused content bleed-through.
   return (
     <AnimatePresence initial={false}>
       {isLeftPanelOpen && (
@@ -99,7 +107,10 @@ export function LeftSettingsPanel({
           className="shrink-0 h-full flex flex-col relative lcars-panel"
           style={{
             overflow: 'hidden',
-            background: 'var(--fluent-sidebar, #16161e)',
+            // Force fully opaque background — overrides .ui-fluent .lcars-panel rgba semi-transparent
+            backgroundColor: SOLID_BG_DARK,
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
             borderRight: '1px solid var(--border-color, rgba(255,255,255,0.08))',
             minWidth: 0,
           }}
