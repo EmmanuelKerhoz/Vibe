@@ -28,7 +28,9 @@ interface Props {
   normalizeStructure: () => void;
   handleDrop: (idx: number) => void;
   onScrollToSection: (sectionId: string) => void;
-  /** Extra class applied to the motion panel root (e.g. mobile overlay). */
+  /** True when rendered as a mobile overlay (hides footer collapse button, shows header X). */
+  isMobileOverlay?: boolean;
+  /** Extra class applied to the motion panel root. */
   className?: string;
 }
 
@@ -40,20 +42,17 @@ export function StructureSidebar({
   dragOverIndex, setDragOverIndex,
   isGenerating, addStructureItem, removeStructureItem,
   normalizeStructure, handleDrop, onScrollToSection,
+  isMobileOverlay = false,
   className,
 }: Props) {
   const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Detect mobile overlay mode from className prop
-  const isMobileOverlay = className?.includes('structure-sidebar-mobile-overlay') ?? false;
 
   const sectionOptions = [
     t.sections.intro, t.sections.verse, t.sections.preChorus,
     t.sections.chorus, t.sections.bridge, t.sections.breakdown, t.sections.finalChorus, t.sections.outro,
   ];
 
-  // NOTE: backdrop removed — App.tsx owns the single shared mobile backdrop.
   return (
     <AnimatePresence>
       {isStructureOpen && (
@@ -81,7 +80,7 @@ export function StructureSidebar({
                 <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />
                 <span className="text-[10px] uppercase tracking-widest font-semibold">{t.structure.title}</span>
               </h3>
-              {/* Close button visible only on mobile overlay */}
+              {/* X close button — mobile overlay only */}
               {isMobileOverlay && (
                 <button
                   onClick={() => setIsStructureOpen(false)}
@@ -205,7 +204,7 @@ export function StructureSidebar({
               </div>
             </div>
 
-            {/* Footer collapse button — desktop only, hidden on mobile overlay */}
+            {/* Footer collapse button — desktop only */}
             {!isMobileOverlay && (
               <div className="p-5 border-t border-fluent-border">
                 <Tooltip title={t.tooltips.collapseRight}>

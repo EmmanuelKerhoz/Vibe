@@ -461,6 +461,7 @@ export default function App() {
         </div>
 
         <StructureSidebar
+          isMobileOverlay={isMobileOrTablet}
           className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
           isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
           structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
