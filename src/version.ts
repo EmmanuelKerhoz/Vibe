@@ -1,2 +1,2 @@
 /** Human-readable app version shown in the UI. */
-export const APP_VERSION = 'v03.02.22';
+export const APP_VERSION = 'v03.02.23';

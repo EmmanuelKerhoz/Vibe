@@ -9,6 +9,7 @@ interface UseSessionPersistenceParams {
   song: Section[];
   structure: string[];
   title: string;
+  titleOrigin: 'user' | 'ai';
   topic: string;
   mood: string;
   rhymeScheme: string;
@@ -40,7 +41,7 @@ interface UseSessionPersistenceParams {
 
 export function useSessionPersistence(params: UseSessionPersistenceParams): void {
   const {
-    song, structure, title, topic, mood, rhymeScheme, targetSyllables,
+    song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
     genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
     replaceStateWithoutHistory, clearHistory,
@@ -64,6 +65,7 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
             : (parsed.structure ? parsed.structure.map((s: string) => cleanSectionName(s)) : DEFAULT_STRUCTURE);
           replaceStateWithoutHistory(cleanedSong, nextStructure);
           if (parsed.title) setTitle(parsed.title);
+          if (parsed.titleOrigin) setTitleOrigin(parsed.titleOrigin);
           if (parsed.topic) setTopic(parsed.topic);
           if (parsed.mood) setMood(parsed.mood);
           if (parsed.rhymeScheme) setRhymeScheme(parsed.rhymeScheme);
@@ -87,11 +89,11 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
   useEffect(() => {
     if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
       const sessionData = {
-        song, structure, title, topic, mood, rhymeScheme, targetSyllables,
+        song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
         genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
       };
       safeSetItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
     }
-  }, [song, structure, title, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, isSessionHydrated, setHasSavedSession]);
+  }, [song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, isSessionHydrated, setHasSavedSession]);
 }
