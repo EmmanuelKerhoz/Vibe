@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Plus, ChevronDown, AlignLeft, PanelRight, X, BarChart2, GripVertical } from 'lucide-react';
+import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';
@@ -28,7 +28,7 @@ interface Props {
   normalizeStructure: () => void;
   handleDrop: (idx: number) => void;
   onScrollToSection: (sectionId: string) => void;
-  /** True when rendered as a mobile overlay (hides footer collapse button, shows header X). */
+  /** True when rendered as a mobile overlay (shows header X close button). */
   isMobileOverlay?: boolean;
   /** Extra class applied to the motion panel root. */
   className?: string;
@@ -203,21 +203,6 @@ export function StructureSidebar({
                 </div>
               </div>
             </div>
-
-            {/* Footer collapse button — desktop only */}
-            {!isMobileOverlay && (
-              <div className="p-5 border-t border-fluent-border">
-                <Tooltip title={t.tooltips.collapseRight}>
-                  <button
-                    onClick={() => setIsStructureOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 py-2 text-[10px] uppercase tracking-widest text-[var(--accent-color)] hover:text-[var(--accent-color)]/80 transition-colors"
-                  >
-                    <PanelRight className="w-3.5 h-3.5" />
-                    {t.structure.collapse}
-                  </button>
-                </Tooltip>
-              </div>
-            )}
           </div>
         </motion.div>
       )}
