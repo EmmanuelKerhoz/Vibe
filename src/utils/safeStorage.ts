@@ -1,6 +1,9 @@
 /**
- * Safe localStorage helpers — handle QuotaExceededError and private browsing
+ * Unified safe localStorage helpers.
+ * Handles QuotaExceededError, NS_ERROR_DOM_QUOTA_REACHED, and private-browsing
  * silently so the app never crashes on storage operations.
+ *
+ * Replaces both safeStorage.ts and storageUtils.ts — import from here only.
  */
 
 export const safeGetItem = (key: string): string | null => {
@@ -16,7 +19,14 @@ export const safeSetItem = (key: string, value: string): boolean => {
     localStorage.setItem(key, value);
     return true;
   } catch (e) {
-    console.warn(`[safeStorage] Could not persist "${key}":`, e);
+    if (e instanceof DOMException && (
+      e.name === 'QuotaExceededError' ||
+      e.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+    )) {
+      console.warn(`[safeStorage] localStorage quota exceeded for key: "${key}"`);
+    } else {
+      console.warn(`[safeStorage] Could not persist "${key}":`, e);
+    }
     return false;
   }
 };
