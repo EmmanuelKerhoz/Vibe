@@ -5,20 +5,29 @@ const SECTION_HEADER_PATTERNS = [
   /^intro/i,
   /^verse/i,
   /^pre[- ]?chorus/i,
+  /^post[- ]?chorus/i,
   /^chorus/i,
-  /^final chorus/i,
+  /^final[- ]chorus/i,
   /^bridge/i,
   /^breakdown/i,
   /^outro/i,
   /^couplet/i,
   /^refrain/i,
-  /^refrain final/i,
+  /^refrain[- ]final/i,
   /^pont/i,
   /^hook/i,
   /^tag/i,
   /^solo/i,
   /^interlude/i,
   /^spoken/i,
+  /^drop/i,
+  /^vamp/i,
+  // French variants
+  /^pr[eé][- ]?refrain/i,
+  /^pr[eé][- ]?chorus/i,
+  /^post[- ]?refrain/i,
+  /^double[- ]chorus/i,
+  /^final[- ]refrain/i,
 ];
 
 export const isSectionHeader = (inner: string): boolean =>
@@ -57,7 +66,6 @@ export const tokenizeMetaInline = (
     if (match.index > last) {
       parts.push({ text: text.slice(last, match.index), isMeta: false });
     }
-    // Skip empty/whitespace-only brackets
     const innerTrimmed = inner.trim();
     if (innerTrimmed) {
       parts.push({ text: match[0], isMeta: !isSectionHeader(inner) });
