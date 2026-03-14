@@ -31,6 +31,8 @@ interface Props {
   onSurprise: () => void;
   isSurprising: boolean;
   onGenerateSong: () => void;
+  /** Whether the session has been fully hydrated from localStorage. */
+  isSessionHydrated: boolean;
   /** Extra class applied to the panel root (e.g. mobile overlay). */
   className?: string;
 }
@@ -43,21 +45,18 @@ export function LeftSettingsPanel({
   isLeftPanelOpen, setIsLeftPanelOpen,
   onSurprise, isSurprising,
   onGenerateSong,
+  isSessionHydrated,
   className,
 }: Props) {
   const { t } = useTranslation();
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
 
-  // On desktop: inline sidebar, always in the flex flow (no fixed positioning).
-  // On mobile/tablet: fixed overlay that slides in from the left.
+  // Desktop: inline sidebar, visible only when open AND session ready
   if (!isMobileOrTablet) {
-    // Desktop — only render (non-zero width) when open
-    if (!isLeftPanelOpen) return null;
+    if (!isLeftPanelOpen || !isSessionHydrated) return null;
     return (
-      <div
-        className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel w-[22rem] shrink-0 h-full overflow-hidden${className ? ` ${className}` : ''}`}
-      >
+      <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel w-[22rem] shrink-0 h-full overflow-hidden${className ? ` ${className}` : ''}`}>
         <PanelContent
           t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
           onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
@@ -72,7 +71,7 @@ export function LeftSettingsPanel({
     );
   }
 
-  // Mobile/tablet — fixed overlay
+  // Mobile/tablet: fixed overlay, slides in from left
   return (
     <div
       className={`border border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel
@@ -80,30 +79,32 @@ export function LeftSettingsPanel({
         transition-transform duration-300 ease-in-out
         ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}${className ? ` ${className}` : ''}`}
     >
-      <PanelContent
-        t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
-        onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-        topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-        rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-        targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-        song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
-        isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-        onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
-      />
+      {/* Only render content once hydrated to avoid blank flash */}
+      {isSessionHydrated && (
+        <PanelContent
+          t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
+          onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+          topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+          rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+          targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+          song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
+          isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+          onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
+        />
+      )}
     </div>
   );
 }
 
-// ── Inner content extracted to avoid duplication ─────────────────────────────
+// ── Inner content extracted to avoid duplication ────────────────────────────
 function PanelContent({
   t, title, setTitle, titleOrigin, onGenerateTitle, isGeneratingTitle,
   topic, setTopic, mood, setMood,
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   song, isGenerating, quantizeSyllables,
-  isLeftPanelOpen, setIsLeftPanelOpen,
+  isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen,
   onSurprise, isSurprising, onGenerateSong,
-}: Omit<Props, 'className'> & { t: ReturnType<typeof useTranslation>['t'] }) {
-  void isLeftPanelOpen; // referenced for completeness
+}: Omit<Props, 'className' | 'isSessionHydrated'> & { t: ReturnType<typeof useTranslation>['t'] }) {
   return (
     <div className="w-full flex flex-col h-full">
       <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">

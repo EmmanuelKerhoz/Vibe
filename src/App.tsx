@@ -100,6 +100,8 @@ export default function App() {
   const { scrollToSection, handleMarkupToggle } = useMarkupEditor({
     song, isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   });
+
+  // Library similarity (local)
   useEffect(() => {
     let isCancelled = false;
     const runSimilarity = async () => {
@@ -114,6 +116,7 @@ export default function App() {
     void runSimilarity(); void loadCount();
     return () => { isCancelled = true; };
   }, [song, setSimilarityMatches, setLibraryCount]);
+
   const introOutroSortedRef = useRef<string | null>(null);
   useEffect(() => {
     if (song.length === 0) return;
@@ -127,6 +130,7 @@ export default function App() {
     introOutroSortedRef.current = key;
     updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
+
   const { isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
     isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, songLanguage, targetLanguage, setTargetLanguage,
@@ -136,6 +140,7 @@ export default function App() {
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
+
   const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
     selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
     quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
@@ -146,6 +151,7 @@ export default function App() {
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory, saveVersion,
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
+
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
   } = useSongEditor({ song, structure, newSectionName, setNewSectionName,
@@ -153,6 +159,7 @@ export default function App() {
     updateState, updateSongWithHistory, updateStructureWithHistory, updateSongAndStructureWithHistory, title, topic, mood,
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); }, playAudioFeedback,
   });
+
   const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood, songLanguage);
   const { generateSuggestion: handleSurprise, isGeneratingSuggestion: isSurprising } =
     useTopicMoodSuggester(topic, mood, setTopic, setMood);
@@ -160,6 +167,8 @@ export default function App() {
     const suggestion = await handleSurprise();
     if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }
   }, [handleSurprise, setTopic, setMood]);
+
+  // ── Keyboard shortcuts ─────────────────────────────────────────
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
@@ -198,6 +207,7 @@ export default function App() {
     setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
     setPromptModal, undo,
   ]);
+
   useEffect(() => {
     if (!shouldAutoGenerateTitle || song.length === 0) return;
     let isCancelled = false;
@@ -209,32 +219,41 @@ export default function App() {
     void run();
     return () => { isCancelled = true; };
   }, [generateTitle, shouldAutoGenerateTitle, song.length, setTitle, setTitleOrigin, setShouldAutoGenerateTitle]);
+
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
-  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity } = useSimilarityEngine(song, title);
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title);
+
   const hasExistingWork = (song.length > 0 && !isPristineDraft(song, structure, rhymeScheme))
     || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
+
   const webBadgeLabel = webSimilarityIndex.status === 'done' && webSimilarityIndex.candidates.length > 0
     ? `${webSimilarityIndex.candidates[0]?.score}%` : null;
+
   const handleApiKeyHelp = () => setApiErrorModal({ open: true, message: t.tooltips.aiUnavailableHelp });
   const handleTitleChange = (value: string) => { setTitle(value); setTitleOrigin('user'); };
   const handleGenerateTitle = async () => { const t2 = await generateTitle(); if (t2) { setTitle(t2); setTitleOrigin('ai'); } };
+
   const handleGlobalRegenerate = () => {
     if (song.length > 0) { setConfirmModal({ open: true, onConfirm: () => { setConfirmModal(null); void generateSong(); } }); }
     else { void generateSong(); }
   };
+
   const handleScrollToSection = useCallback((sectionId: string) => {
     const sec = song.find(s => s.id === sectionId);
     if (sec) scrollToSection(sec);
   }, [song, scrollToSection]);
+
   const handleOpenSaveToLibraryModal = async () => {
     setLibraryAssets(await loadLibraryAssets());
     setIsSaveToLibraryModalOpen(true);
   };
+
   const handleOpenNewGeneration = useCallback(() => {
     setActiveTab('lyrics');
     setIsLeftPanelOpen(true);
     if (isMobileOrTablet) setIsStructureOpen(false);
   }, [isMobileOrTablet, setActiveTab, setIsLeftPanelOpen, setIsStructureOpen]);
+
   const handleCreateEmptySong = useCallback(() => {
     replaceStateWithoutHistory(createEmptySong(DEFAULT_STRUCTURE, 'AABB'), DEFAULT_STRUCTURE);
     clearHistory();
@@ -256,12 +275,16 @@ export default function App() {
     setMarkupText('');
     setActiveTab('lyrics');
     setIsLeftPanelOpen(false);
+    // Reset similarity engine — clear stale results from previous song
+    setSimilarityMatches([]);
+    resetWebSimilarityIndex();
   }, [
     clearHistory, clearSelection, replaceStateWithoutHistory, setActiveTab, setGenre,
     setHasSavedSession, setInstrumentation, setIsLeftPanelOpen, setMarkupText, setMood,
     setMusicalPrompt, setNarrative, setRhymeScheme, setRhythm, setTargetSyllables,
-    setTempo, setTitle, setTitleOrigin, setTopic,
+    setTempo, setTitle, setTitleOrigin, setTopic, setSimilarityMatches, resetWebSimilarityIndex,
   ]);
+
   const handleSaveToLibrary = async () => {
     if (song.length === 0) return;
     setIsSavingToLibrary(true);
@@ -270,6 +293,7 @@ export default function App() {
       const updated = await loadLibraryAssets(); setLibraryCount(updated.length); setLibraryAssets(updated);
     } catch (e) { console.error('Failed to save to library:', e); } finally { setIsSavingToLibrary(false); }
   };
+
   const handleLoadLibraryAsset = useCallback((asset: LibraryAsset) => {
     const loadedAsset = loadAssetIntoEditor(asset);
     replaceStateWithoutHistory(loadedAsset.song, loadedAsset.structure);
@@ -288,6 +312,7 @@ export default function App() {
     setMusicalPrompt(loadedAsset.musicalPrompt);
     setIsSaveToLibraryModalOpen(false);
   }, [clearHistory, replaceStateWithoutHistory, setGenre, setInstrumentation, setMood, setMusicalPrompt, setNarrative, setRhymeScheme, setRhythm, setTargetSyllables, setTempo, setTitle, setTitleOrigin, setTopic, setIsSaveToLibraryModalOpen]);
+
   const handleDeleteLibraryAsset = useCallback(async (versionId: string) => {
     try {
       await deleteAssetFromLibrary(versionId);
@@ -296,11 +321,13 @@ export default function App() {
       setLibraryCount(prev => Math.max(0, prev - 1));
     } catch (e) { console.error('Failed to delete library asset:', e); }
   }, [setLibraryAssets, setSimilarityMatches, setLibraryCount]);
+
   const handleImportInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; e.target.value = '';
     if (!file) return;
     setIsImportModalOpen(false); loadFileForAnalysis(file);
   };
+
   const handleImportChooseFile = async () => {
     const pw = window as Window & { showOpenFilePicker?: (o: object) => Promise<Array<{ getFile: () => Promise<File> }>> };
     if (pw.showOpenFilePicker) {
@@ -324,9 +351,17 @@ export default function App() {
     }
     importInputRef.current?.click();
   };
+
   const resetSong = () => {
     updateSongAndStructureWithHistory(createEmptySong(DEFAULT_STRUCTURE, rhymeScheme), DEFAULT_STRUCTURE);
-    safeRemoveItem('lyricist_session'); setHasSavedSession(false); clearSelection(); setMarkupText(''); setIsResetModalOpen(false);
+    safeRemoveItem('lyricist_session');
+    setHasSavedSession(false);
+    clearSelection();
+    setMarkupText('');
+    setIsResetModalOpen(false);
+    // Reset similarity engine — clear stale results
+    setSimilarityMatches([]);
+    resetWebSimilarityIndex();
   };
 
   return (
@@ -350,6 +385,7 @@ export default function App() {
           isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
           onSurprise={handleSurpriseClick}
           isSurprising={isSurprising}
+          isSessionHydrated={isSessionHydrated}
           onGenerateSong={() => { setIsLeftPanelOpen(false); handleGlobalRegenerate(); }}
         />
 
@@ -397,17 +433,17 @@ export default function App() {
                     removeInstruction={removeInstruction} regenerateSection={regenerateSection}
                     draggedItemIndex={draggedItemIndex} dragOverIndex={dragOverIndex}
                     draggedLineInfo={draggedLineInfo} dragOverLineInfo={dragOverLineInfo}
-                     setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
-                     setDraggableSectionIndex={setDraggableSectionIndex}
-                     setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
-                     playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
-                     handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
-                     isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
-                     markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
-                     onOpenLibrary={handleOpenSaveToLibraryModal}
-                     onPasteLyrics={() => setIsPasteModalOpen(true)}
-                     onGenerateSong={handleGlobalRegenerate}
-                   />
+                    setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
+                    setDraggableSectionIndex={setDraggableSectionIndex}
+                    setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
+                    playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
+                    handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
+                    isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
+                    markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
+                    onOpenLibrary={handleOpenSaveToLibraryModal}
+                    onPasteLyrics={() => setIsPasteModalOpen(true)}
+                    onGenerateSong={handleGlobalRegenerate}
+                  />
                 ) : (
                   <MusicalTab
                     song={song} title={title} topic={topic} mood={mood}
@@ -449,9 +485,11 @@ export default function App() {
         isLeftPanelOpen={isLeftPanelOpen}
         isStructureOpen={isStructureOpen}
         activeTab={activeTab}
+        isGenerating={isGenerating}
         setIsLeftPanelOpen={setIsLeftPanelOpen}
         setIsStructureOpen={setIsStructureOpen}
         setActiveTab={setActiveTab}
+        onGenerateSong={handleGlobalRegenerate}
       />
 
       <AppModals

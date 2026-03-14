@@ -42,7 +42,6 @@ export const useSimilarityEngine = (sections: Section[], title = '') => {
   const effectiveTitle = title.trim() === DEFAULT_TITLE ? '' : title;
 
   const runSearch = useCallback(async (currentSections: Section[], currentTitle: string) => {
-    // Cancel any in-flight search
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -68,20 +67,27 @@ export const useSimilarityEngine = (sections: Section[], title = '') => {
     }
   }, []);
 
+  /** Reset index to initial state — call on song reset / new empty draft */
+  const resetIndex = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = null;
+    lastFingerprintRef.current = '';
+    setIndex(INITIAL_INDEX);
+  }, []);
+
   useEffect(() => {
     const fingerprint = textFingerprint(effectiveTitle, sections);
     const delta = changeDelta(lastFingerprintRef.current, fingerprint);
 
-    // Skip if text hasn't changed enough
     if (delta < DELTA_THRESHOLD && lastFingerprintRef.current !== '') return;
 
-    // Skip if sections are essentially empty
     const hasContent = effectiveTitle.trim().length > 0 || sections.some(s => s.lines.some(l => l.text.trim().length > 0));
     if (!hasContent) return;
 
     lastFingerprintRef.current = fingerprint;
 
-    // Debounce
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       runSearch(sections, effectiveTitle);
@@ -92,7 +98,6 @@ export const useSimilarityEngine = (sections: Section[], title = '') => {
     };
   }, [effectiveTitle, sections, runSearch]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
@@ -106,5 +111,5 @@ export const useSimilarityEngine = (sections: Section[], title = '') => {
     runSearch(sections, effectiveTitle);
   }, [effectiveTitle, sections, runSearch]);
 
-  return { index, triggerNow };
+  return { index, triggerNow, resetIndex };
 };
