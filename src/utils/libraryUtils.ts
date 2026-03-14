@@ -2,7 +2,7 @@ import type { Section } from '../types';
 import type { SimilarityMatch } from './similarityUtils';
 import { calculateSimilarityWithMetadata } from './similarityUtils';
 import { DEFAULT_MOOD, DEFAULT_TOPIC } from './songDefaults';
-import { safeGetItem, safeSetItem } from './storageUtils';
+import { safeGetItem, safeSetItem } from './safeStorage';
 
 export type LibraryAsset = {
   id: string;
@@ -247,7 +247,6 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
 const parseTextToSections = (text: string): Section[] => {
   const blocks = text.split(/\n\s*\n/);
   const sections: Section[] = [];
-  // Use a counter instead of Date.now() to guarantee unique IDs within the same parse call
   let uid = Date.now();
 
   blocks.forEach((block) => {
