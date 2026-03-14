@@ -1070,3 +1070,70 @@ input:focus, textarea:focus, button:focus-visible {
     display: flex;
   }
 }
+
+/* ===========================================================================
+   LCARS Gradient Border Panel (.lcars-gb-panel)
+   CSS-native border-image gradient — no double-div wrapper, no background bleed.
+   Light mode: subtle neutral border. Dark mode: LCARS amber→cyan→violet rail.
+   =========================================================================== */
+
+.lcars-gb-panel {
+  border-radius: 16px 4px 16px 4px;
+  background-color: var(--bg-card);
+  backdrop-filter: var(--layer2-blur, blur(8px));
+  -webkit-backdrop-filter: var(--layer2-blur, blur(8px));
+  /* Light: plain border */
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dark: gradient border via outline trick (border-image doesn't respect border-radius).
+   We use a ::before pseudo-element inset overlay approach — zero DOM cost. */
+.dark .lcars-gb-panel {
+  background-color: var(--bg-card);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  /* Glow from the gradient border */
+  box-shadow:
+    0 0 0 1px transparent,
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Pseudo border via box-shadow gradient simulation isn't viable for multi-stop.
+   Use a wrapping ::before at z:-1 with the gradient background + padding trick. */
+.dark .lcars-gb-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    180deg,
+    var(--lcars-amber)  0%,
+    var(--lcars-cyan)   55%,
+    var(--lcars-violet) 100%
+  );
+  /* Mask: show only the 1px border area */
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.dark .lcars-gb-panel:hover::before {
+  opacity: 1;
+}
+
+/* Ensure content sits above the pseudo border */
+.dark .lcars-gb-panel > * {
+  position: relative;
+  z-index: 1;
+}
