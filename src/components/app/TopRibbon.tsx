@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Sparkles, Download, Upload, Undo2, Redo2, Trash2, History, PanelRight, Library, Menu, FilePlus2, FilePlus, Settings, Info, WandSparkles
+  Sparkles, Download, Upload, Undo2, Redo2, Trash2, History,
+  PanelRight, Library, Menu, FilePlus2, FilePlus, Settings, Info, WandSparkles
 } from 'lucide-react';
-import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
 import { motion } from 'motion/react';
@@ -75,7 +75,6 @@ export function TopRibbon({
       style={{
         position: 'relative',
         overflow: 'visible',
-        // Solid bg — overrides glass-panel semi-transparency on the ribbon itself
         backgroundColor: 'var(--bg-app, #0c0c0c)',
         backdropFilter: 'none',
         WebkitBackdropFilter: 'none',
@@ -93,19 +92,15 @@ export function TopRibbon({
         zIndex: 1,
       }} />
 
-      {/* Left: burger menu + tab switcher */}
+      {/* LEFT: burger + tabs */}
       <div className="flex items-center gap-3 lg:gap-6 pl-1 lg:pl-3">
-        {/*
-          z-[60] on the wrapper ensures the dropdown (z-50 inside) renders above
-          other ribbon content and the burger button itself stays visible.
-        */}
         <div className="relative" style={{ zIndex: 60 }} ref={menuRef}>
-          <Tooltip title="Open main menu">
+          <Tooltip title="Menu">
             <button
               onClick={() => setIsMenuOpen(v => !v)}
               className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 rounded-md transition-all duration-200"
               style={{
-                color: isMenuOpen ? 'var(--accent-color)' : undefined,
+                color: isMenuOpen ? 'var(--accent-color)' : 'var(--text-secondary)',
                 backgroundColor: isMenuOpen ? 'color-mix(in srgb, var(--accent-color) 12%, transparent)' : undefined,
               }}
               aria-label="Open main menu"
@@ -119,7 +114,6 @@ export function TopRibbon({
             <div
               className="absolute left-0 top-full mt-2 w-[280px] rounded-2xl shadow-2xl py-2 overflow-hidden"
               style={{
-                // Fully opaque — no glass-panel class to avoid rgba/backdrop-filter bleed
                 backgroundColor: 'var(--bg-app, #111)',
                 border: '1px solid var(--border-color, rgba(255,255,255,0.10))',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04)',
@@ -180,11 +174,14 @@ export function TopRibbon({
           )}
         </div>
 
-        <div className="w-px h-6 bg-fluent-border" />
+        <div className="w-px h-6 bg-fluent-border opacity-40" />
+
         <Tooltip title={t.tooltips.lyricsTab}>
           <button
             onClick={() => setActiveTab('lyrics')}
-            className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${activeTab === 'lyrics' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'}`}
+            className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${
+              activeTab === 'lyrics' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'
+            }`}
           >
             {t.ribbon.lyrics}
             {activeTab === 'lyrics' && (
@@ -192,10 +189,13 @@ export function TopRibbon({
             )}
           </button>
         </Tooltip>
+
         <Tooltip title={t.tooltips.musicalTab}>
           <button
             onClick={() => setActiveTab('musical')}
-            className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${activeTab === 'musical' ? 'text-[#f59e0b]' : 'text-zinc-500 hover:text-[#f59e0b]'}`}
+            className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${
+              activeTab === 'musical' ? 'text-[#f59e0b]' : 'text-zinc-500 hover:text-[#f59e0b]'
+            }`}
           >
             {t.ribbon.musical}
             {activeTab === 'musical' && (
@@ -205,93 +205,75 @@ export function TopRibbon({
         </Tooltip>
       </div>
 
-      {/* Right: action buttons */}
-      <div className="flex items-center gap-2">
-        <div className="hidden lg:flex items-center gap-2">
-          {isBusy && (
-            <span className="mr-2 inline-flex items-center gap-2 rounded-full border border-[var(--accent-color)]/20 bg-[var(--accent-color)]/10 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-[var(--accent-color)]">
-              <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-hidden="true" />
-              Busy
-            </span>
-          )}
-          <Tooltip title={t.tooltips.export}>
-            <Button onClick={onExportClick} disabled={song.length === 0} variant="outlined" color="info" size="small" startIcon={<Download className="w-3.5 h-3.5" />} style={{ fontSize: '0.75rem', padding: '4px 12px' }}>
-              {t.ribbon.export}
-            </Button>
-          </Tooltip>
-          <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
-          <Tooltip title={t.tooltips.versions}>
-            <IconButton onClick={() => setIsVersionsModalOpen(true)} size="small" style={{ color: 'var(--text-secondary)' }}>
-              <History className="w-4 h-4" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t.tooltips.undo}>
-            <IconButton onClick={undo} disabled={!canUndo} size="small"
-              style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
-              className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
-              aria-disabled={!canUndo}>
-              <Undo2 className="w-4 h-4" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t.tooltips.redo}>
-            <IconButton onClick={redo} disabled={!canRedo} size="small"
-              style={{ color: canRedo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
-              className={canRedo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
-              aria-disabled={!canRedo}>
-              <Redo2 className="w-4 h-4" />
-            </IconButton>
-          </Tooltip>
-          <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
-          <Tooltip title={t.tooltips.reset}>
-            <IconButton onClick={() => setIsResetModalOpen(true)} disabled={song.length === 0} size="small" style={{ color: 'var(--accent-critical)' }}>
-              <Trash2 className="w-4 h-4" />
-            </IconButton>
-          </Tooltip>
-          <div className="w-px h-4 bg-[var(--border-color)] mx-2" />
-          {!hasApiKey && (
-            <Tooltip title={t.tooltips.aiUnavailableHelp}>
-              <button onClick={handleApiKeyHelp} className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold rounded-lg flex items-center gap-2 hover:bg-amber-500/20 transition-all">
-                <Sparkles className="w-3 h-3" />
-                {t.ribbon.aiUnavailable}
-              </button>
-            </Tooltip>
-          )}
-        </div>
+      {/* RIGHT: undo/redo + busy dot + api key alert + structure toggle */}
+      <div className="flex items-center gap-1 lg:gap-2">
 
-        {/* Mobile-only */}
-        <div className="flex lg:hidden items-center gap-1">
-          {isBusy && <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-hidden="true" />}
-          {!hasApiKey && (
-            <button onClick={handleApiKeyHelp} className="min-w-[44px] min-h-[44px] flex items-center justify-center px-2 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg hover:bg-amber-500/20 transition-all">
-              <Sparkles className="w-4 h-4" />
+        {/* Busy indicator — dot only, no text */}
+        {isBusy && (
+          <span
+            className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse"
+            aria-label="Processing"
+            title="Processing…"
+          />
+        )}
+
+        {/* API key missing — compact on desktop, icon-only on mobile */}
+        {!hasApiKey && (
+          <Tooltip title={t.tooltips.aiUnavailableHelp}>
+            <button
+              onClick={handleApiKeyHelp}
+              className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold rounded-lg hover:bg-amber-500/20 transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">{t.ribbon.aiUnavailable}</span>
             </button>
-          )}
-          <IconButton onClick={undo} disabled={!canUndo} size="small"
-            style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 44, minHeight: 44 }}
+          </Tooltip>
+        )}
+
+        <div className="w-px h-4 bg-[var(--border-color)] mx-1 hidden lg:block" />
+
+        {/* Undo */}
+        <Tooltip title={t.tooltips.undo}>
+          <IconButton
+            onClick={undo}
+            disabled={!canUndo}
+            size="small"
+            style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 36, minHeight: 36 }}
             className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
-            aria-disabled={!canUndo} aria-label={t.tooltips.undo}>
+            aria-disabled={!canUndo}
+            aria-label={t.tooltips.undo}
+          >
             <Undo2 className="w-4 h-4" />
           </IconButton>
-          <IconButton onClick={redo} disabled={!canRedo} size="small"
-            style={{ color: canRedo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 44, minHeight: 44 }}
+        </Tooltip>
+
+        {/* Redo */}
+        <Tooltip title={t.tooltips.redo}>
+          <IconButton
+            onClick={redo}
+            disabled={!canRedo}
+            size="small"
+            style={{ color: canRedo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 36, minHeight: 36 }}
             className={canRedo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
-            aria-disabled={!canRedo} aria-label={t.tooltips.redo}>
+            aria-disabled={!canRedo}
+            aria-label={t.tooltips.redo}
+          >
             <Redo2 className="w-4 h-4" />
           </IconButton>
-          <Tooltip title="Open new generation panel">
-            <button onClick={onOpenNewGeneration}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all"
-              aria-label="Open new generation panel">
-              <FilePlus2 className="w-5 h-5" />
-            </button>
-          </Tooltip>
-        </div>
+        </Tooltip>
 
+        <div className="w-px h-4 bg-[var(--border-color)] mx-1" />
+
+        {/* Structure sidebar toggle */}
         <Tooltip title={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}>
           <button
             onClick={() => setIsStructureOpen(!isStructureOpen)}
             aria-label={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-colors"
+            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
+            style={{
+              color: isStructureOpen ? 'var(--accent-color)' : 'var(--text-secondary)',
+              backgroundColor: isStructureOpen ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)' : undefined,
+            }}
           >
             <PanelRight className="w-5 h-5" />
           </button>
