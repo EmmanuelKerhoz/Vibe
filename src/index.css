@@ -245,10 +245,8 @@
 
 /* ===========================================================================
    ACCENT RAIL — reusable pseudo-element mixin classes
-   Applied via ::before on containers. Single gradient, consistent 2px stroke.
    =========================================================================== */
 
-/* Horizontal rail — top edge */
 .accent-rail-top {
   position: relative;
 }
@@ -268,7 +266,6 @@
 }
 .dark .accent-rail-top::before { opacity: 1; }
 
-/* Vertical rail — right edge */
 .accent-rail-right {
   position: relative;
 }
@@ -288,7 +285,6 @@
 }
 .dark .accent-rail-right::before { opacity: 1; }
 
-/* When both top + right needed, ::before = top, ::after = right */
 .accent-rail-top-right {
   position: relative;
 }
@@ -323,7 +319,6 @@
 .dark .accent-rail-top-right::before,
 .dark .accent-rail-top-right::after { opacity: 1; }
 
-/* Legacy alias kept for compatibility */
 .lcars-ribbon-rail {
   position: relative;
 }
@@ -347,8 +342,6 @@ body {
   overscroll-behavior: none;
 }
 
-/* overflow:clip clips paint overflow without creating a scroll container,
-   so wheel/touch events propagate correctly to .lcars-lyrics-area */
 html, body, #root {
   height: 100%;
   height: 100dvh;
@@ -461,7 +454,6 @@ html, body, #root {
   transform: translateY(-1px);
 }
 
-/* Left sidebar — top accent rail only, NO bottom line */
 .ui-fluent .fluent-sidebar {
   backdrop-filter: var(--layer1-blur);
   background-color: var(--bg-sidebar);
@@ -544,7 +536,6 @@ html, body, #root {
     repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, rgba(255,255,255,0.55) 7px, rgba(255,255,255,0.55) 8px, transparent 8px, transparent 15px),
     radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.6) 0%, transparent 70%);
   background-attachment: scroll;
-  /* Explicit touch-action on the actual scroll container */
   touch-action: pan-y;
 }
 .dark .lcars-lyrics-area {
@@ -565,7 +556,6 @@ html, body, #root {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* lcars-ribbon — top accent rail only via unified token */
 .lcars-ribbon { position: relative; }
 .dark .lcars-ribbon::before {
   content: '';
@@ -579,7 +569,6 @@ html, body, #root {
   z-index: 2;
   pointer-events: none;
 }
-/* Remove old ::after bottom line from ribbon */
 .dark .lcars-ribbon::after { display: none; }
 
 .lcars-suggestions { border: 1px solid var(--border-color); }
@@ -588,7 +577,6 @@ html, body, #root {
   box-shadow: var(--glow-accent);
 }
 
-/* Status bar — unified accent rail top */
 .lcars-status-bar {
   background: var(--status-bar-bg);
   border-top: 1px solid var(--border-color);
@@ -643,13 +631,6 @@ html, body, #root {
 .lcars-app-id { letter-spacing: 0.05em; }
 .dark .lcars-app-id:hover { color: var(--accent-color); }
 
-/* ── Lyrics editor zoom — desktop only ─────────────────────────────────────── */
-/*
-  FIX: .lyrics-editor-zoom-wrapper must NOT set height:100% or overflow:hidden.
-  Doing so traps content inside the wrapper, preventing the parent
-  .lcars-lyrics-area (overflow-y:auto) from ever seeing overflow to scroll.
-  We let the wrapper size naturally to its content.
-*/
 .lyrics-editor-zoom-wrapper {
   width: 100%;
 }
@@ -658,11 +639,7 @@ html, body, #root {
   transform-origin: top center;
   width: 117.647059%;
   margin-left: -8.823529%;
-  /* NOTE: no flex:1 / display:flex / flex-direction:column here —
-     those caused the zoom container to fill exactly the viewport
-     height, producing zero scrollable overflow. */
 }
-/* Mobile & tablet: no zoom, full width */
 @media (max-width: 1023px) {
   .lyrics-editor-zoom {
     transform: none;
@@ -975,6 +952,10 @@ input:focus, textarea:focus, button:focus-visible {
     z-index: 50;
     box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
   }
+  /* Inner scrollable zone: leave room for the bottom nav bar */
+  .structure-sidebar-mobile-overlay .p-5.flex-1.overflow-y-auto {
+    padding-bottom: calc(var(--mobile-nav-h) + var(--sab) + 16px) !important;
+  }
 }
 
 /* ===========================================================================
@@ -1079,8 +1060,6 @@ input:focus, textarea:focus, button:focus-visible {
 
 /* ===========================================================================
    LCARS Gradient Border Panel (.lcars-gb-panel)
-   CSS-native border-image gradient — no double-div wrapper, no background bleed.
-   Light mode: subtle neutral border. Dark mode: LCARS amber→cyan→violet rail.
    =========================================================================== */
 
 .lcars-gb-panel {
@@ -1088,28 +1067,22 @@ input:focus, textarea:focus, button:focus-visible {
   background-color: var(--bg-card);
   backdrop-filter: var(--layer2-blur, blur(8px));
   -webkit-backdrop-filter: var(--layer2-blur, blur(8px));
-  /* Light: plain border */
   border: 1px solid var(--border-color);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   position: relative;
   overflow: hidden;
 }
 
-/* Dark: gradient border via outline trick (border-image doesn't respect border-radius).
-   We use a ::before pseudo-element inset overlay approach — zero DOM cost. */
 .dark .lcars-gb-panel {
   background-color: var(--bg-card);
   border: 1px solid transparent;
   background-clip: padding-box;
-  /* Glow from the gradient border */
   box-shadow:
     0 0 0 1px transparent,
     0 4px 16px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-/* Pseudo border via box-shadow gradient simulation isn't viable for multi-stop.
-   Use a wrapping ::before at z:-1 with the gradient background + padding trick. */
 .dark .lcars-gb-panel::before {
   content: '';
   position: absolute;
@@ -1122,7 +1095,6 @@ input:focus, textarea:focus, button:focus-visible {
     var(--lcars-cyan)   55%,
     var(--lcars-violet) 100%
   );
-  /* Mask: show only the 1px border area */
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -1138,8 +1110,51 @@ input:focus, textarea:focus, button:focus-visible {
   opacity: 1;
 }
 
-/* Ensure content sits above the pseudo border */
 .dark .lcars-gb-panel > * {
   position: relative;
   z-index: 1;
+}
+
+/* ===========================================================================
+   AboutModal — glass sweep diagonal animation
+   Overlay div fires once on open: BG (bottom-left) → HD (top-right)
+   =========================================================================== */
+
+@keyframes about-glass-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%) translateY(100%) skewX(-15deg);
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(160%) translateY(-160%) skewX(-15deg);
+  }
+}
+
+.about-glass-sweep-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  /* Wide band to cross the full diagonal */
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 20%,
+    rgba(255, 255, 255, 0.18) 48%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.18) 52%,
+    rgba(255, 255, 255, 0.04) 80%,
+    transparent 100%
+  );
+  /* Initial state: off-screen bottom-left, animation applied by JS */
+  opacity: 0;
+  transform: translateX(-100%) translateY(100%) skewX(-15deg);
+  will-change: transform, opacity;
 }

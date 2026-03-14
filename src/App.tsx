@@ -498,6 +498,7 @@ export default function App() {
         setIsStructureOpen={setIsStructureOpen}
         setActiveTab={setActiveTab}
         onGenerateSong={handleGlobalRegenerate}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       <AppModals
