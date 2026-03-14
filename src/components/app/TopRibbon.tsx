@@ -71,6 +71,16 @@ export function TopRibbon({
 
   return (
     <div className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0 fluent-animate-panel">
+      {/* LCARS gradient separator — bottom edge */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0, left: 0, right: 0,
+        height: '1px',
+        background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
+        opacity: 0.5,
+        pointerEvents: 'none',
+        zIndex: 1,
+      }} />
       {/* Left: burger menu + tab switcher */}
       <div className="flex items-center gap-3 lg:gap-6 pl-1 lg:pl-3">
         <div className="relative" ref={menuRef}>
