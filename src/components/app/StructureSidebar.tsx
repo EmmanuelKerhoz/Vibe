@@ -45,6 +45,9 @@ export function StructureSidebar({
   const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Detect mobile overlay mode from className prop
+  const isMobileOverlay = className?.includes('structure-sidebar-mobile-overlay') ?? false;
+
   const sectionOptions = [
     t.sections.intro, t.sections.verse, t.sections.preChorus,
     t.sections.chorus, t.sections.bridge, t.sections.breakdown, t.sections.finalChorus, t.sections.outro,
@@ -78,6 +81,16 @@ export function StructureSidebar({
                 <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />
                 <span className="text-[10px] uppercase tracking-widest font-semibold">{t.structure.title}</span>
               </h3>
+              {/* Close button visible only on mobile overlay */}
+              {isMobileOverlay && (
+                <button
+                  onClick={() => setIsStructureOpen(false)}
+                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded"
+                  aria-label="Close structure panel"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
@@ -192,17 +205,20 @@ export function StructureSidebar({
               </div>
             </div>
 
-            <div className="p-5 border-t border-fluent-border">
-              <Tooltip title={t.tooltips.collapseRight}>
-                <button
-                  onClick={() => setIsStructureOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-2 text-[10px] uppercase tracking-widest text-[var(--accent-color)] hover:text-[var(--accent-color)]/80 transition-colors"
-                >
-                  <PanelRight className="w-3.5 h-3.5" />
-                  {t.structure.collapse}
-                </button>
-              </Tooltip>
-            </div>
+            {/* Footer collapse button — desktop only, hidden on mobile overlay */}
+            {!isMobileOverlay && (
+              <div className="p-5 border-t border-fluent-border">
+                <Tooltip title={t.tooltips.collapseRight}>
+                  <button
+                    onClick={() => setIsStructureOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 py-2 text-[10px] uppercase tracking-widest text-[var(--accent-color)] hover:text-[var(--accent-color)]/80 transition-colors"
+                  >
+                    <PanelRight className="w-3.5 h-3.5" />
+                    {t.structure.collapse}
+                  </button>
+                </Tooltip>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
