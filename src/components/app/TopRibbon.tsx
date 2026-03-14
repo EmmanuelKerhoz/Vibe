@@ -71,8 +71,16 @@ export function TopRibbon({
 
   return (
     <div
-      className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0 fluent-animate-panel"
-      style={{ position: 'relative', overflow: 'visible' }}
+      className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0"
+      style={{
+        position: 'relative',
+        overflow: 'visible',
+        // Solid bg — overrides glass-panel semi-transparency on the ribbon itself
+        backgroundColor: 'var(--bg-app, #0c0c0c)',
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        zIndex: 20,
+      }}
     >
       {/* LCARS gradient separator — bottom edge */}
       <div style={{
@@ -82,105 +90,96 @@ export function TopRibbon({
         background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
         opacity: 0.85,
         pointerEvents: 'none',
-        zIndex: 10,
+        zIndex: 1,
       }} />
+
       {/* Left: burger menu + tab switcher */}
       <div className="flex items-center gap-3 lg:gap-6 pl-1 lg:pl-3">
-        <div className="relative" ref={menuRef}>
+        {/*
+          z-[60] on the wrapper ensures the dropdown (z-50 inside) renders above
+          other ribbon content and the burger button itself stays visible.
+        */}
+        <div className="relative" style={{ zIndex: 60 }} ref={menuRef}>
           <Tooltip title="Open main menu">
             <button
               onClick={() => setIsMenuOpen(v => !v)}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all duration-200"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 rounded-md transition-all duration-200"
+              style={{
+                color: isMenuOpen ? 'var(--accent-color)' : undefined,
+                backgroundColor: isMenuOpen ? 'color-mix(in srgb, var(--accent-color) 12%, transparent)' : undefined,
+              }}
               aria-label="Open main menu"
               aria-expanded={isMenuOpen}
             >
               <Menu className="w-5 h-5" />
             </button>
           </Tooltip>
+
           {isMenuOpen && (
-            <div className="absolute left-0 top-full mt-2 w-[280px] glass-panel border border-[var(--border-color)] rounded-2xl shadow-2xl z-50 py-2 overflow-hidden">
+            <div
+              className="absolute left-0 top-full mt-2 w-[280px] rounded-2xl shadow-2xl py-2 overflow-hidden"
+              style={{
+                // Fully opaque — no glass-panel class to avoid rgba/backdrop-filter bleed
+                backgroundColor: 'var(--bg-app, #111)',
+                border: '1px solid var(--border-color, rgba(255,255,255,0.10))',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04)',
+                zIndex: 50,
+              }}
+            >
               <div className="px-4 py-2 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Create</div>
-              <button
-                onClick={() => runMenuAction(onOpenNewGeneration)}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
-              >
+              <button onClick={() => runMenuAction(onOpenNewGeneration)} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <WandSparkles className="w-4 h-4 text-[var(--accent-color)]" />
                 New generation
               </button>
-              <button
-                onClick={() => runMenuAction(onOpenNewEmpty)}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
-              >
+              <button onClick={() => runMenuAction(onOpenNewEmpty)} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
                 New empty
               </button>
-              <button
-                onClick={() => runMenuAction(onImportClick)}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
-              >
+              <button onClick={() => runMenuAction(onImportClick)} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <Upload className="w-4 h-4 text-[var(--text-secondary)]" />
                 Load
               </button>
+
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 py-2 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Workspace</div>
-              <button
-                onClick={() => runMenuAction(onOpenLibraryClick)}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
-              >
+              <button onClick={() => runMenuAction(onOpenLibraryClick)} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <Library className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.saveToLibrary.title}
               </button>
-              <button
-                onClick={() => runMenuAction(() => setActiveTab('musical'))}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
-              >
+              <button onClick={() => runMenuAction(() => setActiveTab('musical'))} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <Sparkles className="w-4 h-4 text-[#f59e0b]" />
                 {t.ribbon.musical}
               </button>
+
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 py-2 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
-              <button
-                onClick={() => runMenuAction(onExportClick)}
-                disabled={song.length === 0}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50"
-              >
+              <button onClick={() => runMenuAction(onExportClick)} disabled={song.length === 0} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50">
                 <Download className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.ribbon.export}
               </button>
-              <button
-                onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
-              >
+              <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <History className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.ribbon.versions}
               </button>
-              <button
-                onClick={() => runMenuAction(() => setIsResetModalOpen(true))}
-                disabled={song.length === 0}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
-              >
+              <button onClick={() => runMenuAction(() => setIsResetModalOpen(true))} disabled={song.length === 0} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50">
                 <Trash2 className="w-4 h-4" />
                 {t.ribbon.reset}
               </button>
+
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 py-2 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">App</div>
-              <button
-                onClick={() => runMenuAction(onOpenSettingsClick)}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
-              >
+              <button onClick={() => runMenuAction(onOpenSettingsClick)} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
                 Settings
               </button>
-              <button
-                onClick={() => runMenuAction(onOpenAboutClick)}
-                className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
-              >
+              <button onClick={() => runMenuAction(onOpenAboutClick)} className="w-full flex items-center gap-3 px-4 py-3 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <Info className="w-4 h-4 text-[var(--text-secondary)]" />
                 About
               </button>
             </div>
           )}
         </div>
+
         <div className="w-px h-6 bg-fluent-border" />
         <Tooltip title={t.tooltips.lyricsTab}>
           <button
@@ -227,26 +226,18 @@ export function TopRibbon({
             </IconButton>
           </Tooltip>
           <Tooltip title={t.tooltips.undo}>
-            <IconButton
-              onClick={undo}
-              disabled={!canUndo}
-              size="small"
+            <IconButton onClick={undo} disabled={!canUndo} size="small"
               style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
               className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
-              aria-disabled={!canUndo}
-            >
+              aria-disabled={!canUndo}>
               <Undo2 className="w-4 h-4" />
             </IconButton>
           </Tooltip>
           <Tooltip title={t.tooltips.redo}>
-            <IconButton
-              onClick={redo}
-              disabled={!canRedo}
-              size="small"
+            <IconButton onClick={redo} disabled={!canRedo} size="small"
               style={{ color: canRedo ? 'var(--accent-color)' : 'var(--text-secondary)' }}
               className={canRedo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
-              aria-disabled={!canRedo}
-            >
+              aria-disabled={!canRedo}>
               <Redo2 className="w-4 h-4" />
             </IconButton>
           </Tooltip>
@@ -267,44 +258,30 @@ export function TopRibbon({
           )}
         </div>
 
-        {/* Mobile-only: compact undo/redo + busy indicator + overflow menu */}
+        {/* Mobile-only */}
         <div className="flex lg:hidden items-center gap-1">
-          {isBusy && (
-            <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-hidden="true" />
-          )}
+          {isBusy && <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-hidden="true" />}
           {!hasApiKey && (
             <button onClick={handleApiKeyHelp} className="min-w-[44px] min-h-[44px] flex items-center justify-center px-2 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg hover:bg-amber-500/20 transition-all">
               <Sparkles className="w-4 h-4" />
             </button>
           )}
-          <IconButton
-            onClick={undo}
-            disabled={!canUndo}
-            size="small"
+          <IconButton onClick={undo} disabled={!canUndo} size="small"
             style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 44, minHeight: 44 }}
             className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
-            aria-disabled={!canUndo}
-            aria-label={t.tooltips.undo}
-          >
+            aria-disabled={!canUndo} aria-label={t.tooltips.undo}>
             <Undo2 className="w-4 h-4" />
           </IconButton>
-          <IconButton
-            onClick={redo}
-            disabled={!canRedo}
-            size="small"
+          <IconButton onClick={redo} disabled={!canRedo} size="small"
             style={{ color: canRedo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 44, minHeight: 44 }}
             className={canRedo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'}
-            aria-disabled={!canRedo}
-            aria-label={t.tooltips.redo}
-          >
-              <Redo2 className="w-4 h-4" />
-            </IconButton>
+            aria-disabled={!canRedo} aria-label={t.tooltips.redo}>
+            <Redo2 className="w-4 h-4" />
+          </IconButton>
           <Tooltip title="Open new generation panel">
-            <button
-              onClick={onOpenNewGeneration}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all"
-              aria-label="Open new generation panel"
-            >
+            <button onClick={onOpenNewGeneration}
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all"
+              aria-label="Open new generation panel">
               <FilePlus2 className="w-5 h-5" />
             </button>
           </Tooltip>
