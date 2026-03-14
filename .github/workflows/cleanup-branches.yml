@@ -18,127 +18,95 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const branches = [
-              // Previously listed in cleanup-merged-branches.yml (may already be deleted)
-              'copilot/add-gemini-proxy-endpoint',
-              'copilot/audit-copilot-app-tsx-cleanup',
-              'copilot/audit-main-and-fix-inconsistencies',
-              'copilot/fix-build-and-typecheck-issues',
-              'copilot/fix-github-pages-deployment',
-              'copilot/regenerate-package-lock-file',
-              'copilot/restore-src-app-tsx-version',
-              'copilot/update-gemini-model-unification',
-              'refactor/auto-split-phase1',
-              'refactor/modularize-app',
-              'refactor/type-safety-phase2',
-              // Previously listed in cleanup-branches.yml (may already be deleted)
-              'copilot/add-tooltips-to-ui-elements',
-              'copilot/remove-obsolete-merged-branches',
-              'copilot/restore-lcars-ui-features',
-              'copilot/update-adaptation-function-prompts',
-              // Dead branches from closed/unmerged PRs (batch 1)
-              'copilot/add-apple-link-in-about',
-              'copilot/add-column-headers-to-lyric-cards',
-              'copilot/add-light-theme-override-lcars-lyrics-area',
-              'copilot/add-links-and-transparency-to-about',
-              'copilot/add-multilingual-support',
-              'copilot/add-similarity-index-calculation',
-              'copilot/add-version-control-for-lyrics',
-              'copilot/check-code-lines',
-              'copilot/check-last-pr-errors',
-              'copilot/check-project-anomalies',
-              'copilot/fix-algorithmic-texture-lyrics-area',
-              'copilot/fix-banner-visibility-issue',
-              'copilot/fix-border-radius-issues',
-              'copilot/fix-ci-job-error-relationship-prop',
-              'copilot/fix-code-anomalies-and-bugs',
-              'copilot/fix-empty-lyrics-area',
-              'copilot/fix-issue-58-audit-hooks',
-              'copilot/fix-language-switcher-dropdown',
-              'copilot/fix-lcars-lyrics-area-scope',
-              'copilot/fix-lyric-column-header-overlap',
-              'copilot/fix-multiple-targeted-issues',
-              'copilot/fix-ui-corrections',
-              'copilot/fix-ui-regression-star-trek',
-              'copilot/implement-similarity-check-function',
-              'copilot/merge-warning-and-open-dialog',
-              'copilot/proceed-all-prs-in-order',
-              'copilot/remove-dead-branches',
-              'copilot/remove-rounded-box-drag-grip',
-              'copilot/update-about-banner-image',
-              'copilot/update-about-banner-visibility',
-              'copilot/update-lyrics-analysis-and-ui',
-              'fix/ui-refinements',
-              'hotfix/vercel-build',
-              'work',
-              // Merged branches (batch 2 — accumulated since last cleanup)
-              'copilot/add-about-dialog-splash-screen',
-              'copilot/add-api-error-modal',
-              'copilot/add-musicmap-genre-taxonomy',
-              'copilot/add-sliding-window-rate-limiter',
-              'copilot/add-translation-entries',
-              'copilot/add-ui-ux-animations',
-              'copilot/clean-dead-branches',
-              'copilot/exchange-schema-syllabes-columns',
-              'copilot/extract-section-editor-component',
-              'copilot/feat-preserve-meta-instructions',
-              'copilot/fix-ci-errors',
-              'copilot/fix-dropdown-display-issues',
-              'copilot/fix-extract-song-merge-utils',
-              'copilot/fix-html-entities-in-snippets',
-              'copilot/fix-lcars-glow-consistency',
-              'copilot/fix-localstorage-quota-guard-again',
-              'copilot/fix-merge-conflict-package-json',
-              'copilot/fix-metronome-visibility-and-select-styling',
-              'copilot/fix-pr-76-i18n-issues',
-              'copilot/fix-regenerate-section-context',
-              'copilot/fix-selection-highlighting-issue',
-              'copilot/improve-editor-ui-elements',
-              'copilot/improve-light-theme-readability',
-              'copilot/increment-app-minor-version',
-              'copilot/pr-119-fix-issues',
-              'copilot/preserve-meta-instructions-import',
-              'copilot/reduce-section-spacing',
-              'copilot/reduce-vertical-space-lyrics',
-              'copilot/refactor-app-component-logic',
-              'copilot/refactor-section-editor-memo',
-              'copilot/remove-redundant-useeffect',
-              'copilot/replace-and-consolidate-prs-117-118',
-              'copilot/replace-native-select-with-lcarsselect',
-              'copilot/ui-consistency-dialogs',
-              'copilot/ui-mobile-responsive-layout',
-              'copilot/update-dialog-export-colors',
-              'copilot/update-musical-interface',
-              'copilot/update-rhyme-scheme-display',
-              'copilot/update-ui-ux-across-dialogs',
-              'copilot/update-visual-layer-to-star-trek-fui',
-              'copilot/ux-fixes-language-flags-section-count',
-              'feature/rhyme-schema-update',
-              'feature/web-similarity-engine',
-              'fix/section-columns',
-              'fix/structured-editor-dropdown',
-              'fix/ui-consistency-safe',
-              'ui-consistency-improvements',
-            ];
-
+            const { owner, repo } = context.repo;
+            const defaultBranch = context.payload.repository.default_branch;
+            const openPrRefs = new Set();
+            const latestClosedPrByRef = new Map();
             let deleted = 0;
             let skipped = 0;
-            for (const branch of branches) {
-              try {
-                await github.rest.git.deleteRef({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  ref: `heads/${branch}`,
-                });
-                console.log(`✓ Deleted ${branch}`);
-                deleted++;
-              } catch (error) {
-                if (error.status === 404 || error.status === 422) {
-                  console.log(`⊘ ${branch} already deleted`);
-                  skipped++;
-                } else {
-                  console.error(`✗ Failed to delete ${branch}: ${error.message}`);
+            let ignored = 0;
+
+            for await (const response of github.paginate.iterator(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            })) {
+              for (const pr of response.data) {
+                if (pr.head.repo?.full_name === `${owner}/${repo}`) {
+                  openPrRefs.add(pr.head.ref);
                 }
               }
             }
-            console.log(`\nSummary: ${deleted} deleted, ${skipped} already gone.`);
+
+            for await (const response of github.paginate.iterator(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'closed',
+              sort: 'updated',
+              direction: 'desc',
+              per_page: 100,
+            })) {
+              for (const pr of response.data) {
+                if (pr.head.repo?.full_name !== `${owner}/${repo}`) continue;
+                if (pr.head.ref === defaultBranch) continue;
+                if (!latestClosedPrByRef.has(pr.head.ref)) {
+                  latestClosedPrByRef.set(pr.head.ref, {
+                    sha: pr.head.sha,
+                    number: pr.number,
+                    merged: Boolean(pr.merged_at),
+                  });
+                }
+              }
+            }
+
+            const branches = await github.paginate(github.rest.repos.listBranches, {
+              owner,
+              repo,
+              per_page: 100,
+            });
+
+            for (const branch of branches) {
+              if (branch.name === defaultBranch || branch.protected) {
+                console.log(`⊘ Keeping ${branch.name} (default or protected branch)`);
+                ignored++;
+                continue;
+              }
+
+              if (openPrRefs.has(branch.name)) {
+                console.log(`⊘ Keeping ${branch.name} (open pull request)`);
+                ignored++;
+                continue;
+              }
+
+              const latestClosedPr = latestClosedPrByRef.get(branch.name);
+              if (!latestClosedPr) {
+                console.log(`⊘ Keeping ${branch.name} (no closed pull request found)`);
+                ignored++;
+                continue;
+              }
+
+              if (branch.commit?.sha !== latestClosedPr.sha) {
+                console.log(`⊘ Keeping ${branch.name} (branch advanced since PR #${latestClosedPr.number} closed)`);
+                ignored++;
+                continue;
+              }
+
+              try {
+                await github.rest.git.deleteRef({
+                  owner,
+                  repo,
+                  ref: `heads/${branch.name}`,
+                });
+                console.log(`✓ Deleted ${branch.name} (${latestClosedPr.merged ? 'merged' : 'closed'} PR #${latestClosedPr.number})`);
+                deleted++;
+              } catch (error) {
+                if (error.status === 404 || error.status === 422) {
+                  console.log(`⊘ ${branch.name} already deleted`);
+                  skipped++;
+                } else {
+                  console.error(`✗ Failed to delete ${branch.name}: ${error.message}`);
+                }
+              }
+            }
+            console.log(`\nSummary: ${deleted} deleted, ${skipped} already gone, ${ignored} kept.`);
