@@ -223,7 +223,11 @@ export default function App() {
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title);
 
-  const hasExistingWork = (song.length > 0 && !isPristineDraft(song, structure, rhymeScheme))
+  // Guard: only consider content exists if at least one non-meta line has real text
+  const hasRealLyricContent = song.some(s =>
+    s.lines.some(l => !l.isMeta && l.text.trim().length > 0)
+  );
+  const hasExistingWork = (hasRealLyricContent && !isPristineDraft(song, structure, rhymeScheme))
     || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
 
   const webBadgeLabel = webSimilarityIndex.status === 'done' && webSimilarityIndex.candidates.length > 0
@@ -234,8 +238,11 @@ export default function App() {
   const handleGenerateTitle = async () => { const t2 = await generateTitle(); if (t2) { setTitle(t2); setTitleOrigin('ai'); } };
 
   const handleGlobalRegenerate = () => {
-    if (song.length > 0) { setConfirmModal({ open: true, onConfirm: () => { setConfirmModal(null); void generateSong(); } }); }
-    else { void generateSong(); }
+    if (hasRealLyricContent) {
+      setConfirmModal({ open: true, onConfirm: () => { setConfirmModal(null); void generateSong(); } });
+    } else {
+      void generateSong();
+    }
   };
 
   const handleScrollToSection = useCallback((sectionId: string) => {

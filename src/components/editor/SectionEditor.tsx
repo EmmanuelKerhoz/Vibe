@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, Trash2 } from 'lucide-react';
+import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, Trash2, Settings2 } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
 import { LyricInput } from './LyricInput';
@@ -105,10 +105,13 @@ export const SectionEditor = React.memo(function SectionEditor({
       className={`lcars-band ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
       style={{ overflow: 'visible' }}
     >
-      {/* Colour stripe — kept as separate clipping context so it stays crisp */}
-      <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} style={{ borderRadius: '24px 0 0 24px', overflow: 'hidden', flexShrink: 0 }} />
+      {/* Colour stripe — border-radius only, no overflow:hidden so top ring/outline is not clipped */}
+      <div
+        className={`lcars-band-stripe ${getSectionDotColor(section.name)}`}
+        style={{ borderRadius: '24px 0 0 24px', flexShrink: 0 }}
+      />
 
-      <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0 }}>
+      <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, overflow: 'visible' }}>
         <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
           <div className="flex items-center gap-3">
             <div className="flex flex-col gap-0.5">
@@ -212,12 +215,14 @@ export const SectionEditor = React.memo(function SectionEditor({
                     style={{ paddingLeft: '12px', paddingRight: '12px' }}
                   >
                     <div /><div /><div />
+                    {/* Meta lines: show gear badge instead of a lyric line number */}
                     <button
                       type="button"
                       onClick={() => handleLineClick(line.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-sm border border-cyan-500/20 bg-cyan-500/10 text-[11px] font-semibold text-cyan-500"
+                      className="flex h-8 w-8 items-center justify-center rounded-sm border border-cyan-500/20 bg-cyan-500/10 text-cyan-500"
+                      aria-label="Meta instruction"
                     >
-                      {index + 1}
+                      <Settings2 className="h-3.5 w-3.5" />
                     </button>
                     <div style={{ gridColumn: 'span 4', display: 'flex', alignItems: 'center', minWidth: 0 }}>
                       <MetaLine text={line.text} />
@@ -234,6 +239,8 @@ export const SectionEditor = React.memo(function SectionEditor({
                   </div>
                 );
               }
+
+              const lyricDisplayIndex = (lyricLineIndexMap.get(line.id) ?? 0) + 1;
 
               return (
                 <div
@@ -284,7 +291,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                   </div>
 
                   <button type="button" onClick={() => handleLineClick(line.id)} className="flex h-8 w-8 items-center justify-center rounded-sm border border-black/10 bg-white/70 text-[11px] font-semibold text-zinc-500 transition group-hover:text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-zinc-200">
-                    {index + 1}
+                    {lyricDisplayIndex}
                   </button>
 
                   <LyricInput
@@ -293,7 +300,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                     onKeyDown={(e) => handleLineKeyDown(e, section.id, line.id)}
                     onClick={() => handleLineClick(line.id)}
                     data-line-id={line.id}
-                    placeholder={`${section.name} line ${index + 1}`}
+                    placeholder={`${section.name} line ${lyricDisplayIndex}`}
                     className="text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                     style={{ width: '100%', minWidth: 0 }}
                   />

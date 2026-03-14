@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Section } from '../types';
 import { cleanSectionName, countSyllables } from '../utils/songUtils';
-import { isPureMetaLine, isEmptyBracketLine } from '../utils/metaUtils';
+import { isPureMetaLine, isSectionHeader, isEmptyBracketLine } from '../utils/metaUtils';
 import { generateId } from '../utils/idUtils';
 
 interface UseMarkupEditorParams {
@@ -20,6 +20,36 @@ const isArtifact = (text: string): boolean => {
   return t === '' || isEmptyBracketLine(t);
 };
 
+/**
+ * Splits a raw text line into individual bracketed tokens + plain text.
+ * e.g. "[Intro][Deep dry kicks]" → ["[Intro]", "[Deep dry kicks]"]
+ * e.g. "[Verse 1]" → ["[Verse 1]"]
+ * e.g. "Some lyric text" → ["Some lyric text"]
+ */
+const tokenizeLine = (rawLine: string): string[] => {
+  const trimmed = rawLine.trim();
+  // Line is entirely composed of consecutive [...] tokens (no plain text between)
+  const tokenPattern = /\[([^\]]+)\]/g;
+  const tokens: string[] = [];
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+  while ((match = tokenPattern.exec(trimmed)) !== null) {
+    // Any plain text before this token
+    if (match.index > lastIdx) {
+      const plain = trimmed.slice(lastIdx, match.index).trim();
+      if (plain) tokens.push(plain);
+    }
+    tokens.push(match[0]);
+    lastIdx = match.index + match[0].length;
+  }
+  // Trailing plain text after last token
+  if (lastIdx < trimmed.length) {
+    const trailing = trimmed.slice(lastIdx).trim();
+    if (trailing) tokens.push(trailing);
+  }
+  return tokens.length > 0 ? tokens : (trimmed ? [trimmed] : []);
+};
+
 export function useMarkupEditor(params: UseMarkupEditorParams) {
   const {
     song, isMarkupMode, markupText, markupTextareaRef,
@@ -36,7 +66,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         const ta = markupTextareaRef.current;
         ta.focus();
         ta.setSelectionRange(index, index + searchStr.length);
-        // Use actual line height from computed style for accurate scroll
         const lineHeight = parseInt(window.getComputedStyle(ta).lineHeight, 10) || 20;
         ta.scrollTop = (markupText.substring(0, index).split('\n').length - 2) * lineHeight;
       }
@@ -53,23 +82,31 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
   const handleMarkupToggle = useCallback(() => {
     if (isMarkupMode) {
       // MARKUP → STRUCTURED
-      const blocks = markupText.split(/\n\s*\n/);
+      // Expand each raw line into individual tokens before processing
+      const rawBlocks = markupText.split(/\n\s*\n/);
       const usedSectionIds = new Set<string>();
       const usedLineIds = new Set<string>();
 
-      const newSections: Section[] = blocks.map((block, index) => {
-        const lines = block.trim().split('\n');
-        if (lines.length === 0 || (lines.length === 1 && !(lines[0] ?? '').trim())) return null;
+      const newSections: Section[] = rawBlocks.map((block, index) => {
+        // Expand all raw lines into individual tokens
+        const expandedLines = block
+          .trim()
+          .split('\n')
+          .flatMap(tokenizeLine)
+          .filter(tok => tok.trim().length > 0);
+
+        if (expandedLines.length === 0) return null;
 
         let name = 'Verse';
-        let remainingLines = lines;
-        const firstLine = (lines[0] ?? '').trim();
+        let remainingLines = expandedLines;
+        const firstToken = (expandedLines[0] ?? '').trim();
 
-        if ((firstLine.startsWith('**[') && firstLine.endsWith(']**')) || (firstLine.startsWith('[') && firstLine.endsWith(']'))) {
-          const inner = firstLine.replace(/^\*\*\[|\]\*\*$|^\[|\]$/g, '').trim();
-          if (inner && !isPureMetaLine(`[${inner}]`)) {
-            name = cleanSectionName(firstLine);
-            remainingLines = lines.slice(1);
+        // Detect section header token (first token only)
+        if ((firstToken.startsWith('**[') && firstToken.endsWith(']**')) || (firstToken.startsWith('[') && firstToken.endsWith(']'))) {
+          const inner = firstToken.replace(/^\*\*\[|\]\*\*$|^\[|\]$/g, '').trim();
+          if (inner && isSectionHeader(inner)) {
+            name = cleanSectionName(firstToken);
+            remainingLines = expandedLines.slice(1);
           }
         }
 
@@ -78,25 +115,27 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         const lyricLines: string[] = [];
         let foundLyrics = false;
 
-        remainingLines.forEach(line => {
-          if (isArtifact(line)) return;
-          const trimmed = line.trim();
+        remainingLines.forEach(tok => {
+          if (isArtifact(tok)) return;
+          const trimmed = tok.trim();
           if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
             if (isPureMetaLine(trimmed)) {
+              // It's a meta-instruction: treat as a special lyric line (isMeta)
               foundLyrics = true;
-              lyricLines.push(line);
+              lyricLines.push(trimmed);
             } else {
+              // It's a section-header token appearing mid-block → treat as pre/post instruction
               if (foundLyrics) postInstructions.push(trimmed);
               else preInstructions.push(trimmed);
             }
           } else {
             foundLyrics = true;
-            lyricLines.push(line);
+            lyricLines.push(tok);
           }
         });
 
-        let existingSection = (song[index] && song[index].name === name)
-          ? song[index]
+        let existingSection = (song[index] && song[index]!.name === name)
+          ? song[index]!
           : song.find(s => s.name === name && !usedSectionIds.has(s.id));
         let sectionId = existingSection?.id || generateId();
         if (usedSectionIds.has(sectionId)) sectionId = generateId();
@@ -133,18 +172,28 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
             };
           }),
         };
-      }).filter(s => s !== null) as Section[];
+      }).filter((s): s is Section => s !== null);
 
       if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
       setIsMarkupMode(false);
     } else {
       // STRUCTURED → MARKUP
+      // Filter out any line whose text is a bare section-header bracket (e.g. "[Intro]") to avoid duplication
       const fmt = (i: string) => { const tr = i.trim(); return (tr.startsWith('[') && tr.endsWith(']')) ? tr : `[${tr}]`; };
       const text = song.map(sec => {
         const pre = (sec.preInstructions || []).map(fmt).join('\n');
         const post = (sec.postInstructions || []).map(fmt).join('\n');
         const lyricText = sec.lines
-          .filter(l => !isArtifact(l.text))
+          .filter(l => {
+            if (isArtifact(l.text)) return false;
+            // Exclude lines whose text is a bare section-header token — they would duplicate the section header
+            const t2 = l.text.trim();
+            if (t2.startsWith('[') && t2.endsWith(']')) {
+              const inner = t2.slice(1, -1).trim();
+              if (isSectionHeader(inner)) return false;
+            }
+            return true;
+          })
           .map(l => l.text)
           .join('\n');
         return `[${sec.name}]\n${pre ? pre + '\n' : ''}${lyricText}${post ? '\n' + post : ''}`;
