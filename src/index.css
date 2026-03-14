@@ -22,6 +22,9 @@
   --lcars-white:       #E0E0E0;
   --lcars-near-black:  #050505;
 
+  /* Shared token: mobile bottom nav height (without safe-area) */
+  --mobile-nav-h: 56px;
+
   --bg-app:            #f3f2f1;
   --bg-sidebar:        rgba(243, 242, 241, 0.75);
   --bg-card:           #e1dfdd;
@@ -526,7 +529,7 @@ html, body, #root {
   .lcars-lyrics-area {
     padding-left: 8px !important;
     padding-right: 8px !important;
-    padding-bottom: calc(60px + var(--sab)) !important;
+    padding-bottom: calc(var(--mobile-nav-h) + var(--sab) + 8px) !important;
   }
 }
 
@@ -862,7 +865,7 @@ input:focus, textarea:focus, button:focus-visible {
     left: 0;
     right: 0;
     z-index: 40;
-    height: calc(56px + var(--sab));
+    height: calc(var(--mobile-nav-h) + var(--sab));
     padding-bottom: var(--sab);
     background: var(--status-bar-bg);
     border-top: 1px solid var(--border-color);
@@ -923,11 +926,11 @@ input:focus, textarea:focus, button:focus-visible {
   }
   /* StatusBar hidden on mobile/tablet — replaced by bottom nav */
   .lcars-status-bar-desktop {
-    display: none;
+    display: none !important;
   }
   /* Lyrics area: ensure content above bottom nav */
   .lcars-lyrics-area {
-    padding-bottom: calc(64px + var(--sab)) !important;
+    padding-bottom: calc(var(--mobile-nav-h) + var(--sab) + 8px) !important;
   }
 }
 @media (min-width: 1024px) {

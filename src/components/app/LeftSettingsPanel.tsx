@@ -59,8 +59,8 @@ export function LeftSettingsPanel({
           transition-transform duration-300 ease-in-out
           ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}
         style={{
-          // Stop above the mobile bottom nav (60px) + safe-area-inset-bottom
-          bottom: 'calc(60px + var(--sab, 0px))',
+          // Stop above the mobile bottom nav (56px) + safe-area-inset-bottom
+          bottom: 'calc(56px + var(--sab, 0px))',
           position: 'fixed',
           overflow: 'hidden',
           backgroundColor: 'color-mix(in srgb, var(--bg-app, #0c0c0c) 98%, transparent)',
@@ -302,7 +302,7 @@ function PanelContent({
         </div>
       </div>
 
-      {/* Footer — desktop only shows collapse btn; mobile: generate only */}
+      {/* Footer — generate button only (no collapse on mobile overlay) */}
       <div className="p-5 shrink-0" style={{ position: 'relative', borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
