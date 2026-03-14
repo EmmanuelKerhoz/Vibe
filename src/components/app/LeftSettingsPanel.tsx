@@ -52,20 +52,23 @@ export function LeftSettingsPanel({
   if (isMobileOverlay) {
     return (
       <div
-        className={`border border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel
+        className={`flex flex-col shadow-2xl lcars-panel
           fixed left-0 top-0 bottom-0 z-[80] w-[min(22rem,85vw)]
           transition-transform duration-300 ease-in-out
           ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}
-        style={{ position: 'fixed', overflow: 'visible' }}
+        style={{
+          position: 'fixed',
+          overflow: 'hidden',
+          background: 'var(--fluent-sidebar, #16161e)',
+          borderRight: '1px solid var(--border-color, rgba(255,255,255,0.08))',
+        }}
       >
+        {/* LCARS separator — right edge */}
         <div style={{
-          position: 'absolute',
-          top: 0, right: -1, bottom: 0,
+          position: 'absolute', top: 0, right: 0, bottom: 0,
           width: '2px',
           background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-          opacity: 0.85,
-          pointerEvents: 'none',
-          zIndex: 10,
+          opacity: 0.85, pointerEvents: 'none', zIndex: 10,
         }} />
         <PanelContent
           t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
@@ -81,29 +84,35 @@ export function LeftSettingsPanel({
     );
   }
 
-  // ── Desktop: animated inline sidebar (mirrors StructureSidebar pattern) ───
+  // ── Desktop: animated inline sidebar ──────────────────────────────────
+  // Inserted in flex flow — no z-index, no overlay, solid background.
+  // Inner wrapper is 352px wide so content doesn’t compress during width animation.
   return (
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       {isLeftPanelOpen && (
         <motion.div
+          key="left-panel-desktop"
           initial={{ width: 0, opacity: 0 }}
           animate={{ width: 352, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="border-r border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl lcars-panel fluent-animate-panel shrink-0 h-full"
-          style={{ overflow: 'visible' }}
+          transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+          className="shrink-0 h-full flex flex-col relative lcars-panel"
+          style={{
+            overflow: 'hidden',
+            background: 'var(--fluent-sidebar, #16161e)',
+            borderRight: '1px solid var(--border-color, rgba(255,255,255,0.08))',
+            minWidth: 0,
+          }}
         >
-          {/* LCARS gradient separator — right edge */}
+          {/* LCARS separator — right edge */}
           <div style={{
-            position: 'absolute',
-            top: 0, right: -1, bottom: 0,
+            position: 'absolute', top: 0, right: 0, bottom: 0,
             width: '2px',
             background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-            opacity: 0.85,
-            pointerEvents: 'none',
-            zIndex: 10,
+            opacity: 0.85, pointerEvents: 'none', zIndex: 2,
           }} />
-          <div className="w-[352px] flex flex-col h-full overflow-hidden">
+          {/* Fixed-width inner wrapper prevents content squishing during animation */}
+          <div style={{ width: 352, minWidth: 352, flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <PanelContent
               t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
               onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
@@ -132,24 +141,16 @@ function PanelContent({
 }: Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & { t: ReturnType<typeof useTranslation>['t'] }) {
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
-      <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between" style={{
-        borderBottom: '1px solid transparent',
-        backgroundImage: 'none',
-        boxShadow: 'inset 0 -1px 0 var(--border-color)',
-        position: 'relative',
-      }}>
-        {/* LCARS gradient separator — bottom of header */}
+
+      {/* Header */}
+      <div className="h-16 px-5 flex items-center justify-between shrink-0" style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
         <div style={{
-          position: 'absolute',
-          bottom: 0, left: 0, right: 0,
-          height: '1px',
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px',
           background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-          opacity: 0.85,
-          pointerEvents: 'none',
-          zIndex: 1,
+          opacity: 0.85, pointerEvents: 'none', zIndex: 1,
         }} />
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner">
+          <div className="w-9 h-9 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
             <Music className="w-5 h-5 text-[var(--accent-color)]" />
           </div>
           <h1 className="text-base text-primary tracking-tight">{t.app.name}</h1>
@@ -157,11 +158,14 @@ function PanelContent({
         <span className="text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">New generation</span>
       </div>
 
+      {/* Scrollable body */}
       <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
-        <div className="flex items-center gap-2 mb-1">
+
+        <div className="flex items-center gap-2">
           <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-amber,#f59e0b)] opacity-80" />
           <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Song Info</span>
         </div>
+
         <div className="space-y-4">
           <div>
             <Label>
@@ -200,9 +204,7 @@ function PanelContent({
                   onClick={onSurprise}
                   disabled={isSurprising || isGenerating}
                   variant="outlined" color="primary"
-                  startIcon={isSurprising
-                    ? <Loader2 className="w-3 h-3 animate-spin" />
-                    : <Shuffle className="w-3 h-3" />}
+                  startIcon={isSurprising ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />}
                   style={{ fontSize: '10px', padding: '2px 8px' }}
                 >
                   Surprise
@@ -239,10 +241,11 @@ function PanelContent({
 
         <div className="h-px bg-white/5 mx-1" />
 
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2">
           <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-cyan,#06b6d4)] opacity-80" />
           <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Composition</span>
         </div>
+
         <div className="space-y-4">
           <div>
             <Label>{t.leftPanel.rhymeScheme}</Label>
@@ -281,7 +284,6 @@ function PanelContent({
               variant="outlined" color="primary" fullWidth
               startIcon={<Ruler className="w-3.5 h-3.5" />}
               style={{ fontSize: '10px', padding: '4px 0' }}
-              className="mt-4"
             >
               {t.leftPanel.quantize}
             </Button>
@@ -289,22 +291,17 @@ function PanelContent({
         </div>
       </div>
 
-      <div className="p-5 border-t border-fluent-border space-y-3" style={{ position: 'relative' }}>
-        {/* LCARS gradient separator — top of footer */}
+      {/* Footer */}
+      <div className="p-5 space-y-3 shrink-0" style={{ position: 'relative', borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
         <div style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0,
-          height: '1px',
+          position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
           background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-          opacity: 0.85,
-          pointerEvents: 'none',
+          opacity: 0.85, pointerEvents: 'none',
         }} />
         <Button
           onClick={onGenerateSong}
           disabled={isGenerating}
-          variant="contained"
-          color="primary"
-          fullWidth
+          variant="contained" color="primary" fullWidth
           startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
           style={{ fontSize: '11px', padding: '8px 0' }}
         >
