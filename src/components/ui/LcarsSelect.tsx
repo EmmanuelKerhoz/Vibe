@@ -2,11 +2,6 @@ import React, { useState, useRef, useEffect, useCallback, useId, type CSSPropert
 import { ChevronDown } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
-/**
- * Font stack that guarantees emoji rendering on Windows desktop (Segoe UI Emoji)
- * and macOS/iOS (Apple Color Emoji). Applied to both the trigger and the dropdown
- * so flag/symbol chars display correctly regardless of the host OS system font.
- */
 const EMOJI_FONT_STACK =
   '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif';
 
@@ -18,6 +13,8 @@ interface LcarsSelectProps {
   className?: string;
   style?: CSSProperties;
   disabled?: boolean;
+  /** Override the glow/border accent colour (CSS colour string or var()). Defaults to var(--accent-color). */
+  accentColor?: string;
 }
 
 export function LcarsSelect({
@@ -28,7 +25,9 @@ export function LcarsSelect({
   className,
   style,
   disabled = false,
+  accentColor,
 }: LcarsSelectProps) {
+  const accent = accentColor ?? 'var(--accent-color)';
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -150,6 +149,8 @@ export function LcarsSelect({
     }
   };
 
+  const glowShadow = `0 0 0 2px ${accent}, 0 0 10px 1px ${accent}`;
+
   return (
     <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
       <button
@@ -169,12 +170,12 @@ export function LcarsSelect({
           width: '100%',
           padding: '6px 10px',
           borderRadius: '6px 2px 6px 2px',
-          border: '1px solid var(--border-color)',
+          border: `1px solid var(--border-color)`,
           background: 'var(--bg-card)',
           color: 'var(--text-primary)',
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.5 : 1,
-          transition: 'box-shadow 0.2s',
+          transition: 'box-shadow 0.2s, border-color 0.2s',
           outline: 'none',
           gap: '6px',
           fontSize: 'inherit',
@@ -182,10 +183,10 @@ export function LcarsSelect({
           textAlign: 'left',
           ...style,
         }}
-        onFocus={(e) => { e.currentTarget.style.boxShadow = '0 0 0 2px var(--accent-color), 0 0 10px 1px var(--accent-color)'; }}
-        onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) e.currentTarget.style.boxShadow = 'none'; }}
-        onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.boxShadow = '0 0 0 2px var(--accent-color), 0 0 10px 1px var(--accent-color)'; }}
-        onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) e.currentTarget.style.boxShadow = 'none'; }}
+        onFocus={(e) => { e.currentTarget.style.boxShadow = glowShadow; e.currentTarget.style.borderColor = accent; }}
+        onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
+        onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.boxShadow = glowShadow; e.currentTarget.style.borderColor = accent; } }}
+        onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
       >
         <span dir="auto" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: EMOJI_FONT_STACK }}>
           {selectedLabel}
@@ -203,16 +204,16 @@ export function LcarsSelect({
             ...dropdownStyle,
             fontFamily: EMOJI_FONT_STACK,
             borderRadius: '2px 6px 6px 2px',
-            border: '1px solid var(--accent-color)',
+            border: `1px solid ${accent}`,
             background: 'var(--bg-card)',
             backdropFilter: 'blur(12px)',
-            boxShadow: '0 0 20px 2px color-mix(in srgb, var(--accent-color) 30%, transparent)',
+            boxShadow: `0 0 20px 2px color-mix(in srgb, ${accent} 30%, transparent)`,
             overflowY: 'auto',
             listStyle: 'none',
             margin: 0,
             padding: 0,
             scrollbarWidth: 'thin',
-            scrollbarColor: 'var(--accent-color) transparent',
+            scrollbarColor: `${accent} transparent`,
           }}
         >
           {options.map((opt, idx) => {
@@ -230,9 +231,9 @@ export function LcarsSelect({
                   padding: '10px 14px',
                   cursor: 'pointer',
                   fontFamily: EMOJI_FONT_STACK,
-                  color: isSelected || isFocused ? 'var(--accent-color)' : 'var(--text-primary)',
-                  background: isFocused ? 'color-mix(in srgb, var(--accent-color) 15%, transparent)' : 'transparent',
-                  borderLeft: isSelected ? '3px solid var(--accent-color)' : '3px solid transparent',
+                  color: isSelected || isFocused ? accent : 'var(--text-primary)',
+                  background: isFocused ? `color-mix(in srgb, ${accent} 15%, transparent)` : 'transparent',
+                  borderLeft: isSelected ? `3px solid ${accent}` : '3px solid transparent',
                   transition: 'background 0.1s, color 0.1s',
                   fontSize: 'inherit',
                   whiteSpace: 'normal',

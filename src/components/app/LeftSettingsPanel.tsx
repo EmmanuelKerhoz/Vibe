@@ -31,9 +31,7 @@ interface Props {
   onSurprise: () => void;
   isSurprising: boolean;
   onGenerateSong: () => void;
-  /** Whether the session has been fully hydrated from localStorage. */
   isSessionHydrated: boolean;
-  /** Extra class applied to the panel root (e.g. mobile overlay). */
   className?: string;
 }
 
@@ -52,11 +50,29 @@ export function LeftSettingsPanel({
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
 
-  // Desktop: inline sidebar, visible only when open AND session ready
+  // ── Desktop: inline sidebar ───────────────────────────────────────────────
   if (!isMobileOrTablet) {
+    // Guard: don't render until session is hydrated — prevents blank flash
     if (!isLeftPanelOpen || !isSessionHydrated) return null;
     return (
-      <div className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel w-[22rem] shrink-0 h-full overflow-hidden${className ? ` ${className}` : ''}`}>
+      <div
+        className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel w-[22rem] shrink-0 h-full overflow-hidden${className ? ` ${className}` : ''}`}
+        style={{
+          borderRight: 'none',
+          boxShadow: 'inset -1px 0 0 transparent',
+          position: 'relative',
+        }}
+      >
+        {/* LCARS gradient separator — right edge */}
+        <div style={{
+          position: 'absolute',
+          top: 0, right: 0, bottom: 0,
+          width: '2px',
+          background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
+          opacity: 0.7,
+          pointerEvents: 'none',
+          zIndex: 1,
+        }} />
         <PanelContent
           t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
           onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
@@ -71,32 +87,41 @@ export function LeftSettingsPanel({
     );
   }
 
-  // Mobile/tablet: fixed overlay, slides in from left
+  // ── Mobile/tablet: fixed overlay ─────────────────────────────────────────
   return (
     <div
       className={`border border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel
         fixed left-0 top-0 bottom-0 z-[80] w-[min(22rem,85vw)]
         transition-transform duration-300 ease-in-out
         ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}${className ? ` ${className}` : ''}`}
+      style={{ position: 'fixed' }}
     >
-      {/* Only render content once hydrated to avoid blank flash */}
-      {isSessionHydrated && (
-        <PanelContent
-          t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
-          onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-          topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-          rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-          targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-          song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
-          isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-          onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
-        />
-      )}
+      {/* LCARS gradient separator — right edge */}
+      <div style={{
+        position: 'absolute',
+        top: 0, right: 0, bottom: 0,
+        width: '2px',
+        background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
+        opacity: 0.7,
+        pointerEvents: 'none',
+        zIndex: 1,
+      }} />
+      {/* Mobile: always render content (panel is off-screen when closed — no flash risk) */}
+      <PanelContent
+        t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
+        onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+        topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+        rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+        targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+        song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
+        isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+        onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
+      />
     </div>
   );
 }
 
-// ── Inner content extracted to avoid duplication ────────────────────────────
+// ── Inner content ────────────────────────────────────────────────────────────
 function PanelContent({
   t, title, setTitle, titleOrigin, onGenerateTitle, isGeneratingTitle,
   topic, setTopic, mood, setMood,
@@ -107,7 +132,21 @@ function PanelContent({
 }: Omit<Props, 'className' | 'isSessionHydrated'> & { t: ReturnType<typeof useTranslation>['t'] }) {
   return (
     <div className="w-full flex flex-col h-full">
-      <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">
+      <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between" style={{
+        borderBottom: '1px solid transparent',
+        backgroundImage: 'none',
+        boxShadow: 'inset 0 -1px 0 var(--border-color)',
+        position: 'relative',
+      }}>
+        {/* LCARS gradient separator — bottom of header */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0, left: 0, right: 0,
+          height: '1px',
+          background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
+          opacity: 0.5,
+          pointerEvents: 'none',
+        }} />
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner">
             <Music className="w-5 h-5 text-[var(--accent-color)]" />
@@ -187,6 +226,7 @@ function PanelContent({
                   onChange={(v) => { if (v) setMood(v); }}
                   placeholder={t.leftPanel.songMoodPresets}
                   options={Object.entries(t.moods).map(([, moodOption]) => ({ value: moodOption, label: moodOption }))}
+                  accentColor="var(--lcars-violet)"
                 />
               </div>
               <datalist id="mood-suggestions">
@@ -208,6 +248,7 @@ function PanelContent({
             <LcarsSelect
               value={rhymeScheme}
               onChange={setRhymeScheme}
+              accentColor="var(--lcars-cyan)"
               options={[
                 { value: 'AABB', label: t.rhymeSchemes.AABB },
                 { value: 'ABAB', label: t.rhymeSchemes.ABAB },
@@ -247,7 +288,16 @@ function PanelContent({
         </div>
       </div>
 
-      <div className="p-5 border-t border-fluent-border space-y-3">
+      <div className="p-5 border-t border-fluent-border space-y-3" style={{ position: 'relative' }}>
+        {/* LCARS gradient separator — top of footer */}
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0,
+          height: '1px',
+          background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
+          opacity: 0.5,
+          pointerEvents: 'none',
+        }} />
         <Button
           onClick={onGenerateSong}
           disabled={isGenerating}

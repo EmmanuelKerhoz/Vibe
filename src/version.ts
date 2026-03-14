@@ -1,5 +1,5 @@
 /** Human-readable app version shown in the UI. */
-export const APP_VERSION = 'v03.01.01';
+export const APP_VERSION = 'v03.01.02';
 
 /** Semantic version of the app package. */
-export const APP_VERSION_SEMVER = '3.1.1';
+export const APP_VERSION_SEMVER = '3.1.2';

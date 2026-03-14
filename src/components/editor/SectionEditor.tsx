@@ -93,6 +93,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   const { t } = useTranslation();
   const isSectionDraggable = section.name.toLowerCase() !== 'intro' && section.name.toLowerCase() !== 'outro';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
+  const sectionColor = getSectionColorHex(section.name);
 
   return (
     <section
@@ -102,11 +103,13 @@ export const SectionEditor = React.memo(function SectionEditor({
       onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (dragOverIndex === sectionIndex) setDragOverIndex(null); }}
       onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(sectionIndex); }}
       className={`lcars-band ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
+      style={{ overflow: 'visible' }}
     >
-      <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} />
+      {/* Colour stripe — kept as separate clipping context so it stays crisp */}
+      <div className={`lcars-band-stripe ${getSectionDotColor(section.name)}`} style={{ borderRadius: '24px 0 0 24px', overflow: 'hidden', flexShrink: 0 }} />
 
-      <div className="flex-1 pt-3 px-4 pb-2">
-        <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: getSectionColorHex(section.name) }}>
+      <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0 }}>
+        <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
           <div className="flex items-center gap-3">
             <div className="flex flex-col gap-0.5">
               <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>
@@ -121,6 +124,7 @@ export const SectionEditor = React.memo(function SectionEditor({
               </Tooltip>
             </div>
             <div>
+              {/* Section name — accent = section colour */}
               <LcarsSelect
                 value={section.name}
                 onChange={(v) => setSectionName(section.id, v)}
@@ -130,15 +134,18 @@ export const SectionEditor = React.memo(function SectionEditor({
                     ? [{ value: section.name, label: section.name.toUpperCase() }]
                     : []),
                 ]}
-                style={{ color: getSectionColorHex(section.name) }}
+                accentColor={sectionColor}
+                style={{ color: sectionColor }}
               />
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">{section.lines.filter(l => !l.isMeta).length} {t.editor.lines ?? 'lines'}</p>
                 <div className="min-w-[15rem] max-w-full flex-1">
+                  {/* Rhyme scheme — accent = LCARS cyan, distinct from section colour */}
                   <LcarsSelect
                     value={section.rhymeScheme || rhymeScheme}
                     onChange={(v) => setSectionRhymeScheme(section.id, v)}
                     options={RHYME_KEYS.map(key => ({ value: key, label: t.rhymeSchemes[key as keyof typeof t.rhymeSchemes] }))}
+                    accentColor="var(--lcars-cyan)"
                   />
                 </div>
               </div>
@@ -301,7 +308,6 @@ export const SectionEditor = React.memo(function SectionEditor({
                   <span className="lyric-col-aux" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     {(() => {
                       const lyricIndex = lyricLineIndexMap.get(line.id) ?? 0;
-                      // Fallback chain: section scheme → global scheme → 'AABB'
                       const effectiveScheme = (section.rhymeScheme || rhymeScheme || 'AABB').toUpperCase();
                       if (effectiveScheme === 'FREE') {
                         return <span className="text-[10px] text-zinc-600 dark:text-zinc-700 select-none" aria-label="Free verse">—</span>;
