@@ -31,15 +31,15 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
     return text
       .split('\n')
       .map(line => {
-        // Empty line — render as non-breaking space to preserve layout
-        if (!line.trim()) return '&nbsp;';
+        const trimmed = line.trim();
+
+        // Empty line or bare [] — render as non-breaking space
+        if (!trimmed || trimmed === '[]') return '&nbsp;';
 
         const escaped = line
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
-
-        const trimmed = line.trim();
 
         // Section header: [Name] where Name is non-empty and is a known section
         const headerMatch = trimmed.match(/^\[(.+)\]$/);
@@ -48,7 +48,7 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
           return `<span class="markup-section-header" style="color:${color}">${escaped}</span>`;
         }
 
-        // Pure meta line: [instruction] but NOT a section header
+        // Pure meta line
         if (isPureMetaLine(trimmed)) {
           return `<span class="markup-meta-line">${escaped}</span>`;
         }

@@ -41,6 +41,12 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     }
   }, [isMarkupMode, markupText, markupTextareaRef]);
 
+  /** Returns true if a line text is considered empty/garbage and should be excluded from markup */
+  const isEmptyLine = (text: string): boolean => {
+    const t = text.trim();
+    return t === '' || t === '[]';
+  };
+
   const handleMarkupToggle = useCallback(() => {
     if (isMarkupMode) {
       // ── MARKUP → STRUCTURED ────────────────────────────────────
@@ -58,7 +64,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
 
         if ((firstLine.startsWith('**[') && firstLine.endsWith(']**')) || (firstLine.startsWith('[') && firstLine.endsWith(']'))) {
           const inner = firstLine.replace(/^\*\*\[|\]\*\*$|^\[|\]$/g, '').trim();
-          if (!isPureMetaLine(`[${inner}]`)) {
+          if (inner && !isPureMetaLine(`[${inner}]`)) {
             name = cleanSectionName(firstLine);
             remainingLines = lines.slice(1);
           }
@@ -71,8 +77,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
 
         remainingLines.forEach(line => {
           const trimmed = line.trim();
-          // Skip completely empty lines in the deserializer
-          if (!trimmed) return;
+          if (!trimmed || trimmed === '[]') return;
 
           if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
             if (isPureMetaLine(trimmed)) {
@@ -136,9 +141,12 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       const text = song.map(sec => {
         const pre = (sec.preInstructions || []).map(fmt).join('\n');
         const post = (sec.postInstructions || []).map(fmt).join('\n');
-        // Filter out lines with empty or whitespace-only text before serializing
+        // Filter out empty lines and bare [] artifacts
         const lyricText = sec.lines
-          .filter(l => l.text.trim() !== '')
+          .filter(l => {
+            const t = l.text.trim();
+            return t !== '' && t !== '[]';
+          })
           .map(l => l.text)
           .join('\n');
         return `[${sec.name}]\n${pre ? pre + '\n' : ''}${lyricText}${post ? '\n' + post : ''}`;
