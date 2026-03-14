@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Music, PanelLeft, Ruler, Bot, User, Sparkles, Loader2, Shuffle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
@@ -42,29 +43,21 @@ export function LeftSettingsPanel({
   isLeftPanelOpen, setIsLeftPanelOpen,
   onSurprise, isSurprising,
   onGenerateSong,
-  isSessionHydrated,
+  isSessionHydrated: _isSessionHydrated,
   isMobileOverlay,
 }: Props) {
   const { t } = useTranslation();
 
-  // ── Desktop: inline sidebar ───────────────────────────────────────────────
-  if (!isMobileOverlay) {
-    // Guard: don't render if panel is closed
-    // Also guard on !isSessionHydrated ONLY when panel is closed (prevents blank flash on first render)
-    // Once the user explicitly opens the panel, we always render regardless of hydration state
-    if (!isLeftPanelOpen) return null;
-    if (!isSessionHydrated && !isLeftPanelOpen) return null;
+  // ── Mobile/tablet: fixed overlay ─────────────────────────────────────────
+  if (isMobileOverlay) {
     return (
       <div
-        className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel w-[22rem] shrink-0 h-full`}
-        style={{
-          borderRight: 'none',
-          boxShadow: 'inset -1px 0 0 transparent',
-          position: 'relative',
-          overflow: 'visible',
-        }}
+        className={`border border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel
+          fixed left-0 top-0 bottom-0 z-[80] w-[min(22rem,85vw)]
+          transition-transform duration-300 ease-in-out
+          ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}
+        style={{ position: 'fixed', overflow: 'visible' }}
       >
-        {/* LCARS gradient separator — right edge */}
         <div style={{
           position: 'absolute',
           top: 0, right: -1, bottom: 0,
@@ -88,41 +81,47 @@ export function LeftSettingsPanel({
     );
   }
 
-  // ── Mobile/tablet: fixed overlay ─────────────────────────────────────────
+  // ── Desktop: animated inline sidebar (mirrors StructureSidebar pattern) ───
   return (
-    <div
-      className={`border border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel
-        fixed left-0 top-0 bottom-0 z-[80] w-[min(22rem,85vw)]
-        transition-transform duration-300 ease-in-out
-        ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}
-      style={{ position: 'fixed', overflow: 'visible' }}
-    >
-      {/* LCARS gradient separator — right edge */}
-      <div style={{
-        position: 'absolute',
-        top: 0, right: -1, bottom: 0,
-        width: '2px',
-        background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-        opacity: 0.85,
-        pointerEvents: 'none',
-        zIndex: 10,
-      }} />
-      {/* Mobile: always render content (panel is off-screen when closed — no flash risk) */}
-      <PanelContent
-        t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
-        onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-        topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-        rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-        targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-        song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
-        isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-        onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
-      />
-    </div>
+    <AnimatePresence>
+      {isLeftPanelOpen && (
+        <motion.div
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: 352, opacity: 1 }}
+          exit={{ width: 0, opacity: 0 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          className="border-r border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl lcars-panel fluent-animate-panel shrink-0 h-full"
+          style={{ overflow: 'visible' }}
+        >
+          {/* LCARS gradient separator — right edge */}
+          <div style={{
+            position: 'absolute',
+            top: 0, right: -1, bottom: 0,
+            width: '2px',
+            background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
+            opacity: 0.85,
+            pointerEvents: 'none',
+            zIndex: 10,
+          }} />
+          <div className="w-[352px] flex flex-col h-full overflow-hidden">
+            <PanelContent
+              t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
+              onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+              topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+              rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+              targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+              song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
+              isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+              onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
+            />
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
-// ── Inner content ────────────────────────────────────────────────────────────
+// ── Inner content ─────────────────────────────────────────────────────────────
 function PanelContent({
   t, title, setTitle, titleOrigin, onGenerateTitle, isGeneratingTitle,
   topic, setTopic, mood, setMood,
