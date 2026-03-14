@@ -275,7 +275,6 @@ export default function App() {
     setMarkupText('');
     setActiveTab('lyrics');
     setIsLeftPanelOpen(false);
-    // Reset similarity engine — clear stale results from previous song
     setSimilarityMatches([]);
     resetWebSimilarityIndex();
   }, [
@@ -359,7 +358,6 @@ export default function App() {
     clearSelection();
     setMarkupText('');
     setIsResetModalOpen(false);
-    // Reset similarity engine — clear stale results
     setSimilarityMatches([]);
     resetWebSimilarityIndex();
   };
@@ -399,10 +397,12 @@ export default function App() {
             hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
             onOpenNewGeneration={handleOpenNewGeneration}
             onOpenNewEmpty={handleCreateEmptySong}
-            onImportClick={() => setIsImportModalOpen(true)} onExportClick={() => setIsExportModalOpen(true)}
+            onImportClick={() => setIsImportModalOpen(true)}
+            onExportClick={() => setIsExportModalOpen(true)}
             onOpenLibraryClick={handleOpenSaveToLibraryModal}
             onOpenSettingsClick={() => setIsSettingsOpen(true)}
             onOpenAboutClick={() => setIsAboutOpen(true)}
+            onPasteLyrics={() => setIsPasteModalOpen(true)}
             isGenerating={isGenerating} isAnalyzing={isAnalyzing}
           />
           {activeTab === 'lyrics' && song.length > 0 && (
