@@ -6,7 +6,6 @@ import { Label } from '../ui/Label';
 import { Input } from '../ui/Input';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
-import { useMobileLayout } from '../../hooks/useMobileLayout';
 import type { Section } from '../../types';
 
 interface Props {
@@ -32,7 +31,7 @@ interface Props {
   isSurprising: boolean;
   onGenerateSong: () => void;
   isSessionHydrated: boolean;
-  className?: string;
+  isMobileOverlay?: boolean;
 }
 
 export function LeftSettingsPanel({
@@ -44,19 +43,17 @@ export function LeftSettingsPanel({
   onSurprise, isSurprising,
   onGenerateSong,
   isSessionHydrated,
-  className,
+  isMobileOverlay,
 }: Props) {
   const { t } = useTranslation();
-  const { isMobile, isTablet } = useMobileLayout();
-  const isMobileOrTablet = isMobile || isTablet;
 
   // ── Desktop: inline sidebar ───────────────────────────────────────────────
-  if (!isMobileOrTablet) {
+  if (!isMobileOverlay) {
     // Guard: don't render until session is hydrated — prevents blank flash
     if (!isLeftPanelOpen || !isSessionHydrated) return null;
     return (
       <div
-        className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel w-[22rem] shrink-0 h-full overflow-hidden${className ? ` ${className}` : ''}`}
+        className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel w-[22rem] shrink-0 h-full overflow-hidden`}
         style={{
           borderRight: 'none',
           boxShadow: 'inset -1px 0 0 transparent',
@@ -93,7 +90,7 @@ export function LeftSettingsPanel({
       className={`border border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel
         fixed left-0 top-0 bottom-0 z-[80] w-[min(22rem,85vw)]
         transition-transform duration-300 ease-in-out
-        ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}${className ? ` ${className}` : ''}`}
+        ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}
       style={{ position: 'fixed' }}
     >
       {/* LCARS gradient separator — right edge */}
@@ -129,7 +126,7 @@ function PanelContent({
   song, isGenerating, quantizeSyllables,
   isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen,
   onSurprise, isSurprising, onGenerateSong,
-}: Omit<Props, 'className' | 'isSessionHydrated'> & { t: ReturnType<typeof useTranslation>['t'] }) {
+}: Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & { t: ReturnType<typeof useTranslation>['t'] }) {
   return (
     <div className="w-full flex flex-col h-full">
       <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between" style={{
