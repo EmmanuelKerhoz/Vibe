@@ -33,6 +33,46 @@ const AMBER_PRIMARY = '#f59e0b';
 const AMBER_SECONDARY = '#38bdf8';
 const AMBER_MUTED = '#c4b5fd';
 
+/** Gradient used for outer container borders — matches the LCARS header rail */
+const PANEL_BORDER_GRADIENT = `linear-gradient(180deg, ${AMBER_PRIMARY} 0%, ${AMBER_SECONDARY} 60%, ${AMBER_MUTED} 100%)`;
+
+/**
+ * Wrapper that renders a 1-px gradient border around its children.
+ * The inner div restores the panel background so the gradient shows only as a border.
+ */
+function GradientPanel({
+  children,
+  className = '',
+  style = {},
+  borderRadius = '16px 4px 16px 4px',
+}: {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  borderRadius?: string;
+}) {
+  return (
+    <div
+      style={{
+        background: PANEL_BORDER_GRADIENT,
+        borderRadius,
+        padding: '1px',
+        ...style,
+      }}
+    >
+      <div
+        className={`glass-panel-inner ${className}`}
+        style={{
+          borderRadius: `calc(${borderRadius.split(' ')[0]} - 1px) calc(${borderRadius.split(' ')[1] ?? borderRadius.split(' ')[0]} - 1px) calc(${borderRadius.split(' ')[2] ?? borderRadius.split(' ')[0]} - 1px) calc(${borderRadius.split(' ')[3] ?? borderRadius.split(' ')[0]} - 1px)`,
+          height: '100%',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 const BPM_PRESETS = [
   { label: 'Very Slow', value: '60' },
   { label: 'Slow',      value: '80' },
@@ -265,7 +305,7 @@ export function MusicalTab({
         {/* LCARS left-edge gradient */}
         <div style={{
           position: 'absolute', top: 0, left: 0, bottom: 0, width: '3px',
-          background: `linear-gradient(180deg, ${AMBER_PRIMARY} 0%, ${AMBER_SECONDARY} 60%, ${AMBER_MUTED} 100%)`,
+          background: PANEL_BORDER_GRADIENT,
           opacity: 0.9,
         }} />
         <div className="flex items-start justify-between gap-4">
@@ -327,269 +367,279 @@ export function MusicalTab({
         </div>
 
         {/* Vibe Board */}
-        <div className="glass-panel p-4 space-y-3" style={{ borderRadius: '16px 4px 16px 4px' }}>
-          <div className="flex items-center gap-2">
-            <Music className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
-            <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">
-              {m.vibeBoard ?? 'VIBE BOARD'}
-            </label>
-            {selectedVibeTile && (
-              <span className="ml-auto flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5"
-                style={{ borderRadius: '8px 2px 8px 2px', background: `${selectedAccent}22`, color: selectedAccent }}>
-                {selectedVibeTile.emoji} {genreBlueprint}
-              </span>
-            )}
-          </div>
-          <p className="text-[10px] text-[var(--text-secondary)] opacity-70">
-            {m.vibeBoardDescription ?? 'Select your genre to auto-set BPM & instruments'}
-          </p>
+        <GradientPanel borderRadius="16px 4px 16px 4px">
+          <div className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Music className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+              <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">
+                {m.vibeBoard ?? 'VIBE BOARD'}
+              </label>
+              {selectedVibeTile && (
+                <span className="ml-auto flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5"
+                  style={{ borderRadius: '8px 2px 8px 2px', background: `${selectedAccent}22`, color: selectedAccent }}>
+                  {selectedVibeTile.emoji} {genreBlueprint}
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-[var(--text-secondary)] opacity-70">
+              {m.vibeBoardDescription ?? 'Select your genre to auto-set BPM & instruments'}
+            </p>
 
-          <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
-            {VIBE_CATEGORIES.map(category => (
-              <div key={category.id}>
-                <div className="mb-1.5 flex items-end justify-between gap-3 px-0.5">
-                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: category.color }}>
-                    {category.label}
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+              {VIBE_CATEGORIES.map(category => (
+                <div key={category.id}>
+                  <div className="mb-1.5 flex items-end justify-between gap-3 px-0.5">
+                    <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: category.color }}>
+                      {category.label}
+                    </div>
+                    <p className="text-[10px] text-right leading-4 text-[var(--text-secondary)] opacity-75">{category.summary}</p>
                   </div>
-                  <p className="text-[10px] text-right leading-4 text-[var(--text-secondary)] opacity-75">{category.summary}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {category.tiles.map(tile => {
+                      const isSelected = selectedVibeTile?.name === tile.name;
+                      return (
+                        <button key={tile.name} onClick={() => handleVibeTileSelect(tile)}
+                          className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border"
+                          style={isSelected
+                            ? { borderRadius: '12px 4px 12px 4px', background: `${category.color}22`, borderColor: category.color, color: category.color, boxShadow: `0 0 8px ${category.color}55`, transform: 'scale(1.04)' }
+                            : { borderRadius: '12px 4px 12px 4px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }
+                          }
+                        >
+                          <span>{tile.emoji}</span>
+                          <span>{tile.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Sub-style selector */}
+            {selectedVibeTile && SUB_STYLES[selectedVibeTile.name] && (
+              <div className="pt-2 border-t border-[var(--border-color)]">
+                <div className="text-[9px] font-bold tracking-widest uppercase mb-1.5 text-[var(--text-secondary)]">
+                  {m.subStyle ?? 'SUB-STYLE'}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {category.tiles.map(tile => {
-                    const isSelected = selectedVibeTile?.name === tile.name;
+                  {(SUB_STYLES[selectedVibeTile.name] as string[]).map(sub => {
+                    const isSel = selectedSubStyle === sub;
                     return (
-                      <button key={tile.name} onClick={() => handleVibeTileSelect(tile)}
-                        className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border"
-                        style={isSelected
-                          ? { borderRadius: '12px 4px 12px 4px', background: `${category.color}22`, borderColor: category.color, color: category.color, boxShadow: `0 0 8px ${category.color}55`, transform: 'scale(1.04)' }
-                          : { borderRadius: '12px 4px 12px 4px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }
+                      <button key={sub} onClick={() => handleSubStyleSelect(sub)}
+                        className="ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border"
+                        style={isSel
+                          ? { borderRadius: '8px 2px 8px 2px', background: selectedAccent, borderColor: selectedAccent, color: '#000' }
+                          : { borderRadius: '8px 2px 8px 2px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }
                         }
                       >
-                        <span>{tile.emoji}</span>
-                        <span>{tile.name}</span>
+                        {sub}
                       </button>
                     );
                   })}
                 </div>
               </div>
-            ))}
+            )}
+
+            {/* Detail cards */}
+            {selectedVibeTile && selectedCategory && (
+              <div className="grid gap-2 pt-2 border-t border-[var(--border-color)] lg:grid-cols-4 sm:grid-cols-2">
+                <div className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${selectedCategory.color}14`, borderColor: `${selectedCategory.color}40` }}>
+                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedCategory.color }}>Broad lane</div>
+                  <p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.label}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.summary}</p>
+                </div>
+                <div className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${selectedAccent}10`, borderColor: `${selectedAccent}33` }}>
+                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedAccent }}>Sub-style clues</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {suggestedSubStyles.map(sub => (
+                      <span key={sub} className="px-2 py-1 text-[10px] font-medium"
+                        style={{ borderRadius: '999px', background: `${selectedAccent}1c`, color: selectedAccent }}>
+                        {sub}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${AMBER_MUTED}18`, borderColor: `${AMBER_SECONDARY}33` }}>
+                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: AMBER_SECONDARY }}>For fans of</div>
+                  <p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.artists.join(' · ')}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">Use references to position the song quickly for collaborators and music tools.</p>
+                </div>
+                <div className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${selectedCategory.color}12`, borderColor: `${selectedCategory.color}33` }}>
+                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedCategory.color }}>Mood + era cues</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {selectedCategory.moods.map(moodTag => (
+                      <span key={moodTag} className="px-2 py-1 text-[10px] font-medium"
+                        style={{ borderRadius: '999px', background: `${selectedCategory.color}1a`, color: selectedCategory.color }}>
+                        {moodTag}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.era}</p>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Sub-style selector */}
-          {selectedVibeTile && SUB_STYLES[selectedVibeTile.name] && (
-            <div className="pt-2 border-t border-[var(--border-color)]">
-              <div className="text-[9px] font-bold tracking-widest uppercase mb-1.5 text-[var(--text-secondary)]">
-                {m.subStyle ?? 'SUB-STYLE'}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {(SUB_STYLES[selectedVibeTile.name] as string[]).map(sub => {
-                  const isSel = selectedSubStyle === sub;
-                  return (
-                    <button key={sub} onClick={() => handleSubStyleSelect(sub)}
-                      className="ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border"
-                      style={isSel
-                        ? { borderRadius: '8px 2px 8px 2px', background: selectedAccent, borderColor: selectedAccent, color: '#000' }
-                        : { borderRadius: '8px 2px 8px 2px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }
-                      }
-                    >
-                      {sub}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Detail cards */}
-          {selectedVibeTile && selectedCategory && (
-            <div className="grid gap-2 pt-2 border-t border-[var(--border-color)] lg:grid-cols-4 sm:grid-cols-2">
-              <div className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${selectedCategory.color}14`, borderColor: `${selectedCategory.color}40` }}>
-                <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedCategory.color }}>Broad lane</div>
-                <p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.label}</p>
-                <p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.summary}</p>
-              </div>
-              <div className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${selectedAccent}10`, borderColor: `${selectedAccent}33` }}>
-                <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedAccent }}>Sub-style clues</div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {suggestedSubStyles.map(sub => (
-                    <span key={sub} className="px-2 py-1 text-[10px] font-medium"
-                      style={{ borderRadius: '999px', background: `${selectedAccent}1c`, color: selectedAccent }}>
-                      {sub}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${AMBER_MUTED}18`, borderColor: `${AMBER_SECONDARY}33` }}>
-                <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: AMBER_SECONDARY }}>For fans of</div>
-                <p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.artists.join(' · ')}</p>
-                <p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">Use references to position the song quickly for collaborators and music tools.</p>
-              </div>
-              <div className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${selectedCategory.color}12`, borderColor: `${selectedCategory.color}33` }}>
-                <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedCategory.color }}>Mood + era cues</div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {selectedCategory.moods.map(moodTag => (
-                    <span key={moodTag} className="px-2 py-1 text-[10px] font-medium"
-                      style={{ borderRadius: '999px', background: `${selectedCategory.color}1a`, color: selectedCategory.color }}>
-                      {moodTag}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.era}</p>
-              </div>
-            </div>
-          )}
-        </div>
+        </GradientPanel>
 
         {/* Row 1: Tempo + Instruments */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
           {/* Tempo + Metronome */}
-          <div className="glass-panel p-4 space-y-3" style={{ borderRadius: '16px 4px 16px 4px' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
-                <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.tempo}</label>
+          <GradientPanel borderRadius="16px 4px 16px 4px">
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.tempo}</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center px-2 py-1 text-sm font-mono font-bold border transition-all"
+                    style={metronome.isBeat
+                      ? { borderRadius: '8px 2px 8px 2px', color: AMBER_PRIMARY, borderColor: AMBER_PRIMARY, boxShadow: `0 0 8px ${AMBER_PRIMARY}88`, background: `${AMBER_PRIMARY}22` }
+                      : { borderRadius: '8px 2px 8px 2px', color: 'var(--text-primary)', borderColor: 'var(--border-color)', background: 'transparent' }
+                    }>
+                    {bpmValue}
+                  </span>
+                  <input type="number" value={tempo} onChange={e => setTempo(e.target.value)} min="40" max="220"
+                    className="w-16 bg-transparent border border-[var(--border-color)] px-2 py-1 text-sm text-center text-[var(--text-primary)] lcars-glow-focus transition-colors"
+                    style={{ borderRadius: '8px 2px 8px 2px' }}
+                  />
+                  <span className="text-xs text-[var(--text-secondary)]">BPM</span>
+                  <button onClick={metronome.toggle}
+                    title={metronome.isPlaying ? (m.metronomeStop ?? 'Stop Metronome') : (m.metronomeStart ?? 'Start Metronome')}
+                    className={`ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border ${
+                      metronome.isPlaying ? 'border-transparent metronome-active' : 'border-[var(--border-color)] text-[var(--text-secondary)]'
+                    }`}
+                    style={metronome.isPlaying
+                      ? { borderRadius: '10px 3px 10px 3px', background: AMBER_PRIMARY, borderColor: AMBER_PRIMARY, color: '#000' }
+                      : { borderRadius: '10px 3px 10px 3px' }
+                    }
+                  >
+                    {metronome.isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                    <span className="hidden sm:inline">{m.metronome ?? 'Metronome'}</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center justify-center px-2 py-1 text-sm font-mono font-bold border transition-all"
-                  style={metronome.isBeat
-                    ? { borderRadius: '8px 2px 8px 2px', color: AMBER_PRIMARY, borderColor: AMBER_PRIMARY, boxShadow: `0 0 8px ${AMBER_PRIMARY}88`, background: `${AMBER_PRIMARY}22` }
-                    : { borderRadius: '8px 2px 8px 2px', color: 'var(--text-primary)', borderColor: 'var(--border-color)', background: 'transparent' }
-                  }>
-                  {bpmValue}
-                </span>
-                <input type="number" value={tempo} onChange={e => setTempo(e.target.value)} min="40" max="220"
-                  className="w-16 bg-transparent border border-[var(--border-color)] px-2 py-1 text-sm text-center text-[var(--text-primary)] lcars-glow-focus transition-colors"
-                  style={{ borderRadius: '8px 2px 8px 2px' }}
-                />
-                <span className="text-xs text-[var(--text-secondary)]">BPM</span>
-                <button onClick={metronome.toggle}
-                  title={metronome.isPlaying ? (m.metronomeStop ?? 'Stop Metronome') : (m.metronomeStart ?? 'Start Metronome')}
-                  className={`ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border ${
-                    metronome.isPlaying ? 'border-transparent metronome-active' : 'border-[var(--border-color)] text-[var(--text-secondary)]'
-                  }`}
-                  style={metronome.isPlaying
-                    ? { borderRadius: '10px 3px 10px 3px', background: AMBER_PRIMARY, borderColor: AMBER_PRIMARY, color: '#000' }
-                    : { borderRadius: '10px 3px 10px 3px' }
-                  }
-                >
-                  {metronome.isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                  <span className="hidden sm:inline">{m.metronome ?? 'Metronome'}</span>
-                </button>
+              <div className="relative h-2 bg-[var(--border-color)] rounded-full overflow-hidden">
+                <div className="absolute left-0 top-0 h-full rounded-full transition-all" style={{ width: `${bpmPercent}%`, background: AMBER_PRIMARY }} />
+              </div>
+              <input type="range" min="40" max="220" value={bpmValue} onChange={e => setTempo(e.target.value)}
+                className="w-full h-2 opacity-0 cursor-pointer -mt-4 relative z-10" />
+              <div className="flex flex-wrap gap-1.5">
+                {BPM_PRESETS.map(({ label, value }) => (
+                  <button key={value} onClick={() => setTempo(value)}
+                    className={`ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border ${
+                      tempo === value ? 'border-transparent' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]'
+                    }`}
+                    style={tempo === value
+                      ? { borderRadius: '8px 2px 8px 2px', background: AMBER_PRIMARY, borderColor: AMBER_PRIMARY, color: '#000' }
+                      : { borderRadius: '8px 2px 8px 2px' }
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="relative h-2 bg-[var(--border-color)] rounded-full overflow-hidden">
-              <div className="absolute left-0 top-0 h-full rounded-full transition-all" style={{ width: `${bpmPercent}%`, background: AMBER_PRIMARY }} />
-            </div>
-            <input type="range" min="40" max="220" value={bpmValue} onChange={e => setTempo(e.target.value)}
-              className="w-full h-2 opacity-0 cursor-pointer -mt-4 relative z-10" />
-            <div className="flex flex-wrap gap-1.5">
-              {BPM_PRESETS.map(({ label, value }) => (
-                <button key={value} onClick={() => setTempo(value)}
-                  className={`ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border ${
-                    tempo === value ? 'border-transparent' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]'
-                  }`}
-                  style={tempo === value
-                    ? { borderRadius: '8px 2px 8px 2px', background: AMBER_PRIMARY, borderColor: AMBER_PRIMARY, color: '#000' }
-                    : { borderRadius: '8px 2px 8px 2px' }
-                  }
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
+          </GradientPanel>
 
           {/* Instrument Builder */}
-          <div className="glass-panel p-4 space-y-3" style={{ borderRadius: '16px 4px 16px 4px' }}>
-            <div className="flex items-center gap-2">
-              <Guitar className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
-              <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.instruments ?? 'INSTRUMENTS'}</label>
-              {selectedInstruments.length > 0 && (
-                <span className="ml-auto text-[10px] font-medium px-1.5 py-0.5"
-                  style={{ borderRadius: '6px 2px 6px 2px', background: `${AMBER_PRIMARY}22`, color: AMBER_PRIMARY }}>
-                  {selectedInstruments.length}
-                </span>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              {INSTRUMENT_FAMILIES.map(family => {
-                const isExpanded = expandedFamily === family.label;
-                const familySelected = family.instruments.filter(i => selectedInstruments.includes(i));
-                return (
-                  <div key={family.label}>
-                    <button onClick={() => setExpandedFamily(isExpanded ? null : family.label)}
-                      className="ux-interactive w-full flex items-center gap-2 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border text-left"
-                      style={familySelected.length > 0
-                        ? { borderRadius: '10px 3px 10px 3px', background: `${AMBER_PRIMARY}1a`, borderColor: `${AMBER_PRIMARY}55`, color: AMBER_PRIMARY }
-                        : { borderRadius: '10px 3px 10px 3px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }
-                      }
-                    >
-                      <span>{family.emoji}</span>
-                      <span>{family.label}</span>
-                      {familySelected.length > 0 && (
-                        <span className="ml-1 text-[9px] font-bold px-1"
-                          style={{ borderRadius: '4px', background: AMBER_PRIMARY, color: '#000' }}>
-                          {familySelected.length}
-                        </span>
+          <GradientPanel borderRadius="16px 4px 16px 4px">
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Guitar className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+                <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.instruments ?? 'INSTRUMENTS'}</label>
+                {selectedInstruments.length > 0 && (
+                  <span className="ml-auto text-[10px] font-medium px-1.5 py-0.5"
+                    style={{ borderRadius: '6px 2px 6px 2px', background: `${AMBER_PRIMARY}22`, color: AMBER_PRIMARY }}>
+                    {selectedInstruments.length}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                {INSTRUMENT_FAMILIES.map(family => {
+                  const isExpanded = expandedFamily === family.label;
+                  const familySelected = family.instruments.filter(i => selectedInstruments.includes(i));
+                  return (
+                    <div key={family.label}>
+                      <button onClick={() => setExpandedFamily(isExpanded ? null : family.label)}
+                        className="ux-interactive w-full flex items-center gap-2 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border text-left"
+                        style={familySelected.length > 0
+                          ? { borderRadius: '10px 3px 10px 3px', background: `${AMBER_PRIMARY}1a`, borderColor: `${AMBER_PRIMARY}55`, color: AMBER_PRIMARY }
+                          : { borderRadius: '10px 3px 10px 3px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }
+                        }
+                      >
+                        <span>{family.emoji}</span>
+                        <span>{family.label}</span>
+                        {familySelected.length > 0 && (
+                          <span className="ml-1 text-[9px] font-bold px-1"
+                            style={{ borderRadius: '4px', background: AMBER_PRIMARY, color: '#000' }}>
+                            {familySelected.length}
+                          </span>
+                        )}
+                        <span className="ml-auto opacity-50">{isExpanded ? '▾' : '▸'}</span>
+                      </button>
+                      {isExpanded && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5 pl-2">
+                          {family.instruments.map(instrument => {
+                            const sel = selectedInstruments.includes(instrument);
+                            return (
+                              <button key={instrument} onClick={() => toggleInstrument(instrument)}
+                                className={`ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border ${
+                                  sel ? 'border-transparent' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]'
+                                }`}
+                                style={sel
+                                  ? { borderRadius: '8px 2px 8px 2px', background: `${AMBER_PRIMARY}33`, borderColor: AMBER_PRIMARY, color: AMBER_PRIMARY }
+                                  : { borderRadius: '8px 2px 8px 2px' }
+                                }
+                              >
+                                {instrument}
+                              </button>
+                            );
+                          })}
+                        </div>
                       )}
-                      <span className="ml-auto opacity-50">{isExpanded ? '▾' : '▸'}</span>
-                    </button>
-                    {isExpanded && (
-                      <div className="flex flex-wrap gap-1.5 mt-1.5 pl-2">
-                        {family.instruments.map(instrument => {
-                          const sel = selectedInstruments.includes(instrument);
-                          return (
-                            <button key={instrument} onClick={() => toggleInstrument(instrument)}
-                              className={`ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border ${
-                                sel ? 'border-transparent' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]'
-                              }`}
-                              style={sel
-                                ? { borderRadius: '8px 2px 8px 2px', background: `${AMBER_PRIMARY}33`, borderColor: AMBER_PRIMARY, color: AMBER_PRIMARY }
-                                : { borderRadius: '8px 2px 8px 2px' }
-                              }
-                            >
-                              {instrument}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                    </div>
+                  );
+                })}
+              </div>
+              <textarea value={instrumentation} onChange={e => setInstrumentation(e.target.value)}
+                placeholder={m.instrumentationPlaceholder} rows={2}
+                className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
+                style={{ borderRadius: '10px 3px 10px 3px' }}
+              />
             </div>
-            <textarea value={instrumentation} onChange={e => setInstrumentation(e.target.value)}
-              placeholder={m.instrumentationPlaceholder} rows={2}
-              className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
-              style={{ borderRadius: '10px 3px 10px 3px' }}
-            />
-          </div>
+          </GradientPanel>
         </div>
 
         {/* Row 2: Rhythm + Narrative */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="glass-panel p-4 space-y-3" style={{ borderRadius: '16px 4px 16px 4px' }}>
-            <div className="flex items-center gap-2">
-              <Drum className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
-              <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.rhythm}</label>
+          <GradientPanel borderRadius="16px 4px 16px 4px">
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Drum className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+                <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.rhythm}</label>
+              </div>
+              <textarea value={rhythm} onChange={e => setRhythm(e.target.value)}
+                placeholder={m.rhythmPlaceholder} rows={3}
+                className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
+                style={{ borderRadius: '10px 3px 10px 3px' }}
+              />
             </div>
-            <textarea value={rhythm} onChange={e => setRhythm(e.target.value)}
-              placeholder={m.rhythmPlaceholder} rows={3}
-              className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
-              style={{ borderRadius: '10px 3px 10px 3px' }}
-            />
-          </div>
-          <div className="glass-panel p-4 space-y-3" style={{ borderRadius: '16px 4px 16px 4px' }}>
-            <div className="flex items-center gap-2">
-              <ListMusic className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
-              <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.narrative}</label>
+          </GradientPanel>
+          <GradientPanel borderRadius="16px 4px 16px 4px">
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <ListMusic className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+                <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.narrative}</label>
+              </div>
+              <textarea value={narrative} onChange={e => setNarrative(e.target.value)}
+                placeholder={m.narrativePlaceholder} rows={3}
+                className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
+                style={{ borderRadius: '10px 3px 10px 3px' }}
+              />
             </div>
-            <textarea value={narrative} onChange={e => setNarrative(e.target.value)}
-              placeholder={m.narrativePlaceholder} rows={3}
-              className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
-              style={{ borderRadius: '10px 3px 10px 3px' }}
-            />
-          </div>
+          </GradientPanel>
         </div>
 
         {/* Generate button */}
@@ -604,45 +654,49 @@ export function MusicalTab({
 
         {/* Master Prompt output */}
         {(musicalPrompt || isGeneratingMusicalPrompt) && (
-          <div className="glass-panel p-4 space-y-3" style={{ borderRadius: '16px 4px 16px 4px' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
-                <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.promptLabel}</span>
+          <GradientPanel borderRadius="16px 4px 16px 4px">
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.promptLabel}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] text-[var(--text-secondary)] opacity-60">{m.optimizedFor}</span>
+                  {musicalPrompt && (
+                    <button onClick={handleCopy}
+                      className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border border-[var(--border-color)] text-[var(--text-secondary)]"
+                      style={{ borderRadius: '8px 2px 8px 2px' }}
+                    >
+                      {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      {copied ? m.copied : m.copyPrompt}
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] text-[var(--text-secondary)] opacity-60">{m.optimizedFor}</span>
-                {musicalPrompt && (
-                  <button onClick={handleCopy}
-                    className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border border-[var(--border-color)] text-[var(--text-secondary)]"
-                    style={{ borderRadius: '8px 2px 8px 2px' }}
-                  >
-                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    {copied ? m.copied : m.copyPrompt}
-                  </button>
-                )}
-              </div>
+              {isGeneratingMusicalPrompt && !musicalPrompt ? (
+                <div className="flex items-center gap-3 py-4">
+                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: AMBER_PRIMARY }} />
+                  <span className="text-sm text-[var(--text-secondary)]">{m.analyzing}</span>
+                </div>
+              ) : (
+                <textarea value={musicalPrompt} onChange={e => setMusicalPrompt(e.target.value)} rows={6}
+                  className="w-full bg-transparent px-3 py-2.5 text-sm text-[var(--text-primary)] lcars-glow-focus transition-colors resize-none leading-relaxed border"
+                  style={{ borderRadius: '10px 3px 10px 3px', borderColor: `${AMBER_PRIMARY}55` }}
+                />
+              )}
             </div>
-            {isGeneratingMusicalPrompt && !musicalPrompt ? (
-              <div className="flex items-center gap-3 py-4">
-                <Loader2 className="w-4 h-4 animate-spin" style={{ color: AMBER_PRIMARY }} />
-                <span className="text-sm text-[var(--text-secondary)]">{m.analyzing}</span>
-              </div>
-            ) : (
-              <textarea value={musicalPrompt} onChange={e => setMusicalPrompt(e.target.value)} rows={6}
-                className="w-full bg-transparent px-3 py-2.5 text-sm text-[var(--text-primary)] lcars-glow-focus transition-colors resize-none leading-relaxed border"
-                style={{ borderRadius: '10px 3px 10px 3px', borderColor: `${AMBER_PRIMARY}55` }}
-              />
-            )}
-          </div>
+          </GradientPanel>
         )}
 
         {/* Empty prompt placeholder */}
         {!musicalPrompt && !isGeneratingMusicalPrompt && (
-          <div className="glass-panel p-6 text-center space-y-2 border-dashed" style={{ borderRadius: '16px 4px 16px 4px' }}>
-            <Music className="w-8 h-8 opacity-30 mx-auto" style={{ color: AMBER_PRIMARY }} />
-            <p className="text-sm text-[var(--text-secondary)] opacity-50">{m.promptPlaceholder}</p>
-          </div>
+          <GradientPanel borderRadius="16px 4px 16px 4px">
+            <div className="p-6 text-center space-y-2">
+              <Music className="w-8 h-8 opacity-30 mx-auto" style={{ color: AMBER_PRIMARY }} />
+              <p className="text-sm text-[var(--text-secondary)] opacity-50">{m.promptPlaceholder}</p>
+            </div>
+          </GradientPanel>
         )}
 
       </div>
