@@ -98,6 +98,8 @@ export function InsightsBar({
   const detectedDisplay = songLanguage ? getLanguageDisplay(songLanguage) : null;
   const targetLanguageDisplayText = targetDisplay ? `${targetDisplay.sign} ${targetDisplay.label}` : targetLanguage;
 
+  const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
+
   return (
     <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10" style={{ position: 'relative', overflow: 'visible' }}>
       {/* LCARS gradient separator — bottom edge */}
@@ -242,7 +244,7 @@ export function InsightsBar({
             <Tooltip title={t.tooltips.checkSimilarity}>
               <button
                 onClick={() => setIsSimilarityModalOpen(true)}
-                disabled={isGenerating || isAnalyzing || song.length === 0}
+                disabled={isGenerating || isAnalyzing || !hasLyrics}
                 className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
               >
                 {webSimilarityIndex.status === 'running'
