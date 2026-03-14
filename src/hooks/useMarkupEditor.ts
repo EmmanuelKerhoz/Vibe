@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Section } from '../types';
 import { cleanSectionName, countSyllables } from '../utils/songUtils';
-import { isPureMetaLine } from '../utils/metaUtils';
+import { isPureMetaLine, isEmptyBracketLine } from '../utils/metaUtils';
 import { generateId } from '../utils/idUtils';
 
 interface UseMarkupEditorParams {
@@ -13,6 +13,12 @@ interface UseMarkupEditorParams {
   setMarkupText: (v: string) => void;
   updateSongAndStructureWithHistory: (song: Section[], structure: string[]) => void;
 }
+
+/** Returns true if a line text is an artifact that should be excluded from processing. */
+const isArtifact = (text: string): boolean => {
+  const t = text.trim();
+  return t === '' || isEmptyBracketLine(t);
+};
 
 export function useMarkupEditor(params: UseMarkupEditorParams) {
   const {
@@ -27,9 +33,12 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       let index = markupText.indexOf(searchStr);
       if (index === -1) { searchStr = `[${section.name}]`; index = markupText.indexOf(searchStr); }
       if (index !== -1) {
-        markupTextareaRef.current.focus();
-        markupTextareaRef.current.setSelectionRange(index, index + searchStr.length);
-        markupTextareaRef.current.scrollTop = (markupText.substring(0, index).split('\n').length - 2) * 20;
+        const ta = markupTextareaRef.current;
+        ta.focus();
+        ta.setSelectionRange(index, index + searchStr.length);
+        // Use actual line height from computed style for accurate scroll
+        const lineHeight = parseInt(window.getComputedStyle(ta).lineHeight, 10) || 20;
+        ta.scrollTop = (markupText.substring(0, index).split('\n').length - 2) * lineHeight;
       }
     } else {
       const el = document.getElementById(`section-${section.id}`);
@@ -41,15 +50,9 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     }
   }, [isMarkupMode, markupText, markupTextareaRef]);
 
-  /** Returns true if a line text is considered empty/garbage and should be excluded from markup */
-  const isEmptyLine = (text: string): boolean => {
-    const t = text.trim();
-    return t === '' || t === '[]';
-  };
-
   const handleMarkupToggle = useCallback(() => {
     if (isMarkupMode) {
-      // ── MARKUP → STRUCTURED ────────────────────────────────────
+      // MARKUP → STRUCTURED
       const blocks = markupText.split(/\n\s*\n/);
       const usedSectionIds = new Set<string>();
       const usedLineIds = new Set<string>();
@@ -76,9 +79,8 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         let foundLyrics = false;
 
         remainingLines.forEach(line => {
+          if (isArtifact(line)) return;
           const trimmed = line.trim();
-          if (!trimmed || trimmed === '[]') return;
-
           if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
             if (isPureMetaLine(trimmed)) {
               foundLyrics = true;
@@ -136,17 +138,13 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
       setIsMarkupMode(false);
     } else {
-      // ── STRUCTURED → MARKUP ────────────────────────────────────
+      // STRUCTURED → MARKUP
       const fmt = (i: string) => { const tr = i.trim(); return (tr.startsWith('[') && tr.endsWith(']')) ? tr : `[${tr}]`; };
       const text = song.map(sec => {
         const pre = (sec.preInstructions || []).map(fmt).join('\n');
         const post = (sec.postInstructions || []).map(fmt).join('\n');
-        // Filter out empty lines and bare [] artifacts
         const lyricText = sec.lines
-          .filter(l => {
-            const t = l.text.trim();
-            return t !== '' && t !== '[]';
-          })
+          .filter(l => !isArtifact(l.text))
           .map(l => l.text)
           .join('\n');
         return `[${sec.name}]\n${pre ? pre + '\n' : ''}${lyricText}${post ? '\n' + post : ''}`;

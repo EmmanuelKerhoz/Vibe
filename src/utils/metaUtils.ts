@@ -1,6 +1,5 @@
 /**
  * Known section-header keywords that must NOT be treated as meta-instructions.
- * Extend this list as new section types are added.
  */
 const SECTION_HEADER_PATTERNS = [
   /^intro/i,
@@ -17,34 +16,35 @@ const SECTION_HEADER_PATTERNS = [
   /^pont/i,
   /^hook/i,
   /^tag/i,
-  /^solo/i,           // [Solo] alone acts as section, [Guitar solo] is meta
+  /^solo/i,
   /^interlude/i,
   /^spoken/i,
 ];
 
-/**
- * Returns true if the bracketed content looks like a structural section header
- * (Verse, Chorus, Bridge…) as opposed to a performance meta-instruction.
- * @param inner  Content INSIDE the brackets, e.g. "Verse 1" or "Guitar solo"
- */
 export const isSectionHeader = (inner: string): boolean =>
   SECTION_HEADER_PATTERNS.some(re => re.test(inner.trim()));
 
 /**
  * Returns true if a raw text line is a pure bracketed meta-instruction
- * (the entire line is `[something]`) AND that something is NOT a known section header.
+ * AND that something is NOT a known section header.
+ * Rejects empty brackets [] or whitespace-only brackets [  ].
  */
 export const isPureMetaLine = (line: string): boolean => {
   const m = line.trim().match(/^\[(.+)\]$/);
-  if (!m || !m[1]) return false;
+  if (!m || !m[1] || !m[1].trim()) return false;
   return !isSectionHeader(m[1]);
 };
 
 /**
- * Renders meta-instruction tokens in a plain text string as highlighted HTML spans.
- * Tokens: `[anything]` that is NOT a section header get cyan styling.
- * Returns an array of React-compatible parts: { text, isMeta }[]
+ * Returns true if the line is a bare empty-bracket artifact: [] or [  ]
  */
+export const isEmptyBracketLine = (line: string): boolean => {
+  const t = line.trim();
+  if (t === '[]') return true;
+  const m = t.match(/^\[\s*\]$/);
+  return m !== null;
+};
+
 export const tokenizeMetaInline = (
   text: string
 ): Array<{ text: string; isMeta: boolean }> => {
@@ -57,7 +57,11 @@ export const tokenizeMetaInline = (
     if (match.index > last) {
       parts.push({ text: text.slice(last, match.index), isMeta: false });
     }
-    parts.push({ text: match[0], isMeta: !isSectionHeader(inner) });
+    // Skip empty/whitespace-only brackets
+    const innerTrimmed = inner.trim();
+    if (innerTrimmed) {
+      parts.push({ text: match[0], isMeta: !isSectionHeader(inner) });
+    }
     last = match.index + match[0].length;
   }
   if (last < text.length) {

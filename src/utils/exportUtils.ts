@@ -25,13 +25,19 @@ const escapeMarkdown = (value: string) => value.replace(/([\\`*_{}[\]()#+\-.!|>]
 
 const getBaseFileName = (title: string) => (title.trim() || 'Untitled Song').replace(/\s+/g, '_');
 
+/** Returns true if a lyric line text is an artifact that should be excluded from exports. */
+const isArtifactLine = (text: string): boolean => {
+  const t = text.trim();
+  return t === '' || t === '[]';
+};
+
 const buildTxtContent = (song: Section[], title: string) => {
   let content = `${title}\n\n`;
   song.forEach(section => {
     content += `[${section.name}]\n`;
-    section.lines.forEach(line => {
-      content += `${line.text}\n`;
-    });
+    section.lines
+      .filter(line => !isArtifactLine(line.text))
+      .forEach(line => { content += `${line.text}\n`; });
     content += '\n';
   });
   return content;
@@ -43,11 +49,13 @@ const buildMarkupContent = (song: Section[], title: string, topic: string, mood:
   content += `**Mood:** ${escapeMarkdown(mood)}\n\n`;
   song.forEach(section => {
     content += `### ${escapeMarkdown(section.name)}\n\n`;
-    section.lines.forEach(line => {
-      content += line.isMeta
-        ? `*${escapeMarkdown(line.text)}*  \n`
-        : `${escapeMarkdown(line.text)}  \n`;
-    });
+    section.lines
+      .filter(line => !isArtifactLine(line.text))
+      .forEach(line => {
+        content += line.isMeta
+          ? `*${escapeMarkdown(line.text)}*  \n`
+          : `${escapeMarkdown(line.text)}  \n`;
+      });
     content += '\n';
   });
   return content;
@@ -66,7 +74,9 @@ const buildDocxBlob = (song: Section[], title: string, topic: string, mood: stri
     '<w:p/>',
     ...song.flatMap(section => [
       buildWordParagraph(section.name, { bold: true }),
-      ...section.lines.map(line => buildWordParagraph(line.text)),
+      ...section.lines
+        .filter(line => !isArtifactLine(line.text))
+        .map(line => buildWordParagraph(line.text)),
       '<w:p/>',
     ]),
   ].join('');
@@ -105,7 +115,9 @@ const buildOdtBlob = (song: Section[], title: string, topic: string, mood: strin
     '<text:p text:style-name="Standard"/>',
     ...song.flatMap(section => [
       `<text:p text:style-name="Heading">${escapeXml(section.name)}</text:p>`,
-      ...section.lines.map(line => `<text:p text:style-name="Standard">${escapeXml(line.text)}</text:p>`),
+      ...section.lines
+        .filter(line => !isArtifactLine(line.text))
+        .map(line => `<text:p text:style-name="Standard">${escapeXml(line.text)}</text:p>`),
       '<text:p text:style-name="Standard"/>',
     ]),
   ].join('');
@@ -174,14 +186,9 @@ const buildOdtBlob = (song: Section[], title: string, topic: string, mood: strin
 };
 
 export const createSongExport = ({
-  song,
-  title,
-  topic,
-  mood,
-  format,
+  song, title, topic, mood, format,
 }: SongExportParams): { blob: Blob; filename: string } => {
   const baseFileName = getBaseFileName(title);
-
   switch (format) {
     case 'txt':
       return {
@@ -194,14 +201,8 @@ export const createSongExport = ({
         filename: `${baseFileName}.md`,
       };
     case 'docx':
-      return {
-        blob: buildDocxBlob(song, title, topic, mood),
-        filename: `${baseFileName}.docx`,
-      };
+      return { blob: buildDocxBlob(song, title, topic, mood), filename: `${baseFileName}.docx` };
     case 'odt':
-      return {
-        blob: buildOdtBlob(song, title, topic, mood),
-        filename: `${baseFileName}.odt`,
-      };
+      return { blob: buildOdtBlob(song, title, topic, mood), filename: `${baseFileName}.odt` };
   }
 };

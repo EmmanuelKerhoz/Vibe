@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { isPureMetaLine, isSectionHeader, tokenizeMetaInline } from '../../utils/metaUtils';
+import { isPureMetaLine, isSectionHeader, isEmptyBracketLine, tokenizeMetaInline } from '../../utils/metaUtils';
 import { getSectionColorHex } from '../../utils/songUtils';
 
 interface MarkupInputProps {
@@ -33,15 +33,15 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
       .map(line => {
         const trimmed = line.trim();
 
-        // Empty line or bare [] — render as non-breaking space
-        if (!trimmed || trimmed === '[]') return '&nbsp;';
+        // Empty line or empty-bracket artifact
+        if (!trimmed || isEmptyBracketLine(trimmed)) return '&nbsp;';
 
         const escaped = line
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
 
-        // Section header: [Name] where Name is non-empty and is a known section
+        // Section header
         const headerMatch = trimmed.match(/^\[(.+)\]$/);
         if (headerMatch && headerMatch[1] && headerMatch[1].trim() && isSectionHeader(headerMatch[1])) {
           const color = getSectionColorHex(headerMatch[1]);
@@ -89,18 +89,9 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
         style={{ padding: '1.5rem', color: 'transparent' }}
       />
       <style>{`
-        .markup-section-header {
-          font-weight: 700;
-          letter-spacing: 0.05em;
-        }
-        .markup-meta-line {
-          color: #22d3ee;
-          opacity: 0.85;
-        }
-        .markup-meta-token {
-          color: #67e8f9;
-          font-weight: 600;
-        }
+        .markup-section-header { font-weight: 700; letter-spacing: 0.05em; }
+        .markup-meta-line { color: #22d3ee; opacity: 0.85; }
+        .markup-meta-token { color: #67e8f9; font-weight: 600; }
       `}</style>
     </div>
   );
