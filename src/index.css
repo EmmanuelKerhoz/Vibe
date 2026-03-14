@@ -39,14 +39,12 @@
   --scrollbar-thumb:   rgba(0, 0, 0, 0.1);
   --input-bg:          rgba(255, 255, 255, 0.55);
 
-  /* Safe-area insets (populated by JS / env()) */
   --sab: 0;
   --sat: 0;
   --sal: 0;
   --sar: 0;
 }
 
-/* Expose CSS env safe-area insets as custom properties */
 @supports (padding: env(safe-area-inset-bottom)) {
   :root {
     --sab: env(safe-area-inset-bottom);
@@ -216,7 +214,6 @@
   box-shadow: 0 0 12px currentColor, 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
-/* LCARS ribbon left rail */
 .lcars-ribbon-rail {
   position: relative;
 }
@@ -235,14 +232,11 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
-  /* Prevent rubber-band overscroll on iOS */
   overscroll-behavior: none;
 }
 
-/* ── PWA / Mobile viewport fix ───────────────────────────────── */
 html, body, #root {
   height: 100%;
-  /* Use dvh when available for correct mobile viewport */
   height: 100dvh;
   overflow: hidden;
   touch-action: pan-y;
@@ -256,7 +250,6 @@ html, body, #root {
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.3); }
-/* Hide scrollbars on mobile touch screens */
 @media (pointer: coarse) {
   ::-webkit-scrollbar { width: 0; height: 0; }
 }
@@ -280,25 +273,12 @@ html, body, #root {
     opacity 0.22s ease;
   will-change: transform, box-shadow;
 }
-.ux-interactive:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-.ux-interactive:active:not(:disabled) {
-  transform: translateY(0) scale(0.985);
-}
-/* Larger touch targets on coarse pointer (mobile) */
+.ux-interactive:hover:not(:disabled) { transform: translateY(-1px); }
+.ux-interactive:active:not(:disabled) { transform: translateY(0) scale(0.985); }
 @media (pointer: coarse) {
-  .ux-interactive {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  /* Remove hover transforms on touch — prevents stuck states */
-  .ux-interactive:hover:not(:disabled) {
-    transform: none;
-  }
-  .ux-interactive:active:not(:disabled) {
-    transform: scale(0.96);
-  }
+  .ux-interactive { min-height: 44px; min-width: 44px; }
+  .ux-interactive:hover:not(:disabled) { transform: none; }
+  .ux-interactive:active:not(:disabled) { transform: scale(0.96); }
 }
 
 @keyframes fluentSlideIn {
@@ -330,12 +310,8 @@ html, body, #root {
     background-color var(--motion-duration-fast) ease,
     opacity var(--motion-duration-fast) ease;
 }
-.ui-fluent .fluent-animate-pressable:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-.ui-fluent .fluent-animate-pressable:active:not(:disabled) {
-  transform: translateY(0) scale(0.985);
-}
+.ui-fluent .fluent-animate-pressable:hover:not(:disabled) { transform: translateY(-1px); }
+.ui-fluent .fluent-animate-pressable:active:not(:disabled) { transform: translateY(0) scale(0.985); }
 .ui-fluent .fluent-stagger-1 { animation-delay: 0.04s; }
 .ui-fluent .fluent-stagger-2 { animation-delay: 0.08s; }
 .ui-fluent .fluent-stagger-3 { animation-delay: 0.12s; }
@@ -423,10 +399,7 @@ html, body, #root {
   background-image: none;
   border-color: rgba(255, 255, 255, 0.06);
 }
-
-.dark .lcars-section-title {
-  text-shadow: none;
-}
+.dark .lcars-section-title { text-shadow: none; }
 
 .lcars-band-stripe { width: 16px; flex-shrink: 0; }
 
@@ -480,6 +453,7 @@ html, body, #root {
   font-family: var(--font-mono);
   font-size: 10px;
   position: relative;
+  padding-bottom: max(4px, var(--sab));
 }
 .dark .lcars-status-bar::before {
   content: '';
@@ -488,10 +462,6 @@ html, body, #root {
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, var(--lcars-amber, #f59e0b) 15%, var(--lcars-cyan, #06b6d4) 50%, var(--lcars-violet, #a78bfa) 85%, transparent 100%);
   opacity: 0.5;
-}
-/* Status bar: pad bottom for iOS home indicator */
-.lcars-status-bar {
-  padding-bottom: max(4px, var(--sab));
 }
 
 .lcars-divider {
@@ -529,7 +499,7 @@ html, body, #root {
 .lcars-app-id { letter-spacing: 0.05em; }
 .dark .lcars-app-id:hover { color: var(--accent-color); }
 
-/* ── Lyrics editor zoom — disabled on mobile (no transform distortion on small screens) ── */
+/* ── Lyrics editor zoom — desktop only ─────────────────────────────────────── */
 .lyrics-editor-zoom-wrapper {
   width: 100%;
   height: 100%;
@@ -546,17 +516,16 @@ html, body, #root {
   display: flex;
   flex-direction: column;
 }
-@media (max-width: 767px) {
+/* Mobile & tablet: no zoom, full width */
+@media (max-width: 1023px) {
   .lyrics-editor-zoom {
     transform: none;
     width: 100%;
     margin-left: 0;
   }
-  /* Lyrics area: full bleed, no horizontal padding waste */
   .lcars-lyrics-area {
     padding-left: 8px !important;
     padding-right: 8px !important;
-    /* Ensure content above mobile bottom nav */
     padding-bottom: calc(60px + var(--sab)) !important;
   }
 }
@@ -718,9 +687,7 @@ html:not(.dark) .lcars-hud-chip {
   border-radius: 999px 4px 999px 4px;
   transition: all 0.2s ease;
 }
-.dark .lcars-sidebar-pill:hover {
-  box-shadow: 0 0 12px currentColor;
-}
+.dark .lcars-sidebar-pill:hover { box-shadow: 0 0 12px currentColor; }
 
 .dark .lcars-band {
   background-color: rgba(0, 0, 0, 0.6);
@@ -732,9 +699,7 @@ html:not(.dark) .lcars-hud-chip {
   border-radius: 24px 4px 24px 4px;
   transition: all 0.2s ease;
 }
-.lcars-pill-btn:hover:not(:disabled) {
-  box-shadow: 0 0 12px currentColor;
-}
+.lcars-pill-btn:hover:not(:disabled) { box-shadow: 0 0 12px currentColor; }
 
 .dark .lcars-section-header {
   position: relative;
@@ -756,26 +721,12 @@ html:not(.dark) .lcars-hud-chip {
    LCARS Glow utilities
    =========================================================================== */
 
-.lcars-glow {
-  box-shadow: 0 0 8px 1px var(--accent-color);
-}
-.lcars-glow-accent {
-  box-shadow: 0 0 12px 2px var(--accent-color);
-}
-.lcars-glow-focus:focus {
-  box-shadow: 0 0 12px 2px var(--accent-color);
-  outline: none;
-}
-.dark .lcars-glow {
-  box-shadow: 0 0 8px 1px rgba(var(--accent-color-rgb), 0.6);
-}
-.dark .lcars-glow-accent {
-  box-shadow: 0 0 12px 2px rgba(var(--accent-color-rgb), 0.7);
-}
-.dark .lcars-glow-focus:focus {
-  box-shadow: 0 0 12px 2px rgba(var(--accent-color-rgb), 0.7);
-  outline: none;
-}
+.lcars-glow { box-shadow: 0 0 8px 1px var(--accent-color); }
+.lcars-glow-accent { box-shadow: 0 0 12px 2px var(--accent-color); }
+.lcars-glow-focus:focus { box-shadow: 0 0 12px 2px var(--accent-color); outline: none; }
+.dark .lcars-glow { box-shadow: 0 0 8px 1px rgba(var(--accent-color-rgb), 0.6); }
+.dark .lcars-glow-accent { box-shadow: 0 0 12px 2px rgba(var(--accent-color-rgb), 0.7); }
+.dark .lcars-glow-focus:focus { box-shadow: 0 0 12px 2px rgba(var(--accent-color-rgb), 0.7); outline: none; }
 
 input:focus, textarea:focus, button:focus-visible {
   box-shadow: 0 0 8px 1px rgba(var(--accent-color-rgb), 0.4);
@@ -827,12 +778,8 @@ input:focus, textarea:focus, button:focus-visible {
   0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
   50%       { box-shadow: 0 0 10px 3px rgba(245, 158, 11, 0.5); }
 }
-.metronome-active {
-  animation: amber-pulse 0.5s ease-in-out infinite;
-}
-.metronome-beat-flash {
-  animation: metronome-beat 0.1s ease-out forwards;
-}
+.metronome-active { animation: amber-pulse 0.5s ease-in-out infinite; }
+.metronome-beat-flash { animation: metronome-beat 0.1s ease-out forwards; }
 
 /* ===========================================================================
    RESPONSIVE — Lyric editor line row
@@ -847,26 +794,29 @@ input:focus, textarea:focus, button:focus-visible {
   min-height: 36px;
 }
 
+/* Tablet (768-1023px): hide origin + rhyming-syl columns */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .lyric-row {
+    grid-template-columns: 20px 16px 32px 1fr 72px 40px 24px;
+    column-gap: 8px;
+  }
+  .lyric-col-origin,
+  .lyric-col-rhyming-syl { display: none !important; }
+}
+
 /* Mobile (< 768px): simplified 3-col grid — move | text | delete */
 @media (max-width: 767px) {
   .lyric-row {
     grid-template-columns: 32px 1fr 36px;
     column-gap: 6px;
-    min-height: 44px;  /* WCAG touch target */
+    min-height: 44px;
   }
-  /* Hide: drag handle, origin badge, line-num, rhyme badge, syllables, rhyming-syllable */
   .lyric-col-drag,
   .lyric-col-origin,
   .lyric-col-linenum,
   .lyric-col-rhyme,
   .lyric-col-syllables,
-  .lyric-col-rhyming-syl,
-  .lyric-row > *:nth-child(1) {
-    display: none !important;
-  }
-  .lyric-row > *:nth-child(2) {
-    display: none !important;
-  }
+  .lyric-col-rhyming-syl { display: none !important; }
 }
 
 /* ===========================================================================
@@ -884,19 +834,9 @@ input:focus, textarea:focus, button:focus-visible {
 }
 
 /* ===========================================================================
-   MOBILE LAYOUT — Left panel overlay on mobile
+   MOBILE LAYOUT — Bottom nav & status bar visibility
    =========================================================================== */
-@media (max-width: 767px) {
-  .left-panel-mobile-overlay {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 50;
-    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
-    width: min(320px, 85vw) !important;
-    max-width: 85vw;
-  }
+@media (max-width: 1023px) {
   /* Backdrop for mobile panels */
   .mobile-panel-backdrop {
     position: fixed;
@@ -906,18 +846,15 @@ input:focus, textarea:focus, button:focus-visible {
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
   }
-  /* TopRibbon: compact on mobile */
+  /* TopRibbon: compact */
   .top-ribbon-mobile {
     padding-left: 8px !important;
     padding-right: 8px !important;
   }
-  /* InsightsBar: horizontal scroll on mobile */
+  /* InsightsBar: no horizontal bleed scroll at the bar level */
   .insights-bar-mobile {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    overflow-x: hidden;
   }
-  .insights-bar-mobile::-webkit-scrollbar { display: none; }
   /* Mobile bottom nav bar */
   .mobile-bottom-nav {
     position: fixed;
@@ -954,7 +891,7 @@ input:focus, textarea:focus, button:focus-visible {
     color: var(--text-secondary);
     border-radius: 8px;
     transition: color 0.15s, background 0.15s;
-    padding: 4px 8px;
+    padding: 4px 6px;
   }
   .mobile-bottom-nav-btn.active {
     color: var(--accent-color);
@@ -969,12 +906,31 @@ input:focus, textarea:focus, button:focus-visible {
     letter-spacing: 0.05em;
     font-weight: 600;
   }
-  /* StatusBar hidden on mobile — replaced by bottom nav */
+  /* Generate CTA button — highlighted */
+  .mobile-bottom-nav-generate {
+    background: var(--accent-color);
+    color: var(--on-accent-color);
+    border-radius: 12px;
+    padding: 6px 10px;
+    box-shadow: 0 0 12px rgba(var(--accent-color-rgb), 0.4);
+    min-width: 48px;
+  }
+  .mobile-bottom-nav-generate:disabled {
+    opacity: 0.5;
+  }
+  .mobile-bottom-nav-generate span {
+    color: var(--on-accent-color);
+  }
+  /* StatusBar hidden on mobile/tablet — replaced by bottom nav */
   .lcars-status-bar-desktop {
     display: none;
   }
+  /* Lyrics area: ensure content above bottom nav */
+  .lcars-lyrics-area {
+    padding-bottom: calc(64px + var(--sab)) !important;
+  }
 }
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .mobile-bottom-nav {
     display: none !important;
   }
