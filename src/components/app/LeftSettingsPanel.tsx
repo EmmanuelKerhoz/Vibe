@@ -50,7 +50,7 @@ export function LeftSettingsPanel({
 }: Props) {
   const { t } = useTranslation();
 
-  // ── Mobile/tablet: fixed overlay ──────────────────────────────────────────
+  // ── Mobile/tablet: fixed overlay ────────────────────────────────────────────────────────
   if (isMobileOverlay) {
     return (
       <div
@@ -59,7 +59,6 @@ export function LeftSettingsPanel({
           transition-transform duration-300 ease-in-out
           ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}
         style={{
-          // Stop above the mobile bottom nav (56px) + safe-area-inset-bottom
           bottom: 'calc(56px + var(--sab, 0px))',
           position: 'fixed',
           overflow: 'hidden',
@@ -91,7 +90,7 @@ export function LeftSettingsPanel({
     );
   }
 
-  // ── Desktop: animated inline sidebar ──────────────────────────────────────
+  // ── Desktop: animated inline sidebar ──────────────────────────────────────────
   return (
     <AnimatePresence initial={false}>
       {isLeftPanelOpen && (
@@ -137,7 +136,7 @@ export function LeftSettingsPanel({
   );
 }
 
-// ── Inner content ─────────────────────────────────────────────────────────────
+// ── Inner content ──────────────────────────────────────────────────────────────────
 function PanelContent({
   t, title, setTitle, titleOrigin, onGenerateTitle, isGeneratingTitle,
   topic, setTopic, mood, setMood,
@@ -153,11 +152,13 @@ function PanelContent({
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
 
-      {/* Header */}
+      {/* Header — accent rail top via unified token */}
       <div className="h-16 px-5 flex items-center justify-between shrink-0" style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
+        {/* Unified accent rail — bottom of header = top of body separator, using standard gradient */}
         <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px',
-          background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          height: 'var(--accent-rail-thickness, 2px)',
+          background: 'var(--accent-rail-gradient-h)',
           opacity: 0.85, pointerEvents: 'none', zIndex: 1,
         }} />
         <div className="flex items-center gap-3">
@@ -210,7 +211,7 @@ function PanelContent({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Topic &amp; Mood</span>
-              <Tooltip title="Generate a random topic &amp; mood with AI">
+              <Tooltip title="Suggest a random topic &amp; mood with AI">
                 <Button
                   onClick={onSurprise}
                   disabled={isSurprising || isGenerating}
@@ -218,7 +219,7 @@ function PanelContent({
                   startIcon={isSurprising ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />}
                   style={{ fontSize: '10px', padding: '2px 8px' }}
                 >
-                  Surprise
+                  Suggest
                 </Button>
               </Tooltip>
             </div>
@@ -302,13 +303,8 @@ function PanelContent({
         </div>
       </div>
 
-      {/* Footer — generate button only (no collapse on mobile overlay) */}
-      <div className="p-5 shrink-0" style={{ position: 'relative', borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
-          background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-          opacity: 0.85, pointerEvents: 'none',
-        }} />
+      {/* Footer — generate button, no separator line */}
+      <div className="p-5 shrink-0">
         <Button
           onClick={onGenerateSong}
           disabled={isGenerating}

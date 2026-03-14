@@ -91,13 +91,13 @@ export function TopRibbon({
         opacity: 0.85, pointerEvents: 'none', zIndex: 1,
       }} />
 
-      {/* LEFT: burger + tabs */}
-      <div className="flex items-center gap-3 lg:gap-6 pl-1 lg:pl-3">
+      {/* LEFT: burger flush to left edge + tabs */}
+      <div className="flex items-center gap-3 lg:gap-6 pl-0">
         <div className="relative" style={{ zIndex: 60 }} ref={menuRef}>
           <Tooltip title="Menu">
             <button
               onClick={() => setIsMenuOpen(v => !v)}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 rounded-md transition-all duration-200"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md transition-all duration-200"
               style={{
                 color: isMenuOpen ? 'var(--accent-color)' : 'var(--text-secondary)',
                 backgroundColor: isMenuOpen ? 'color-mix(in srgb, var(--accent-color) 12%, transparent)' : undefined,
