@@ -12,6 +12,8 @@ interface Props {
   setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
   onGenerateSong?: () => void;
+  /** Opens the Settings dialog (not the generation panel) */
+  onOpenSettings?: () => void;
 }
 
 export function MobileBottomNav({
@@ -19,20 +21,21 @@ export function MobileBottomNav({
   isGenerating,
   setIsLeftPanelOpen, setIsStructureOpen, setActiveTab,
   onGenerateSong,
+  onOpenSettings,
 }: Props) {
   const { t } = useTranslation();
 
   return (
     <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
-      {/* Settings / New generation panel */}
+      {/* Settings — opens SettingsModal */}
       <button
-        className={`mobile-bottom-nav-btn ${isLeftPanelOpen ? 'active' : ''}`}
+        className="mobile-bottom-nav-btn"
         onClick={() => {
-          setIsLeftPanelOpen(v => !v);
+          setIsLeftPanelOpen(false);
           setIsStructureOpen(false);
+          onOpenSettings?.();
         }}
         aria-label={t.mobileNav.settings}
-        aria-pressed={isLeftPanelOpen}
       >
         <Settings size={20} />
         <span>{t.mobileNav.settings}</span>

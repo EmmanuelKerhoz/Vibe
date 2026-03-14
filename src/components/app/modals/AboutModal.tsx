@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Apple, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag, Info, X } from 'lucide-react';
 import { useTranslation } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
@@ -16,6 +16,20 @@ interface Props {
 
 export function AboutModal({ isOpen, onClose }: Props) {
   const { t } = useTranslation();
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const sweepRef = useRef<HTMLDivElement>(null);
+
+  // Glass sweep animation triggered once on open
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = sweepRef.current;
+    if (!el) return;
+    // Reset then trigger
+    el.style.animation = 'none';
+    // Force reflow
+    void el.offsetWidth;
+    el.style.animation = 'about-glass-sweep 900ms cubic-bezier(0.4, 0, 0.2, 1) 350ms forwards';
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -39,6 +53,13 @@ export function AboutModal({ isOpen, onClose }: Props) {
         aria-label={t.app.name}
         className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8"
       >
+        {/* Glass sweep overlay — diagonal, fires once on open */}
+        <div
+          ref={sweepRef}
+          aria-hidden="true"
+          className="about-glass-sweep-overlay"
+        />
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -64,8 +85,8 @@ export function AboutModal({ isOpen, onClose }: Props) {
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {/* Banner — flush, no top padding */}
+        <div ref={bodyRef} className="flex-1 overflow-y-auto custom-scrollbar">
+          {/* Banner — flush, no padding */}
           <div className="relative w-full bg-black/80">
             <div className="w-full overflow-hidden" style={{ aspectRatio: `${BANNER_WIDTH} / ${BANNER_HEIGHT}` }}>
               <img src={bannerImage} alt="Lyricist splash screen" className="w-full h-full object-contain object-top" />
@@ -77,8 +98,8 @@ export function AboutModal({ isOpen, onClose }: Props) {
             />
           </div>
 
-          {/* Body — tighter top padding to close gap */}
-          <div className="px-8 pt-4 pb-8 space-y-6">
+          {/* Body — pt-0 pour coller directement sous la bannière */}
+          <div className="px-8 pt-0 pb-8 space-y-6">
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto text-center">
               {t.about.description}
             </p>
