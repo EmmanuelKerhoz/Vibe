@@ -33,46 +33,6 @@ const AMBER_PRIMARY = '#f59e0b';
 const AMBER_SECONDARY = '#38bdf8';
 const AMBER_MUTED = '#c4b5fd';
 
-/** Gradient used for outer container borders — matches the LCARS header rail */
-const PANEL_BORDER_GRADIENT = `linear-gradient(180deg, ${AMBER_PRIMARY} 0%, ${AMBER_SECONDARY} 60%, ${AMBER_MUTED} 100%)`;
-
-/**
- * Wrapper that renders a 1-px gradient border around its children.
- * The inner div restores the panel background so the gradient shows only as a border.
- */
-function GradientPanel({
-  children,
-  className = '',
-  style = {},
-  borderRadius = '16px 4px 16px 4px',
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-  borderRadius?: string;
-}) {
-  return (
-    <div
-      style={{
-        background: PANEL_BORDER_GRADIENT,
-        borderRadius,
-        padding: '1px',
-        ...style,
-      }}
-    >
-      <div
-        className={`glass-panel-inner ${className}`}
-        style={{
-          borderRadius: `calc(${borderRadius.split(' ')[0]} - 1px) calc(${borderRadius.split(' ')[1] ?? borderRadius.split(' ')[0]} - 1px) calc(${borderRadius.split(' ')[2] ?? borderRadius.split(' ')[0]} - 1px) calc(${borderRadius.split(' ')[3] ?? borderRadius.split(' ')[0]} - 1px)`,
-          height: '100%',
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
 const BPM_PRESETS = [
   { label: 'Very Slow', value: '60' },
   { label: 'Slow',      value: '80' },
@@ -112,9 +72,9 @@ interface VibeCategory {
 }
 
 const MUSICAL_GUIDE_STEPS = [
-  { title: 'Start broad',       description: 'Choose the family that gets closest to the track before refining the micro-scene.' },
-  { title: 'Refine the niche',  description: 'Use a sub-style to tell whether it leans indie, club-ready, cinematic, soulful, or hybrid.' },
-  { title: 'Give references',   description: 'Artist touchpoints, mood words, and era cues help define the intended lane instantly.' },
+  { title: 'Start broad',         description: 'Choose the family that gets closest to the track before refining the micro-scene.' },
+  { title: 'Refine the niche',    description: 'Use a sub-style to tell whether it leans indie, club-ready, cinematic, soulful, or hybrid.' },
+  { title: 'Give references',     description: 'Artist touchpoints, mood words, and era cues help define the intended lane instantly.' },
   { title: 'Lock the production', description: 'Confirm BPM, groove, and instruments so the prompt sounds intentional instead of generic.' },
 ];
 
@@ -224,6 +184,26 @@ const SUB_STYLES: Record<string, string[]> = {
   'Afrobeat':   ['Afrobeats', 'Highlife', 'Jùjú'],
 };
 
+/** CSS-native gradient border panel — no extra DOM wrapper, no background bleed */
+function GBPanel({
+  children,
+  className = '',
+  style = {},
+}: {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      className={`lcars-gb-panel ${className}`}
+      style={style}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function MusicalTab({
   song, title, topic, mood,
   genre, setGenre, tempo, setTempo,
@@ -301,13 +281,7 @@ export function MusicalTab({
     <div className="flex flex-col h-full overflow-y-auto fluent-fade-in">
 
       {/* ── Header ── */}
-      <div className="relative px-6 pt-6 pb-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)]">
-        {/* LCARS left-edge gradient */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, bottom: 0, width: '3px',
-          background: PANEL_BORDER_GRADIENT,
-          opacity: 0.9,
-        }} />
+      <div className="relative px-6 pt-6 pb-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] lcars-ribbon-rail">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-[12px_4px_12px_4px] flex items-center justify-center shrink-0"
@@ -367,7 +341,7 @@ export function MusicalTab({
         </div>
 
         {/* Vibe Board */}
-        <GradientPanel borderRadius="16px 4px 16px 4px">
+        <GBPanel>
           <div className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Music className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
@@ -479,13 +453,13 @@ export function MusicalTab({
               </div>
             )}
           </div>
-        </GradientPanel>
+        </GBPanel>
 
         {/* Row 1: Tempo + Instruments */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
           {/* Tempo + Metronome */}
-          <GradientPanel borderRadius="16px 4px 16px 4px">
+          <GBPanel>
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -541,10 +515,10 @@ export function MusicalTab({
                 ))}
               </div>
             </div>
-          </GradientPanel>
+          </GBPanel>
 
           {/* Instrument Builder */}
-          <GradientPanel borderRadius="16px 4px 16px 4px">
+          <GBPanel>
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Guitar className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
@@ -609,12 +583,12 @@ export function MusicalTab({
                 style={{ borderRadius: '10px 3px 10px 3px' }}
               />
             </div>
-          </GradientPanel>
+          </GBPanel>
         </div>
 
         {/* Row 2: Rhythm + Narrative */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <GradientPanel borderRadius="16px 4px 16px 4px">
+          <GBPanel>
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Drum className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
@@ -626,8 +600,8 @@ export function MusicalTab({
                 style={{ borderRadius: '10px 3px 10px 3px' }}
               />
             </div>
-          </GradientPanel>
-          <GradientPanel borderRadius="16px 4px 16px 4px">
+          </GBPanel>
+          <GBPanel>
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <ListMusic className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
@@ -639,7 +613,7 @@ export function MusicalTab({
                 style={{ borderRadius: '10px 3px 10px 3px' }}
               />
             </div>
-          </GradientPanel>
+          </GBPanel>
         </div>
 
         {/* Generate button */}
@@ -654,7 +628,7 @@ export function MusicalTab({
 
         {/* Master Prompt output */}
         {(musicalPrompt || isGeneratingMusicalPrompt) && (
-          <GradientPanel borderRadius="16px 4px 16px 4px">
+          <GBPanel>
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -686,17 +660,17 @@ export function MusicalTab({
                 />
               )}
             </div>
-          </GradientPanel>
+          </GBPanel>
         )}
 
         {/* Empty prompt placeholder */}
         {!musicalPrompt && !isGeneratingMusicalPrompt && (
-          <GradientPanel borderRadius="16px 4px 16px 4px">
+          <GBPanel>
             <div className="p-6 text-center space-y-2">
               <Music className="w-8 h-8 opacity-30 mx-auto" style={{ color: AMBER_PRIMARY }} />
               <p className="text-sm text-[var(--text-secondary)] opacity-50">{m.promptPlaceholder}</p>
             </div>
-          </GradientPanel>
+          </GBPanel>
         )}
 
       </div>
