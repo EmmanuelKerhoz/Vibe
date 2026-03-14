@@ -56,40 +56,33 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         let remainingLines = lines;
         const firstLine = (lines[0] ?? '').trim();
 
-        // First line is a section header if it's [SectionName] or **[SectionName]**
         if ((firstLine.startsWith('**[') && firstLine.endsWith(']**')) || (firstLine.startsWith('[') && firstLine.endsWith(']'))) {
-          // Only treat as section header if it IS a known section keyword
           const inner = firstLine.replace(/^\*\*\[|\]\*\*$|^\[|\]$/g, '').trim();
           if (!isPureMetaLine(`[${inner}]`)) {
-            // It's a structural section header
             name = cleanSectionName(firstLine);
             remainingLines = lines.slice(1);
           }
-          // else: it's a meta-instruction on the first line — keep it in remainingLines
         }
 
         const preInstructions: string[] = [];
         const postInstructions: string[] = [];
         const lyricLines: string[] = [];
-        const metaLineTexts = new Set<string>(); // track meta lines to skip from preInstructions
         let foundLyrics = false;
 
         remainingLines.forEach(line => {
           const trimmed = line.trim();
+          // Skip completely empty lines in the deserializer
           if (!trimmed) return;
 
           if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
             if (isPureMetaLine(trimmed)) {
-              // This is a meta-instruction — treat as a lyric line with isMeta flag
               foundLyrics = true;
               lyricLines.push(line);
-              metaLineTexts.add(trimmed);
             } else {
-              // Structural bracket (e.g. [Anthemic] used as pre/post instruction)
               if (foundLyrics) postInstructions.push(trimmed);
               else preInstructions.push(trimmed);
             }
-          } else if (trimmed !== '') {
+          } else {
             foundLyrics = true;
             lyricLines.push(line);
           }
@@ -139,12 +132,16 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       setIsMarkupMode(false);
     } else {
       // ── STRUCTURED → MARKUP ────────────────────────────────────
-      // line.text is already preserved with brackets for isMeta lines — no transformation needed
       const fmt = (i: string) => { const tr = i.trim(); return (tr.startsWith('[') && tr.endsWith(']')) ? tr : `[${tr}]`; };
       const text = song.map(sec => {
         const pre = (sec.preInstructions || []).map(fmt).join('\n');
         const post = (sec.postInstructions || []).map(fmt).join('\n');
-        return `[${sec.name}]\n${pre ? pre + '\n' : ''}${sec.lines.map(l => l.text).join('\n')}${post ? '\n' + post : ''}`;
+        // Filter out lines with empty or whitespace-only text before serializing
+        const lyricText = sec.lines
+          .filter(l => l.text.trim() !== '')
+          .map(l => l.text)
+          .join('\n');
+        return `[${sec.name}]\n${pre ? pre + '\n' : ''}${lyricText}${post ? '\n' + post : ''}`;
       }).join('\n\n');
       setMarkupText(text);
       setIsMarkupMode(true);
