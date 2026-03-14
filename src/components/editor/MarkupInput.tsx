@@ -31,18 +31,29 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
     return text
       .split('\n')
       .map(line => {
+        // Empty line — render as non-breaking space to preserve layout
+        if (!line.trim()) return '&nbsp;';
+
         const escaped = line
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
-        const headerMatch = line.trim().match(/^\[(.+)\]$/);
-        if (headerMatch && headerMatch[1] && isSectionHeader(headerMatch[1])) {
+
+        const trimmed = line.trim();
+
+        // Section header: [Name] where Name is non-empty and is a known section
+        const headerMatch = trimmed.match(/^\[(.+)\]$/);
+        if (headerMatch && headerMatch[1] && headerMatch[1].trim() && isSectionHeader(headerMatch[1])) {
           const color = getSectionColorHex(headerMatch[1]);
           return `<span class="markup-section-header" style="color:${color}">${escaped}</span>`;
         }
-        if (isPureMetaLine(line)) {
+
+        // Pure meta line: [instruction] but NOT a section header
+        if (isPureMetaLine(trimmed)) {
           return `<span class="markup-meta-line">${escaped}</span>`;
         }
+
+        // Inline meta tokens
         const parts = tokenizeMetaInline(line);
         if (parts.some(p => p.isMeta)) {
           return parts
@@ -52,6 +63,7 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
             })
             .join('');
         }
+
         return escaped;
       })
       .join('\n');
