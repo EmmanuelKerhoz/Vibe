@@ -347,10 +347,12 @@ body {
   overscroll-behavior: none;
 }
 
+/* overflow:clip clips paint overflow without creating a scroll container,
+   so wheel/touch events propagate correctly to .lcars-lyrics-area */
 html, body, #root {
   height: 100%;
   height: 100dvh;
-  overflow: hidden;
+  overflow: clip;
   touch-action: pan-y;
 }
 
@@ -542,6 +544,8 @@ html, body, #root {
     repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, rgba(255,255,255,0.55) 7px, rgba(255,255,255,0.55) 8px, transparent 8px, transparent 15px),
     radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.6) 0%, transparent 70%);
   background-attachment: scroll;
+  /* Explicit touch-action on the actual scroll container */
+  touch-action: pan-y;
 }
 .dark .lcars-lyrics-area {
   background-color: #080808;
@@ -640,21 +644,23 @@ html, body, #root {
 .dark .lcars-app-id:hover { color: var(--accent-color); }
 
 /* ── Lyrics editor zoom — desktop only ─────────────────────────────────────── */
+/*
+  FIX: .lyrics-editor-zoom-wrapper must NOT set height:100% or overflow:hidden.
+  Doing so traps content inside the wrapper, preventing the parent
+  .lcars-lyrics-area (overflow-y:auto) from ever seeing overflow to scroll.
+  We let the wrapper size naturally to its content.
+*/
 .lyrics-editor-zoom-wrapper {
   width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 .lyrics-editor-zoom {
   transform: scale(0.85);
   transform-origin: top center;
   width: 117.647059%;
   margin-left: -8.823529%;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  /* NOTE: no flex:1 / display:flex / flex-direction:column here —
+     those caused the zoom container to fill exactly the viewport
+     height, producing zero scrollable overflow. */
 }
 /* Mobile & tablet: no zoom, full width */
 @media (max-width: 1023px) {
