@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Music, PanelLeft, Ruler, Bot, User, Sparkles, Loader2, Shuffle } from 'lucide-react';
+import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Label } from '../ui/Label';
@@ -35,9 +35,6 @@ interface Props {
   isMobileOverlay?: boolean;
 }
 
-// Solid background applied inline with !important-level specificity via style=
-// to override .ui-fluent .lcars-panel { background-color: rgba(12,12,12,0.80) }
-// which is semi-transparent and causes backdrop-filter bleed.
 const SOLID_BG_DARK = 'var(--bg-app, #0c0c0c)';
 
 export function LeftSettingsPanel({
@@ -53,18 +50,19 @@ export function LeftSettingsPanel({
 }: Props) {
   const { t } = useTranslation();
 
-  // ── Mobile/tablet: fixed overlay ─────────────────────────────────────────
+  // ── Mobile/tablet: fixed overlay ──────────────────────────────────────────
   if (isMobileOverlay) {
     return (
       <div
         className={`flex flex-col shadow-2xl lcars-panel
-          fixed left-0 top-0 bottom-0 z-[80] w-[min(22rem,85vw)]
+          fixed left-0 top-0 z-[80] w-[min(22rem,85vw)]
           transition-transform duration-300 ease-in-out
           ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}
         style={{
+          // Stop above the mobile bottom nav (60px) + safe-area-inset-bottom
+          bottom: 'calc(60px + var(--sab, 0px))',
           position: 'fixed',
           overflow: 'hidden',
-          // Override semi-transparent .lcars-panel bg for the overlay (fixed, has its own stacking context)
           backgroundColor: 'color-mix(in srgb, var(--bg-app, #0c0c0c) 98%, transparent)',
           backdropFilter: 'none',
           WebkitBackdropFilter: 'none',
@@ -87,14 +85,13 @@ export function LeftSettingsPanel({
           song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
           isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
           onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
+          isMobileOverlay={true}
         />
       </div>
     );
   }
 
-  // ── Desktop: animated inline sidebar ──────────────────────────────────
-  // Key fix: backgroundColor + backdropFilter inline override the .ui-fluent .lcars-panel
-  // CSS rule (rgba semi-transparent + blur) that caused content bleed-through.
+  // ── Desktop: animated inline sidebar ──────────────────────────────────────
   return (
     <AnimatePresence initial={false}>
       {isLeftPanelOpen && (
@@ -107,7 +104,6 @@ export function LeftSettingsPanel({
           className="shrink-0 h-full flex flex-col relative lcars-panel"
           style={{
             overflow: 'hidden',
-            // Force fully opaque background — overrides .ui-fluent .lcars-panel rgba semi-transparent
             backgroundColor: SOLID_BG_DARK,
             backdropFilter: 'none',
             WebkitBackdropFilter: 'none',
@@ -122,7 +118,6 @@ export function LeftSettingsPanel({
             background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
             opacity: 0.85, pointerEvents: 'none', zIndex: 2,
           }} />
-          {/* Fixed-width inner wrapper prevents content squishing during animation */}
           <div style={{ width: 352, minWidth: 352, flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <PanelContent
               t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
@@ -133,6 +128,7 @@ export function LeftSettingsPanel({
               song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
               isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
               onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
+              isMobileOverlay={false}
             />
           </div>
         </motion.div>
@@ -147,9 +143,13 @@ function PanelContent({
   topic, setTopic, mood, setMood,
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   song, isGenerating, quantizeSyllables,
-  isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen,
+  isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen: _setIsLeftPanelOpen,
   onSurprise, isSurprising, onGenerateSong,
-}: Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & { t: ReturnType<typeof useTranslation>['t'] }) {
+  isMobileOverlay,
+}: Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & {
+  t: ReturnType<typeof useTranslation>['t'];
+  isMobileOverlay: boolean;
+}) {
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
 
@@ -302,8 +302,8 @@ function PanelContent({
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="p-5 space-y-3 shrink-0" style={{ position: 'relative', borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
+      {/* Footer — desktop only shows collapse btn; mobile: generate only */}
+      <div className="p-5 shrink-0" style={{ position: 'relative', borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
           background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
@@ -318,15 +318,6 @@ function PanelContent({
         >
           {t.editor.emptyState.generateSong}
         </Button>
-        <Tooltip title={t.tooltips.collapseLeft}>
-          <button
-            onClick={() => setIsLeftPanelOpen(false)}
-            className="w-full flex items-center justify-center gap-2 py-2 text-[10px] uppercase tracking-widest text-[var(--accent-color)] hover:text-[var(--accent-color)]/80 transition-colors"
-          >
-            <PanelLeft className="w-3.5 h-3.5" />
-            Close
-          </button>
-        </Tooltip>
       </div>
     </div>
   );
