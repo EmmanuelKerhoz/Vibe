@@ -70,16 +70,19 @@ export function TopRibbon({
   };
 
   return (
-    <div className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0 fluent-animate-panel">
+    <div
+      className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 z-10 glass-panel lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0 fluent-animate-panel"
+      style={{ position: 'relative', overflow: 'visible' }}
+    >
       {/* LCARS gradient separator — bottom edge */}
       <div style={{
         position: 'absolute',
-        bottom: 0, left: 0, right: 0,
-        height: '1px',
+        bottom: -1, left: 0, right: 0,
+        height: '2px',
         background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-        opacity: 0.5,
+        opacity: 0.85,
         pointerEvents: 'none',
-        zIndex: 1,
+        zIndex: 10,
       }} />
       {/* Left: burger menu + tab switcher */}
       <div className="flex items-center gap-3 lg:gap-6 pl-1 lg:pl-3">
@@ -299,7 +302,7 @@ export function TopRibbon({
           <Tooltip title="Open new generation panel">
             <button
               onClick={onOpenNewGeneration}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-500 hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded-md transition-all"
               aria-label="Open new generation panel"
             >
               <FilePlus2 className="w-5 h-5" />

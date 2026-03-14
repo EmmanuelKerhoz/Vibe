@@ -99,16 +99,16 @@ export function InsightsBar({
   const targetLanguageDisplayText = targetDisplay ? `${targetDisplay.sign} ${targetDisplay.label}` : targetLanguage;
 
   return (
-    <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10" style={{ position: 'relative' }}>
+    <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10" style={{ position: 'relative', overflow: 'visible' }}>
       {/* LCARS gradient separator — bottom edge */}
       <div style={{
         position: 'absolute',
-        bottom: 0, left: 0, right: 0,
-        height: '1px',
+        bottom: -1, left: 0, right: 0,
+        height: '2px',
         background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-        opacity: 0.5,
+        opacity: 0.85,
         pointerEvents: 'none',
-        zIndex: 1,
+        zIndex: 10,
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 

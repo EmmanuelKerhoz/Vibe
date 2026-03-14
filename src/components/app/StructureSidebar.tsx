@@ -59,19 +59,20 @@ export function StructureSidebar({
           animate={{ width: 280, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className={`border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl overflow-hidden lcars-panel fluent-animate-panel !rounded-none${className ? ` ${className}` : ''}`}
+          className={`border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl lcars-panel fluent-animate-panel !rounded-none${className ? ` ${className}` : ''}`}
+          style={{ overflow: 'visible' }}
         >
           {/* LCARS gradient separator — left edge */}
           <div style={{
             position: 'absolute',
-            top: 0, left: 0, bottom: 0,
+            top: 0, left: -1, bottom: 0,
             width: '2px',
             background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-            opacity: 0.7,
+            opacity: 0.85,
             pointerEvents: 'none',
-            zIndex: 1,
+            zIndex: 10,
           }} />
-          <div className="w-[280px] flex flex-col h-full">
+          <div className="w-[280px] flex flex-col h-full overflow-hidden">
             <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between">
               <h3 className="micro-label text-zinc-400 flex items-center gap-2">
                 <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />

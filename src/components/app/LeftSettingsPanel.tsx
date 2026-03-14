@@ -49,26 +49,30 @@ export function LeftSettingsPanel({
 
   // ── Desktop: inline sidebar ───────────────────────────────────────────────
   if (!isMobileOverlay) {
-    // Guard: don't render until session is hydrated — prevents blank flash
-    if (!isLeftPanelOpen || !isSessionHydrated) return null;
+    // Guard: don't render if panel is closed
+    // Also guard on !isSessionHydrated ONLY when panel is closed (prevents blank flash on first render)
+    // Once the user explicitly opens the panel, we always render regardless of hydration state
+    if (!isLeftPanelOpen) return null;
+    if (!isSessionHydrated && !isLeftPanelOpen) return null;
     return (
       <div
-        className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel w-[22rem] shrink-0 h-full overflow-hidden`}
+        className={`border-r border-fluent-border bg-fluent-sidebar flex flex-col shadow-2xl lcars-panel fluent-animate-panel w-[22rem] shrink-0 h-full`}
         style={{
           borderRight: 'none',
           boxShadow: 'inset -1px 0 0 transparent',
           position: 'relative',
+          overflow: 'visible',
         }}
       >
         {/* LCARS gradient separator — right edge */}
         <div style={{
           position: 'absolute',
-          top: 0, right: 0, bottom: 0,
+          top: 0, right: -1, bottom: 0,
           width: '2px',
           background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-          opacity: 0.7,
+          opacity: 0.85,
           pointerEvents: 'none',
-          zIndex: 1,
+          zIndex: 10,
         }} />
         <PanelContent
           t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
@@ -91,17 +95,17 @@ export function LeftSettingsPanel({
         fixed left-0 top-0 bottom-0 z-[80] w-[min(22rem,85vw)]
         transition-transform duration-300 ease-in-out
         ${isLeftPanelOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}
-      style={{ position: 'fixed' }}
+      style={{ position: 'fixed', overflow: 'visible' }}
     >
       {/* LCARS gradient separator — right edge */}
       <div style={{
         position: 'absolute',
-        top: 0, right: 0, bottom: 0,
+        top: 0, right: -1, bottom: 0,
         width: '2px',
         background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-        opacity: 0.7,
+        opacity: 0.85,
         pointerEvents: 'none',
-        zIndex: 1,
+        zIndex: 10,
       }} />
       {/* Mobile: always render content (panel is off-screen when closed — no flash risk) */}
       <PanelContent
@@ -128,7 +132,7 @@ function PanelContent({
   onSurprise, isSurprising, onGenerateSong,
 }: Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & { t: ReturnType<typeof useTranslation>['t'] }) {
   return (
-    <div className="w-full flex flex-col h-full">
+    <div className="w-full flex flex-col h-full overflow-hidden">
       <div className="h-16 px-5 border-b border-fluent-border flex items-center justify-between" style={{
         borderBottom: '1px solid transparent',
         backgroundImage: 'none',
@@ -141,8 +145,9 @@ function PanelContent({
           bottom: 0, left: 0, right: 0,
           height: '1px',
           background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-          opacity: 0.5,
+          opacity: 0.85,
           pointerEvents: 'none',
+          zIndex: 1,
         }} />
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center shadow-inner">
@@ -292,7 +297,7 @@ function PanelContent({
           top: 0, left: 0, right: 0,
           height: '1px',
           background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-          opacity: 0.5,
+          opacity: 0.85,
           pointerEvents: 'none',
         }} />
         <Button
