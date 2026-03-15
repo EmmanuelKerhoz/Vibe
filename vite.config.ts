@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'fs';
+
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8')) as { version: string };
 
 export default defineConfig(({ mode }) => ({
   plugins: [
@@ -50,7 +53,6 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
-            // App shell — cache first, long TTL
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -60,7 +62,6 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            // Google Fonts files
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -70,12 +71,10 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            // Gemini API — network first, no offline fallback (requires live key)
             urlPattern: /^https:\/\/generativelanguage\.googleapis\.com\/.*/i,
             handler: 'NetworkOnly'
           },
           {
-            // DuckDuckGo proxy — network first
             urlPattern: /^\/api\/ddg.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -85,7 +84,6 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            // Vercel API routes — network first
             urlPattern: /^\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -130,6 +128,7 @@ export default defineConfig(({ mode }) => ({
   assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.svg'],
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode),
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
   },
   resolve: {
     alias: {
