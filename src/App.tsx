@@ -147,7 +147,7 @@ export default function App() {
     toggleAnalysisItemSelection, applySelectedAnalysisItems,
     analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
   } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language, setTopic, setMood, saveVersion,
-    updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
+    updateState, updateSongAndStructureWithHistory,
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
@@ -166,7 +166,7 @@ export default function App() {
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
   } = useSongEditor({ song, structure, newSectionName, setNewSectionName,
     draggedItemIndex, setDraggedItemIndex, setDragOverIndex, draggedLineInfo, setDraggedLineInfo, setDragOverLineInfo,
-    updateState, updateSongWithHistory, updateStructureWithHistory, updateSongAndStructureWithHistory, title, topic, mood,
+    updateState, updateStructureWithHistory, updateSongAndStructureWithHistory, title, topic, mood,
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); }, playAudioFeedback,
   });
 

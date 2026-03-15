@@ -33,7 +33,6 @@ type UseSongEditorParams = {
   setDraggedLineInfo: Dispatch<SetStateAction<LineDragInfo>>;
   setDragOverLineInfo: Dispatch<SetStateAction<LineDragInfo>>;
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
-  updateSongWithHistory: (newSong: Section[]) => void;
   updateStructureWithHistory: (newStructure: string[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   title: string;
@@ -55,7 +54,6 @@ export const useSongEditor = ({
   setDraggedLineInfo,
   setDragOverLineInfo,
   updateState,
-  updateSongWithHistory: _updateSongWithHistory,
   updateStructureWithHistory,
   updateSongAndStructureWithHistory,
   title,
@@ -241,7 +239,6 @@ export const useSongEditor = ({
       const sourceSectionIndex = currentSong.findIndex(s => s.id === draggedLineInfo.sectionId);
       const targetSectionIndex = currentSong.findIndex(s => s.id === targetSectionId);
       if (sourceSectionIndex === -1 || targetSectionIndex === -1) return currentSong;
-      // Deep-clone the affected sections to avoid pre-setState mutation
       const newSong = currentSong.map((s, i) =>
         i === sourceSectionIndex || i === targetSectionIndex
           ? { ...s, lines: [...s.lines] }

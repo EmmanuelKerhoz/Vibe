@@ -22,7 +22,6 @@ type UseSongAnalysisParams = {
     mood: string;
   }) => void;
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
-  updateSongWithHistory: (newSong: Section[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   clearLineSelection: () => void;
   requestAutoTitleGeneration: () => void;
