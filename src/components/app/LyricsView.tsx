@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, memo } from 'react';
 import { ClipboardPaste, Layout, Library, Music, Sparkles } from 'lucide-react';
 import { Section } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
@@ -6,7 +6,7 @@ import { MarkupInput } from '../editor/MarkupInput';
 import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
-import { EditorContextProvider, type EditorContextValue } from '../../contexts/EditorContext';
+import { EditorContextProvider, type EditorHandlers } from '../../contexts/EditorContext';
 
 interface LyricsViewProps {
   song: Section[];
@@ -50,7 +50,7 @@ interface LyricsViewProps {
   onGenerateSong: () => void;
 }
 
-function LyricsViewInner({
+export const LyricsView = memo(function LyricsView({
   song, rhymeScheme,
   updateState, updateSongAndStructureWithHistory,
   selectedLineId, isGenerating, isAnalyzing,
@@ -72,13 +72,13 @@ function LyricsViewInner({
   const RHYME_KEYS = Object.keys(t.rhymeSchemes) as Array<keyof typeof t.rhymeSchemes>;
   const SECTION_TYPE_OPTIONS = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Breakdown', 'Final Chorus', 'Outro'];
 
-  // ── 8 handlers extracted into EditorContext ──────────────────────────────
+  // ── Handlers locaux — stables via useCallback ────────────────────────────
+
   const moveSectionUp = useCallback((sectionId: string) => {
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx <= 0) return;
     const newSong = [...song];
-    const a = newSong[idx - 1]!; const b = newSong[idx]!;
-    newSong[idx - 1] = b; newSong[idx] = a;
+    [newSong[idx - 1], newSong[idx]] = [newSong[idx]!, newSong[idx - 1]!];
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
@@ -86,8 +86,7 @@ function LyricsViewInner({
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx < 0 || idx >= song.length - 1) return;
     const newSong = [...song];
-    const a = newSong[idx]!; const b = newSong[idx + 1]!;
-    newSong[idx] = b; newSong[idx + 1] = a;
+    [newSong[idx], newSong[idx + 1]] = [newSong[idx + 1]!, newSong[idx]!];
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
@@ -97,10 +96,9 @@ function LyricsViewInner({
         if (s.id !== sectionId) return s;
         const idx = s.lines.findIndex(l => l.id === lineId);
         if (idx <= 0) return s;
-        const newLines = [...s.lines];
-        const a = newLines[idx - 1]!; const b = newLines[idx]!;
-        newLines[idx - 1] = b; newLines[idx] = a;
-        return { ...s, lines: newLines };
+        const lines = [...s.lines];
+        [lines[idx - 1], lines[idx]] = [lines[idx]!, lines[idx - 1]!];
+        return { ...s, lines };
       }),
       structure: current.structure,
     }));
@@ -112,10 +110,9 @@ function LyricsViewInner({
         if (s.id !== sectionId) return s;
         const idx = s.lines.findIndex(l => l.id === lineId);
         if (idx < 0 || idx >= s.lines.length - 1) return s;
-        const newLines = [...s.lines];
-        const a = newLines[idx]!; const b = newLines[idx + 1]!;
-        newLines[idx] = b; newLines[idx + 1] = a;
-        return { ...s, lines: newLines };
+        const lines = [...s.lines];
+        [lines[idx], lines[idx + 1]] = [lines[idx + 1]!, lines[idx]!];
+        return { ...s, lines };
       }),
       structure: current.structure,
     }));
@@ -123,20 +120,21 @@ function LyricsViewInner({
 
   const addLineToSection = useCallback((sectionId: string) => {
     updateState(current => ({
-      song: current.song.map(s => {
-        if (s.id !== sectionId) return s;
-        return { ...s, lines: [...s.lines, { id: generateId(), text: '', rhymingSyllables: '', rhyme: '', syllables: 0, concept: '', isManual: true }] };
-      }),
+      song: current.song.map(s =>
+        s.id !== sectionId ? s : {
+          ...s,
+          lines: [...s.lines, { id: generateId(), text: '', rhymingSyllables: '', rhyme: '', syllables: 0, concept: '', isManual: true }],
+        }
+      ),
       structure: current.structure,
     }));
   }, [updateState]);
 
   const deleteLineFromSection = useCallback((sectionId: string, lineId: string) => {
     updateState(current => ({
-      song: current.song.map(s => {
-        if (s.id !== sectionId) return s;
-        return { ...s, lines: s.lines.filter(l => l.id !== lineId) };
-      }),
+      song: current.song.map(s =>
+        s.id !== sectionId ? s : { ...s, lines: s.lines.filter(l => l.id !== lineId) }
+      ),
       structure: current.structure,
     }));
   }, [updateState]);
@@ -153,17 +151,16 @@ function LyricsViewInner({
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
-  // Stable context value — changes only when song/updateState/updateSongAndStructureWithHistory change
-  const editorCtx = useMemo<EditorContextValue>(() => ({
+  // ── EditorContext value — stable object tant que les callbacks ne changent pas
+  const editorHandlers: EditorHandlers = {
     moveSectionUp, moveSectionDown,
     moveLineUp, moveLineDown,
     addLineToSection, deleteLineFromSection,
     setSectionName, setSectionRhymeScheme,
-  }), [moveSectionUp, moveSectionDown, moveLineUp, moveLineDown,
-      addLineToSection, deleteLineFromSection, setSectionName, setSectionRhymeScheme]);
+  };
 
   return (
-    <EditorContextProvider value={editorCtx}>
+    <EditorContextProvider value={editorHandlers}>
       <div className="w-full flex flex-col gap-1 pb-32">
         {isMarkupMode ? (
           <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
@@ -258,6 +255,4 @@ function LyricsViewInner({
       </div>
     </EditorContextProvider>
   );
-}
-
-export const LyricsView = React.memo(LyricsViewInner);
+});

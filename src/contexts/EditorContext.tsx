@@ -1,13 +1,14 @@
 // ---------------------------------------------------------------------------
-// EditorContext.tsx — stable handler bag for LyricsView ↔ SectionEditor
+// EditorContext.tsx
 // ---------------------------------------------------------------------------
-// Eliminates 8 function props from SectionEditor, allowing React.memo to cut
-// re-renders driven solely by new callback references from LyricsView.
+// Fournit les 8 handlers locaux construits dans LyricsView aux descendants
+// (SectionEditor, etc.) sans prop-drilling.
 // ---------------------------------------------------------------------------
 
 import React, { createContext, useContext } from 'react';
+import type { Section } from '../types';
 
-export interface EditorContextValue {
+export interface EditorHandlers {
   moveSectionUp:        (sectionId: string) => void;
   moveSectionDown:      (sectionId: string) => void;
   moveLineUp:           (sectionId: string, lineId: string) => void;
@@ -18,11 +19,11 @@ export interface EditorContextValue {
   setSectionRhymeScheme:(sectionId: string, scheme: string) => void;
 }
 
-const EditorContext = createContext<EditorContextValue | null>(null);
+const EditorContext = createContext<EditorHandlers | null>(null);
 
 export const EditorContextProvider = EditorContext.Provider;
 
-export function useEditorContext(): EditorContextValue {
+export function useEditorContext(): EditorHandlers {
   const ctx = useContext(EditorContext);
   if (!ctx) throw new Error('useEditorContext must be used inside EditorContextProvider');
   return ctx;

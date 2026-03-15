@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, Trash2, Settings2, X, Languages } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
@@ -29,7 +29,9 @@ interface SectionEditorProps {
   dragOverIndex: number | null;
   draggedLineInfo: { sectionId: string; lineId: string } | null;
   dragOverLineInfo: { sectionId: string; lineId: string } | null;
-  // ── Handlers remaining as props (line-level + drag + generation) ──────────
+  // ✕ moveSectionUp/Down, moveLineUp/Down, addLineToSection,
+  //   deleteLineFromSection, setSectionName, setSectionRhymeScheme
+  //   → via useEditorContext()
   isRegeneratingSection: (sectionId: string) => boolean;
   handleLineClick: (lineId: string) => void;
   updateLineText: (sectionId: string, lineId: string, text: string) => void;
@@ -37,7 +39,6 @@ interface SectionEditorProps {
   handleInstructionChange: (sectionId: string, type: 'pre' | 'post', index: number, value: string) => void;
   addInstruction: (sectionId: string, type: 'pre' | 'post') => void;
   removeInstruction: (sectionId: string, type: 'pre' | 'post', index: number) => void;
-  regenerateSection: (sectionId: string) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
   handleLineDrop: (sectionId: string, lineId: string) => void;
   setDraggedItemIndex: (i: number | null) => void;
@@ -46,6 +47,7 @@ interface SectionEditorProps {
   setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
+  regenerateSection: (sectionId: string) => void;
 }
 
 /** A run of consecutive isMeta lines rendered as a single merged row */
@@ -73,42 +75,25 @@ function buildRenderItems(lines: Section['lines']): RenderItem[] {
 }
 
 export const SectionEditor = React.memo(function SectionEditor({
-  section,
-  sectionIndex,
-  songLength,
-  rhymeScheme,
-  RHYME_KEYS,
-  SECTION_TYPE_OPTIONS,
-  selectedLineId,
-  isGenerating,
-  isAnalyzing,
+  section, sectionIndex, songLength, rhymeScheme,
+  RHYME_KEYS, SECTION_TYPE_OPTIONS,
+  selectedLineId, isGenerating, isAnalyzing,
   isAdaptingLanguage = false,
   sectionTargetLanguage = 'English',
   onSectionTargetLanguageChange,
   adaptSectionLanguage,
-  draggedItemIndex,
-  dragOverIndex,
-  draggedLineInfo,
-  dragOverLineInfo,
+  draggedItemIndex, dragOverIndex, draggedLineInfo, dragOverLineInfo,
   isRegeneratingSection,
-  handleLineClick,
-  updateLineText,
-  handleLineKeyDown,
-  handleInstructionChange,
-  addInstruction,
-  removeInstruction,
+  handleLineClick, updateLineText, handleLineKeyDown,
+  handleInstructionChange, addInstruction, removeInstruction,
   regenerateSection,
-  handleLineDragStart,
-  handleLineDrop,
-  setDraggedItemIndex,
-  setDragOverIndex,
-  setDraggedLineInfo,
-  setDragOverLineInfo,
-  playAudioFeedback,
-  handleDrop,
+  handleLineDragStart, handleLineDrop,
+  setDraggedItemIndex, setDragOverIndex, setDraggedLineInfo, setDragOverLineInfo,
+  playAudioFeedback, handleDrop,
 }: SectionEditorProps) {
   const { t } = useTranslation();
-  // 8 handlers from context — stable references, never trigger memo invalidation
+
+  // ── Handlers locaux via contexte (stables, pas de re-render si song change ailleurs)
   const {
     moveSectionUp, moveSectionDown,
     moveLineUp, moveLineDown,
@@ -200,7 +185,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                     disabled={!canAdaptSection}
                     className="flex items-center gap-1.5 rounded border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-400 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isSectionAdapting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                    {isSectionAdapting
+                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                      : <Languages className="h-3 w-3" />}
                   </button>
                 </Tooltip>
               </div>
