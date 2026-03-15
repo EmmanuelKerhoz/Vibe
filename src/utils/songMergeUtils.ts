@@ -1,34 +1,42 @@
-import type { Section } from '../types';
+import type { Section, Line } from '../types';
 import { cleanSectionName } from './songUtils';
 import { generateId } from './idUtils';
 
+// Partial AI payload types — the AI returns loose JSON that we merge
+// into strongly-typed Section/Line objects. Using dedicated AI types
+// (instead of `any`) preserves strict typing everywhere else.
+type AiLine = Partial<Line>;
+type AiSection = Partial<Omit<Section, 'lines'>> & { lines?: AiLine[] };
+
 export const mapSongWithPreservedIds = (
-  newSongData: any[],
+  newSongData: AiSection[],
   song: Section[],
   language?: string,
 ): Section[] =>
-  newSongData.map((s: any, idx: number) => {
-    const existing = (song[idx] || {}) as any;
+  newSongData.map((s, idx) => {
+    const existing = song[idx] ?? ({} as Partial<Section>);
     return {
       ...existing,
       ...s,
-      id: existing.id || generateId(),
+      id: existing.id ?? generateId(),
       ...(language !== undefined ? { language } : {}),
-      lines: (s.lines ?? []).map((l: any, lIdx: number) => ({
+      lines: (s.lines ?? []).map((l, lIdx) => ({
         ...l,
-        id: existing.lines?.[lIdx]?.id || generateId(),
+        id: existing.lines?.[lIdx]?.id ?? generateId(),
       })),
-    };
+    } as Section;
   });
 
 export const mergeAiSectionIntoCurrent = (
   currentSection: Section,
-  aiSection: any,
+  aiSection: AiSection,
   language?: string,
 ): Section => {
-  const mergedName = cleanSectionName(aiSection?.name || currentSection.name);
-  const mergedRhymeScheme = aiSection?.rhymeScheme || currentSection.rhymeScheme;
-  const mergedLines = Array.isArray(aiSection?.lines) ? aiSection.lines : currentSection.lines;
+  const mergedName = cleanSectionName(aiSection?.name ?? currentSection.name);
+  const mergedRhymeScheme = aiSection?.rhymeScheme ?? currentSection.rhymeScheme;
+  const mergedLines: AiLine[] = Array.isArray(aiSection?.lines)
+    ? aiSection.lines
+    : currentSection.lines;
 
   return {
     ...currentSection,
@@ -37,10 +45,10 @@ export const mergeAiSectionIntoCurrent = (
     name: mergedName,
     rhymeScheme: mergedRhymeScheme,
     ...(language !== undefined ? { language } : {}),
-    lines: mergedLines.map((line: any, index: number) => ({
-      ...(currentSection.lines[index] || {}),
+    lines: mergedLines.map((line, index) => ({
+      ...(currentSection.lines[index] ?? {}),
       ...line,
-      id: currentSection.lines[index]?.id || generateId(),
+      id: currentSection.lines[index]?.id ?? generateId(),
       text: line?.text ?? currentSection.lines[index]?.text ?? '',
       rhymingSyllables: line?.rhymingSyllables ?? currentSection.lines[index]?.rhymingSyllables ?? '',
       rhyme: line?.rhyme ?? currentSection.lines[index]?.rhyme ?? '',

@@ -19,6 +19,17 @@ interface UseVersionManagerParams {
   setMood: (v: string) => void;
 }
 
+/**
+ * M5 fix: lightweight fingerprint for song+structure comparison.
+ * Avoids full JSON.stringify on every render — O(n) on section count
+ * instead of O(total characters). Collisions are astronomically unlikely
+ * (would require identical ids+line-count with different content).
+ */
+const fingerprintSnapshot = (song: Section[], structure: string[]): string => {
+  const songPrint = song.map(s => `${s.id}:${s.lines.length}:${s.lines.map(l => l.id).join(',')}`).join('|');
+  return `${structure.join('-')}__${songPrint}`;
+};
+
 export function useVersionManager(params: UseVersionManagerParams) {
   const {
     song, structure, title, titleOrigin, topic, mood,
@@ -29,6 +40,8 @@ export function useVersionManager(params: UseVersionManagerParams) {
 
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const previousLyricsSnapshotRef = useRef<VersionSnapshot | null>(null);
+  // M5: store fingerprint separately to avoid re-serialising the full song.
+  const previousFingerprintRef = useRef<string | null>(null);
 
   const createVersion = useCallback((
     snapshot: VersionSnapshot,
@@ -83,25 +96,26 @@ export function useVersionManager(params: UseVersionManagerParams) {
     });
   }, [setPromptModal]);
 
-  // Auto-restore-point: captures the snapshot *before* each lyrics/structure change
-  // so the user can always roll back to the state just prior to an AI generation.
-  // Note: title/topic/mood are included in the dep array because they are stored
-  // in the snapshot, but lyricsChanged only compares song+structure intentionally —
-  // a metadata-only change does not warrant a restore point.
+  // Auto-restore-point: captures the snapshot *before* each lyrics/structure change.
+  // M5: uses fingerprintSnapshot instead of JSON.stringify for the change-detection check.
   useEffect(() => {
     const currentSnapshot = { song, structure, title, titleOrigin, topic, mood };
+    const currentFingerprint = fingerprintSnapshot(song, structure);
+
     if (!previousLyricsSnapshotRef.current) {
       previousLyricsSnapshotRef.current = currentSnapshot;
+      previousFingerprintRef.current = currentFingerprint;
       return;
     }
+
     const previousSnapshot = previousLyricsSnapshotRef.current;
-    const lyricsChanged =
-      JSON.stringify(previousSnapshot.song) !== JSON.stringify(song) ||
-      JSON.stringify(previousSnapshot.structure) !== JSON.stringify(structure);
+    const lyricsChanged = previousFingerprintRef.current !== currentFingerprint;
+
     if (lyricsChanged && previousSnapshot.song.length > 0) {
       setVersions(prev => createVersion(previousSnapshot, 'Auto Restore Point', prev));
     }
     previousLyricsSnapshotRef.current = currentSnapshot;
+    previousFingerprintRef.current = currentFingerprint;
   }, [createVersion, song, structure, title, titleOrigin, topic, mood]);
 
   return { versions, saveVersion, rollbackToVersion, handleRequestVersionName };

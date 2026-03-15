@@ -1,6 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+// M4 fix: internal timeout 55s (under Vercel's 60s maxDuration).
+// Prevents the handler from hanging silently if Gemini freezes.
+const GEMINI_TIMEOUT_MS = 55_000;
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
@@ -31,12 +35,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({ model, contents, config });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+
+    let response;
+    try {
+      response = await ai.models.generateContent({ model, contents, config });
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (controller.signal.aborted) {
+      res.status(504).json({ error: 'AI generation timed out. Please try again.' });
+      return;
+    }
 
     res.status(200).json({ text: response.text ?? '' });
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : 'Unknown server error';
+    const isAbort = error instanceof DOMException && error.name === 'AbortError';
+    if (isAbort) {
+      res.status(504).json({ error: 'AI generation timed out. Please try again.' });
+      return;
+    }
     const code =
       error instanceof Error && 'code' in error
         ? (error as { code?: number }).code

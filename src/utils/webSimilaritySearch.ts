@@ -64,10 +64,18 @@ export const extractSegments = (sections: Section[]): string[] => {
   return [...new Set(segments.filter(s => s.trim().length > 10))];
 };
 
-const ddgSearch = async (query: string): Promise<SearchTreeNode[]> => {
+// M3 fix: compose caller abortSignal with a per-request timeout signal.
+// AbortSignal.any() is available in all modern browsers and Node 20+.
+const makeSearchSignal = (outerSignal?: AbortSignal, timeoutMs = 5000): AbortSignal => {
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  if (!outerSignal) return timeoutSignal;
+  return AbortSignal.any([outerSignal, timeoutSignal]);
+};
+
+const ddgSearch = async (query: string, abortSignal?: AbortSignal): Promise<SearchTreeNode[]> => {
   const url = `/api/ddg?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(url, { signal: makeSearchSignal(abortSignal) });
     if (!res.ok) return [];
     const data = await res.json();
     const results: SearchTreeNode[] = [];
@@ -87,14 +95,14 @@ const ddgSearch = async (query: string): Promise<SearchTreeNode[]> => {
   }
 };
 
-const wikipediaSearch = async (query: string): Promise<SearchTreeNode[]> => {
+const wikipediaSearch = async (query: string, abortSignal?: AbortSignal): Promise<SearchTreeNode[]> => {
   const params = new URLSearchParams({
     action: 'query', list: 'search', srsearch: query,
     srlimit: '5', srprop: 'snippet|titlesnippet', format: 'json', origin: '*',
   });
   const url = `https://en.wikipedia.org/w/api.php?${params}`;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(url, { signal: makeSearchSignal(abortSignal) });
     if (!res.ok) return [];
     const data = await res.json();
     return (data.query?.search ?? []).map((item: { title: string; snippet: string }) => ({
@@ -108,7 +116,7 @@ const wikipediaSearch = async (query: string): Promise<SearchTreeNode[]> => {
   }
 };
 
-export const PROVIDERS: Record<SearchProvider, (q: string) => Promise<SearchTreeNode[]>> = {
+export const PROVIDERS: Record<SearchProvider, (q: string, signal?: AbortSignal) => Promise<SearchTreeNode[]>> = {
   ddg: ddgSearch,
   wikipedia: wikipediaSearch,
 };
@@ -144,7 +152,7 @@ export const runSearchTree = async (
 
   const safeSearch = async (provider: SearchProvider, query: string) => {
     if (abortSignal?.aborted) return;
-    const nodes = await PROVIDERS[provider](query);
+    const nodes = await PROVIDERS[provider](query, abortSignal);
     allNodes.push(...nodes);
   };
 
@@ -164,8 +172,6 @@ export const runSearchTree = async (
 
   if (abortSignal?.aborted) return [];
 
-  // Title-specific lyrics search — when the title is non-trivial, search for
-  // lyrics behind identical or similar titles to detect shared song names.
   if (normalizedTitle.length > 0) {
     const titleLyricsQuery = `${title} lyrics`;
     await Promise.allSettled([
@@ -178,7 +184,6 @@ export const runSearchTree = async (
 
   const unique = deduplicateNodes(allNodes).slice(0, MAX_CANDIDATES);
 
-  // Score all nodes, filter to score > 5% (discard noise), keep top 3
   const candidates: WebSimilarityCandidate[] = unique
     .map(node => {
       const snippetScore = jaccardScore(fullText, node.snippet);
