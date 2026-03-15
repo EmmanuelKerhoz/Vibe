@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
@@ -28,7 +28,7 @@ export const useLanguageAdapter = ({
   updateSongAndStructureWithHistory,
   updateState,
 }: UseLanguageAdapterParams) => {
-  const [songLanguage, setSongLanguage] = useState<string>('English');
+  const [songLanguage, setSongLanguage] = useState<string>('');
   const [targetLanguage, setTargetLanguage] = useState<string>('English');
   const [sectionTargetLanguages, setSectionTargetLanguages] = useState<Record<string, string>>({});
   const [isDetectingLanguage, setIsDetectingLanguage] = useState(false);
@@ -42,6 +42,14 @@ export const useLanguageAdapter = ({
     : uiLanguage === 'zh' ? 'Chinese'
     : uiLanguage === 'ko' ? 'Korean'
     : 'English';
+
+  // Auto-detect language when song is loaded and language is not yet known
+  useEffect(() => {
+    if (song.length > 0 && !songLanguage) {
+      detectLanguage();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [song.length]);
 
   const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
     updateState(current => ({

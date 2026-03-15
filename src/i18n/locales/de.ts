@@ -75,7 +75,7 @@ const de: Translations = {
       generateSong: 'Song generieren',
     },
     markupMode: {
-      title: 'Markup-Modus',
+      title: 'Markdown-Modus',
       description: 'Reine Textbearbeitungserfahrung',
       hint: 'Format: [Abschnittsname] gefolgt von den Liedtexten. Trenne Abschnitte durch doppelte Zeilenumbrüche.',
       placeholder: '[Strophe 1]\nLiedtext hier...\n\n[Refrain]\nRefrainzeilen...',
@@ -93,7 +93,7 @@ const de: Translations = {
     regenerateGlobal: 'Neu generieren (GLOBAL)',
     adaptSection: 'Anpassung',
     editorMode: 'Editor-Modus',
-    markupModeLabel: 'Markup-Modus',
+    markupModeLabel: 'Markdown-Modus',
     regenerateSection: 'Neu generieren',
     quantize: 'Quantisieren',
     lyricLine: 'Liedtextzeile',

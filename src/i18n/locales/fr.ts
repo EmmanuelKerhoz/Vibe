@@ -75,7 +75,7 @@ const fr: Translations = {
       generateSong: 'Générer la chanson',
     },
     markupMode: {
-      title: 'Mode Balisage',
+      title: 'Mode Markdown',
       description: 'Expérience d\'édition en texte brut',
       hint: 'Format : [Nom de la section] suivi des paroles. Séparez les sections par des doubles sauts de ligne.',
       placeholder: '[Couplet 1]\nParoles ici...\n\n[Refrain]\nLignes du refrain...',
@@ -93,7 +93,7 @@ const fr: Translations = {
     regenerateGlobal: 'Régénérer (GLOBAL)',
     adaptSection: 'Adaptation',
     editorMode: 'Mode Éditeur',
-    markupModeLabel: 'Mode Balisage',
+    markupModeLabel: 'Mode Markdown',
     regenerateSection: 'Régénérer',
     quantize: 'Quantifier',
     lyricLine: 'Ligne de paroles',

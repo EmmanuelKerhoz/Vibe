@@ -75,7 +75,7 @@ const en: Translations = {
       generateSong: 'Generate Song',
     },
     markupMode: {
-      title: 'Markup Mode',
+      title: 'Markdown Mode',
       description: 'Pure text editing experience',
       hint: 'Format: [Section Name] followed by lyrics. Separate sections with double newlines.',
       placeholder: '[Verse 1]\nLyrics go here...\n\n[Chorus]\nChorus lines...',
@@ -93,7 +93,7 @@ const en: Translations = {
     regenerateGlobal: 'Regenerate (GLOBAL)',
     adaptSection: 'Adaptation',
     editorMode: 'Editor Mode',
-    markupModeLabel: 'Markup Mode',
+    markupModeLabel: 'Markdown Mode',
     regenerateSection: 'Regenerate',
     quantize: 'Quantize',
     lyricLine: 'Lyric Line',

@@ -75,7 +75,7 @@ const es: Translations = {
       generateSong: 'Generar canción',
     },
     markupMode: {
-      title: 'Modo Marcado',
+      title: 'Modo Markdown',
       description: 'Experiencia de edición en texto puro',
       hint: 'Formato: [Nombre de sección] seguido de las letras. Separa las secciones con doble salto de línea.',
       placeholder: '[Verso 1]\nLetras aquí...\n\n[Estribillo]\nLíneas del estribillo...',
@@ -93,7 +93,7 @@ const es: Translations = {
     regenerateGlobal: 'Regenerar (GLOBAL)',
     adaptSection: 'Adaptación',
     editorMode: 'Modo Editor',
-    markupModeLabel: 'Modo Marcado',
+    markupModeLabel: 'Modo Markdown',
     regenerateSection: 'Regenerar',
     quantize: 'Cuantizar',
     lyricLine: 'Línea de letra',
