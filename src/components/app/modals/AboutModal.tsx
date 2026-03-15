@@ -17,28 +17,17 @@ interface Props {
 export function AboutModal({ isOpen, onClose }: Props) {
   const { t } = useTranslation();
   const bodyRef = useRef<HTMLDivElement>(null);
-  const sweepRef = useRef<HTMLDivElement>(null);
   const sweepItemsRef = useRef<HTMLDivElement>(null);
 
-  // Diagonal sweep line (BG→HD) fires once on open, then per-item shimmer stagger
+  // Per-item shimmer — activate sweep-active class so paused animations run
   useEffect(() => {
     if (!isOpen) return;
 
-    // Full-panel diagonal sweep
-    const el = sweepRef.current;
-    if (el) {
-      el.style.animation = 'none';
-      void el.offsetWidth;
-      el.style.animation = 'about-glass-sweep 3000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms forwards';
-    }
-
-    // Per-item shimmer — activate sweep-active class so paused animations run
     const container = sweepItemsRef.current;
     if (container) {
       const items = container.querySelectorAll<HTMLElement>('.about-sweep-item');
       items.forEach((item) => {
         item.classList.remove('sweep-active');
-        // Force reflow to restart animation
         void item.offsetWidth;
         item.classList.add('sweep-active');
       });
@@ -65,15 +54,8 @@ export function AboutModal({ isOpen, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={t.app.name}
-        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8"
+        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8 about-dialog-shimmer"
       >
-        {/* Diagonal sweep overlay — BG→HD (bottom-left → top-right) — fires once on open */}
-        <div
-          ref={sweepRef}
-          aria-hidden="true"
-          className="about-glass-sweep-overlay"
-        />
-
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
           <div className="flex items-center gap-3">
