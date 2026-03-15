@@ -1,6 +1,20 @@
 import React, { useState, useCallback } from 'react';
-import { Sparkles, Loader2, Copy, Check } from 'lucide-react';
+import {
+  Sparkle24Regular,
+  Copy24Regular,
+  Checkmark24Regular,
+} from '@fluentui/react-icons';
 import { useTranslation } from '../../../i18n';
+
+function SpinnerIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <span className={`inline-flex animate-spin ${className ?? ''}`} style={style}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
 
 const AMBER_PRIMARY = '#f59e0b';
 
@@ -41,7 +55,7 @@ export function MusicalPromptBuilder({
         className="ux-interactive w-full flex items-center justify-center gap-2.5 px-6 py-3.5 font-semibold text-sm tracking-wide disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99]"
         style={{ borderRadius: '14px 4px 14px 4px', background: AMBER_PRIMARY, color: '#000' }}
       >
-        {isGeneratingMusicalPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+        {isGeneratingMusicalPrompt ? <SpinnerIcon className="text-current" /> : <Sparkle24Regular className="w-4 h-4" />}
         {m.generatePrompt}
       </button>
 
@@ -50,7 +64,7 @@ export function MusicalPromptBuilder({
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+                <Sparkle24Regular className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
                 <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.promptLabel}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -60,7 +74,7 @@ export function MusicalPromptBuilder({
                     className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border border-[var(--border-color)] text-[var(--text-secondary)]"
                     style={{ borderRadius: '8px 2px 8px 2px' }}
                   >
-                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    {copied ? <Checkmark24Regular className="w-3 h-3" /> : <Copy24Regular className="w-3 h-3" />}
                     {copied ? m.copied : m.copyPrompt}
                   </button>
                 )}
@@ -68,7 +82,7 @@ export function MusicalPromptBuilder({
             </div>
             {isGeneratingMusicalPrompt && !musicalPrompt ? (
               <div className="flex items-center gap-3 py-4">
-                <Loader2 className="w-4 h-4 animate-spin" style={{ color: AMBER_PRIMARY }} />
+                <SpinnerIcon style={{ color: AMBER_PRIMARY }} />
                 <span className="text-sm text-[var(--text-secondary)]">{m.analyzing}</span>
               </div>
             ) : (
@@ -84,7 +98,7 @@ export function MusicalPromptBuilder({
       {!musicalPrompt && !isGeneratingMusicalPrompt && (
         <GBPanel>
           <div className="p-6 text-center space-y-2">
-            <Sparkles className="w-8 h-8 opacity-30 mx-auto" style={{ color: AMBER_PRIMARY }} />
+            <Sparkle24Regular className="w-8 h-8 opacity-30 mx-auto" style={{ color: AMBER_PRIMARY }} />
             <p className="text-sm text-[var(--text-secondary)] opacity-50">{m.promptPlaceholder}</p>
           </div>
         </GBPanel>
