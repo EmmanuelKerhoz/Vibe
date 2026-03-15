@@ -139,6 +139,18 @@ export default function App() {
     updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
+  // ── useSongComposer first — isGenerating must be available before useSongAnalysis ──
+  const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
+    selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
+    quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
+    generateMusicalPrompt, analyzeLyricsForMusic, handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
+  } = useSongComposer({ song, structure, topic, mood, rhymeScheme, targetSyllables, title,
+    genre, tempo, instrumentation, rhythm, narrative, songLanguage: '', uiLanguage: language,
+    setMusicalPrompt, setGenre, setTempo, setInstrumentation, setRhythm, setNarrative,
+    updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
+    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
+  });
+
   const { isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
     isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, songLanguage, targetLanguage, setTargetLanguage,
@@ -146,20 +158,9 @@ export default function App() {
     sectionTargetLanguages, setSectionTargetLanguages,
     toggleAnalysisItemSelection, applySelectedAnalysisItems,
     analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
-  } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language, setTopic, setMood, saveVersion,
+  } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language, isGenerating, setTopic, setMood, saveVersion,
     updateState, updateSongAndStructureWithHistory,
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
-  });
-
-  const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
-    selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
-    quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
-    generateMusicalPrompt, analyzeLyricsForMusic, handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
-  } = useSongComposer({ song, structure, topic, mood, rhymeScheme, targetSyllables, title,
-    genre, tempo, instrumentation, rhythm, narrative, songLanguage, uiLanguage: language,
-    setMusicalPrompt, setGenre, setTempo, setInstrumentation, setRhythm, setNarrative,
-    updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
-    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
