@@ -55,7 +55,7 @@ export default function App() {
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
   } = useAppState();
 
-  // ── Mobile layout ──────────────────────────────────────────────
+  // ── Mobile layout ────────────────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
 
@@ -158,7 +158,7 @@ export default function App() {
   } = useSongComposer({ song, structure, topic, mood, rhymeScheme, targetSyllables, title,
     genre, tempo, instrumentation, rhythm, narrative, songLanguage, uiLanguage: language,
     setMusicalPrompt, setGenre, setTempo, setInstrumentation, setRhythm, setNarrative,
-    updateState, updateSongWithHistory, updateSongAndStructureWithHistory, saveVersion,
+    updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
@@ -178,7 +178,7 @@ export default function App() {
     if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }
   }, [handleSurprise, setTopic, setMood]);
 
-  // ── Keyboard shortcuts ─────────────────────────────────────────
+  // ── Keyboard shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;

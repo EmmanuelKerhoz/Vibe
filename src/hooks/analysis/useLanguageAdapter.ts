@@ -104,6 +104,10 @@ export const useLanguageAdapter = ({
   // Track whether initial auto-detect has already been triggered
   const autoDetectFiredRef = useRef(false);
 
+  // Track the identity of the first section to detect song replacement
+  // (replaceStateWithoutHistory does not pass through song.length === 0)
+  const firstSectionIdRef = useRef<string | null>(null);
+
   const uiLang = uiLanguage === 'fr' ? 'French'
     : uiLanguage === 'es' ? 'Spanish'
     : uiLanguage === 'de' ? 'German'
@@ -112,6 +116,20 @@ export const useLanguageAdapter = ({
     : uiLanguage === 'zh' ? 'Chinese'
     : uiLanguage === 'ko' ? 'Korean'
     : 'English';
+
+  // Detect song identity change (covers load-from-library via replaceStateWithoutHistory).
+  // When the first section ID changes while song is non-empty, the song was replaced;
+  // reset the auto-detect gate so the new song gets its language detected.
+  useEffect(() => {
+    if (song.length === 0) return;
+    const currentFirstId = song[0]!.id;
+    if (firstSectionIdRef.current !== null && firstSectionIdRef.current !== currentFirstId) {
+      // Song was replaced (e.g. load-from-library)
+      autoDetectFiredRef.current = false;
+      setSongLanguage('');
+    }
+    firstSectionIdRef.current = currentFirstId;
+  }, [song]);
 
   // Auto-detect language once when song first becomes non-empty,
   // guarded against concurrent generation or ongoing adaptation.
@@ -133,6 +151,7 @@ export const useLanguageAdapter = ({
   useEffect(() => {
     if (song.length === 0) {
       autoDetectFiredRef.current = false;
+      firstSectionIdRef.current = null;
       setSongLanguage('');
     }
   }, [song.length]);

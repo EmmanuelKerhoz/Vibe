@@ -29,14 +29,6 @@ type UseSongComposerParams = {
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
   updateSongWithHistory: (newSong: Section[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
-  saveVersion: (name: string, snapshot?: {
-    song: Section[];
-    structure: string[];
-    title: string;
-    titleOrigin: 'user' | 'ai';
-    topic: string;
-    mood: string;
-  }) => void;
   requestAutoTitleGeneration: () => void;
 };
 
@@ -64,7 +56,6 @@ export const useSongComposer = ({
   updateState,
   updateSongWithHistory,
   updateSongAndStructureWithHistory,
-  saveVersion: _saveVersion,
   requestAutoTitleGeneration,
 }: UseSongComposerParams) => {
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
