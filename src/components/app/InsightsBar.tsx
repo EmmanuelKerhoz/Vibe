@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, Languages, ScanText, Layout, Search, RefreshCw, Timer } from 'lucide-react';
+import { Loader2, BarChart2, Languages, ScanText, Layout, Search, RefreshCw, Timer, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
 import { LcarsSelect } from '../ui/LcarsSelect';
@@ -8,6 +8,7 @@ import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES, getLanguageDisplay } from '../../i18n';
 import { emojiToTwemojiUrl } from '../../utils/emojiUtils';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
+import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 
 interface InsightsBarProps {
   song: Section[];
@@ -34,6 +35,8 @@ interface InsightsBarProps {
   scrollToSection: (section: Section) => void;
   isMetronomeActive?: boolean;
   toggleMetronome?: () => void;
+  adaptationProgress?: AdaptationProgress;
+  adaptationResult?: AdaptationResult | null;
 }
 
 function EmojiSign({ sign }: { sign: string }) {
@@ -66,6 +69,157 @@ function EmojiSign({ sign }: { sign: string }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// AdaptationProgressBanner
+// ---------------------------------------------------------------------------
+
+const ORDERED_STEP_IDS = ['adapting', 'reversing', 'reviewing', 'done'] as const;
+
+function scoreColor(score: number): string {
+  if (score >= 80) return 'text-emerald-400';
+  if (score >= 60) return 'text-amber-400';
+  return 'text-red-400';
+}
+
+function scoreBg(score: number): string {
+  if (score >= 80) return 'bg-emerald-400/10 border-emerald-400/30';
+  if (score >= 60) return 'bg-amber-400/10 border-amber-400/30';
+  return 'bg-red-400/10 border-red-400/30';
+}
+
+function AdaptationProgressBanner({
+  progress,
+  result,
+  onDismiss,
+}: {
+  progress: AdaptationProgress;
+  result: AdaptationResult | null;
+  onDismiss: () => void;
+}) {
+  if (progress.active === 'idle') return null;
+
+  const isFailed = progress.active === 'failed';
+  const isDone   = progress.active === 'done';
+  const isActive = !isFailed && !isDone;
+
+  return (
+    <div
+      className={`w-full rounded border px-3 py-2 mt-1 flex flex-col gap-1.5 text-[10px] ${
+        isFailed
+          ? 'bg-red-400/5 border-red-400/20'
+          : isDone && result
+          ? scoreBg(result.score)
+          : 'bg-white/3 border-white/10'
+      }`}
+    >
+      {/* Header: label + dismiss */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 font-semibold tracking-wider uppercase text-zinc-300">
+          {isFailed
+            ? <XCircle className="w-3 h-3 text-red-400" />
+            : isDone && result
+            ? result.accepted
+              ? <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              : <AlertTriangle className="w-3 h-3 text-amber-400" />
+            : <Loader2 className="w-3 h-3 animate-spin text-[var(--accent-color)]" />}
+          <span className="text-zinc-400">{progress.label}</span>
+        </div>
+        {(isDone || isFailed) && (
+          <button
+            onClick={onDismiss}
+            className="text-zinc-500 hover:text-zinc-300 transition-colors leading-none px-1"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Stepper */}
+      <div className="flex items-center gap-1">
+        {ORDERED_STEP_IDS.map((stepId, idx) => {
+          const activeIdx  = ORDERED_STEP_IDS.indexOf(
+            isFailed ? 'reviewing' : (progress.active as typeof ORDERED_STEP_IDS[number]) === 'done'
+              ? 'done'
+              : progress.active as typeof ORDERED_STEP_IDS[number]
+          );
+          const stepDone    = isDone || idx < activeIdx;
+          const stepActive  = !isDone && !isFailed && idx === activeIdx;
+          const stepPending = !stepDone && !stepActive;
+
+          const stepLabel = ORDERED_STEP_IDS[idx] === 'adapting'  ? 'Adapting'
+                          : ORDERED_STEP_IDS[idx] === 'reversing' ? 'Reverse'
+                          : ORDERED_STEP_IDS[idx] === 'reviewing' ? 'Review'
+                          : 'Done';
+
+          return (
+            <React.Fragment key={stepId}>
+              <div className="flex items-center gap-1">
+                <span
+                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    stepDone
+                      ? 'bg-emerald-400'
+                      : stepActive
+                      ? 'bg-[var(--accent-color)] animate-pulse'
+                      : 'bg-white/15'
+                  }`}
+                />
+                <span
+                  className={`whitespace-nowrap ${
+                    stepDone
+                      ? 'text-emerald-400'
+                      : stepActive
+                      ? 'text-[var(--accent-color)] font-semibold'
+                      : 'text-zinc-600'
+                  }`}
+                >
+                  {stepLabel}
+                </span>
+              </div>
+              {idx < ORDERED_STEP_IDS.length - 1 && (
+                <span className="text-zinc-700 mx-0.5">›</span>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Result: score + warnings */}
+      {isDone && result && (
+        <div className="flex flex-col gap-1 mt-0.5">
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-500">Fidelity score</span>
+            <span className={`font-bold tabular-nums ${scoreColor(result.score)}`}>
+              {result.score}/100
+            </span>
+            {!result.accepted && (
+              <span className="text-amber-400 italic">— review recommended</span>
+            )}
+          </div>
+          {result.warnings.length > 0 && (
+            <ul className="flex flex-col gap-0.5 list-none pl-0 mt-0.5">
+              {result.warnings.map((w, i) => (
+                <li key={i} className="flex items-start gap-1 text-amber-300/80">
+                  <span className="mt-0.5 shrink-0">·</span>
+                  <span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {isFailed && (
+        <span className="text-red-400">Adaptation pipeline failed. Check console for details.</span>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// InsightsBar
+// ---------------------------------------------------------------------------
+
 export function InsightsBar({
   song,
   sectionCount,
@@ -91,14 +245,28 @@ export function InsightsBar({
   scrollToSection,
   isMetronomeActive,
   toggleMetronome,
+  adaptationProgress,
+  adaptationResult,
 }: InsightsBarProps) {
   const { t } = useTranslation();
+  const [bannerDismissed, setBannerDismissed] = React.useState(false);
+
+  // Reset dismiss state when a new pipeline starts
+  React.useEffect(() => {
+    if (adaptationProgress && adaptationProgress.active !== 'idle') {
+      setBannerDismissed(false);
+    }
+  }, [adaptationProgress?.active]);
 
   const targetDisplay = getLanguageDisplay(targetLanguage);
   const detectedDisplay = songLanguage ? getLanguageDisplay(songLanguage) : null;
   const targetLanguageDisplayText = targetDisplay ? `${targetDisplay.sign} ${targetDisplay.label}` : targetLanguage;
 
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
+
+  const showBanner = !!adaptationProgress &&
+    adaptationProgress.active !== 'idle' &&
+    !bannerDismissed;
 
   return (
     <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10" style={{ position: 'relative', overflow: 'visible' }}>
@@ -177,6 +345,15 @@ export function InsightsBar({
             </div>
           </div>
         </div>
+
+        {/* Adaptation pipeline progress banner */}
+        {showBanner && adaptationProgress && (
+          <AdaptationProgressBanner
+            progress={adaptationProgress}
+            result={adaptationResult ?? null}
+            onDismiss={() => setBannerDismissed(true)}
+          />
+        )}
 
         {/* Row 2: Section chips + action buttons */}
         <div className="flex items-center gap-2 w-full min-w-0">
