@@ -143,8 +143,9 @@ export default function App() {
     isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, songLanguage, targetLanguage, setTargetLanguage,
     isAdaptingLanguage, isDetectingLanguage, adaptationProgress, adaptationResult,
+    sectionTargetLanguages, setSectionTargetLanguages,
     toggleAnalysisItemSelection, applySelectedAnalysisItems,
-    analyzeCurrentSong, detectLanguage, adaptSongLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
+    analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
   } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language, setTopic, setMood, saveVersion,
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
@@ -444,6 +445,10 @@ export default function App() {
                     song={song} rhymeScheme={rhymeScheme}
                     updateState={updateState} updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
                     selectedLineId={selectedLineId} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+                    isAdaptingLanguage={isAdaptingLanguage}
+                    sectionTargetLanguages={sectionTargetLanguages}
+                    onSectionTargetLanguageChange={(sectionId, lang) => setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang }))}
+                    adaptSectionLanguage={adaptSectionLanguage}
                     isRegeneratingSection={isRegeneratingSection} handleLineClick={handleLineClick}
                     updateLineText={updateLineText} handleLineKeyDown={handleLineKeyDown}
                     handleInstructionChange={handleInstructionChange} addInstruction={addInstruction}
@@ -498,7 +503,6 @@ export default function App() {
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
-      {/* MobileBottomNav — mobile/tablet only, never rendered on desktop */}
       {isMobileOrTablet && (
         <MobileBottomNav
           isLeftPanelOpen={isLeftPanelOpen}
