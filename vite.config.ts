@@ -79,7 +79,7 @@ export default defineConfig(({ mode }) => ({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'ddg-api-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 5 },
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 },
               networkTimeoutSeconds: 10
             }
           },
@@ -119,6 +119,7 @@ export default defineConfig(({ mode }) => ({
           'vendor-react': ['react', 'react-dom'],
           'vendor-fluent': ['@fluentui/react-components'],
           'vendor-motion': ['motion'],
+          'vendor-lucide': ['lucide-react'],
         },
       },
     },
