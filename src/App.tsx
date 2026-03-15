@@ -101,20 +101,28 @@ export default function App() {
     song, isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   });
 
-  // Library similarity (local)
+  // Library similarity (local) — debounced 800ms to avoid running on every keystroke
+  const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
     let isCancelled = false;
-    const runSimilarity = async () => {
-      if (song.length === 0) { setSimilarityMatches([]); return; }
-      const matches = await findSimilarAssetsInLibrary(song, 0, 3);
-      if (!isCancelled) setSimilarityMatches(matches);
-    };
+    similarityDebounceRef.current = setTimeout(() => {
+      const runSimilarity = async () => {
+        if (song.length === 0) { setSimilarityMatches([]); return; }
+        const matches = await findSimilarAssetsInLibrary(song, 0, 3);
+        if (!isCancelled) setSimilarityMatches(matches);
+      };
+      void runSimilarity();
+    }, 800);
     const loadCount = async () => {
       try { const c = localStorage.getItem('lyricist_library'); if (c) setLibraryCount(JSON.parse(c).length); }
       catch (e) { console.error('Failed to load library count:', e); }
     };
-    void runSimilarity(); void loadCount();
-    return () => { isCancelled = true; };
+    void loadCount();
+    return () => {
+      isCancelled = true;
+      if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
+    };
   }, [song, setSimilarityMatches, setLibraryCount]);
 
   const introOutroSortedRef = useRef<string | null>(null);
@@ -204,7 +212,7 @@ export default function App() {
     isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen, promptModal,
     isMobileOrTablet, closeMobilePanels,
     redo, setApiErrorModal, setConfirmModal, setIsAboutOpen, setIsAnalysisModalOpen,
-    setIsExportModalOut, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
+    setIsExportModalOpen, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
     setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
     setPromptModal, undo,
   ]);
@@ -224,7 +232,6 @@ export default function App() {
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title);
 
-  // Guard: only consider content exists if at least one non-meta line has real text
   const hasRealLyricContent = song.some(s =>
     s.lines.some(l => !l.isMeta && l.text.trim().length > 0)
   );
@@ -251,10 +258,10 @@ export default function App() {
     if (sec) scrollToSection(sec);
   }, [song, scrollToSection]);
 
-  const handleOpenSaveToLibraryModal = async () => {
+  const handleOpenSaveToLibraryModal = useCallback(async () => {
     setLibraryAssets(await loadLibraryAssets());
     setIsSaveToLibraryModalOpen(true);
-  };
+  }, [setLibraryAssets, setIsSaveToLibraryModalOpen]);
 
   const handleOpenNewGeneration = useCallback(() => {
     setActiveTab('lyrics');
