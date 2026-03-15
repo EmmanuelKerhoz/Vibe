@@ -59,6 +59,8 @@ export const useSongAnalysisEngine = ({
   const backoffUntilRef = useRef<number>(0);
   const bgAbortControllerRef = useRef<AbortController | null>(null);
   const fgAbortRef = useRef<AbortController | null>(null);
+  // P5-fix: ref mirror for isAnalyzingTheme — guards the background timer closure against stale capture
+  const isAnalyzingThemeRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -78,29 +80,19 @@ export const useSongAnalysisEngine = ({
 
     const timer = setTimeout(async () => {
       if (Date.now() < backoffUntilRef.current) return;
-      if (isAnalyzingTheme) return;
+      // P5-fix: read ref, not stale closure value
+      if (isAnalyzingThemeRef.current) return;
 
       bgAbortControllerRef.current?.abort();
       const controller = new AbortController();
       bgAbortControllerRef.current = controller;
 
-      // fix #1: stamp before await to prevent cascade re-triggers when
-      // setTopic/setMood cause the effect to re-evaluate before try completes
       lastAnalyzedSongRef.current = currentSongStr;
 
+      isAnalyzingThemeRef.current = true;
       setIsAnalyzingTheme(true);
       try {
-        const prompt = `Analyze the following song lyrics.
-Current Topic: "${topic}"
-Current Mood: "${mood}"
-
-If the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.
-IMPORTANT: Return the topic and mood values in ${uiLang}.
-Return JSON with "topic" and "mood" strings.
-
-Lyrics:
-${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n')}
-`;
+        const prompt = `Analyze the following song lyrics.\nCurrent Topic: "${topic}"\nCurrent Mood: "${mood}"\n\nIf the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.\nIMPORTANT: Return the topic and mood values in ${uiLang}.\nReturn JSON with "topic" and "mood" strings.\n\nLyrics:\n${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n')}\n`;
         const response = await getAi().models.generateContent({
           model: AI_MODEL_NAME,
           contents: prompt,
@@ -132,7 +124,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
           handleApiError(e, 'Background analysis failed.');
         }
       } finally {
-        // fix #2: always reset regardless of whether abort fired before or after setIsAnalyzingTheme(true)
+        isAnalyzingThemeRef.current = false;
         setIsAnalyzingTheme(false);
       }
     }, 3000);
@@ -153,7 +145,6 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     setAppliedAnalysisItems(new Set());
   }, []);
 
-  // fix #4: useCallback to stabilise reference across renders
   const applySelectedAnalysisItems = useCallback(async () => {
     if (selectedAnalysisItems.size === 0 || isApplyingAnalysis) return;
 
@@ -166,19 +157,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     saveVersion('Before Analysis Batch Improvements');
 
     try {
-      const prompt = `Modify the following song lyrics based on these improvement suggestions:
-      ${itemsToApply.map((item, i) => `${i + 1}. ${item}`).join('\n')}
-
-      IMPORTANT:
-      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).
-      2. Only update the lyrics as suggested.
-      3. Return the FULL updated song in the same JSON format as the input.
-      4. Do not change the section names unless specifically requested by the improvements.
-      5. Preserve the original song language in all lyric text fields.
-      6. Write the "concept" field for each line in ${uiLang}.
-
-      Current Song Data:
-      ${JSON.stringify(song)}`;
+      const prompt = `Modify the following song lyrics based on these improvement suggestions:\n      ${itemsToApply.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\n      IMPORTANT:\n      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).\n      2. Only update the lyrics as suggested.\n      3. Return the FULL updated song in the same JSON format as the input.\n      4. Do not change the section names unless specifically requested by the improvements.\n      5. Preserve the original song language in all lyric text fields.\n      6. Write the "concept" field for each line in ${uiLang}.\n\n      Current Song Data:\n      ${JSON.stringify(song)}`;
 
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
@@ -234,7 +213,6 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     }
   }, [song, selectedAnalysisItems, isApplyingAnalysis, uiLang, saveVersion, updateSongAndStructureWithHistory]);
 
-  // fix #4: useCallback to stabilise reference across renders
   const applyAnalysisItem = useCallback(async (itemText: string) => {
     if (isApplyingAnalysis) return;
 
@@ -249,18 +227,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     }
 
     try {
-      const prompt = `Modify the following song lyrics based on this specific improvement suggestion: "${itemText}".
-
-      IMPORTANT:
-      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).
-      2. Only update the lyrics as suggested.
-      3. Return the FULL updated song in the same JSON format as the input.
-      4. Do not change the section names unless specifically requested by the improvement.
-      5. Preserve the original song language in all lyric text fields.
-      6. Write the "concept" field for each line in ${uiLang}.
-
-      Current Song Data:
-      ${JSON.stringify(song)}`;
+      const prompt = `Modify the following song lyrics based on this specific improvement suggestion: "${itemText}".\n\n      IMPORTANT:\n      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).\n      2. Only update the lyrics as suggested.\n      3. Return the FULL updated song in the same JSON format as the input.\n      4. Do not change the section names unless specifically requested by the improvement.\n      5. Preserve the original song language in all lyric text fields.\n      6. Write the "concept" field for each line in ${uiLang}.\n\n      Current Song Data:\n      ${JSON.stringify(song)}`;
 
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
@@ -311,7 +278,8 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     }
   }, [song, appliedAnalysisItems, isApplyingAnalysis, uiLang, saveVersion, updateSongAndStructureWithHistory]);
 
-  const analyzeCurrentSong = async () => {
+  // P7-fix: useCallback for reference stability
+  const analyzeCurrentSong = useCallback(async () => {
     if (song.length === 0) return;
 
     fgAbortRef.current?.abort();
@@ -328,19 +296,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
       setAnalysisSteps(prev => [...prev, 'Analyzing structure and flow...']);
       const songText = song.map(s => `[${s.name}]\n${s.lines.map(l => l.text).join('\n')}`).join('\n\n');
 
-      const prompt = `Thoroughly analyze the following song lyrics.
-      Provide a detailed report including:
-      1. Overall Theme & Narrative: What is the song truly about?
-      2. Emotional Arc: How do the emotions shift throughout the song?
-      3. Technical Analysis: Rhyme schemes, syllable consistency, and rhythmic flow.
-      4. Strengths: What works well in the current version?
-      5. Actionable Improvements: Specific suggestions to improve the lyrics, structure, or impact.
-      6. Musical Suggestions: Ideas for instrumentation or vocal delivery based on the lyrics.
-
-      IMPORTANT: Write the ENTIRE analysis report in ${uiLang}.
-
-      Song Lyrics:
-      ${songText}`;
+      const prompt = `Thoroughly analyze the following song lyrics.\n      Provide a detailed report including:\n      1. Overall Theme & Narrative: What is the song truly about?\n      2. Emotional Arc: How do the emotions shift throughout the song?\n      3. Technical Analysis: Rhyme schemes, syllable consistency, and rhythmic flow.\n      4. Strengths: What works well in the current version?\n      5. Actionable Improvements: Specific suggestions to improve the lyrics, structure, or impact.\n      6. Musical Suggestions: Ideas for instrumentation or vocal delivery based on the lyrics.\n\n      IMPORTANT: Write the ENTIRE analysis report in ${uiLang}.\n\n      Song Lyrics:\n      ${songText}`;
 
       setAnalysisSteps(prev => [...prev, 'Consulting AI Lyricist...']);
       const response = await getAi().models.generateContent({
@@ -385,7 +341,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     } finally {
       if (!controller.signal.aborted) setIsAnalyzing(false);
     }
-  };
+  }, [song, uiLang, setIsAnalyzing]);
 
   return {
     isAnalysisModalOpen,

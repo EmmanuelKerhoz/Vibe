@@ -148,31 +148,13 @@ export const useAiGeneration = ({
   // Stable — ne change que si updateState change
   const updateSong = useMemo(() => makeSongUpdater(updateState), [updateState]);
 
-  // ── generateSong ────────────────────────────────────────────────────
-  const generateSong = async () => {
+  // ── generateSong ──────────────────────────────────────────────────── P4-fix: useCallback
+  const generateSong = useCallback(async () => {
     setIsGenerating(true);
     try {
       await withAbort(abortControllerRef, async (signal) => {
         const lang = songLanguage || 'English';
-        const prompt = `Write a song about "${topic}".
-Mood: ${mood}
-Default Rhyme Scheme: ${rhymeScheme}
-Target Syllables per line: ${targetSyllables}
-Structure: ${structure.join(', ')}
-
-IMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY. Generate exactly the sections listed in the Structure field, in that specific order.
-
-${META_INSTRUCTION_HINT}
-
-Line counts for sections:
-- Intro: 4 lines
-- Verse: 6 lines
-- Chorus: 4 lines
-- Bridge: 6 lines
-- Outro: 4 lines
-
-For each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
-For each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${uiLanguage}).`;
+        const prompt = `Write a song about "${topic}".\nMood: ${mood}\nDefault Rhyme Scheme: ${rhymeScheme}\nTarget Syllables per line: ${targetSyllables}\nStructure: ${structure.join(', ')}\n\nIMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY. Generate exactly the sections listed in the Structure field, in that specific order.\n\n${META_INSTRUCTION_HINT}\n\nLine counts for sections:\n- Intro: 4 lines\n- Verse: 6 lines\n- Chorus: 4 lines\n- Bridge: 6 lines\n- Outro: 4 lines\n\nFor each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).\nFor each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${uiLanguage}).`;
 
         const response = await withRetry(() =>
           getAi().models.generateContent({
@@ -202,10 +184,13 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
     } finally {
       if (!abortControllerRef.current?.signal.aborted) setIsGenerating(false);
     }
-  };
+  }, [
+    song, structure, topic, mood, rhymeScheme, targetSyllables, songLanguage, uiLanguage,
+    updateSongAndStructureWithHistory, requestAutoTitleGeneration, setSelectedLineId,
+  ]);
 
-  // ── regenerateSection ───────────────────────────────────────────
-  const regenerateSection = async (sectionId: string) => {
+  // ── regenerateSection ───────────────────────────────────────────── P4-fix: useCallback
+  const regenerateSection = useCallback(async (sectionId: string) => {
     const sectionToRegenerate = song.find(s => s.id === sectionId);
     if (!sectionToRegenerate) return;
 
@@ -224,7 +209,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
         else if (lowerName.includes('bridge')) lineCountPrompt = 'The section should have exactly 6 lines.';
         else if (lowerName.includes('outro'))  lineCountPrompt = 'The section should have exactly 4 lines.';
 
-        const songStructure = song.map(s => s.name).join(' → ');
+        const songStructure = song.map(s => s.name).join(' \u2192 ');
         const lang = songLanguage || 'English';
         const formatSectionLyrics = (sec: Section) =>
           sec.lines.map(l => l.text).filter(Boolean).join('\n');
@@ -244,24 +229,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           ? `\nCreative directives:\n${creativeDirectives.map(d => `- ${d}`).join('\n')}`
           : '';
 
-        const prompt = `Rewrite the following section of a song titled "${title}" about "${topic}".
-Mood: ${mood}
-Target Syllables per line: ${targetSyllables}
-Section Name: ${sectionToRegenerate.name}
-Rhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}
-${lineCountPrompt}
-Song structure: ${songStructure}
-${prevContext}${nextContext}${directivesPrompt}
-
-${META_INSTRUCTION_HINT}
-
-IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${uiLanguage}.
-
-Current Section:
-${JSON.stringify([sectionToRegenerate], null, 2)}
-
-Provide a new creative version of this section that fits seamlessly with the surrounding sections.
-Return the updated section in the exact same JSON structure (as an array with one section).`;
+        const prompt = `Rewrite the following section of a song titled "${title}" about "${topic}".\nMood: ${mood}\nTarget Syllables per line: ${targetSyllables}\nSection Name: ${sectionToRegenerate.name}\nRhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}\n${lineCountPrompt}\nSong structure: ${songStructure}\n${prevContext}${nextContext}${directivesPrompt}\n\n${META_INSTRUCTION_HINT}\n\nIMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${uiLanguage}.\n\nCurrent Section:\n${JSON.stringify([sectionToRegenerate], null, 2)}\n\nProvide a new creative version of this section that fits seamlessly with the surrounding sections.\nReturn the updated section in the exact same JSON structure (as an array with one section).`;
 
         const response = await withRetry(() =>
           getAi().models.generateContent({
@@ -295,10 +263,13 @@ Return the updated section in the exact same JSON structure (as an array with on
         });
       }
     }
-  };
+  }, [
+    song, title, topic, mood, rhymeScheme, targetSyllables, songLanguage, uiLanguage,
+    updateSong,
+  ]);
 
-  // ── quantizeSyllables ──────────────────────────────────────────
-  const quantizeSyllables = async (sectionId?: string) => {
+  // ── quantizeSyllables ──────────────────────────────────────────── P4-fix: useCallback
+  const quantizeSyllables = useCallback(async (sectionId?: string) => {
     if (song.length === 0) return;
     setIsGenerating(true);
     const lang = songLanguage || 'English';
@@ -310,23 +281,9 @@ Return the updated section in the exact same JSON structure (as an array with on
           const sectionToQuantize = song.find(s => s.id === sectionId);
           if (!sectionToQuantize) return;
           const syllables = sectionToQuantize.targetSyllables ?? targetSyllables;
-          prompt = `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables. Maintain the original meaning, rhyme scheme, and section structure.
-Write ALL lyrics in ${lang}.
-Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.
-
-Current Section:
-${JSON.stringify([sectionToQuantize], null, 2)}
-
-Return the updated section in the exact same JSON structure (as an array with one section).`;
+          prompt = `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables. Maintain the original meaning, rhyme scheme, and section structure.\nWrite ALL lyrics in ${lang}.\nPreserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.\n\nCurrent Section:\n${JSON.stringify([sectionToQuantize], null, 2)}\n\nReturn the updated section in the exact same JSON structure (as an array with one section).`;
         } else {
-          prompt = `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its section's targetSyllables (or ${targetSyllables} if not specified). Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
-Write ALL lyrics in ${lang}.
-Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.
-
-Current Song:
-${JSON.stringify(song, null, 2)}
-
-Return the updated song in the exact same JSON structure.`;
+          prompt = `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its section's targetSyllables (or ${targetSyllables} if not specified). Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.\nWrite ALL lyrics in ${lang}.\nPreserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.\n\nCurrent Song:\n${JSON.stringify(song, null, 2)}\n\nReturn the updated song in the exact same JSON structure.`;
         }
 
         const response = await withRetry(() =>
@@ -362,7 +319,9 @@ Return the updated song in the exact same JSON structure.`;
     } finally {
       if (!abortControllerRef.current?.signal.aborted) setIsGenerating(false);
     }
-  };
+  }, [
+    song, targetSyllables, songLanguage, updateSong, updateSongWithHistory,
+  ]);
 
   return {
     isGenerating,

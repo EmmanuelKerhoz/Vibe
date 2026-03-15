@@ -199,11 +199,12 @@ export const useLanguageAdapter = ({
       setSongLanguage(newLanguage);
 
       setStep('reversing', progressLabel);
-      const reversedLines = await reverseTranslate(adaptedSong, newLanguage, sourceLanguage);
+      // P6-fix: pass controller.signal so abort propagates into pipeline steps
+      const reversedLines = await reverseTranslate(adaptedSong, newLanguage, sourceLanguage, controller.signal);
       if (controller.signal.aborted) return;
 
       setStep('reviewing', progressLabel);
-      const { score, warnings } = await reviewFidelity(song, reversedLines, newLanguage, sourceLanguage);
+      const { score, warnings } = await reviewFidelity(song, reversedLines, newLanguage, sourceLanguage, controller.signal);
       if (controller.signal.aborted) return;
 
       const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };
@@ -275,8 +276,6 @@ export const useLanguageAdapter = ({
       const newSectionData = safeJsonParse<any>(adaptResponse.text || '{}', {});
       if (!newSectionData.name) throw new Error('Empty section adaptation response');
 
-      // fix #5: filter isMeta lines before reverseTranslate to avoid meta-instructions
-      // ([Guitar solo] etc.) polluting the back-translation fidelity score
       const adaptedSectionSong: Section[] = [{
         ...section,
         lines: (newSectionData.lines ?? section.lines).filter((l: any) => !l.isMeta),
@@ -291,11 +290,12 @@ export const useLanguageAdapter = ({
       );
 
       setStep('reversing', progressLabel);
-      const reversedLines = await reverseTranslate(adaptedSectionSong, newLanguage, sourceLanguage);
+      // P6-fix: pass controller.signal
+      const reversedLines = await reverseTranslate(adaptedSectionSong, newLanguage, sourceLanguage, controller.signal);
       if (controller.signal.aborted) return;
 
       setStep('reviewing', progressLabel);
-      const { score, warnings } = await reviewFidelity([section], reversedLines, newLanguage, sourceLanguage);
+      const { score, warnings } = await reviewFidelity([section], reversedLines, newLanguage, sourceLanguage, controller.signal);
       if (controller.signal.aborted) return;
 
       const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };

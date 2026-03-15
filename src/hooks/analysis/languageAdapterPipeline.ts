@@ -8,12 +8,13 @@ import type { Section } from '../../types';
 
 /**
  * Reverse-translates adapted lyrics literally back to the source language.
- * Used as the second step of the fidelity pipeline.
+ * P6-fix: accepts AbortSignal so the caller's controller can cancel mid-pipeline.
  */
 export const reverseTranslate = async (
   adaptedSong: Section[],
   fromLanguage: string,
   toLanguage: string,
+  signal?: AbortSignal,
 ): Promise<string[]> => {
   const lines = adaptedSong.flatMap(s =>
     s.lines.filter(l => !l.isMeta).map(l => l.text)
@@ -35,19 +36,21 @@ export const reverseTranslate = async (
         items: { type: Type.STRING },
       },
     },
+    signal,
   });
   return safeJsonParse<string[]>(response.text || '[]', []);
 };
 
 /**
  * Reviews the fidelity of an adaptation via LLM scoring (0–100).
- * Returns a score and an array of human-readable warnings.
+ * P6-fix: accepts AbortSignal so the caller's controller can cancel mid-pipeline.
  */
 export const reviewFidelity = async (
   originalSong: Section[],
   reversedLines: string[],
   targetLanguage: string,
   sourceLang: string,
+  signal?: AbortSignal,
 ): Promise<{ score: number; warnings: string[] }> => {
   const originalLines = originalSong
     .flatMap(s => s.lines.filter(l => !l.isMeta).map(l => l.text));
@@ -86,6 +89,7 @@ export const reviewFidelity = async (
         required: ['score', 'warnings'],
       },
     },
+    signal,
   });
 
   return safeJsonParse<{ score: number; warnings: string[] }>(

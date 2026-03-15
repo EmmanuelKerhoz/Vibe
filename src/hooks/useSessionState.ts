@@ -7,7 +7,8 @@ export function useSessionState() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   // ── API / session ─────────────────────────────────────────────────────────
-  const [hasApiKey, setHasApiKey] = useState(true);
+  // P2-fix: init false — set to true only after server confirmation
+  const [hasApiKey, setHasApiKey] = useState(false);
   const [isSessionHydrated, setIsSessionHydrated] = useState(false);
   const [hasSavedSession, setHasSavedSession] = useState(false);
 
