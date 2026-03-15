@@ -100,7 +100,6 @@ function AdaptationProgressBanner({
 
   const isFailed = progress.active === 'failed';
   const isDone   = progress.active === 'done';
-  const isActive = !isFailed && !isDone;
 
   return (
     <div
@@ -251,7 +250,6 @@ export function InsightsBar({
   const { t } = useTranslation();
   const [bannerDismissed, setBannerDismissed] = React.useState(false);
 
-  // Reset dismiss state when a new pipeline starts
   React.useEffect(() => {
     if (adaptationProgress && adaptationProgress.active !== 'idle') {
       setBannerDismissed(false);
@@ -270,7 +268,7 @@ export function InsightsBar({
 
   return (
     <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10" style={{ position: 'relative', overflow: 'visible' }}>
-      {/* LCARS gradient separator — bottom edge */}
+      {/* LCARS gradient separator */}
       <div style={{
         position: 'absolute',
         bottom: -1, left: 0, right: 0,
@@ -282,55 +280,57 @@ export function InsightsBar({
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 
-        {/* Row 1: Language tools + KPIs (KPIs hidden on desktop — shown in StatusBar) */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Language selector */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0">
-              <BarChart2 className="w-3.5 h-3.5" />
-              {t.insights.title}
-            </h3>
-            <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="flex-1 min-w-0">
-                <LcarsSelect
-                  value={targetLanguage}
-                  onChange={setTargetLanguage}
-                  options={SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
-                    value: lang.aiName,
-                    label: <><EmojiSign sign={lang.sign} /> {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</>,
-                  }))}
-                />
-              </div>
-              <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText)}>
-                <button
-                  onClick={() => adaptSongLanguage(targetLanguage)}
-                  disabled={isAdaptingLanguage || song.length === 0}
-                  className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap shrink-0"
-                >
-                  {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
-                  <span className="hidden sm:inline">{t.editor.adaptation}</span>
-                </button>
-              </Tooltip>
-              <Tooltip title={detectedDisplay ? `Detected: ${detectedDisplay.sign} ${detectedDisplay.label} — click to re-detect` : '🌐 Detect song language'}>
-                <button
-                  onClick={() => void detectLanguage()}
-                  disabled={isDetectingLanguage || song.length === 0}
-                  className="ux-interactive px-2.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap shrink-0"
-                >
-                  {isDetectingLanguage
-                    ? <Loader2 className="w-3 h-3 animate-spin" />
-                    : <ScanText className="w-3 h-3" />}
-                  {detectedDisplay
-                    ? <><EmojiSign sign={detectedDisplay.sign} /><span className="hidden sm:inline">{detectedDisplay.label}</span></>
-                    : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">Detect</span></>}
-                </button>
-              </Tooltip>
-            </div>
+        {/* Row 1: Language tools — single line, no wrap */}
+        <div className="flex items-center gap-2 overflow-hidden min-w-0">
+          {/* Left: label + separator (desktop only) */}
+          <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
+            <BarChart2 className="w-3.5 h-3.5" />
+            {t.insights.title}
+          </h3>
+          <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
+
+          {/* Language selector — takes remaining space, clips if needed */}
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <LcarsSelect
+              value={targetLanguage}
+              onChange={setTargetLanguage}
+              options={SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
+                value: lang.aiName,
+                label: <><EmojiSign sign={lang.sign} /> {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</>,
+              }))}
+            />
           </div>
 
-          {/* KPIs — mobile only (desktop: shown in StatusBar) */}
-          <div className="flex lg:hidden items-center gap-3 shrink-0">
+          {/* ADAPTATION button */}
+          <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText)}>
+            <button
+              onClick={() => adaptSongLanguage(targetLanguage)}
+              disabled={isAdaptingLanguage || song.length === 0}
+              className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap shrink-0"
+            >
+              {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
+              <span className="hidden sm:inline">{t.editor.adaptation}</span>
+            </button>
+          </Tooltip>
+
+          {/* Detect language button */}
+          <Tooltip title={detectedDisplay ? `Detected: ${detectedDisplay.sign} ${detectedDisplay.label} — click to re-detect` : '🌐 Detect song language'}>
+            <button
+              onClick={() => void detectLanguage()}
+              disabled={isDetectingLanguage || song.length === 0}
+              className="ux-interactive px-2.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap shrink-0"
+            >
+              {isDetectingLanguage
+                ? <Loader2 className="w-3 h-3 animate-spin" />
+                : <ScanText className="w-3 h-3" />}
+              {detectedDisplay
+                ? <><EmojiSign sign={detectedDisplay.sign} /><span className="hidden sm:inline">{detectedDisplay.label}</span></>
+                : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">Detect</span></>}
+            </button>
+          </Tooltip>
+
+          {/* KPIs — mobile only */}
+          <div className="flex lg:hidden items-center gap-3 shrink-0 ml-auto">
             <div className="flex flex-col items-end">
               <span className="micro-label text-zinc-500">{t.insights.sections}</span>
               <span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{sectionCount}</span>
@@ -346,7 +346,7 @@ export function InsightsBar({
           </div>
         </div>
 
-        {/* Adaptation pipeline progress banner */}
+        {/* Adaptation pipeline progress banner — shown only when active */}
         {showBanner && adaptationProgress && (
           <AdaptationProgressBanner
             progress={adaptationProgress}
