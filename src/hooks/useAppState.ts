@@ -35,8 +35,6 @@ export function useAppState() {
   const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>('lyrics');
   const [isStructureOpen, setIsStructureOpen] = useState(true);
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
-  // draggableSectionIndex removed: value was never consumed in render (phantom state).
-  // setDraggedItemIndex already tracks the active drag; SectionEditor now uses that.
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [draggedLineInfo, setDraggedLineInfo] = useState<{ sectionId: string; lineId: string } | null>(null);
@@ -56,8 +54,6 @@ export function useAppState() {
   const [apiErrorModal, setApiErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  // isSectionDropdownOpen drives the add-section dropdown in StructureSidebar.
-  // The click-outside handler lives locally in StructureSidebar (its own dropdownRef).
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
   const [isSimilarityModalOpen, setIsSimilarityModalOpen] = useState(false);
   const [isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen] = useState(false);
@@ -70,7 +66,9 @@ export function useAppState() {
   const [hasSavedSession, setHasSavedSession] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(true);
 
-  // sectionDropdownRef removed: StructureSidebar owns its own local dropdownRef.
+  // Elevated from useLanguageAdapter — shared between useSongAnalysis and useSongComposer
+  const [songLanguage, setSongLanguage] = useState('');
+
   const importInputRef = useRef<HTMLInputElement>(null);
   const markupTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -129,6 +127,7 @@ export function useAppState() {
     hasSavedSession, setHasSavedSession,
     isSessionHydrated, setIsSessionHydrated,
     hasApiKey,
+    songLanguage, setSongLanguage,
     importInputRef, markupTextareaRef,
   };
 }

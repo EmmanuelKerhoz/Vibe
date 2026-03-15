@@ -80,6 +80,9 @@ type UseLanguageAdapterParams = {
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
   /** When true, auto-detect is suppressed to avoid parasitic AI calls during generation. */
   isGenerating?: boolean;
+  /** Elevated from useAppState — shared source of truth for detected language. */
+  songLanguage: string;
+  setSongLanguage: (lang: string) => void;
 };
 
 // ---------------------------------------------------------------------------
@@ -93,8 +96,9 @@ export const useLanguageAdapter = ({
   updateSongAndStructureWithHistory,
   updateState,
   isGenerating = false,
+  songLanguage,
+  setSongLanguage,
 }: UseLanguageAdapterParams) => {
-  const [songLanguage, setSongLanguage]     = useState<string>('');
   const [targetLanguage, setTargetLanguage] = useState<string>('English');
   const [sectionTargetLanguages, setSectionTargetLanguages] = useState<Record<string, string>>({});
   const [isDetectingLanguage, setIsDetectingLanguage] = useState(false);
@@ -106,7 +110,6 @@ export const useLanguageAdapter = ({
   const autoDetectFiredRef = useRef(false);
 
   // Track the identity of the first section to detect song replacement
-  // (replaceStateWithoutHistory does not pass through song.length === 0)
   const firstSectionIdRef = useRef<string | null>(null);
 
   // R3: shared updateSong via factory
@@ -130,7 +133,7 @@ export const useLanguageAdapter = ({
       setSongLanguage('');
     }
     firstSectionIdRef.current = currentFirstId;
-  }, [song]);
+  }, [song, setSongLanguage]);
 
   // Auto-detect language once when song first becomes non-empty.
   useEffect(() => {
@@ -145,7 +148,7 @@ export const useLanguageAdapter = ({
       void detectLanguage();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [song.length, isGenerating, isAdaptingLanguage]);
+  }, [song.length, songLanguage, isGenerating, isAdaptingLanguage]);
 
   // Reset the auto-detect gate when the song is cleared.
   useEffect(() => {
@@ -154,7 +157,7 @@ export const useLanguageAdapter = ({
       firstSectionIdRef.current = null;
       setSongLanguage('');
     }
-  }, [song.length]);
+  }, [song.length, setSongLanguage]);
 
   // -------------------------------------------------------------------------
   // Helpers

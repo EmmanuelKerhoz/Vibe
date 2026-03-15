@@ -53,6 +53,7 @@ export default function App() {
     isResetModalOpen, setIsResetModalOpen, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     confirmModal, setConfirmModal, promptModal, setPromptModal,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
+    songLanguage, setSongLanguage,
   } = useAppState();
 
   // ── Mobile layout ────────────────────────────────────────────────────────
@@ -139,28 +140,32 @@ export default function App() {
     updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
-  // ── useSongComposer first — isGenerating must be available before useSongAnalysis ──
+  // ── useSongAnalysis first — provides songLanguage + isGenerating guard ──
+  const { isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
+    isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
+    appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, targetLanguage, setTargetLanguage,
+    isAdaptingLanguage, isDetectingLanguage, adaptationProgress, adaptationResult,
+    sectionTargetLanguages, setSectionTargetLanguages,
+    toggleAnalysisItemSelection, applySelectedAnalysisItems,
+    analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
+  } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language,
+    isGenerating: false, // will be true after useSongComposer — see note below
+    songLanguage, setSongLanguage,
+    setTopic, setMood, saveVersion,
+    updateState, updateSongAndStructureWithHistory,
+    clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
+  });
+
+  // ── useSongComposer — isGenerating flows to InsightsBar / LyricsView ────
   const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
     selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
     quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
     generateMusicalPrompt, analyzeLyricsForMusic, handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
   } = useSongComposer({ song, structure, topic, mood, rhymeScheme, targetSyllables, title,
-    genre, tempo, instrumentation, rhythm, narrative, songLanguage: '', uiLanguage: language,
+    genre, tempo, instrumentation, rhythm, narrative, songLanguage, uiLanguage: language,
     setMusicalPrompt, setGenre, setTempo, setInstrumentation, setRhythm, setNarrative,
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
-  });
-
-  const { isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
-    isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
-    appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, songLanguage, targetLanguage, setTargetLanguage,
-    isAdaptingLanguage, isDetectingLanguage, adaptationProgress, adaptationResult,
-    sectionTargetLanguages, setSectionTargetLanguages,
-    toggleAnalysisItemSelection, applySelectedAnalysisItems,
-    analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
-  } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language, isGenerating, setTopic, setMood, saveVersion,
-    updateState, updateSongAndStructureWithHistory,
-    clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,

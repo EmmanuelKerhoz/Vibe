@@ -11,6 +11,9 @@ type UseSongAnalysisParams = {
   rhymeScheme: string;
   uiLanguage: string;
   isGenerating?: boolean;
+  /** Elevated state from useAppState — shared with useSongComposer */
+  songLanguage: string;
+  setSongLanguage: (lang: string) => void;
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
   saveVersion: (name: string, snapshot?: {
@@ -34,6 +37,8 @@ export const useSongAnalysis = ({
   rhymeScheme,
   uiLanguage,
   isGenerating = false,
+  songLanguage,
+  setSongLanguage,
   setTopic,
   setMood,
   saveVersion,
@@ -51,6 +56,8 @@ export const useSongAnalysis = ({
     updateSongAndStructureWithHistory,
     updateState,
     isGenerating,
+    songLanguage,
+    setSongLanguage,
   });
 
   const pasteImport = usePasteImport({
