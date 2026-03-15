@@ -33,7 +33,6 @@ interface LyricsViewProps {
   dragOverLineInfo: { sectionId: string; lineId: string } | null;
   setDraggedItemIndex: (i: number | null) => void;
   setDragOverIndex: (i: number | null) => void;
-  setDraggableSectionIndex: (i: number | null) => void;
   setDraggedLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
@@ -61,7 +60,7 @@ export function LyricsView({
   isRegeneratingSection, handleLineClick, updateLineText, handleLineKeyDown,
   handleInstructionChange, addInstruction, removeInstruction, regenerateSection,
   draggedItemIndex, dragOverIndex, draggedLineInfo, dragOverLineInfo,
-  setDraggedItemIndex, setDragOverIndex, setDraggableSectionIndex,
+  setDraggedItemIndex, setDragOverIndex,
   setDraggedLineInfo, setDragOverLineInfo,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
   isMarkupMode, setIsMarkupMode, markupText, setMarkupText, markupTextareaRef,
@@ -252,7 +251,6 @@ export function LyricsView({
               handleLineDrop={handleLineDrop}
               setDraggedItemIndex={setDraggedItemIndex}
               setDragOverIndex={setDragOverIndex}
-              setDraggableSectionIndex={setDraggableSectionIndex}
               setDraggedLineInfo={setDraggedLineInfo}
               setDragOverLineInfo={setDragOverLineInfo}
               playAudioFeedback={playAudioFeedback}

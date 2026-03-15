@@ -37,7 +37,8 @@ export function useAppState() {
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [draggableSectionIndex, setDraggableSectionIndex] = useState<number | null>(null);
+  // draggableSectionIndex removed: value was never consumed in render (phantom state).
+  // setDraggedItemIndex already tracks the active drag; SectionEditor now uses that.
   const [draggedLineInfo, setDraggedLineInfo] = useState<{ sectionId: string; lineId: string } | null>(null);
   const [dragOverLineInfo, setDragOverLineInfo] = useState<{ sectionId: string; lineId: string } | null>(null);
   const [similarityMatches, setSimilarityMatches] = useState<SimilarityMatch[]>([]);
@@ -78,10 +79,12 @@ export function useAppState() {
   }, [theme]);
 
   useEffect(() => {
-    fetch('/api/status')
+    const controller = new AbortController();
+    fetch('/api/status', { signal: controller.signal })
       .then(r => r.json())
       .then((data: { available?: boolean }) => setHasApiKey(data.available === true))
-      .catch(() => setHasApiKey(false));
+      .catch((err) => { if (err.name !== 'AbortError') setHasApiKey(false); });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -114,7 +117,6 @@ export function useAppState() {
     theme, setTheme, activeTab, setActiveTab,
     isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
     draggedItemIndex, setDraggedItemIndex, dragOverIndex, setDragOverIndex,
-    draggableSectionIndex, setDraggableSectionIndex,
     draggedLineInfo, setDraggedLineInfo, dragOverLineInfo, setDragOverLineInfo,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount,
     libraryAssets, setLibraryAssets, isSavingToLibrary, setIsSavingToLibrary,

@@ -85,7 +85,8 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
     setIsSessionHydrated(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount-only; all refs are stable dispatchers
 
-  // Save session on every relevant change
+  // Save session on every relevant change.
+  // setHasSavedSession is a stable dispatcher but listed explicitly for exhaustive-deps compliance.
   useEffect(() => {
     if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
       const sessionData = {
@@ -95,5 +96,9 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
       safeSetItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
     }
-  }, [song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables, genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, isSessionHydrated, setHasSavedSession]);
+  }, [
+    song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
+    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
+    isSessionHydrated, setHasSavedSession,
+  ]);
 }

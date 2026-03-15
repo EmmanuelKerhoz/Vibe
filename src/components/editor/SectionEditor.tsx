@@ -48,7 +48,6 @@ interface SectionEditorProps {
   handleLineDrop: (sectionId: string, lineId: string) => void;
   setDraggedItemIndex: (i: number | null) => void;
   setDragOverIndex: (i: number | null) => void;
-  setDraggableSectionIndex: (i: number | null) => void;
   setDraggedLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
@@ -121,7 +120,6 @@ export const SectionEditor = React.memo(function SectionEditor({
   handleLineDrop,
   setDraggedItemIndex,
   setDragOverIndex,
-  setDraggableSectionIndex,
   setDraggedLineInfo,
   setDragOverLineInfo,
   playAudioFeedback,
@@ -236,8 +234,8 @@ export const SectionEditor = React.memo(function SectionEditor({
             <Tooltip title={isSectionDraggable ? (t.editor.dragToReorder ?? 'Drag to reorder section') : (t.editor.anchoredSection ?? 'Intro and Outro stay anchored')}>
               <div
                 draggable={isSectionDraggable}
-                onDragStart={() => { if (!isSectionDraggable) return; setDraggedItemIndex(sectionIndex); setDraggableSectionIndex(sectionIndex); playAudioFeedback('drag'); }}
-                onDragEnd={() => { setDraggedItemIndex(null); setDragOverIndex(null); setDraggableSectionIndex(null); }}
+                onDragStart={() => { if (!isSectionDraggable) return; setDraggedItemIndex(sectionIndex); playAudioFeedback('drag'); }}
+                onDragEnd={() => { setDraggedItemIndex(null); setDragOverIndex(null); }}
                 className={`cursor-grab active:cursor-grabbing text-zinc-500 hover:text-zinc-300 transition-colors ${!isSectionDraggable ? 'cursor-not-allowed opacity-40' : ''}`}
               >
                 <GripVertical className="h-5 w-5" />

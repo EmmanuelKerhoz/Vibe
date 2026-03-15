@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
+import { useCallback } from 'react';
 import type { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
@@ -54,7 +55,7 @@ export const useSongEditor = ({
   setDraggedLineInfo,
   setDragOverLineInfo,
   updateState,
-  updateSongWithHistory,
+  updateSongWithHistory: _updateSongWithHistory,
   updateStructureWithHistory,
   updateSongAndStructureWithHistory,
   title,
@@ -63,14 +64,14 @@ export const useSongEditor = ({
   openPasteModalWithText,
   playAudioFeedback,
 }: UseSongEditorParams) => {
-  const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
+  const updateSong = useCallback((transform: (currentSong: Section[]) => Section[]) => {
     updateState(current => ({
       song: transform(current.song),
       structure: current.structure,
     }));
-  };
+  }, [updateState]);
 
-  const removeStructureItem = (index: number) => {
+  const removeStructureItem = useCallback((index: number) => {
     const newStructure = structure.filter((_, i) => i !== index);
     if (song.length > index) {
       const newSong = song.filter((_, i) => i !== index);
@@ -78,9 +79,9 @@ export const useSongEditor = ({
     } else {
       updateStructureWithHistory(newStructure);
     }
-  };
+  }, [song, structure, updateSongAndStructureWithHistory, updateStructureWithHistory]);
 
-  const addStructureItem = (name?: string) => {
+  const addStructureItem = useCallback((name?: string) => {
     const itemToAdd = cleanSectionName(name || newSectionName.trim());
     if (!itemToAdd) return;
 
@@ -130,9 +131,9 @@ export const useSongEditor = ({
     newSong.splice(insertIndex, 0, newSection);
     updateSongAndStructureWithHistory(newSong, newStructure);
     if (!name) setNewSectionName('');
-  };
+  }, [song, structure, newSectionName, setNewSectionName, updateSongAndStructureWithHistory]);
 
-  const normalizeStructure = () => {
+  const normalizeStructure = useCallback(() => {
     const intros = structure.filter(s => s.toLowerCase().includes('intro'));
     const verses = structure.filter(s => s.toLowerCase().includes('verse'));
     const preChoruses = structure.filter(s => s.toLowerCase().includes('pre-chorus') || s.toLowerCase().includes('prechorus'));
@@ -178,9 +179,9 @@ export const useSongEditor = ({
       });
     }
     updateSongAndStructureWithHistory(newSong, newStructure);
-  };
+  }, [song, structure, updateSongAndStructureWithHistory]);
 
-  const handleDrop = (dropIndex: number) => {
+  const handleDrop = useCallback((dropIndex: number) => {
     setDragOverIndex(null);
     if (draggedItemIndex === null || draggedItemIndex === dropIndex) return;
     const draggedItemName = structure[draggedItemIndex];
@@ -222,14 +223,14 @@ export const useSongEditor = ({
     }
     updateSongAndStructureWithHistory(newSong, newStructure);
     setDraggedItemIndex(null);
-  };
+  }, [draggedItemIndex, structure, song, setDragOverIndex, setDraggedItemIndex, updateSongAndStructureWithHistory]);
 
-  const handleLineDragStart = (sectionId: string, lineId: string) => {
+  const handleLineDragStart = useCallback((sectionId: string, lineId: string) => {
     setDraggedLineInfo({ sectionId, lineId });
     playAudioFeedback('drag');
-  };
+  }, [setDraggedLineInfo, playAudioFeedback]);
 
-  const handleLineDrop = (targetSectionId: string, targetLineId: string) => {
+  const handleLineDrop = useCallback((targetSectionId: string, targetLineId: string) => {
     setDragOverLineInfo(null);
     if (!draggedLineInfo) return;
     if (draggedLineInfo.sectionId === targetSectionId && draggedLineInfo.lineId === targetLineId) {
@@ -240,23 +241,26 @@ export const useSongEditor = ({
       const sourceSectionIndex = currentSong.findIndex(s => s.id === draggedLineInfo.sectionId);
       const targetSectionIndex = currentSong.findIndex(s => s.id === targetSectionId);
       if (sourceSectionIndex === -1 || targetSectionIndex === -1) return currentSong;
-      const newSong = [...currentSong];
-      const sourceSection = { ...newSong[sourceSectionIndex]!, lines: [...newSong[sourceSectionIndex]!.lines] };
-      const targetSection = sourceSectionIndex === targetSectionIndex ? sourceSection : { ...newSong[targetSectionIndex]!, lines: [...newSong[targetSectionIndex]!.lines] };
+      // Deep-clone the affected sections to avoid pre-setState mutation
+      const newSong = currentSong.map((s, i) =>
+        i === sourceSectionIndex || i === targetSectionIndex
+          ? { ...s, lines: [...s.lines] }
+          : s
+      );
+      const sourceSection = newSong[sourceSectionIndex]!;
+      const targetSection = newSong[targetSectionIndex]!;
       const sourceLineIndex = sourceSection.lines.findIndex(l => l.id === draggedLineInfo.lineId);
       const targetLineIndex = targetSection.lines.findIndex(l => l.id === targetLineId);
       if (sourceLineIndex === -1 || targetLineIndex === -1) return currentSong;
       const draggedLine = sourceSection.lines.splice(sourceLineIndex, 1)[0]!;
       targetSection.lines.splice(targetLineIndex, 0, draggedLine);
-      newSong[sourceSectionIndex] = sourceSection;
-      if (sourceSectionIndex !== targetSectionIndex) newSong[targetSectionIndex] = targetSection;
       return newSong;
     });
     setDraggedLineInfo(null);
     playAudioFeedback('drop');
-  };
+  }, [draggedLineInfo, setDragOverLineInfo, setDraggedLineInfo, updateSong, playAudioFeedback]);
 
-  const exportSong = async (format: ExportFormat) => {
+  const exportSong = useCallback(async (format: ExportFormat) => {
     if (song.length === 0) return;
     const { blob, filename } = createSongExport({ song, title, topic, mood, format });
     const saveWithPicker = async () => {
@@ -286,16 +290,16 @@ export const useSongEditor = ({
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [song, title, topic, mood]);
 
-  const loadFileForAnalysis = (file: File) => {
+  const loadFileForAnalysis = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = event => {
       const text = event.target?.result as string;
       if (text) openPasteModalWithText(text);
     };
     reader.readAsText(file);
-  };
+  }, [openPasteModalWithText]);
 
   return {
     removeStructureItem,
