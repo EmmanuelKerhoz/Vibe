@@ -147,6 +147,13 @@ export default function App() {
   });
 
   // ── isGenerating bridge ──────────────────────────────────────────────────
+  // React hooks must be called in declaration order: useSongAnalysis is
+  // instantiated BEFORE useSongComposer, so isGenerating is not yet in scope.
+  // Passing it as a plain prop would create a stale closure (the analysis
+  // engine would always see the initial `false` value).
+  // Solution: a ref that is kept in sync via the useEffect below.
+  // The analysis engine reads isGeneratingRef.current synchronously at call
+  // time, always getting the live value without re-rendering.
   const isGeneratingRef = useRef(false);
 
   // ── useSongAnalysis ──────────────────────────────────────────────────────
@@ -177,6 +184,7 @@ export default function App() {
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
+  // Keep the ref in sync with the reactive value (see bridge comment above)
   useEffect(() => { isGeneratingRef.current = isGenerating; }, [isGenerating]);
 
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
@@ -251,7 +259,11 @@ export default function App() {
 
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
 
-  // Library similarity — debounced 800ms
+  // ── Library similarity — debounced 800ms ─────────────────────────────────
+  // fix #9: libraryCount is NOT recomputed here on every song keystroke.
+  // Count updates are owned exclusively by handleSaveToLibrary and
+  // handleDeleteLibraryAsset where the actual library mutation occurs.
+  // This effect only drives the similarity search debounce.
   const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
@@ -264,16 +276,24 @@ export default function App() {
       };
       void runSimilarity();
     }, 800);
-    const loadCount = async () => {
-      try { const c = localStorage.getItem('lyricist_library'); if (c) setLibraryCount(JSON.parse(c).length); }
-      catch (e) { console.error('Failed to load library count:', e); }
-    };
-    void loadCount();
     return () => {
       isCancelled = true;
       if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
     };
-  }, [song, setSimilarityMatches, setLibraryCount]);
+  }, [song, setSimilarityMatches]);
+
+  // ── Library count — loaded once on mount ─────────────────────────────────
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const c = localStorage.getItem('lyricist_library');
+        if (c) setLibraryCount(JSON.parse(c).length);
+      } catch (e) {
+        console.error('Failed to load library count:', e);
+      }
+    };
+    void loadCount();
+  }, [setLibraryCount]);
 
   const introOutroSortedRef = useRef<string | null>(null);
   useEffect(() => {
