@@ -67,23 +67,27 @@ export function useVersionManager(params: UseVersionManagerParams) {
     setVersions(prev => createVersion(versionSnapshot, name || `Version ${prev.length + 1}`, prev, { allowDuplicate: true }));
   }, [createVersion, song, structure, title, titleOrigin, topic, mood]);
 
-  const rollbackToVersion = (version: SongVersion) => {
+  const rollbackToVersion = useCallback((version: SongVersion) => {
     updateSongAndStructureWithHistory(version.song, version.structure);
     setTitle(version.title);
     setTitleOrigin(version.titleOrigin);
     setTopic(version.topic);
     setMood(version.mood);
     setIsVersionsModalOpen(false);
-  };
+  }, [updateSongAndStructureWithHistory, setTitle, setTitleOrigin, setTopic, setMood, setIsVersionsModalOpen]);
 
-  const handleRequestVersionName = (callback: (name: string) => void) => {
+  const handleRequestVersionName = useCallback((callback: (name: string) => void) => {
     setPromptModal({
       open: true,
       onConfirm: (name) => { setPromptModal(null); callback(name); },
     });
-  };
+  }, [setPromptModal]);
 
-  // Auto-restore-point: snapshot before each lyrics change
+  // Auto-restore-point: captures the snapshot *before* each lyrics/structure change
+  // so the user can always roll back to the state just prior to an AI generation.
+  // Note: title/topic/mood are included in the dep array because they are stored
+  // in the snapshot, but lyricsChanged only compares song+structure intentionally —
+  // a metadata-only change does not warrant a restore point.
   useEffect(() => {
     const currentSnapshot = { song, structure, title, titleOrigin, topic, mood };
     if (!previousLyricsSnapshotRef.current) {
@@ -91,8 +95,9 @@ export function useVersionManager(params: UseVersionManagerParams) {
       return;
     }
     const previousSnapshot = previousLyricsSnapshotRef.current;
-    const lyricsChanged = JSON.stringify(previousSnapshot.song) !== JSON.stringify(song)
-      || JSON.stringify(previousSnapshot.structure) !== JSON.stringify(structure);
+    const lyricsChanged =
+      JSON.stringify(previousSnapshot.song) !== JSON.stringify(song) ||
+      JSON.stringify(previousSnapshot.structure) !== JSON.stringify(structure);
     if (lyricsChanged && previousSnapshot.song.length > 0) {
       setVersions(prev => createVersion(previousSnapshot, 'Auto Restore Point', prev));
     }
