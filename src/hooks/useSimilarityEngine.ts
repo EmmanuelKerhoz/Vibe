@@ -16,13 +16,16 @@ const DELTA_THRESHOLD = 0.20;     // retrigger if text changed by >20%
 const textFingerprint = (title: string, sections: Section[]): string =>
   [title.trim(), ...sections.flatMap(s => s.lines.map(l => l.text))].join('\n');
 
+/** Unicode-safe character delta: iterates over code points, not UTF-16 units. */
 const changeDelta = (prev: string, next: string): number => {
   if (!prev) return 1;
-  const maxLen = Math.max(prev.length, next.length);
+  const prevChars = [...prev];
+  const nextChars = [...next];
+  const maxLen = Math.max(prevChars.length, nextChars.length);
   if (maxLen === 0) return 0;
   let diff = 0;
   for (let i = 0; i < maxLen; i++) {
-    if (prev[i] !== next[i]) diff++;
+    if (prevChars[i] !== nextChars[i]) diff++;
   }
   return diff / maxLen;
 };

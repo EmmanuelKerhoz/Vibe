@@ -49,11 +49,14 @@ const getSetOverlapRatio = (left: string[], right: string[]) => {
   return ratio(intersection, union);
 };
 
-const getSharedKeywords = (currentSong: Section[], candidateSong: Section[]) => {
+const getSharedKeywords = (
+  currentTokens: string[],
+  candidateSong: Section[],
+) => {
   const currentCounts = new Map<string, number>();
   const candidateCounts = new Map<string, number>();
 
-  for (const token of getSongTokens(currentSong)) {
+  for (const token of currentTokens) {
     currentCounts.set(token, (currentCounts.get(token) || 0) + 1);
   }
 
@@ -100,10 +103,13 @@ const getMatchedSections = (currentSong: Section[], candidateSong: Section[]) =>
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 };
 
-const calculateSimilarity = (currentSong: Section[], candidateSong: Section[]) => {
-  const currentLines = getSongLines(currentSong);
+const calculateSimilarity = (
+  currentLines: string[],
+  currentTokens: string[],
+  candidateSong: Section[],
+  currentSong: Section[],
+) => {
   const candidateLines = getSongLines(candidateSong);
-  const currentTokens = getSongTokens(currentSong);
   const candidateTokens = getSongTokens(candidateSong);
   const currentSections = currentSong.map(section => normalizeText(section.name));
   const candidateSections = candidateSong.map(section => normalizeText(section.name));
@@ -119,11 +125,11 @@ export const calculateSimilarityWithMetadata = (
   currentSong: Section[],
   candidateSong: Section[],
 ): Omit<SimilarityMatch, 'versionId' | 'versionName' | 'title' | 'timestamp'> => {
+  // Hoist: compute once for currentSong, reuse across all candidate comparisons
   const currentTokens = getSongTokens(currentSong);
+  const currentLines = getSongLines(currentSong);
   const candidateTokens = getSongTokens(candidateSong);
   const candidateTokenSet = new Set(candidateTokens);
-
-  const currentLines = getSongLines(currentSong);
   const candidateLines = getSongLines(candidateSong);
   const candidateLineSet = new Set(candidateLines);
 
@@ -131,17 +137,17 @@ export const calculateSimilarityWithMetadata = (
   const sharedLines = new Set(currentLines.filter(line => candidateLineSet.has(line))).size;
 
   return {
-    score: calculateSimilarity(currentSong, candidateSong),
+    score: calculateSimilarity(currentLines, currentTokens, candidateSong, currentSong),
     sharedWords,
     sharedLines,
-    sharedKeywords: getSharedKeywords(currentSong, candidateSong),
+    sharedKeywords: getSharedKeywords(currentTokens, candidateSong),
     matchedSections: getMatchedSections(currentSong, candidateSong).slice(0, 3),
   };
 };
 
 /**
  * Get top 3 similar matches from version history.
- * Always returns up to 3 results regardless of score — low similarity is shown.
+ * currentSong tokens/lines are hoisted outside the loop.
  */
 export const getTopSimilarSongMatches = (
   currentSong: Section[],
@@ -151,6 +157,7 @@ export const getTopSimilarSongMatches = (
 ): SimilarityMatch[] => {
   if (currentSong.length === 0) return [];
 
+  // Hoist: compute once
   const currentTokens = getSongTokens(currentSong);
   const currentLines = getSongLines(currentSong);
 
@@ -170,10 +177,10 @@ export const getTopSimilarSongMatches = (
         versionName: version.name,
         title: version.title,
         timestamp: version.timestamp,
-        score: calculateSimilarity(currentSong, version.song),
+        score: calculateSimilarity(currentLines, currentTokens, version.song, currentSong),
         sharedWords,
         sharedLines,
-        sharedKeywords: getSharedKeywords(currentSong, version.song),
+        sharedKeywords: getSharedKeywords(currentTokens, version.song),
         matchedSections: getMatchedSections(currentSong, version.song).slice(0, 3),
       };
     })
