@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Type } from '@google/genai';
 import type { Section } from '../../types';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
@@ -6,6 +6,7 @@ import { cleanSectionName } from '../../utils/songUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
 import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
+import { makeSongUpdater } from '../hookUtils';
 
 const SHORT_SECTION_LINE_COUNT = 4;
 const LONG_SECTION_LINE_COUNT = 6;
@@ -102,19 +103,27 @@ export const useAiGeneration = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [regeneratingSections, setRegeneratingSections] = useState<Set<string>>(new Set());
 
+  // R4: shared AbortController — aborts previous call when a new one starts
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Abort on unmount to prevent stale setState
+  useEffect(() => {
+    return () => { abortControllerRef.current?.abort(); };
+  }, []);
+
   const isRegeneratingSection = useCallback(
     (sectionId: string) => regeneratingSections.has(sectionId),
     [regeneratingSections],
   );
 
-  const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
-    updateState(current => ({
-      song: transform(current.song),
-      structure: current.structure,
-    }));
-  };
+  // R3: shared updateSong via factory
+  const updateSong = makeSongUpdater(updateState);
 
   const generateSong = async () => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsGenerating(true);
     try {
       const lang = songLanguage || 'English';
@@ -174,6 +183,8 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
         },
       });
 
+      if (controller.signal.aborted) return;
+
       const data = safeJsonParse(response.text || '[]', []);
       const songWithIds = data.map((section: any) => ({
         ...section,
@@ -190,15 +201,20 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
       requestAutoTitleGeneration();
       setSelectedLineId(null);
     } catch (error: any) {
+      if (controller.signal.aborted) return;
       handleApiError(error, 'Failed to generate song. Please try again.');
     } finally {
-      setIsGenerating(false);
+      if (!controller.signal.aborted) setIsGenerating(false);
     }
   };
 
   const regenerateSection = async (sectionId: string) => {
     const sectionToRegenerate = song.find(s => s.id === sectionId);
     if (!sectionToRegenerate) return;
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setRegeneratingSections(prev => new Set(prev).add(sectionId));
     try {
@@ -288,10 +304,11 @@ Return the updated section in the exact same JSON structure (as an array with on
         },
       });
 
+      if (controller.signal.aborted) return;
+
       const data = safeJsonParse<Section[]>(response.text || '[]', []);
       const firstSection = data[0];
       if (firstSection) {
-        // Patch isMeta on the returned lines before merging
         const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
         updateSong(currentSong =>
           currentSong.map(section => {
@@ -301,18 +318,26 @@ Return the updated section in the exact same JSON structure (as an array with on
         );
       }
     } catch (error: any) {
+      if (controller.signal.aborted) return;
       handleApiError(error, 'Failed to regenerate section. Please try again.');
     } finally {
-      setRegeneratingSections(prev => {
-        const next = new Set(prev);
-        next.delete(sectionId);
-        return next;
-      });
+      if (!controller.signal.aborted) {
+        setRegeneratingSections(prev => {
+          const next = new Set(prev);
+          next.delete(sectionId);
+          return next;
+        });
+      }
     }
   };
 
   const quantizeSyllables = async (sectionId?: string) => {
     if (song.length === 0) return;
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsGenerating(true);
     const lang = songLanguage || 'English';
     try {
@@ -373,6 +398,8 @@ Return the updated song in the exact same JSON structure.`;
         },
       });
 
+      if (controller.signal.aborted) return;
+
       const data = safeJsonParse<Section[]>(response.text || '[]', []);
 
       if (sectionId) {
@@ -388,7 +415,6 @@ Return the updated song in the exact same JSON structure.`;
         }
       } else {
         const updatedSong = mapSongWithPreservedIds(data, song);
-        // Re-flag isMeta after syllable quantization (AI may rewrite meta lines)
         const reflagged = updatedSong.map(sec => ({
           ...sec,
           lines: flagMetaLines(sec.lines),
@@ -396,9 +422,10 @@ Return the updated song in the exact same JSON structure.`;
         updateSongWithHistory(reflagged);
       }
     } catch (error: any) {
+      if (controller.signal.aborted) return;
       handleApiError(error, 'Failed to quantize syllables. Please try again.');
     } finally {
-      setIsGenerating(false);
+      if (!controller.signal.aborted) setIsGenerating(false);
     }
   };
 

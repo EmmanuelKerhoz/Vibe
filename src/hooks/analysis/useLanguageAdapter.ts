@@ -3,6 +3,7 @@ import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
 import type { Section } from '../../types';
+import { makeSongUpdater } from '../hookUtils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -108,6 +109,9 @@ export const useLanguageAdapter = ({
   // (replaceStateWithoutHistory does not pass through song.length === 0)
   const firstSectionIdRef = useRef<string | null>(null);
 
+  // R3: shared updateSong via factory
+  const updateSong = makeSongUpdater(updateState);
+
   const uiLang = uiLanguage === 'fr' ? 'French'
     : uiLanguage === 'es' ? 'Spanish'
     : uiLanguage === 'de' ? 'German'
@@ -118,21 +122,17 @@ export const useLanguageAdapter = ({
     : 'English';
 
   // Detect song identity change (covers load-from-library via replaceStateWithoutHistory).
-  // When the first section ID changes while song is non-empty, the song was replaced;
-  // reset the auto-detect gate so the new song gets its language detected.
   useEffect(() => {
     if (song.length === 0) return;
     const currentFirstId = song[0]!.id;
     if (firstSectionIdRef.current !== null && firstSectionIdRef.current !== currentFirstId) {
-      // Song was replaced (e.g. load-from-library)
       autoDetectFiredRef.current = false;
       setSongLanguage('');
     }
     firstSectionIdRef.current = currentFirstId;
   }, [song]);
 
-  // Auto-detect language once when song first becomes non-empty,
-  // guarded against concurrent generation or ongoing adaptation.
+  // Auto-detect language once when song first becomes non-empty.
   useEffect(() => {
     if (
       song.length > 0 &&
@@ -159,13 +159,6 @@ export const useLanguageAdapter = ({
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
-
-  const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
-    updateState(current => ({
-      song: transform(current.song),
-      structure: current.structure,
-    }));
-  };
 
   const setStep = (id: AdaptationStepId, label: string) => {
     setAdaptationProgress(prev => ({ ...prev, active: id, label }));
