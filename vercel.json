@@ -10,10 +10,6 @@
       "source": "/(.*)",
       "headers": [
         {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://en.wikipedia.org https://api.duckduckgo.com; worker-src 'self' blob:; manifest-src 'self'; frame-ancestors 'none'"
-        },
-        {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
         },
