@@ -184,9 +184,6 @@
 
 /* ===========================================================================
    LYRICS EDITOR — row grid layout
-   9 columns: drag-handle | ai/human badge | move-arrows | line-number | lyric-input | syllables | count | schema | delete
-   Regression fix: class tokens lyric-row / lyric-col-aux were used in SectionEditor
-   since v3.2.22 (commit f6d9e3f) but CSS rules were never defined.
    =========================================================================== */
 
 .lyric-row {
@@ -218,10 +215,143 @@
 }
 
 /* ===========================================================================
+   LCARS GB-PANEL — gradient-border container used throughout MusicalTab
+   Uses a CSS-native padding + background-clip trick so the inner content
+   sits on the correct background with no extra DOM wrapper.
+   Light: subtle warm border. Dark: full multicolor LCARS rail.
+   =========================================================================== */
+
+.lcars-gb-panel {
+  position: relative;
+  border-radius: 14px 4px 14px 4px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark .lcars-gb-panel {
+  background-color: rgba(14, 14, 14, 0.70);
+  border: none;
+  /* Gradient border via pseudo-element on dark mode */
+}
+
+.dark .lcars-gb-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--lcars-amber)  0%,
+    var(--lcars-sage)   25%,
+    var(--lcars-cyan)   50%,
+    var(--lcars-blue)   75%,
+    var(--lcars-violet) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+.dark .lcars-gb-panel:hover::before {
+  opacity: 0.9;
+}
+
+.dark .lcars-gb-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===========================================================================
+   STATUS BAR — desktop-only class toggled via className prop
+   =========================================================================== */
+
+.lcars-status-bar-desktop {
+  display: flex;
+}
+
+@media (max-width: 1023px) {
+  .lcars-status-bar-desktop {
+    display: none;
+  }
+}
+
+/* ===========================================================================
+   MOBILE BOTTOM NAV
+   =========================================================================== */
+
+.mobile-bottom-nav {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  height: calc(var(--mobile-nav-h) + var(--sab));
+  padding-bottom: var(--sab);
+  background: var(--acrylic-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-top: 1px solid var(--border-color);
+  position: relative;
+  z-index: 50;
+}
+
+.mobile-bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 4px;
+  min-height: 44px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.mobile-bottom-nav-btn.active {
+  color: var(--accent-color);
+}
+
+.mobile-bottom-nav-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: rgba(128, 128, 128, 0.08);
+}
+
+.mobile-bottom-nav-generate {
+  color: var(--accent-color);
+}
+
+.mobile-bottom-nav-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===========================================================================
+   MOBILE PANEL BACKDROP
+   =========================================================================== */
+
+.mobile-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 30;
+  backdrop-filter: blur(2px);
+}
+
+/* ===========================================================================
    ABOUT MODAL — diagonal sweep BG→HD (bottom-left → top-right)
-   The overlay pseudo-element is a wide bar rotated -45deg that translates
-   along the 135° diagonal from below-left to above-right.
-   Each About item (.about-sweep-item) animates in with staggered delay.
    =========================================================================== */
 
 @keyframes about-diagonal-sweep {
@@ -241,7 +371,6 @@
   }
 }
 
-/* Legacy keyframe kept for any stale references */
 @keyframes about-glass-sweep {
   0%   { transform: rotate(-45deg) translateX(-160%); opacity: 0; }
   6%   { opacity: 1; }
@@ -260,7 +389,6 @@
 .about-glass-sweep-overlay::after {
   content: '';
   position: absolute;
-  /* Centre the bar on the dialog then let the rotation+translate do the work */
   top: 50%;
   left: -50%;
   width: 200%;
@@ -285,8 +413,6 @@
   animation: inherit;
 }
 
-/* Per-item shimmer sweep: each .about-sweep-item gets an individual shimmer
-   that flows from bottom-left corner to top-right corner of the item itself */
 @keyframes about-item-shimmer {
   0%   { background-position: 200% 200%; opacity: 0; }
   10%  { opacity: 1; }
@@ -325,7 +451,6 @@
   animation-play-state: running;
 }
 
-/* Stagger delays for About items */
 .about-sweep-item:nth-child(1)::before  { animation-delay: 0.3s; }
 .about-sweep-item:nth-child(2)::before  { animation-delay: 0.45s; }
 .about-sweep-item:nth-child(3)::before  { animation-delay: 0.6s; }
@@ -719,4 +844,157 @@ html, body, #root {
   background: linear-gradient(135deg, rgba(76,175,115,0.03) 0%, rgba(94,163,222,0.02) 100%);
   pointer-events: none;
   z-index: 0;
+}
+
+/* ===========================================================================
+   TELEMETRY / STATUS BAR TYPOGRAPHY
+   =========================================================================== */
+
+.telemetry-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.lcars-status-bar {
+  background: var(--status-bar-bg);
+  backdrop-filter: var(--layer1-blur);
+  -webkit-backdrop-filter: var(--layer1-blur);
+}
+
+.lcars-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--border-color);
+  flex-shrink: 0;
+}
+
+.lcars-cursor-blink {
+  display: inline-block;
+  width: 6px;
+  height: 10px;
+  background: currentColor;
+  animation: lcars-blink 1s step-end infinite;
+  vertical-align: middle;
+}
+
+@keyframes lcars-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.lcars-pulse {
+  animation: lcars-pulse-anim 2.5s ease-in-out infinite;
+}
+
+@keyframes lcars-pulse-anim {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
+.lcars-meta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.lcars-meta-btn:hover {
+  color: var(--text-primary);
+  background: rgba(128, 128, 128, 0.1);
+}
+
+.lcars-app-id {
+  font-weight: 600;
+  color: var(--accent-color);
+  opacity: 0.8;
+}
+
+.lcars-app-id:hover { opacity: 1; }
+
+/* ===========================================================================
+   LCARS GLOW FOCUS
+   =========================================================================== */
+
+.lcars-glow-focus:focus {
+  outline: none;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 1px var(--accent-color), var(--glow-accent);
+}
+
+/* ===========================================================================
+   CUSTOM SCROLLBAR
+   =========================================================================== */
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+/* ===========================================================================
+   STRUCTURE SIDEBAR MOBILE OVERLAY
+   =========================================================================== */
+
+.structure-sidebar-mobile-overlay {
+  position: fixed !important;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: min(300px, 85vw) !important;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+}
+
+/* ===========================================================================
+   LYRICS EDITOR ZOOM
+   =========================================================================== */
+
+.lyrics-editor-zoom-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.lyrics-editor-zoom {
+  width: 100%;
+  max-width: 860px;
+}
+
+/* ===========================================================================
+   LCARS SELECT
+   =========================================================================== */
+
+.lcars-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px 2px 8px 2px;
+  padding: 4px 24px 4px 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  transition: border-color 0.15s ease;
+}
+
+.lcars-select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: var(--glow-accent);
 }

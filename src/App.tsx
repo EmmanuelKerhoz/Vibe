@@ -204,7 +204,7 @@ export default function App() {
     isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen, promptModal,
     isMobileOrTablet, closeMobilePanels,
     redo, setApiErrorModal, setConfirmModal, setIsAboutOpen, setIsAnalysisModalOpen,
-    setIsExportModalOpen, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
+    setIsExportModalOut, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
     setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
     setPromptModal, undo,
   ]);
@@ -485,24 +485,27 @@ export default function App() {
 
       <StatusBar
         className="lcars-status-bar-desktop"
-        song={song} wordCount={wordCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+        song={song} wordCount={wordCount} charCount={charCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
         isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
         audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
         onOpenAbout={() => setIsAboutOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
-      <MobileBottomNav
-        isLeftPanelOpen={isLeftPanelOpen}
-        isStructureOpen={isStructureOpen}
-        activeTab={activeTab}
-        isGenerating={isGenerating}
-        setIsLeftPanelOpen={setIsLeftPanelOpen}
-        setIsStructureOpen={setIsStructureOpen}
-        setActiveTab={setActiveTab}
-        onGenerateSong={handleGlobalRegenerate}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-      />
+      {/* MobileBottomNav — mobile/tablet only, never rendered on desktop */}
+      {isMobileOrTablet && (
+        <MobileBottomNav
+          isLeftPanelOpen={isLeftPanelOpen}
+          isStructureOpen={isStructureOpen}
+          activeTab={activeTab}
+          isGenerating={isGenerating}
+          setIsLeftPanelOpen={setIsLeftPanelOpen}
+          setIsStructureOpen={setIsStructureOpen}
+          setActiveTab={setActiveTab}
+          onGenerateSong={handleGlobalRegenerate}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+        />
+      )}
 
       <AppModals
         isAboutOpen={isAboutOpen} setIsAboutOpen={setIsAboutOpen}

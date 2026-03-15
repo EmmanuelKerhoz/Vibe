@@ -54,6 +54,11 @@ export const isEmptyBracketLine = (line: string): boolean => {
   return m !== null;
 };
 
+/**
+ * Tokenizes a meta line into display parts.
+ * For meta tokens, returns `inner` (WITHOUT surrounding brackets) so MetaLine
+ * can render them without duplication with its own bracket badge.
+ */
 export const tokenizeMetaInline = (
   text: string
 ): Array<{ text: string; isMeta: boolean }> => {
@@ -68,7 +73,8 @@ export const tokenizeMetaInline = (
     }
     const innerTrimmed = inner.trim();
     if (innerTrimmed) {
-      parts.push({ text: match[0], isMeta: !isSectionHeader(inner) });
+      // Return inner text WITHOUT brackets — MetaLine renders its own [ ] badge
+      parts.push({ text: innerTrimmed, isMeta: !isSectionHeader(inner) });
     }
     last = match.index + match[0].length;
   }
