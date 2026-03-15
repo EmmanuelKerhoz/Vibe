@@ -4,6 +4,8 @@ import { generateId } from '../utils/idUtils';
 import { isPureMetaLine } from '../utils/metaUtils';
 import { cleanSectionName } from '../utils/songUtils';
 
+const MAX_HISTORY = 50;
+
 type SongHistorySnapshot = {
   song: Section[];
   structure: string[];
@@ -33,12 +35,17 @@ const cleanSong = (song: Section[]): Section[] => song.map((section) => ({
     };
   }),
 }));
-const cleanStructure = (structure: string[]): string[] => structure.map(name => cleanSectionName(name));
+
+const cleanStructure = (structure: string[]): string[] =>
+  structure.map(name => cleanSectionName(name));
 
 const normalizeSnapshot = (snapshot: SongHistorySnapshot): SongHistorySnapshot => ({
   song: cleanSong(snapshot.song),
   structure: cleanStructure(snapshot.structure),
 });
+
+const cappedPast = (past: SongHistorySnapshot[]): SongHistorySnapshot[] =>
+  past.length > MAX_HISTORY ? past.slice(past.length - MAX_HISTORY) : past;
 
 export const useSongHistoryState = (initialSong: Section[] = [], initialStructure: string[] = []) => {
   const [state, setState] = useState<SongHistoryState>(() => ({
@@ -49,11 +56,12 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
 
   const applySnapshot = useCallback((nextSnapshot: SongHistorySnapshot, options?: { trackHistory?: boolean }) => {
     const normalizedNext = normalizeSnapshot(nextSnapshot);
-
     setState(current => ({
       song: normalizedNext.song,
       structure: normalizedNext.structure,
-      past: options?.trackHistory === false ? current.past : [...current.past, { song: current.song, structure: current.structure }],
+      past: options?.trackHistory === false
+        ? current.past
+        : cappedPast([...current.past, { song: current.song, structure: current.structure }]),
       future: options?.trackHistory === false ? current.future : [],
     }));
   }, []);
@@ -64,7 +72,7 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
       return {
         song: nextSnapshot.song,
         structure: nextSnapshot.structure,
-        past: [...current.past, { song: current.song, structure: current.structure }],
+        past: cappedPast([...current.past, { song: current.song, structure: current.structure }]),
         future: [],
       };
     });
@@ -112,7 +120,7 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
       return {
         song: next.song,
         structure: next.structure,
-        past: [...current.past, { song: current.song, structure: current.structure }],
+        past: cappedPast([...current.past, { song: current.song, structure: current.structure }]),
         future: current.future.slice(1),
       };
     });

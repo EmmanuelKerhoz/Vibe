@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Type } from '@google/genai';
 import type { Section } from '../../types';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
@@ -7,6 +7,8 @@ import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
 import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
 import { makeSongUpdater } from '../hookUtils';
+import { withAbort, isAbortError } from '../../utils/withAbort';
+import { withRetry } from '../../utils/withRetry';
 
 const SHORT_SECTION_LINE_COUNT = 4;
 const LONG_SECTION_LINE_COUNT = 6;
@@ -65,6 +67,35 @@ const flagMetaLines = (lines: any[]): any[] =>
 
 const META_INSTRUCTION_HINT = `You may include performance/production meta-instructions on their own line using square brackets, e.g. [Guitar solo], [Whispered], [Anthemic], [Ad-lib], [Key change]. These are NOT section headers — they are preserved and displayed as special directives in the song editor.`;
 
+const GENERATION_SCHEMA = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      name: { type: Type.STRING },
+      rhymeScheme: {
+        type: Type.STRING,
+        description: 'The rhyme scheme for this section, e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE',
+      },
+      lines: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            text: { type: Type.STRING },
+            rhymingSyllables: { type: Type.STRING },
+            rhyme: { type: Type.STRING },
+            syllables: { type: Type.INTEGER },
+            concept: { type: Type.STRING },
+          },
+          required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
+        },
+      },
+    },
+    required: ['name', 'lines', 'rhymeScheme'],
+  },
+} as const;
+
 type UseAiGenerationParams = {
   song: Section[];
   structure: string[];
@@ -103,10 +134,8 @@ export const useAiGeneration = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [regeneratingSections, setRegeneratingSections] = useState<Set<string>>(new Set());
 
-  // R4: shared AbortController — aborts previous call when a new one starts
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Abort on unmount to prevent stale setState
   useEffect(() => {
     return () => { abortControllerRef.current?.abort(); };
   }, []);
@@ -116,18 +145,16 @@ export const useAiGeneration = ({
     [regeneratingSections],
   );
 
-  // R3: shared updateSong via factory
-  const updateSong = makeSongUpdater(updateState);
+  // Stable — ne change que si updateState change
+  const updateSong = useMemo(() => makeSongUpdater(updateState), [updateState]);
 
+  // ── generateSong ────────────────────────────────────────────────────
   const generateSong = async () => {
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
     setIsGenerating(true);
     try {
-      const lang = songLanguage || 'English';
-      const prompt = `Write a song about "${topic}".
+      await withAbort(abortControllerRef, async (signal) => {
+        const lang = songLanguage || 'English';
+        const prompt = `Write a song about "${topic}".
 Mood: ${mood}
 Default Rhyme Scheme: ${rhymeScheme}
 Target Syllables per line: ${targetSyllables}
@@ -147,112 +174,77 @@ Line counts for sections:
 For each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
 For each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${uiLanguage}).`;
 
-      const response = await getAi().models.generateContent({
-        model: AI_MODEL_NAME,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                rhymeScheme: {
-                  type: Type.STRING,
-                  description: 'The rhyme scheme for this section, e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE',
-                },
-                lines: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      text: { type: Type.STRING },
-                      rhymingSyllables: { type: Type.STRING },
-                      rhyme: { type: Type.STRING },
-                      syllables: { type: Type.INTEGER },
-                      concept: { type: Type.STRING },
-                    },
-                    required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
-                  },
-                },
-              },
-              required: ['name', 'lines', 'rhymeScheme'],
-            },
-          },
-        },
-      });
+        const response = await withRetry(() =>
+          getAi().models.generateContent({
+            model: AI_MODEL_NAME,
+            contents: prompt,
+            config: { responseMimeType: 'application/json', responseSchema: GENERATION_SCHEMA },
+            signal,
+          })
+        );
 
-      if (controller.signal.aborted) return;
-
-      const data = safeJsonParse(response.text || '[]', []);
-      const songWithIds = data.map((section: any) => ({
-        ...section,
-        name: cleanSectionName(section.name),
-        id: generateId(),
-        rhymeScheme: section.rhymeScheme || rhymeScheme,
-        lines: flagMetaLines(section.lines).map((line: any) => ({
-          ...line,
+        const data = safeJsonParse(response.text || '[]', []);
+        const songWithIds = data.map((section: any) => ({
+          ...section,
+          name: cleanSectionName(section.name),
           id: generateId(),
-        })),
-      }));
-      const orderedSong = alignGeneratedSongToStructure(songWithIds, structure, rhymeScheme);
-      updateSongAndStructureWithHistory(orderedSong, structure);
-      requestAutoTitleGeneration();
-      setSelectedLineId(null);
+          rhymeScheme: section.rhymeScheme || rhymeScheme,
+          lines: flagMetaLines(section.lines).map((line: any) => ({ ...line, id: generateId() })),
+        }));
+        const orderedSong = alignGeneratedSongToStructure(songWithIds, structure, rhymeScheme);
+        updateSongAndStructureWithHistory(orderedSong, structure);
+        requestAutoTitleGeneration();
+        setSelectedLineId(null);
+      });
     } catch (error: any) {
-      if (controller.signal.aborted) return;
+      if (isAbortError(error)) return;
       handleApiError(error, 'Failed to generate song. Please try again.');
     } finally {
-      if (!controller.signal.aborted) setIsGenerating(false);
+      if (!abortControllerRef.current?.signal.aborted) setIsGenerating(false);
     }
   };
 
+  // ── regenerateSection ───────────────────────────────────────────
   const regenerateSection = async (sectionId: string) => {
     const sectionToRegenerate = song.find(s => s.id === sectionId);
     if (!sectionToRegenerate) return;
 
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
     setRegeneratingSections(prev => new Set(prev).add(sectionId));
     try {
-      const sectionIndex = song.findIndex(s => s.id === sectionId);
-      const prevSection = sectionIndex > 0 ? song[sectionIndex - 1] : null;
-      const nextSection = sectionIndex < song.length - 1 ? song[sectionIndex + 1] : null;
+      await withAbort(abortControllerRef, async (signal) => {
+        const sectionIndex = song.findIndex(s => s.id === sectionId);
+        const prevSection = sectionIndex > 0 ? song[sectionIndex - 1] : null;
+        const nextSection = sectionIndex < song.length - 1 ? song[sectionIndex + 1] : null;
 
-      let lineCountPrompt = '';
-      const lowerName = sectionToRegenerate.name.toLowerCase();
-      if (lowerName.includes('intro')) lineCountPrompt = 'The section should have exactly 4 lines.';
-      else if (lowerName.includes('verse')) lineCountPrompt = 'The section should have exactly 6 lines.';
-      else if (lowerName.includes('chorus')) lineCountPrompt = 'The section should have exactly 4 lines.';
-      else if (lowerName.includes('bridge')) lineCountPrompt = 'The section should have exactly 6 lines.';
-      else if (lowerName.includes('outro')) lineCountPrompt = 'The section should have exactly 4 lines.';
+        let lineCountPrompt = '';
+        const lowerName = sectionToRegenerate.name.toLowerCase();
+        if (lowerName.includes('intro'))  lineCountPrompt = 'The section should have exactly 4 lines.';
+        else if (lowerName.includes('verse'))  lineCountPrompt = 'The section should have exactly 6 lines.';
+        else if (lowerName.includes('chorus')) lineCountPrompt = 'The section should have exactly 4 lines.';
+        else if (lowerName.includes('bridge')) lineCountPrompt = 'The section should have exactly 6 lines.';
+        else if (lowerName.includes('outro'))  lineCountPrompt = 'The section should have exactly 4 lines.';
 
-      const songStructure = song.map(s => s.name).join(' → ');
-      const lang = songLanguage || 'English';
+        const songStructure = song.map(s => s.name).join(' → ');
+        const lang = songLanguage || 'English';
+        const formatSectionLyrics = (sec: Section) =>
+          sec.lines.map(l => l.text).filter(Boolean).join('\n');
 
-      const formatSectionLyrics = (sec: Section) =>
-        sec.lines.map(l => l.text).filter(Boolean).join('\n');
+        const prevContext = prevSection
+          ? `\nPrevious section context (${prevSection.name}):\n${formatSectionLyrics(prevSection)}`
+          : '';
+        const nextContext = nextSection
+          ? `\nNext section context (${nextSection.name}):\n${formatSectionLyrics(nextSection)}`
+          : '';
 
-      const prevContext = prevSection
-        ? `\nPrevious section context (${prevSection.name}):\n${formatSectionLyrics(prevSection)}`
-        : '';
-      const nextContext = nextSection
-        ? `\nNext section context (${nextSection.name}):\n${formatSectionLyrics(nextSection)}`
-        : '';
-
-      const creativeDirectives = [
-        ...(sectionToRegenerate.preInstructions || []),
-        ...(sectionToRegenerate.postInstructions || []),
-      ];
-      const directivesPrompt =
-        creativeDirectives.length > 0
+        const creativeDirectives = [
+          ...(sectionToRegenerate.preInstructions || []),
+          ...(sectionToRegenerate.postInstructions || []),
+        ];
+        const directivesPrompt = creativeDirectives.length > 0
           ? `\nCreative directives:\n${creativeDirectives.map(d => `- ${d}`).join('\n')}`
           : '';
 
-      const prompt = `Rewrite the following section of a song titled "${title}" about "${topic}".
+        const prompt = `Rewrite the following section of a song titled "${title}" about "${topic}".
 Mood: ${mood}
 Target Syllables per line: ${targetSyllables}
 Section Name: ${sectionToRegenerate.name}
@@ -271,57 +263,31 @@ ${JSON.stringify([sectionToRegenerate], null, 2)}
 Provide a new creative version of this section that fits seamlessly with the surrounding sections.
 Return the updated section in the exact same JSON structure (as an array with one section).`;
 
-      const response = await getAi().models.generateContent({
-        model: AI_MODEL_NAME,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                rhymeScheme: { type: Type.STRING, description: 'The rhyme scheme for this section' },
-                lines: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      text: { type: Type.STRING },
-                      rhymingSyllables: { type: Type.STRING },
-                      rhyme: { type: Type.STRING },
-                      syllables: { type: Type.INTEGER },
-                      concept: { type: Type.STRING },
-                    },
-                    required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
-                  },
-                },
-              },
-              required: ['name', 'lines', 'rhymeScheme'],
-            },
-          },
-        },
-      });
-
-      if (controller.signal.aborted) return;
-
-      const data = safeJsonParse<Section[]>(response.text || '[]', []);
-      const firstSection = data[0];
-      if (firstSection) {
-        const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
-        updateSong(currentSong =>
-          currentSong.map(section => {
-            if (section.id !== sectionId) return section;
-            return mergeAiSectionIntoCurrent(section, patchedSection);
-          }),
+        const response = await withRetry(() =>
+          getAi().models.generateContent({
+            model: AI_MODEL_NAME,
+            contents: prompt,
+            config: { responseMimeType: 'application/json', responseSchema: GENERATION_SCHEMA },
+            signal,
+          })
         );
-      }
+
+        const data = safeJsonParse<Section[]>(response.text || '[]', []);
+        const firstSection = data[0];
+        if (firstSection) {
+          const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
+          updateSong(currentSong =>
+            currentSong.map(section =>
+              section.id !== sectionId ? section : mergeAiSectionIntoCurrent(section, patchedSection)
+            )
+          );
+        }
+      });
     } catch (error: any) {
-      if (controller.signal.aborted) return;
+      if (isAbortError(error)) return;
       handleApiError(error, 'Failed to regenerate section. Please try again.');
     } finally {
-      if (!controller.signal.aborted) {
+      if (!abortControllerRef.current?.signal.aborted) {
         setRegeneratingSections(prev => {
           const next = new Set(prev);
           next.delete(sectionId);
@@ -331,22 +297,20 @@ Return the updated section in the exact same JSON structure (as an array with on
     }
   };
 
+  // ── quantizeSyllables ──────────────────────────────────────────
   const quantizeSyllables = async (sectionId?: string) => {
     if (song.length === 0) return;
-
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
     setIsGenerating(true);
     const lang = songLanguage || 'English';
+
     try {
-      let prompt = '';
-      if (sectionId) {
-        const sectionToQuantize = song.find(s => s.id === sectionId);
-        if (!sectionToQuantize) return;
-        const syllables = sectionToQuantize.targetSyllables ?? targetSyllables;
-        prompt = `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables. Maintain the original meaning, rhyme scheme, and section structure.
+      await withAbort(abortControllerRef, async (signal) => {
+        let prompt = '';
+        if (sectionId) {
+          const sectionToQuantize = song.find(s => s.id === sectionId);
+          if (!sectionToQuantize) return;
+          const syllables = sectionToQuantize.targetSyllables ?? targetSyllables;
+          prompt = `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables. Maintain the original meaning, rhyme scheme, and section structure.
 Write ALL lyrics in ${lang}.
 Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.
 
@@ -354,8 +318,8 @@ Current Section:
 ${JSON.stringify([sectionToQuantize], null, 2)}
 
 Return the updated section in the exact same JSON structure (as an array with one section).`;
-      } else {
-        prompt = `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its section's targetSyllables (or ${targetSyllables} if not specified). Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
+        } else {
+          prompt = `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its section's targetSyllables (or ${targetSyllables} if not specified). Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
 Write ALL lyrics in ${lang}.
 Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.
 
@@ -363,69 +327,40 @@ Current Song:
 ${JSON.stringify(song, null, 2)}
 
 Return the updated song in the exact same JSON structure.`;
-      }
-
-      const response = await getAi().models.generateContent({
-        model: AI_MODEL_NAME,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                rhymeScheme: { type: Type.STRING, description: 'The rhyme scheme for this section' },
-                lines: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      text: { type: Type.STRING },
-                      rhymingSyllables: { type: Type.STRING },
-                      rhyme: { type: Type.STRING },
-                      syllables: { type: Type.INTEGER },
-                      concept: { type: Type.STRING },
-                    },
-                    required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
-                  },
-                },
-              },
-              required: ['name', 'lines', 'rhymeScheme'],
-            },
-          },
-        },
-      });
-
-      if (controller.signal.aborted) return;
-
-      const data = safeJsonParse<Section[]>(response.text || '[]', []);
-
-      if (sectionId) {
-        const firstSection = data[0];
-        if (firstSection) {
-          const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
-          updateSong(currentSong =>
-            currentSong.map(section => {
-              if (section.id !== sectionId) return section;
-              return mergeAiSectionIntoCurrent(section, patchedSection);
-            }),
-          );
         }
-      } else {
-        const updatedSong = mapSongWithPreservedIds(data, song);
-        const reflagged = updatedSong.map(sec => ({
-          ...sec,
-          lines: flagMetaLines(sec.lines),
-        }));
-        updateSongWithHistory(reflagged);
-      }
+
+        const response = await withRetry(() =>
+          getAi().models.generateContent({
+            model: AI_MODEL_NAME,
+            contents: prompt,
+            config: { responseMimeType: 'application/json', responseSchema: GENERATION_SCHEMA },
+            signal,
+          })
+        );
+
+        const data = safeJsonParse<Section[]>(response.text || '[]', []);
+
+        if (sectionId) {
+          const firstSection = data[0];
+          if (firstSection) {
+            const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
+            updateSong(currentSong =>
+              currentSong.map(section =>
+                section.id !== sectionId ? section : mergeAiSectionIntoCurrent(section, patchedSection)
+              )
+            );
+          }
+        } else {
+          const updatedSong = mapSongWithPreservedIds(data, song);
+          const reflagged = updatedSong.map(sec => ({ ...sec, lines: flagMetaLines(sec.lines) }));
+          updateSongWithHistory(reflagged);
+        }
+      });
     } catch (error: any) {
-      if (controller.signal.aborted) return;
+      if (isAbortError(error)) return;
       handleApiError(error, 'Failed to quantize syllables. Please try again.');
     } finally {
-      if (!controller.signal.aborted) setIsGenerating(false);
+      if (!abortControllerRef.current?.signal.aborted) setIsGenerating(false);
     }
   };
 

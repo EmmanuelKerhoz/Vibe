@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
 import { DEFAULT_STRUCTURE } from '../constants/editor';
-import { safeSetItem } from '../utils/safeStorage';
+import { safeSetItem, safeGetItem } from '../utils/safeStorage';
 import { isPristineDraft } from '../utils/songDefaults';
 
 interface UseSessionPersistenceParams {
@@ -56,7 +56,7 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
   // All deps used here are stable useState/useReducer dispatchers that never change identity,
   // so an empty dep array is correct and intentional.
   useEffect(() => {
-    const savedRaw = localStorage.getItem('lyricist_session');
+    const savedRaw = safeGetItem('lyricist_session');
     if (savedRaw) {
       try {
         const parsed = JSON.parse(savedRaw);
@@ -79,7 +79,6 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
           if (parsed.rhythm) setRhythm(parsed.rhythm);
           if (parsed.narrative) setNarrative(parsed.narrative);
           if (parsed.musicalPrompt) setMusicalPrompt(parsed.musicalPrompt);
-          // Restore detected language — avoids a parasitic AI detect call on every reload
           if (parsed.songLanguage) setSongLanguage(parsed.songLanguage);
           clearHistory();
         }

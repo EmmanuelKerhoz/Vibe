@@ -28,13 +28,11 @@ const isArtifact = (text: string): boolean => {
  */
 const tokenizeLine = (rawLine: string): string[] => {
   const trimmed = rawLine.trim();
-  // Line is entirely composed of consecutive [...] tokens (no plain text between)
   const tokenPattern = /\[([^\]]+)\]/g;
   const tokens: string[] = [];
   let lastIdx = 0;
   let match: RegExpExecArray | null;
   while ((match = tokenPattern.exec(trimmed)) !== null) {
-    // Any plain text before this token
     if (match.index > lastIdx) {
       const plain = trimmed.slice(lastIdx, match.index).trim();
       if (plain) tokens.push(plain);
@@ -42,7 +40,6 @@ const tokenizeLine = (rawLine: string): string[] => {
     tokens.push(match[0]);
     lastIdx = match.index + match[0].length;
   }
-  // Trailing plain text after last token
   if (lastIdx < trimmed.length) {
     const trailing = trimmed.slice(lastIdx).trim();
     if (trailing) tokens.push(trailing);
@@ -82,13 +79,11 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
   const handleMarkupToggle = useCallback(() => {
     if (isMarkupMode) {
       // MARKUP → STRUCTURED
-      // Expand each raw line into individual tokens before processing
       const rawBlocks = markupText.split(/\n\s*\n/);
       const usedSectionIds = new Set<string>();
       const usedLineIds = new Set<string>();
 
       const newSections: Section[] = rawBlocks.map((block, index) => {
-        // Expand all raw lines into individual tokens
         const expandedLines = block
           .trim()
           .split('\n')
@@ -101,7 +96,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         let remainingLines = expandedLines;
         const firstToken = (expandedLines[0] ?? '').trim();
 
-        // Detect section header token (first token only)
         if ((firstToken.startsWith('**[') && firstToken.endsWith(']**')) || (firstToken.startsWith('[') && firstToken.endsWith(']'))) {
           const inner = firstToken.replace(/^\*\*\[|\]\*\*$|^\[|\]$/g, '').trim();
           if (inner && isSectionHeader(inner)) {
@@ -120,11 +114,9 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
           const trimmed = tok.trim();
           if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
             if (isPureMetaLine(trimmed)) {
-              // It's a meta-instruction: treat as a special lyric line (isMeta)
               foundLyrics = true;
               lyricLines.push(trimmed);
             } else {
-              // It's a section-header token appearing mid-block → treat as pre/post instruction
               if (foundLyrics) postInstructions.push(trimmed);
               else preInstructions.push(trimmed);
             }
@@ -144,9 +136,10 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         return {
           id: sectionId,
           name,
-          rhymeScheme: existingSection?.rhymeScheme || 'AABB',
-          targetSyllables: existingSection?.targetSyllables || 8,
-          mood: existingSection?.mood || '',
+          // Use ?? to preserve intentionally empty/zero values from the existing section
+          rhymeScheme: existingSection?.rhymeScheme ?? 'AABB',
+          targetSyllables: existingSection?.targetSyllables ?? 8,
+          mood: existingSection?.mood ?? '',
           preInstructions: preInstructions.length > 0 ? preInstructions : (existingSection?.preInstructions || []),
           postInstructions: postInstructions.length > 0 ? postInstructions : (existingSection?.postInstructions || []),
           lines: lyricLines.map((text, lIdx) => {
@@ -178,7 +171,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       setIsMarkupMode(false);
     } else {
       // STRUCTURED → MARKUP
-      // Filter out any line whose text is a bare section-header bracket (e.g. "[Intro]") to avoid duplication
       const fmt = (i: string) => { const tr = i.trim(); return (tr.startsWith('[') && tr.endsWith(']')) ? tr : `[${tr}]`; };
       const text = song.map(sec => {
         const pre = (sec.preInstructions || []).map(fmt).join('\n');
@@ -186,7 +178,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         const lyricText = sec.lines
           .filter(l => {
             if (isArtifact(l.text)) return false;
-            // Exclude lines whose text is a bare section-header token — they would duplicate the section header
             const t2 = l.text.trim();
             if (t2.startsWith('[') && t2.endsWith(']')) {
               const inner = t2.slice(1, -1).trim();

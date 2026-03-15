@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, Trash2, Settings2, X, Languages } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
@@ -9,6 +9,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
+import { useEditorContext } from '../../contexts/EditorContext';
 
 interface SectionEditorProps {
   section: Section;
@@ -28,15 +29,9 @@ interface SectionEditorProps {
   dragOverIndex: number | null;
   draggedLineInfo: { sectionId: string; lineId: string } | null;
   dragOverLineInfo: { sectionId: string; lineId: string } | null;
-  moveSectionUp: (sectionId: string) => void;
-  moveSectionDown: (sectionId: string) => void;
-  moveLineUp: (sectionId: string, lineId: string) => void;
-  moveLineDown: (sectionId: string, lineId: string) => void;
-  addLineToSection: (sectionId: string) => void;
-  deleteLineFromSection: (sectionId: string, lineId: string) => void;
-  setSectionName: (sectionId: string, name: string) => void;
-  setSectionRhymeScheme: (sectionId: string, scheme: string) => void;
-  regenerateSection: (sectionId: string) => void;
+  // ✕ moveSectionUp/Down, moveLineUp/Down, addLineToSection,
+  //   deleteLineFromSection, setSectionName, setSectionRhymeScheme
+  //   → via useEditorContext()
   isRegeneratingSection: (sectionId: string) => boolean;
   handleLineClick: (lineId: string) => void;
   updateLineText: (sectionId: string, lineId: string, text: string) => void;
@@ -52,6 +47,7 @@ interface SectionEditorProps {
   setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
+  regenerateSection: (sectionId: string) => void;
 }
 
 /** A run of consecutive isMeta lines rendered as a single merged row */
@@ -60,7 +56,6 @@ type MetaGroup = { kind: 'meta'; lines: Section['lines'] };
 type LyricItem = { kind: 'lyric'; line: Section['lines'][number]; index: number };
 type RenderItem = MetaGroup | LyricItem;
 
-/** Build the render list: collapse consecutive meta lines into groups */
 function buildRenderItems(lines: Section['lines']): RenderItem[] {
   const items: RenderItem[] = [];
   let lyricIdx = 0;
@@ -69,10 +64,7 @@ function buildRenderItems(lines: Section['lines']): RenderItem[] {
     const line = lines[i]!;
     if (line.isMeta) {
       const group: Section['lines'] = [line];
-      while (i + 1 < lines.length && lines[i + 1]!.isMeta) {
-        i++;
-        group.push(lines[i]!);
-      }
+      while (i + 1 < lines.length && lines[i + 1]!.isMeta) { i++; group.push(lines[i]!); }
       items.push({ kind: 'meta', lines: group });
     } else {
       items.push({ kind: 'lyric', line, index: lyricIdx++ });
@@ -83,55 +75,36 @@ function buildRenderItems(lines: Section['lines']): RenderItem[] {
 }
 
 export const SectionEditor = React.memo(function SectionEditor({
-  section,
-  sectionIndex,
-  songLength,
-  rhymeScheme,
-  RHYME_KEYS,
-  SECTION_TYPE_OPTIONS,
-  selectedLineId,
-  isGenerating,
-  isAnalyzing,
+  section, sectionIndex, songLength, rhymeScheme,
+  RHYME_KEYS, SECTION_TYPE_OPTIONS,
+  selectedLineId, isGenerating, isAnalyzing,
   isAdaptingLanguage = false,
   sectionTargetLanguage = 'English',
   onSectionTargetLanguageChange,
   adaptSectionLanguage,
-  draggedItemIndex,
-  dragOverIndex,
-  draggedLineInfo,
-  dragOverLineInfo,
-  moveSectionUp,
-  moveSectionDown,
-  moveLineUp,
-  moveLineDown,
-  addLineToSection,
-  deleteLineFromSection,
-  setSectionName,
-  setSectionRhymeScheme,
-  regenerateSection,
+  draggedItemIndex, dragOverIndex, draggedLineInfo, dragOverLineInfo,
   isRegeneratingSection,
-  handleLineClick,
-  updateLineText,
-  handleLineKeyDown,
-  handleInstructionChange,
-  addInstruction,
-  removeInstruction,
-  handleLineDragStart,
-  handleLineDrop,
-  setDraggedItemIndex,
-  setDragOverIndex,
-  setDraggedLineInfo,
-  setDragOverLineInfo,
-  playAudioFeedback,
-  handleDrop,
+  handleLineClick, updateLineText, handleLineKeyDown,
+  handleInstructionChange, addInstruction, removeInstruction,
+  regenerateSection,
+  handleLineDragStart, handleLineDrop,
+  setDraggedItemIndex, setDragOverIndex, setDraggedLineInfo, setDragOverLineInfo,
+  playAudioFeedback, handleDrop,
 }: SectionEditorProps) {
   const { t } = useTranslation();
+
+  // ── Handlers locaux via contexte (stables, pas de re-render si song change ailleurs)
+  const {
+    moveSectionUp, moveSectionDown,
+    moveLineUp, moveLineDown,
+    addLineToSection, deleteLineFromSection,
+    setSectionName, setSectionRhymeScheme,
+  } = useEditorContext();
+
   const isSectionDraggable = section.name.toLowerCase() !== 'intro' && section.name.toLowerCase() !== 'outro';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
   const sectionColor = getSectionColorHex(section.name);
-
   const renderItems = buildRenderItems(section.lines);
-
   const isSectionAdapting = isAdaptingLanguage;
   const canAdaptSection = !!adaptSectionLanguage && !isGenerating && !isAnalyzing && !isSectionAdapting;
 
@@ -145,7 +118,6 @@ export const SectionEditor = React.memo(function SectionEditor({
       className={`lcars-band ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
       style={{ overflow: 'visible' }}
     >
-      {/* Colour stripe */}
       <div
         className={`lcars-band-stripe ${getSectionDotColor(section.name)}`}
         style={{ borderRadius: '24px 0 0 24px', flexShrink: 0 }}
@@ -194,7 +166,6 @@ export const SectionEditor = React.memo(function SectionEditor({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Per-section language adaptation */}
             {adaptSectionLanguage && (
               <div className="flex items-center gap-1.5">
                 <div className="w-32">
@@ -254,7 +225,6 @@ export const SectionEditor = React.memo(function SectionEditor({
         />
 
         <div className="mt-3 space-y-3">
-          {/* Column header */}
           <div className="lyric-row lyric-row-header px-3 pb-1 border-b border-white/5 mb-1">
             <div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" />
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Syllables</span>

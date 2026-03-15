@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 import { DEFAULT_STRUCTURE } from './constants/editor';
-import { safeRemoveItem } from './utils/safeStorage';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
@@ -28,6 +27,48 @@ import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
 import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, loadAssetIntoEditor, type LibraryAsset } from './utils/libraryUtils';
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
+import { buildResetPayload, buildPartialResetPayload, clearPersistedSession } from './utils/sessionReset';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dispatch-style setter bag produced by useAppState
+// ─────────────────────────────────────────────────────────────────────────────
+type StateBag = ReturnType<typeof useAppState>;
+
+/**
+ * Applies a full ResetPayload to the state bag in one pass.
+ * Keeps App.tsx free of per-field reset logic.
+ */
+function applyResetPayload(
+  payload: ReturnType<typeof buildResetPayload>,
+  replaceStateWithoutHistory: (song: ReturnType<typeof createEmptySong>, structure: string[]) => void,
+  clearHistory: () => void,
+  clearSelection: () => void,
+  resetWebSimilarityIndex: () => void,
+  s: StateBag,
+) {
+  replaceStateWithoutHistory(payload.song, payload.structure);
+  clearHistory();
+  clearPersistedSession();
+  clearSelection();
+  s.setHasSavedSession(payload.hasSavedSession);
+  s.setTitle(payload.title);
+  s.setTitleOrigin(payload.titleOrigin);
+  s.setTopic(payload.topic);
+  s.setMood(payload.mood);
+  s.setRhymeScheme(payload.rhymeScheme);
+  s.setTargetSyllables(payload.targetSyllables);
+  s.setGenre(payload.genre);
+  s.setTempo(payload.tempo);
+  s.setInstrumentation(payload.instrumentation);
+  s.setRhythm(payload.rhythm);
+  s.setNarrative(payload.narrative);
+  s.setMusicalPrompt(payload.musicalPrompt);
+  s.setMarkupText(payload.markupText);
+  s.setActiveTab(payload.activeTab);
+  s.setIsLeftPanelOpen(payload.isLeftPanelOpen);
+  s.setSimilarityMatches(payload.similarityMatches);
+  resetWebSimilarityIndex();
+}
 
 export default function App() {
   const { t } = useTranslation();
@@ -35,6 +76,8 @@ export default function App() {
   const { song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
     updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory, undo, redo,
   } = useSongHistoryState(createEmptySong(DEFAULT_STRUCTURE, 'AABB'), DEFAULT_STRUCTURE);
+
+  const appState = useAppState();
   const {
     theme, setTheme, activeTab, setActiveTab, isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
     title, setTitle, titleOrigin, setTitleOrigin, topic, setTopic, mood, setMood,
@@ -54,7 +97,7 @@ export default function App() {
     confirmModal, setConfirmModal, promptModal, setPromptModal,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
     songLanguage, setSongLanguage,
-  } = useAppState();
+  } = appState;
 
   // ── Mobile layout ────────────────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
@@ -104,9 +147,6 @@ export default function App() {
   });
 
   // ── isGenerating bridge ──────────────────────────────────────────────────
-  // useSongAnalysis must be called before useSongComposer (songLanguage source order),
-  // but needs to know whether generation is in progress to gate auto-detect.
-  // A mutable ref provides a stable bridge without creating a circular hook dependency.
   const isGeneratingRef = useRef(false);
 
   // ── useSongAnalysis ──────────────────────────────────────────────────────
@@ -137,10 +177,7 @@ export default function App() {
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
-  // Keep the bridge ref in sync so useLanguageAdapter reads the live value on next tick
-  useEffect(() => {
-    isGeneratingRef.current = isGenerating;
-  }, [isGenerating]);
+  useEffect(() => { isGeneratingRef.current = isGenerating; }, [isGenerating]);
 
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
@@ -157,6 +194,8 @@ export default function App() {
     const suggestion = await handleSurprise();
     if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }
   }, [handleSurprise, setTopic, setMood]);
+
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title);
 
   // ── Keyboard shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
@@ -211,9 +250,8 @@ export default function App() {
   }, [generateTitle, shouldAutoGenerateTitle, song.length, setTitle, setTitleOrigin, setShouldAutoGenerateTitle]);
 
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
-  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title);
 
-  // Library similarity (local) — debounced 800ms to avoid running on every keystroke
+  // Library similarity — debounced 800ms
   const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
@@ -251,9 +289,7 @@ export default function App() {
     updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
-  const hasRealLyricContent = song.some(s =>
-    s.lines.some(l => !l.isMeta && l.text.trim().length > 0)
-  );
+  const hasRealLyricContent = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
   const hasExistingWork = (hasRealLyricContent && !isPristineDraft(song, structure, rhymeScheme))
     || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
 
@@ -288,35 +324,26 @@ export default function App() {
     if (isMobileOrTablet) setIsStructureOpen(false);
   }, [isMobileOrTablet, setActiveTab, setIsLeftPanelOpen, setIsStructureOpen]);
 
+  // ── Reset handlers — dep-array: 1 stable entry each ─────────────────────
   const handleCreateEmptySong = useCallback(() => {
-    replaceStateWithoutHistory(createEmptySong(DEFAULT_STRUCTURE, 'AABB'), DEFAULT_STRUCTURE);
-    clearHistory();
-    safeRemoveItem('lyricist_session');
-    setHasSavedSession(false);
+    applyResetPayload(
+      buildResetPayload('AABB'),
+      replaceStateWithoutHistory, clearHistory, clearSelection, resetWebSimilarityIndex,
+      appState,
+    );
+  }, [appState, clearHistory, clearSelection, replaceStateWithoutHistory, resetWebSimilarityIndex]);
+
+  const resetSong = useCallback(() => {
+    const partial = buildPartialResetPayload(rhymeScheme);
+    updateSongAndStructureWithHistory(partial.song, partial.structure);
+    clearPersistedSession();
+    appState.setHasSavedSession(false);
     clearSelection();
-    setTitle('');
-    setTitleOrigin('user');
-    setTopic(DEFAULT_TOPIC);
-    setMood(DEFAULT_MOOD);
-    setRhymeScheme('AABB');
-    setTargetSyllables(10);
-    setGenre('');
-    setTempo('120');
-    setInstrumentation('');
-    setRhythm('');
-    setNarrative('');
-    setMusicalPrompt('');
-    setMarkupText('');
-    setActiveTab('lyrics');
-    setIsLeftPanelOpen(false);
-    setSimilarityMatches([]);
+    appState.setMarkupText('');
+    appState.setSimilarityMatches([]);
     resetWebSimilarityIndex();
-  }, [
-    clearHistory, clearSelection, replaceStateWithoutHistory, setActiveTab, setGenre,
-    setHasSavedSession, setInstrumentation, setIsLeftPanelOpen, setMarkupText, setMood,
-    setMusicalPrompt, setNarrative, setRhymeScheme, setRhythm, setTargetSyllables,
-    setTempo, setTitle, setTitleOrigin, setTopic, setSimilarityMatches, resetWebSimilarityIndex,
-  ]);
+    setIsResetModalOpen(false);
+  }, [appState, clearSelection, resetWebSimilarityIndex, rhymeScheme, setIsResetModalOpen, updateSongAndStructureWithHistory]);
 
   const handleSaveToLibrary = async () => {
     if (song.length === 0) return;
@@ -367,15 +394,11 @@ export default function App() {
       try {
         const [h] = await pw.showOpenFilePicker({
           multiple: false,
-          types: [{
-            description: 'Lyrics files',
-            accept: {
-              'text/plain': ['.txt', '.md'],
-              'text/markdown': ['.md'],
-              'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-              'application/vnd.oasis.opendocument.text': ['.odt'],
-            },
-          }],
+          types: [{ description: 'Lyrics files', accept: {
+            'text/plain': ['.txt', '.md'], 'text/markdown': ['.md'],
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+            'application/vnd.oasis.opendocument.text': ['.odt'],
+          }}],
         });
         if (!h) return;
         const file = await h.getFile(); setIsImportModalOpen(false); loadFileForAnalysis(file);
@@ -383,17 +406,6 @@ export default function App() {
       return;
     }
     importInputRef.current?.click();
-  };
-
-  const resetSong = () => {
-    updateSongAndStructureWithHistory(createEmptySong(DEFAULT_STRUCTURE, rhymeScheme), DEFAULT_STRUCTURE);
-    safeRemoveItem('lyricist_session');
-    setHasSavedSession(false);
-    clearSelection();
-    setMarkupText('');
-    setIsResetModalOpen(false);
-    setSimilarityMatches([]);
-    resetWebSimilarityIndex();
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Type } from '@google/genai';
 import type { Line, Section } from '../../types';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
@@ -36,44 +36,48 @@ export const useSuggestions = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
 
-  const updateSong = (transform: (currentSong: Section[]) => Section[]) => {
-    updateState(current => ({
-      song: transform(current.song),
-      structure: current.structure,
-    }));
-  };
+  const updateSong = useCallback(
+    (transform: (currentSong: Section[]) => Section[]) => {
+      updateState(current => ({
+        song: transform(current.song),
+        structure: current.structure,
+      }));
+    },
+    [updateState],
+  );
 
-  const generateSuggestions = async (lineId: string) => {
-    setIsSuggesting(true);
-    setSuggestions([]);
+  const generateSuggestions = useCallback(
+    async (lineId: string) => {
+      setIsSuggesting(true);
+      setSuggestions([]);
 
-    let currentLine: Line | null = null;
-    let previousLine: Line | null = null;
-    let nextLine: Line | null = null;
-    let sectionName = '';
+      let currentLine: Line | null = null;
+      let previousLine: Line | null = null;
+      let nextLine: Line | null = null;
+      let sectionName = '';
 
-    for (let s = 0; s < song.length; s++) {
-      const section = song[s]!;
-      for (let l = 0; l < section.lines.length; l++) {
-        if (section.lines[l]!.id === lineId) {
-          currentLine = section.lines[l]!;
-          sectionName = section.name;
-          if (l > 0) previousLine = section.lines[l - 1]!;
-          if (l < section.lines.length - 1) nextLine = section.lines[l + 1]!;
-          break;
+      for (let s = 0; s < song.length; s++) {
+        const section = song[s]!;
+        for (let l = 0; l < section.lines.length; l++) {
+          if (section.lines[l]!.id === lineId) {
+            currentLine = section.lines[l]!;
+            sectionName = section.name;
+            if (l > 0) previousLine = section.lines[l - 1]!;
+            if (l < section.lines.length - 1) nextLine = section.lines[l + 1]!;
+            break;
+          }
         }
+        if (currentLine) break;
       }
-      if (currentLine) break;
-    }
 
-    if (!currentLine) {
-      setIsSuggesting(false);
-      return;
-    }
+      if (!currentLine) {
+        setIsSuggesting(false);
+        return;
+      }
 
-    const lang = songLanguage || 'English';
-    try {
-      const prompt = `Generate 3 creative alternative versions for a lyric line.
+      const lang = songLanguage || 'English';
+      try {
+        const prompt = `Generate 3 creative alternative versions for a lyric line.
 Context:
 - Topic: ${topic}
 - Mood: ${mood}
@@ -87,41 +91,46 @@ Context:
 IMPORTANT: All 3 alternatives MUST be written in ${lang}.
 Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
 
-      const response = await getAi().models.generateContent({
-        model: AI_MODEL_NAME,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
+        const response = await getAi().models.generateContent({
+          model: AI_MODEL_NAME,
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+            },
           },
-        },
-      });
+        });
 
-      const data = safeJsonParse(response.text || '[]', []);
-      setSuggestions(data);
-    } catch (error) {
-      handleApiError(error, 'Failed to generate suggestions.');
-    } finally {
-      setIsSuggesting(false);
-    }
-  };
+        const data = safeJsonParse(response.text || '[]', []);
+        setSuggestions(data);
+      } catch (error) {
+        handleApiError(error, 'Failed to generate suggestions.');
+      } finally {
+        setIsSuggesting(false);
+      }
+    },
+    [song, topic, mood, rhymeScheme, targetSyllables, songLanguage],
+  );
 
-  const applySuggestion = (newText: string) => {
-    if (!selectedLineId) return;
-    updateSong(currentSong =>
-      currentSong.map(section => ({
-        ...section,
-        lines: section.lines.map(line => {
-          if (line.id === selectedLineId) {
-            return { ...line, text: newText, syllables: computeSyllables(newText), isManual: true };
-          }
-          return line;
-        }),
-      })),
-    );
-  };
+  const applySuggestion = useCallback(
+    (newText: string) => {
+      if (!selectedLineId) return;
+      updateSong(currentSong =>
+        currentSong.map(section => ({
+          ...section,
+          lines: section.lines.map(line => {
+            if (line.id === selectedLineId) {
+              return { ...line, text: newText, syllables: computeSyllables(newText), isManual: true };
+            }
+            return line;
+          }),
+        })),
+      );
+    },
+    [selectedLineId, updateSong],
+  );
 
   return {
     suggestions,

@@ -42,6 +42,23 @@ type UseSongEditorParams = {
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
 };
 
+const makeEmptyLines = () =>
+  Array(4).fill(null).map(() => ({
+    id: generateId(),
+    text: '',
+    rhymingSyllables: '',
+    rhyme: '',
+    syllables: 0,
+    concept: 'New line',
+  }));
+
+const makeEmptySection = (name: string): Section => ({
+  id: generateId(),
+  name,
+  rhymeScheme: '',
+  lines: makeEmptyLines(),
+});
+
 export const useSongEditor = ({
   song,
   structure,
@@ -111,22 +128,8 @@ export const useSongEditor = ({
 
     const newStructure = [...structure];
     const newSong = [...song];
-
-    const newSection: Section = {
-      id: generateId(),
-      name: finalName,
-      lines: Array(4).fill(null).map(() => ({
-        id: generateId(),
-        text: '',
-        rhymingSyllables: '',
-        rhyme: '',
-        syllables: 0,
-        concept: 'New line',
-      })),
-    };
-
     newStructure.splice(insertIndex, 0, finalName);
-    newSong.splice(insertIndex, 0, newSection);
+    newSong.splice(insertIndex, 0, makeEmptySection(finalName));
     updateSongAndStructureWithHistory(newSong, newStructure);
     if (!name) setNewSectionName('');
   }, [song, structure, newSectionName, setNewSectionName, updateSongAndStructureWithHistory]);
@@ -166,13 +169,7 @@ export const useSongEditor = ({
           newSong.push(songCopy[index]!);
           songCopy.splice(index, 1);
         } else {
-          newSong.push({
-            id: generateId(),
-            name: structName,
-            lines: Array(4).fill(null).map(() => ({
-              id: generateId(), text: '', rhymingSyllables: '', rhyme: '', syllables: 0, concept: 'New line',
-            })),
-          });
+          newSong.push(makeEmptySection(structName));
         }
       });
     }
