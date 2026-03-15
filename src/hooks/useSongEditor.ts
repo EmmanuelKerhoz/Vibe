@@ -156,7 +156,6 @@ export const useSongEditor = ({
       if (i < verses.length) newStructure.push(verses[i]!);
       if (i < choruses.length) {
         if (hasPreChorus) {
-          // Use existing Pre-Chorus name if available, otherwise generate one
           const existingPreChorus = preChoruses[preChorusCount];
           newStructure.push(existingPreChorus ?? `Pre-Chorus ${preChorusCount + 1}`);
           preChorusCount++;
@@ -231,6 +230,13 @@ export const useSongEditor = ({
     playAudioFeedback('drag');
   }, [setDraggedLineInfo, playAudioFeedback]);
 
+  /**
+   * fix #3: fully immutable line-drag implementation.
+   * Previous version called splice() on spread arrays that still shared
+   * the same line object references, causing React to miss state deltas
+   * in strict/concurrent mode.
+   * Now: filter (remove) + slice/concat (insert) — zero mutation.
+   */
   const handleLineDrop = useCallback((targetSectionId: string, targetLineId: string) => {
     setDragOverLineInfo(null);
     if (!draggedLineInfo) return;
@@ -242,19 +248,47 @@ export const useSongEditor = ({
       const sourceSectionIndex = currentSong.findIndex(s => s.id === draggedLineInfo.sectionId);
       const targetSectionIndex = currentSong.findIndex(s => s.id === targetSectionId);
       if (sourceSectionIndex === -1 || targetSectionIndex === -1) return currentSong;
-      const newSong = currentSong.map((s, i) =>
-        i === sourceSectionIndex || i === targetSectionIndex
-          ? { ...s, lines: [...s.lines] }
-          : s
-      );
-      const sourceSection = newSong[sourceSectionIndex]!;
-      const targetSection = newSong[targetSectionIndex]!;
+
+      const sourceSection = currentSong[sourceSectionIndex]!;
+      const targetSection = currentSong[targetSectionIndex]!;
+
       const sourceLineIndex = sourceSection.lines.findIndex(l => l.id === draggedLineInfo.lineId);
       const targetLineIndex = targetSection.lines.findIndex(l => l.id === targetLineId);
       if (sourceLineIndex === -1 || targetLineIndex === -1) return currentSong;
-      const draggedLine = sourceSection.lines.splice(sourceLineIndex, 1)[0]!;
-      targetSection.lines.splice(targetLineIndex, 0, draggedLine);
-      return newSong;
+
+      const draggedLine = sourceSection.lines[sourceLineIndex]!;
+
+      // Immutable: remove from source
+      const newSourceLines = sourceSection.lines.filter((_, i) => i !== sourceLineIndex);
+
+      // Immutable: insert into target
+      // If cross-section: target lines still have the dragged line, insert at targetLineIndex
+      // If same section: target lines already lack the dragged line (removed above), adjust index
+      const isSameSection = sourceSectionIndex === targetSectionIndex;
+      const targetLines = isSameSection ? newSourceLines : targetSection.lines;
+      const effectiveTargetIndex = isSameSection
+        ? targetSection.lines.findIndex(l => l.id === targetLineId) > sourceLineIndex
+          ? targetLineIndex - 1
+          : targetLineIndex
+        : targetLineIndex;
+      const newTargetLines = [
+        ...targetLines.slice(0, effectiveTargetIndex),
+        draggedLine,
+        ...targetLines.slice(effectiveTargetIndex),
+      ];
+
+      return currentSong.map((section, i) => {
+        if (isSameSection && i === sourceSectionIndex) {
+          return { ...section, lines: newTargetLines };
+        }
+        if (!isSameSection && i === sourceSectionIndex) {
+          return { ...section, lines: newSourceLines };
+        }
+        if (!isSameSection && i === targetSectionIndex) {
+          return { ...section, lines: newTargetLines };
+        }
+        return section;
+      });
     });
     setDraggedLineInfo(null);
     playAudioFeedback('drop');
@@ -292,10 +326,6 @@ export const useSongEditor = ({
     URL.revokeObjectURL(url);
   }, [song, title, topic, mood]);
 
-  /**
-   * fix #6: route .docx and .odt through their respective binary extractors
-   * instead of reading as UTF-8 text (which produces garbage XML for Office docs).
-   */
   const loadFileForAnalysis = useCallback(async (file: File) => {
     let text = '';
     if (file.name.endsWith('.docx')) {
