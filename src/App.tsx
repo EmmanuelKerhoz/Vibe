@@ -41,7 +41,7 @@ export default function App() {
     rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables, genre, setGenre, tempo, setTempo,
     instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative, musicalPrompt, setMusicalPrompt,
     audioFeedback, setAudioFeedback, newSectionName, setNewSectionName,
-    draggedItemIndex, setDraggedItemIndex, dragOverIndex, setDragOverIndex, draggableSectionIndex, setDraggableSectionIndex,
+    draggedItemIndex, setDraggedItemIndex, dragOverIndex, setDragOverIndex,
     draggedLineInfo, setDraggedLineInfo, dragOverLineInfo, setDragOverLineInfo,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
     isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
@@ -451,7 +451,6 @@ export default function App() {
                     draggedItemIndex={draggedItemIndex} dragOverIndex={dragOverIndex}
                     draggedLineInfo={draggedLineInfo} dragOverLineInfo={dragOverLineInfo}
                     setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
-                    setDraggableSectionIndex={setDraggableSectionIndex}
                     setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
                     playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
                     handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
