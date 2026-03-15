@@ -6,7 +6,11 @@ import { readFileSync } from 'fs';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8')) as { version: string };
 
+// Use VITE_BASE env var for GitHub Pages (/Vibe/), default to / for Vercel
+const base = process.env.VITE_BASE ?? '/';
+
 export default defineConfig(({ mode }) => ({
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -21,8 +25,8 @@ export default defineConfig(({ mode }) => ({
         background_color: '#0a0a1a',
         display: 'standalone',
         orientation: 'any',
-        scope: '/',
-        start_url: '/',
+        scope: base,
+        start_url: base,
         lang: 'en',
         categories: ['music', 'productivity', 'utilities'],
         icons: [
@@ -44,7 +48,7 @@ export default defineConfig(({ mode }) => ({
             name: 'New Song',
             short_name: 'New',
             description: 'Start a new lyric session',
-            url: '/?action=new',
+            url: base + '?action=new',
             icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }]
           }
         ]
@@ -136,7 +140,6 @@ export default defineConfig(({ mode }) => ({
       '@': '/src',
     },
   },
-  base: '/',
   test: {
     environment: 'jsdom',
     globals: true,
