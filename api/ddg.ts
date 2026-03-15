@@ -24,11 +24,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     skip_disambig: '1',
   });
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6000);
+
   try {
     const upstream = await fetch(`https://api.duckduckgo.com/?${params}`, {
       headers: { 'User-Agent': 'Lyricist/1.0 similarity-check' },
-      signal: AbortSignal.timeout(6000),
+      signal: controller.signal,
     });
+    clearTimeout(timer);
 
     if (!upstream.ok) {
       res.status(502).json({ error: `DDG upstream error: ${upstream.status}` });
@@ -37,11 +41,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await upstream.json();
 
-    // Cache 5 minutes — DDG data doesn't change that fast
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).json(data);
   } catch (err) {
+    clearTimeout(timer);
     const message = err instanceof Error ? err.message : 'Unknown upstream error';
     res.status(502).json({ error: message });
   }
