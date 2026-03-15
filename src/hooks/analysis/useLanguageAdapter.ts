@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
+import { isSectionHeader } from '../../utils/metaUtils';
 import type { Section } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -107,13 +108,19 @@ export const useLanguageAdapter = ({
     : uiLanguage === 'ko' ? 'Korean'
     : 'English';
 
-  // Auto-detect language when song is loaded and language is not yet known
+  // Track previous song length so auto-detect only fires when length actually changes
+  const prevSongLengthRef = useRef(song.length);
+
+  // Auto-detect language only when song length changes AND language is not yet known
   useEffect(() => {
-    if (song.length > 0 && !songLanguage) {
+    const lengthChanged = song.length !== prevSongLengthRef.current;
+    prevSongLengthRef.current = song.length;
+
+    if (song.length > 0 && !songLanguage && lengthChanged) {
       detectLanguage();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [song.length]);
+  }, [song.length, songLanguage]);
 
   // -------------------------------------------------------------------------
   // Helpers
@@ -225,7 +232,18 @@ export const useLanguageAdapter = ({
     if (song.length === 0) return;
     setIsDetectingLanguage(true);
     try {
-      const songText = song.map(s => s.lines.map(l => l.text).join('\n')).join('\n');
+      // Filter out meta-lines and section header names so the AI only sees real lyrics
+      const songText = song
+        .flatMap(s =>
+          s.lines
+            .filter(l => !l.isMeta && !isSectionHeader(l.text.replace(/^\[|\]$/g, '').trim()))
+            .map(l => l.text)
+        )
+        .join('\n');
+      if (!songText.trim()) {
+        setIsDetectingLanguage(false);
+        return;
+      }
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
         contents: `Detect the language of these lyrics. Return ONLY the name of the language in English (e.g., "English", "French", "Spanish").\n\nLyrics:\n${songText.substring(0, 1000)}`,

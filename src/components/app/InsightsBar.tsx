@@ -91,19 +91,21 @@ function AdaptationProgressBanner({
   progress,
   result,
   onDismiss,
+  isOverlay,
 }: {
   progress: AdaptationProgress;
   result: AdaptationResult | null;
   onDismiss: () => void;
+  isOverlay?: boolean;
 }) {
   if (progress.active === 'idle') return null;
 
   const isFailed = progress.active === 'failed';
   const isDone   = progress.active === 'done';
 
-  return (
+  const banner = (
     <div
-      className={`w-full rounded border px-3 py-2 mt-1 flex flex-col gap-1.5 text-[10px] ${
+      className={`w-full rounded border px-3 py-2 ${isOverlay ? 'mt-0' : 'mt-1'} flex flex-col gap-1.5 text-[10px] ${
         isFailed
           ? 'bg-red-400/5 border-red-400/20'
           : isDone && result
@@ -213,6 +215,26 @@ function AdaptationProgressBanner({
       )}
     </div>
   );
+
+  // When actively adapting (not done/failed), show as a centred modal overlay
+  if (isOverlay && !isDone && !isFailed) {
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+        {/* Particle shimmer layer */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden adaptation-particles" aria-hidden="true" />
+
+        {/* Modal card */}
+        <div className="relative z-10 w-full max-w-md glass-panel border border-[var(--accent-color)]/20 rounded-2xl p-6 shadow-2xl adaptation-modal-glow">
+          {banner}
+        </div>
+      </div>
+    );
+  }
+
+  return banner;
 }
 
 // ---------------------------------------------------------------------------
@@ -346,12 +368,13 @@ export function InsightsBar({
           </div>
         </div>
 
-        {/* Adaptation pipeline progress banner — shown only when active */}
+        {/* Adaptation pipeline progress — modal overlay while active, inline when done/failed */}
         {showBanner && adaptationProgress && (
           <AdaptationProgressBanner
             progress={adaptationProgress}
             result={adaptationResult ?? null}
             onDismiss={() => setBannerDismissed(true)}
+            isOverlay
           />
         )}
 
