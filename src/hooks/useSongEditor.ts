@@ -4,6 +4,7 @@ import type { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
 import { createSongExport, type ExportFormat } from '../utils/exportUtils';
+import { extractTextFromDocx, extractTextFromOdt } from '../utils/libraryUtils';
 
 type SaveFilePickerOptions = {
   suggestedName: string;
@@ -154,7 +155,12 @@ export const useSongEditor = ({
     for (let i = 0; i < maxVPC; i++) {
       if (i < verses.length) newStructure.push(verses[i]!);
       if (i < choruses.length) {
-        if (hasPreChorus) { preChorusCount++; newStructure.push(`Pre-Chorus ${preChorusCount}`); }
+        if (hasPreChorus) {
+          // Use existing Pre-Chorus name if available, otherwise generate one
+          const existingPreChorus = preChoruses[preChorusCount];
+          newStructure.push(existingPreChorus ?? `Pre-Chorus ${preChorusCount + 1}`);
+          preChorusCount++;
+        }
         newStructure.push(choruses[i]!);
       }
     }
@@ -286,13 +292,20 @@ export const useSongEditor = ({
     URL.revokeObjectURL(url);
   }, [song, title, topic, mood]);
 
-  const loadFileForAnalysis = useCallback((file: File) => {
-    const reader = new FileReader();
-    reader.onload = event => {
-      const text = event.target?.result as string;
-      if (text) openPasteModalWithText(text);
-    };
-    reader.readAsText(file);
+  /**
+   * fix #6: route .docx and .odt through their respective binary extractors
+   * instead of reading as UTF-8 text (which produces garbage XML for Office docs).
+   */
+  const loadFileForAnalysis = useCallback(async (file: File) => {
+    let text = '';
+    if (file.name.endsWith('.docx')) {
+      text = await extractTextFromDocx(file);
+    } else if (file.name.endsWith('.odt')) {
+      text = await extractTextFromOdt(file);
+    } else {
+      text = await file.text();
+    }
+    if (text) openPasteModalWithText(text);
   }, [openPasteModalWithText]);
 
   return {
