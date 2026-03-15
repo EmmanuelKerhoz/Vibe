@@ -134,7 +134,8 @@ export default function App() {
   const { isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
     isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, songLanguage, targetLanguage, setTargetLanguage,
-    isAdaptingLanguage, isDetectingLanguage, toggleAnalysisItemSelection, applySelectedAnalysisItems,
+    isAdaptingLanguage, isDetectingLanguage, adaptationProgress, adaptationResult,
+    toggleAnalysisItemSelection, applySelectedAnalysisItems,
     analyzeCurrentSong, detectLanguage, adaptSongLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
   } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language, setTopic, setMood, saveVersion,
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
@@ -423,6 +424,8 @@ export default function App() {
               analyzeCurrentSong={analyzeCurrentSong} handleGlobalRegenerate={handleGlobalRegenerate}
               handleMarkupToggle={handleMarkupToggle}
               setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
+              adaptationProgress={adaptationProgress}
+              adaptationResult={adaptationResult}
             />
           )}
           <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}

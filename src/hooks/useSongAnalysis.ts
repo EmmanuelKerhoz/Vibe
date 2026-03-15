@@ -97,6 +97,8 @@ export const useSongAnalysis = ({
     setSectionTargetLanguages: languageAdapter.setSectionTargetLanguages,
     isDetectingLanguage: languageAdapter.isDetectingLanguage,
     isAdaptingLanguage: languageAdapter.isAdaptingLanguage,
+    adaptationProgress: languageAdapter.adaptationProgress,
+    adaptationResult: languageAdapter.adaptationResult,
     toggleAnalysisItemSelection: analysisEngine.toggleAnalysisItemSelection,
     applySelectedAnalysisItems: analysisEngine.applySelectedAnalysisItems,
     applyAnalysisItem: analysisEngine.applyAnalysisItem,
