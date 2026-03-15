@@ -144,7 +144,7 @@ export const findSimilarAssetsInLibrary = async (
 /**
  * Extract plain text from a .docx file (Office Open XML).
  */
-const extractTextFromDocx = async (file: File): Promise<string> => {
+export const extractTextFromDocx = async (file: File): Promise<string> => {
   try {
     const { unzipSync, strFromU8 } = await import('fflate');
     const buffer = await file.arrayBuffer();
@@ -168,7 +168,7 @@ const extractTextFromDocx = async (file: File): Promise<string> => {
 /**
  * Extract plain text from a .odt file (ODF).
  */
-const extractTextFromOdt = async (file: File): Promise<string> => {
+export const extractTextFromOdt = async (file: File): Promise<string> => {
   try {
     const { unzipSync, strFromU8 } = await import('fflate');
     const buffer = await file.arrayBuffer();
