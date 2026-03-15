@@ -9,6 +9,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
+import { useEditorContext } from '../../contexts/EditorContext';
 
 interface SectionEditorProps {
   section: Section;
@@ -28,15 +29,7 @@ interface SectionEditorProps {
   dragOverIndex: number | null;
   draggedLineInfo: { sectionId: string; lineId: string } | null;
   dragOverLineInfo: { sectionId: string; lineId: string } | null;
-  moveSectionUp: (sectionId: string) => void;
-  moveSectionDown: (sectionId: string) => void;
-  moveLineUp: (sectionId: string, lineId: string) => void;
-  moveLineDown: (sectionId: string, lineId: string) => void;
-  addLineToSection: (sectionId: string) => void;
-  deleteLineFromSection: (sectionId: string, lineId: string) => void;
-  setSectionName: (sectionId: string, name: string) => void;
-  setSectionRhymeScheme: (sectionId: string, scheme: string) => void;
-  regenerateSection: (sectionId: string) => void;
+  // ── Handlers remaining as props (line-level + drag + generation) ──────────
   isRegeneratingSection: (sectionId: string) => boolean;
   handleLineClick: (lineId: string) => void;
   updateLineText: (sectionId: string, lineId: string, text: string) => void;
@@ -44,6 +37,7 @@ interface SectionEditorProps {
   handleInstructionChange: (sectionId: string, type: 'pre' | 'post', index: number, value: string) => void;
   addInstruction: (sectionId: string, type: 'pre' | 'post') => void;
   removeInstruction: (sectionId: string, type: 'pre' | 'post', index: number) => void;
+  regenerateSection: (sectionId: string) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
   handleLineDrop: (sectionId: string, lineId: string) => void;
   setDraggedItemIndex: (i: number | null) => void;
@@ -60,7 +54,6 @@ type MetaGroup = { kind: 'meta'; lines: Section['lines'] };
 type LyricItem = { kind: 'lyric'; line: Section['lines'][number]; index: number };
 type RenderItem = MetaGroup | LyricItem;
 
-/** Build the render list: collapse consecutive meta lines into groups */
 function buildRenderItems(lines: Section['lines']): RenderItem[] {
   const items: RenderItem[] = [];
   let lyricIdx = 0;
@@ -69,10 +62,7 @@ function buildRenderItems(lines: Section['lines']): RenderItem[] {
     const line = lines[i]!;
     if (line.isMeta) {
       const group: Section['lines'] = [line];
-      while (i + 1 < lines.length && lines[i + 1]!.isMeta) {
-        i++;
-        group.push(lines[i]!);
-      }
+      while (i + 1 < lines.length && lines[i + 1]!.isMeta) { i++; group.push(lines[i]!); }
       items.push({ kind: 'meta', lines: group });
     } else {
       items.push({ kind: 'lyric', line, index: lyricIdx++ });
@@ -100,15 +90,6 @@ export const SectionEditor = React.memo(function SectionEditor({
   dragOverIndex,
   draggedLineInfo,
   dragOverLineInfo,
-  moveSectionUp,
-  moveSectionDown,
-  moveLineUp,
-  moveLineDown,
-  addLineToSection,
-  deleteLineFromSection,
-  setSectionName,
-  setSectionRhymeScheme,
-  regenerateSection,
   isRegeneratingSection,
   handleLineClick,
   updateLineText,
@@ -116,6 +97,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   handleInstructionChange,
   addInstruction,
   removeInstruction,
+  regenerateSection,
   handleLineDragStart,
   handleLineDrop,
   setDraggedItemIndex,
@@ -126,12 +108,18 @@ export const SectionEditor = React.memo(function SectionEditor({
   handleDrop,
 }: SectionEditorProps) {
   const { t } = useTranslation();
+  // 8 handlers from context — stable references, never trigger memo invalidation
+  const {
+    moveSectionUp, moveSectionDown,
+    moveLineUp, moveLineDown,
+    addLineToSection, deleteLineFromSection,
+    setSectionName, setSectionRhymeScheme,
+  } = useEditorContext();
+
   const isSectionDraggable = section.name.toLowerCase() !== 'intro' && section.name.toLowerCase() !== 'outro';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
   const sectionColor = getSectionColorHex(section.name);
-
   const renderItems = buildRenderItems(section.lines);
-
   const isSectionAdapting = isAdaptingLanguage;
   const canAdaptSection = !!adaptSectionLanguage && !isGenerating && !isAnalyzing && !isSectionAdapting;
 
@@ -145,7 +133,6 @@ export const SectionEditor = React.memo(function SectionEditor({
       className={`lcars-band ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
       style={{ overflow: 'visible' }}
     >
-      {/* Colour stripe */}
       <div
         className={`lcars-band-stripe ${getSectionDotColor(section.name)}`}
         style={{ borderRadius: '24px 0 0 24px', flexShrink: 0 }}
@@ -194,7 +181,6 @@ export const SectionEditor = React.memo(function SectionEditor({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Per-section language adaptation */}
             {adaptSectionLanguage && (
               <div className="flex items-center gap-1.5">
                 <div className="w-32">
@@ -214,9 +200,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                     disabled={!canAdaptSection}
                     className="flex items-center gap-1.5 rounded border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-400 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isSectionAdapting
-                      ? <Loader2 className="h-3 w-3 animate-spin" />
-                      : <Languages className="h-3 w-3" />}
+                    {isSectionAdapting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
                   </button>
                 </Tooltip>
               </div>
@@ -254,7 +238,6 @@ export const SectionEditor = React.memo(function SectionEditor({
         />
 
         <div className="mt-3 space-y-3">
-          {/* Column header */}
           <div className="lyric-row lyric-row-header px-3 pb-1 border-b border-white/5 mb-1">
             <div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" />
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Syllables</span>

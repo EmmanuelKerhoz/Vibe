@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ClipboardPaste, Layout, Library, Music, Sparkles } from 'lucide-react';
 import { Section } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
@@ -6,6 +6,7 @@ import { MarkupInput } from '../editor/MarkupInput';
 import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
+import { EditorContextProvider, type EditorContextValue } from '../../contexts/EditorContext';
 
 interface LyricsViewProps {
   song: Section[];
@@ -49,7 +50,7 @@ interface LyricsViewProps {
   onGenerateSong: () => void;
 }
 
-export function LyricsView({
+function LyricsViewInner({
   song, rhymeScheme,
   updateState, updateSongAndStructureWithHistory,
   selectedLineId, isGenerating, isAnalyzing,
@@ -71,14 +72,13 @@ export function LyricsView({
   const RHYME_KEYS = Object.keys(t.rhymeSchemes) as Array<keyof typeof t.rhymeSchemes>;
   const SECTION_TYPE_OPTIONS = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Breakdown', 'Final Chorus', 'Outro'];
 
+  // ── 8 handlers extracted into EditorContext ──────────────────────────────
   const moveSectionUp = useCallback((sectionId: string) => {
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx <= 0) return;
     const newSong = [...song];
-    const a = newSong[idx - 1]!;
-    const b = newSong[idx]!;
-    newSong[idx - 1] = b;
-    newSong[idx] = a;
+    const a = newSong[idx - 1]!; const b = newSong[idx]!;
+    newSong[idx - 1] = b; newSong[idx] = a;
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
@@ -86,45 +86,39 @@ export function LyricsView({
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx < 0 || idx >= song.length - 1) return;
     const newSong = [...song];
-    const a = newSong[idx]!;
-    const b = newSong[idx + 1]!;
-    newSong[idx] = b;
-    newSong[idx + 1] = a;
+    const a = newSong[idx]!; const b = newSong[idx + 1]!;
+    newSong[idx] = b; newSong[idx + 1] = a;
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
   const moveLineUp = useCallback((sectionId: string, lineId: string) => {
-    updateState(current => {
-      const newSong = current.song.map(s => {
+    updateState(current => ({
+      song: current.song.map(s => {
         if (s.id !== sectionId) return s;
         const idx = s.lines.findIndex(l => l.id === lineId);
         if (idx <= 0) return s;
         const newLines = [...s.lines];
-        const a = newLines[idx - 1]!;
-        const b = newLines[idx]!;
-        newLines[idx - 1] = b;
-        newLines[idx] = a;
+        const a = newLines[idx - 1]!; const b = newLines[idx]!;
+        newLines[idx - 1] = b; newLines[idx] = a;
         return { ...s, lines: newLines };
-      });
-      return { song: newSong, structure: current.structure };
-    });
+      }),
+      structure: current.structure,
+    }));
   }, [updateState]);
 
   const moveLineDown = useCallback((sectionId: string, lineId: string) => {
-    updateState(current => {
-      const newSong = current.song.map(s => {
+    updateState(current => ({
+      song: current.song.map(s => {
         if (s.id !== sectionId) return s;
         const idx = s.lines.findIndex(l => l.id === lineId);
         if (idx < 0 || idx >= s.lines.length - 1) return s;
         const newLines = [...s.lines];
-        const a = newLines[idx]!;
-        const b = newLines[idx + 1]!;
-        newLines[idx] = b;
-        newLines[idx + 1] = a;
+        const a = newLines[idx]!; const b = newLines[idx + 1]!;
+        newLines[idx] = b; newLines[idx + 1] = a;
         return { ...s, lines: newLines };
-      });
-      return { song: newSong, structure: current.structure };
-    });
+      }),
+      structure: current.structure,
+    }));
   }, [updateState]);
 
   const addLineToSection = useCallback((sectionId: string) => {
@@ -159,106 +153,111 @@ export function LyricsView({
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
+  // Stable context value — changes only when song/updateState/updateSongAndStructureWithHistory change
+  const editorCtx = useMemo<EditorContextValue>(() => ({
+    moveSectionUp, moveSectionDown,
+    moveLineUp, moveLineDown,
+    addLineToSection, deleteLineFromSection,
+    setSectionName, setSectionRhymeScheme,
+  }), [moveSectionUp, moveSectionDown, moveLineUp, moveLineDown,
+      addLineToSection, deleteLineFromSection, setSectionName, setSectionRhymeScheme]);
+
   return (
-    <div className="w-full flex flex-col gap-1 pb-32">
-      {isMarkupMode ? (
-        <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
-          <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
-              <Layout className="w-4 h-4 text-[var(--accent-color)]" />
+    <EditorContextProvider value={editorCtx}>
+      <div className="w-full flex flex-col gap-1 pb-32">
+        {isMarkupMode ? (
+          <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
+            <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
+                <Layout className="w-4 h-4 text-[var(--accent-color)]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
+                  {t.editor.markupMode.title}
+                </h3>
+                <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
+                  {t.editor.markupMode.description}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
-                {t.editor.markupMode.title}
-              </h3>
-              <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
-                {t.editor.markupMode.description}
-              </p>
-            </div>
-          </div>
-          <MarkupInput
-            value={markupText}
-            onChange={(e) => setMarkupText(e.target.value)}
-            textareaRef={markupTextareaRef}
-            className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
-            spellCheck={false}
-          />
-          <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
-            <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
-          </div>
-        </div>
-      ) : song.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center py-24 text-center select-none fluent-animate-in" role="status" aria-label={t.editor.emptyState.title}>
-          <div className="w-16 h-16 rounded-[16px_4px_16px_4px] bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center mb-6" aria-hidden="true">
-            <Music className="w-8 h-8 text-[var(--accent-color)]/40" />
-          </div>
-          <h2 className="text-sm font-bold tracking-widest uppercase text-[var(--text-primary)] mb-3">
-            {t.editor.emptyState.title}
-          </h2>
-          <p className="text-xs text-[var(--text-secondary)] max-w-xs mb-2 leading-relaxed">
-            {t.editor.emptyState.description}
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            <Button onClick={onOpenLibrary} aria-label={t.saveToLibrary.browseDescription} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
-              {t.saveToLibrary.title}
-            </Button>
-            <Button onClick={onPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
-              {t.editor.emptyState.pasteLyrics}
-            </Button>
-            <Button onClick={onGenerateSong} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
-              {t.editor.emptyState.generateSong}
-            </Button>
-          </div>
-        </div>
-      ) : (
-        song.map((section, sectionIndex) => (
-          <div key={section.id} className={`fluent-animate-in fluent-stagger-${Math.min(sectionIndex + 1, 8)}`}>
-            <SectionEditor
-              section={section}
-              sectionIndex={sectionIndex}
-              songLength={song.length}
-              rhymeScheme={rhymeScheme}
-              RHYME_KEYS={RHYME_KEYS}
-              SECTION_TYPE_OPTIONS={SECTION_TYPE_OPTIONS}
-              selectedLineId={selectedLineId}
-              isGenerating={isGenerating}
-              isAnalyzing={isAnalyzing}
-              isAdaptingLanguage={isAdaptingLanguage}
-              sectionTargetLanguage={sectionTargetLanguages[section.id] ?? 'English'}
-              onSectionTargetLanguageChange={onSectionTargetLanguageChange}
-              adaptSectionLanguage={adaptSectionLanguage}
-              draggedItemIndex={draggedItemIndex}
-              dragOverIndex={dragOverIndex}
-              draggedLineInfo={draggedLineInfo}
-              dragOverLineInfo={dragOverLineInfo}
-              moveSectionUp={moveSectionUp}
-              moveSectionDown={moveSectionDown}
-              moveLineUp={moveLineUp}
-              moveLineDown={moveLineDown}
-              addLineToSection={addLineToSection}
-              deleteLineFromSection={deleteLineFromSection}
-              setSectionName={setSectionName}
-              setSectionRhymeScheme={setSectionRhymeScheme}
-              regenerateSection={regenerateSection}
-              isRegeneratingSection={isRegeneratingSection}
-              handleLineClick={handleLineClick}
-              updateLineText={updateLineText}
-              handleLineKeyDown={handleLineKeyDown}
-              handleInstructionChange={handleInstructionChange}
-              addInstruction={addInstruction}
-              removeInstruction={removeInstruction}
-              handleLineDragStart={handleLineDragStart}
-              handleLineDrop={handleLineDrop}
-              setDraggedItemIndex={setDraggedItemIndex}
-              setDragOverIndex={setDragOverIndex}
-              setDraggedLineInfo={setDraggedLineInfo}
-              setDragOverLineInfo={setDragOverLineInfo}
-              playAudioFeedback={playAudioFeedback}
-              handleDrop={handleDrop}
+            <MarkupInput
+              value={markupText}
+              onChange={(e) => setMarkupText(e.target.value)}
+              textareaRef={markupTextareaRef}
+              className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
+              spellCheck={false}
             />
+            <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
+              <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
+            </div>
           </div>
-        ))
-      )}
-    </div>
+        ) : song.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-24 text-center select-none fluent-animate-in" role="status" aria-label={t.editor.emptyState.title}>
+            <div className="w-16 h-16 rounded-[16px_4px_16px_4px] bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center mb-6" aria-hidden="true">
+              <Music className="w-8 h-8 text-[var(--accent-color)]/40" />
+            </div>
+            <h2 className="text-sm font-bold tracking-widest uppercase text-[var(--text-primary)] mb-3">
+              {t.editor.emptyState.title}
+            </h2>
+            <p className="text-xs text-[var(--text-secondary)] max-w-xs mb-2 leading-relaxed">
+              {t.editor.emptyState.description}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+              <Button onClick={onOpenLibrary} aria-label={t.saveToLibrary.browseDescription} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+                {t.saveToLibrary.title}
+              </Button>
+              <Button onClick={onPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+                {t.editor.emptyState.pasteLyrics}
+              </Button>
+              <Button onClick={onGenerateSong} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+                {t.editor.emptyState.generateSong}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          song.map((section, sectionIndex) => (
+            <div key={section.id} className={`fluent-animate-in fluent-stagger-${Math.min(sectionIndex + 1, 8)}`}>
+              <SectionEditor
+                section={section}
+                sectionIndex={sectionIndex}
+                songLength={song.length}
+                rhymeScheme={rhymeScheme}
+                RHYME_KEYS={RHYME_KEYS}
+                SECTION_TYPE_OPTIONS={SECTION_TYPE_OPTIONS}
+                selectedLineId={selectedLineId}
+                isGenerating={isGenerating}
+                isAnalyzing={isAnalyzing}
+                isAdaptingLanguage={isAdaptingLanguage}
+                sectionTargetLanguage={sectionTargetLanguages[section.id] ?? 'English'}
+                onSectionTargetLanguageChange={onSectionTargetLanguageChange}
+                adaptSectionLanguage={adaptSectionLanguage}
+                draggedItemIndex={draggedItemIndex}
+                dragOverIndex={dragOverIndex}
+                draggedLineInfo={draggedLineInfo}
+                dragOverLineInfo={dragOverLineInfo}
+                isRegeneratingSection={isRegeneratingSection}
+                handleLineClick={handleLineClick}
+                updateLineText={updateLineText}
+                handleLineKeyDown={handleLineKeyDown}
+                handleInstructionChange={handleInstructionChange}
+                addInstruction={addInstruction}
+                removeInstruction={removeInstruction}
+                regenerateSection={regenerateSection}
+                handleLineDragStart={handleLineDragStart}
+                handleLineDrop={handleLineDrop}
+                setDraggedItemIndex={setDraggedItemIndex}
+                setDragOverIndex={setDragOverIndex}
+                setDraggedLineInfo={setDraggedLineInfo}
+                setDragOverLineInfo={setDragOverLineInfo}
+                playAudioFeedback={playAudioFeedback}
+                handleDrop={handleDrop}
+              />
+            </div>
+          ))
+        )}
+      </div>
+    </EditorContextProvider>
   );
 }
+
+export const LyricsView = React.memo(LyricsViewInner);
