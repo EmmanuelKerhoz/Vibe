@@ -43,14 +43,15 @@ const BPM_PRESETS = [
 ];
 
 const INSTRUMENT_FAMILIES: { emoji: string; label: string; instruments: string[] }[] = [
-  { emoji: '🎺', label: 'Brass',      instruments: ['Trumpet', 'Trombone', 'French Horn', 'Tuba'] },
-  { emoji: '🎻', label: 'Strings',    instruments: ['Violin', 'Viola', 'Cello', 'Double Bass', 'Harp'] },
-  { emoji: '🎸', label: 'Guitar',     instruments: ['Acoustic Guitar', 'Electric Guitar', 'Bass Guitar'] },
-  { emoji: '🎹', label: 'Keys',       instruments: ['Piano', 'Rhodes', 'Organ', 'Synth'] },
-  { emoji: '🎷', label: 'Woodwinds',  instruments: ['Saxophone', 'Flute', 'Clarinet', 'Oboe'] },
-  { emoji: '🥁', label: 'Percussion', instruments: ['Standard Drum Kit', 'Afrobeat Kit', 'Electronic Kit', 'Orchestral Percussion', 'Latin Percussion'] },
-  { emoji: '🎤', label: 'Vocals',     instruments: ['Lead Vocals', 'Backing Vocals', 'Choir'] },
-  { emoji: '🎛️', label: 'Electronic', instruments: ['Synthesizer', 'Sampler', '808', 'TR-909'] },
+  { emoji: '🎺', label: 'Brass',       instruments: ['Trumpet', 'Trombone', 'French Horn', 'Tuba'] },
+  { emoji: '🎻', label: 'Strings',     instruments: ['Violin', 'Alto Violin', 'Viola', 'Cello', 'Double Bass', 'Harp'] },
+  { emoji: '🎸', label: 'Guitar',      instruments: ['Acoustic Guitar', 'Electric Guitar', 'Bass Guitar'] },
+  { emoji: '🎹', label: 'Keys',        instruments: ['Grand Piano', 'Piano', 'Rhodes', 'Organ', 'Synth'] },
+  { emoji: '🎷', label: 'Woodwinds',   instruments: ['Saxophone', 'Flute', 'Clarinet', 'Oboe'] },
+  { emoji: '🥁', label: 'Percussion',  instruments: ['Standard Drum Kit', 'Afrobeat Kit', 'Electronic Kit', 'Orchestral Percussion', 'Latin Percussion', 'Tribal Percussion'] },
+  { emoji: '🎤', label: 'Vocals',      instruments: ['Lead Vocals', 'Backing Vocals', 'Choir'] },
+  { emoji: '🎛️', label: 'Electronic',  instruments: ['Synthesizer', 'Sampler', '808', 'TR-909'] },
+  { emoji: '🪗', label: 'Folk / Ethnic', instruments: ['Alto Harmonica', 'Kazoo', 'Jaw Harp', 'Pan Flute', 'Tribal Percussion', 'Bouzouki', 'Sitar', 'Duduk'] },
 ];
 
 interface VibeTile {
@@ -163,7 +164,7 @@ const VIBE_CATEGORIES: VibeCategory[] = [
     tiles: [
       { name: 'Orchestral',   emoji: '🎻', bpm: 100, rhythm: 'Waltz', instruments: ['Violin', 'Viola', 'Cello', 'French Horn', 'Trumpet'] },
       { name: 'Baroque',      emoji: '🎼', bpm: 120, rhythm: 'Waltz', instruments: ['Violin', 'Cello', 'Organ', 'Flute'] },
-      { name: 'Contemporary', emoji: '🎵', bpm: 80,  rhythm: 'Waltz', instruments: ['Piano', 'Violin', 'Cello'] },
+      { name: 'Contemporary', emoji: '🎵', bpm: 80,  rhythm: 'Waltz', instruments: ['Grand Piano', 'Violin', 'Cello'] },
     ],
   },
 ];
