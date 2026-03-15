@@ -33,15 +33,55 @@ export type LibrarySearchResult = SimilarityMatch & {
   metadata?: LibraryAsset['metadata'];
 };
 
-export const loadLibraryAssets = async (): Promise<LibraryAsset[]> => {
+// ---------------------------------------------------------------------------
+// M2 fix: version-stamp + merge strategy for atomic-safe writes.
+//
+// localStorage is synchronous but JS is single-threaded *per tab*.
+// The race condition arises across tabs: Tab A and Tab B both read v=5,
+// both push an asset, both write v=6 — one write is lost.
+//
+// Solution: each write reads the *current* store immediately before
+// committing, merges any assets added by other tabs (by id), increments
+// the version stamp, then writes. No external lock needed.
+// ---------------------------------------------------------------------------
+
+type LibraryStore = {
+  version: number;
+  assets: LibraryAsset[];
+};
+
+const LIBRARY_KEY = 'lyricist_library';
+
+const readStore = (): LibraryStore => {
   try {
-    const cached = safeGetItem('lyricist_library');
-    if (cached) return JSON.parse(cached) as LibraryAsset[];
-    return [];
-  } catch (error) {
-    console.error('Failed to load library assets:', error);
-    return [];
+    const raw = safeGetItem(LIBRARY_KEY);
+    if (!raw) return { version: 0, assets: [] };
+    const parsed = JSON.parse(raw) as unknown;
+    // Legacy format: plain array (before M2). Migrate transparently.
+    if (Array.isArray(parsed)) return { version: 0, assets: parsed as LibraryAsset[] };
+    const store = parsed as LibraryStore;
+    return { version: store.version ?? 0, assets: store.assets ?? [] };
+  } catch {
+    return { version: 0, assets: [] };
   }
+};
+
+const writeStore = (store: LibraryStore): boolean =>
+  safeSetItem(LIBRARY_KEY, JSON.stringify(store));
+
+/**
+ * Merge `incoming` assets into `base`, keeping all unique ids.
+ * `incoming` wins on conflict (same id → keep incoming version).
+ */
+const mergeAssets = (base: LibraryAsset[], incoming: LibraryAsset[]): LibraryAsset[] => {
+  const map = new Map<string, LibraryAsset>();
+  for (const a of base) map.set(a.id, a);
+  for (const a of incoming) map.set(a.id, a); // incoming overwrites
+  return [...map.values()].sort((a, b) => b.timestamp - a.timestamp);
+};
+
+export const loadLibraryAssets = async (): Promise<LibraryAsset[]> => {
+  return readStore().assets;
 };
 
 export type LoadedLibraryAssetState = {
@@ -89,9 +129,10 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
     timestamp: Date.now(),
   };
   try {
-    const library = await loadLibraryAssets();
-    library.push(newAsset);
-    safeSetItem('lyricist_library', JSON.stringify(library));
+    // M2: re-read immediately before writing to capture concurrent tab writes.
+    const current = readStore();
+    const merged = mergeAssets(current.assets, [newAsset]);
+    writeStore({ version: current.version + 1, assets: merged });
     return newAsset;
   } catch (error) {
     console.error('Failed to save asset to library:', error);
@@ -101,9 +142,10 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
 
 export const deleteAssetFromLibrary = async (assetId: string): Promise<void> => {
   try {
-    const library = await loadLibraryAssets();
-    const updated = library.filter(a => a.id !== assetId);
-    safeSetItem('lyricist_library', JSON.stringify(updated));
+    // M2: re-read immediately before writing.
+    const current = readStore();
+    const updated = current.assets.filter(a => a.id !== assetId);
+    writeStore({ version: current.version + 1, assets: updated });
   } catch (error) {
     console.error('Failed to delete asset from library:', error);
     throw error;
