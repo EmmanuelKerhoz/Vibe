@@ -18,6 +18,7 @@ type GenerateContentParams = {
   model: string;
   contents: string;
   config?: Record<string, unknown>;
+  signal?: AbortSignal; // ♥ transmis au fetch sous-jacent
 };
 
 export const AI_PROVIDER_NAME = 'Google Gemini';
@@ -29,10 +30,12 @@ type GenerateContentResponse = {
 };
 
 const proxyGenerateContent = async (params: GenerateContentParams): Promise<GenerateContentResponse> => {
+  const { signal, ...body } = params;
   const response = await fetch('/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
+    body: JSON.stringify(body),
+    signal, // ♥ abort réel du fetch
   });
   if (!response.ok) {
     let errMsg = `Server error ${response.status}`;
