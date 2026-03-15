@@ -3,6 +3,7 @@ import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
 import { isSectionHeader } from '../../utils/metaUtils';
+import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import type { Section } from '../../types';
 import { makeSongUpdater } from '../hookUtils';
 import {
@@ -60,26 +61,16 @@ export const useLanguageAdapter = ({
 
   const autoDetectFiredRef = useRef(false);
   const firstSectionIdRef  = useRef<string | null>(null);
-  // Single abort ref — cancels whichever AI call is in-flight when a new one starts or on unmount
   const abortRef = useRef<AbortController | null>(null);
 
   const updateSong = makeSongUpdater(updateState);
 
-  const uiLang = uiLanguage === 'fr' ? 'French'
-    : uiLanguage === 'es' ? 'Spanish'
-    : uiLanguage === 'de' ? 'German'
-    : uiLanguage === 'pt' ? 'Portuguese'
-    : uiLanguage === 'ar' ? 'Arabic'
-    : uiLanguage === 'zh' ? 'Chinese'
-    : uiLanguage === 'ko' ? 'Korean'
-    : 'English';
+  const uiLang = resolveUiLanguageName(uiLanguage);
 
-  // Abort on unmount
   useEffect(() => {
     return () => { abortRef.current?.abort(); };
   }, []);
 
-  // Detect song identity change
   useEffect(() => {
     if (song.length === 0) return;
     const currentFirstId = song[0]!.id;
@@ -90,7 +81,6 @@ export const useLanguageAdapter = ({
     firstSectionIdRef.current = currentFirstId;
   }, [song, setSongLanguage]);
 
-  // Auto-detect language once when song first becomes non-empty
   useEffect(() => {
     if (song.length > 0 && !songLanguage && !isGenerating && !isAdaptingLanguage && !autoDetectFiredRef.current) {
       autoDetectFiredRef.current = true;
@@ -99,7 +89,6 @@ export const useLanguageAdapter = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [song.length, songLanguage, isGenerating, isAdaptingLanguage]);
 
-  // Reset when song is cleared
   useEffect(() => {
     if (song.length === 0) {
       autoDetectFiredRef.current = false;
@@ -111,9 +100,6 @@ export const useLanguageAdapter = ({
   const setStep = (id: AdaptationStepId, label: string) =>
     setAdaptationProgress(prev => ({ ...prev, active: id, label }));
 
-  // ---------------------------------------------------------------------------
-  // Public: detect language
-  // ---------------------------------------------------------------------------
   const detectLanguage = async () => {
     if (song.length === 0) return;
 
@@ -123,7 +109,6 @@ export const useLanguageAdapter = ({
 
     setIsDetectingLanguage(true);
     try {
-      // Filter out meta-lines and section header names — only send real lyric content
       const songText = song
         .flatMap(s =>
           s.lines
@@ -151,9 +136,6 @@ export const useLanguageAdapter = ({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Public: adapt full song
-  // ---------------------------------------------------------------------------
   const adaptSongLanguage = async (newLanguage: string) => {
     if (song.length === 0 || newLanguage === songLanguage) return;
 
@@ -237,9 +219,6 @@ export const useLanguageAdapter = ({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Public: adapt single section
-  // ---------------------------------------------------------------------------
   const adaptSectionLanguage = async (sectionId: string, newLanguage: string) => {
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
@@ -296,7 +275,13 @@ export const useLanguageAdapter = ({
       const newSectionData = safeJsonParse<any>(adaptResponse.text || '{}', {});
       if (!newSectionData.name) throw new Error('Empty section adaptation response');
 
-      const adaptedSectionSong: Section[] = [{ ...section, lines: newSectionData.lines ?? section.lines, language: newLanguage }];
+      // fix #5: filter isMeta lines before reverseTranslate to avoid meta-instructions
+      // ([Guitar solo] etc.) polluting the back-translation fidelity score
+      const adaptedSectionSong: Section[] = [{
+        ...section,
+        lines: (newSectionData.lines ?? section.lines).filter((l: any) => !l.isMeta),
+        language: newLanguage,
+      }];
 
       updateSong(currentSong =>
         currentSong.map(currentSection => {

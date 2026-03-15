@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds } from '../../utils/songMergeUtils';
+import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import type { Section } from '../../types';
 
 type AnalysisReport = {
@@ -57,10 +58,8 @@ export const useSongAnalysisEngine = ({
   const lastAnalyzedSongRef = useRef<string>('');
   const backoffUntilRef = useRef<number>(0);
   const bgAbortControllerRef = useRef<AbortController | null>(null);
-  // Shared abort ref for foreground user-triggered calls
   const fgAbortRef = useRef<AbortController | null>(null);
 
-  // Abort all in-flight calls on unmount
   useEffect(() => {
     return () => {
       bgAbortControllerRef.current?.abort();
@@ -68,14 +67,7 @@ export const useSongAnalysisEngine = ({
     };
   }, []);
 
-  const uiLang = uiLanguage === 'fr' ? 'French'
-    : uiLanguage === 'es' ? 'Spanish'
-    : uiLanguage === 'de' ? 'German'
-    : uiLanguage === 'pt' ? 'Portuguese'
-    : uiLanguage === 'ar' ? 'Arabic'
-    : uiLanguage === 'zh' ? 'Chinese'
-    : uiLanguage === 'ko' ? 'Korean'
-    : 'English';
+  const uiLang = resolveUiLanguageName(uiLanguage);
 
   // Background theme-tracking
   useEffect(() => {
@@ -91,6 +83,10 @@ export const useSongAnalysisEngine = ({
       bgAbortControllerRef.current?.abort();
       const controller = new AbortController();
       bgAbortControllerRef.current = controller;
+
+      // fix #1: stamp before await to prevent cascade re-triggers when
+      // setTopic/setMood cause the effect to re-evaluate before try completes
+      lastAnalyzedSongRef.current = currentSongStr;
 
       setIsAnalyzingTheme(true);
       try {
@@ -125,7 +121,6 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
         const data = safeJsonParse<{ topic?: string; mood?: string }>(response.text || '{}', {});
         if (data.topic && data.topic !== topic) setTopic(data.topic);
         if (data.mood && data.mood !== mood) setMood(data.mood);
-        lastAnalyzedSongRef.current = currentSongStr;
       } catch (e) {
         if ((e as any)?.name === 'AbortError') return;
         const msg = e instanceof Error ? e.message : '';
@@ -137,9 +132,8 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
           handleApiError(e, 'Background analysis failed.');
         }
       } finally {
-        if (!bgAbortControllerRef.current?.signal.aborted) {
-          setIsAnalyzingTheme(false);
-        }
+        // fix #2: always reset regardless of whether abort fired before or after setIsAnalyzingTheme(true)
+        setIsAnalyzingTheme(false);
       }
     }, 3000);
 
@@ -159,7 +153,8 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     setAppliedAnalysisItems(new Set());
   }, []);
 
-  const applySelectedAnalysisItems = async () => {
+  // fix #4: useCallback to stabilise reference across renders
+  const applySelectedAnalysisItems = useCallback(async () => {
     if (selectedAnalysisItems.size === 0 || isApplyingAnalysis) return;
 
     fgAbortRef.current?.abort();
@@ -237,9 +232,10 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     } finally {
       if (!controller.signal.aborted) setIsApplyingAnalysis(null);
     }
-  };
+  }, [song, selectedAnalysisItems, isApplyingAnalysis, uiLang, saveVersion, updateSongAndStructureWithHistory]);
 
-  const applyAnalysisItem = async (itemText: string) => {
+  // fix #4: useCallback to stabilise reference across renders
+  const applyAnalysisItem = useCallback(async (itemText: string) => {
     if (isApplyingAnalysis) return;
 
     fgAbortRef.current?.abort();
@@ -313,7 +309,7 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     } finally {
       if (!controller.signal.aborted) setIsApplyingAnalysis(null);
     }
-  };
+  }, [song, appliedAnalysisItems, isApplyingAnalysis, uiLang, saveVersion, updateSongAndStructureWithHistory]);
 
   const analyzeCurrentSong = async () => {
     if (song.length === 0) return;
