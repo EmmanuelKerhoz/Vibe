@@ -1,5 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music } from 'lucide-react';
+import {
+  MusicNote224Regular,
+  WeatherThunderstorm24Regular,
+  MusicNoteList24Regular,
+  Play24Regular,
+  Pause24Regular,
+  Guitar24Regular,
+  MusicNote124Regular,
+} from '@fluentui/react-icons';
 import { useTranslation } from '../../../i18n';
 import { useMetronome } from '../../../hooks/useMetronome';
 import { RHYTHM_BPM } from '../../../constants/rhythmBpm';
@@ -16,13 +24,13 @@ const BPM_PRESETS = [
 ];
 
 const INSTRUMENT_FAMILIES: { emoji: string; label: string; instruments: string[] }[] = [
-  { emoji: '\uD83C\uDFBA', label: 'Brass',       instruments: ['Trumpet', 'Trombone', 'French Horn', 'Tuba'] },
-  { emoji: '\uD83C\uDFBB', label: 'Strings',     instruments: ['Violin', 'Alto Violin', 'Viola', 'Cello', 'Double Bass', 'Harp'] },
-  { emoji: '\uD83C\uDFB8', label: 'Guitar',      instruments: ['Acoustic Guitar', 'Electric Guitar', 'Bass Guitar'] },
-  { emoji: '\uD83C\uDFB9', label: 'Keys',        instruments: ['Grand Piano', 'Piano', 'Rhodes', 'Organ', 'Synth'] },
-  { emoji: '\uD83C\uDFB7', label: 'Woodwinds',   instruments: ['Saxophone', 'Flute', 'Clarinet', 'Oboe'] },
-  { emoji: '\uD83E\uDD41', label: 'Percussion',  instruments: ['Standard Drum Kit', 'Afrobeat Kit', 'Electronic Kit', 'Orchestral Percussion', 'Latin Percussion', 'Tribal Percussion'] },
-  { emoji: '\uD83C\uDFA4', label: 'Vocals',      instruments: ['Lead Vocals', 'Backing Vocals', 'Choir'] },
+  { emoji: '\uD83C\uDFBA', label: 'Brass',         instruments: ['Trumpet', 'Trombone', 'French Horn', 'Tuba'] },
+  { emoji: '\uD83C\uDFBB', label: 'Strings',       instruments: ['Violin', 'Alto Violin', 'Viola', 'Cello', 'Double Bass', 'Harp'] },
+  { emoji: '\uD83C\uDFB8', label: 'Guitar',        instruments: ['Acoustic Guitar', 'Electric Guitar', 'Bass Guitar'] },
+  { emoji: '\uD83C\uDFB9', label: 'Keys',          instruments: ['Grand Piano', 'Piano', 'Rhodes', 'Organ', 'Synth'] },
+  { emoji: '\uD83C\uDFB7', label: 'Woodwinds',     instruments: ['Saxophone', 'Flute', 'Clarinet', 'Oboe'] },
+  { emoji: '\uD83E\uDD41', label: 'Percussion',    instruments: ['Standard Drum Kit', 'Afrobeat Kit', 'Electronic Kit', 'Orchestral Percussion', 'Latin Percussion', 'Tribal Percussion'] },
+  { emoji: '\uD83C\uDFA4', label: 'Vocals',        instruments: ['Lead Vocals', 'Backing Vocals', 'Choir'] },
   { emoji: '\uD83C\uDF9B\uFE0F', label: 'Electronic', instruments: ['Synthesizer', 'Sampler', '808', 'TR-909'] },
   { emoji: '\uD83E\uDE97', label: 'Folk / Ethnic', instruments: ['Alto Harmonica', 'Kazoo', 'Jaw Harp', 'Pan Flute', 'Tribal Percussion', 'Bouzouki', 'Sitar', 'Duduk'] },
 ];
@@ -34,29 +42,29 @@ interface VibeCategory {
 }
 
 const SUB_STYLES: Record<string, string[]> = {
-  'Rock': ['Classic', 'Indie', 'Psychedelic', 'Prog', 'Alternative'],
-  'Jazz': ['Swing', 'Bebop', 'Fusion', 'Smooth', 'Latin'],
-  'Hip-Hop': ['Trap', 'Boom Bap', 'Lo-Fi', 'Cloud Rap', 'Drill'],
-  'Pop': ['Indie Pop', 'K-Pop', 'Synth-Pop', 'Dance Pop'],
-  'R&B': ['Neo Soul', 'Contemporary', 'Future R&B'],
-  'Metal': ['Heavy', 'Death', 'Thrash', 'Progressive'],
-  'Funk': ['Classic', 'P-Funk', 'Neo-Funk', 'Electro-Funk'],
-  'Reggae': ['Roots', 'Dancehall', 'Dub'],
-  'Blues': ['Delta', 'Chicago', 'Electric', 'Texas'],
+  'Rock':       ['Classic', 'Indie', 'Psychedelic', 'Prog', 'Alternative'],
+  'Jazz':       ['Swing', 'Bebop', 'Fusion', 'Smooth', 'Latin'],
+  'Hip-Hop':    ['Trap', 'Boom Bap', 'Lo-Fi', 'Cloud Rap', 'Drill'],
+  'Pop':        ['Indie Pop', 'K-Pop', 'Synth-Pop', 'Dance Pop'],
+  'R&B':        ['Neo Soul', 'Contemporary', 'Future R&B'],
+  'Metal':      ['Heavy', 'Death', 'Thrash', 'Progressive'],
+  'Funk':       ['Classic', 'P-Funk', 'Neo-Funk', 'Electro-Funk'],
+  'Reggae':     ['Roots', 'Dancehall', 'Dub'],
+  'Blues':      ['Delta', 'Chicago', 'Electric', 'Texas'],
   'Electronic': ['House', 'Techno', 'Ambient', 'IDM'],
-  'Synthwave': ['Retrowave', 'Darksynth', 'Chillwave'],
-  'Soul': ['Classic', 'Neo Soul', 'Northern Soul'],
-  'Afrobeat': ['Afrobeats', 'Highlife', 'J\u00f9j\u00fa'],
+  'Synthwave':  ['Retrowave', 'Darksynth', 'Chillwave'],
+  'Soul':       ['Classic', 'Neo Soul', 'Northern Soul'],
+  'Afrobeat':   ['Afrobeats', 'Highlife', 'J\u00f9j\u00fa'],
 };
 
 const VIBE_CATEGORIES: VibeCategory[] = [
-  { id: 'electronic', label: 'ÉLECTRONIQUE', color: '#06b6d4', summary: 'Synthetic textures, club energy, and precise pulse-driven production.', artists: ['Fred again..', 'BICEP', 'Justice'], moods: ['Driving', 'Futuristic', 'Late-night'], era: '90s club DNA → modern festival polish', tiles: [{ name: 'House', emoji: '\uD83C\uDFE0', bpm: 128, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Sampler', 'TR-909'] }, { name: 'Techno', emoji: '\u2699\uFE0F', bpm: 140, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'TR-909', 'Electronic Kit'] }, { name: 'Trap', emoji: '\uD83D\uDD0A', bpm: 70, rhythm: 'Trap', instruments: ['808', 'Electronic Kit', 'Sampler'] }, { name: 'Synthwave', emoji: '\uD83C\uDF06', bpm: 110, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Sampler'] }, { name: 'Drum & Bass', emoji: '\uD83E\uDD41', bpm: 174, rhythm: 'Breakbeat', instruments: ['Electronic Kit', 'Synthesizer', 'Sampler'] }] },
+  { id: 'electronic', label: '\u00c9LECTRONIQUE', color: '#06b6d4', summary: 'Synthetic textures, club energy, and precise pulse-driven production.', artists: ['Fred again..', 'BICEP', 'Justice'], moods: ['Driving', 'Futuristic', 'Late-night'], era: '90s club DNA \u2192 modern festival polish', tiles: [{ name: 'House', emoji: '\uD83C\uDFE0', bpm: 128, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Sampler', 'TR-909'] }, { name: 'Techno', emoji: '\u2699\uFE0F', bpm: 140, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'TR-909', 'Electronic Kit'] }, { name: 'Trap', emoji: '\uD83D\uDD0A', bpm: 70, rhythm: 'Trap', instruments: ['808', 'Electronic Kit', 'Sampler'] }, { name: 'Synthwave', emoji: '\uD83C\uDF06', bpm: 110, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Sampler'] }, { name: 'Drum & Bass', emoji: '\uD83E\uDD41', bpm: 174, rhythm: 'Breakbeat', instruments: ['Electronic Kit', 'Synthesizer', 'Sampler'] }] },
   { id: 'urban', label: 'URBAIN', color: '#ec4899', summary: 'Beat-first songwriting with vocal attitude, bounce, and contemporary crossover appeal.', artists: ['SZA', 'Travis Scott', 'Burna Boy'], moods: ['Confident', 'Sensual', 'Hypnotic'], era: 'Streaming-era polish with roots in 90s/2000s rhythm culture', tiles: [{ name: 'Hip-Hop', emoji: '\uD83C\uDFA4', bpm: 90, rhythm: 'Hip-Hop', instruments: ['808', 'Electronic Kit', 'Sampler', 'Lead Vocals'] }, { name: 'R&B', emoji: '\uD83D\uDC9C', bpm: 90, rhythm: 'Funk', instruments: ['Rhodes', 'Electronic Kit', 'Lead Vocals', 'Backing Vocals'] }, { name: 'Afrobeat', emoji: '\uD83C\uDF0D', bpm: 100, rhythm: 'Afrobeat', instruments: ['Afrobeat Kit', 'Electric Guitar', 'Lead Vocals'] }, { name: 'Reggaeton', emoji: '\uD83D\uDD25', bpm: 95, rhythm: 'Cumbia', instruments: ['Electronic Kit', 'Sampler', 'Lead Vocals'] }] },
   { id: 'rock', label: 'ROCK', color: '#ef4444', summary: 'Live-band impact, punchy drums, and guitar-forward arrangements with edge.', artists: ['Arctic Monkeys', 'Foo Fighters', 'Paramore'], moods: ['Raw', 'Anthemic', 'Restless'], era: '70s riffs through 2000s alt-rock urgency', tiles: [{ name: 'Rock', emoji: '\uD83C\uDFB8', bpm: 120, rhythm: 'Rock', instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar'] }, { name: 'Hard Rock', emoji: '\uD83E\uDD18', bpm: 140, rhythm: 'Hard Rock', instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar'] }, { name: 'Punk', emoji: '\u26A1', bpm: 180, rhythm: 'Rock', instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar', 'Lead Vocals'] }, { name: 'Metal', emoji: '\uD83D\uDC80', bpm: 160, rhythm: 'Rock', instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar'] }, { name: 'Grunge', emoji: '\uD83C\uDF27\uFE0F', bpm: 100, rhythm: 'Rock', instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar', 'Lead Vocals'] }] },
   { id: 'soul-jazz', label: 'SOUL / JAZZ', color: '#8b5cf6', summary: 'Expressive harmony, groove depth, and human warmth anchored by feel.', artists: ['Amy Winehouse', 'Anderson .Paak', 'Esperanza Spalding'], moods: ['Warm', 'Playful', 'Intimate'], era: 'Timeless heritage with modern neo-soul finesse', tiles: [{ name: 'Jazz', emoji: '\uD83C\uDFB7', bpm: 165, rhythm: 'Jazz Swing', instruments: ['Saxophone', 'Piano', 'Double Bass', 'Standard Drum Kit'] }, { name: 'Blues', emoji: '\uD83C\uDFB5', bpm: 75, rhythm: 'Blues', instruments: ['Electric Guitar', 'Piano', 'Standard Drum Kit'] }, { name: 'Soul', emoji: '\u2764\uFE0F', bpm: 80, rhythm: 'Funk', instruments: ['Rhodes', 'Lead Vocals', 'Backing Vocals'] }, { name: 'Funk', emoji: '\uD83D\uDD7A', bpm: 105, rhythm: 'Funk', instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar', 'Rhodes'] }, { name: 'Gospel', emoji: '\uD83D\uDE4F', bpm: 85, rhythm: 'Blues', instruments: ['Piano', 'Choir', 'Lead Vocals'] }] },
-  { id: 'world', label: 'WORLD', color: '#14b8a6', summary: 'Regional rhythms and acoustic character blended with strong cultural signatures.', artists: ['Buena Vista Social Club', 'Rosalía', 'Fela Kuti'], moods: ['Organic', 'Sunlit', 'Transportive'], era: 'Tradition-informed grooves with global-pop openness', tiles: [{ name: 'Reggae', emoji: '\uD83C\uDF34', bpm: 75, rhythm: 'Reggae', instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar'] }, { name: 'Samba', emoji: '\uD83E\uDD41', bpm: 100, rhythm: 'Samba', instruments: ['Latin Percussion', 'Standard Drum Kit'] }, { name: 'Bossa Nova', emoji: '\uD83C\uDFB8', bpm: 130, rhythm: 'Bossa Nova', instruments: ['Acoustic Guitar', 'Double Bass'] }, { name: 'Flamenco', emoji: '\uD83D\uDC83', bpm: 120, rhythm: 'Flamenco', instruments: ['Acoustic Guitar', 'Latin Percussion'] }, { name: 'Tango', emoji: '\uD83C\uDF39', bpm: 120, rhythm: 'Tango', instruments: ['Violin', 'Piano', 'Double Bass'] }] },
+  { id: 'world', label: 'WORLD', color: '#14b8a6', summary: 'Regional rhythms and acoustic character blended with strong cultural signatures.', artists: ['Buena Vista Social Club', 'Rosal\u00eda', 'Fela Kuti'], moods: ['Organic', 'Sunlit', 'Transportive'], era: 'Tradition-informed grooves with global-pop openness', tiles: [{ name: 'Reggae', emoji: '\uD83C\uDF34', bpm: 75, rhythm: 'Reggae', instruments: ['Electric Guitar', 'Standard Drum Kit', 'Bass Guitar'] }, { name: 'Samba', emoji: '\uD83E\uDD41', bpm: 100, rhythm: 'Samba', instruments: ['Latin Percussion', 'Standard Drum Kit'] }, { name: 'Bossa Nova', emoji: '\uD83C\uDFB8', bpm: 130, rhythm: 'Bossa Nova', instruments: ['Acoustic Guitar', 'Double Bass'] }, { name: 'Flamenco', emoji: '\uD83D\uDC83', bpm: 120, rhythm: 'Flamenco', instruments: ['Acoustic Guitar', 'Latin Percussion'] }, { name: 'Tango', emoji: '\uD83C\uDF39', bpm: 120, rhythm: 'Tango', instruments: ['Violin', 'Piano', 'Double Bass'] }] },
   { id: 'pop', label: 'POP', color: '#f59e0b', summary: 'Direct hooks, polished toplines, and wide-audience accessibility.', artists: ['Dua Lipa', 'The Weeknd', 'Caroline Polachek'], moods: ['Bright', 'Catchy', 'Cinematic'], era: '80s sheen to current chart-ready production', tiles: [{ name: 'Pop', emoji: '\u2B50', bpm: 120, rhythm: 'Disco', instruments: ['Synthesizer', 'Electronic Kit', 'Lead Vocals', 'Backing Vocals'] }, { name: 'Indie Pop', emoji: '\uD83C\uDF1F', bpm: 110, rhythm: 'Rock', instruments: ['Acoustic Guitar', 'Electronic Kit', 'Lead Vocals'] }, { name: 'K-Pop', emoji: '\u2728', bpm: 128, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Electronic Kit', 'Lead Vocals', 'Backing Vocals'] }, { name: 'Synth-Pop', emoji: '\uD83C\uDFB9', bpm: 120, rhythm: 'Disco', instruments: ['Synthesizer', 'Sampler', 'Lead Vocals'] }] },
-  { id: 'classical', label: 'CLASSIQUE', color: '#6366f1', summary: 'Composed dynamics, orchestral detail, and cinematic movement over groove-first writing.', artists: ['Max Richter', 'Ólafur Arnalds', 'Hans Zimmer'], moods: ['Elegant', 'Expansive', 'Reflective'], era: 'Classical foundations with modern soundtrack sensibility', tiles: [{ name: 'Orchestral', emoji: '\uD83C\uDFBB', bpm: 100, rhythm: 'Waltz', instruments: ['Violin', 'Viola', 'Cello', 'French Horn', 'Trumpet'] }, { name: 'Baroque', emoji: '\uD83C\uDFBC', bpm: 120, rhythm: 'Waltz', instruments: ['Violin', 'Cello', 'Organ', 'Flute'] }, { name: 'Contemporary', emoji: '\uD83C\uDFB5', bpm: 80, rhythm: 'Waltz', instruments: ['Grand Piano', 'Violin', 'Cello'] }] },
+  { id: 'classical', label: 'CLASSIQUE', color: '#6366f1', summary: 'Composed dynamics, orchestral detail, and cinematic movement over groove-first writing.', artists: ['Max Richter', '\u00d3lafur Arnalds', 'Hans Zimmer'], moods: ['Elegant', 'Expansive', 'Reflective'], era: 'Classical foundations with modern soundtrack sensibility', tiles: [{ name: 'Orchestral', emoji: '\uD83C\uDFBB', bpm: 100, rhythm: 'Waltz', instruments: ['Violin', 'Viola', 'Cello', 'French Horn', 'Trumpet'] }, { name: 'Baroque', emoji: '\uD83C\uDFBC', bpm: 120, rhythm: 'Waltz', instruments: ['Violin', 'Cello', 'Organ', 'Flute'] }, { name: 'Contemporary', emoji: '\uD83C\uDFB5', bpm: 80, rhythm: 'Waltz', instruments: ['Grand Piano', 'Violin', 'Cello'] }] },
 ];
 
 function GBPanel({ children, className = '', style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
@@ -75,7 +83,6 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
   const { t } = useTranslation();
   const m = t.musical;
   const AMBER_SECONDARY = '#38bdf8';
-  const AMBER_MUTED = '#c4b5fd';
 
   const [expandedFamily, setExpandedFamily] = useState<string | null>(null);
   const [selectedVibeTile, setSelectedVibeTile] = useState<VibeTile | null>(null);
@@ -119,7 +126,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
       <GBPanel>
         <div className="p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Music className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+            <MusicNote224Regular className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
             <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.vibeBoard ?? 'VIBE BOARD'}</label>
             {selectedVibeTile && (
               <span className="ml-auto flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5" style={{ borderRadius: '8px 2px 8px 2px', background: `${selectedAccent}22`, color: selectedAccent }}>
@@ -144,9 +151,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                         style={isSelected
                           ? { borderRadius: '12px 4px 12px 4px', background: `${category.color}22`, borderColor: category.color, color: category.color, boxShadow: `0 0 8px ${category.color}55`, transform: 'scale(1.04)' }
                           : { borderRadius: '12px 4px 12px 4px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
-                      >
-                        <span>{tile.emoji}</span><span>{tile.name}</span>
-                      </button>
+                      ><span>{tile.emoji}</span><span>{tile.name}</span></button>
                     );
                   })}
                 </div>
@@ -171,8 +176,8 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
           {selectedVibeTile && selectedCategory && (
             <div className="grid gap-2 pt-2 border-t border-[var(--border-color)] lg:grid-cols-4 sm:grid-cols-2">
               {[{ title: 'Broad lane', color: selectedCategory.color, content: <><p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.label}</p><p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.summary}</p></> },
-                { title: 'Sub-style clues', color: selectedAccent, content: <div className="mt-2 flex flex-wrap gap-1.5">{suggestedSubStyles.map(sub => <span key={sub} className="px-2 py-1 text-[10px] font-medium" style={{ borderRadius: '999px', background: `${selectedAccent}1c`, color: selectedAccent }}>{sub}</span>)}</div> },
-                { title: 'For fans of', color: AMBER_SECONDARY, content: <><p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.artists.join(' · ')}</p><p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">Use references to position the song quickly for collaborators and music tools.</p></> },
+                { title: 'Sub-style clues', color: AMBER_SECONDARY, content: <div className="mt-2 flex flex-wrap gap-1.5">{suggestedSubStyles.map(sub => <span key={sub} className="px-2 py-1 text-[10px] font-medium" style={{ borderRadius: '999px', background: `${AMBER_SECONDARY}1c`, color: AMBER_SECONDARY }}>{sub}</span>)}</div> },
+                { title: 'For fans of', color: AMBER_SECONDARY, content: <><p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.artists.join(' \u00b7 ')}</p><p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">Use references to position the song quickly for collaborators and music tools.</p></> },
                 { title: 'Mood + era cues', color: selectedCategory.color, content: <><div className="mt-2 flex flex-wrap gap-1.5">{selectedCategory.moods.map(moodTag => <span key={moodTag} className="px-2 py-1 text-[10px] font-medium" style={{ borderRadius: '999px', background: `${selectedCategory.color}1a`, color: selectedCategory.color }}>{moodTag}</span>)}</div><p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.era}</p></> },
               ].map(card => (
                 <div key={card.title} className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${card.color}14`, borderColor: `${card.color}40` }}>
@@ -191,7 +196,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+                <WeatherThunderstorm24Regular className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
                 <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.tempo}</label>
               </div>
               <div className="flex items-center gap-2">
@@ -207,10 +212,10 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                 />
                 <span className="text-xs text-[var(--text-secondary)]">BPM</span>
                 <button onClick={metronome.toggle}
-                  className={`ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border ${metronome.isPlaying ? 'border-transparent metronome-active' : 'border-[var(--border-color)] text-[var(--text-secondary)]'}`}
+                  className={`ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border ${metronome.isPlaying ? 'border-transparent' : 'border-[var(--border-color)] text-[var(--text-secondary)]'}`}
                   style={metronome.isPlaying ? { borderRadius: '10px 3px 10px 3px', background: AMBER_PRIMARY, borderColor: AMBER_PRIMARY, color: '#000' } : { borderRadius: '10px 3px 10px 3px' }}
                 >
-                  {metronome.isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  {metronome.isPlaying ? <Pause24Regular className="w-3 h-3" /> : <Play24Regular className="w-3 h-3" />}
                   <span className="hidden sm:inline">{m.metronome ?? 'Metronome'}</span>
                 </button>
               </div>
@@ -233,7 +238,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
         <GBPanel>
           <div className="p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Guitar className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+              <Guitar24Regular className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
               <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.instruments ?? 'INSTRUMENTS'}</label>
               {selectedInstruments.length > 0 && <span className="ml-auto text-[10px] font-medium px-1.5 py-0.5" style={{ borderRadius: '6px 2px 6px 2px', background: `${AMBER_PRIMARY}22`, color: AMBER_PRIMARY }}>{selectedInstruments.length}</span>}
             </div>
@@ -249,7 +254,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                     >
                       <span>{family.emoji}</span><span>{family.label}</span>
                       {familySelected.length > 0 && <span className="ml-1 text-[9px] font-bold px-1" style={{ borderRadius: '4px', background: AMBER_PRIMARY, color: '#000' }}>{familySelected.length}</span>}
-                      <span className="ml-auto opacity-50">{isExpanded ? '▾' : '▸'}</span>
+                      <span className="ml-auto opacity-50">{isExpanded ? '\u25be' : '\u25b8'}</span>
                     </button>
                     {isExpanded && (
                       <div className="flex flex-wrap gap-1.5 mt-1.5 pl-2">
@@ -281,7 +286,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
         <GBPanel>
           <div className="p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Drum className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+              <MusicNote124Regular className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
               <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.rhythm}</label>
             </div>
             <textarea value={rhythm} onChange={e => setRhythm(e.target.value)} placeholder={m.rhythmPlaceholder} rows={3}
@@ -293,7 +298,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
         <GBPanel>
           <div className="p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <ListMusic className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+              <MusicNoteList24Regular className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
               <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.narrative}</label>
             </div>
             <textarea value={narrative} onChange={e => setNarrative(e.target.value)} placeholder={m.narrativePlaceholder} rows={3}

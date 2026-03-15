@@ -1,6 +1,21 @@
 import React from 'react';
-import { Music, Wand2, Loader2, Zap } from 'lucide-react';
+import {
+  MusicNote224Regular,
+  Wand24Regular,
+  Flash24Regular,
+} from '@fluentui/react-icons';
 import { useTranslation } from '../../../i18n';
+
+// Spinner via CSS animation on a Fluent icon — no Lucide dependency
+function SpinnerIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <span className={`inline-flex animate-spin ${className ?? ''}`} style={style}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
 
 const AMBER_PRIMARY = '#f59e0b';
 const AMBER_SECONDARY = '#38bdf8';
@@ -34,7 +49,7 @@ export function LyricsMusicAnalysis({ title, topic, mood, hasContext, hasApiKey,
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-[12px_4px_12px_4px] flex items-center justify-center shrink-0" style={{ background: `${AMBER_PRIMARY}22` }}>
-              <Music className="w-5 h-5" style={{ color: AMBER_PRIMARY }} />
+              <MusicNote224Regular className="w-5 h-5" style={{ color: AMBER_PRIMARY }} />
             </div>
             <div>
               <h2 className="text-sm font-semibold tracking-widest uppercase" style={{ color: AMBER_PRIMARY }}>{m.title}</h2>
@@ -46,7 +61,7 @@ export function LyricsMusicAnalysis({ title, topic, mood, hasContext, hasApiKey,
               className="ux-interactive flex items-center gap-2 px-3 py-2 text-xs font-medium tracking-wide shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border"
               style={{ borderRadius: '10px 3px 10px 3px', background: `${AMBER_PRIMARY}1a`, borderColor: `${AMBER_PRIMARY}55`, color: AMBER_PRIMARY }}
             >
-              {isAnalyzingLyrics ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+              {isAnalyzingLyrics ? <SpinnerIcon className="text-current" /> : <Wand24Regular className="w-3.5 h-3.5" />}
               <span className="hidden sm:inline">{isAnalyzingLyrics ? m.analyzing : m.analyzeLyricsShort}</span>
             </button>
           )}
@@ -55,7 +70,7 @@ export function LyricsMusicAnalysis({ title, topic, mood, hasContext, hasApiKey,
           <div className="mt-3 flex items-center gap-2 text-[10px] px-3 py-1.5 border"
             style={{ borderRadius: '10px 3px 10px 3px', background: `${AMBER_PRIMARY}0d`, borderColor: `${AMBER_PRIMARY}2a`, color: AMBER_SECONDARY }}
           >
-            <Zap className="w-3 h-3 shrink-0" style={{ color: AMBER_PRIMARY }} />
+            <Flash24Regular className="w-3 h-3 shrink-0" style={{ color: AMBER_PRIMARY }} />
             <span>{m.contextInfo}</span>
             <div className="flex items-center gap-1.5 ml-auto flex-wrap justify-end">
               {title && <span className="px-1.5 py-0.5 rounded-md font-medium" style={{ background: `${AMBER_PRIMARY}22`, color: AMBER_PRIMARY }}>{title}</span>}
