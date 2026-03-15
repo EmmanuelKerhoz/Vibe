@@ -27,8 +27,8 @@ const fr: Translations = {
     lyrics: 'PAROLES',
     musical: 'MUSICAL',
     similarity: 'Similarité',
-    import: 'Importer',
-    export: 'Exporter',
+    import: 'Load/Import',
+    export: 'Save/Export',
     versions: 'Versions',
     undo: 'Annuler',
     redo: 'Rétablir',
@@ -71,7 +71,7 @@ const fr: Translations = {
       title: 'Prêt à écrire votre prochain chef-d\'œuvre ?',
       description: 'Configurez les paramètres de votre chanson dans la barre latérale ou importez des paroles existantes pour commencer.',
       loadSession: 'Charger la dernière session',
-      pasteLyrics: 'Coller les paroles',
+      pasteLyrics: 'Coller des paroles',
       generateSong: 'Générer la chanson',
     },
     markupMode: {
@@ -156,7 +156,7 @@ const fr: Translations = {
     instruments: 'INSTRUMENTS',
     instrumentsPlaceholder: 'Sélectionner des familles d\'instruments...',
     rhythmPresets: 'RYTHMES PRÉDÉFINIS',
-    vibeBoard: 'VIBE BOARD',
+    vibeBoard: 'MOOD BOARD',
     vibeBoardDescription: 'Sélectionnez votre genre pour définir automatiquement le BPM et les instruments',
     subStyle: 'SOUS-STYLE',
   },
@@ -207,12 +207,12 @@ const fr: Translations = {
     yourLibrary: 'Votre bibliothèque',
     empty: 'Aucune chanson dans la bibliothèque. Enregistrez cette chanson pour commencer votre collection.',
     load: 'Charger',
-    loadDescription: 'Charger cette chanson dans l’éditeur',
+    loadDescription: 'Charger cette chanson dans l\'éditeur',
     close: 'Fermer',
   },
 
   paste: {
-    title: 'Coller les paroles',
+    title: 'Coller des paroles',
     description: 'Collez vos paroles ci-dessous. Notre IA les analysera pour extraire la structure, le schéma de rimes, le nombre de syllabes et les concepts clés afin de les intégrer dans l\'éditeur.',
     placeholder: 'Collez vos paroles ici...',
     cancel: 'Annuler',
@@ -220,9 +220,8 @@ const fr: Translations = {
     analyzing: 'Analyse...',
   },
 
-
   importDialog: {
-    title: 'Importer un fichier de paroles',
+    title: 'Load / Import paroles',
     emptyDescription: 'Choisissez un fichier .txt ou .md à analyser et à importer dans l\'éditeur.',
     replaceDescription: 'Choisissez un fichier .txt ou .md à importer. Les paroles importées remplaceront les paroles, la structure et le contexte d\'analyse actuels.',
     warning: 'Votre travail actuel sera perdu une fois le fichier importé analysé.',
@@ -232,7 +231,7 @@ const fr: Translations = {
   },
 
   exportDialog: {
-    title: 'Exporter les paroles',
+    title: 'Save / Export paroles',
     description: 'Choisissez un format unique pour cette sauvegarde.',
     formatLabel: 'Format',
     cancel: 'Annuler',
@@ -288,8 +287,8 @@ const fr: Translations = {
     showSidebar: 'Afficher la barre latérale',
     lyricsTab: 'Passer à l\'éditeur de paroles',
     musicalTab: 'Passer au générateur de prompt musical',
-    import: 'Importer un fichier',
-    export: 'Exporter les paroles',
+    import: 'Load / Import fichier',
+    export: 'Save / Export paroles',
     versions: 'Versions de la chanson',
     undo: 'Annuler',
     redo: 'Rétablir',

@@ -121,21 +121,21 @@ export function TopRibbon({
             >
               {/* Create */}
               <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Create</div>
+              <button onClick={() => runMenuAction(onImportClick)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+                <Upload className="w-4 h-4 text-[var(--accent-color)]" />
+                Load/Import
+              </button>
+              <button onClick={() => runMenuAction(onPasteLyrics)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+                <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
+                Coller des paroles
+              </button>
               <button onClick={() => runMenuAction(onOpenNewGeneration)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
-                <WandSparkles className="w-4 h-4 text-[var(--accent-color)]" />
+                <WandSparkles className="w-4 h-4 text-[var(--text-secondary)]" />
                 New generation
               </button>
               <button onClick={() => runMenuAction(onOpenNewEmpty)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
                 New empty
-              </button>
-              <button onClick={() => runMenuAction(onPasteLyrics)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
-                <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
-                {t.editor.emptyState.pasteLyrics}
-              </button>
-              <button onClick={() => runMenuAction(onImportClick)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
-                <Upload className="w-4 h-4 text-[var(--text-secondary)]" />
-                Load
               </button>
 
               {/* Workspace */}
@@ -155,7 +155,7 @@ export function TopRibbon({
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
               <button onClick={() => runMenuAction(onExportClick)} disabled={song.length === 0} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50">
                 <Download className="w-4 h-4 text-[var(--text-secondary)]" />
-                {t.ribbon.export}
+                Save/Export
               </button>
               <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
                 <History className="w-4 h-4 text-[var(--text-secondary)]" />

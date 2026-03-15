@@ -19,16 +19,14 @@ export function AboutModal({ isOpen, onClose }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const sweepRef = useRef<HTMLDivElement>(null);
 
-  // Glass sweep animation triggered once on open
+  // Thick sweep line animation triggered once on open
   useEffect(() => {
     if (!isOpen) return;
     const el = sweepRef.current;
     if (!el) return;
-    // Reset then trigger
     el.style.animation = 'none';
-    // Force reflow
     void el.offsetWidth;
-    el.style.animation = 'about-glass-sweep 900ms cubic-bezier(0.4, 0, 0.2, 1) 350ms forwards';
+    el.style.animation = 'about-glass-sweep 3000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms forwards';
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -53,7 +51,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
         aria-label={t.app.name}
         className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8"
       >
-        {/* Glass sweep overlay — diagonal, fires once on open */}
+        {/* Thick sweep line overlay — fires once on open */}
         <div
           ref={sweepRef}
           aria-hidden="true"
@@ -86,16 +84,11 @@ export function AboutModal({ isOpen, onClose }: Props) {
 
         {/* Scrollable body */}
         <div ref={bodyRef} className="flex-1 overflow-y-auto custom-scrollbar">
-          {/* Banner — flush, no padding */}
-          <div className="relative w-full bg-black/80">
+          {/* Banner — flush, no dark overlay */}
+          <div className="relative w-full">
             <div className="w-full overflow-hidden" style={{ aspectRatio: `${BANNER_WIDTH} / ${BANNER_HEIGHT}` }}>
               <img src={bannerImage} alt="Lyricist splash screen" className="w-full h-full object-contain object-top" />
             </div>
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-12 sm:h-20"
-              style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0), var(--bg-card))' }}
-            />
           </div>
 
           {/* Body — pt-0 pour coller directement sous la bannière */}

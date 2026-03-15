@@ -27,8 +27,8 @@ const en: Translations = {
     lyrics: 'LYRICS',
     musical: 'MUSICAL',
     similarity: 'Similarity',
-    import: 'Import',
-    export: 'Export',
+    import: 'Load/Import',
+    export: 'Save/Export',
     versions: 'Versions',
     undo: 'Undo',
     redo: 'Redo',
@@ -158,7 +158,7 @@ const en: Translations = {
     instruments: 'INSTRUMENTS',
     instrumentsPlaceholder: 'Select instrument families...',
     rhythmPresets: 'RHYTHM PRESETS',
-    vibeBoard: 'VIBE BOARD',
+    vibeBoard: 'MOOD BOARD',
     vibeBoardDescription: 'Select your genre to auto-set BPM & instruments',
     subStyle: 'SUB-STYLE',
   },
@@ -223,7 +223,7 @@ const en: Translations = {
   },
 
   importDialog: {
-    title: 'Import lyrics file',
+    title: 'Load / Import lyrics',
     emptyDescription: 'Choose a .txt or .md file to analyze and import into the editor.',
     replaceDescription: 'Choose a .txt or .md file to import. The imported lyrics will replace the current lyrics, structure, and analysis context.',
     warning: 'Your current work will be lost once the imported file is analyzed.',
@@ -233,7 +233,7 @@ const en: Translations = {
   },
 
   exportDialog: {
-    title: 'Export lyrics',
+    title: 'Save / Export lyrics',
     description: 'Choose a single format for this export.',
     formatLabel: 'Format',
     cancel: 'Cancel',
@@ -290,8 +290,8 @@ const en: Translations = {
     showSidebar: 'Show Sidebar',
     lyricsTab: 'Switch to lyrics editor',
     musicalTab: 'Switch to musical prompt generator',
-    import: 'Import File',
-    export: 'Export lyrics',
+    import: 'Load / Import File',
+    export: 'Save / Export lyrics',
     versions: 'Song Versions',
     undo: 'Undo',
     redo: 'Redo',

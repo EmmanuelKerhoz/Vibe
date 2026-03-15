@@ -8,6 +8,7 @@ import { APP_VERSION } from '../../version';
 interface Props {
   song: { length: number };
   wordCount: number;
+  charCount: number;
   isGenerating: boolean;
   isAnalyzing: boolean;
   isSuggesting: boolean;
@@ -22,7 +23,7 @@ interface Props {
 }
 
 export function StatusBar({
-  song, wordCount, isGenerating, isAnalyzing, isSuggesting,
+  song, wordCount, charCount, isGenerating, isAnalyzing, isSuggesting,
   theme, setTheme, audioFeedback, setAudioFeedback,
   onOpenAbout, onOpenSettings, className,
 }: Props) {
@@ -38,7 +39,7 @@ export function StatusBar({
 
   return (
     <div className={`lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
-      {/* Left: system status + KPIs */}
+      {/* Left: system status + KPIs desktop only */}
       <div className="flex items-center gap-2 lg:gap-4">
         <div className="flex items-center gap-1.5">
           <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isBusy ? 'bg-[var(--accent-warning)] animate-pulse' : 'bg-[var(--accent-color)] lcars-pulse'}`} />
@@ -48,16 +49,23 @@ export function StatusBar({
           {isBusy && <span className="lcars-cursor-blink text-[var(--accent-warning)]" />}
         </div>
         <div className="lcars-divider" />
-        <span className="hidden sm:inline telemetry-text text-zinc-600 dark:text-zinc-400">
+        {/* KPIs — desktop only (hidden on mobile, shown in InsightsBar) */}
+        <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
           {song.length}{' '}
           <span className="text-zinc-400 dark:text-zinc-600 uppercase">
             {tPlural(statusBarDict, 'sections', song.length, language)}
           </span>
         </span>
-        <span className="hidden sm:inline telemetry-text text-zinc-600 dark:text-zinc-400">
+        <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
           {wordCount}{' '}
           <span className="text-zinc-400 dark:text-zinc-600 uppercase">
             {tPlural(statusBarDict, 'words', wordCount, language)}
+          </span>
+        </span>
+        <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
+          {charCount}{' '}
+          <span className="text-zinc-400 dark:text-zinc-600 uppercase">
+            {t.insights.characters}
           </span>
         </span>
       </div>
