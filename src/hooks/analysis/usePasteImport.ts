@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { cleanSectionName } from '../../utils/songUtils';
@@ -34,6 +34,13 @@ export const usePasteImport = ({
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pastedText, setPastedText] = useState('');
 
+  // Abort controller — cancels in-flight AI call on unmount or new invocation
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => { abortControllerRef.current?.abort(); };
+  }, []);
+
   const uiLang = uiLanguage === 'fr' ? 'French'
     : uiLanguage === 'es' ? 'Spanish'
     : uiLanguage === 'de' ? 'German'
@@ -45,6 +52,12 @@ export const usePasteImport = ({
 
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
+
+    // Abort any previous in-flight call
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsAnalyzing(true);
     try {
       const prompt = `Analyze the following lyrics and structure them into sections.
@@ -121,6 +134,9 @@ ${pastedText}`;
         },
       });
 
+      // Discard result if component unmounted or a new call was started
+      if (controller.signal.aborted) return;
+
       const data = safeJsonParse<any>(response.text || '{}', {});
 
       if (data.topic) setTopic(data.topic);
@@ -138,7 +154,6 @@ ${pastedText}`;
 
       const songWithIds: Section[] = sections.map((section: any) => ({
         ...section,
-        // cleanSectionName is correct here — only applied to section header names
         name: cleanSectionName(section.name),
         id: generateId(),
         rhymeScheme: section.rhymeScheme || rhymeScheme,
@@ -146,9 +161,7 @@ ${pastedText}`;
           ...line,
           id: generateId(),
           isManual: true,
-          // Detect pure meta lines AFTER the AI returns them — flag isMeta, never strip brackets
           isMeta: isPureMetaLine(line.text ?? ''),
-          // Do NOT pass line.text through cleanSectionName — preserve [meta] brackets verbatim
           text: (line.text ?? '') as string,
         })),
       }));
@@ -161,9 +174,10 @@ ${pastedText}`;
       setIsPasteModalOpen(false);
       setPastedText('');
     } catch (error) {
+      if (controller.signal.aborted) return;
       handleApiError(error, 'Failed to analyze lyrics. Please try again.');
     } finally {
-      setIsAnalyzing(false);
+      if (!controller.signal.aborted) setIsAnalyzing(false);
     }
   };
 

@@ -56,6 +56,13 @@ export const useSongAnalysisEngine = ({
 
   const lastAnalyzedSongRef = useRef<string>('');
   const backoffUntilRef = useRef<number>(0);
+  // Abort controller for the background theme-tracking call
+  const bgAbortControllerRef = useRef<AbortController | null>(null);
+
+  // Abort on unmount
+  useEffect(() => {
+    return () => { bgAbortControllerRef.current?.abort(); };
+  }, []);
 
   const uiLang = uiLanguage === 'fr' ? 'French'
     : uiLanguage === 'es' ? 'Spanish'
@@ -74,7 +81,13 @@ export const useSongAnalysisEngine = ({
 
     const timer = setTimeout(async () => {
       if (Date.now() < backoffUntilRef.current) return;
-      if (isAnalyzingTheme) return; // already running
+      if (isAnalyzingTheme) return;
+
+      // Abort any previous background call still in-flight
+      bgAbortControllerRef.current?.abort();
+      const controller = new AbortController();
+      bgAbortControllerRef.current = controller;
+
       setIsAnalyzingTheme(true);
       try {
         const prompt = `Analyze the following song lyrics.
@@ -103,22 +116,26 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
           },
         });
 
+        if (controller.signal.aborted) return;
+
         const data = safeJsonParse<{ topic?: string; mood?: string }>(response.text || '{}', {});
         if (data.topic && data.topic !== topic) setTopic(data.topic);
         if (data.mood && data.mood !== mood) setMood(data.mood);
         lastAnalyzedSongRef.current = currentSongStr;
       } catch (e) {
+        if ((e as any)?.name === 'AbortError') return;
         const msg = e instanceof Error ? e.message : '';
         const isQuota = (e as any)?.code === 429 || msg.includes('429') || msg.includes('quota');
         if (isQuota) {
-          // Backoff 5 minutes on quota exhaustion
           backoffUntilRef.current = Date.now() + 5 * 60 * 1000;
-          console.warn('[useSongAnalysis] Quota exceeded — background analysis paused for 5 minutes.');
+          console.warn('[useSongAnalysisEngine] Quota exceeded — background analysis paused for 5 minutes.');
         } else {
           handleApiError(e, 'Background analysis failed.');
         }
       } finally {
-        setIsAnalyzingTheme(false);
+        if (!bgAbortControllerRef.current?.signal.aborted) {
+          setIsAnalyzingTheme(false);
+        }
       }
     }, 3000);
 

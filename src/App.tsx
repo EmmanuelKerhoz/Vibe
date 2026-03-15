@@ -87,11 +87,12 @@ export default function App() {
   const showBackdrop = isLeftPanelOpen || (isMobileOrTablet && isStructureOpen);
 
   useSessionPersistence({
-    song, structure, title, topic, mood, rhymeScheme, targetSyllables,
-    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
+    song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
+    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession, replaceStateWithoutHistory, clearHistory,
     setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme, setTargetSyllables,
     setGenre, setTempo, setInstrumentation, setRhythm, setNarrative, setMusicalPrompt,
+    setSongLanguage,
   });
   const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionManager({
     song, structure, title, titleOrigin, topic, mood, updateSongAndStructureWithHistory,
@@ -102,45 +103,13 @@ export default function App() {
     song, isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   });
 
-  // Library similarity (local) — debounced 800ms to avoid running on every keystroke
-  const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
-    let isCancelled = false;
-    similarityDebounceRef.current = setTimeout(() => {
-      const runSimilarity = async () => {
-        if (song.length === 0) { setSimilarityMatches([]); return; }
-        const matches = await findSimilarAssetsInLibrary(song, 0, 3);
-        if (!isCancelled) setSimilarityMatches(matches);
-      };
-      void runSimilarity();
-    }, 800);
-    const loadCount = async () => {
-      try { const c = localStorage.getItem('lyricist_library'); if (c) setLibraryCount(JSON.parse(c).length); }
-      catch (e) { console.error('Failed to load library count:', e); }
-    };
-    void loadCount();
-    return () => {
-      isCancelled = true;
-      if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
-    };
-  }, [song, setSimilarityMatches, setLibraryCount]);
+  // ── isGenerating bridge ──────────────────────────────────────────────────
+  // useSongAnalysis must be called before useSongComposer (songLanguage source order),
+  // but needs to know whether generation is in progress to gate auto-detect.
+  // A mutable ref provides a stable bridge without creating a circular hook dependency.
+  const isGeneratingRef = useRef(false);
 
-  const introOutroSortedRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (song.length === 0) return;
-    const introIdx = song.findIndex(s => s.name.toLowerCase() === 'intro');
-    const outroIdx = song.findIndex(s => s.name.toLowerCase() === 'outro');
-    if (introIdx <= 0 && (outroIdx === -1 || outroIdx === song.length - 1)) return;
-    const others = song.filter(s => s.name.toLowerCase() !== 'intro' && s.name.toLowerCase() !== 'outro');
-    const sorted = [...(introIdx !== -1 ? [song[introIdx]!] : []), ...others, ...(outroIdx !== -1 ? [song[outroIdx]!] : [])];
-    const key = JSON.stringify(sorted.map(s => s.id));
-    if (key === introOutroSortedRef.current) return;
-    introOutroSortedRef.current = key;
-    updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
-  }, [song, updateSongAndStructureWithHistory]);
-
-  // ── useSongAnalysis first — provides songLanguage + isGenerating guard ──
+  // ── useSongAnalysis ──────────────────────────────────────────────────────
   const { isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
     isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, targetLanguage, setTargetLanguage,
@@ -149,14 +118,14 @@ export default function App() {
     toggleAnalysisItemSelection, applySelectedAnalysisItems,
     analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
   } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language,
-    isGenerating: false, // will be true after useSongComposer — see note below
+    isGenerating: isGeneratingRef.current,
     songLanguage, setSongLanguage,
     setTopic, setMood, saveVersion,
     updateState, updateSongAndStructureWithHistory,
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
-  // ── useSongComposer — isGenerating flows to InsightsBar / LyricsView ────
+  // ── useSongComposer ──────────────────────────────────────────────────────
   const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
     selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
     quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
@@ -167,6 +136,11 @@ export default function App() {
     updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
+
+  // Keep the bridge ref in sync so useLanguageAdapter reads the live value on next tick
+  useEffect(() => {
+    isGeneratingRef.current = isGenerating;
+  }, [isGenerating]);
 
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
@@ -238,6 +212,44 @@ export default function App() {
 
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title);
+
+  // Library similarity (local) — debounced 800ms to avoid running on every keystroke
+  const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
+    let isCancelled = false;
+    similarityDebounceRef.current = setTimeout(() => {
+      const runSimilarity = async () => {
+        if (song.length === 0) { setSimilarityMatches([]); return; }
+        const matches = await findSimilarAssetsInLibrary(song, 0, 3);
+        if (!isCancelled) setSimilarityMatches(matches);
+      };
+      void runSimilarity();
+    }, 800);
+    const loadCount = async () => {
+      try { const c = localStorage.getItem('lyricist_library'); if (c) setLibraryCount(JSON.parse(c).length); }
+      catch (e) { console.error('Failed to load library count:', e); }
+    };
+    void loadCount();
+    return () => {
+      isCancelled = true;
+      if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
+    };
+  }, [song, setSimilarityMatches, setLibraryCount]);
+
+  const introOutroSortedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (song.length === 0) return;
+    const introIdx = song.findIndex(s => s.name.toLowerCase() === 'intro');
+    const outroIdx = song.findIndex(s => s.name.toLowerCase() === 'outro');
+    if (introIdx <= 0 && (outroIdx === -1 || outroIdx === song.length - 1)) return;
+    const others = song.filter(s => s.name.toLowerCase() !== 'intro' && s.name.toLowerCase() !== 'outro');
+    const sorted = [...(introIdx !== -1 ? [song[introIdx]!] : []), ...others, ...(outroIdx !== -1 ? [song[outroIdx]!] : [])];
+    const key = JSON.stringify(sorted.map(s => s.id));
+    if (key === introOutroSortedRef.current) return;
+    introOutroSortedRef.current = key;
+    updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
+  }, [song, updateSongAndStructureWithHistory]);
 
   const hasRealLyricContent = song.some(s =>
     s.lines.some(l => !l.isMeta && l.text.trim().length > 0)

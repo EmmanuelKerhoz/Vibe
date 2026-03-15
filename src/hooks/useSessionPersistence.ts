@@ -20,6 +20,7 @@ interface UseSessionPersistenceParams {
   rhythm: string;
   narrative: string;
   musicalPrompt: string;
+  songLanguage: string;
   isSessionHydrated: boolean;
   setIsSessionHydrated: (v: boolean) => void;
   setHasSavedSession: (v: boolean) => void;
@@ -37,16 +38,18 @@ interface UseSessionPersistenceParams {
   setRhythm: (v: string) => void;
   setNarrative: (v: string) => void;
   setMusicalPrompt: (v: string) => void;
+  setSongLanguage: (v: string) => void;
 }
 
 export function useSessionPersistence(params: UseSessionPersistenceParams): void {
   const {
     song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
-    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
+    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
     replaceStateWithoutHistory, clearHistory,
     setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme, setTargetSyllables,
     setGenre, setTempo, setInstrumentation, setRhythm, setNarrative, setMusicalPrompt,
+    setSongLanguage,
   } = params;
 
   // Mount-only: hydrate state from localStorage.
@@ -76,6 +79,8 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
           if (parsed.rhythm) setRhythm(parsed.rhythm);
           if (parsed.narrative) setNarrative(parsed.narrative);
           if (parsed.musicalPrompt) setMusicalPrompt(parsed.musicalPrompt);
+          // Restore detected language — avoids a parasitic AI detect call on every reload
+          if (parsed.songLanguage) setSongLanguage(parsed.songLanguage);
           clearHistory();
         }
       } catch (e) {
@@ -86,19 +91,18 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount-only; all refs are stable dispatchers
 
   // Save session on every relevant change.
-  // setHasSavedSession is a stable dispatcher but listed explicitly for exhaustive-deps compliance.
   useEffect(() => {
     if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
       const sessionData = {
         song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
-        genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
+        genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
       };
       safeSetItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
     }
   }, [
     song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
-    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
+    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
     isSessionHydrated, setHasSavedSession,
   ]);
 }
