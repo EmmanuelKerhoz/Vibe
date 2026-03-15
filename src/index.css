@@ -183,24 +183,70 @@
 }
 
 /* ===========================================================================
-   ABOUT MODAL — thick sweep line animation
+   LYRICS EDITOR — row grid layout
+   9 columns: drag-handle | ai/human badge | move-arrows | line-number | lyric-input | syllables | count | schema | delete
+   Regression fix: class tokens lyric-row / lyric-col-aux were used in SectionEditor
+   since v3.2.22 (commit f6d9e3f) but CSS rules were never defined.
    =========================================================================== */
 
-@keyframes about-glass-sweep {
+.lyric-row {
+  display: grid;
+  grid-template-columns: 20px 16px 20px 32px 1fr 80px 48px 40px 28px;
+  align-items: center;
+  min-height: 40px;
+  gap: 0 6px;
+  width: 100%;
+}
+
+.lyric-col-aux {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.micro-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+/* ===========================================================================
+   ABOUT MODAL — diagonal sweep BG→HD (bottom-left → top-right)
+   The overlay pseudo-element is a wide bar rotated -45deg that translates
+   along the 135° diagonal from below-left to above-right.
+   Each About item (.about-sweep-item) animates in with staggered delay.
+   =========================================================================== */
+
+@keyframes about-diagonal-sweep {
   0% {
-    transform: translateX(-120%) skewX(-12deg);
+    transform: rotate(-45deg) translateX(-160%);
     opacity: 0;
   }
-  8% {
+  6% {
     opacity: 1;
   }
-  92% {
+  94% {
     opacity: 1;
   }
   100% {
-    transform: translateX(220%) skewX(-12deg);
+    transform: rotate(-45deg) translateX(160%);
     opacity: 0;
   }
+}
+
+/* Legacy keyframe kept for any stale references */
+@keyframes about-glass-sweep {
+  0%   { transform: rotate(-45deg) translateX(-160%); opacity: 0; }
+  6%   { opacity: 1; }
+  94%  { opacity: 1; }
+  100% { transform: rotate(-45deg) translateX(160%);  opacity: 0; }
 }
 
 .about-glass-sweep-overlay {
@@ -214,10 +260,12 @@
 .about-glass-sweep-overlay::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 35%;
+  /* Centre the bar on the dialog then let the rotation+translate do the work */
+  top: 50%;
+  left: -50%;
+  width: 200%;
   height: 8px;
+  margin-top: -4px;
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -231,11 +279,63 @@
   box-shadow:
     0 0 12px rgba(245, 158, 11, 0.6),
     0 0 24px rgba(6, 182, 212, 0.4),
-    0 0 8px rgba(167, 139, 250, 0.5);
+    0 0 8px  rgba(167, 139, 250, 0.5);
   border-radius: 4px;
-  transform: translateX(-120%) skewX(-12deg);
+  transform: rotate(-45deg) translateX(-160%);
   animation: inherit;
 }
+
+/* Per-item shimmer sweep: each .about-sweep-item gets an individual shimmer
+   that flows from bottom-left corner to top-right corner of the item itself */
+@keyframes about-item-shimmer {
+  0%   { background-position: 200% 200%; opacity: 0; }
+  10%  { opacity: 1; }
+  100% { background-position: -100% -100%; opacity: 1; }
+}
+
+.about-sweep-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.about-sweep-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.07) 45%,
+    rgba(255, 255, 255, 0.13) 50%,
+    rgba(255, 255, 255, 0.07) 55%,
+    transparent 65%,
+    transparent 100%
+  );
+  background-size: 300% 300%;
+  background-position: 200% 200%;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+  animation: about-item-shimmer 800ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-play-state: paused;
+}
+
+.about-sweep-item.sweep-active::before {
+  animation-play-state: running;
+}
+
+/* Stagger delays for About items */
+.about-sweep-item:nth-child(1)::before  { animation-delay: 0.3s; }
+.about-sweep-item:nth-child(2)::before  { animation-delay: 0.45s; }
+.about-sweep-item:nth-child(3)::before  { animation-delay: 0.6s; }
+.about-sweep-item:nth-child(4)::before  { animation-delay: 0.75s; }
+.about-sweep-item:nth-child(5)::before  { animation-delay: 0.9s; }
+.about-sweep-item:nth-child(6)::before  { animation-delay: 1.05s; }
+.about-sweep-item:nth-child(7)::before  { animation-delay: 1.2s; }
+.about-sweep-item:nth-child(8)::before  { animation-delay: 1.35s; }
+.about-sweep-item:nth-child(9)::before  { animation-delay: 1.5s; }
+.about-sweep-item:nth-child(10)::before { animation-delay: 1.65s; }
 
 .glass-panel {
   background: rgba(255, 255, 255, 0.03);

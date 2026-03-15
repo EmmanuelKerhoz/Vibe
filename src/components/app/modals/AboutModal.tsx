@@ -18,15 +18,31 @@ export function AboutModal({ isOpen, onClose }: Props) {
   const { t } = useTranslation();
   const bodyRef = useRef<HTMLDivElement>(null);
   const sweepRef = useRef<HTMLDivElement>(null);
+  const sweepItemsRef = useRef<HTMLDivElement>(null);
 
-  // Thick sweep line animation triggered once on open
+  // Diagonal sweep line (BG→HD) fires once on open, then per-item shimmer stagger
   useEffect(() => {
     if (!isOpen) return;
+
+    // Full-panel diagonal sweep
     const el = sweepRef.current;
-    if (!el) return;
-    el.style.animation = 'none';
-    void el.offsetWidth;
-    el.style.animation = 'about-glass-sweep 3000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms forwards';
+    if (el) {
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = 'about-glass-sweep 3000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms forwards';
+    }
+
+    // Per-item shimmer — activate sweep-active class so paused animations run
+    const container = sweepItemsRef.current;
+    if (container) {
+      const items = container.querySelectorAll<HTMLElement>('.about-sweep-item');
+      items.forEach((item) => {
+        item.classList.remove('sweep-active');
+        // Force reflow to restart animation
+        void item.offsetWidth;
+        item.classList.add('sweep-active');
+      });
+    }
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -51,7 +67,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
         aria-label={t.app.name}
         className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8"
       >
-        {/* Thick sweep line overlay — fires once on open */}
+        {/* Diagonal sweep overlay — BG→HD (bottom-left → top-right) — fires once on open */}
         <div
           ref={sweepRef}
           aria-hidden="true"
@@ -91,56 +107,56 @@ export function AboutModal({ isOpen, onClose }: Props) {
             </div>
           </div>
 
-          {/* Body — pt-0 pour coller directement sous la bannière */}
-          <div className="px-8 pt-0 pb-8 space-y-6">
-            <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto text-center">
+          {/* Body content — ref container for per-item shimmer sweep */}
+          <div ref={sweepItemsRef} className="px-8 pt-0 pb-8 space-y-6">
+            <p className="about-sweep-item text-sm text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto text-center rounded-lg">
               {t.about.description}
             </p>
 
-            {/* Tech Info */}
+            {/* Tech Info — each card is an about-sweep-item */}
             <div className="grid grid-cols-1 gap-3 pt-4 border-t border-[var(--border-color)] sm:grid-cols-2">
-              <div className="flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
+              <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
                 <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{t.about.engineLabel}</span>
                 <span className="text-xs text-[var(--text-primary)] telemetry-text">{t.about.engine}</span>
               </div>
-              <div className="flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
+              <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
                 <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{t.about.modelLabel}</span>
                 <span className="text-xs text-[var(--text-primary)] telemetry-text break-all text-center">{AI_MODEL_NAME}</span>
               </div>
-              <div className="flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
+              <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
                 <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{t.about.apiKeyLabel}</span>
                 <span className="text-xs text-[var(--text-primary)] telemetry-text break-all text-center">{AI_KEY_ENV_VAR}</span>
               </div>
-              <div className="flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
+              <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
                 <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{t.about.licenseLabel}</span>
                 <span className="text-xs text-[var(--text-primary)] telemetry-text">{t.about.license}</span>
               </div>
             </div>
 
-            {/* Social Links */}
+            {/* Social Links — each link is an about-sweep-item */}
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <a href="https://www.youtube.com/@voxnova42" target="_blank" rel="noopener noreferrer" aria-label="Visit YouTube channel"
-                className="ux-interactive flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium">
+                className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium">
                 <Youtube className="w-4 h-4" /><span>YouTube</span><ExternalLink className="w-3 h-3 opacity-50" />
               </a>
               <a href="https://open.spotify.com/artist/6VfhDlWsBW0qk0a8x7UbOM?si=UtpaOQ5JT3iN1mUb2vN7vg&nd=1&dlsi=1dffb43b3c7d4280" target="_blank" rel="noopener noreferrer" aria-label="Visit Spotify artist page"
-                className="ux-interactive flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/40 text-green-400 hover:text-green-300 rounded-lg text-xs font-medium">
+                className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/40 text-green-400 hover:text-green-300 rounded-lg text-xs font-medium">
                 <Music className="w-4 h-4" /><span>Spotify</span><ExternalLink className="w-3 h-3 opacity-50" />
               </a>
               <a href="https://www.linkedin.com/in/emmanuelkerhoz/" target="_blank" rel="noopener noreferrer" aria-label="Visit LinkedIn profile"
-                className="ux-interactive flex items-center gap-2 px-4 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 hover:border-sky-500/40 text-sky-400 hover:text-sky-300 rounded-lg text-xs font-medium">
+                className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 hover:border-sky-500/40 text-sky-400 hover:text-sky-300 rounded-lg text-xs font-medium">
                 <Linkedin className="w-4 h-4" /><span>LinkedIn</span><ExternalLink className="w-3 h-3 opacity-50" />
               </a>
               <a href="https://network.landr.com/users/emmanueldk" target="_blank" rel="noopener noreferrer" aria-label="Visit Landr profile"
-                className="ux-interactive flex items-center gap-2 px-4 py-2 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 hover:border-violet-500/40 text-violet-400 hover:text-violet-300 rounded-lg text-xs font-medium">
+                className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 hover:border-violet-500/40 text-violet-400 hover:text-violet-300 rounded-lg text-xs font-medium">
                 <Radio className="w-4 h-4" /><span>Landr</span><ExternalLink className="w-3 h-3 opacity-50" />
               </a>
               <a href="https://music.amazon.com/artists/B0DKW3BNL7/emmanuel-kerhoz" target="_blank" rel="noopener noreferrer" aria-label="Visit Amazon Music artist page"
-                className="ux-interactive flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 text-amber-400 hover:text-amber-300 rounded-lg text-xs font-medium">
+                className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 text-amber-400 hover:text-amber-300 rounded-lg text-xs font-medium">
                 <ShoppingBag className="w-4 h-4" /><span>Amazon</span><ExternalLink className="w-3 h-3 opacity-50" />
               </a>
               <a href="https://music.apple.com/artist/emmanuel-kerhoz/1776965137" target="_blank" rel="noopener noreferrer" aria-label="Visit Apple Music artist page"
-                className="ux-interactive flex items-center gap-2 px-4 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg text-xs font-medium">
+                className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg text-xs font-medium">
                 <Apple className="w-4 h-4" /><span>Apple Music</span><ExternalLink className="w-3 h-3 opacity-50" />
               </a>
             </div>
