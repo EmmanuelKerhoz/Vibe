@@ -15,6 +15,10 @@ interface LyricsViewProps {
   selectedLineId: string | null;
   isGenerating: boolean;
   isAnalyzing: boolean;
+  isAdaptingLanguage?: boolean;
+  sectionTargetLanguages?: Record<string, string>;
+  onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
+  adaptSectionLanguage?: (sectionId: string, lang: string) => void;
   isRegeneratingSection: (sectionId: string) => boolean;
   handleLineClick: (lineId: string) => void;
   updateLineText: (sectionId: string, lineId: string, text: string) => void;
@@ -50,6 +54,10 @@ export function LyricsView({
   song, rhymeScheme,
   updateState, updateSongAndStructureWithHistory,
   selectedLineId, isGenerating, isAnalyzing,
+  isAdaptingLanguage = false,
+  sectionTargetLanguages = {},
+  onSectionTargetLanguageChange,
+  adaptSectionLanguage,
   isRegeneratingSection, handleLineClick, updateLineText, handleLineKeyDown,
   handleInstructionChange, addInstruction, removeInstruction, regenerateSection,
   draggedItemIndex, dragOverIndex, draggedLineInfo, dragOverLineInfo,
@@ -206,46 +214,50 @@ export function LyricsView({
       ) : (
         song.map((section, sectionIndex) => (
           <div key={section.id} className={`fluent-animate-in fluent-stagger-${Math.min(sectionIndex + 1, 8)}`}>
-          <SectionEditor
-            section={section}
-            sectionIndex={sectionIndex}
-            songLength={song.length}
-            rhymeScheme={rhymeScheme}
-            RHYME_KEYS={RHYME_KEYS}
-            SECTION_TYPE_OPTIONS={SECTION_TYPE_OPTIONS}
-            selectedLineId={selectedLineId}
-            isGenerating={isGenerating}
-            isAnalyzing={isAnalyzing}
-            draggedItemIndex={draggedItemIndex}
-            dragOverIndex={dragOverIndex}
-            draggedLineInfo={draggedLineInfo}
-            dragOverLineInfo={dragOverLineInfo}
-            moveSectionUp={moveSectionUp}
-            moveSectionDown={moveSectionDown}
-            moveLineUp={moveLineUp}
-            moveLineDown={moveLineDown}
-            addLineToSection={addLineToSection}
-            deleteLineFromSection={deleteLineFromSection}
-            setSectionName={setSectionName}
-            setSectionRhymeScheme={setSectionRhymeScheme}
-            regenerateSection={regenerateSection}
-            isRegeneratingSection={isRegeneratingSection}
-            handleLineClick={handleLineClick}
-            updateLineText={updateLineText}
-            handleLineKeyDown={handleLineKeyDown}
-            handleInstructionChange={handleInstructionChange}
-            addInstruction={addInstruction}
-            removeInstruction={removeInstruction}
-            handleLineDragStart={handleLineDragStart}
-            handleLineDrop={handleLineDrop}
-            setDraggedItemIndex={setDraggedItemIndex}
-            setDragOverIndex={setDragOverIndex}
-            setDraggableSectionIndex={setDraggableSectionIndex}
-            setDraggedLineInfo={setDraggedLineInfo}
-            setDragOverLineInfo={setDragOverLineInfo}
-            playAudioFeedback={playAudioFeedback}
-            handleDrop={handleDrop}
-          />
+            <SectionEditor
+              section={section}
+              sectionIndex={sectionIndex}
+              songLength={song.length}
+              rhymeScheme={rhymeScheme}
+              RHYME_KEYS={RHYME_KEYS}
+              SECTION_TYPE_OPTIONS={SECTION_TYPE_OPTIONS}
+              selectedLineId={selectedLineId}
+              isGenerating={isGenerating}
+              isAnalyzing={isAnalyzing}
+              isAdaptingLanguage={isAdaptingLanguage}
+              sectionTargetLanguage={sectionTargetLanguages[section.id] ?? 'English'}
+              onSectionTargetLanguageChange={onSectionTargetLanguageChange}
+              adaptSectionLanguage={adaptSectionLanguage}
+              draggedItemIndex={draggedItemIndex}
+              dragOverIndex={dragOverIndex}
+              draggedLineInfo={draggedLineInfo}
+              dragOverLineInfo={dragOverLineInfo}
+              moveSectionUp={moveSectionUp}
+              moveSectionDown={moveSectionDown}
+              moveLineUp={moveLineUp}
+              moveLineDown={moveLineDown}
+              addLineToSection={addLineToSection}
+              deleteLineFromSection={deleteLineFromSection}
+              setSectionName={setSectionName}
+              setSectionRhymeScheme={setSectionRhymeScheme}
+              regenerateSection={regenerateSection}
+              isRegeneratingSection={isRegeneratingSection}
+              handleLineClick={handleLineClick}
+              updateLineText={updateLineText}
+              handleLineKeyDown={handleLineKeyDown}
+              handleInstructionChange={handleInstructionChange}
+              addInstruction={addInstruction}
+              removeInstruction={removeInstruction}
+              handleLineDragStart={handleLineDragStart}
+              handleLineDrop={handleLineDrop}
+              setDraggedItemIndex={setDraggedItemIndex}
+              setDragOverIndex={setDragOverIndex}
+              setDraggableSectionIndex={setDraggableSectionIndex}
+              setDraggedLineInfo={setDraggedLineInfo}
+              setDragOverLineInfo={setDragOverLineInfo}
+              playAudioFeedback={playAudioFeedback}
+              handleDrop={handleDrop}
+            />
           </div>
         ))
       )}

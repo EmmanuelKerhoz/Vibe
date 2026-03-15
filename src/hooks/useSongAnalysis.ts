@@ -10,6 +10,7 @@ type UseSongAnalysisParams = {
   mood: string;
   rhymeScheme: string;
   uiLanguage: string;
+  isGenerating?: boolean;
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
   saveVersion: (name: string, snapshot?: {
@@ -33,6 +34,7 @@ export const useSongAnalysis = ({
   mood,
   rhymeScheme,
   uiLanguage,
+  isGenerating = false,
   setTopic,
   setMood,
   saveVersion,
@@ -49,6 +51,7 @@ export const useSongAnalysis = ({
     saveVersion,
     updateSongAndStructureWithHistory,
     updateState,
+    isGenerating,
   });
 
   const pasteImport = usePasteImport({

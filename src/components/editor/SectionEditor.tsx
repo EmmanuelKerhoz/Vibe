@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, Trash2, Settings2, X } from 'lucide-react';
+import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, Trash2, Settings2, X, Languages } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
 import { LyricInput } from './LyricInput';
@@ -8,6 +8,7 @@ import { InstructionEditor } from './InstructionEditor';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
+import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 
 interface SectionEditorProps {
   section: Section;
@@ -19,6 +20,10 @@ interface SectionEditorProps {
   selectedLineId: string | null;
   isGenerating: boolean;
   isAnalyzing: boolean;
+  isAdaptingLanguage?: boolean;
+  sectionTargetLanguage?: string;
+  onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
+  adaptSectionLanguage?: (sectionId: string, lang: string) => void;
   draggedItemIndex: number | null;
   dragOverIndex: number | null;
   draggedLineInfo: { sectionId: string; lineId: string } | null;
@@ -88,6 +93,10 @@ export const SectionEditor = React.memo(function SectionEditor({
   selectedLineId,
   isGenerating,
   isAnalyzing,
+  isAdaptingLanguage = false,
+  sectionTargetLanguage = 'English',
+  onSectionTargetLanguageChange,
+  adaptSectionLanguage,
   draggedItemIndex,
   dragOverIndex,
   draggedLineInfo,
@@ -124,6 +133,9 @@ export const SectionEditor = React.memo(function SectionEditor({
   const sectionColor = getSectionColorHex(section.name);
 
   const renderItems = buildRenderItems(section.lines);
+
+  const isSectionAdapting = isAdaptingLanguage;
+  const canAdaptSection = !!adaptSectionLanguage && !isGenerating && !isAnalyzing && !isSectionAdapting;
 
   return (
     <section
@@ -183,7 +195,34 @@ export const SectionEditor = React.memo(function SectionEditor({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Per-section language adaptation */}
+            {adaptSectionLanguage && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-32">
+                  <LcarsSelect
+                    value={sectionTargetLanguage}
+                    onChange={(v) => onSectionTargetLanguageChange?.(section.id, v)}
+                    options={SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
+                      value: lang.aiName,
+                      label: `${lang.sign} ${lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}`,
+                    }))}
+                    accentColor="var(--lcars-cyan)"
+                  />
+                </div>
+                <Tooltip title={`Adapt this section to ${sectionTargetLanguage}`}>
+                  <button
+                    onClick={() => adaptSectionLanguage(section.id, sectionTargetLanguage)}
+                    disabled={!canAdaptSection}
+                    className="flex items-center gap-1.5 rounded border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-400 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSectionAdapting
+                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                      : <Languages className="h-3 w-3" />}
+                  </button>
+                </Tooltip>
+              </div>
+            )}
             <Tooltip title={t.tooltips.regenerateSection}>
               <button
                 onClick={() => regenerateSection(section.id)}
@@ -219,25 +258,22 @@ export const SectionEditor = React.memo(function SectionEditor({
         <div className="mt-3 space-y-3">
           {/* Column header */}
           <div className="lyric-row lyric-row-header px-3 pb-1 border-b border-white/5 mb-1">
-            <div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/><div aria-hidden="true"/>
+            <div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" />
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Syllables</span>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>Count</span>
             <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Schema</span>
-            <div/>
+            <div />
           </div>
 
           {renderItems.map((item) => {
             if (item.kind === 'meta') {
-              /* ── Merged meta-group row ── */
               return (
                 <div
                   key={item.lines.map(l => l.id).join('-')}
                   className="group lyric-row border-l-2 border-cyan-500/50 bg-cyan-500/5 transition-colors"
                   style={{ paddingLeft: '12px', paddingRight: '12px' }}
                 >
-                  {/* cols 1-3: spacers */}
                   <div /><div /><div />
-                  {/* col 4: settings badge (click first line) */}
                   <button
                     type="button"
                     onClick={() => handleLineClick(item.lines[0]!.id)}
@@ -246,13 +282,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                   >
                     <Settings2 className="h-3.5 w-3.5" />
                   </button>
-                  {/* col 5: all tags inline, each with its own ×-delete */}
                   <div style={{ gridColumn: 'span 4', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', minWidth: 0 }}>
                     {item.lines.map((metaLine) => (
-                      <span
-                        key={metaLine.id}
-                        className="group/tag inline-flex items-center gap-1"
-                      >
+                      <span key={metaLine.id} className="group/tag inline-flex items-center gap-1">
                         <MetaLine text={metaLine.text} />
                         <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
                           <button
@@ -271,7 +303,6 @@ export const SectionEditor = React.memo(function SectionEditor({
               );
             }
 
-            /* ── Regular lyric line ── */
             const { line, index: lyricDisplayIndex0 } = item;
             const lyricDisplayIndex = lyricDisplayIndex0 + 1;
             const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;

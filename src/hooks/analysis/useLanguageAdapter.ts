@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
@@ -77,6 +77,8 @@ type UseLanguageAdapterParams = {
   saveVersion: SaveVersionFn;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
+  /** When true, auto-detect is suppressed to avoid parasitic AI calls during generation. */
+  isGenerating?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -89,6 +91,7 @@ export const useLanguageAdapter = ({
   saveVersion,
   updateSongAndStructureWithHistory,
   updateState,
+  isGenerating = false,
 }: UseLanguageAdapterParams) => {
   const [songLanguage, setSongLanguage]     = useState<string>('');
   const [targetLanguage, setTargetLanguage] = useState<string>('English');
@@ -97,6 +100,9 @@ export const useLanguageAdapter = ({
   const [isAdaptingLanguage, setIsAdaptingLanguage]   = useState(false);
   const [adaptationProgress, setAdaptationProgress]   = useState<AdaptationProgress>(IDLE_PROGRESS);
   const [adaptationResult, setAdaptationResult]       = useState<AdaptationResult | null>(null);
+
+  // Track whether initial auto-detect has already been triggered
+  const autoDetectFiredRef = useRef(false);
 
   const uiLang = uiLanguage === 'fr' ? 'French'
     : uiLanguage === 'es' ? 'Spanish'
@@ -107,12 +113,28 @@ export const useLanguageAdapter = ({
     : uiLanguage === 'ko' ? 'Korean'
     : 'English';
 
-  // Auto-detect language when song is loaded and language is not yet known
+  // Auto-detect language once when song first becomes non-empty,
+  // guarded against concurrent generation or ongoing adaptation.
   useEffect(() => {
-    if (song.length > 0 && !songLanguage) {
-      detectLanguage();
+    if (
+      song.length > 0 &&
+      !songLanguage &&
+      !isGenerating &&
+      !isAdaptingLanguage &&
+      !autoDetectFiredRef.current
+    ) {
+      autoDetectFiredRef.current = true;
+      void detectLanguage();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [song.length, isGenerating, isAdaptingLanguage]);
+
+  // Reset the auto-detect gate when the song is cleared.
+  useEffect(() => {
+    if (song.length === 0) {
+      autoDetectFiredRef.current = false;
+      setSongLanguage('');
+    }
   }, [song.length]);
 
   // -------------------------------------------------------------------------
@@ -131,8 +153,7 @@ export const useLanguageAdapter = ({
   };
 
   // -------------------------------------------------------------------------
-  // Reverse-translate: plain literal translation back to source language
-  // Returns array of plain strings (one per line, all sections flattened)
+  // Reverse-translate
   // -------------------------------------------------------------------------
   const reverseTranslate = async (
     adaptedSong: Section[],
@@ -164,8 +185,7 @@ export const useLanguageAdapter = ({
   };
 
   // -------------------------------------------------------------------------
-  // Review fidelity: compare original intent vs reverse-translated lines
-  // Returns { score, warnings }
+  // Review fidelity
   // -------------------------------------------------------------------------
   const reviewFidelity = async (
     originalSong: Section[],
@@ -240,7 +260,7 @@ export const useLanguageAdapter = ({
   };
 
   // -------------------------------------------------------------------------
-  // Public: adapt full song with reverse-check pipeline
+  // Public: adapt full song
   // -------------------------------------------------------------------------
   const adaptSongLanguage = async (newLanguage: string) => {
     if (song.length === 0 || newLanguage === songLanguage) return;
@@ -254,7 +274,6 @@ export const useLanguageAdapter = ({
     saveVersion(`Before Translation to ${newLanguage}`);
 
     try {
-      // ------- STEP 1: Adapt -----------------------------------------------
       setStep('adapting', progressLabel);
 
       const adaptPrompt = `You are an expert lyricist specializing in creative song adaptation across languages.
@@ -334,26 +353,16 @@ Return the fully adapted song that feels native to ${newLanguage} speakers while
       if (newSongData.length === 0) throw new Error('Empty adaptation response');
 
       const adaptedSong = mapSongWithPreservedIds(newSongData, song, newLanguage);
-
-      // Apply adapted lyrics immediately so the user sees the result
       updateSongAndStructureWithHistory(adaptedSong, adaptedSong.map(s => s.name));
       setSongLanguage(newLanguage);
 
-      // ------- STEP 2: Reverse translate -----------------------------------
       setStep('reversing', progressLabel);
       const reversedLines = await reverseTranslate(adaptedSong, newLanguage, sourceLanguage);
 
-      // ------- STEP 3: Review fidelity -------------------------------------
       setStep('reviewing', progressLabel);
       const { score, warnings } = await reviewFidelity(song, reversedLines, newLanguage, sourceLanguage);
 
-      // ------- STEP 4: Done ------------------------------------------------
-      const result: AdaptationResult = {
-        score,
-        warnings,
-        accepted: score >= 50,
-        targetLanguage: newLanguage,
-      };
+      const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };
       setAdaptationResult(result);
       setAdaptationProgress({ active: 'done', steps: PIPELINE_STEPS, label: progressLabel });
 
@@ -366,7 +375,7 @@ Return the fully adapted song that feels native to ${newLanguage} speakers while
   };
 
   // -------------------------------------------------------------------------
-  // Public: adapt single section with reverse-check pipeline
+  // Public: adapt single section
   // -------------------------------------------------------------------------
   const adaptSectionLanguage = async (sectionId: string, newLanguage: string) => {
     const section = song.find(s => s.id === sectionId);
@@ -381,7 +390,6 @@ Return the fully adapted song that feels native to ${newLanguage} speakers while
     saveVersion(`Before Section ${section.name} Translation to ${newLanguage}`);
 
     try {
-      // ------- STEP 1: Adapt -----------------------------------------------
       setStep('adapting', progressLabel);
 
       const sectionPrompt = `You are an expert lyricist specializing in creative song adaptation across languages.
@@ -426,14 +434,12 @@ ${JSON.stringify(section)}`;
       const newSectionData = safeJsonParse<any>(adaptResponse.text || '{}', {});
       if (!newSectionData.name) throw new Error('Empty section adaptation response');
 
-      // Build a single-section song for reverse check
       const adaptedSectionSong: Section[] = [{
         ...section,
         lines: newSectionData.lines ?? section.lines,
         language: newLanguage,
       }];
 
-      // Apply immediately
       updateSong(currentSong =>
         currentSong.map(currentSection => {
           if (currentSection.id !== sectionId) return currentSection;
@@ -441,23 +447,14 @@ ${JSON.stringify(section)}`;
         })
       );
 
-      // ------- STEP 2: Reverse translate -----------------------------------
       setStep('reversing', progressLabel);
       const reversedLines = await reverseTranslate(adaptedSectionSong, newLanguage, sourceLanguage);
 
-      // ------- STEP 3: Review fidelity -------------------------------------
       setStep('reviewing', progressLabel);
-      // Use the original section lines as reference
       const originalSectionSong: Section[] = [section];
       const { score, warnings } = await reviewFidelity(originalSectionSong, reversedLines, newLanguage, sourceLanguage);
 
-      // ------- STEP 4: Done ------------------------------------------------
-      const result: AdaptationResult = {
-        score,
-        warnings,
-        accepted: score >= 50,
-        targetLanguage: newLanguage,
-      };
+      const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };
       setAdaptationResult(result);
       setAdaptationProgress({ active: 'done', steps: PIPELINE_STEPS, label: progressLabel });
 
