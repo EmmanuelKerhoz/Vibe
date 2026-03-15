@@ -114,9 +114,9 @@ export function InsightsBar({
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 
-        {/* Row 1: Language tools + KPIs */}
+        {/* Row 1: Language tools + KPIs (KPIs hidden on desktop — shown in StatusBar) */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Language selector — shrinks on mobile */}
+          {/* Language selector */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0">
               <BarChart2 className="w-3.5 h-3.5" />
@@ -161,8 +161,8 @@ export function InsightsBar({
             </div>
           </div>
 
-          {/* KPIs */}
-          <div className="flex items-center gap-3 lg:gap-6 shrink-0">
+          {/* KPIs — mobile only (desktop: shown in StatusBar) */}
+          <div className="flex lg:hidden items-center gap-3 shrink-0">
             <div className="flex flex-col items-end">
               <span className="micro-label text-zinc-500">{t.insights.sections}</span>
               <span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{sectionCount}</span>
@@ -171,7 +171,7 @@ export function InsightsBar({
               <span className="micro-label text-zinc-500">{t.insights.words}</span>
               <span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{wordCount}</span>
             </div>
-            <div className="hidden sm:flex flex-col items-end">
+            <div className="hidden sm:flex lg:hidden flex-col items-end">
               <span className="micro-label text-zinc-500">{t.insights.characters}</span>
               <span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{charCount}</span>
             </div>
@@ -180,7 +180,7 @@ export function InsightsBar({
 
         {/* Row 2: Section chips + action buttons */}
         <div className="flex items-center gap-2 w-full min-w-0">
-          {/* Section chips — scroll independently */}
+          {/* Section chips */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar min-w-0 flex-1" style={{ scrollbarWidth: 'none' }}>
             {song.map((section) => {
               const sectionWordCount = section.lines
@@ -206,7 +206,7 @@ export function InsightsBar({
             })}
           </div>
 
-          {/* Action buttons — never scroll away */}
+          {/* Action buttons */}
           <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
             {toggleMetronome && (
               <Tooltip title={t.musical?.metronome ?? 'Metronome'}>
