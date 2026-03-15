@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds } from '../../utils/songMergeUtils';
@@ -56,12 +56,16 @@ export const useSongAnalysisEngine = ({
 
   const lastAnalyzedSongRef = useRef<string>('');
   const backoffUntilRef = useRef<number>(0);
-  // Abort controller for the background theme-tracking call
   const bgAbortControllerRef = useRef<AbortController | null>(null);
+  // Shared abort ref for foreground user-triggered calls
+  const fgAbortRef = useRef<AbortController | null>(null);
 
-  // Abort on unmount
+  // Abort all in-flight calls on unmount
   useEffect(() => {
-    return () => { bgAbortControllerRef.current?.abort(); };
+    return () => {
+      bgAbortControllerRef.current?.abort();
+      fgAbortRef.current?.abort();
+    };
   }, []);
 
   const uiLang = uiLanguage === 'fr' ? 'French'
@@ -73,6 +77,7 @@ export const useSongAnalysisEngine = ({
     : uiLanguage === 'ko' ? 'Korean'
     : 'English';
 
+  // Background theme-tracking
   useEffect(() => {
     if (song.length === 0) return;
 
@@ -83,7 +88,6 @@ export const useSongAnalysisEngine = ({
       if (Date.now() < backoffUntilRef.current) return;
       if (isAnalyzingTheme) return;
 
-      // Abort any previous background call still in-flight
       bgAbortControllerRef.current?.abort();
       const controller = new AbortController();
       bgAbortControllerRef.current = controller;
@@ -142,20 +146,25 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
     return () => clearTimeout(timer);
   }, [song, topic, mood, uiLang, setTopic, setMood]);
 
-  const toggleAnalysisItemSelection = (itemText: string) => {
+  const toggleAnalysisItemSelection = useCallback((itemText: string) => {
     setSelectedAnalysisItems(prev => {
       const next = new Set(prev);
-      if (next.has(itemText)) {
-        next.delete(itemText);
-      } else {
-        next.add(itemText);
-      }
+      if (next.has(itemText)) next.delete(itemText);
+      else next.add(itemText);
       return next;
     });
-  };
+  }, []);
+
+  const clearAppliedAnalysisItems = useCallback(() => {
+    setAppliedAnalysisItems(new Set());
+  }, []);
 
   const applySelectedAnalysisItems = async () => {
     if (selectedAnalysisItems.size === 0 || isApplyingAnalysis) return;
+
+    fgAbortRef.current?.abort();
+    const controller = new AbortController();
+    fgAbortRef.current = controller;
 
     const itemsToApply = Array.from(selectedAnalysisItems);
     setIsApplyingAnalysis('batch');
@@ -209,6 +218,8 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
         },
       });
 
+      if (controller.signal.aborted) return;
+
       const newSongData = safeJsonParse<any[]>(response.text || '[]', []);
       if (newSongData.length > 0) {
         const updatedSong = mapSongWithPreservedIds(newSongData, song);
@@ -221,14 +232,20 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
         setSelectedAnalysisItems(new Set());
       }
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       console.error('Apply batch analysis error:', error);
     } finally {
-      setIsApplyingAnalysis(null);
+      if (!controller.signal.aborted) setIsApplyingAnalysis(null);
     }
   };
 
   const applyAnalysisItem = async (itemText: string) => {
     if (isApplyingAnalysis) return;
+
+    fgAbortRef.current?.abort();
+    const controller = new AbortController();
+    fgAbortRef.current = controller;
+
     setIsApplyingAnalysis(itemText);
 
     if (appliedAnalysisItems.size === 0) {
@@ -282,6 +299,8 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
         },
       });
 
+      if (controller.signal.aborted) return;
+
       const newSongData = safeJsonParse<any[]>(response.text || '[]', []);
       if (newSongData.length > 0) {
         const updatedSong = mapSongWithPreservedIds(newSongData, song);
@@ -289,14 +308,20 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
         setAppliedAnalysisItems(prev => new Set(prev).add(itemText));
       }
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       console.error('Apply analysis error:', error);
     } finally {
-      setIsApplyingAnalysis(null);
+      if (!controller.signal.aborted) setIsApplyingAnalysis(null);
     }
   };
 
   const analyzeCurrentSong = async () => {
     if (song.length === 0) return;
+
+    fgAbortRef.current?.abort();
+    const controller = new AbortController();
+    fgAbortRef.current = controller;
+
     setIsAnalyzing(true);
     setAnalysisSteps(['Gathering song data...']);
     setIsAnalysisModalOpen(true);
@@ -343,6 +368,8 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
         },
       });
 
+      if (controller.signal.aborted) return;
+
       setAnalysisSteps(prev => [...prev, 'Finalizing report...']);
       const data = safeJsonParse<AnalysisReport>(response.text || '{}', {
         theme: '',
@@ -356,15 +383,12 @@ ${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n'
       setAnalysisReport(data);
       setAnalysisSteps(prev => [...prev, 'Analysis complete!']);
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       console.error('Analysis error:', error);
       setAnalysisSteps(prev => [...prev, 'Error during analysis. Please try again.']);
     } finally {
-      setIsAnalyzing(false);
+      if (!controller.signal.aborted) setIsAnalyzing(false);
     }
-  };
-
-  const clearAppliedAnalysisItems = () => {
-    setAppliedAnalysisItems(new Set());
   };
 
   return {

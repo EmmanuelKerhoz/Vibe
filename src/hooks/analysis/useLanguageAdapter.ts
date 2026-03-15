@@ -13,17 +13,12 @@ import {
 } from './languageAdapterTypes';
 import { reverseTranslate, reviewFidelity } from './languageAdapterPipeline';
 
-// Re-export types so consumers don't need to change their import paths.
 export type {
   AdaptationStepId,
   AdaptationStep,
   AdaptationProgress,
   AdaptationResult,
 } from './languageAdapterTypes';
-
-// ---------------------------------------------------------------------------
-// Hook params
-// ---------------------------------------------------------------------------
 
 type SaveVersionFn = (name: string, snapshot?: {
   song: Section[];
@@ -40,16 +35,10 @@ type UseLanguageAdapterParams = {
   saveVersion: SaveVersionFn;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
-  /** When true, auto-detect is suppressed to avoid parasitic AI calls during generation. */
   isGenerating?: boolean;
-  /** Elevated from useAppState — shared source of truth for detected language. */
   songLanguage: string;
   setSongLanguage: (lang: string) => void;
 };
-
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
 
 export const useLanguageAdapter = ({
   song,
@@ -70,6 +59,8 @@ export const useLanguageAdapter = ({
 
   const autoDetectFiredRef = useRef(false);
   const firstSectionIdRef  = useRef<string | null>(null);
+  // Single abort ref — cancels whichever AI call is in-flight when a new one starts or on unmount
+  const abortRef = useRef<AbortController | null>(null);
 
   const updateSong = makeSongUpdater(updateState);
 
@@ -82,7 +73,12 @@ export const useLanguageAdapter = ({
     : uiLanguage === 'ko' ? 'Korean'
     : 'English';
 
-  // Detect song identity change.
+  // Abort on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
+  // Detect song identity change
   useEffect(() => {
     if (song.length === 0) return;
     const currentFirstId = song[0]!.id;
@@ -93,7 +89,7 @@ export const useLanguageAdapter = ({
     firstSectionIdRef.current = currentFirstId;
   }, [song, setSongLanguage]);
 
-  // Auto-detect language once when song first becomes non-empty.
+  // Auto-detect language once when song first becomes non-empty
   useEffect(() => {
     if (song.length > 0 && !songLanguage && !isGenerating && !isAdaptingLanguage && !autoDetectFiredRef.current) {
       autoDetectFiredRef.current = true;
@@ -102,7 +98,7 @@ export const useLanguageAdapter = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [song.length, songLanguage, isGenerating, isAdaptingLanguage]);
 
-  // Reset when song is cleared.
+  // Reset when song is cleared
   useEffect(() => {
     if (song.length === 0) {
       autoDetectFiredRef.current = false;
@@ -114,11 +110,16 @@ export const useLanguageAdapter = ({
   const setStep = (id: AdaptationStepId, label: string) =>
     setAdaptationProgress(prev => ({ ...prev, active: id, label }));
 
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Public: detect language
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   const detectLanguage = async () => {
     if (song.length === 0) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsDetectingLanguage(true);
     try {
       const songText = song.map(s => s.lines.map(l => l.text).join('\n')).join('\n');
@@ -126,19 +127,25 @@ export const useLanguageAdapter = ({
         model: AI_MODEL_NAME,
         contents: `Detect the language of these lyrics. Return ONLY the name of the language in English (e.g., "English", "French", "Spanish").\n\nLyrics:\n${songText.substring(0, 1000)}`,
       });
+      if (controller.signal.aborted) return;
       setSongLanguage(response.text?.trim() || 'English');
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       console.error('Language detection error:', error);
     } finally {
-      setIsDetectingLanguage(false);
+      if (!controller.signal.aborted) setIsDetectingLanguage(false);
     }
   };
 
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Public: adapt full song
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   const adaptSongLanguage = async (newLanguage: string) => {
     if (song.length === 0 || newLanguage === songLanguage) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     const sourceLanguage = songLanguage || 'unknown';
     const progressLabel  = `${sourceLanguage} \u2192 ${newLanguage}`;
@@ -186,6 +193,8 @@ export const useLanguageAdapter = ({
         },
       });
 
+      if (controller.signal.aborted) return;
+
       const newSongData = safeJsonParse<any[]>(adaptResponse.text || '[]', []);
       if (newSongData.length === 0) throw new Error('Empty adaptation response');
 
@@ -195,28 +204,35 @@ export const useLanguageAdapter = ({
 
       setStep('reversing', progressLabel);
       const reversedLines = await reverseTranslate(adaptedSong, newLanguage, sourceLanguage);
+      if (controller.signal.aborted) return;
 
       setStep('reviewing', progressLabel);
       const { score, warnings } = await reviewFidelity(song, reversedLines, newLanguage, sourceLanguage);
+      if (controller.signal.aborted) return;
 
       const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };
       setAdaptationResult(result);
       setAdaptationProgress({ active: 'done', steps: PIPELINE_STEPS, label: progressLabel });
 
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       console.error('Language adaptation error:', error);
       setAdaptationProgress({ active: 'failed', steps: PIPELINE_STEPS, label: progressLabel });
     } finally {
-      setIsAdaptingLanguage(false);
+      if (!controller.signal.aborted) setIsAdaptingLanguage(false);
     }
   };
 
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Public: adapt single section
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   const adaptSectionLanguage = async (sectionId: string, newLanguage: string) => {
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     const sourceLanguage = songLanguage || 'unknown';
     const progressLabel  = `${section.name}: ${sourceLanguage} \u2192 ${newLanguage}`;
@@ -261,6 +277,8 @@ export const useLanguageAdapter = ({
         },
       });
 
+      if (controller.signal.aborted) return;
+
       const newSectionData = safeJsonParse<any>(adaptResponse.text || '{}', {});
       if (!newSectionData.name) throw new Error('Empty section adaptation response');
 
@@ -275,19 +293,22 @@ export const useLanguageAdapter = ({
 
       setStep('reversing', progressLabel);
       const reversedLines = await reverseTranslate(adaptedSectionSong, newLanguage, sourceLanguage);
+      if (controller.signal.aborted) return;
 
       setStep('reviewing', progressLabel);
       const { score, warnings } = await reviewFidelity([section], reversedLines, newLanguage, sourceLanguage);
+      if (controller.signal.aborted) return;
 
       const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };
       setAdaptationResult(result);
       setAdaptationProgress({ active: 'done', steps: PIPELINE_STEPS, label: progressLabel });
 
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       console.error('Section language adaptation error:', error);
       setAdaptationProgress({ active: 'failed', steps: PIPELINE_STEPS, label: progressLabel });
     } finally {
-      setIsAdaptingLanguage(false);
+      if (!controller.signal.aborted) setIsAdaptingLanguage(false);
     }
   };
 
