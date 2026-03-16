@@ -24,7 +24,7 @@ const lastCreatedBlob = () => {
 
 const buildHook = (song: Section[], structure = DEFAULT_STRUCTURE) => {
   const updateState = vi.fn();
-  const updateSongWithHistory = vi.fn();
+  
   const updateStructureWithHistory = vi.fn();
   const updateSongAndStructureWithHistory = vi.fn();
   const openPasteModalWithText = vi.fn();
@@ -43,7 +43,7 @@ const buildHook = (song: Section[], structure = DEFAULT_STRUCTURE) => {
       setDraggedLineInfo: vi.fn(),
       setDragOverLineInfo: vi.fn(),
       updateState,
-      updateSongWithHistory,
+      
       updateStructureWithHistory,
       updateSongAndStructureWithHistory,
       title: 'Test Song',
@@ -53,7 +53,7 @@ const buildHook = (song: Section[], structure = DEFAULT_STRUCTURE) => {
       playAudioFeedback,
     })
   );
-  return { result, updateSongAndStructureWithHistory, updateStructureWithHistory, updateSongWithHistory, updateState };
+  return { result, updateSongAndStructureWithHistory, updateStructureWithHistory,  updateState };
 };
 
 describe('useSongEditor', () => {
