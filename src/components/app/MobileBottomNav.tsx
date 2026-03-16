@@ -7,7 +7,6 @@ interface Props {
   isStructureOpen: boolean;
   activeTab: 'lyrics' | 'musical';
   isGenerating?: boolean;
-  /** Accept both direct boolean setter and functional updater */
   setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
@@ -27,13 +26,15 @@ export function MobileBottomNav({
 
   return (
     <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
-      {/* Settings — opens SettingsModal */}
+      {/* FIX #5: call onOpenSettings BEFORE closing panels so React batches the
+          state updates correctly and the settings modal is not cancelled by
+          a subsequent closeMobilePanels triggered by the backdrop unmount. */}
       <button
         className="mobile-bottom-nav-btn"
         onClick={() => {
+          onOpenSettings?.();
           setIsLeftPanelOpen(false);
           setIsStructureOpen(false);
-          onOpenSettings?.();
         }}
         aria-label={t.mobileNav.settings}
       >
@@ -88,7 +89,9 @@ export function MobileBottomNav({
         <span>{t.mobileNav.music}</span>
       </button>
 
-      {/* Structure sidebar */}
+      {/* FIX #4: structure toggle — guard against re-open if panel is animating out.
+          We force setIsStructureOpen(false) when already closing rather than toggling,
+          preventing the ghost re-appearance caused by rapid tap during exit animation. */}
       <button
         className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
         onClick={() => {

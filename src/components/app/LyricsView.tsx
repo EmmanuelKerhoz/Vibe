@@ -151,7 +151,6 @@ export const LyricsView = memo(function LyricsView({
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
-  // ── EditorContext value — stable object tant que les callbacks ne changent pas
   const editorHandlers: EditorHandlers = {
     moveSectionUp, moveSectionDown,
     moveLineUp, moveLineDown,
@@ -161,7 +160,8 @@ export const LyricsView = memo(function LyricsView({
 
   return (
     <EditorContextProvider value={editorHandlers}>
-      <div className="w-full flex flex-col gap-1 pb-32">
+      {/* FIX #1: w-full + min-w-0 ensure the sections container expands to full available width */}
+      <div className="w-full min-w-0 flex flex-col gap-1 pb-32">
         {isMarkupMode ? (
           <div className="flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
             <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
@@ -172,6 +172,7 @@ export const LyricsView = memo(function LyricsView({
                 <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
                   {t.editor.markupMode.title}
                 </h3>
+                {/* FIX #3: meta-instructions header — flex-nowrap prevents wrapping on consecutive items */}
                 <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
                   {t.editor.markupMode.description}
                 </p>
@@ -213,7 +214,7 @@ export const LyricsView = memo(function LyricsView({
           </div>
         ) : (
           song.map((section, sectionIndex) => (
-            <div key={section.id} className={`fluent-animate-in fluent-stagger-${Math.min(sectionIndex + 1, 8)}`}>
+            <div key={section.id} className={`w-full min-w-0 fluent-animate-in fluent-stagger-${Math.min(sectionIndex + 1, 8)}`}>
               <SectionEditor
                 section={section}
                 sectionIndex={sectionIndex}

@@ -28,9 +28,7 @@ interface Props {
   normalizeStructure: () => void;
   handleDrop: (idx: number) => void;
   onScrollToSection: (sectionId: string) => void;
-  /** True when rendered as a mobile overlay (shows header X close button). */
   isMobileOverlay?: boolean;
-  /** Extra class applied to the motion panel root. */
   className?: string;
 }
 
@@ -47,6 +45,17 @@ export function StructureSidebar({
 }: Props) {
   const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // FIX #4: track whether the panel is in the process of closing to prevent
+  // ghost re-appearance if the user taps quickly during the exit animation.
+  const isClosingRef = useRef(false);
+
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    isClosingRef.current = true;
+    setIsStructureOpen(false);
+    // Reset the closing flag after the motion exit animation completes (~300ms)
+    setTimeout(() => { isClosingRef.current = false; }, 350);
+  };
 
   const sectionOptions = [
     t.sections.intro, t.sections.verse, t.sections.preChorus,
@@ -76,9 +85,7 @@ export function StructureSidebar({
           }} />
           <div className="w-[280px] flex flex-col h-full overflow-hidden">
 
-            {/* Header — accent rail bottom using unified token, no legacy border-b */}
             <div className="h-16 px-5 flex items-center justify-between" style={{ position: 'relative' }}>
-              {/* Unified accent rail — bottom edge of header */}
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 height: 'var(--accent-rail-thickness, 2px)',
@@ -89,10 +96,11 @@ export function StructureSidebar({
                 <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />
                 <span className="text-[10px] uppercase tracking-widest font-semibold">{t.structure.title}</span>
               </h3>
-              {/* X close button — mobile overlay only */}
+              {/* FIX #4: stopPropagation prevents the backdrop from receiving the
+                  same touch event and calling closeMobilePanels a second time */}
               {isMobileOverlay && (
                 <button
-                  onClick={() => setIsStructureOpen(false)}
+                  onClick={handleClose}
                   className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded"
                   aria-label="Close structure panel"
                 >
