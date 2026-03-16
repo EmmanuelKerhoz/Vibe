@@ -107,6 +107,8 @@ const ar: Translations = {
     adapt: 'تكييف',
     moodPlaceholder: 'المزاج...',
     regenerateWarning: 'سيؤدي هذا إلى إعادة توليد كلمات الأغنية الحالية بالكامل. هل تريد المتابعة؟',
+    addLine: 'إضافة سطر',
+    addMusicalEffect: 'إضافة تأثير موسيقي / تعديل / مؤثر',
     moveSectionUp: 'تحريك المقطع لأعلى',
     moveSectionDown: 'تحريك المقطع لأسفل',
     dragToReorder: 'اسحب لإعادة ترتيب المقطع',
@@ -156,6 +158,9 @@ const ar: Translations = {
     instruments: 'الآلات الموسيقية',
     instrumentsPlaceholder: 'اختر عائلات الآلات...',
     rhythmPresets: 'أنماط الإيقاع',
+    vibeBoard: 'لوحة المزاج',
+    vibeBoardDescription: 'اختر نوعك الموسيقي لضبط BPM والآلات تلقائيًا',
+    subStyle: 'النمط الفرعي',
   },
 
   analysis: {
@@ -264,6 +269,7 @@ const ar: Translations = {
       label: 'الصوت',
       enable: 'تفعيل الصوت',
       volume: 'مستوى الصوت',
+      disable: 'تعطيل',
     },
     language: {
       label: 'اللغة',
