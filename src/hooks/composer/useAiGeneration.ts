@@ -9,14 +9,7 @@ import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/
 import { makeSongUpdater } from '../hookUtils';
 import { withAbort, isAbortError } from '../../utils/withAbort';
 import { withRetry } from '../../utils/withRetry';
-
-const SHORT_SECTION_LINE_COUNT = 4;
-const LONG_SECTION_LINE_COUNT = 6;
-
-const getDefaultLineCount = (name: string) =>
-  name.toLowerCase().includes('verse') || name.toLowerCase().includes('bridge')
-    ? LONG_SECTION_LINE_COUNT
-    : SHORT_SECTION_LINE_COUNT;
+import { getDefaultLineCount } from '../../utils/songDefaults';
 
 const sectionNamesMatch = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
 
@@ -145,10 +138,9 @@ export const useAiGeneration = ({
     [regeneratingSections],
   );
 
-  // Stable — ne change que si updateState change
   const updateSong = useMemo(() => makeSongUpdater(updateState), [updateState]);
 
-  // ── generateSong ──────────────────────────────────────────────────── P4-fix: useCallback
+  // ── generateSong ── song retiré des deps (non utilisé dans le corps)
   const generateSong = useCallback(async () => {
     setIsGenerating(true);
     try {
@@ -185,11 +177,11 @@ export const useAiGeneration = ({
       if (!abortControllerRef.current?.signal.aborted) setIsGenerating(false);
     }
   }, [
-    song, structure, topic, mood, rhymeScheme, targetSyllables, songLanguage, uiLanguage,
+    structure, topic, mood, rhymeScheme, targetSyllables, songLanguage, uiLanguage,
     updateSongAndStructureWithHistory, requestAutoTitleGeneration, setSelectedLineId,
   ]);
 
-  // ── regenerateSection ───────────────────────────────────────────── P4-fix: useCallback
+  // ── regenerateSection ────────────────────────────────────────────────────
   const regenerateSection = useCallback(async (sectionId: string) => {
     const sectionToRegenerate = song.find(s => s.id === sectionId);
     if (!sectionToRegenerate) return;
@@ -268,7 +260,7 @@ export const useAiGeneration = ({
     updateSong,
   ]);
 
-  // ── quantizeSyllables ──────────────────────────────────────────── P4-fix: useCallback
+  // ── quantizeSyllables ────────────────────────────────────────────────────
   const quantizeSyllables = useCallback(async (sectionId?: string) => {
     if (song.length === 0) return;
     setIsGenerating(true);

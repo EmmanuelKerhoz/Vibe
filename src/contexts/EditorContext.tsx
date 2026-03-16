@@ -13,7 +13,7 @@ export interface EditorHandlers {
   moveSectionDown:      (sectionId: string) => void;
   moveLineUp:           (sectionId: string, lineId: string) => void;
   moveLineDown:         (sectionId: string, lineId: string) => void;
-  addLineToSection:     (sectionId: string) => void;
+  addLineToSection:     (sectionId: string, afterLineId?: string) => void;
   deleteLineFromSection:(sectionId: string, lineId: string) => void;
   setSectionName:       (sectionId: string, name: string) => void;
   setSectionRhymeScheme:(sectionId: string, scheme: string) => void;

@@ -118,14 +118,22 @@ export const LyricsView = memo(function LyricsView({
     }));
   }, [updateState]);
 
-  const addLineToSection = useCallback((sectionId: string) => {
+  const addLineToSection = useCallback((sectionId: string, afterLineId?: string) => {
+    const newLine = { id: generateId(), text: '', rhymingSyllables: '', rhyme: '', syllables: 0, concept: '', isManual: true };
     updateState(current => ({
-      song: current.song.map(s =>
-        s.id !== sectionId ? s : {
-          ...s,
-          lines: [...s.lines, { id: generateId(), text: '', rhymingSyllables: '', rhyme: '', syllables: 0, concept: '', isManual: true }],
+      song: current.song.map(s => {
+        if (s.id !== sectionId) return s;
+        if (!afterLineId) {
+          return { ...s, lines: [...s.lines, newLine] };
         }
-      ),
+        const afterIdx = s.lines.findIndex(l => l.id === afterLineId);
+        if (afterIdx === -1) {
+          return { ...s, lines: [...s.lines, newLine] };
+        }
+        const lines = [...s.lines];
+        lines.splice(afterIdx + 1, 0, newLine);
+        return { ...s, lines };
+      }),
       structure: current.structure,
     }));
   }, [updateState]);
@@ -172,7 +180,6 @@ export const LyricsView = memo(function LyricsView({
                 <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
                   {t.editor.markupMode.title}
                 </h3>
-                {/* FIX #3: meta-instructions header — flex-nowrap prevents wrapping on consecutive items */}
                 <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
                   {t.editor.markupMode.description}
                 </p>
