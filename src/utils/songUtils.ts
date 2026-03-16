@@ -40,10 +40,6 @@ export const getSectionDotColor = (name: string) => {
   return 'bg-zinc-500';
 };
 
-/**
- * Returns the rhyme scheme letter (e.g. 'A', 'B', 'C') for a given lyric line index
- * within a section, using the provided rhymeScheme string (e.g. 'AABB', 'ABAB').
- */
 export function getSchemeLetterForLine(section: Section, lineIndex: number, rhymeScheme: string): string | null;
 export function getSchemeLetterForLine(scheme: string | undefined, lineIndex: number): string | null;
 export function getSchemeLetterForLine(
@@ -78,25 +74,116 @@ export const getRhymeColor = (rhyme: string | null | undefined): string => {
   return 'bg-white/5 text-zinc-500 border-white/10';
 };
 
-/**
- * Returns the raw CSS colour for a rhyme letter — used for inline span colouring
- * (as opposed to getRhymeColor which returns Tailwind class strings).
- */
 export const getRhymeTextColor = (rhyme: string | null | undefined): string | null => {
   if (!rhyme || typeof rhyme !== 'string') return null;
   const r = rhyme.toUpperCase();
-  if (r === 'A') return '#3b82f6'; // blue-500
-  if (r === 'B') return '#10b981'; // emerald-500
-  if (r === 'C') return '#f59e0b'; // amber-500
-  if (r === 'D') return '#a855f7'; // purple-500
-  if (r === 'E') return '#ec4899'; // pink-500
-  if (r === 'F') return '#06b6d4'; // cyan-500
-  if (r === 'G') return '#f43f5e'; // rose-500
-  if (r === 'H') return '#6366f1'; // indigo-500
+  if (r === 'A') return '#3b82f6';
+  if (r === 'B') return '#10b981';
+  if (r === 'C') return '#f59e0b';
+  if (r === 'D') return '#a855f7';
+  if (r === 'E') return '#ec4899';
+  if (r === 'F') return '#06b6d4';
+  if (r === 'G') return '#f43f5e';
+  if (r === 'H') return '#6366f1';
   return null;
 };
 
-// Re-exported from constants/editor for backward compatibility.
+/**
+ * Client-side rhyme scheme detector — fallback when the AI returns FREE.
+ *
+ * Algorithm:
+ * 1. Extract the "rhyme key" of each line: the last 3 chars of its last word,
+ *    normalised (lowercase, diacritics stripped). 2-char minimum.
+ * 2. Cluster lines that share the same rhyme key into groups.
+ * 3. Try to match clusters to known schemes (AABB, ABAB, ABCB, AAAA, ABAB…).
+ * 4. If ≥50% of lines participate in a rhyme pair → return the scheme string.
+ * 5. Otherwise return null (caller keeps FREE).
+ *
+ * Supports 4, 6, 8 line sections. Handles French assonance via suffix match.
+ */
+export function detectRhymeSchemeLocally(lines: string[]): string | null {
+  const lyricLines = lines.filter(l => l.trim().length > 0);
+  const n = lyricLines.length;
+  if (n < 2) return null;
+
+  // Normalise: strip diacritics, lowercase, keep only letters
+  const normalize = (s: string): string =>
+    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+
+  // Extract rhyme key: last 3 chars of last word (min 2)
+  const rhymeKey = (line: string): string => {
+    const stripped = line.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
+    const lastWord = stripped.match(/[\p{L}\p{N}]+$/u)?.[0] ?? '';
+    const norm = normalize(lastWord);
+    if (norm.length < 2) return norm;
+    return norm.slice(-3); // last 3 chars covers most rhymes
+  };
+
+  const keys = lyricLines.map(rhymeKey);
+
+  // Build pairwise similarity matrix (same key OR last-2-char match)
+  const rhymes = (a: string, b: string): boolean => {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    // accept 2-char suffix match (assonance/near-rhyme)
+    return a.slice(-2) === b.slice(-2);
+  };
+
+  // Assign a letter to each unique rhyme cluster greedily
+  const letters: (string | null)[] = new Array(n).fill(null);
+  let nextLetter = 0;
+  const LETTERS = 'ABCDEFGH';
+
+  for (let i = 0; i < n; i++) {
+    if (letters[i] !== null) continue;
+    // Find if any previous key rhymes with this one
+    let matchedLetter: string | null = null;
+    for (let j = 0; j < i; j++) {
+      if (rhymes(keys[i]!, keys[j]!)) {
+        matchedLetter = letters[j]!;
+        break;
+      }
+    }
+    if (matchedLetter) {
+      letters[i] = matchedLetter;
+    } else {
+      letters[i] = LETTERS[nextLetter] ?? String.fromCharCode(65 + nextLetter);
+      nextLetter++;
+    }
+    // Propagate this letter to all later lines that rhyme with this one
+    for (let k = i + 1; k < n; k++) {
+      if (letters[k] === null && rhymes(keys[i]!, keys[k]!)) {
+        letters[k] = letters[i]!;
+      }
+    }
+  }
+
+  // Count how many lines participate in at least one rhyme pair
+  const letterCounts: Record<string, number> = {};
+  for (const l of letters) {
+    if (l) letterCounts[l] = (letterCounts[l] ?? 0) + 1;
+  }
+  const rhymingLines = Object.values(letterCounts).filter(c => c >= 2).reduce((a, b) => a + b, 0);
+  const confidence = rhymingLines / n;
+
+  if (confidence < 0.5) return null; // not enough rhymes → keep FREE
+
+  // Build the raw scheme string (e.g. "AABBA", "ABABCC")
+  const raw = letters.map(l => l ?? 'X').join('');
+
+  // Map to known scheme labels for clean display
+  const KNOWN: Record<string, string> = {
+    AABB: 'AABB', ABAB: 'ABAB', ABCB: 'ABCB', AAAA: 'AAAA',
+    AABBA: 'AABBA', AAABBB: 'AAABBB', AABBCC: 'AABBCC',
+    ABABAB: 'ABABAB', ABCABC: 'ABCABC', AABCCB: 'AABCCB', ABACBC: 'ABACBC',
+    ABBA: 'ABBA', ABAC: 'ABAC', AAAB: 'AAAB', ABBB: 'ABBB',
+    AABBAA: 'AABBAA', ABABCC: 'ABABCC',
+  };
+
+  // Return known label if matches exactly, otherwise return raw scheme
+  return KNOWN[raw] ?? raw;
+}
+
 export { DEFAULT_STRUCTURE, MUSICAL_INSTRUCTIONS } from '../constants/editor';
 
 export const cleanSectionName = (name: string) => {

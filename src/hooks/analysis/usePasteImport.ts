@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
-import { cleanSectionName } from '../../utils/songUtils';
+import { cleanSectionName, detectRhymeSchemeLocally } from '../../utils/songUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
 import type { Section } from '../../types';
@@ -34,12 +34,8 @@ export const usePasteImport = ({
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pastedText, setPastedText] = useState('');
 
-  // Abort controller — cancels in-flight AI call on unmount or new invocation
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    return () => { abortControllerRef.current?.abort(); };
-  }, []);
+  useEffect(() => { return () => { abortControllerRef.current?.abort(); }; }, []);
 
   const uiLang = uiLanguage === 'fr' ? 'French'
     : uiLanguage === 'es' ? 'Spanish'
@@ -53,7 +49,6 @@ export const usePasteImport = ({
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
 
-    // Abort any previous in-flight call
     abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -82,8 +77,15 @@ CRITICAL INSTRUCTIONS:
 
 Do NOT use any other section names. If a block of text is a structural section header (Verse, Chorus, Bridge, etc.), use it as the section name. If it is a performance meta-instruction, keep it as a line.
 
-Extract the overall topic/theme and mood/vibe.
-For each section, identify the rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
+RHYME SCHEME DETECTION — CRITICAL RULES:
+- Evaluate rhymes phonetically in the LANGUAGE of the lyrics, not in English.
+- For French lyrics: feminine endings (-tion/-sion, -eur/-eur, -ment/-ment) and assonances (shared vowel sound) ARE valid rhymes.
+- For all languages: near-rhymes, assonances, and imperfect rhymes count as rhyming.
+- Assign FREE ONLY when you find absolutely zero recurring end-sound pattern across ANY pair of lines in the section.
+- Prefer a structured scheme (AABB, ABAB, ABCB, AAAA, AABBA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, ABACBC) over FREE whenever at least 2 line-pairs share a sound.
+- When in doubt between FREE and a structured scheme, choose the structured scheme.
+
+For each section, identify the rhyme scheme using one of: AABB, ABAB, ABCB, AAAA, AABBA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, ABACBC, FREE.
 For each line: exact lyric text (preserve [meta] brackets), rhyming syllables, rhyme identifier, exact syllable count, short core concept.
 
 Lyrics:
@@ -108,7 +110,7 @@ ${pastedText}`;
                     name: { type: Type.STRING },
                     rhymeScheme: {
                       type: Type.STRING,
-                      description: 'Rhyme scheme for this section, e.g. AABB, ABAB, FREE',
+                      description: 'Rhyme scheme: AABB, ABAB, ABCB, AAAA, AABBA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, ABACBC, or FREE',
                     },
                     lines: {
                       type: Type.ARRAY,
@@ -134,14 +136,12 @@ ${pastedText}`;
         },
       });
 
-      // Discard result if component unmounted or a new call was started
       if (controller.signal.aborted) return;
 
       const data = safeJsonParse<any>(response.text || '{}', {});
 
       if (data.topic) setTopic(data.topic);
       if (data.mood) setMood(data.mood);
-
       if (data.language) {
         setSongLanguage(data.language);
         setTargetLanguage(data.language);
@@ -152,19 +152,33 @@ ${pastedText}`;
         throw new Error('No sections could be extracted. Please check the lyrics format.');
       }
 
-      const songWithIds: Section[] = sections.map((section: any) => ({
-        ...section,
-        name: cleanSectionName(section.name),
-        id: generateId(),
-        rhymeScheme: section.rhymeScheme || rhymeScheme,
-        lines: section.lines.map((line: any) => ({
+      const songWithIds: Section[] = sections.map((section: any) => {
+        const lines: Section['lines'] = section.lines.map((line: any) => ({
           ...line,
           id: generateId(),
           isManual: true,
           isMeta: isPureMetaLine(line.text ?? ''),
           text: (line.text ?? '') as string,
-        })),
-      }));
+        }));
+
+        // AI returned FREE — run local fallback detector before accepting it
+        let finalScheme: string = section.rhymeScheme || rhymeScheme;
+        if (finalScheme.toUpperCase() === 'FREE') {
+          const lyricTexts = lines.filter(l => !l.isMeta).map(l => l.text);
+          const detected = detectRhymeSchemeLocally(lyricTexts);
+          if (detected && detected.toUpperCase() !== 'FREE') {
+            finalScheme = detected;
+          }
+        }
+
+        return {
+          ...section,
+          name: cleanSectionName(section.name),
+          id: generateId(),
+          rhymeScheme: finalScheme,
+          lines,
+        };
+      });
 
       const newStructure = sections.map((s: any) => cleanSectionName(s.name));
       updateSongAndStructureWithHistory(songWithIds, newStructure);
