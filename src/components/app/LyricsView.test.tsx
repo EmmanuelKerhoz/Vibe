@@ -34,7 +34,6 @@ describe('LyricsView empty state', () => {
           dragOverLineInfo={null}
           setDraggedItemIndex={() => {}}
           setDragOverIndex={() => {}}
-          setDraggableSectionIndex={() => {}}
           setDraggedLineInfo={() => {}}
           setDragOverLineInfo={() => {}}
           playAudioFeedback={() => {}}
