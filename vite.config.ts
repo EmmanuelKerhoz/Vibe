@@ -54,6 +54,8 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
@@ -120,7 +122,6 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
           'vendor-fluent': ['@fluentui/react-components'],
           'vendor-motion': ['motion'],
           'vendor-lucide': ['lucide-react'],
