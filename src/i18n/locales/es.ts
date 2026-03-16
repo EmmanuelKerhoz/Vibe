@@ -107,6 +107,8 @@ const es: Translations = {
     adapt: 'ADAPTAR',
     moodPlaceholder: 'Ánimo...',
     regenerateWarning: 'Esto regenerará por completo la letra actual. ¿Quieres continuar?',
+    addLine: 'Añadir línea',
+    addMusicalEffect: 'Añadir efecto musical / modulación / efecto',
     moveSectionUp: 'Subir sección',
     moveSectionDown: 'Bajar sección',
     dragToReorder: 'Arrastrar para reordenar la sección',
@@ -156,6 +158,9 @@ const es: Translations = {
     instruments: 'INSTRUMENTOS',
     instrumentsPlaceholder: 'Seleccionar familias de instrumentos...',
     rhythmPresets: 'RITMOS PREDEFINIDOS',
+    vibeBoard: 'TABLERO DE AMBIENTE',
+    vibeBoardDescription: 'Selecciona tu género para configurar automáticamente el BPM e instrumentos',
+    subStyle: 'SUBESTILO',
   },
 
   analysis: {
@@ -264,6 +269,7 @@ const es: Translations = {
       label: 'Audio',
       enable: 'Activar sonido',
       volume: 'Volumen',
+      disable: 'Desactivar',
     },
     language: {
       label: 'Idioma',

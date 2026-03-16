@@ -107,6 +107,8 @@ const zh: Translations = {
     adapt: '适配',
     moodPlaceholder: '情感...',
     regenerateWarning: '这将完全重新生成当前歌词。是否继续？',
+    addLine: '添加行',
+    addMusicalEffect: '添加音乐效果 / 调制 / 特效',
     moveSectionUp: '上移段落',
     moveSectionDown: '下移段落',
     dragToReorder: '拖动以重新排序段落',
@@ -156,6 +158,9 @@ const zh: Translations = {
     instruments: '乐器',
     instrumentsPlaceholder: '选择乐器组合...',
     rhythmPresets: '节奏预设',
+    vibeBoard: '情绪板',
+    vibeBoardDescription: '选择您的风格以自动设置 BPM 和乐器',
+    subStyle: '子风格',
   },
 
   analysis: {
@@ -264,6 +269,7 @@ const zh: Translations = {
       label: '音频',
       enable: '启用声音',
       volume: '音量',
+      disable: '禁用',
     },
     language: {
       label: '语言',
