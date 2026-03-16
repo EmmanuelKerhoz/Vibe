@@ -959,6 +959,7 @@ html, body, #root {
 
 /* ===========================================================================
    LYRICS EDITOR ZOOM
+   FIX B: removed max-width: 860px — editor now fills the full available width.
    =========================================================================== */
 
 .lyrics-editor-zoom-wrapper {
@@ -969,7 +970,7 @@ html, body, #root {
 
 .lyrics-editor-zoom {
   width: 100%;
-  max-width: 860px;
+  /* max-width removed — editor expands to full container width */
 }
 
 /* ===========================================================================

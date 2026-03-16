@@ -119,7 +119,7 @@ export const SectionEditor = React.memo(function SectionEditor({
         style={{ borderRadius: '24px 0 0 24px', flexShrink: 0 }}
       />
 
-      {/* FIX #1: flex-1 + min-w-0 + width:100% ensure the content area expands to fill available width */}
+      {/* flex-1 + min-w-0 + width:100% ensure the content area expands to fill available width */}
       <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
         <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
           <div className="flex items-center gap-3">
@@ -165,8 +165,8 @@ export const SectionEditor = React.memo(function SectionEditor({
           <div className="flex items-center gap-2 flex-wrap">
             {adaptSectionLanguage && (
               <div className="flex items-center gap-1.5">
-                <div className="w-40">
-                  {/* FIX #2: use adaptationLanguageLabel() for consistent flag+name display, matching the ribbon */}
+                {/* FIX A: min-w-[12rem] prevents flag emoji from being clipped by ellipsis at narrow widths */}
+                <div className="min-w-[12rem] max-w-[16rem] flex-shrink-0">
                   <LcarsSelect
                     value={sectionTargetLanguage}
                     onChange={(v) => onSectionTargetLanguageChange?.(section.id, v)}
@@ -183,216 +183,112 @@ export const SectionEditor = React.memo(function SectionEditor({
                     disabled={!canAdaptSection}
                     className="flex items-center gap-1.5 rounded border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-400 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isSectionAdapting
-                      ? <Loader2 className="h-3 w-3 animate-spin" />
-                      : <Languages className="h-3 w-3" />}
+                    {isSectionAdapting ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Languages className="h-3 w-3" />
+                    )}
+                    {t.editor.adapt ?? 'ADAPT'}
                   </button>
                 </Tooltip>
               </div>
             )}
-            <Tooltip title={t.tooltips.regenerateSection}>
-              <button
-                onClick={() => regenerateSection(section.id)}
-                disabled={isGenerating || isAnalyzing || isRegeneratingSection(section.id)}
-                className="flex items-center gap-2 rounded border border-[var(--accent-color)]/30 bg-[var(--accent-color)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-color)] transition hover:bg-[var(--accent-color)]/20 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isRegeneratingSection(section.id) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                {t.editor.regenerateSection}
-              </button>
-            </Tooltip>
-            <Tooltip title={isSectionDraggable ? (t.editor.dragToReorder ?? 'Drag to reorder section') : (t.editor.anchoredSection ?? 'Intro and Outro stay anchored')}>
-              <div
-                draggable={isSectionDraggable}
-                onDragStart={() => { if (!isSectionDraggable) return; setDraggedItemIndex(sectionIndex); playAudioFeedback('drag'); }}
-                onDragEnd={() => { setDraggedItemIndex(null); setDragOverIndex(null); }}
-                className={`cursor-grab active:cursor-grabbing text-zinc-500 hover:text-zinc-300 transition-colors ${!isSectionDraggable ? 'cursor-not-allowed opacity-40' : ''}`}
-              >
-                <GripVertical className="h-5 w-5" />
-              </div>
-            </Tooltip>
           </div>
         </div>
 
-        <InstructionEditor
-          instructions={section.preInstructions}
-          sectionId={section.id}
-          type="pre"
-          onChange={handleInstructionChange}
-          onAdd={addInstruction}
-          onRemove={removeInstruction}
-        />
-
-        <div className="mt-3 space-y-3">
-          <div className="lyric-row lyric-row-header px-3 pb-1 border-b border-white/5 mb-1">
-            <div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" /><div aria-hidden="true" />
-            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Syllables</span>
-            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 0 }}>Count</span>
-            <span className="lyric-col-aux micro-label text-zinc-600 dark:text-zinc-500" style={{ textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Schema</span>
-            <div />
-          </div>
-
-          {renderItems.map((item) => {
+        {/* Lines */}
+        <div className="flex flex-col gap-0.5">
+          {renderItems.map((item, renderIdx) => {
             if (item.kind === 'meta') {
               return (
-                <div
+                <MetaLine
                   key={item.lines.map(l => l.id).join('-')}
-                  className="group lyric-row border-l-2 border-cyan-500/50 bg-cyan-500/5 transition-colors"
-                  style={{ paddingLeft: '12px', paddingRight: '12px' }}
-                >
-                  <div /><div /><div />
-                  <button
-                    type="button"
-                    onClick={() => handleLineClick(item.lines[0]!.id)}
-                    className="flex h-8 w-8 items-center justify-center rounded-sm border border-cyan-500/20 bg-cyan-500/10 text-cyan-500"
-                    aria-label="Meta instruction group"
-                  >
-                    <Settings2 className="h-3.5 w-3.5" />
-                  </button>
-                  {/* FIX #3: flex-nowrap on the meta tags container so consecutive instructions stay on the same line */}
-                  <div style={{ gridColumn: 'span 4', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap', minWidth: 0, overflow: 'hidden' }}>
-                    {item.lines.map((metaLine) => (
-                      <span key={metaLine.id} className="group/tag inline-flex items-center gap-1 flex-shrink-0">
-                        <MetaLine text={metaLine.text} />
-                        <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
-                          <button
-                            type="button"
-                            onClick={() => deleteLineFromSection(section.id, metaLine.id)}
-                            className="opacity-0 group-hover/tag:opacity-100 flex h-4 w-4 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300 ml-0.5"
-                            aria-label={`Delete ${metaLine.text}`}
-                          >
-                            <X className="h-2.5 w-2.5" />
-                          </button>
-                        </Tooltip>
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                  lines={item.lines}
+                  sectionId={section.id}
+                  handleInstructionChange={handleInstructionChange}
+                  addInstruction={addInstruction}
+                  removeInstruction={removeInstruction}
+                />
               );
             }
-
-            const { line, index: lyricDisplayIndex0 } = item;
-            const lyricDisplayIndex = lyricDisplayIndex0 + 1;
-            const isLineDropTarget = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo.lineId === line.id;
-            const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo.lineId === line.id;
-            const lineIndex = section.lines.indexOf(line);
-
+            const { line, index: lyricIndex } = item;
+            const schemeLabel = getSchemeLetterForLine(section, lyricIndex, section.rhymeScheme || rhymeScheme);
+            const rhymeColor = getRhymeColor(schemeLabel);
+            const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo?.lineId === line.id;
+            const isDragOverLine = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo?.lineId === line.id;
             return (
-              <div
+              <LyricInput
                 key={line.id}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (!draggedLineInfo || isDraggedLine) return; setDragOverLineInfo({ sectionId: section.id, lineId: line.id }); }}
-                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (isLineDropTarget) setDragOverLineInfo(null); }}
-                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleLineDrop(section.id, line.id); }}
-                className={`group lyric-row transition-colors ${
-                  selectedLineId === line.id
-                    ? 'bg-[var(--accent-color)]/10 shadow-[inset_2px_0_0_var(--accent-color)]'
-                    : 'hover:bg-white/[0.025]'
-                } ${isLineDropTarget ? 'ring-1 ring-[var(--accent-color)]/60' : ''} ${isDraggedLine ? 'opacity-50' : ''}`}
-                style={{ paddingLeft: '12px', paddingRight: '12px' }}
-              >
-                {isSectionDraggable ? (
-                  <Tooltip title={t.editor.dragToReorderLine ?? 'Drag to reorder line'}>
-                    <div
-                      draggable
-                      onDragStart={() => handleLineDragStart(section.id, line.id)}
-                      onDragEnd={() => { setDraggedLineInfo(null); setDragOverLineInfo(null); }}
-                      className="flex h-8 w-5 items-center justify-center text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-zinc-300"
-                    >
-                      <GripVertical className="h-3.5 w-3.5" />
-                    </div>
-                  </Tooltip>
-                ) : <div />}
-
-                <Tooltip title={line.isManual ? (t.editor.humanLine ?? 'Human') : (t.editor.aiLine ?? 'AI')}>
-                  <span className="flex items-center justify-center w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                    {line.isManual
-                      ? <User className="h-3.5 w-3.5 text-emerald-400" />
-                      : <Bot className="h-3.5 w-3.5 text-[var(--accent-color)]" />}
-                  </span>
-                </Tooltip>
-
-                <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Tooltip title={t.editor.moveLineUp ?? 'Move line up'}>
-                    <button type="button" onClick={() => moveLineUp(section.id, line.id)} disabled={lineIndex === 0} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
-                      <ChevronUp className="h-2.5 w-2.5" />
-                    </button>
-                  </Tooltip>
-                  <Tooltip title={t.editor.moveLineDown ?? 'Move line down'}>
-                    <button type="button" onClick={() => moveLineDown(section.id, line.id)} disabled={lineIndex === section.lines.length - 1} className="flex h-4 w-4 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
-                      <ChevronDown className="h-2.5 w-2.5" />
-                    </button>
-                  </Tooltip>
-                </div>
-
-                <button type="button" onClick={() => handleLineClick(line.id)} className="flex h-8 w-8 items-center justify-center rounded-sm border border-black/10 bg-white/70 text-[11px] font-semibold text-zinc-500 transition group-hover:text-zinc-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:group-hover:text-zinc-200">
-                  {lyricDisplayIndex}
-                </button>
-
-                <LyricInput
-                  value={line.text}
-                  onChange={(e) => updateLineText(section.id, line.id, e.target.value)}
-                  onKeyDown={(e) => handleLineKeyDown(e, section.id, line.id)}
-                  onClick={() => handleLineClick(line.id)}
-                  data-line-id={line.id}
-                  placeholder={`${section.name} line ${lyricDisplayIndex}`}
-                  className="text-base text-zinc-900 placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
-                  style={{ width: '100%', minWidth: 0 }}
-                />
-
-                <span className="lyric-col-aux" style={{ textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', opacity: line.rhymingSyllables ? 1 : 0 }}>
-                  {line.rhymingSyllables || '\u00a0'}
-                </span>
-                <span className="lyric-col-aux" style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                  {line.syllables > 0 ? line.syllables : ''}
-                </span>
-
-                <span className="lyric-col-aux" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  {(() => {
-                    const effectiveScheme = (section.rhymeScheme || rhymeScheme || 'AABB').toUpperCase();
-                    if (effectiveScheme === 'FREE') {
-                      return <span className="text-[10px] text-zinc-600 dark:text-zinc-700 select-none" aria-label="Free verse">—</span>;
-                    }
-                    const letter = getSchemeLetterForLine(effectiveScheme, lyricDisplayIndex0);
-                    return letter ? (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRhymeColor(letter)}`}>{letter}</span>
-                    ) : null;
-                  })()}
-                </span>
-
-                <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
-                  <button type="button" onClick={() => deleteLineFromSection(section.id, line.id)} className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded border border-red-500/20 bg-red-500/10 text-red-400 transition hover:bg-red-500/25 hover:text-red-300">
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </Tooltip>
-              </div>
+                line={line}
+                lineIndex={lyricIndex}
+                sectionId={section.id}
+                sectionLinesCount={section.lines.filter(l => !l.isMeta).length}
+                selectedLineId={selectedLineId}
+                schemeLabel={schemeLabel}
+                rhymeColor={rhymeColor}
+                isGenerating={isGenerating}
+                isDraggedLine={isDraggedLine}
+                isDragOverLine={isDragOverLine}
+                handleLineClick={handleLineClick}
+                updateLineText={updateLineText}
+                handleLineKeyDown={handleLineKeyDown}
+                handleLineDragStart={handleLineDragStart}
+                handleLineDrop={handleLineDrop}
+                setDraggedLineInfo={setDraggedLineInfo}
+                setDragOverLineInfo={setDragOverLineInfo}
+                moveLineUp={moveLineUp}
+                moveLineDown={moveLineDown}
+                addLineToSection={addLineToSection}
+                deleteLineFromSection={deleteLineFromSection}
+                playAudioFeedback={playAudioFeedback}
+              />
             );
           })}
         </div>
 
-        {section.postInstructions && section.postInstructions.length > 0 && (
-          <div className="mt-2 px-3">
-            <InstructionEditor
-              instructions={section.postInstructions}
-              sectionId={section.id}
-              type="post"
-              onChange={handleInstructionChange}
-              onAdd={addInstruction}
-              onRemove={removeInstruction}
-              showAddButton={false}
-            />
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 pt-1 pb-1 px-3">
-          <button type="button" onClick={() => addLineToSection(section.id)} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded">
-            <Plus className="w-3 h-3" />
-            {t.editor.addLine ?? 'Add Line'}
+        {/* Footer actions */}
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => { addLineToSection(section.id); playAudioFeedback('click'); }}
+            className="flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition"
+          >
+            <Plus className="h-3 w-3" />
+            {t.editor.addLine ?? '+ ADD LINE'}
           </button>
-          <span className="text-zinc-700 dark:text-zinc-600 text-[10px]">|</span>
-          <button type="button" onClick={() => addInstruction(section.id, 'post')} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-[var(--accent-color)] transition-colors px-2 py-1 rounded">
-            <Plus className="w-3 h-3" />
-            {t.editor.addMusicalEffect ?? 'Add Musical / Modulation / Effect'}
-          </button>
+          <InstructionEditor
+            sectionId={section.id}
+            instructions={section.preInstructions ?? []}
+            type="pre"
+            handleInstructionChange={handleInstructionChange}
+            addInstruction={addInstruction}
+            removeInstruction={removeInstruction}
+          />
+          <InstructionEditor
+            sectionId={section.id}
+            instructions={section.postInstructions ?? []}
+            type="post"
+            handleInstructionChange={handleInstructionChange}
+            addInstruction={addInstruction}
+            removeInstruction={removeInstruction}
+          />
+          {!isGenerating && (
+            <Tooltip title={t.editor.regenerateSection ?? 'Regenerate this section'}>
+              <button
+                type="button"
+                onClick={() => { regenerateSection(section.id); playAudioFeedback('click'); }}
+                disabled={isRegeneratingSection(section.id)}
+                className="ml-auto flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isRegeneratingSection(section.id) ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Wand2 className="h-3 w-3" />
+                )}
+                {t.editor.regenerate ?? 'REGENERATE'}
+              </button>
+            </Tooltip>
+          )}
         </div>
       </div>
     </section>

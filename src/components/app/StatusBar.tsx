@@ -38,7 +38,9 @@ export function StatusBar({
   const statusBarDict = t.statusBar as Record<string, string | undefined>;
 
   return (
-    <div className={`lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
+    // FIX C/D: added `relative` so that `z-40` (z-index:40) takes effect and
+    // buttons are not blocked by lower-z overlays or the acrylic backdrop.
+    <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
       {/* Left: system status + KPIs desktop only */}
       <div className="flex items-center gap-2 lg:gap-4">
         <div className="flex items-center gap-1.5">
