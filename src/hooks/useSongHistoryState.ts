@@ -47,6 +47,16 @@ const normalizeSnapshot = (snapshot: SongHistorySnapshot): SongHistorySnapshot =
 const cappedPast = (past: SongHistorySnapshot[]): SongHistorySnapshot[] =>
   past.length > MAX_HISTORY ? past.slice(past.length - MAX_HISTORY) : past;
 
+// ─── Delta helpers ────────────────────────────────────────────────────────────
+// Instead of cloning entire snapshots on every keystroke, we store a structural
+// fingerprint. Full clones only happen when the fingerprint actually changes.
+
+const sectionFingerprint = (s: Section): string =>
+  `${s.id}:${s.name}:${s.lines.map(l => `${l.id}:${l.text}:${l.syllables}`).join('|')}`;
+
+const snapshotFingerprint = (snap: SongHistorySnapshot): string =>
+  snap.song.map(sectionFingerprint).join('//') + '||' + snap.structure.join(',');
+
 export const useSongHistoryState = (initialSong: Section[] = [], initialStructure: string[] = []) => {
   const [state, setState] = useState<SongHistoryState>(() => ({
     ...normalizeSnapshot({ song: initialSong, structure: initialStructure }),
@@ -56,19 +66,35 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
 
   const applySnapshot = useCallback((nextSnapshot: SongHistorySnapshot, options?: { trackHistory?: boolean }) => {
     const normalizedNext = normalizeSnapshot(nextSnapshot);
-    setState(current => ({
-      song: normalizedNext.song,
-      structure: normalizedNext.structure,
-      past: options?.trackHistory === false
-        ? current.past
-        : cappedPast([...current.past, { song: current.song, structure: current.structure }]),
-      future: options?.trackHistory === false ? current.future : [],
-    }));
+    setState(current => {
+      if (options?.trackHistory === false) {
+        return {
+          song: normalizedNext.song,
+          structure: normalizedNext.structure,
+          past: current.past,
+          future: current.future,
+        };
+      }
+      // Delta: skip push if content is identical
+      const currentFp = snapshotFingerprint({ song: current.song, structure: current.structure });
+      const nextFp = snapshotFingerprint(normalizedNext);
+      if (currentFp === nextFp) return current;
+      return {
+        song: normalizedNext.song,
+        structure: normalizedNext.structure,
+        past: cappedPast([...current.past, { song: current.song, structure: current.structure }]),
+        future: [],
+      };
+    });
   }, []);
 
   const updateState = useCallback((recipe: (current: SongHistorySnapshot) => SongHistorySnapshot) => {
     setState(current => {
       const nextSnapshot = normalizeSnapshot(recipe({ song: current.song, structure: current.structure }));
+      // Delta: skip push if content is identical
+      const currentFp = snapshotFingerprint({ song: current.song, structure: current.structure });
+      const nextFp = snapshotFingerprint(nextSnapshot);
+      if (currentFp === nextFp) return current;
       return {
         song: nextSnapshot.song,
         structure: nextSnapshot.structure,

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 import { DEFAULT_STRUCTURE } from './constants/editor';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
@@ -28,6 +28,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, loadAssetIntoEditor, type LibraryAsset } from './utils/libraryUtils';
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
 import { buildResetPayload, buildPartialResetPayload, clearPersistedSession } from './utils/sessionReset';
+import { safeJsonGet } from './utils/safeStorage';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dispatch-style setter bag produced by useAppState
@@ -68,6 +69,17 @@ function applyResetPayload(
   s.setIsLeftPanelOpen(payload.isLeftPanelOpen);
   s.setSimilarityMatches(payload.similarityMatches);
   resetWebSimilarityIndex();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Lyrical content key — memoized, excludes meta-only lines.
+// Used to gate the similarity debounce: no recalculation if only
+// meta lines or structural/musical props changed.
+// ─────────────────────────────────────────────────────────────────────────────
+function lyricalKey(song: ReturnType<typeof createEmptySong>): string {
+  return song
+    .map(s => s.lines.filter(l => !l.isMeta).map(l => l.text).join('|'))
+    .join('//');
 }
 
 export default function App() {
@@ -252,12 +264,20 @@ export default function App() {
 
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
 
-  // ── Library similarity — debounced 800ms ─────────────────────────────────
+  // ── Library similarity — debounced 800ms, lyrical content only ───────────────
+  // Memoize the lyrical key so the debounce only fires when real lyric
+  // text changes — not on meta-line edits, drag events, or musical props.
+  const currentLyricalKey = useMemo(() => lyricalKey(song), [song]);
   const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSimilarityKeyRef = useRef<string>('');
+
   useEffect(() => {
+    // Skip if lyrical content hasn't changed
+    if (currentLyricalKey === lastSimilarityKeyRef.current) return;
     if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
     let isCancelled = false;
     similarityDebounceRef.current = setTimeout(() => {
+      lastSimilarityKeyRef.current = currentLyricalKey;
       const runSimilarity = async () => {
         if (song.length === 0) { setSimilarityMatches([]); return; }
         const matches = await findSimilarAssetsInLibrary(song, 0, 3);
@@ -269,19 +289,12 @@ export default function App() {
       isCancelled = true;
       if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
     };
-  }, [song, setSimilarityMatches]);
+  }, [currentLyricalKey, song, setSimilarityMatches]);
 
-  // ── Library count — loaded once on mount ─────────────────────────────────
+  // ── Library count — loaded once on mount via safeStorage ───────────────────
   useEffect(() => {
-    const loadCount = async () => {
-      try {
-        const c = localStorage.getItem('lyricist_library');
-        if (c) setLibraryCount(JSON.parse(c).length);
-      } catch (e) {
-        console.error('Failed to load library count:', e);
-      }
-    };
-    void loadCount();
+    const assets = safeJsonGet<unknown[]>('lyricist_library');
+    if (Array.isArray(assets)) setLibraryCount(assets.length);
   }, [setLibraryCount]);
 
   const introOutroSortedRef = useRef<string | null>(null);
