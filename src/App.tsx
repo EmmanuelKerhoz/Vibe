@@ -148,13 +148,6 @@ export default function App() {
   });
 
   // ── isGenerating bridge ──────────────────────────────────────────────────
-  // React hooks must be called in declaration order: useSongAnalysis is
-  // instantiated BEFORE useSongComposer, so isGenerating is not yet in scope.
-  // Passing it as a plain prop would create a stale closure (the analysis
-  // engine would always see the initial `false` value).
-  // Solution: a ref that is kept in sync via the useEffect below.
-  // The analysis engine reads isGeneratingRef.current synchronously at call
-  // time, always getting the live value without re-rendering.
   const isGeneratingRef = useRef(false);
 
   // ── useSongAnalysis ──────────────────────────────────────────────────────
@@ -185,7 +178,6 @@ export default function App() {
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
-  // Keep the ref in sync with the reactive value (see bridge comment above)
   useEffect(() => { isGeneratingRef.current = isGenerating; }, [isGenerating]);
 
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
@@ -241,7 +233,7 @@ export default function App() {
     isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen, promptModal,
     isMobileOrTablet, closeMobilePanels,
     redo, setApiErrorModal, setConfirmModal, setIsAboutOpen, setIsAnalysisModalOpen,
-    setIsExportModalError, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
+    setIsExportModalOpen, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
     setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
     setPromptModal, undo,
   ]);
@@ -341,7 +333,7 @@ export default function App() {
     if (isMobileOrTablet) setIsStructureOpen(false);
   }, [isMobileOrTablet, setActiveTab, setIsLeftPanelOpen, setIsStructureOpen]);
 
-  // ── Reset handlers — dep-array: 1 stable entry each ─────────────────────
+  // ── Reset handlers ───────────────────────────────────────────────────────
   const handleCreateEmptySong = useCallback(() => {
     applyResetPayload(
       buildResetPayload('AABB'),
