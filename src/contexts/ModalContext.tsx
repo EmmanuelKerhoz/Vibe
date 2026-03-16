@@ -1,40 +1,69 @@
 import React, { createContext, useContext, useCallback, type ReactNode } from 'react';
-import type { useUIState } from '../hooks/useUIState';
 
-// ── Modal names union ──────────────────────────────────────────────────────────────────
+// ── Minimal UIState interface ─────────────────────────────────────────────────
+// Avoids the circular import of useUIState while remaining fully type-safe.
+export interface UIStateBag {
+  setIsAboutOpen: (v: boolean) => void;
+  setIsSettingsOpen: (v: boolean) => void;
+  setApiErrorModal: (v: { open: boolean; message: string }) => void;
+  setIsImportModalOpen: (v: boolean) => void;
+  setIsExportModalOpen: (v: boolean) => void;
+  setIsSectionDropdownOpen: (v: boolean) => void;
+  setIsSimilarityModalOpen: (v: boolean) => void;
+  setIsSaveToLibraryModalOpen: (v: boolean) => void;
+  setIsVersionsModalOpen: (v: boolean) => void;
+  setIsResetModalOpen: (v: boolean) => void;
+  setConfirmModal: (v: { open: boolean; onConfirm: () => void } | null) => void;
+  setPromptModal: (v: { open: boolean; onConfirm: (value: string) => void } | null) => void;
+  setIsMarkupMode: (v: boolean) => void;
+  isAboutOpen: boolean;
+  isSettingsOpen: boolean;
+  apiErrorModal: { open: boolean; message: string };
+  isImportModalOpen: boolean;
+  isExportModalOpen: boolean;
+  isSectionDropdownOpen: boolean;
+  isSimilarityModalOpen: boolean;
+  isSaveToLibraryModalOpen: boolean;
+  isVersionsModalOpen: boolean;
+  isResetModalOpen: boolean;
+  confirmModal: { open: boolean; onConfirm: () => void } | null;
+  promptModal: { open: boolean; onConfirm: (value: string) => void } | null;
+  activeTab: 'lyrics' | 'musical';
+  setActiveTab: (v: 'lyrics' | 'musical') => void;
+  isStructureOpen: boolean;
+  setIsStructureOpen: (v: boolean) => void;
+  isLeftPanelOpen: boolean;
+  setIsLeftPanelOpen: (v: boolean) => void;
+  isMarkupMode: boolean;
+  markupText: string;
+  setMarkupText: (v: string) => void;
+  markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  importInputRef: React.RefObject<HTMLInputElement | null>;
+  shouldAutoGenerateTitle: boolean;
+  setShouldAutoGenerateTitle: (v: boolean) => void;
+}
+
+// ── Modal names union ─────────────────────────────────────────────────────────
 export type ModalName =
-  | 'about'
-  | 'settings'
-  | 'apiError'
-  | 'import'
-  | 'export'
-  | 'sectionDropdown'
-  | 'similarity'
-  | 'saveToLibrary'
-  | 'versions'
-  | 'reset'
-  | 'confirm'
-  | 'prompt'
-  | 'paste'
-  | 'analysis';
+  | 'about' | 'settings' | 'apiError' | 'import' | 'export'
+  | 'sectionDropdown' | 'similarity' | 'saveToLibrary'
+  | 'versions' | 'reset' | 'confirm' | 'prompt' | 'paste' | 'analysis';
 
-// ── Context value type ────────────────────────────────────────────────────────────────
+// ── Context value type ────────────────────────────────────────────────────────
 export interface ModalContextValue {
   openModal: (name: ModalName, payload?: unknown) => void;
   closeModal: (name: ModalName) => void;
-  uiState: ReturnType<typeof useUIState>;
+  uiState: UIStateBag;
 }
 
 const ModalContext = createContext<ModalContextValue | null>(null);
 
-// ── Provider ─────────────────────────────────────────────────────────────────────────────
-// IMPORTANT: uiState is injected by App.tsx — NOT created here.
-// Previously, ModalProvider created its own useUIState() instance, causing
-// a split-brain: App.tsx setters wrote to one instance, AppModals read from
-// another → modals never opened. The provider is now a pure relay.
+// ── Provider ──────────────────────────────────────────────────────────────────
+// uiState is injected by AppInner (the single instance from useAppState).
+// No internal useUIState() — pure relay, zero split-brain.
 export interface ModalProviderProps {
   children: ReactNode;
-  uiState: ReturnType<typeof useUIState>;
+  uiState: UIStateBag;
 }
 
 export function ModalProvider({ children, uiState }: ModalProviderProps) {
@@ -95,7 +124,7 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
   );
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────────────────────
+// ── Hook ──────────────────────────────────────────────────────────────────────
 export function useModalContext(): ModalContextValue {
   const ctx = useContext(ModalContext);
   if (!ctx) throw new Error('useModalContext must be used inside <ModalProvider>');

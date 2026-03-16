@@ -15,7 +15,7 @@ import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
 import { useMobileLayout } from './hooks/useMobileLayout';
-import { ModalProvider } from './contexts/ModalContext';
+import { ModalProvider, type UIStateBag } from './contexts/ModalContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -71,9 +71,6 @@ function lyricalKey(song: ReturnType<typeof createEmptySong>): string {
     .join('//');
 }
 
-// ── Inner component — has access to appState.uiState for ModalProvider ──────────
-// App shell wraps AppInner in ModalProvider, passing the single uiState
-// instance so AppModals and all context consumers share the same state.
 function AppInner() {
   const { t } = useTranslation();
   const { language } = useLanguage();
@@ -103,10 +100,7 @@ function AppInner() {
     songLanguage, setSongLanguage,
   } = appState;
 
-  // Extract the uiState slice so ModalProvider gets the exact same instance
-  const { uiState } = appState as unknown as { uiState: ReturnType<typeof import('./hooks/useUIState').useUIState> };
-
-  // ── Mobile layout ────────────────────────────────────────────────────────
+  // ── Mobile layout ─────────────────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
 
@@ -201,7 +195,7 @@ function AppInner() {
 
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title);
 
-  // ── Keyboard shortcuts ───────────────────────────────────────────────────
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
@@ -255,7 +249,7 @@ function AppInner() {
 
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
 
-  // ── Library similarity — debounced 800ms, lyrical content only ───────────────
+  // ── Library similarity — debounced 800ms, lyrical content only ────────────
   const currentLyricalKey = useMemo(() => lyricalKey(song), [song]);
   const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSimilarityKeyRef = useRef<string>('');
@@ -279,7 +273,6 @@ function AppInner() {
     };
   }, [currentLyricalKey, song, setSimilarityMatches]);
 
-  // ── Library count — loaded once on mount via safeStorage ───────────────────
   useEffect(() => {
     const assets = safeJsonGet<unknown[]>('lyricist_library');
     if (Array.isArray(assets)) setLibraryCount(assets.length);
@@ -367,25 +360,19 @@ function AppInner() {
     const loadedAsset = loadAssetIntoEditor(asset);
     replaceStateWithoutHistory(loadedAsset.song, loadedAsset.structure);
     clearHistory();
-    setTitle(loadedAsset.title);
-    setTitleOrigin('user');
-    setTopic(loadedAsset.topic);
-    setMood(loadedAsset.mood);
-    setRhymeScheme(loadedAsset.rhymeScheme);
-    setTargetSyllables(loadedAsset.targetSyllables);
-    setGenre(loadedAsset.genre);
-    setTempo(loadedAsset.tempo);
-    setInstrumentation(loadedAsset.instrumentation);
-    setRhythm(loadedAsset.rhythm);
-    setNarrative(loadedAsset.narrative);
-    setMusicalPrompt(loadedAsset.musicalPrompt);
+    setTitle(loadedAsset.title); setTitleOrigin('user');
+    setTopic(loadedAsset.topic); setMood(loadedAsset.mood);
+    setRhymeScheme(loadedAsset.rhymeScheme); setTargetSyllables(loadedAsset.targetSyllables);
+    setGenre(loadedAsset.genre); setTempo(loadedAsset.tempo);
+    setInstrumentation(loadedAsset.instrumentation); setRhythm(loadedAsset.rhythm);
+    setNarrative(loadedAsset.narrative); setMusicalPrompt(loadedAsset.musicalPrompt);
     setIsSaveToLibraryModalOpen(false);
   }, [clearHistory, replaceStateWithoutHistory, setGenre, setInstrumentation, setMood, setMusicalPrompt, setNarrative, setRhymeScheme, setRhythm, setTargetSyllables, setTempo, setTitle, setTitleOrigin, setTopic, setIsSaveToLibraryModalOpen]);
 
   const handleDeleteLibraryAsset = useCallback(async (versionId: string) => {
     try {
       await deleteAssetFromLibrary(versionId);
-      setLibraryAssets(prev => prev.filter(asset => asset.id !== versionId));
+      setLibraryAssets(prev => prev.filter(a => a.id !== versionId));
       setSimilarityMatches(prev => prev.filter(m => m.versionId !== versionId));
       setLibraryCount(prev => Math.max(0, prev - 1));
     } catch (e) { console.error('Failed to delete library asset:', e); }
@@ -417,10 +404,10 @@ function AppInner() {
     importInputRef.current?.click();
   };
 
-  // Build the uiState slice to inject into ModalProvider.
-  // useAppState spreads useUIState into its return — we reconstruct the slice
-  // by picking the keys that belong to useUIState.
-  const uiStateForProvider = useMemo(() => ({
+  // ── ModalProvider injection ───────────────────────────────────────────────
+  // Construct UIStateBag directly from destructured appState values.
+  // NO cast, NO dynamic import — fully type-checked against UIStateBag.
+  const uiStateForProvider = useMemo<UIStateBag>(() => ({
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
@@ -451,7 +438,7 @@ function AppInner() {
   ]);
 
   return (
-    <ModalProvider uiState={uiStateForProvider as ReturnType<typeof import('./hooks/useUIState').useUIState>}>
+    <ModalProvider uiState={uiStateForProvider}>
       <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
       <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
 
@@ -460,7 +447,6 @@ function AppInner() {
         )}
 
         <div className="flex-1 flex overflow-hidden">
-
           <LeftSettingsPanel
             isMobileOverlay={isMobileOrTablet}
             title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
@@ -470,8 +456,7 @@ function AppInner() {
             targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
             song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
             isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-            onSurprise={handleSurpriseClick}
-            isSurprising={isSurprising}
+            onSurprise={handleSurpriseClick} isSurprising={isSurprising}
             isSessionHydrated={isSessionHydrated}
             onGenerateSong={() => { setIsLeftPanelOpen(false); handleGlobalRegenerate(); }}
           />
@@ -505,8 +490,7 @@ function AppInner() {
                 analyzeCurrentSong={analyzeCurrentSong} handleGlobalRegenerate={handleGlobalRegenerate}
                 handleMarkupToggle={handleMarkupToggle}
                 setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
-                adaptationProgress={adaptationProgress}
-                adaptationResult={adaptationResult}
+                adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
               />
             )}
             <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}
@@ -578,14 +562,10 @@ function AppInner() {
 
         {isMobileOrTablet && (
           <MobileBottomNav
-            isLeftPanelOpen={isLeftPanelOpen}
-            isStructureOpen={isStructureOpen}
-            activeTab={activeTab}
-            isGenerating={isGenerating}
-            setIsLeftPanelOpen={setIsLeftPanelOpen}
-            setIsStructureOpen={setIsStructureOpen}
-            setActiveTab={setActiveTab}
-            onGenerateSong={handleGlobalRegenerate}
+            isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
+            activeTab={activeTab} isGenerating={isGenerating}
+            setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpen}
+            setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
             onOpenSettings={() => setIsSettingsOpen(true)}
           />
         )}
@@ -614,7 +594,8 @@ function AppInner() {
           webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
           handleDeleteLibraryAsset={handleDeleteLibraryAsset}
           handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
-          title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0} handleLoadLibraryAsset={handleLoadLibraryAsset}
+          title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
+          handleLoadLibraryAsset={handleLoadLibraryAsset}
           saveVersion={saveVersion} handleRequestVersionName={handleRequestVersionName}
           resetSong={resetSong}
         />
