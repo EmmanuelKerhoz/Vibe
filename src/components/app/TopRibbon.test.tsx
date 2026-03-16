@@ -53,7 +53,7 @@ describe('TopRibbon burger menu', () => {
     expect(onOpenNewEmpty).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Load' }));
+          fireEvent.click(screen.getByRole('button', { name: 'Load/Import' }));
     expect(onImportClick).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
