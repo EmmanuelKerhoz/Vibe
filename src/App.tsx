@@ -127,7 +127,8 @@ export default function App() {
     setIsStructureOpen(false);
   }, [setIsLeftPanelOpen, setIsStructureOpen]);
 
-  const showBackdrop = isLeftPanelOpen || (isMobileOrTablet && isStructureOpen);
+  // fix: backdrop must only appear on mobile/tablet — never on desktop
+  const showBackdrop = isMobileOrTablet && (isLeftPanelOpen || isStructureOpen);
 
   useSessionPersistence({
     song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
@@ -240,7 +241,7 @@ export default function App() {
     isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen, promptModal,
     isMobileOrTablet, closeMobilePanels,
     redo, setApiErrorModal, setConfirmModal, setIsAboutOpen, setIsAnalysisModalOpen,
-    setIsExportModalOpen, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
+    setIsExportModalError, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
     setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
     setPromptModal, undo,
   ]);
@@ -260,10 +261,6 @@ export default function App() {
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
 
   // ── Library similarity — debounced 800ms ─────────────────────────────────
-  // fix #9: libraryCount is NOT recomputed here on every song keystroke.
-  // Count updates are owned exclusively by handleSaveToLibrary and
-  // handleDeleteLibraryAsset where the actual library mutation occurs.
-  // This effect only drives the similarity search debounce.
   const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
