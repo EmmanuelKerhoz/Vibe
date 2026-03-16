@@ -33,7 +33,7 @@ export function MusicalTab({
 }: Props) {
   const hasLyrics  = song.some(s => s.lines.some(l => l.text.trim() !== ''));
   const hasContext = !!(title || topic || mood || hasLyrics);
-  const canGenerate = hasApiKey && (hasContext || genre || instrumentation);
+    const canGenerate = hasApiKey && !!(hasContext || genre || instrumentation);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto fluent-fade-in">
