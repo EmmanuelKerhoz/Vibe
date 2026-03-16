@@ -32,6 +32,7 @@ describe('TopRibbon burger menu', () => {
           handleApiKeyHelp={() => {}}
           onOpenNewGeneration={onOpenNewGeneration}
           onOpenNewEmpty={onOpenNewEmpty}
+                    onPasteLyrics={onOpenNewEmpty}
           onImportClick={onImportClick}
           onExportClick={() => {}}
           onOpenLibraryClick={onOpenLibraryClick}
