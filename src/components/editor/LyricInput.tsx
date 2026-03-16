@@ -31,8 +31,12 @@ export interface LyricInputProps {
 
 /**
  * Renders a single non-meta lyric line.
- * Layout (L→R): drag-handle | text-input | [controls] | syllable-count | scheme-badge
- * Schema badge is rightmost so it aligns under the "Schema" column header.
+ *
+ * Right-side column layout (matches header in SectionEditor):
+ *   [controls] | SYLLABLES-label (hidden, spacer) | COUNT (number) | SCHEMA (badge)
+ *
+ * The SYLLABLES column shows the word — that label lives in the header only;
+ * each row shows the count value and the scheme badge aligned under their headers.
  */
 export const LyricInput = React.memo(function LyricInput({
   line,
@@ -68,49 +72,32 @@ export const LyricInput = React.memo(function LyricInput({
     }
   }, [isSelected]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateLineText(sectionId, line.id, e.target.value);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    handleLineKeyDown(e, sectionId, line.id);
-  };
-
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => updateLineText(sectionId, line.id, e.target.value);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => handleLineKeyDown(e, sectionId, line.id);
   const handleClick = () => handleLineClick(line.id);
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move';
     handleLineDragStart(sectionId, line.id);
   };
-
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     setDragOverLineInfo({ sectionId, lineId: line.id });
   };
-
   const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     setDragOverLineInfo(null);
   };
-
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     handleLineDrop(sectionId, line.id);
     playAudioFeedback('drop');
   };
-
-  const handleDragEnd = () => {
-    setDraggedLineInfo(null);
-    setDragOverLineInfo(null);
-  };
+  const handleDragEnd = () => { setDraggedLineInfo(null); setDragOverLineInfo(null); };
 
   const renderStyledOverlay = (text: string) => {
     if (!text) return null;
-    const parts = text.split(/(\([^)]*\))/g);
-    return parts.map((part, i) =>
+    return text.split(/(\([^)]*\))/g).map((part, i) =>
       part.startsWith('(') && part.endsWith(')')
         ? <span key={i} className="text-amber-400">{part}</span>
         : <span key={i} className="text-zinc-200">{part}</span>
@@ -139,7 +126,7 @@ export const LyricInput = React.memo(function LyricInput({
         <GripVertical className="h-3.5 w-3.5 text-zinc-500" />
       </div>
 
-      {/* Text input with overlay */}
+      {/* Text input with styled overlay */}
       <div className="relative flex-1 min-w-0" onClick={handleClick}>
         <div
           aria-hidden="true"
@@ -167,52 +154,40 @@ export const LyricInput = React.memo(function LyricInput({
       {/* Line controls — visible on hover */}
       <div className="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <Tooltip title={t.editor?.moveLineUp ?? 'Move line up'}>
-          <button
-            type="button"
-            onClick={() => { moveLineUp(sectionId, line.id); playAudioFeedback('click'); }}
-            disabled={lineIndex === 0}
-            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition"
-          >
+          <button type="button" onClick={() => { moveLineUp(sectionId, line.id); playAudioFeedback('click'); }} disabled={lineIndex === 0}
+            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">
             <ChevronUp className="h-2.5 w-2.5" />
           </button>
         </Tooltip>
         <Tooltip title={t.editor?.moveLineDown ?? 'Move line down'}>
-          <button
-            type="button"
-            onClick={() => { moveLineDown(sectionId, line.id); playAudioFeedback('click'); }}
-            disabled={lineIndex === sectionLinesCount - 1}
-            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition"
-          >
+          <button type="button" onClick={() => { moveLineDown(sectionId, line.id); playAudioFeedback('click'); }} disabled={lineIndex === sectionLinesCount - 1}
+            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">
             <ChevronDown className="h-2.5 w-2.5" />
           </button>
         </Tooltip>
         <Tooltip title={t.editor?.addLineAfter ?? 'Add line after'}>
-          <button
-            type="button"
-            onClick={() => { addLineToSection(sectionId, line.id); playAudioFeedback('click'); }}
-            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 transition"
-          >
+          <button type="button" onClick={() => { addLineToSection(sectionId, line.id); playAudioFeedback('click'); }}
+            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 transition">
             <Plus className="h-2.5 w-2.5" />
           </button>
         </Tooltip>
         <Tooltip title={t.editor?.deleteLine ?? 'Delete line'}>
-          <button
-            type="button"
-            onClick={() => { deleteLineFromSection(sectionId, line.id); playAudioFeedback('click'); }}
-            disabled={sectionLinesCount <= 1}
-            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-red-400 disabled:opacity-20 disabled:cursor-not-allowed transition"
-          >
+          <button type="button" onClick={() => { deleteLineFromSection(sectionId, line.id); playAudioFeedback('click'); }} disabled={sectionLinesCount <= 1}
+            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-red-400 disabled:opacity-20 disabled:cursor-not-allowed transition">
             <Trash2 className="h-2.5 w-2.5" />
           </button>
         </Tooltip>
       </div>
 
-      {/* Syllable count — second from right */}
+      {/* COL: SYLLABLES — label spacer (empty in data rows, shown in header only) */}
+      <span className="flex-shrink-0 w-[3.5rem]" />
+
+      {/* COL: COUNT — syllable number */}
       <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors w-[1.75rem] text-right">
         {line.syllables > 0 ? line.syllables : ''}
       </span>
 
-      {/* Rhyme scheme badge — rightmost, aligns under Schema column header */}
+      {/* COL: SCHEMA — rhyme scheme badge */}
       <span
         className={`flex-shrink-0 inline-flex h-4 w-4 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
       >

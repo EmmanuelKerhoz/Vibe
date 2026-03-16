@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { Loader2, GripVertical, Wand2, ChevronUp, ChevronDown, Bot, User, Plus, Trash2, Settings2, X, Languages } from 'lucide-react';
+import React from 'react';
+import { Loader2, Wand2, ChevronUp, ChevronDown, Plus, Languages } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
 import { LyricInput } from './LyricInput';
@@ -8,7 +8,7 @@ import { InstructionEditor } from './InstructionEditor';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
-import { SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from '../../i18n';
+import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import { useEditorContext } from '../../contexts/EditorContext';
 
 interface SectionEditorProps {
@@ -47,9 +47,7 @@ interface SectionEditorProps {
   regenerateSection: (sectionId: string) => void;
 }
 
-/** A run of consecutive isMeta lines rendered as a single merged row */
 type MetaGroup = { kind: 'meta'; lines: Section['lines'] };
-/** A single non-meta lyric line */
 type LyricItem = { kind: 'lyric'; line: Section['lines'][number]; index: number };
 type RenderItem = MetaGroup | LyricItem;
 
@@ -98,8 +96,6 @@ export const SectionEditor = React.memo(function SectionEditor({
   } = useEditorContext();
 
   const sectionName: string = section.name ?? '';
-
-  const isSectionDraggable = sectionName.toLowerCase() !== 'intro' && sectionName.toLowerCase() !== 'outro';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
   const sectionColor = getSectionColorHex(sectionName);
   const renderItems = buildRenderItems(section.lines);
@@ -114,10 +110,26 @@ export const SectionEditor = React.memo(function SectionEditor({
       : []),
   ];
 
-  // Build language options with sign prefix so flags show in the trigger
+  /**
+   * Language options: label is a ReactNode so the flag emoji is rendered in its
+   * own flex-shrink-0 span and can never be clipped by the trigger's text-overflow.
+   */
   const languageOptions = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
     value: lang.aiName,
-    label: adaptationLanguageLabel(lang),
+    label: (
+      <span className="flex items-center gap-1.5 min-w-0">
+        <span
+          className="flex-shrink-0 text-base leading-none"
+          style={{ fontFamily: '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif' }}
+          aria-hidden="true"
+        >
+          {lang.sign}
+        </span>
+        <span className="truncate">
+          {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}
+        </span>
+      </span>
+    ) as React.ReactNode,
   }));
 
   return (
@@ -136,17 +148,22 @@ export const SectionEditor = React.memo(function SectionEditor({
       />
 
       <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
+
         {/* ── Section header ─────────────────────────────────────────────── */}
         <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
           <div className="flex items-center gap-3">
             <div className="flex flex-col gap-0.5">
               <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>
-                <button type="button" onClick={() => moveSectionUp(section.id)} disabled={sectionIndex === 0 || sectionName.toLowerCase() === 'intro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                <button type="button" onClick={() => moveSectionUp(section.id)}
+                  disabled={sectionIndex === 0 || sectionName.toLowerCase() === 'intro'}
+                  className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                   <ChevronUp className="h-3 w-3" />
                 </button>
               </Tooltip>
               <Tooltip title={t.editor.moveSectionDown ?? 'Move section down'}>
-                <button type="button" onClick={() => moveSectionDown(section.id)} disabled={sectionIndex === songLength - 1 || sectionName.toLowerCase() === 'outro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                <button type="button" onClick={() => moveSectionDown(section.id)}
+                  disabled={sectionIndex === songLength - 1 || sectionName.toLowerCase() === 'outro'}
+                  className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                   <ChevronDown className="h-3 w-3" />
                 </button>
               </Tooltip>
@@ -160,12 +177,17 @@ export const SectionEditor = React.memo(function SectionEditor({
                 style={{ color: sectionColor }}
               />
               <div className="mt-1 flex flex-wrap items-center gap-2">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">{section.lines.filter(l => !l.isMeta).length} {t.editor.lines ?? 'lines'}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+                  {section.lines.filter(l => !l.isMeta).length} {t.editor.lines ?? 'lines'}
+                </p>
                 <div className="min-w-[15rem] max-w-full flex-1">
                   <LcarsSelect
                     value={section.rhymeScheme || rhymeScheme}
                     onChange={(v) => setSectionRhymeScheme(section.id, v)}
-                    options={RHYME_KEYS.filter((k): k is string => typeof k === 'string').map(key => ({ value: key, label: t.rhymeSchemes[key as keyof typeof t.rhymeSchemes] ?? key }))}
+                    options={RHYME_KEYS.filter((k): k is string => typeof k === 'string').map(key => ({
+                      value: key,
+                      label: t.rhymeSchemes[key as keyof typeof t.rhymeSchemes] ?? key,
+                    }))}
                     accentColor="var(--lcars-cyan)"
                   />
                 </div>
@@ -191,11 +213,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                     disabled={!canAdaptSection}
                     className="flex items-center gap-1.5 rounded border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-400 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isSectionAdapting ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Languages className="h-3 w-3" />
-                    )}
+                    {isSectionAdapting
+                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                      : <Languages className="h-3 w-3" />}
                     {t.editor.adapt ?? 'ADAPT'}
                   </button>
                 </Tooltip>
@@ -205,18 +225,28 @@ export const SectionEditor = React.memo(function SectionEditor({
         </div>
 
         {/* ── Column headers ─────────────────────────────────────────────── */}
-        <div className="flex items-center gap-1.5 px-1 mb-0.5 select-none">
-          {/* spacer: drag-handle width */}
-          <span className="flex-shrink-0 w-3.5" />
-          {/* spacer: text area */}
-          <span className="flex-1 min-w-0" />
-          {/* controls spacer (4 × w-4 + 3 × gap-0.5) ≈ 74px */}
-          <span className="flex-shrink-0 w-[74px]" />
-          {/* Syllables header */}
-          <span className="flex-shrink-0 w-[1.75rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
-            {t.editor?.syllablesHeader ?? 'Syl.'}
+        {/*
+          Spacer widths mirror LyricInput right-side layout exactly:
+            drag-handle: w-3.5
+            text (flex-1): —
+            controls (4×w-4 + 3×gap-0.5): ≈74px
+            SYLLABLES spacer: w-[3.5rem]  ← header shows the label here
+            COUNT: w-[1.75rem]
+            SCHEMA: w-4
+        */}
+        <div className="flex items-center gap-1.5 px-1 mb-0.5 select-none" aria-hidden="true">
+          <span className="flex-shrink-0 w-3.5" />{/* drag-handle spacer */}
+          <span className="flex-1 min-w-0" />{/* text spacer */}
+          <span className="flex-shrink-0 w-[74px]" />{/* controls spacer */}
+          {/* SYLLABLES header */}
+          <span className="flex-shrink-0 w-[3.5rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
+            {t.editor?.syllables ?? 'Syllables'}
           </span>
-          {/* Schema header */}
+          {/* COUNT header */}
+          <span className="flex-shrink-0 w-[1.75rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
+            {t.editor?.syllableCount ?? 'Count'}
+          </span>
+          {/* SCHEMA header */}
           <span className="flex-shrink-0 w-4 text-center text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
             {t.editor?.schemaHeader ?? 'Sch.'}
           </span>
@@ -224,7 +254,7 @@ export const SectionEditor = React.memo(function SectionEditor({
 
         {/* ── Lines ──────────────────────────────────────────────────────── */}
         <div className="flex flex-col gap-0.5">
-          {renderItems.map((item, renderIdx) => {
+          {renderItems.map((item) => {
             if (item.kind === 'meta') {
               return (
                 <MetaLine
@@ -295,19 +325,17 @@ export const SectionEditor = React.memo(function SectionEditor({
             onRemove={removeInstruction}
           />
           {!isGenerating && (
-            <Tooltip title={t.editor.regenerateSection ?? 'Regenerate this section'}>
+            <Tooltip title={t.tooltips?.regenerateSection ?? 'Regenerate this section'}>
               <button
                 type="button"
                 onClick={() => { regenerateSection(section.id); playAudioFeedback('click'); }}
                 disabled={isRegeneratingSection(section.id)}
                 className="ml-auto flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {isRegeneratingSection(section.id) ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Wand2 className="h-3 w-3" />
-                )}
-                {t.editor.regenerate ?? 'REGENERATE'}
+                {isRegeneratingSection(section.id)
+                  ? <Loader2 className="h-3 w-3 animate-spin" />
+                  : <Wand2 className="h-3 w-3" />}
+                {t.editor?.regenerateSection ?? 'REGENERATE SECTION'}
               </button>
             </Tooltip>
           )}
