@@ -107,6 +107,8 @@ const de: Translations = {
     adapt: 'ANPASSEN',
     moodPlaceholder: 'Stimmung...',
     regenerateWarning: 'Dadurch wird der aktuelle Liedtext vollständig neu generiert. Möchtest du fortfahren?',
+    addLine: 'Zeile hinzufügen',
+    addMusicalEffect: 'Musik/Modulation/Effekt hinzufügen',
     moveSectionUp: 'Abschnitt nach oben',
     moveSectionDown: 'Abschnitt nach unten',
     dragToReorder: 'Ziehen zum Neuanordnen des Abschnitts',
@@ -156,6 +158,9 @@ const de: Translations = {
     instruments: 'INSTRUMENTE',
     instrumentsPlaceholder: 'Instrumentenfamilien auswählen...',
     rhythmPresets: 'RHYTHMUS-VOREINSTELLUNGEN',
+    vibeBoard: 'STIMMUNGSTAFEL',
+    vibeBoardDescription: 'Wählen Sie Ihr Genre, um BPM und Instrumente automatisch festzulegen',
+    subStyle: 'UNTERSTIL',
   },
 
   analysis: {
@@ -264,6 +269,7 @@ const de: Translations = {
       label: 'Audio',
       enable: 'Sound aktivieren',
       volume: 'Lautstärke',
+      disable: 'Deaktivieren',
     },
     language: {
       label: 'Sprache',
