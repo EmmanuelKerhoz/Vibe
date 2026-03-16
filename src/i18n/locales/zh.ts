@@ -260,19 +260,19 @@ const zh: Translations = {
   settings: {
     title: '设置',
     theme: {
-      label: '主题',
+      label: 'UI 主题',
       dark: '深色',
       light: '浅色',
       system: '跟随系统',
     },
     audio: {
-      label: '音频',
+      label: '音频反馈',
       enable: '启用声音',
       volume: '音量',
       disable: '禁用',
     },
     language: {
-      label: '语言',
+      label: 'UI 语言',
     },
     actions: {
       default: '默认',
@@ -280,7 +280,7 @@ const zh: Translations = {
       close: '关闭',
     },
     about: {
-      version: '版本',
+      version: '应用版本',
       github: 'GitHub 仓库',
       docs: '文档',
     },

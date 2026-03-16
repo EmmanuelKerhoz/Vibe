@@ -260,19 +260,19 @@ const ar: Translations = {
   settings: {
     title: 'الإعدادات',
     theme: {
-      label: 'المظهر',
+      label: 'مظهر الواجهة',
       dark: 'داكن',
       light: 'فاتح',
       system: 'النظام',
     },
     audio: {
-      label: 'الصوت',
+      label: 'تعليق صوتي',
       enable: 'تفعيل الصوت',
       volume: 'مستوى الصوت',
       disable: 'تعطيل',
     },
     language: {
-      label: 'اللغة',
+      label: 'لغة الواجهة',
     },
     actions: {
       default: 'افتراضي',
@@ -280,7 +280,7 @@ const ar: Translations = {
       close: 'إغلاق',
     },
     about: {
-      version: 'الإصدار',
+      version: 'إصدار التطبيق',
       github: 'مستودع GitHub',
       docs: 'التوثيق',
     },
