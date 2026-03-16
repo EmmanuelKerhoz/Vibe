@@ -235,20 +235,16 @@
   /* Gradient border via pseudo-element on dark mode */
 }
 
+/* GB-PANEL gradient border — unified with lcars-ribbon-rail token system.
+   Same gradient (--accent-rail-gradient-v), same glow, same radius.
+   Angle mapped to 135deg to wrap the full border perimeter. */
 .dark .lcars-gb-panel::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(
-    135deg,
-    var(--lcars-amber)  0%,
-    var(--lcars-sage)   25%,
-    var(--lcars-cyan)   50%,
-    var(--lcars-blue)   75%,
-    var(--lcars-violet) 100%
-  );
+  background: var(--accent-rail-gradient-v);
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -256,6 +252,7 @@
   mask-composite: exclude;
   pointer-events: none;
   z-index: 0;
+  box-shadow: var(--accent-rail-glow);
   opacity: 0.55;
   transition: opacity 0.2s ease;
 }
@@ -543,6 +540,8 @@
 
 /* ===========================================================================
    ACCENT RAIL — reusable pseudo-element mixin classes
+   All rails share: --accent-rail-gradient-v / -h, --accent-rail-glow,
+   --accent-rail-thickness, --accent-rail-radius.
    =========================================================================== */
 
 .accent-rail-top {
@@ -617,6 +616,8 @@
 .dark .accent-rail-top-right::before,
 .dark .accent-rail-top-right::after { opacity: 1; }
 
+/* LCARS RIBBON RAIL — vertical left bar, source of truth.
+   2px wide · amber→sage→cyan→blue→violet · opacity 0.9 always-on · glow. */
 .lcars-ribbon-rail {
   position: relative;
 }
@@ -629,6 +630,31 @@
   border-radius: var(--accent-rail-radius);
   box-shadow: var(--accent-rail-glow);
   opacity: 0.9;
+}
+
+/* FLUENT SIDEBAR — top horizontal rail on dark mode. */
+.ui-fluent .fluent-sidebar {
+  backdrop-filter: var(--layer1-blur);
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  border-bottom: none;
+  box-shadow: inset 1px 0 0 rgba(255,255,255,0.02);
+  position: relative;
+}
+.dark .ui-fluent .fluent-sidebar::before,
+.dark.ui-fluent .fluent-sidebar::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 0;
+  height: var(--accent-rail-thickness);
+  background: var(--accent-rail-gradient-h);
+  border-radius: var(--accent-rail-radius);
+  box-shadow: var(--accent-rail-glow);
+  opacity: 1;
+  z-index: 2;
+  pointer-events: none;
 }
 
 body {
@@ -750,30 +776,6 @@ html, body, #root {
 .ui-fluent .fluent-card:hover {
   box-shadow: var(--glow-accent), inset 0 1px 0 rgba(255,255,255,0.05);
   transform: translateY(-1px);
-}
-
-.ui-fluent .fluent-sidebar {
-  backdrop-filter: var(--layer1-blur);
-  background-color: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
-  border-bottom: none;
-  box-shadow: inset 1px 0 0 rgba(255,255,255,0.02);
-  position: relative;
-}
-.dark .ui-fluent .fluent-sidebar::before,
-.dark.ui-fluent .fluent-sidebar::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  top: 0;
-  height: var(--accent-rail-thickness);
-  background: var(--accent-rail-gradient-h);
-  border-radius: var(--accent-rail-radius);
-  box-shadow: var(--accent-rail-glow);
-  opacity: 1;
-  z-index: 2;
-  pointer-events: none;
 }
 
 .ui-fluent .fluent-input {
