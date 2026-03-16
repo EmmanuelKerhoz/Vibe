@@ -207,17 +207,13 @@ export const SectionEditor = React.memo(function SectionEditor({
         <div className="flex flex-col gap-0.5">
           {renderItems.map((item, renderIdx) => {
             if (item.kind === 'meta') {
-              return (
-                <MetaLine
-                  key={item.lines.map(l => l.id).join('-')}
-                  lines={item.lines}
-                  sectionId={section.id}
-                  handleInstructionChange={handleInstructionChange}
-                  addInstruction={addInstruction}
-                  removeInstruction={removeInstruction}
-                />
-              );
-            }
+            return (
+              <MetaLine
+                key={item.lines.map(l => l.id).join('-')}
+                text={item.lines.map(l => l.text).join(' ')}
+              />
+            );
+                        }
             const { line, index: lyricIndex } = item;
             const schemeLabel = getSchemeLetterForLine(section, lyricIndex, section.rhymeScheme || rhymeScheme);
             const rhymeColor = getRhymeColor(schemeLabel);
@@ -267,17 +263,17 @@ export const SectionEditor = React.memo(function SectionEditor({
             sectionId={section.id}
             instructions={section.preInstructions ?? []}
             type="pre"
-            handleInstructionChange={handleInstructionChange}
-            addInstruction={addInstruction}
-            removeInstruction={removeInstruction}
+                      onChange={handleInstructionChange}
+                      onAdd={addInstruction}
+                      onRemove={removeInstruction}
           />
           <InstructionEditor
             sectionId={section.id}
             instructions={section.postInstructions ?? []}
             type="post"
-            handleInstructionChange={handleInstructionChange}
-            addInstruction={addInstruction}
-            removeInstruction={removeInstruction}
+                      onChange={handleInstructionChange}
+                      onAdd={addInstruction}
+                      onRemove={removeInstruction}
           />
           {!isGenerating && (
             <Tooltip title={t.editor.regenerateSection ?? 'Regenerate this section'}>
