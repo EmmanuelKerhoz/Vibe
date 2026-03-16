@@ -83,7 +83,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       const usedSectionIds = new Set<string>();
       const usedLineIds = new Set<string>();
 
-      const newSections: Section[] = rawBlocks.map((block, index) => {
+          const newSections = rawBlocks.map((block, index) => {
         const expandedLines = block
           .trim()
           .split('\n')
@@ -165,7 +165,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
             };
           }),
         };
-      }).filter((s): s is Section => s !== null);
+      }).filter((s): s is NonNullable<typeof s> => s !== null);
 
       if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
       setIsMarkupMode(false);
