@@ -30,12 +30,9 @@ export interface LyricInputProps {
 }
 
 /**
- * Renders a single non-meta lyric line with:
- * - inline rhyme-scheme badge (schemeLabel / rhymeColor)
- * - syllable count badge
- * - drag handle
- * - up/down/add/delete controls on hover
- * - transparent-text trick for parenthetical coloring
+ * Renders a single non-meta lyric line.
+ * Layout (L→R): drag-handle | text-input | [controls] | syllable-count | scheme-badge
+ * Schema badge is rightmost so it aligns under the "Schema" column header.
  */
 export const LyricInput = React.memo(function LyricInput({
   line,
@@ -65,7 +62,6 @@ export const LyricInput = React.memo(function LyricInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const isSelected = selectedLineId === line.id;
 
-  // Auto-focus when this line becomes selected
   useEffect(() => {
     if (isSelected && inputRef.current && document.activeElement !== inputRef.current) {
       inputRef.current.focus();
@@ -80,9 +76,7 @@ export const LyricInput = React.memo(function LyricInput({
     handleLineKeyDown(e, sectionId, line.id);
   };
 
-  const handleClick = () => {
-    handleLineClick(line.id);
-  };
+  const handleClick = () => handleLineClick(line.id);
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -113,7 +107,6 @@ export const LyricInput = React.memo(function LyricInput({
     setDragOverLineInfo(null);
   };
 
-  // Render parentheticals in amber
   const renderStyledOverlay = (text: string) => {
     if (!text) return null;
     const parts = text.split(/(\([^)]*\))/g);
@@ -146,16 +139,8 @@ export const LyricInput = React.memo(function LyricInput({
         <GripVertical className="h-3.5 w-3.5 text-zinc-500" />
       </div>
 
-      {/* Rhyme scheme badge */}
-      <span
-        className={`flex-shrink-0 inline-flex h-4 w-4 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
-      >
-        {schemeLabel ?? ''}
-      </span>
-
       {/* Text input with overlay */}
       <div className="relative flex-1 min-w-0" onClick={handleClick}>
-        {/* Styled overlay (pointer-events none) */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 flex items-center text-sm font-mono overflow-hidden whitespace-pre"
@@ -163,7 +148,6 @@ export const LyricInput = React.memo(function LyricInput({
         >
           {renderStyledOverlay(line.text)}
         </div>
-        {/* Actual input — transparent text so overlay shows through */}
         <input
           ref={inputRef}
           data-line-id={line.id}
@@ -179,11 +163,6 @@ export const LyricInput = React.memo(function LyricInput({
           autoComplete="off"
         />
       </div>
-
-      {/* Syllable count */}
-      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors min-w-[1.5rem] text-right">
-        {line.syllables > 0 ? line.syllables : ''}
-      </span>
 
       {/* Line controls — visible on hover */}
       <div className="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -227,6 +206,18 @@ export const LyricInput = React.memo(function LyricInput({
           </button>
         </Tooltip>
       </div>
+
+      {/* Syllable count — second from right */}
+      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors w-[1.75rem] text-right">
+        {line.syllables > 0 ? line.syllables : ''}
+      </span>
+
+      {/* Rhyme scheme badge — rightmost, aligns under Schema column header */}
+      <span
+        className={`flex-shrink-0 inline-flex h-4 w-4 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
+      >
+        {schemeLabel ?? ''}
+      </span>
     </div>
   );
 });

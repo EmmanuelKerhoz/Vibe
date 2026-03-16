@@ -97,7 +97,6 @@ export const SectionEditor = React.memo(function SectionEditor({
     setSectionName, setSectionRhymeScheme,
   } = useEditorContext();
 
-  // Guard: section.name may be undefined/null in corrupted state (causes toUpperCase crash)
   const sectionName: string = section.name ?? '';
 
   const isSectionDraggable = sectionName.toLowerCase() !== 'intro' && sectionName.toLowerCase() !== 'outro';
@@ -107,7 +106,6 @@ export const SectionEditor = React.memo(function SectionEditor({
   const isSectionAdapting = isAdaptingLanguage;
   const canAdaptSection = !!adaptSectionLanguage && !isGenerating && !isAnalyzing && !isSectionAdapting;
 
-  // Build section type options safely — filter out any non-string entries defensively
   const safeSectionTypeOptions = SECTION_TYPE_OPTIONS.filter((opt): opt is string => typeof opt === 'string');
   const sectionTypeSelectOptions = [
     ...safeSectionTypeOptions.map(opt => ({ value: opt, label: opt.toUpperCase() })),
@@ -115,6 +113,12 @@ export const SectionEditor = React.memo(function SectionEditor({
       ? [{ value: sectionName, label: sectionName.toUpperCase() }]
       : []),
   ];
+
+  // Build language options with sign prefix so flags show in the trigger
+  const languageOptions = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
+    value: lang.aiName,
+    label: adaptationLanguageLabel(lang),
+  }));
 
   return (
     <section
@@ -131,8 +135,8 @@ export const SectionEditor = React.memo(function SectionEditor({
         style={{ borderRadius: '24px 0 0 24px', flexShrink: 0 }}
       />
 
-      {/* flex-1 + min-w-0 + width:100% ensure the content area expands to fill available width */}
       <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
+        {/* ── Section header ─────────────────────────────────────────────── */}
         <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
           <div className="flex items-center gap-3">
             <div className="flex flex-col gap-0.5">
@@ -169,18 +173,15 @@ export const SectionEditor = React.memo(function SectionEditor({
             </div>
           </div>
 
+          {/* ── Language adapt control ───────────────────────────────────── */}
           <div className="flex items-center gap-2 flex-wrap">
             {adaptSectionLanguage && (
               <div className="flex items-center gap-1.5">
-                {/* FIX A: min-w-[12rem] prevents flag emoji from being clipped by ellipsis at narrow widths */}
-                <div className="min-w-[12rem] max-w-[16rem] flex-shrink-0">
+                <div className="min-w-[13rem] max-w-[18rem] flex-shrink-0">
                   <LcarsSelect
                     value={sectionTargetLanguage}
                     onChange={(v) => onSectionTargetLanguageChange?.(section.id, v)}
-                    options={SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
-                      value: lang.aiName,
-                      label: adaptationLanguageLabel(lang),
-                    }))}
+                    options={languageOptions}
                     accentColor="var(--lcars-cyan)"
                   />
                 </div>
@@ -203,17 +204,35 @@ export const SectionEditor = React.memo(function SectionEditor({
           </div>
         </div>
 
-        {/* Lines */}
+        {/* ── Column headers ─────────────────────────────────────────────── */}
+        <div className="flex items-center gap-1.5 px-1 mb-0.5 select-none">
+          {/* spacer: drag-handle width */}
+          <span className="flex-shrink-0 w-3.5" />
+          {/* spacer: text area */}
+          <span className="flex-1 min-w-0" />
+          {/* controls spacer (4 × w-4 + 3 × gap-0.5) ≈ 74px */}
+          <span className="flex-shrink-0 w-[74px]" />
+          {/* Syllables header */}
+          <span className="flex-shrink-0 w-[1.75rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
+            {t.editor?.syllablesHeader ?? 'Syl.'}
+          </span>
+          {/* Schema header */}
+          <span className="flex-shrink-0 w-4 text-center text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
+            {t.editor?.schemaHeader ?? 'Sch.'}
+          </span>
+        </div>
+
+        {/* ── Lines ──────────────────────────────────────────────────────── */}
         <div className="flex flex-col gap-0.5">
           {renderItems.map((item, renderIdx) => {
             if (item.kind === 'meta') {
-            return (
-              <MetaLine
-                key={item.lines.map(l => l.id).join('-')}
-                text={item.lines.map(l => l.text).join(' ')}
-              />
-            );
-                        }
+              return (
+                <MetaLine
+                  key={item.lines.map(l => l.id).join('-')}
+                  text={item.lines.map(l => l.text).join(' ')}
+                />
+              );
+            }
             const { line, index: lyricIndex } = item;
             const schemeLabel = getSchemeLetterForLine(section, lyricIndex, section.rhymeScheme || rhymeScheme);
             const rhymeColor = getRhymeColor(schemeLabel);
@@ -249,7 +268,7 @@ export const SectionEditor = React.memo(function SectionEditor({
           })}
         </div>
 
-        {/* Footer actions */}
+        {/* ── Footer actions ─────────────────────────────────────────────── */}
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <button
             type="button"
@@ -263,17 +282,17 @@ export const SectionEditor = React.memo(function SectionEditor({
             sectionId={section.id}
             instructions={section.preInstructions ?? []}
             type="pre"
-                      onChange={handleInstructionChange}
-                      onAdd={addInstruction}
-                      onRemove={removeInstruction}
+            onChange={handleInstructionChange}
+            onAdd={addInstruction}
+            onRemove={removeInstruction}
           />
           <InstructionEditor
             sectionId={section.id}
             instructions={section.postInstructions ?? []}
             type="post"
-                      onChange={handleInstructionChange}
-                      onAdd={addInstruction}
-                      onRemove={removeInstruction}
+            onChange={handleInstructionChange}
+            onAdd={addInstruction}
+            onRemove={removeInstruction}
           />
           {!isGenerating && (
             <Tooltip title={t.editor.regenerateSection ?? 'Regenerate this section'}>
