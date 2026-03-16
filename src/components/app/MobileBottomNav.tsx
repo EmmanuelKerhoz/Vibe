@@ -7,7 +7,6 @@ interface Props {
   isStructureOpen: boolean;
   activeTab: 'lyrics' | 'musical';
   isGenerating?: boolean;
-  /** Accept both direct boolean setter and functional updater */
   setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
@@ -27,13 +26,13 @@ export function MobileBottomNav({
 
   return (
     <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
-      {/* Settings — opens SettingsModal */}
+      {/* Settings — onOpenSettings called first so React batch preserves the modal open state */}
       <button
         className="mobile-bottom-nav-btn"
         onClick={() => {
+          onOpenSettings?.();
           setIsLeftPanelOpen(false);
           setIsStructureOpen(false);
-          onOpenSettings?.();
         }}
         aria-label={t.mobileNav.settings}
       >
@@ -88,11 +87,16 @@ export function MobileBottomNav({
         <span>{t.mobileNav.music}</span>
       </button>
 
-      {/* Structure sidebar */}
+      {/*
+        FIX #4 (amend): open-only from here — closing is exclusively handled by
+        StructureSidebar's handleClose (stopPropagation + setIsStructureOpen(false)).
+        This prevents the ghost re-appearance caused by a rapid tap during the
+        motion exit animation re-toggling the state from false back to true.
+      */}
       <button
         className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
         onClick={() => {
-          setIsStructureOpen(v => !v);
+          if (!isStructureOpen) setIsStructureOpen(true);
           setIsLeftPanelOpen(false);
         }}
         aria-label={t.mobileNav.structure}

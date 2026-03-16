@@ -8,7 +8,7 @@ import { InstructionEditor } from './InstructionEditor';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
-import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
+import { SUPPORTED_ADAPTATION_LANGUAGES, adaptationLanguageLabel } from '../../i18n';
 import { useEditorContext } from '../../contexts/EditorContext';
 
 interface SectionEditorProps {
@@ -29,9 +29,6 @@ interface SectionEditorProps {
   dragOverIndex: number | null;
   draggedLineInfo: { sectionId: string; lineId: string } | null;
   dragOverLineInfo: { sectionId: string; lineId: string } | null;
-  // ✕ moveSectionUp/Down, moveLineUp/Down, addLineToSection,
-  //   deleteLineFromSection, setSectionName, setSectionRhymeScheme
-  //   → via useEditorContext()
   isRegeneratingSection: (sectionId: string) => boolean;
   handleLineClick: (lineId: string) => void;
   updateLineText: (sectionId: string, lineId: string, text: string) => void;
@@ -93,7 +90,6 @@ export const SectionEditor = React.memo(function SectionEditor({
 }: SectionEditorProps) {
   const { t } = useTranslation();
 
-  // ── Handlers locaux via contexte (stables, pas de re-render si song change ailleurs)
   const {
     moveSectionUp, moveSectionDown,
     moveLineUp, moveLineDown,
@@ -115,7 +111,7 @@ export const SectionEditor = React.memo(function SectionEditor({
       onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
       onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (dragOverIndex === sectionIndex) setDragOverIndex(null); }}
       onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(sectionIndex); }}
-      className={`lcars-band ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
+      className={`lcars-band w-full ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
       style={{ overflow: 'visible' }}
     >
       <div
@@ -123,7 +119,8 @@ export const SectionEditor = React.memo(function SectionEditor({
         style={{ borderRadius: '24px 0 0 24px', flexShrink: 0 }}
       />
 
-      <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, overflow: 'visible' }}>
+      {/* FIX #1: flex-1 + min-w-0 + width:100% ensure the content area expands to fill available width */}
+      <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
         <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
           <div className="flex items-center gap-3">
             <div className="flex flex-col gap-0.5">
@@ -168,13 +165,14 @@ export const SectionEditor = React.memo(function SectionEditor({
           <div className="flex items-center gap-2 flex-wrap">
             {adaptSectionLanguage && (
               <div className="flex items-center gap-1.5">
-                <div className="w-32">
+                <div className="w-40">
+                  {/* FIX #2: use adaptationLanguageLabel() for consistent flag+name display, matching the ribbon */}
                   <LcarsSelect
                     value={sectionTargetLanguage}
                     onChange={(v) => onSectionTargetLanguageChange?.(section.id, v)}
                     options={SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
                       value: lang.aiName,
-                      label: `${lang.sign} ${lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}`,
+                      label: adaptationLanguageLabel(lang),
                     }))}
                     accentColor="var(--lcars-cyan)"
                   />
@@ -250,9 +248,10 @@ export const SectionEditor = React.memo(function SectionEditor({
                   >
                     <Settings2 className="h-3.5 w-3.5" />
                   </button>
-                  <div style={{ gridColumn: 'span 4', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', minWidth: 0 }}>
+                  {/* FIX #3: flex-nowrap on the meta tags container so consecutive instructions stay on the same line */}
+                  <div style={{ gridColumn: 'span 4', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap', minWidth: 0, overflow: 'hidden' }}>
                     {item.lines.map((metaLine) => (
-                      <span key={metaLine.id} className="group/tag inline-flex items-center gap-1">
+                      <span key={metaLine.id} className="group/tag inline-flex items-center gap-1 flex-shrink-0">
                         <MetaLine text={metaLine.text} />
                         <Tooltip title={t.editor.deleteLine ?? 'Delete line'}>
                           <button
