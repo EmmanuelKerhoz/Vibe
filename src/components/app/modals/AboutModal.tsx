@@ -19,10 +19,8 @@ export function AboutModal({ isOpen, onClose }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const sweepItemsRef = useRef<HTMLDivElement>(null);
 
-  // Per-item shimmer — activate sweep-active class so paused animations run
   useEffect(() => {
     if (!isOpen) return;
-
     const container = sweepItemsRef.current;
     if (container) {
       const items = container.querySelectorAll<HTMLElement>('.about-sweep-item');
@@ -38,9 +36,9 @@ export function AboutModal({ isOpen, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
-      {/* Backdrop */}
+      {/* Backdrop — slightly more opaque for less see-through */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-xl animate-in fade-in duration-300"
+        className="absolute inset-0 bg-black/70 backdrop-blur-xl animate-in fade-in duration-300"
         onClick={onClose}
       />
 
@@ -49,15 +47,16 @@ export function AboutModal({ isOpen, onClose }: Props) {
         <div className="w-[600px] h-[400px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
       </div>
 
-      {/* Modal panel */}
+      {/* Modal panel — opaque background, no glass transparency */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t.app.name}
-        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8 about-dialog-shimmer"
+        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8 about-dialog-shimmer"
+        style={{ background: 'var(--bg-card)' }}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
+        <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0" style={{ background: 'var(--bg-sidebar)' }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
               <Info className="w-4 h-4 text-[var(--accent-color)]" />
@@ -82,20 +81,23 @@ export function AboutModal({ isOpen, onClose }: Props) {
 
         {/* Scrollable body */}
         <div ref={bodyRef} className="flex-1 overflow-y-auto custom-scrollbar">
-          {/* Banner — flush, no dark overlay */}
-          <div className="relative w-full">
-            <div className="w-full overflow-hidden" style={{ aspectRatio: `${BANNER_WIDTH} / ${BANNER_HEIGHT}` }}>
-              <img src={bannerImage} alt="Lyricist splash screen" className="w-full h-full object-contain object-top" />
-            </div>
+
+          {/* Banner — flush to header, no top padding, no bottom margin */}
+          <div className="w-full overflow-hidden" style={{ aspectRatio: `${BANNER_WIDTH} / ${BANNER_HEIGHT}` }}>
+            <img
+              src={bannerImage}
+              alt="Lyricist splash screen"
+              className="w-full h-full object-contain object-top"
+            />
           </div>
 
-          {/* Body content — ref container for per-item shimmer sweep */}
-          <div ref={sweepItemsRef} className="px-8 pt-0 pb-8 space-y-6">
-            <p className="about-sweep-item text-sm text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto text-center rounded-lg">
+          {/* Body content */}
+          <div ref={sweepItemsRef} className="px-8 pt-4 pb-8 space-y-6">
+            <p className="about-sweep-item text-sm text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto text-center">
               {t.about.description}
             </p>
 
-            {/* Tech Info — each card is an about-sweep-item */}
+            {/* Tech Info */}
             <div className="grid grid-cols-1 gap-3 pt-4 border-t border-[var(--border-color)] sm:grid-cols-2">
               <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
                 <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{t.about.engineLabel}</span>
@@ -115,7 +117,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
               </div>
             </div>
 
-            {/* Social Links — each link is an about-sweep-item */}
+            {/* Social Links */}
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <a href="https://www.youtube.com/@voxnova42" target="_blank" rel="noopener noreferrer" aria-label="Visit YouTube channel"
                 className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium">
@@ -146,7 +148,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-end flex-shrink-0">
+        <div className="px-6 py-4 border-t border-[var(--border-color)] flex justify-end flex-shrink-0" style={{ background: 'var(--bg-sidebar)' }}>
           <Button onClick={onClose} variant="contained" color="primary" className="ux-interactive">
             {t.about.close}
           </Button>

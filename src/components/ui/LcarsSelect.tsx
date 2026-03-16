@@ -181,6 +181,7 @@ export function LcarsSelect({
           fontSize: 'inherit',
           fontFamily: EMOJI_FONT_STACK,
           textAlign: 'left',
+          overflow: 'hidden',
           ...style,
         }}
         onFocus={(e) => { e.currentTarget.style.boxShadow = glowShadow; e.currentTarget.style.borderColor = accent; }}
@@ -188,9 +189,29 @@ export function LcarsSelect({
         onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.boxShadow = glowShadow; e.currentTarget.style.borderColor = accent; } }}
         onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
       >
-        <span dir="auto" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: EMOJI_FONT_STACK }}>
-          {selectedLabel}
-        </span>
+        {/*
+          Label wrapper: flex + minWidth:0 so the inner truncate span clips text,
+          NOT overflow:hidden+textOverflow:ellipsis on this div — that would clip
+          emoji flag sequences before they render.
+          The ReactNode label is responsible for its own truncation via truncate class.
+        */}
+        <div style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          alignItems: 'center',
+          fontFamily: EMOJI_FONT_STACK,
+          overflow: 'hidden',
+        }}>
+          {typeof selectedLabel === 'string' ? (
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', width: '100%' }}>
+              {selectedLabel}
+            </span>
+          ) : (
+            // ReactNode (e.g. flag + text): rendered as-is, inner span handles truncation
+            <>{selectedLabel}</>
+          )}
+        </div>
         <ChevronDown style={{ width: 14, height: 14, flexShrink: 0, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
       </button>
 

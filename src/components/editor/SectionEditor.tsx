@@ -111,13 +111,13 @@ export const SectionEditor = React.memo(function SectionEditor({
   ];
 
   /**
-   * Language options: label is a ReactNode so the flag emoji is rendered in its
-   * own flex-shrink-0 span and can never be clipped by the trigger's text-overflow.
+   * Language options: label is ReactNode — flag in flex-shrink-0 span, text in truncate span.
+   * This prevents the emoji country flag sequence from being clipped by the trigger's overflow.
    */
   const languageOptions = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
     value: lang.aiName,
     label: (
-      <span className="flex items-center gap-1.5 min-w-0">
+      <span className="flex items-center gap-1.5 min-w-0 w-full">
         <span
           className="flex-shrink-0 text-base leading-none"
           style={{ fontFamily: '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif' }}
@@ -125,7 +125,7 @@ export const SectionEditor = React.memo(function SectionEditor({
         >
           {lang.sign}
         </span>
-        <span className="truncate">
+        <span className="truncate text-[11px]">
           {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}
         </span>
       </span>
@@ -227,26 +227,28 @@ export const SectionEditor = React.memo(function SectionEditor({
         {/* ── Column headers ─────────────────────────────────────────────── */}
         {/*
           Spacer widths mirror LyricInput right-side layout exactly:
-            drag-handle: w-3.5
-            text (flex-1): —
-            controls (4×w-4 + 3×gap-0.5): ≈74px
-            SYLLABLES spacer: w-[3.5rem]  ← header shows the label here
-            COUNT: w-[1.75rem]
-            SCHEMA: w-4
+            drag-handle: w-3.5  = 14px
+            gap-1.5             = 6px  (between drag-handle and text)
+            text (flex-1)       — fills remaining
+            gap-1.5             = 6px  (between text and controls)
+            controls: 4×w-4 + 3×gap-0.5 = 4×16 + 3×2 = 70px
+            gap-1.5             = 6px  (between controls and SYLLABLES)
+            SYLLABLES: w-[3.5rem] = 56px
+            gap-1.5             = 6px
+            COUNT: w-[1.75rem]  = 28px
+            gap-1.5             = 6px
+            SCHEMA: w-4         = 16px
         */}
         <div className="flex items-center gap-1.5 px-1 mb-0.5 select-none" aria-hidden="true">
-          <span className="flex-shrink-0 w-3.5" />{/* drag-handle spacer */}
-          <span className="flex-1 min-w-0" />{/* text spacer */}
-          <span className="flex-shrink-0 w-[74px]" />{/* controls spacer */}
-          {/* SYLLABLES header */}
+          <span className="flex-shrink-0 w-3.5" />{/* drag-handle */}
+          <span className="flex-1 min-w-0" />{/* text area */}
+          <span className="flex-shrink-0 w-[70px]" />{/* 4 controls: 4×16 + 3×2 = 70px */}
           <span className="flex-shrink-0 w-[3.5rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
             {t.editor?.syllables ?? 'Syllables'}
           </span>
-          {/* COUNT header */}
           <span className="flex-shrink-0 w-[1.75rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
             {t.editor?.syllableCount ?? 'Count'}
           </span>
-          {/* SCHEMA header */}
           <span className="flex-shrink-0 w-4 text-center text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
             {t.editor?.schemaHeader ?? 'Sch.'}
           </span>
