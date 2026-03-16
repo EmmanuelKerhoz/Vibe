@@ -1,5 +1,7 @@
+import type { Section } from '../types';
+
 export const getSectionColor = (name: string) => {
-  const n = name.toLowerCase();
+  const n = (name ?? '').toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500/10 border-orange-500/20 text-orange-500';
   if (n.includes('chorus')) return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
   if (n.includes('verse')) return 'bg-cyan-500/10 border-cyan-500/20 text-cyan-500';
@@ -9,7 +11,7 @@ export const getSectionColor = (name: string) => {
 };
 
 export const getSectionTextColor = (name: string) => {
-  const n = name.toLowerCase();
+  const n = (name ?? '').toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'text-orange-500';
   if (n.includes('chorus')) return 'text-amber-500';
   if (n.includes('verse')) return 'text-cyan-400';
@@ -19,7 +21,7 @@ export const getSectionTextColor = (name: string) => {
 };
 
 export const getSectionColorHex = (name: string): string => {
-  const n = name.toLowerCase();
+  const n = (name ?? '').toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return '#f97316';
   if (n.includes('chorus')) return '#f59e0b';
   if (n.includes('verse')) return '#06b6d4';
@@ -29,7 +31,7 @@ export const getSectionColorHex = (name: string): string => {
 };
 
 export const getSectionDotColor = (name: string) => {
-  const n = name.toLowerCase();
+  const n = (name ?? '').toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500';
   if (n.includes('chorus')) return 'bg-amber-500';
   if (n.includes('verse')) return 'bg-cyan-500';
@@ -39,18 +41,38 @@ export const getSectionDotColor = (name: string) => {
 };
 
 /**
- * Returns the rhyme scheme letter (e.g. 'A', 'B', 'C') for a given line index
- * within a scheme string (e.g. 'AABB', 'ABAB'). Returns null for FREE or missing schemes.
+ * Returns the rhyme scheme letter (e.g. 'A', 'B', 'C') for a given lyric line index
+ * within a section, using the provided rhymeScheme string (e.g. 'AABB', 'ABAB').
+ * Returns null for FREE scheme, missing scheme, or invalid inputs.
  * If the line index exceeds the scheme length, it wraps around.
+ *
+ * Overload 1 — legacy: (schemeStr: string | undefined, lineIndex: number)
+ * Overload 2 — current: (section: Section, lineIndex: number, rhymeScheme: string)
  */
-export const getSchemeLetterForLine = (scheme: string | undefined, lineIndex: number): string | null => {
-  if (!scheme || scheme.toUpperCase() === 'FREE') return null;
+export function getSchemeLetterForLine(section: Section, lineIndex: number, rhymeScheme: string): string | null;
+export function getSchemeLetterForLine(scheme: string | undefined, lineIndex: number): string | null;
+export function getSchemeLetterForLine(
+  sectionOrScheme: Section | string | undefined,
+  lineIndex: number,
+  rhymeScheme?: string,
+): string | null {
+  let scheme: string | undefined;
+  if (typeof sectionOrScheme === 'object' && sectionOrScheme !== null) {
+    // Called as (section, lineIndex, rhymeScheme)
+    scheme = rhymeScheme;
+  } else {
+    // Called as (schemeStr, lineIndex)
+    scheme = sectionOrScheme;
+  }
+  if (!scheme || typeof scheme !== 'string') return null;
+  if (scheme.toUpperCase() === 'FREE') return null;
   const upper = scheme.toUpperCase();
   if (upper.length === 0) return null;
   return upper[lineIndex % upper.length] ?? null;
-};
+}
 
-export const getRhymeColor = (rhyme: string) => {
+export const getRhymeColor = (rhyme: string | null | undefined): string => {
+  if (!rhyme || typeof rhyme !== 'string') return 'bg-white/5 text-zinc-500 border-white/10';
   const r = rhyme.toUpperCase();
   if (r === 'A') return 'bg-blue-500/15 text-blue-500 border-blue-500/20';
   if (r === 'B') return 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20';
