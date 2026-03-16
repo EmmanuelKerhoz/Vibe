@@ -51,6 +51,9 @@
     var(--lcars-violet) 100%
   );
 
+  /* Alias used by gradient-outline controls — always matches rail thickness */
+  --accent-rail-outline-thickness: var(--accent-rail-thickness);
+
   --bg-app:            #f3f2f1;
   --bg-sidebar:        rgba(243, 242, 241, 0.75);
   --bg-card:           #e1dfdd;
@@ -216,9 +219,6 @@
 
 /* ===========================================================================
    LCARS GB-PANEL — gradient-border container used throughout MusicalTab
-   Uses a CSS-native padding + background-clip trick so the inner content
-   sits on the correct background with no extra DOM wrapper.
-   Light: subtle warm border. Dark: full multicolor LCARS rail.
    =========================================================================== */
 
 .lcars-gb-panel {
@@ -232,18 +232,14 @@
 .dark .lcars-gb-panel {
   background-color: rgba(14, 14, 14, 0.70);
   border: none;
-  /* Gradient border via pseudo-element on dark mode */
 }
 
-/* GB-PANEL gradient border — unified with lcars-ribbon-rail token system.
-   Same gradient (--accent-rail-gradient-v), same glow, same radius.
-   Angle mapped to 135deg to wrap the full border perimeter. */
 .dark .lcars-gb-panel::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
+  padding: var(--accent-rail-thickness);
   background: var(--accent-rail-gradient-v);
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
@@ -264,6 +260,55 @@
 .dark .lcars-gb-panel > * {
   position: relative;
   z-index: 1;
+}
+
+/* ===========================================================================
+   LCARS GRADIENT OUTLINE — unified utility class
+   Applies a multicolor gradient border via ::before pseudo-element.
+   Thickness: --accent-rail-outline-thickness (alias of --accent-rail-thickness).
+   Gradient: 135deg amber→sage→cyan→blue→violet (matches accent-rail palette).
+   Dark-mode only: opacity 0 in light, 0.65 idle → 1 on hover/focus in dark.
+   Usage: add class="lcars-gradient-outline" to any position:relative container.
+   The inner content must have position:relative + z-index:1 to sit above ::before.
+   =========================================================================== */
+
+.lcars-gradient-outline {
+  position: relative;
+}
+
+.lcars-gradient-outline::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--accent-rail-outline-thickness);
+  background: linear-gradient(
+    135deg,
+    var(--lcars-amber)  0%,
+    var(--lcars-sage)   25%,
+    var(--lcars-cyan)   50%,
+    var(--lcars-blue)   75%,
+    var(--lcars-violet) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Dark mode: visible by default, brighter on hover/focus */
+.dark .lcars-gradient-outline::before {
+  opacity: 0.65;
+}
+
+.dark .lcars-gradient-outline:hover::before,
+.dark .lcars-gradient-outline:focus-within::before {
+  opacity: 1;
 }
 
 /* ===========================================================================
@@ -348,13 +393,9 @@
 }
 
 /* ===========================================================================
-   ABOUT MODAL — full-dialog multi-particle shimmer
-   Replaces the old diagonal sweep with soft floating particles
-   across the entire dialog surface for a "magical" ambient effect.
-   Each About item (.about-sweep-item) still animates in with staggered delay.
+   ABOUT MODAL
    =========================================================================== */
 
-/* Full-dialog shimmer overlay via ::after on .about-dialog-shimmer */
 @keyframes about-dialog-particles {
   0%   { background-position: 0% 0%; }
   50%  { background-position: 100% 100%; }
@@ -429,7 +470,7 @@
 .about-sweep-item:nth-child(10)::before { animation-delay: 1.65s; }
 
 /* ===========================================================================
-   ADAPTATION MODAL OVERLAY — magical particles and glow
+   ADAPTATION MODAL OVERLAY
    =========================================================================== */
 
 @keyframes adaptation-particle-float {
@@ -540,8 +581,6 @@
 
 /* ===========================================================================
    ACCENT RAIL — reusable pseudo-element mixin classes
-   All rails share: --accent-rail-gradient-v / -h, --accent-rail-glow,
-   --accent-rail-thickness, --accent-rail-radius.
    =========================================================================== */
 
 .accent-rail-top {
@@ -616,8 +655,6 @@
 .dark .accent-rail-top-right::before,
 .dark .accent-rail-top-right::after { opacity: 1; }
 
-/* LCARS RIBBON RAIL — vertical left bar, source of truth.
-   2px wide · amber→sage→cyan→blue→violet · opacity 0.9 always-on · glow. */
 .lcars-ribbon-rail {
   position: relative;
 }
@@ -632,7 +669,6 @@
   opacity: 0.9;
 }
 
-/* FLUENT SIDEBAR — top horizontal rail on dark mode. */
 .ui-fluent .fluent-sidebar {
   backdrop-filter: var(--layer1-blur);
   background-color: var(--bg-sidebar);
@@ -979,7 +1015,6 @@ html, body, #root {
 
 /* ===========================================================================
    LYRICS EDITOR ZOOM
-   FIX B: removed max-width: 860px — editor now fills the full available width.
    =========================================================================== */
 
 .lyrics-editor-zoom-wrapper {
@@ -990,11 +1025,10 @@ html, body, #root {
 
 .lyrics-editor-zoom {
   width: 100%;
-  /* max-width removed — editor expands to full container width */
 }
 
 /* ===========================================================================
-   LCARS SELECT
+   LCARS SELECT — native <select> fallback
    =========================================================================== */
 
 .lcars-select {
