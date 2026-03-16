@@ -97,12 +97,24 @@ export const SectionEditor = React.memo(function SectionEditor({
     setSectionName, setSectionRhymeScheme,
   } = useEditorContext();
 
-  const isSectionDraggable = section.name.toLowerCase() !== 'intro' && section.name.toLowerCase() !== 'outro';
+  // Guard: section.name may be undefined/null in corrupted state (causes toUpperCase crash)
+  const sectionName: string = section.name ?? '';
+
+  const isSectionDraggable = sectionName.toLowerCase() !== 'intro' && sectionName.toLowerCase() !== 'outro';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
-  const sectionColor = getSectionColorHex(section.name);
+  const sectionColor = getSectionColorHex(sectionName);
   const renderItems = buildRenderItems(section.lines);
   const isSectionAdapting = isAdaptingLanguage;
   const canAdaptSection = !!adaptSectionLanguage && !isGenerating && !isAnalyzing && !isSectionAdapting;
+
+  // Build section type options safely — filter out any non-string entries defensively
+  const safeSectionTypeOptions = SECTION_TYPE_OPTIONS.filter((opt): opt is string => typeof opt === 'string');
+  const sectionTypeSelectOptions = [
+    ...safeSectionTypeOptions.map(opt => ({ value: opt, label: opt.toUpperCase() })),
+    ...(sectionName && !safeSectionTypeOptions.includes(sectionName)
+      ? [{ value: sectionName, label: sectionName.toUpperCase() }]
+      : []),
+  ];
 
   return (
     <section
@@ -115,7 +127,7 @@ export const SectionEditor = React.memo(function SectionEditor({
       style={{ overflow: 'visible' }}
     >
       <div
-        className={`lcars-band-stripe ${getSectionDotColor(section.name)}`}
+        className={`lcars-band-stripe ${getSectionDotColor(sectionName)}`}
         style={{ borderRadius: '24px 0 0 24px', flexShrink: 0 }}
       />
 
@@ -125,26 +137,21 @@ export const SectionEditor = React.memo(function SectionEditor({
           <div className="flex items-center gap-3">
             <div className="flex flex-col gap-0.5">
               <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>
-                <button type="button" onClick={() => moveSectionUp(section.id)} disabled={sectionIndex === 0 || section.name.toLowerCase() === 'intro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                <button type="button" onClick={() => moveSectionUp(section.id)} disabled={sectionIndex === 0 || sectionName.toLowerCase() === 'intro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                   <ChevronUp className="h-3 w-3" />
                 </button>
               </Tooltip>
               <Tooltip title={t.editor.moveSectionDown ?? 'Move section down'}>
-                <button type="button" onClick={() => moveSectionDown(section.id)} disabled={sectionIndex === songLength - 1 || section.name.toLowerCase() === 'outro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+                <button type="button" onClick={() => moveSectionDown(section.id)} disabled={sectionIndex === songLength - 1 || sectionName.toLowerCase() === 'outro'} className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                   <ChevronDown className="h-3 w-3" />
                 </button>
               </Tooltip>
             </div>
             <div>
               <LcarsSelect
-                value={section.name}
+                value={sectionName}
                 onChange={(v) => setSectionName(section.id, v)}
-                options={[
-                  ...SECTION_TYPE_OPTIONS.map(opt => ({ value: opt, label: opt.toUpperCase() })),
-                  ...(!SECTION_TYPE_OPTIONS.includes(section.name)
-                    ? [{ value: section.name, label: section.name.toUpperCase() }]
-                    : []),
-                ]}
+                options={sectionTypeSelectOptions}
                 accentColor={sectionColor}
                 style={{ color: sectionColor }}
               />
@@ -154,7 +161,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                   <LcarsSelect
                     value={section.rhymeScheme || rhymeScheme}
                     onChange={(v) => setSectionRhymeScheme(section.id, v)}
-                    options={RHYME_KEYS.map(key => ({ value: key, label: t.rhymeSchemes[key as keyof typeof t.rhymeSchemes] }))}
+                    options={RHYME_KEYS.filter((k): k is string => typeof k === 'string').map(key => ({ value: key, label: t.rhymeSchemes[key as keyof typeof t.rhymeSchemes] ?? key }))}
                     accentColor="var(--lcars-cyan)"
                   />
                 </div>
