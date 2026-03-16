@@ -91,52 +91,39 @@ export const getRhymeTextColor = (rhyme: string | null | undefined): string | nu
 /**
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
  *
- * Algorithm:
- * 1. Extract the "rhyme key" of each line: the last 3 chars of its last word,
- *    normalised (lowercase, diacritics stripped). 2-char minimum.
- * 2. Cluster lines that share the same rhyme key into groups.
- * 3. Try to match clusters to known schemes (AABB, ABAB, ABCB, AAAA, ABAB…).
- * 4. If ≥50% of lines participate in a rhyme pair → return the scheme string.
- * 5. Otherwise return null (caller keeps FREE).
- *
- * Supports 4, 6, 8 line sections. Handles French assonance via suffix match.
+ * Threshold: dès qu'UNE paire de lignes rime (confidence > 0), on sort de FREE.
+ * Le schème résultant peut être partiellement libre (ex. ABCDEE) — c'est correct.
  */
 export function detectRhymeSchemeLocally(lines: string[]): string | null {
   const lyricLines = lines.filter(l => l.trim().length > 0);
   const n = lyricLines.length;
   if (n < 2) return null;
 
-  // Normalise: strip diacritics, lowercase, keep only letters
   const normalize = (s: string): string =>
     s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 
-  // Extract rhyme key: last 3 chars of last word (min 2)
   const rhymeKey = (line: string): string => {
     const stripped = line.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
     const lastWord = stripped.match(/[\p{L}\p{N}]+$/u)?.[0] ?? '';
     const norm = normalize(lastWord);
     if (norm.length < 2) return norm;
-    return norm.slice(-3); // last 3 chars covers most rhymes
+    return norm.slice(-3);
   };
 
   const keys = lyricLines.map(rhymeKey);
 
-  // Build pairwise similarity matrix (same key OR last-2-char match)
   const rhymes = (a: string, b: string): boolean => {
     if (!a || !b) return false;
     if (a === b) return true;
-    // accept 2-char suffix match (assonance/near-rhyme)
     return a.slice(-2) === b.slice(-2);
   };
 
-  // Assign a letter to each unique rhyme cluster greedily
   const letters: (string | null)[] = new Array(n).fill(null);
   let nextLetter = 0;
   const LETTERS = 'ABCDEFGH';
 
   for (let i = 0; i < n; i++) {
     if (letters[i] !== null) continue;
-    // Find if any previous key rhymes with this one
     let matchedLetter: string | null = null;
     for (let j = 0; j < i; j++) {
       if (rhymes(keys[i]!, keys[j]!)) {
@@ -150,7 +137,6 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
       letters[i] = LETTERS[nextLetter] ?? String.fromCharCode(65 + nextLetter);
       nextLetter++;
     }
-    // Propagate this letter to all later lines that rhyme with this one
     for (let k = i + 1; k < n; k++) {
       if (letters[k] === null && rhymes(keys[i]!, keys[k]!)) {
         letters[k] = letters[i]!;
@@ -158,20 +144,17 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
     }
   }
 
-  // Count how many lines participate in at least one rhyme pair
   const letterCounts: Record<string, number> = {};
   for (const l of letters) {
     if (l) letterCounts[l] = (letterCounts[l] ?? 0) + 1;
   }
   const rhymingLines = Object.values(letterCounts).filter(c => c >= 2).reduce((a, b) => a + b, 0);
-  const confidence = rhymingLines / n;
 
-  if (confidence < 0.5) return null; // not enough rhymes → keep FREE
+  // Exit FREE as soon as at least one rhyming pair is found
+  if (rhymingLines === 0) return null;
 
-  // Build the raw scheme string (e.g. "AABBA", "ABABCC")
   const raw = letters.map(l => l ?? 'X').join('');
 
-  // Map to known scheme labels for clean display
   const KNOWN: Record<string, string> = {
     AABB: 'AABB', ABAB: 'ABAB', ABCB: 'ABCB', AAAA: 'AAAA',
     AABBA: 'AABBA', AAABBB: 'AAABBB', AABBCC: 'AABBCC',
@@ -180,7 +163,6 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
     AABBAA: 'AABBAA', ABABCC: 'ABABCC',
   };
 
-  // Return known label if matches exactly, otherwise return raw scheme
   return KNOWN[raw] ?? raw;
 }
 
