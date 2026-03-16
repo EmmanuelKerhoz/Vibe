@@ -15,6 +15,7 @@ import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
 import { useMobileLayout } from './hooks/useMobileLayout';
+import { ModalProvider } from './contexts/ModalContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -30,15 +31,8 @@ import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from '.
 import { buildResetPayload, buildPartialResetPayload, clearPersistedSession } from './utils/sessionReset';
 import { safeJsonGet } from './utils/safeStorage';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Dispatch-style setter bag produced by useAppState
-// ─────────────────────────────────────────────────────────────────────────────
 type StateBag = ReturnType<typeof useAppState>;
 
-/**
- * Applies a full ResetPayload to the state bag in one pass.
- * Keeps App.tsx free of per-field reset logic.
- */
 function applyResetPayload(
   payload: ReturnType<typeof buildResetPayload>,
   replaceStateWithoutHistory: (song: ReturnType<typeof createEmptySong>, structure: string[]) => void,
@@ -71,18 +65,16 @@ function applyResetPayload(
   resetWebSimilarityIndex();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Lyrical content key — memoized, excludes meta-only lines.
-// Used to gate the similarity debounce: no recalculation if only
-// meta lines or structural/musical props changed.
-// ─────────────────────────────────────────────────────────────────────────────
 function lyricalKey(song: ReturnType<typeof createEmptySong>): string {
   return song
     .map(s => s.lines.filter(l => !l.isMeta).map(l => l.text).join('|'))
     .join('//');
 }
 
-export default function App() {
+// ── Inner component — has access to appState.uiState for ModalProvider ──────────
+// App shell wraps AppInner in ModalProvider, passing the single uiState
+// instance so AppModals and all context consumers share the same state.
+function AppInner() {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const { song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
@@ -110,6 +102,9 @@ export default function App() {
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
     songLanguage, setSongLanguage,
   } = appState;
+
+  // Extract the uiState slice so ModalProvider gets the exact same instance
+  const { uiState } = appState as unknown as { uiState: ReturnType<typeof import('./hooks/useUIState').useUIState> };
 
   // ── Mobile layout ────────────────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
@@ -139,7 +134,6 @@ export default function App() {
     setIsStructureOpen(false);
   }, [setIsLeftPanelOpen, setIsStructureOpen]);
 
-  // fix: backdrop must only appear on mobile/tablet — never on desktop
   const showBackdrop = isMobileOrTablet && (isLeftPanelOpen || isStructureOpen);
 
   useSessionPersistence({
@@ -159,10 +153,8 @@ export default function App() {
     song, isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   });
 
-  // ── isGenerating bridge ──────────────────────────────────────────────────
   const isGeneratingRef = useRef(false);
 
-  // ── useSongAnalysis ──────────────────────────────────────────────────────
   const { isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
     isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, targetLanguage, setTargetLanguage,
@@ -178,7 +170,6 @@ export default function App() {
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
-  // ── useSongComposer ──────────────────────────────────────────────────────
   const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
     selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
     quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
@@ -265,14 +256,11 @@ export default function App() {
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
 
   // ── Library similarity — debounced 800ms, lyrical content only ───────────────
-  // Memoize the lyrical key so the debounce only fires when real lyric
-  // text changes — not on meta-line edits, drag events, or musical props.
   const currentLyricalKey = useMemo(() => lyricalKey(song), [song]);
   const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSimilarityKeyRef = useRef<string>('');
 
   useEffect(() => {
-    // Skip if lyrical content hasn't changed
     if (currentLyricalKey === lastSimilarityKeyRef.current) return;
     if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
     let isCancelled = false;
@@ -346,7 +334,6 @@ export default function App() {
     if (isMobileOrTablet) setIsStructureOpen(false);
   }, [isMobileOrTablet, setActiveTab, setIsLeftPanelOpen, setIsStructureOpen]);
 
-  // ── Reset handlers ───────────────────────────────────────────────────────
   const handleCreateEmptySong = useCallback(() => {
     applyResetPayload(
       buildResetPayload('AABB'),
@@ -430,185 +417,213 @@ export default function App() {
     importInputRef.current?.click();
   };
 
+  // Build the uiState slice to inject into ModalProvider.
+  // useAppState spreads useUIState into its return — we reconstruct the slice
+  // by picking the keys that belong to useUIState.
+  const uiStateForProvider = useMemo(() => ({
+    setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
+    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
+    setIsResetModalOpen, setConfirmModal, setPromptModal, setIsMarkupMode,
+    isAboutOpen, isSettingsOpen, apiErrorModal,
+    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
+    isResetModalOpen, confirmModal, promptModal,
+    activeTab, setActiveTab, isStructureOpen, setIsStructureOpen,
+    isLeftPanelOpen, setIsLeftPanelOpen,
+    isMarkupMode, markupText, setMarkupText,
+    markupTextareaRef, importInputRef,
+    shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
+  }), [
+    setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
+    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
+    setIsResetModalOpen, setConfirmModal, setPromptModal, setIsMarkupMode,
+    isAboutOpen, isSettingsOpen, apiErrorModal,
+    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
+    isResetModalOpen, confirmModal, promptModal,
+    activeTab, setActiveTab, isStructureOpen, setIsStructureOpen,
+    isLeftPanelOpen, setIsLeftPanelOpen,
+    isMarkupMode, markupText, setMarkupText,
+    markupTextareaRef, importInputRef,
+    shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
+  ]);
+
   return (
-    <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
-    <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
+    <ModalProvider uiState={uiStateForProvider as ReturnType<typeof import('./hooks/useUIState').useUIState>}>
+      <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
+      <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
 
-      {showBackdrop && (
-        <div className="mobile-panel-backdrop" onClick={closeMobilePanels} aria-hidden="true" />
-      )}
+        {showBackdrop && (
+          <div className="mobile-panel-backdrop" onClick={closeMobilePanels} aria-hidden="true" />
+        )}
 
-      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden">
 
-        <LeftSettingsPanel
-          isMobileOverlay={isMobileOrTablet}
-          title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
-          onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-          topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-          rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-          targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-          song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
-          isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-          onSurprise={handleSurpriseClick}
-          isSurprising={isSurprising}
-          isSessionHydrated={isSessionHydrated}
-          onGenerateSong={() => { setIsLeftPanelOpen(false); handleGlobalRegenerate(); }}
-        />
-
-        <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
-          <TopRibbon
-            activeTab={activeTab} setActiveTab={setActiveTab}
-            song={song} past={past} future={future} undo={undo} redo={redo}
-            setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
-            isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-            hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-            onOpenNewGeneration={handleOpenNewGeneration}
-            onOpenNewEmpty={handleCreateEmptySong}
-            onImportClick={() => setIsImportModalOpen(true)}
-            onExportClick={() => setIsExportModalOpen(true)}
-            onOpenLibraryClick={handleOpenSaveToLibraryModal}
-            onOpenSettingsClick={() => setIsSettingsOpen(true)}
-            onOpenAboutClick={() => setIsAboutOpen(true)}
-            onPasteLyrics={() => setIsPasteModalOpen(true)}
-            isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+          <LeftSettingsPanel
+            isMobileOverlay={isMobileOrTablet}
+            title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
+            onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+            song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
+            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+            onSurprise={handleSurpriseClick}
+            isSurprising={isSurprising}
+            isSessionHydrated={isSessionHydrated}
+            onGenerateSong={() => { setIsLeftPanelOpen(false); handleGlobalRegenerate(); }}
           />
-          {activeTab === 'lyrics' && song.length > 0 && (
-            <InsightsBar
-              song={song} sectionCount={sectionCount} wordCount={wordCount} charCount={charCount}
-              targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
-              isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
-              songLanguage={songLanguage} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-              isMarkupMode={isMarkupMode} webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel}
-              libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage} detectLanguage={detectLanguage}
-              analyzeCurrentSong={analyzeCurrentSong} handleGlobalRegenerate={handleGlobalRegenerate}
-              handleMarkupToggle={handleMarkupToggle}
-              setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
-              adaptationProgress={adaptationProgress}
-              adaptationResult={adaptationResult}
+
+          <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
+            <TopRibbon
+              activeTab={activeTab} setActiveTab={setActiveTab}
+              song={song} past={past} future={future} undo={undo} redo={redo}
+              setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
+              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+              hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+              onOpenNewGeneration={handleOpenNewGeneration}
+              onOpenNewEmpty={handleCreateEmptySong}
+              onImportClick={() => setIsImportModalOpen(true)}
+              onExportClick={() => setIsExportModalOpen(true)}
+              onOpenLibraryClick={handleOpenSaveToLibraryModal}
+              onOpenSettingsClick={() => setIsSettingsOpen(true)}
+              onOpenAboutClick={() => setIsAboutOpen(true)}
+              onPasteLyrics={() => setIsPasteModalOpen(true)}
+              isGenerating={isGenerating} isAnalyzing={isAnalyzing}
             />
-          )}
-          <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}
-               style={isMobileOrTablet ? { paddingBottom: 'calc(60px + var(--sab))' } : undefined}>
-            <div className="lyrics-editor-zoom-wrapper">
-              <div className="lyrics-editor-zoom">
-                {activeTab === 'lyrics' ? (
-                  <LyricsView
-                    song={song} rhymeScheme={rhymeScheme}
-                    updateState={updateState} updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
-                    selectedLineId={selectedLineId} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-                    isAdaptingLanguage={isAdaptingLanguage}
-                    sectionTargetLanguages={sectionTargetLanguages}
-                    onSectionTargetLanguageChange={(sectionId, lang) => setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang }))}
-                    adaptSectionLanguage={adaptSectionLanguage}
-                    isRegeneratingSection={isRegeneratingSection} handleLineClick={handleLineClick}
-                    updateLineText={updateLineText} handleLineKeyDown={handleLineKeyDown}
-                    handleInstructionChange={handleInstructionChange} addInstruction={addInstruction}
-                    removeInstruction={removeInstruction} regenerateSection={regenerateSection}
-                    draggedItemIndex={draggedItemIndex} dragOverIndex={dragOverIndex}
-                    draggedLineInfo={draggedLineInfo} dragOverLineInfo={dragOverLineInfo}
-                    setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
-                    setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
-                    playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
-                    handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
-                    isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
-                    markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
-                    onOpenLibrary={handleOpenSaveToLibraryModal}
-                    onPasteLyrics={() => setIsPasteModalOpen(true)}
-                    onGenerateSong={handleGlobalRegenerate}
-                  />
-                ) : (
-                  <MusicalTab
-                    song={song} title={title} topic={topic} mood={mood}
-                    genre={genre} setGenre={setGenre} tempo={tempo} setTempo={setTempo}
-                    instrumentation={instrumentation} setInstrumentation={setInstrumentation}
-                    rhythm={rhythm} setRhythm={setRhythm} narrative={narrative} setNarrative={setNarrative}
-                    musicalPrompt={musicalPrompt} setMusicalPrompt={setMusicalPrompt}
-                    isGeneratingMusicalPrompt={isGeneratingMusicalPrompt} isAnalyzingLyrics={isAnalyzingLyrics}
-                    hasApiKey={hasApiKey} generateMusicalPrompt={generateMusicalPrompt} analyzeLyricsForMusic={analyzeLyricsForMusic}
-                  />
-                )}
+            {activeTab === 'lyrics' && song.length > 0 && (
+              <InsightsBar
+                song={song} sectionCount={sectionCount} wordCount={wordCount} charCount={charCount}
+                targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
+                isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
+                songLanguage={songLanguage} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+                isMarkupMode={isMarkupMode} webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel}
+                libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage} detectLanguage={detectLanguage}
+                analyzeCurrentSong={analyzeCurrentSong} handleGlobalRegenerate={handleGlobalRegenerate}
+                handleMarkupToggle={handleMarkupToggle}
+                setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
+                adaptationProgress={adaptationProgress}
+                adaptationResult={adaptationResult}
+              />
+            )}
+            <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}
+                 style={isMobileOrTablet ? { paddingBottom: 'calc(60px + var(--sab))' } : undefined}>
+              <div className="lyrics-editor-zoom-wrapper">
+                <div className="lyrics-editor-zoom">
+                  {activeTab === 'lyrics' ? (
+                    <LyricsView
+                      song={song} rhymeScheme={rhymeScheme}
+                      updateState={updateState} updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
+                      selectedLineId={selectedLineId} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+                      isAdaptingLanguage={isAdaptingLanguage}
+                      sectionTargetLanguages={sectionTargetLanguages}
+                      onSectionTargetLanguageChange={(sectionId, lang) => setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang }))}
+                      adaptSectionLanguage={adaptSectionLanguage}
+                      isRegeneratingSection={isRegeneratingSection} handleLineClick={handleLineClick}
+                      updateLineText={updateLineText} handleLineKeyDown={handleLineKeyDown}
+                      handleInstructionChange={handleInstructionChange} addInstruction={addInstruction}
+                      removeInstruction={removeInstruction} regenerateSection={regenerateSection}
+                      draggedItemIndex={draggedItemIndex} dragOverIndex={dragOverIndex}
+                      draggedLineInfo={draggedLineInfo} dragOverLineInfo={dragOverLineInfo}
+                      setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
+                      setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
+                      playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
+                      handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
+                      isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
+                      markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
+                      onOpenLibrary={handleOpenSaveToLibraryModal}
+                      onPasteLyrics={() => setIsPasteModalOpen(true)}
+                      onGenerateSong={handleGlobalRegenerate}
+                    />
+                  ) : (
+                    <MusicalTab
+                      song={song} title={title} topic={topic} mood={mood}
+                      genre={genre} setGenre={setGenre} tempo={tempo} setTempo={setTempo}
+                      instrumentation={instrumentation} setInstrumentation={setInstrumentation}
+                      rhythm={rhythm} setRhythm={setRhythm} narrative={narrative} setNarrative={setNarrative}
+                      musicalPrompt={musicalPrompt} setMusicalPrompt={setMusicalPrompt}
+                      isGeneratingMusicalPrompt={isGeneratingMusicalPrompt} isAnalyzingLyrics={isAnalyzingLyrics}
+                      hasApiKey={hasApiKey} generateMusicalPrompt={generateMusicalPrompt} analyzeLyricsForMusic={analyzeLyricsForMusic}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
+
+          <StructureSidebar
+            isMobileOverlay={isMobileOrTablet}
+            className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+            isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+            structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
+            isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+            draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
+            dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
+            addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+            normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
+          />
         </div>
 
-        <StructureSidebar
-          isMobileOverlay={isMobileOrTablet}
-          className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-          isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-          structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
-          isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-          draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
-          dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
-          addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-          normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
-        />
-      </div>
-
-      <StatusBar
-        className="lcars-status-bar-desktop"
-        song={song} wordCount={wordCount} charCount={charCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-        isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
-        audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-        onOpenAbout={() => setIsAboutOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-      />
-
-      {isMobileOrTablet && (
-        <MobileBottomNav
-          isLeftPanelOpen={isLeftPanelOpen}
-          isStructureOpen={isStructureOpen}
-          activeTab={activeTab}
-          isGenerating={isGenerating}
-          setIsLeftPanelOpen={setIsLeftPanelOpen}
-          setIsStructureOpen={setIsStructureOpen}
-          setActiveTab={setActiveTab}
-          onGenerateSong={handleGlobalRegenerate}
+        <StatusBar
+          className="lcars-status-bar-desktop"
+          song={song} wordCount={wordCount} charCount={charCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+          isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
+          audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+          onOpenAbout={() => setIsAboutOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
-      )}
 
-      <AppModals
-        isAboutOpen={isAboutOpen} setIsAboutOpen={setIsAboutOpen}
-        isSettingsOpen={isSettingsOpen} setIsSettingsOpen={setIsSettingsOpen}
-        theme={theme} setTheme={setTheme} audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-        isImportModalOpen={isImportModalOpen} setIsImportModalOpen={setIsImportModalOpen}
-        hasExistingWork={hasExistingWork} handleImportChooseFile={handleImportChooseFile}
-        onOpenPasteLyrics={() => { setIsImportModalOpen(false); setIsPasteModalOpen(true); }}
-        importInputRef={importInputRef} handleImportInputChange={handleImportInputChange}
-        isExportModalOpen={isExportModalOpen} setIsExportModalOpen={setIsExportModalOpen}
-        exportSong={exportSong}
-        selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
-        suggestions={suggestions} isSuggesting={isSuggesting}
-        applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
-        isPasteModalOpen={isPasteModalOpen} setIsPasteModalOpen={setIsPasteModalOpen}
-        pastedText={pastedText} setPastedText={setPastedText}
-        isAnalyzing={isAnalyzing} analyzePastedLyrics={analyzePastedLyrics}
-        isAnalysisModalOpen={isAnalysisModalOpen} setIsAnalysisModalOpen={setIsAnalysisModalOpen}
-        analysisReport={analysisReport} analysisSteps={analysisSteps}
-        appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
-        isApplyingAnalysis={isApplyingAnalysis}
-        toggleAnalysisItemSelection={toggleAnalysisItemSelection}
-        applySelectedAnalysisItems={applySelectedAnalysisItems}
-        clearAppliedAnalysisItems={clearAppliedAnalysisItems}
-        versions={versions} rollbackToVersion={rollbackToVersion}
-        isSimilarityModalOpen={isSimilarityModalOpen} setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-        similarityMatches={similarityMatches} libraryCount={libraryCount}
-        webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
-        handleDeleteLibraryAsset={handleDeleteLibraryAsset}
-        isSaveToLibraryModalOpen={isSaveToLibraryModalOpen} setIsSaveToLibraryModalOpen={setIsSaveToLibraryModalOpen}
-        handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
-        title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0} handleLoadLibraryAsset={handleLoadLibraryAsset}
-        isVersionsModalOpen={isVersionsModalOpen} setIsVersionsModalOpen={setIsVersionsModalOpen}
-        saveVersion={saveVersion} handleRequestVersionName={handleRequestVersionName}
-        isResetModalOpen={isResetModalOpen} setIsResetModalOpen={setIsResetModalOpen}
-        resetSong={resetSong}
-        apiErrorModal={apiErrorModal} setApiErrorModal={setApiErrorModal}
-        confirmModal={confirmModal} setConfirmModal={setConfirmModal}
-        promptModal={promptModal} setPromptModal={setPromptModal}
-      />
-    </div>
-    </FluentProvider>
+        {isMobileOrTablet && (
+          <MobileBottomNav
+            isLeftPanelOpen={isLeftPanelOpen}
+            isStructureOpen={isStructureOpen}
+            activeTab={activeTab}
+            isGenerating={isGenerating}
+            setIsLeftPanelOpen={setIsLeftPanelOpen}
+            setIsStructureOpen={setIsStructureOpen}
+            setActiveTab={setActiveTab}
+            onGenerateSong={handleGlobalRegenerate}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
+        )}
+
+        <AppModals
+          theme={theme} setTheme={setTheme} audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+          hasExistingWork={hasExistingWork} handleImportChooseFile={handleImportChooseFile}
+          onOpenPasteLyrics={() => { setIsImportModalOpen(false); setIsPasteModalOpen(true); }}
+          importInputRef={importInputRef} handleImportInputChange={handleImportInputChange}
+          exportSong={exportSong}
+          selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
+          suggestions={suggestions} isSuggesting={isSuggesting}
+          applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
+          isPasteModalOpen={isPasteModalOpen} setIsPasteModalOpen={setIsPasteModalOpen}
+          pastedText={pastedText} setPastedText={setPastedText}
+          isAnalyzing={isAnalyzing} analyzePastedLyrics={analyzePastedLyrics}
+          isAnalysisModalOpen={isAnalysisModalOpen} setIsAnalysisModalOpen={setIsAnalysisModalOpen}
+          analysisReport={analysisReport} analysisSteps={analysisSteps}
+          appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
+          isApplyingAnalysis={isApplyingAnalysis}
+          toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+          applySelectedAnalysisItems={applySelectedAnalysisItems}
+          clearAppliedAnalysisItems={clearAppliedAnalysisItems}
+          versions={versions} rollbackToVersion={rollbackToVersion}
+          similarityMatches={similarityMatches} libraryCount={libraryCount}
+          webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
+          handleDeleteLibraryAsset={handleDeleteLibraryAsset}
+          handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
+          title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0} handleLoadLibraryAsset={handleLoadLibraryAsset}
+          saveVersion={saveVersion} handleRequestVersionName={handleRequestVersionName}
+          resetSong={resetSong}
+        />
+      </div>
+      </FluentProvider>
+    </ModalProvider>
   );
+}
+
+export default function App() {
+  return <AppInner />;
 }

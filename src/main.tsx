@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App.tsx';
 import { LanguageProvider } from './i18n';
-import { ModalProvider } from './contexts/ModalContext';
 import './index.css';
 
 // Dev-only: warn in the browser console when locale files have missing keys.
@@ -12,7 +11,6 @@ if (import.meta.env.DEV) {
 }
 
 // Register PWA Service Worker with auto-update
-// The SW is only generated in production build (devOptions.enabled = false)
 if (import.meta.env.PROD) {
   registerSW({
     onNeedRefresh() {
@@ -30,12 +28,13 @@ if (import.meta.env.PROD) {
   });
 }
 
+// ModalProvider is now mounted inside App.tsx so it can receive the
+// uiState instance created by useAppState — eliminating the split-brain
+// that caused all modals to never open.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <LanguageProvider>
-      <ModalProvider>
-        <App />
-      </ModalProvider>
+      <App />
     </LanguageProvider>
   </StrictMode>,
 );
