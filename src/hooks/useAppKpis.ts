@@ -9,7 +9,7 @@ export interface LyricsKpis {
 }
 
 /** Shared helper — lyric-only lines (excludes meta/label lines). */
-const lyricLines = (sec: Section) => sec.lines.filter(l => !l.isMeta);
+const lyricLines = (sec: Section) => (sec.lines ?? []).filter(l => !l.isMeta);
 
 /**
  * Unified KPI hook (replaces useAppKpis + useLyricsKpis).
@@ -22,23 +22,22 @@ export const useAppKpis = (song: Section[]) => {
   const wordCount = useMemo(
     () => song.reduce((acc, sec) =>
       acc + lyricLines(sec).reduce(
-        (lAcc, line) => lAcc + line.text.split(/\s+/).filter(Boolean).length, 0), 0),
+        (lAcc, line) => lAcc + (line.text ?? '').split(/\s+/).filter(Boolean).length, 0), 0),
     [song]
   );
 
   const charCount = useMemo(
     () => song.reduce((acc, sec) =>
-      acc + lyricLines(sec).reduce((lAcc, line) => lAcc + line.text.length, 0), 0),
+      acc + lyricLines(sec).reduce((lAcc, line) => lAcc + (line.text ?? '').length, 0), 0),
     [song]
   );
 
   const lineCount = useMemo(
     () => song.reduce((acc, sec) =>
-      acc + lyricLines(sec).filter(l => l.text.trim()).length, 0),
+      acc + lyricLines(sec).filter(l => (l.text ?? '').trim()).length, 0),
     [song]
   );
 
-  /** LyricsKpis-compatible shape for consumers that used useLyricsKpis. */
   const lyricsKpis: LyricsKpis = {
     sections: sectionCount,
     lines: lineCount,

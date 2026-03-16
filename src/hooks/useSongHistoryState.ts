@@ -48,11 +48,8 @@ const cappedPast = (past: SongHistorySnapshot[]): SongHistorySnapshot[] =>
   past.length > MAX_HISTORY ? past.slice(past.length - MAX_HISTORY) : past;
 
 // ─── Delta helpers ────────────────────────────────────────────────────────────
-// Instead of cloning entire snapshots on every keystroke, we store a structural
-// fingerprint. Full clones only happen when the fingerprint actually changes.
-
 const sectionFingerprint = (s: Section): string =>
-  `${s.id}:${s.name}:${s.lines.map(l => `${l.id}:${l.text}:${l.syllables}`).join('|')}`;
+  `${s.id}:${s.name}:${(s.lines ?? []).map(l => `${l.id}:${l.text}:${l.syllables}`).join('|')}`;
 
 const snapshotFingerprint = (snap: SongHistorySnapshot): string =>
   snap.song.map(sectionFingerprint).join('//') + '||' + snap.structure.join(',');
@@ -75,7 +72,6 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
           future: current.future,
         };
       }
-      // Delta: skip push if content is identical
       const currentFp = snapshotFingerprint({ song: current.song, structure: current.structure });
       const nextFp = snapshotFingerprint(normalizedNext);
       if (currentFp === nextFp) return current;
@@ -91,7 +87,6 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
   const updateState = useCallback((recipe: (current: SongHistorySnapshot) => SongHistorySnapshot) => {
     setState(current => {
       const nextSnapshot = normalizeSnapshot(recipe({ song: current.song, structure: current.structure }));
-      // Delta: skip push if content is identical
       const currentFp = snapshotFingerprint({ song: current.song, structure: current.structure });
       const nextFp = snapshotFingerprint(nextSnapshot);
       if (currentFp === nextFp) return current;

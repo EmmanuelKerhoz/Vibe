@@ -34,7 +34,7 @@ const tokenize = (text: string) =>
 
 const getSongLines = (song: Section[]) =>
   song
-    .flatMap(section => section.lines.map(line => normalizeText(line.text)))
+    .flatMap(section => (section.lines ?? []).map(line => normalizeText(line.text ?? '')))
     .filter(Boolean);
 
 const getSongTokens = (song: Section[]) => getSongLines(song).flatMap(tokenize);
@@ -87,8 +87,8 @@ const getMatchedSections = (currentSong: Section[], candidateSong: Section[]) =>
 
       const sectionScore = Math.round(
         getSetOverlapRatio(
-          section.lines.map(line => normalizeText(line.text)).filter(Boolean),
-          candidateSection.lines.map(line => normalizeText(line.text)).filter(Boolean),
+          (section.lines ?? []).map(line => normalizeText(line.text ?? '')).filter(Boolean),
+          (candidateSection.lines ?? []).map(line => normalizeText(line.text ?? '')).filter(Boolean),
         ) * 100,
       );
 
@@ -125,7 +125,6 @@ export const calculateSimilarityWithMetadata = (
   currentSong: Section[],
   candidateSong: Section[],
 ): Omit<SimilarityMatch, 'versionId' | 'versionName' | 'title' | 'timestamp'> => {
-  // Hoist: compute once for currentSong, reuse across all candidate comparisons
   const currentTokens = getSongTokens(currentSong);
   const currentLines = getSongLines(currentSong);
   const candidateTokens = getSongTokens(candidateSong);
@@ -145,10 +144,6 @@ export const calculateSimilarityWithMetadata = (
   };
 };
 
-/**
- * Get top 3 similar matches from version history.
- * currentSong tokens/lines are hoisted outside the loop.
- */
 export const getTopSimilarSongMatches = (
   currentSong: Section[],
   versions: SongVersion[],
@@ -157,12 +152,11 @@ export const getTopSimilarSongMatches = (
 ): SimilarityMatch[] => {
   if (currentSong.length === 0) return [];
 
-  // Hoist: compute once
   const currentTokens = getSongTokens(currentSong);
   const currentLines = getSongLines(currentSong);
 
   return versions
-    .filter(version => version.song.length > 0)
+    .filter(version => (version.song ?? []).length > 0)
     .map((version) => {
       const candidateTokens = getSongTokens(version.song);
       const candidateTokenSet = new Set(candidateTokens);

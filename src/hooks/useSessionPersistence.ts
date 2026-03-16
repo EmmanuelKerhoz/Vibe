@@ -41,6 +41,29 @@ interface UseSessionPersistenceParams {
   setSongLanguage: (v: string) => void;
 }
 
+/** Normalize a raw section read from storage — ensures no field is undefined. */
+const normalizeStoredSection = (s: Record<string, unknown>): Section => ({
+  id: (s['id'] as string) || '',
+  name: cleanSectionName((s['name'] as string) || ''),
+  rhymeScheme: (s['rhymeScheme'] as string) ?? '',
+  targetSyllables: typeof s['targetSyllables'] === 'number' ? (s['targetSyllables'] as number) : undefined,
+  mood: (s['mood'] as string) ?? '',
+  preInstructions: Array.isArray(s['preInstructions']) ? (s['preInstructions'] as string[]) : [],
+  postInstructions: Array.isArray(s['postInstructions']) ? (s['postInstructions'] as string[]) : [],
+  lines: Array.isArray(s['lines'])
+    ? (s['lines'] as Record<string, unknown>[]).map(l => ({
+        id: (l['id'] as string) || '',
+        text: (l['text'] as string) ?? '',
+        rhymingSyllables: (l['rhymingSyllables'] as string) ?? '',
+        rhyme: (l['rhyme'] as string) ?? '',
+        syllables: typeof l['syllables'] === 'number' ? (l['syllables'] as number) : 0,
+        concept: (l['concept'] as string) ?? 'New line',
+        isMeta: (l['isMeta'] as boolean) ?? false,
+        isManual: (l['isManual'] as boolean) ?? false,
+      }))
+    : [],
+});
+
 export function useSessionPersistence(params: UseSessionPersistenceParams): void {
   const {
     song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
@@ -53,8 +76,6 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
   } = params;
 
   // Mount-only: hydrate state from localStorage.
-  // All deps used here are stable useState/useReducer dispatchers that never change identity,
-  // so an empty dep array is correct and intentional.
   useEffect(() => {
     const savedRaw = safeGetItem('lyricist_session');
     if (savedRaw) {
@@ -62,7 +83,7 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
         const parsed = JSON.parse(savedRaw);
         if (parsed.song && parsed.song.length > 0) {
           setHasSavedSession(true);
-          const cleanedSong = parsed.song.map((s: Section) => ({ ...s, name: cleanSectionName(s.name) }));
+          const cleanedSong: Section[] = (parsed.song as Record<string, unknown>[]).map(normalizeStoredSection);
           const nextStructure = cleanedSong.length > 0
             ? cleanedSong.map((s: Section) => s.name)
             : (parsed.structure ? parsed.structure.map((s: string) => cleanSectionName(s)) : DEFAULT_STRUCTURE);
