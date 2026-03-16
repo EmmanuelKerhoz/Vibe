@@ -125,7 +125,9 @@ export interface Translations {
     aiLine?: string;
     moveLineUp?: string;
     moveLineDown?: string;
-    deleteLine?: string;
+        deleteLine?: string;
+        linePlaceholder?: string;
+        addLineAfter?: string;
   };
 
   suggestions: {
