@@ -43,11 +43,6 @@ export const getSectionDotColor = (name: string) => {
 /**
  * Returns the rhyme scheme letter (e.g. 'A', 'B', 'C') for a given lyric line index
  * within a section, using the provided rhymeScheme string (e.g. 'AABB', 'ABAB').
- * Returns null for FREE scheme, missing scheme, or invalid inputs.
- * If the line index exceeds the scheme length, it wraps around.
- *
- * Overload 1 — legacy: (schemeStr: string | undefined, lineIndex: number)
- * Overload 2 — current: (section: Section, lineIndex: number, rhymeScheme: string)
  */
 export function getSchemeLetterForLine(section: Section, lineIndex: number, rhymeScheme: string): string | null;
 export function getSchemeLetterForLine(scheme: string | undefined, lineIndex: number): string | null;
@@ -58,10 +53,8 @@ export function getSchemeLetterForLine(
 ): string | null {
   let scheme: string | undefined;
   if (typeof sectionOrScheme === 'object' && sectionOrScheme !== null) {
-    // Called as (section, lineIndex, rhymeScheme)
     scheme = rhymeScheme;
   } else {
-    // Called as (schemeStr, lineIndex)
     scheme = sectionOrScheme;
   }
   if (!scheme || typeof scheme !== 'string') return null;
@@ -83,6 +76,24 @@ export const getRhymeColor = (rhyme: string | null | undefined): string => {
   if (r === 'G') return 'bg-rose-500/15 text-rose-500 border-rose-500/20';
   if (r === 'H') return 'bg-indigo-500/15 text-indigo-500 border-indigo-500/20';
   return 'bg-white/5 text-zinc-500 border-white/10';
+};
+
+/**
+ * Returns the raw CSS colour for a rhyme letter — used for inline span colouring
+ * (as opposed to getRhymeColor which returns Tailwind class strings).
+ */
+export const getRhymeTextColor = (rhyme: string | null | undefined): string | null => {
+  if (!rhyme || typeof rhyme !== 'string') return null;
+  const r = rhyme.toUpperCase();
+  if (r === 'A') return '#3b82f6'; // blue-500
+  if (r === 'B') return '#10b981'; // emerald-500
+  if (r === 'C') return '#f59e0b'; // amber-500
+  if (r === 'D') return '#a855f7'; // purple-500
+  if (r === 'E') return '#ec4899'; // pink-500
+  if (r === 'F') return '#06b6d4'; // cyan-500
+  if (r === 'G') return '#f43f5e'; // rose-500
+  if (r === 'H') return '#6366f1'; // indigo-500
+  return null;
 };
 
 // Re-exported from constants/editor for backward compatibility.

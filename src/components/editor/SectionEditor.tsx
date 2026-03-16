@@ -110,10 +110,6 @@ export const SectionEditor = React.memo(function SectionEditor({
       : []),
   ];
 
-  /**
-   * Language options: label is ReactNode — flag in flex-shrink-0 span, text in truncate span.
-   * This prevents the emoji country flag sequence from being clipped by the trigger's overflow.
-   */
   const languageOptions = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
     value: lang.aiName,
     label: (
@@ -149,7 +145,7 @@ export const SectionEditor = React.memo(function SectionEditor({
 
       <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
 
-        {/* ── Section header ─────────────────────────────────────────────── */}
+        {/* ── Section header */}
         <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
           <div className="flex items-center gap-3">
             <div className="flex flex-col gap-0.5">
@@ -195,7 +191,7 @@ export const SectionEditor = React.memo(function SectionEditor({
             </div>
           </div>
 
-          {/* ── Language adapt control ───────────────────────────────────── */}
+          {/* ── Language adapt control */}
           <div className="flex items-center gap-2 flex-wrap">
             {adaptSectionLanguage && (
               <div className="flex items-center gap-1.5">
@@ -224,37 +220,31 @@ export const SectionEditor = React.memo(function SectionEditor({
           </div>
         </div>
 
-        {/* ── Column headers ─────────────────────────────────────────────── */}
-        {/*
-          Spacer widths mirror LyricInput right-side layout exactly:
-            drag-handle: w-3.5  = 14px
-            gap-1.5             = 6px  (between drag-handle and text)
-            text (flex-1)       — fills remaining
-            gap-1.5             = 6px  (between text and controls)
-            controls: 4×w-4 + 3×gap-0.5 = 4×16 + 3×2 = 70px
-            gap-1.5             = 6px  (between controls and SYLLABLES)
-            SYLLABLES: w-[3.5rem] = 56px
-            gap-1.5             = 6px
-            COUNT: w-[1.75rem]  = 28px
-            gap-1.5             = 6px
-            SCHEMA: w-4         = 16px
+        {/* ── Column headers
+          Layout (mirrors LyricInput exactly):
+            drag-handle: w-3.5 = 14px
+            gap-1.5 = 6px
+            text: flex-1
+            gap-1.5 = 6px
+            controls: 4×16 + 3×2 = 70px
+            gap-1.5 = 6px
+            COUNT: w-[2.25rem] = 36px  (wider for readability)
+            gap-1.5 = 6px
+            SCHEMA: w-5 = 20px
         */}
         <div className="flex items-center gap-1.5 px-1 mb-0.5 select-none" aria-hidden="true">
-          <span className="flex-shrink-0 w-3.5" />{/* drag-handle */}
-          <span className="flex-1 min-w-0" />{/* text area */}
-          <span className="flex-shrink-0 w-[70px]" />{/* 4 controls: 4×16 + 3×2 = 70px */}
-          <span className="flex-shrink-0 w-[3.5rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
-            {t.editor?.syllables ?? 'Syllables'}
-          </span>
-          <span className="flex-shrink-0 w-[1.75rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
+          <span className="flex-shrink-0 w-3.5" />
+          <span className="flex-1 min-w-0" />
+          <span className="flex-shrink-0 w-[70px]" />
+          <span className="flex-shrink-0 w-[2.25rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
             {t.editor?.syllableCount ?? 'Count'}
           </span>
-          <span className="flex-shrink-0 w-4 text-center text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
+          <span className="flex-shrink-0 w-5 text-center text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
             {t.editor?.schemaHeader ?? 'Sch.'}
           </span>
         </div>
 
-        {/* ── Lines ──────────────────────────────────────────────────────── */}
+        {/* ── Lines */}
         <div className="flex flex-col gap-0.5">
           {renderItems.map((item) => {
             if (item.kind === 'meta') {
@@ -300,7 +290,7 @@ export const SectionEditor = React.memo(function SectionEditor({
           })}
         </div>
 
-        {/* ── Footer actions ─────────────────────────────────────────────── */}
+        {/* ── Footer actions */}
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <button
             type="button"

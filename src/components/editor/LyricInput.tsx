@@ -3,6 +3,7 @@ import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2 } from 'lucide-react
 import type { Line } from '../../types';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
+import { getRhymeTextColor } from '../../utils/songUtils';
 
 export interface LyricInputProps {
   line: Line;
@@ -30,14 +31,51 @@ export interface LyricInputProps {
 }
 
 /**
- * Renders a single non-meta lyric line.
+ * Extracts the rhyming suffix of a line's last word.
  *
- * Right-side column layout (matches header in SectionEditor):
- *   [controls] | SYLLABLES-label (hidden, spacer) | COUNT (number) | SCHEMA (badge)
+ * Strategy: from the last word (stripped of trailing punctuation), find the
+ * last vowel cluster — everything from that position to end-of-word is the
+ * "rhyming nucleus+coda". We then locate that exact substring in the original
+ * text (right-anchored, case-insensitive) and return the split indices so the
+ * overlay can colourize just that portion.
  *
- * The SYLLABLES column shows the word — that label lives in the header only;
- * each row shows the count value and the scheme badge aligned under their headers.
+ * Returns { before, rhyme } where before + rhyme === text, or null when no
+ * rhyme colour applies (no scheme, empty text, no vowel found).
  */
+function splitRhymingSuffix(text: string): { before: string; rhyme: string } | null {
+  if (!text.trim()) return null;
+
+  // Strip trailing punctuation/spaces to find the last real word
+  const stripped = text.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
+  if (!stripped) return null;
+
+  // Extract last word (letters/numbers only)
+  const lastWordMatch = stripped.match(/[\p{L}\p{N}]+$/u);
+  if (!lastWordMatch) return null;
+  const lastWord = lastWordMatch[0];
+
+  // Find last vowel position within the last word (covers accented vowels)
+  const vowelRe = /[aeiouyàâäéèêëîïôùûüœæ]/gi;
+  let lastVowelIdx = -1;
+  let m: RegExpExecArray | null;
+  while ((m = vowelRe.exec(lastWord)) !== null) {
+    lastVowelIdx = m.index;
+  }
+  if (lastVowelIdx < 0) return null;
+
+  // The rhyming part inside the last word (from last vowel to end of word)
+  const rhymeSuffix = lastWord.slice(lastVowelIdx);
+
+  // Find rightmost occurrence of that suffix in original text (preserve case)
+  const suffixIdx = text.toLowerCase().lastIndexOf(rhymeSuffix.toLowerCase());
+  if (suffixIdx < 0) return null;
+
+  return {
+    before: text.slice(0, suffixIdx),
+    rhyme: text.slice(suffixIdx),
+  };
+}
+
 export const LyricInput = React.memo(function LyricInput({
   line,
   lineIndex,
@@ -65,6 +103,7 @@ export const LyricInput = React.memo(function LyricInput({
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const isSelected = selectedLineId === line.id;
+  const rhymeTextColor = getRhymeTextColor(schemeLabel);
 
   useEffect(() => {
     if (isSelected && inputRef.current && document.activeElement !== inputRef.current) {
@@ -95,13 +134,39 @@ export const LyricInput = React.memo(function LyricInput({
   };
   const handleDragEnd = () => { setDraggedLineInfo(null); setDragOverLineInfo(null); };
 
+  /**
+   * Renders the styled text overlay:
+   *  - Parenthesised stage directions: amber
+   *  - Rhyming suffix of last word: rhymeTextColor
+   *  - Everything else: zinc-200
+   */
   const renderStyledOverlay = (text: string) => {
     if (!text) return null;
-    return text.split(/(\([^)]*\))/g).map((part, i) =>
-      part.startsWith('(') && part.endsWith(')')
-        ? <span key={i} className="text-amber-400">{part}</span>
-        : <span key={i} className="text-zinc-200">{part}</span>
-    );
+
+    // Split out parenthesised blocks first
+    const parts = text.split(/(\([^)]*\))/g);
+
+    return parts.map((part, i) => {
+      if (part.startsWith('(') && part.endsWith(')')) {
+        return <span key={i} className="text-amber-400">{part}</span>;
+      }
+
+      // For the last non-paren segment, apply rhyme highlight on its suffix
+      const isLastPart = i === parts.length - 1;
+      if (isLastPart && rhymeTextColor) {
+        const split = splitRhymingSuffix(part);
+        if (split) {
+          return (
+            <span key={i}>
+              <span className="text-zinc-200">{split.before}</span>
+              <span style={{ color: rhymeTextColor, fontWeight: 600 }}>{split.rhyme}</span>
+            </span>
+          );
+        }
+      }
+
+      return <span key={i} className="text-zinc-200">{part}</span>;
+    });
   };
 
   return (
@@ -179,17 +244,14 @@ export const LyricInput = React.memo(function LyricInput({
         </Tooltip>
       </div>
 
-      {/* COL: SYLLABLES — label spacer (empty in data rows, shown in header only) */}
-      <span className="flex-shrink-0 w-[3.5rem]" />
-
-      {/* COL: COUNT — syllable number */}
-      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors w-[1.75rem] text-right">
+      {/* COL: COUNT — syllable count, wider for readability */}
+      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors w-[2.25rem] text-right">
         {line.syllables > 0 ? line.syllables : ''}
       </span>
 
-      {/* COL: SCHEMA — rhyme scheme badge */}
+      {/* COL: SCHEMA — rhyme scheme badge, slightly wider */}
       <span
-        className={`flex-shrink-0 inline-flex h-4 w-4 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
+        className={`flex-shrink-0 inline-flex h-4 w-5 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
       >
         {schemeLabel ?? ''}
       </span>
