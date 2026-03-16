@@ -45,16 +45,16 @@ export function StructureSidebar({
 }: Props) {
   const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  // FIX #4: track whether the panel is in the process of closing to prevent
-  // ghost re-appearance if the user taps quickly during the exit animation.
-  const isClosingRef = useRef(false);
 
+  /*
+   * FIX #4: stopPropagation prevents the touch event from bubbling to the
+   * backdrop (which would call closeMobilePanels and trigger a second state
+   * update). Closing is exclusively owned by this handler — the nav toggle
+   * button is now open-only (see MobileBottomNav).
+   */
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
-    isClosingRef.current = true;
     setIsStructureOpen(false);
-    // Reset the closing flag after the motion exit animation completes (~300ms)
-    setTimeout(() => { isClosingRef.current = false; }, 350);
   };
 
   const sectionOptions = [
@@ -96,8 +96,6 @@ export function StructureSidebar({
                 <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />
                 <span className="text-[10px] uppercase tracking-widest font-semibold">{t.structure.title}</span>
               </h3>
-              {/* FIX #4: stopPropagation prevents the backdrop from receiving the
-                  same touch event and calling closeMobilePanels a second time */}
               {isMobileOverlay && (
                 <button
                   onClick={handleClose}

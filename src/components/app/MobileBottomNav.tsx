@@ -26,9 +26,7 @@ export function MobileBottomNav({
 
   return (
     <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
-      {/* FIX #5: call onOpenSettings BEFORE closing panels so React batches the
-          state updates correctly and the settings modal is not cancelled by
-          a subsequent closeMobilePanels triggered by the backdrop unmount. */}
+      {/* Settings — onOpenSettings called first so React batch preserves the modal open state */}
       <button
         className="mobile-bottom-nav-btn"
         onClick={() => {
@@ -89,13 +87,16 @@ export function MobileBottomNav({
         <span>{t.mobileNav.music}</span>
       </button>
 
-      {/* FIX #4: structure toggle — guard against re-open if panel is animating out.
-          We force setIsStructureOpen(false) when already closing rather than toggling,
-          preventing the ghost re-appearance caused by rapid tap during exit animation. */}
+      {/*
+        FIX #4 (amend): open-only from here — closing is exclusively handled by
+        StructureSidebar's handleClose (stopPropagation + setIsStructureOpen(false)).
+        This prevents the ghost re-appearance caused by a rapid tap during the
+        motion exit animation re-toggling the state from false back to true.
+      */}
       <button
         className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
         onClick={() => {
-          setIsStructureOpen(v => !v);
+          if (!isStructureOpen) setIsStructureOpen(true);
           setIsLeftPanelOpen(false);
         }}
         aria-label={t.mobileNav.structure}
