@@ -268,21 +268,21 @@ const ko: Translations = {
     title: '설정',
     theme: {
       ...en.settings.theme,
-      label: '테마',
+      label: 'UI 테마',
       dark: '다크',
       light: '라이트',
       system: '시스템',
     },
     audio: {
       ...en.settings.audio,
-      label: '오디오',
+      label: '오디오 피드백',
       enable: '활성화',
       volume: '볼륨',
       disable: '비활성화',
     },
     language: {
       ...en.settings.language,
-      label: '언어',
+      label: 'UI 언어',
     },
     actions: {
       ...en.settings.actions,
@@ -292,7 +292,7 @@ const ko: Translations = {
     },
     about: {
       ...en.settings.about,
-      version: '버전',
+      version: '앱 버전',
       github: 'GitHub 저장소',
       docs: '문서',
     },

@@ -260,19 +260,19 @@ const es: Translations = {
   settings: {
     title: 'Ajustes',
     theme: {
-      label: 'Tema',
+      label: 'Tema UI',
       dark: 'Oscuro',
       light: 'Claro',
       system: 'Sistema',
     },
     audio: {
-      label: 'Audio',
+      label: 'Retroalimentación de Audio',
       enable: 'Activar sonido',
       volume: 'Volumen',
       disable: 'Desactivar',
     },
     language: {
-      label: 'Idioma',
+      label: 'Idioma UI',
     },
     actions: {
       default: 'Predeterminado',
@@ -280,7 +280,7 @@ const es: Translations = {
       close: 'Cerrar',
     },
     about: {
-      version: 'Versión',
+      version: 'Versión App',
       github: 'Repositorio GitHub',
       docs: 'Documentación',
     },

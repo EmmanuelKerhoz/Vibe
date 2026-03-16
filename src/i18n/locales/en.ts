@@ -259,19 +259,19 @@ const en: Translations = {
   settings: {
     title: 'Settings',
     theme: {
-      label: 'Theme',
+      label: 'UI Theme',
       dark: 'Dark',
       light: 'Light',
       system: 'System',
     },
     audio: {
-      label: 'Audio',
+      label: 'Audio Feedback',
       enable: 'Enable',
       volume: 'Volume',
       disable: 'Disable',
     },
     language: {
-      label: 'Language',
+      label: 'UI Language',
     },
     actions: {
       default: 'Default',
@@ -279,7 +279,7 @@ const en: Translations = {
       close: 'Close',
     },
     about: {
-      version: 'Version',
+      version: 'App Version',
       github: 'GitHub Repository',
       docs: 'Documentation',
     },

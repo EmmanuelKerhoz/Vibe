@@ -257,18 +257,18 @@ const fr: Translations = {
   settings: {
     title: 'Paramètres',
     theme: {
-      label: 'Thème',
+      label: 'Thème UI',
       dark: 'Sombre',
       light: 'Clair',
       system: 'Système',
     },
     audio: {
-      label: 'Audio',
+      label: 'Retour Audio',
       enable: 'Activer le son',
       volume: 'Volume',
     },
     language: {
-      label: 'Langue',
+      label: 'Langue UI',
     },
     actions: {
       default: 'Par défaut',
@@ -276,7 +276,7 @@ const fr: Translations = {
       close: 'Fermer',
     },
     about: {
-      version: 'Version',
+      version: 'Version App',
       github: 'Dépôt GitHub',
       docs: 'Documentation',
     },
