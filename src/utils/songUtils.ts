@@ -233,7 +233,12 @@ export const cleanSectionName = (name: string) => {
 
 export const countSyllables = (text: string) => {
   if (!text) return 0;
-  const word = text.toLowerCase().replace(/[^a-z]/g, '');
+  const word = text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z]/g, '');
+  if (!word) return 0;
   if (word.length <= 3) return 1;
   const syllables = word
     .replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '')
