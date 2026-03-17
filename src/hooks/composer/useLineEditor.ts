@@ -13,11 +13,17 @@ const computeSyllables = (text: string) =>
 
 /**
  * Recomputes the rhyme scheme for a section based on its current lyric lines.
- * Skips sections manually set to FREE.
- * Returns the existing scheme unchanged if detection yields null or no change.
+ *
+ * FREE is treated as any other scheme value (option B): if rhymes emerge
+ * while editing a FREE section, the scheme updates automatically.
+ * The user can still manually set FREE at any time via the selector.
+ *
+ * Returns the existing scheme unchanged if:
+ *   - fewer than 2 lyric lines exist (detection meaningless)
+ *   - detection yields null (no pattern found)
+ *   - detected scheme equals current scheme (no change needed)
  */
 const redetectScheme = (section: Section): string | undefined => {
-  if ((section.rhymeScheme ?? '').toUpperCase() === 'FREE') return section.rhymeScheme;
   const lyricTexts = section.lines
     .filter(l => !(l.isMeta ?? isPureMetaLine(l.text)) && l.text.trim().length > 0)
     .map(l => l.text);
@@ -62,7 +68,6 @@ export const useLineEditor = ({
       updateSong(currentSong =>
         currentSong.map(section => {
           if (section.id !== sectionId) return section;
-          // 1. Update the line text + syllables
           const updatedLines = section.lines.map(line => {
             if (line.id !== lineId) return line;
             return {
@@ -73,7 +78,6 @@ export const useLineEditor = ({
             };
           });
           const updatedSection: Section = { ...section, lines: updatedLines };
-          // 2. Re-detect rhyme scheme in the same atomic pass
           const newScheme = redetectScheme(updatedSection);
           return newScheme !== section.rhymeScheme
             ? { ...updatedSection, rhymeScheme: newScheme }
