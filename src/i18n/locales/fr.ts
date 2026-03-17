@@ -101,6 +101,7 @@ const fr: Translations = {
     rhyme: 'Rime',
     syllables: 'Syllabes',
     syllableCount: 'Compte',
+    schemaHeader: 'Schéma',
     concept: 'Concept',
     lines: 'Lignes',
     chars: 'Caractères',
@@ -243,6 +244,7 @@ const fr: Translations = {
       docx: 'DOCX',
     },
   },
+
   about: {
     description: 'Un éditeur de paroles IA professionnel pour les auteurs-compositeurs et poètes. Composez votre chef-d\'œuvre avec des suggestions en temps réel, la gestion de structure et la quantification intelligente.',
     engine: 'Google Gemini',

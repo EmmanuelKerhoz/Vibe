@@ -106,6 +106,8 @@ export interface Translations {
     rhyme: string;
     syllables: string;
     syllableCount?: string;
+    /** Column header for the rhyme schema badge */
+    schemaHeader?: string;
     concept: string;
     lines: string;
     chars: string;
@@ -125,9 +127,9 @@ export interface Translations {
     aiLine?: string;
     moveLineUp?: string;
     moveLineDown?: string;
-        deleteLine?: string;
-        linePlaceholder?: string;
-        addLineAfter?: string;
+    deleteLine?: string;
+    linePlaceholder?: string;
+    addLineAfter?: string;
   };
 
   suggestions: {

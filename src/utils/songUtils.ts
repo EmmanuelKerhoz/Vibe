@@ -95,15 +95,27 @@ const normalizeWord = (s: string): string =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 
 /**
- * Universal phonetic rhyme key — v3.6.9
+ * Universal phonetic rhyme key — v3.7.2
  *
- * Extracts the LAST vowel nucleus + trailing consonants from the last word
- * of a lyric line. Language-agnostic for all Latin-script languages.
+ * Uses the same second-to-last vowel group strategy as splitRhymingSuffix
+ * in LyricInput.tsx, ensuring the schema letter (A, B, C…) is always
+ * computed from the same phonetic nucleus that gets highlighted.
  *
- *   FR: ruban→an, dedans→an, lame→me, amour→our, couteau→eau, scintille→ille
- *   EN: night→ight, love→ove, falling→ing, moon→oon
- *   ES: corazón→on, amor→or, vida→ida
- *   IT: cuore→re, amore→re  ← correctly identified as rhyme
+ * Algorithm:
+ *   1. Extract last word, normalize to ASCII.
+ *   2. Build list of all vowel-group spans (left-to-right).
+ *   3. If 1 group  → key = entire normalized word.
+ *   4. If 2+ groups → cutPoint = end of (n-2)th group → key = norm.slice(cutPoint).
+ *
+ * Examples:
+ *   FR: certitudes → groups [e][i][u][e] → cut after u → key = "udes"
+ *       servitude  → groups [e][i][u][e] → cut after u → key = "ude"
+ *       mentir     → groups [e][i]       → cut after e → key = "ir"
+ *       amour      → groups [a][ou]      → cut after a → key = "our"
+ *       chanter    → groups [a][e]       → cut after a → key = "er"
+ *   EN: freedom    → groups [ee][o]      → cut after ee→ key = "dom" (norm: "eedo" → "dom")
+ *       together   → groups [o][e][e]    → cut after 2nd e → key = "er"
+ *   ES: corazón    → groups [o][a][o]    → cut after a → key = "on"
  */
 const vocalicRhymeKey = (line: string): string => {
   const stripped = line.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
@@ -112,45 +124,44 @@ const vocalicRhymeKey = (line: string): string => {
   if (norm.length < 2) return norm;
 
   const VOWELS = 'aeiouy';
-  let lastVowelIdx = -1;
-  for (let i = norm.length - 1; i >= 0; i--) {
-    if (VOWELS.includes(norm[i]!)) { lastVowelIdx = i; break; }
+  const isVowel = (ch: string) => VOWELS.includes(ch);
+
+  type Span = { start: number; end: number };
+  const vowelGroups: Span[] = [];
+  let i = 0;
+  while (i < norm.length) {
+    if (isVowel(norm[i]!)) {
+      const start = i;
+      while (i < norm.length && isVowel(norm[i]!)) i++;
+      vowelGroups.push({ start, end: i });
+    } else {
+      i++;
+    }
   }
 
-  if (lastVowelIdx === -1) {
-    return norm.slice(-2);
+  if (vowelGroups.length === 0) return norm.slice(-2);
+
+  let cutPoint: number;
+  if (vowelGroups.length === 1) {
+    cutPoint = 0;
+  } else {
+    const secondToLast = vowelGroups[vowelGroups.length - 2]!;
+    cutPoint = secondToLast.end;
   }
 
-  const key = norm.slice(lastVowelIdx);
-  // Single bare vowel at end: extend one char back for context
-  if (key.length === 1 && lastVowelIdx > 0) {
-    return norm.slice(lastVowelIdx - 1);
-  }
-  return key;
+  return norm.slice(cutPoint);
 };
 
 /**
  * Two lines rhyme if their vocalic keys match by one of two criteria:
  *
  * 1. EXACT (rich rhyme): keys are identical
- *    lumière/frontière → "ere" === "ere" ✅
- *    ruban/dedans      → "an"  === "an"  ✅
- *
  * 2. SUFFIX CONTAINMENT (sufficient rhyme): the shorter key is a suffix
  *    of the longer key, with min length 2 to avoid trivial matches.
- *    passion/raison → "ion" ends with "on" ✅
- *    nuit/fuit      → "ui"  is suffix of "uit" ✅
- *    -tion/-on, -ien/-en, -ille/-il patterns all handled.
- *
- * Unrelated endings are still rejected:
- *    scintille/bien → "ille" vs "en" — neither is suffix of the other ✅
- *    ruban/ego      → "an" vs "o"  — no match ✅
  */
 const rhymesKeys = (a: string, b: string): boolean => {
   if (!a || !b) return false;
-  // 1. Exact match (rich rhyme)
   if (a === b) return true;
-  // 2. Suffix containment (sufficient rhyme) — min 2 chars
   const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
   if (shorter.length >= 2 && longer.endsWith(shorter)) return true;
   return false;
@@ -159,9 +170,8 @@ const rhymesKeys = (a: string, b: string): boolean => {
 /**
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
  *
- * v3.6.10: rhymes() uses suffix-containment in addition to strict equality,
- * covering both rich rhymes (identical vocalic key) and sufficient rhymes
- * (shorter key is phonetic suffix of longer key, min 2 chars).
+ * v3.7.2: vocalicRhymeKey now uses second-to-last vowel group (aligned
+ * with splitRhymingSuffix in LyricInput.tsx).
  */
 export function detectRhymeSchemeLocally(lines: string[]): string | null {
   const lyricLines = lines.filter(l => l.trim().length > 0);
