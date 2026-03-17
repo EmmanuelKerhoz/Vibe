@@ -6,9 +6,6 @@ import { AI_KEY_ENV_VAR, AI_MODEL_NAME } from '../../../utils/aiUtils';
 import { Button } from '../../ui/Button';
 import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
 
-const BANNER_WIDTH = 1200;
-const BANNER_HEIGHT = 630;
-
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -83,13 +80,11 @@ export function AboutModal({ isOpen, onClose }: Props) {
         <div ref={bodyRef} className="flex-1 overflow-y-auto custom-scrollbar">
 
           {/* Banner — flush to header, no top padding, no bottom margin */}
-          <div className="w-full overflow-hidden" style={{ aspectRatio: `${BANNER_WIDTH} / ${BANNER_HEIGHT}` }}>
-            <img
-              src={bannerImage}
-              alt="Lyricist splash screen"
-              className="w-full h-full object-contain object-top"
-            />
-          </div>
+          <img
+            src={bannerImage}
+            alt="Lyricist splash screen"
+            className="w-full block"
+          />
 
           {/* Body content */}
           <div ref={sweepItemsRef} className="px-8 pt-4 pb-8 space-y-6">
