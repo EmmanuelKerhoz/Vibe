@@ -1,0 +1,13 @@
+{
+  "name": "Vibe Dev",
+  "postStartCommand": "npm install && npm run dev &",
+  "postAttachCommand": "npm run dev &",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "App",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  }
+}
