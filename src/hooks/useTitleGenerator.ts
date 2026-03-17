@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AI_MODEL_NAME, getAi, handleApiError } from '../utils/aiUtils';
 import type { Section } from '../types';
+import { getSongText } from '../utils/songUtils';
 
 export function useTitleGenerator(
   song: Section[],
@@ -15,11 +16,7 @@ export function useTitleGenerator(
 
     setIsGeneratingTitle(true);
     try {
-      const lyricsSnippet = song
-        .slice(0, 2)
-        .map(s => s.lines.map(l => l.text).join('\n'))
-        .join('\n\n')
-        .substring(0, 500);
+      const lyricsSnippet = getSongText(song.slice(0, 2)).substring(0, 500);
 
       const prompt = `Generate a creative, concise song title (max 6 words) based on:
 Topic: ${topic}

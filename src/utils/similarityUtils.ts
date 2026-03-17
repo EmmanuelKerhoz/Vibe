@@ -17,7 +17,7 @@ export type SimilarityMatch = {
   matchedSections: SimilaritySectionMatch[];
 };
 
-const normalizeText = (text: string) =>
+export const normalizeText = (text: string) =>
   text
     .toLowerCase()
     .normalize('NFD')
