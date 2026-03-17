@@ -33,28 +33,34 @@ export interface LyricInputProps {
 /**
  * Extracts the rhyming suffix of a line's last word.
  *
- * Strategy: from the last word (stripped of trailing punctuation), find the
- * last vowel cluster — everything from that position to end-of-word is the
- * "rhyming nucleus+coda". We then locate that exact substring in the original
- * text (right-anchored, case-insensitive) and return the split indices so the
- * overlay can colourize just that portion.
+ * The rhyme starts at the **onset of the final syllable** — i.e. the consonant
+ * cluster immediately preceding the last vowel group — not at the bare vowel.
  *
- * Returns { before, rhyme } where before + rhyme === text, or null when no
- * rhyme colour applies (no scheme, empty text, no vowel found).
+ * Examples (French):
+ *   mentir  → "tir"   (not "ir")
+ *   partir  → "tir"   (not "ir")
+ *   chanter → "ter"   (not "er")
+ *   amour   → "our"   (not "ur")
+ *   vie     → "vie"   (vowel at pos 0, no leading consonant → full word)
+ *   nuit    → "nuit"
+ *
+ * Algorithm:
+ *   1. Strip trailing punctuation, extract last word.
+ *   2. Find last vowel position (lastVowelIdx).
+ *   3. Walk backwards from lastVowelIdx to find the start of the preceding
+ *      consonant cluster (onsetStart). The rhyme = word.slice(onsetStart).
+ *   4. Right-anchor that suffix back onto the full text to get split indices.
  */
 function splitRhymingSuffix(text: string): { before: string; rhyme: string } | null {
   if (!text.trim()) return null;
 
-  // Strip trailing punctuation/spaces to find the last real word
   const stripped = text.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
   if (!stripped) return null;
 
-  // Extract last word (letters/numbers only)
   const lastWordMatch = stripped.match(/[\p{L}\p{N}]+$/u);
   if (!lastWordMatch) return null;
   const lastWord = lastWordMatch[0];
 
-  // Find last vowel position within the last word (covers accented vowels)
   const vowelRe = /[aeiouyàâäéèêëîïôùûüœæ]/gi;
   let lastVowelIdx = -1;
   let m: RegExpExecArray | null;
@@ -63,8 +69,19 @@ function splitRhymingSuffix(text: string): { before: string; rhyme: string } | n
   }
   if (lastVowelIdx < 0) return null;
 
-  // The rhyming part inside the last word (from last vowel to end of word)
-  const rhymeSuffix = lastWord.slice(lastVowelIdx);
+  // Walk backwards from lastVowelIdx to find onset of final syllable.
+  // We include any consonants immediately before the vowel (the onset cluster).
+  // Stop when we hit another vowel or the start of the word.
+  const consonantRe = /[^aeiouyàâäéèêëîïôùûüœæ]/i;
+  let onsetStart = lastVowelIdx;
+  while (onsetStart > 0 && consonantRe.test(lastWord[onsetStart - 1]!)) {
+    onsetStart--;
+    // Don't consume more than 3 consonants (avoids grabbing too much in
+    // complex clusters like "str-", "spr-" — keep it phonetically reasonable)
+    if (lastVowelIdx - onsetStart >= 3) break;
+  }
+
+  const rhymeSuffix = lastWord.slice(onsetStart);
 
   // Find rightmost occurrence of that suffix in original text (preserve case)
   const suffixIdx = text.toLowerCase().lastIndexOf(rhymeSuffix.toLowerCase());
@@ -143,7 +160,6 @@ export const LyricInput = React.memo(function LyricInput({
   const renderStyledOverlay = (text: string) => {
     if (!text) return null;
 
-    // Split out parenthesised blocks first
     const parts = text.split(/(\([^)]*\))/g);
 
     return parts.map((part, i) => {
@@ -151,7 +167,6 @@ export const LyricInput = React.memo(function LyricInput({
         return <span key={i} className="text-amber-400">{part}</span>;
       }
 
-      // For the last non-paren segment, apply rhyme highlight on its suffix
       const isLastPart = i === parts.length - 1;
       if (isLastPart && rhymeTextColor) {
         const split = splitRhymingSuffix(part);
@@ -244,12 +259,12 @@ export const LyricInput = React.memo(function LyricInput({
         </Tooltip>
       </div>
 
-      {/* COL: COUNT — syllable count, wider for readability */}
+      {/* COL: COUNT */}
       <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors w-[2.25rem] text-right">
         {line.syllables > 0 ? line.syllables : ''}
       </span>
 
-      {/* COL: SCHEMA — rhyme scheme badge, slightly wider */}
+      {/* COL: SCHEMA */}
       <span
         className={`flex-shrink-0 inline-flex h-4 w-5 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
       >
