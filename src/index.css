@@ -264,12 +264,6 @@
 
 /* ===========================================================================
    LCARS GRADIENT OUTLINE — unified utility class
-   Applies a multicolor gradient border via ::before pseudo-element.
-   Thickness: --accent-rail-outline-thickness (alias of --accent-rail-thickness).
-   Gradient: 135deg amber→sage→cyan→blue→violet (matches accent-rail palette).
-   Dark-mode only: opacity 0 in light, 0.65 idle → 1 on hover/focus in dark.
-   Usage: add class="lcars-gradient-outline" to any position:relative container.
-   The inner content must have position:relative + z-index:1 to sit above ::before.
    =========================================================================== */
 
 .lcars-gradient-outline {
@@ -301,7 +295,6 @@
   transition: opacity 0.2s ease;
 }
 
-/* Dark mode: visible by default, brighter on hover/focus */
 .dark .lcars-gradient-outline::before {
   opacity: 0.65;
 }
@@ -839,13 +832,19 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* ===========================================================================
+   LCARS BAND — section container
+   overflow must be VISIBLE so border-radius corners are not clipped.
+   Internal content overflow is handled by the flex-1 child div.
+   =========================================================================== */
+
 .lcars-band {
   display: flex;
   align-items: stretch;
   background-color: var(--bg-card);
   backdrop-filter: var(--layer2-blur);
   border-radius: 24px 4px 24px 4px;
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: 2px;
   border: 1px solid var(--border-color);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
@@ -861,7 +860,14 @@ html, body, #root {
 }
 .dark .lcars-section-title { text-shadow: none; }
 
-.lcars-band-stripe { width: 16px; flex-shrink: 0; }
+/* The colored left stripe — inherits border-radius from parent via
+   border-radius: 24px 0 0 24px so top-left and bottom-left are rounded.
+   clip-path ensures the stripe background follows the band corners. */
+.lcars-band-stripe {
+  width: 16px;
+  flex-shrink: 0;
+  border-radius: 24px 0 0 24px;
+}
 
 .lcars-lyrics-area {
   background-color: #e8e6e3;
