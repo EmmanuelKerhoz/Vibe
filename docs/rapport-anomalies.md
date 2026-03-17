@@ -132,7 +132,7 @@ Remédiation appliquée le 2026-03-11 :
 - validation explicite du body avant traitement
 - suppression des `any` principaux dans cet endpoint
 
-### 8. Désynchronisation version app / package.json *(incident 2026-03-17)*
+### 8. Désynchronisation version app / package.json *(incident 2026-03-17, première occurrence)*
 
 **Description :**
 
@@ -156,6 +156,28 @@ Le service worker PWA (`skipWaiting: true`, `clientsClaim: true`) peut aggraver 
 
 > Tout bump de version mentionné dans un message de commit **doit** s'accompagner de la mise à jour correspondante du champ `version` dans `package.json`. C'est le seul fichier qui pilote la version affichée dans l'application.
 
+### 9. package.json oublié dans commit groupé *(récidive 2026-03-17, v3.7.2)*
+
+**Description :**
+
+Lors du commit groupé `9df286c` (fix rhyme + i18n + test, v3.7.2), `package.json` n'a pas été inclus dans le `push_files`. Résultat : `package.json` affichait `3.7.1` alors que les fichiers source correspondaient à v3.7.2. L'application déployée par Vercel affichait donc `3.7.1` au lieu de `3.7.2`.
+
+**Symptôme observé :**
+
+L'utilisateur a constaté une divergence de version selon les navigateurs/appareils utilisés — lié à la combinaison cache SW + version erronée injectée au build.
+
+**Remédiation appliquée le 2026-03-17 :**
+
+- `package.json` bumped `3.7.1` → `3.7.2` en commit séparé `e71dcf8`.
+
+**Cause racine :**
+
+Les commits groupés multi-fichiers ne passent pas par le workflow habituel (`package.json` en tête de liste). Quand la liste est construite manuellement, `package.json` peut être omis.
+
+**Règle renforcée :**
+
+> **Avant tout `push_files` groupé** : vérifier que `package.json` est dans la liste si la version change. `package.json` doit être le **premier fichier** de la liste pour être visible en revue de diff.
+
 ## Points vérifiés sans anomalie immédiate
 
 - le projet **passe** `npm run lint`
@@ -171,7 +193,7 @@ Le service worker PWA (`skipWaiting: true`, `clientsClaim: true`) peut aggraver 
 4. Remplacer l'`alert()` restant de `handleApiKeyHelp()` par le mécanisme modal déjà utilisé ailleurs.
 5. Réduire les manipulations DOM différées dans `useSongComposer`.
 6. Rationaliser les logs runtime.
-7. **Toujours bumper `package.json` lors de tout incrément de version** (cf. §8).
+7. **Toujours bumper `package.json` en premier dans tout commit de version** (cf. §8 et §9).
 
 ## Conclusion
 
