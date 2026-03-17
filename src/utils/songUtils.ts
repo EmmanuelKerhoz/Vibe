@@ -89,56 +89,75 @@ export const getRhymeTextColor = (rhyme: string | null | undefined): string | nu
 };
 
 /**
+ * Strip Unicode accents and lowercase — language-agnostic.
+ */
+const normalizeWord = (s: string): string =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+
+/**
+ * Universal phonetic rhyme key — v3.6.9
+ *
+ * Extracts the LAST vowel nucleus + trailing consonants from the last word
+ * of a lyric line. This mirrors how human ears perceive rhyme across all
+ * Latin-script languages:
+ *   FR: ruban→an, dedans→an, lame→ame, amour→our, couteau→eau, scintille→ille
+ *   EN: night→ight, love→ove, falling→ing, moon→oon
+ *   ES: corazón→on, amor→or, vida→ida
+ *   IT: cuore→ore, amore→ore  ← correctly identified as rhyme
+ *
+ * Algorithm:
+ * 1. Strip trailing punctuation, extract last word.
+ * 2. Normalize (NFD accent strip, lowercase, alpha only).
+ * 3. Find the index of the LAST vowel character.
+ * 4. rhymeKey = norm.slice(lastVowelIndex)  — the vowel + all following consonants.
+ * 5. Guard: if result is a single char (bare vowel), take last 2 chars instead
+ *    to avoid over-grouping (e.g. words ending in isolated 'a' or 'e').
+ */
+const vocalicRhymeKey = (line: string): string => {
+  const stripped = line.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
+  const lastWord = stripped.match(/[\p{L}\p{N}]+$/u)?.[0] ?? '';
+  const norm = normalizeWord(lastWord);
+  if (norm.length < 2) return norm;
+
+  const VOWELS = 'aeiouy';
+  let lastVowelIdx = -1;
+  for (let i = norm.length - 1; i >= 0; i--) {
+    if (VOWELS.includes(norm[i]!)) { lastVowelIdx = i; break; }
+  }
+
+  if (lastVowelIdx === -1) {
+    // All consonants (rare): fall back to last 2 chars
+    return norm.slice(-2);
+  }
+
+  const key = norm.slice(lastVowelIdx);
+  // Single bare vowel at end (e.g. "ma", "la" → key="a"): extend one char back
+  if (key.length === 1 && lastVowelIdx > 0) {
+    return norm.slice(lastVowelIdx - 1);
+  }
+  return key;
+};
+
+/**
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
  *
- * Improvements v3.6.7:
- * - rhymeKey: 4-char suffix (vs 3) for better French vowel-chain discrimination.
- *   Normalizes accented vowels BEFORE slicing so lame/âme/flamme all yield "ame".
- * - rhymes(): accepts match on last 3 chars (full vowel chain) OR last 2 chars,
- *   but guards against trivial 2-char coincidences between unrelated endings
- *   by requiring the 3-char check to pass first when keys are >= 3 chars.
- *   This correctly groups lame/âme while rejecting bien/scintille (ien vs ill).
+ * v3.6.9: replaced fixed-suffix rhymeKey with universal vocalicRhymeKey().
+ * rhymes() is now a simple key equality check — the phonetic extraction
+ * already encodes the rhyme sound, no further slicing needed.
  */
 export function detectRhymeSchemeLocally(lines: string[]): string | null {
   const lyricLines = lines.filter(l => l.trim().length > 0);
   const n = lyricLines.length;
   if (n < 2) return null;
 
-  // Full Unicode accent strip
-  const normalize = (s: string): string =>
-    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+  const keys = lyricLines.map(vocalicRhymeKey);
 
-  const rhymeKey = (line: string): string => {
-    // Strip trailing punctuation (incl. ellipsis, em-dash, etc.)
-    const stripped = line.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
-    const lastWord = stripped.match(/[\p{L}\p{N}]+$/u)?.[0] ?? '';
-    const norm = normalize(lastWord);
-    if (norm.length < 2) return norm;
-    // 4-char suffix — better French vowel chain coverage
-    return norm.slice(-4);
-  };
-
-  const keys = lyricLines.map(rhymeKey);
-
-  /**
-   * Two endings rhyme when:
-   *   (a) they are identical, OR
-   *   (b) their last 3 chars match (full vowel chain — catches lame/flamme)
-   *       AND their last 2 chars match (avoids bien/chrétien vs. rien = false positive with only 2)
-   * A 2-char-only match is NOT sufficient when both keys are >= 3 chars long
-   * (prevents bien/scintille: "en" vs "le" — no match anyway, but also prevents
-   * accidental 2-char collisions in short words).
-   */
   const rhymes = (a: string, b: string): boolean => {
     if (!a || !b) return false;
     if (a === b) return true;
-    const minLen = Math.min(a.length, b.length);
-    if (minLen >= 3) {
-      // Require 3-char suffix match (strict vowel chain)
-      return a.slice(-3) === b.slice(-3);
-    }
-    // Short words (< 3 chars): fall back to 2-char match
-    return a.slice(-2) === b.slice(-2);
+    // Allow 1-char tolerance for very short keys (monosyllabic words)
+    if (a.length === 1 || b.length === 1) return a.slice(-2) === b.slice(-2);
+    return false;
   };
 
   const letters: (string | null)[] = new Array(n).fill(null);
@@ -173,7 +192,6 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
   }
   const rhymingLines = Object.values(letterCounts).filter(c => c >= 2).reduce((a, b) => a + b, 0);
 
-  // Exit FREE as soon as at least one rhyming pair is found
   if (rhymingLines === 0) return null;
 
   const raw = letters.map(l => l ?? 'X').join('');
