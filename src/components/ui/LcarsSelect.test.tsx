@@ -21,7 +21,7 @@ describe('LcarsSelect', () => {
     const listbox = document.body.querySelector('[role="listbox"]');
 
     expect(listbox).not.toBeNull();
-    expect((listbox as HTMLElement).style.width).toBe('320px');
+    expect((listbox as HTMLElement).parentElement?.style.width).toBe('320px');
     expect(screen.getByRole('option', { name: 'CHORUS' })).not.toBeNull();
 
     fireEvent.mouseDown(document.body);
