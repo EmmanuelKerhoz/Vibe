@@ -132,6 +132,30 @@ Remédiation appliquée le 2026-03-11 :
 - validation explicite du body avant traitement
 - suppression des `any` principaux dans cet endpoint
 
+### 8. Désynchronisation version app / package.json *(incident 2026-03-17)*
+
+**Description :**
+
+Entre les versions 3.6.12 et 3.6.14, les messages de commit mentionnaient les bumps de version mais le fichier `package.json` n'était pas mis à jour. L'application affichait une version obsolète (3.6.8) en production.
+
+**Chaîne de versioning :**
+
+```
+package.json  →  vite.config.ts (define VITE_APP_VERSION)  →  src/version.ts (APP_VERSION)  →  affichage dans l'app
+```
+
+`vite.config.ts` lit `package.json` au build via `readFileSync('./package.json')` et injecte la valeur dans `import.meta.env.VITE_APP_VERSION`. Si `package.json` n'est pas bumped, la version injectée dans le bundle reste celle de la dernière mise à jour du fichier, indépendamment du message de commit.
+
+Le service worker PWA (`skipWaiting: true`, `clientsClaim: true`) peut aggraver le décalage en servant un bundle caché encore plus ancien jusqu'au prochain rebuild forcé.
+
+**Remédiation appliquée le 2026-03-17 :**
+
+- `package.json` mis à jour de `3.6.11` → `3.6.14` (commit `e3b71b6`).
+
+**Règle à appliquer systématiquement :**
+
+> Tout bump de version mentionné dans un message de commit **doit** s'accompagner de la mise à jour correspondante du champ `version` dans `package.json`. C'est le seul fichier qui pilote la version affichée dans l'application.
+
 ## Points vérifiés sans anomalie immédiate
 
 - le projet **passe** `npm run lint`
@@ -147,6 +171,7 @@ Remédiation appliquée le 2026-03-11 :
 4. Remplacer l'`alert()` restant de `handleApiKeyHelp()` par le mécanisme modal déjà utilisé ailleurs.
 5. Réduire les manipulations DOM différées dans `useSongComposer`.
 6. Rationaliser les logs runtime.
+7. **Toujours bumper `package.json` lors de tout incrément de version** (cf. §8).
 
 ## Conclusion
 
