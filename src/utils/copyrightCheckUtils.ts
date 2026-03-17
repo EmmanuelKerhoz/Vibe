@@ -1,4 +1,5 @@
 import type { Section } from '../types';
+import { getSectionText, getSongText } from './songUtils';
 
 export type CopyrightMatch = {
   score: number;
@@ -27,9 +28,7 @@ export const checkCopyrightSimilarity = async (
 ): Promise<CopyrightMatch[]> => {
   if (currentSong.length === 0) return [];
 
-  const songText = currentSong
-    .map(section => section.lines.map(line => line.text).join('\n'))
-    .join('\n\n');
+  const songText = getSongText(currentSong);
 
   const keywords = extractKeywords(songText);
 
@@ -42,7 +41,7 @@ export const checkCopyrightSimilarity = async (
         keywords,
         sections: currentSong.map(s => ({
           name: s.name,
-          text: s.lines.map(l => l.text).join('\n')
+          text: getSectionText(s)
         })),
         threshold,
         limit 

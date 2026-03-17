@@ -9,6 +9,7 @@
 
 import type { Section } from '../types';
 import type { WebSimilarityCandidate, SearchTreeNode, SearchProvider } from '../types/webSimilarity';
+import { normalizeText } from './similarityUtils';
 
 const decodeHtmlEntities = (html: string): string =>
   html
@@ -19,14 +20,7 @@ const decodeHtmlEntities = (html: string): string =>
     .replace(/&apos;/g, "'")
     .replace(/&amp;/g, '&');
 
-const normalize = (text: string) =>
-  text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+const normalize = normalizeText;
 
 const tokenize = (text: string): string[] =>
   normalize(text).split(' ').filter(t => t.length > 2);

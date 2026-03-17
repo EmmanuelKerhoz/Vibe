@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import type { Section } from '../../types';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
-
-const extractLyricsText = (sections: Section[], limit?: number): string =>
-  (limit ? sections.slice(0, limit) : sections)
-    .map(s => s.lines.map(l => l.text).join('\n'))
-    .join('\n\n');
+import { getSongText } from '../../utils/songUtils';
 
 type UseMusicalPromptParams = {
   song: Section[];
@@ -52,7 +48,7 @@ export const useMusicalPrompt = ({
     setIsGeneratingMusicalPrompt(true);
     const lang = songLanguage || 'English';
     try {
-      const lyricsSnippet = extractLyricsText(song, 3);
+      const lyricsSnippet = getSongText(song.slice(0, 3));
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
         contents: `Generate a detailed musical production prompt for an AI music generator (like Suno or Udio).
@@ -83,7 +79,7 @@ export const useMusicalPrompt = ({
     setIsAnalyzingLyrics(true);
     const lang = songLanguage || 'English';
     try {
-      const lyricsText = extractLyricsText(song);
+      const lyricsText = getSongText(song);
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
         contents: `Analyze these song lyrics and metadata to suggest detailed musical production parameters for an AI music generator.

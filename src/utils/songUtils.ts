@@ -1,5 +1,11 @@
 import type { Section } from '../types';
 
+export const getSectionText = (section: Section): string =>
+  section.lines.map(l => l.text).join('\n');
+
+export const getSongText = (song: Section[]): string =>
+  song.map(getSectionText).join('\n\n');
+
 export const getSectionColor = (name: string) => {
   const n = (name ?? '').toLowerCase();
   if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500/10 border-orange-500/20 text-orange-500';

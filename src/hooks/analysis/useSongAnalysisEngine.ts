@@ -3,6 +3,7 @@ import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds } from '../../utils/songMergeUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
+import { getSectionText } from '../../utils/songUtils';
 import type { Section } from '../../types';
 
 type AnalysisReport = {
@@ -92,7 +93,7 @@ export const useSongAnalysisEngine = ({
       isAnalyzingThemeRef.current = true;
       setIsAnalyzingTheme(true);
       try {
-        const prompt = `Analyze the following song lyrics.\nCurrent Topic: "${topic}"\nCurrent Mood: "${mood}"\n\nIf the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.\nIMPORTANT: Return the topic and mood values in ${uiLang}.\nReturn JSON with "topic" and "mood" strings.\n\nLyrics:\n${song.map(s => s.name + '\n' + s.lines.map(l => l.text).join('\n')).join('\n\n')}\n`;
+        const prompt = `Analyze the following song lyrics.\nCurrent Topic: "${topic}"\nCurrent Mood: "${mood}"\n\nIf the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.\nIMPORTANT: Return the topic and mood values in ${uiLang}.\nReturn JSON with "topic" and "mood" strings.\n\nLyrics:\n${song.map(s => s.name + '\n' + getSectionText(s)).join('\n\n')}\n`;
         const response = await getAi().models.generateContent({
           model: AI_MODEL_NAME,
           contents: prompt,
@@ -294,7 +295,7 @@ export const useSongAnalysisEngine = ({
 
     try {
       setAnalysisSteps(prev => [...prev, 'Analyzing structure and flow...']);
-      const songText = song.map(s => `[${s.name}]\n${s.lines.map(l => l.text).join('\n')}`).join('\n\n');
+      const songText = song.map(s => `[${s.name}]\n${getSectionText(s)}`).join('\n\n');
 
       const prompt = `Thoroughly analyze the following song lyrics.\n      Provide a detailed report including:\n      1. Overall Theme & Narrative: What is the song truly about?\n      2. Emotional Arc: How do the emotions shift throughout the song?\n      3. Technical Analysis: Rhyme schemes, syllable consistency, and rhythmic flow.\n      4. Strengths: What works well in the current version?\n      5. Actionable Improvements: Specific suggestions to improve the lyrics, structure, or impact.\n      6. Musical Suggestions: Ideas for instrumentation or vocal delivery based on the lyrics.\n\n      IMPORTANT: Write the ENTIRE analysis report in ${uiLang}.\n\n      Song Lyrics:\n      ${songText}`;
 
