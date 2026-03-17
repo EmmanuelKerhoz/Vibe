@@ -1,0 +1,27 @@
+/**
+ * Canonical BPM values for each rhythm preset.
+ * Used by MusicalTab to auto-set tempo when a rhythm is selected,
+ * and by the Vibe Board to auto-set BPM per genre tile.
+ */
+export const RHYTHM_BPM: Record<string, number> = {
+  'Samba':            100,
+  'Bossa Nova':       130,
+  'Rock':             120,
+  'Hard Rock':        140,
+  'Reggae':            75,
+  'Ska':              150,
+  'Disco':            120,
+  'Funk':             105,
+  'Hip-Hop':           90,
+  'Trap':              70,
+  'Jazz Swing':       165,
+  'Blues':             75,
+  'Waltz':             90,
+  'Tango':            120,
+  'Afrobeat':         100,
+  'Rumba':            108,
+  'Cumbia':            95,
+  'Flamenco':         120,
+  'Electronic (4/4)': 128,
+  'Breakbeat':        140,
+};
