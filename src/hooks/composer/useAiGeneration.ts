@@ -58,7 +58,44 @@ const flagMetaLines = (lines: any[]): any[] =>
     isMeta: isPureMetaLine(line.text ?? ''),
   }));
 
-const META_INSTRUCTION_HINT = `You may include performance/production meta-instructions on their own line using square brackets, e.g. [Guitar solo], [Whispered], [Anthemic], [Ad-lib], [Key change]. These are NOT section headers — they are preserved and displayed as special directives in the song editor.`;
+/**
+ * Meta-instruction formatting rule injected into every prompt.
+ * IMPORTANT: brackets are MANDATORY — bare text is not recognized.
+ */
+const META_INSTRUCTION_HINT =
+`PERFORMANCE / PRODUCTION META-INSTRUCTIONS:
+You may insert standalone meta-instruction lines using square brackets, e.g.:
+  [Guitar solo], [Whispered], [Anthemic], [Ad-lib], [Key change], [Falsetto], [Drum break]
+Rules:
+- Square brackets are MANDATORY. Never write a meta-instruction as bare text — it will be ignored.
+- Meta lines are NOT counted toward the section's lyric line count.
+- Meta lines are NOT subject to rhyme or syllable requirements.
+- These are preserved and displayed as special directives in the song editor.`;
+
+/**
+ * Rhyme enforcement rules injected into generation and regeneration prompts.
+ * Provides concrete phonetic guidance per scheme and mandates self-validation.
+ */
+const RHYME_ENFORCEMENT_RULES =
+`RHYME ENFORCEMENT — CRITICAL:
+The rhyme scheme you declare MUST be phonetically respected. Shared-letter lines MUST end
+with words whose final stressed vowel + following consonants match.
+
+Phonetic rhyme rules by language:
+- French: accented vowels are transparent (âme = ame, éclat = eclat). "E muet" at end counts
+  (lame / âme / flamme all rhyme; bien / chrétien / lien all rhyme; BUT bien ≠ scintille).
+- English: rely on pronunciation, not spelling (love/above rhyme; love/move do NOT).
+
+Scheme-specific guidance:
+- AABB: lines 1-2 share one rhyme sound, lines 3-4 share a DIFFERENT rhyme sound.
+- ABAB: lines 1 and 3 rhyme; lines 2 and 4 rhyme (cross-rhyme).
+- AABBCC: three distinct rhyme pairs — AA, BB, CC. Each pair must use a DIFFERENT sound.
+- ABCB: only lines 2 and 4 rhyme; lines 1 and 3 are free.
+- FREE: no rhyme constraints.
+
+SELF-VALIDATION (mandatory before returning):
+For each section, mentally check: do all lines sharing the same letter end with matching
+phonetic sounds? If any pair fails, rewrite those lines before returning.`;
 
 const GENERATION_SCHEMA = {
   type: Type.ARRAY,
@@ -140,13 +177,35 @@ export const useAiGeneration = ({
 
   const updateSong = useMemo(() => makeSongUpdater(updateState), [updateState]);
 
-  // ── generateSong ── song retiré des deps (non utilisé dans le corps)
+  // ── generateSong ─────────────────────────────────────────────────────────
   const generateSong = useCallback(async () => {
     setIsGenerating(true);
     try {
       await withAbort(abortControllerRef, async (signal) => {
         const lang = songLanguage || 'English';
-        const prompt = `Write a song about "${topic}".\nMood: ${mood}\nDefault Rhyme Scheme: ${rhymeScheme}\nTarget Syllables per line: ${targetSyllables}\nStructure: ${structure.join(', ')}\n\nIMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY. Generate exactly the sections listed in the Structure field, in that specific order.\n\n${META_INSTRUCTION_HINT}\n\nLine counts for sections:\n- Intro: 4 lines\n- Verse: 6 lines\n- Chorus: 4 lines\n- Bridge: 6 lines\n- Outro: 4 lines\n\nFor each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).\nFor each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${uiLanguage}).`;
+        const prompt =
+`Write a song about "${topic}".
+Mood: ${mood}
+Default Rhyme Scheme: ${rhymeScheme}
+Target Syllables per line: ${targetSyllables}
+Structure: ${structure.join(', ')}
+
+IMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY.
+Generate exactly the sections listed in the Structure field, in that specific order.
+
+${RHYME_ENFORCEMENT_RULES}
+
+${META_INSTRUCTION_HINT}
+
+Line counts for sections:
+- Intro: 4 lines
+- Verse: 6 lines
+- Chorus: 4 lines
+- Bridge: 6 lines
+- Outro: 4 lines
+
+For each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
+For each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${uiLanguage}).`;
 
         const response = await withRetry(() =>
           getAi().models.generateContent({
@@ -221,7 +280,27 @@ export const useAiGeneration = ({
           ? `\nCreative directives:\n${creativeDirectives.map(d => `- ${d}`).join('\n')}`
           : '';
 
-        const prompt = `Rewrite the following section of a song titled "${title}" about "${topic}".\nMood: ${mood}\nTarget Syllables per line: ${targetSyllables}\nSection Name: ${sectionToRegenerate.name}\nRhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}\n${lineCountPrompt}\nSong structure: ${songStructure}\n${prevContext}${nextContext}${directivesPrompt}\n\n${META_INSTRUCTION_HINT}\n\nIMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${uiLanguage}.\n\nCurrent Section:\n${JSON.stringify([sectionToRegenerate], null, 2)}\n\nProvide a new creative version of this section that fits seamlessly with the surrounding sections.\nReturn the updated section in the exact same JSON structure (as an array with one section).`;
+        const prompt =
+`Rewrite the following section of a song titled "${title}" about "${topic}".
+Mood: ${mood}
+Target Syllables per line: ${targetSyllables}
+Section Name: ${sectionToRegenerate.name}
+Rhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}
+${lineCountPrompt}
+Song structure: ${songStructure}
+${prevContext}${nextContext}${directivesPrompt}
+
+${RHYME_ENFORCEMENT_RULES}
+
+${META_INSTRUCTION_HINT}
+
+IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${uiLanguage}.
+
+Current Section:
+${JSON.stringify([sectionToRegenerate], null, 2)}
+
+Provide a new creative version of this section that fits seamlessly with the surrounding sections.
+Return the updated section in the exact same JSON structure (as an array with one section).`;
 
         const response = await withRetry(() =>
           getAi().models.generateContent({
@@ -273,9 +352,32 @@ export const useAiGeneration = ({
           const sectionToQuantize = song.find(s => s.id === sectionId);
           if (!sectionToQuantize) return;
           const syllables = sectionToQuantize.targetSyllables ?? targetSyllables;
-          prompt = `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables. Maintain the original meaning, rhyme scheme, and section structure.\nWrite ALL lyrics in ${lang}.\nPreserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.\n\nCurrent Section:\n${JSON.stringify([sectionToQuantize], null, 2)}\n\nReturn the updated section in the exact same JSON structure (as an array with one section).`;
+          prompt =
+`Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables.
+Maintain the original meaning, rhyme scheme, and section structure.
+Write ALL lyrics in ${lang}.
+Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
+
+${RHYME_ENFORCEMENT_RULES}
+
+Current Section:
+${JSON.stringify([sectionToQuantize], null, 2)}
+
+Return the updated section in the exact same JSON structure (as an array with one section).`;
         } else {
-          prompt = `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its section's targetSyllables (or ${targetSyllables} if not specified). Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.\nWrite ALL lyrics in ${lang}.\nPreserve any meta-instruction lines (e.g. [Guitar solo]) verbatim without counting them toward syllable targets.\n\nCurrent Song:\n${JSON.stringify(song, null, 2)}\n\nReturn the updated song in the exact same JSON structure.`;
+          prompt =
+`Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its
+section's targetSyllables (or ${targetSyllables} if not specified).
+Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
+Write ALL lyrics in ${lang}.
+Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
+
+${RHYME_ENFORCEMENT_RULES}
+
+Current Song:
+${JSON.stringify(song, null, 2)}
+
+Return the updated song in the exact same JSON structure.`;
         }
 
         const response = await withRetry(() =>
