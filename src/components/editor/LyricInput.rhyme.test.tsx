@@ -1,18 +1,10 @@
 /**
- * Regression tests for splitRhymingSuffix (LyricInput) and vocalicRhymeKey (songUtils).
- * Ensures certitudes/servitude case is not regressed — v3.7.2
+ * Regression tests for shared lyric rime detection and suffix highlighting.
  */
 import { describe, it, expect } from 'vitest';
-import { detectRhymeSchemeLocally } from '../../utils/songUtils';
+import { detectRhymeSchemeLocally, splitRhymingSuffix } from '../../utils/songUtils';
 
-// --- Unit-level tests for splitRhymingSuffix via DOM output ---
-// splitRhymingSuffix is not exported, so we test its effect through the
-// rendered rhyme suffix: the highlighted portion must end the line correctly.
-
-// We test vocalicRhymeKey indirectly through detectRhymeSchemeLocally
-// which depends on it to assign scheme letters.
-
-describe('vocalicRhymeKey — second-to-last vowel group (via detectRhymeSchemeLocally)', () => {
+describe('detectRhymeSchemeLocally', () => {
   it('certitudes and servitude share the same rhyme key → same scheme letter', () => {
     const result = detectRhymeSchemeLocally([
       'Tu veux des preuves, tu veux des certitudes',
@@ -56,5 +48,29 @@ describe('vocalicRhymeKey — second-to-last vowel group (via detectRhymeSchemeL
     ];
     const result = detectRhymeSchemeLocally(lines);
     expect(result).toBe('AABBCC');
+  });
+
+  it('groups possessifs and adjectif together while keeping other lines separate', () => {
+    const result = detectRhymeSchemeLocally([
+      'A tous les macho, à tous les possessifs',
+      'A toutes les go jalouses, voici mon adjectif',
+      'Tu prends son cœur… pour une acquisition',
+      'Si ton amour est comme une transaction',
+    ]);
+    expect(result).toBe('AABB');
+  });
+});
+
+describe('splitRhymingSuffix', () => {
+  it('extracts the shared transaction/acquisition ending instead of over-highlighting the word', () => {
+    expect(
+      splitRhymingSuffix(
+        'Tu prends son cœur… pour une acquisition.',
+        ['Si ton amour est comme une transaction.'],
+      ),
+    ).toEqual({
+      before: 'Tu prends son cœur… pour une acquisi',
+      rhyme: 'tion.',
+    });
   });
 });

@@ -100,82 +100,173 @@ export const getRhymeTextColor = (rhyme: string | null | undefined): string | nu
 const normalizeWord = (s: string): string =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 
-/**
- * Universal phonetic rhyme key — v3.9.0
- *
- * Extracts the rhyming nucleus of the last word of a line.
- *
- * Algorithm:
- *   1. Extract last word, normalize to ASCII.
- *   2. Build list of all vowel-group spans (left-to-right).
- *   3. Slice from the last vowel group's start position.
- *   4. Strip trailing consonants to normalise plurals and silent endings
- *      (e.g. "certitudes" → "e", "ant" → "a", "ego" → "o").
- *
- * Examples:
- *   FR: certitudes → last vowel-group [e] at 8 → raw "es" → strip → "e"
- *       servitude  → last vowel-group [e] at 8 → raw "e"  → strip → "e"
- *       maintenant → last vowel-group [a] at 7 → raw "ant" → strip → "a"
- *       enfant     → last vowel-group [a] at 3 → raw "ant" → strip → "a"
- *       zéro       → last vowel-group [o] at 3 → raw "o"  → strip → "o"
- *       ego        → last vowel-group [o] at 2 → raw "o"  → strip → "o"
- */
-const vocalicRhymeKey = (line: string): string => {
-  const stripped = line.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
-  const lastWord = stripped.match(/[\p{L}\p{N}]+$/u)?.[0] ?? '';
-  const norm = normalizeWord(lastWord);
-  if (norm.length < 2) return norm;
+type WordMatch = {
+  lastWord: string;
+  normalizedWord: string;
+  wordStart: number;
+};
 
-  const VOWELS = 'aeiouy';
-  const isVowel = (ch: string) => VOWELS.includes(ch);
+type VowelSpan = { start: number; end: number };
 
-  type Span = { start: number; end: number };
-  const vowelGroups: Span[] = [];
+type RhymeCandidate = {
+  normalizedSuffix: string;
+};
+
+const VOWELS = 'aeiouy';
+
+const isVowel = (ch: string) => VOWELS.includes(ch);
+
+const extractLastWord = (text: string): WordMatch | null => {
+  const trimmedText = text.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
+  if (!trimmedText) return null;
+
+  const lastWordMatch = /[\p{L}\p{N}]+$/u.exec(trimmedText);
+  if (!lastWordMatch) return null;
+
+  const lastWord = lastWordMatch[0];
+  const normalizedWord = normalizeWord(lastWord);
+  if (!normalizedWord) return null;
+
+  return {
+    lastWord,
+    normalizedWord,
+    wordStart: lastWordMatch.index,
+  };
+};
+
+const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
+  const vowelGroups: VowelSpan[] = [];
   let i = 0;
-  while (i < norm.length) {
-    if (isVowel(norm[i]!)) {
+  while (i < normalizedWord.length) {
+    if (isVowel(normalizedWord[i]!)) {
       const start = i;
-      while (i < norm.length && isVowel(norm[i]!)) i++;
+      while (i < normalizedWord.length && isVowel(normalizedWord[i]!)) i++;
       vowelGroups.push({ start, end: i });
     } else {
       i++;
     }
   }
+  return vowelGroups;
+};
 
-  if (vowelGroups.length === 0) return norm.slice(-2);
+const canonicalizeRhymeSuffix = (suffix: string): string => {
+  if (suffix.length <= 3) return suffix;
+  return suffix.replace(/[sx]$/g, '');
+};
 
-  const lastGroup = vowelGroups[vowelGroups.length - 1]!;
-  const raw = norm.slice(lastGroup.start);
-  return raw.replace(/[^aeiouy]+$/, '') || raw;
+const getRhymeCandidates = (text: string): RhymeCandidate[] => {
+  const word = extractLastWord(text);
+  if (!word) return [];
+
+  const vowelGroups = getVowelGroups(word.normalizedWord);
+  if (vowelGroups.length === 0) {
+    return [{
+      normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord),
+    }];
+  }
+
+  return vowelGroups.map(({ start }) => ({
+    normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord.slice(start)),
+  }));
+};
+
+const getLongestCommonSuffix = (a: string, b: string): string => {
+  let sharedLength = 0;
+  while (
+    sharedLength < a.length
+    && sharedLength < b.length
+    && a[a.length - 1 - sharedLength] === b[b.length - 1 - sharedLength]
+  ) {
+    sharedLength++;
+  }
+  return sharedLength > 0 ? a.slice(a.length - sharedLength) : '';
+};
+
+const isSharedRhymeStrongEnough = (suffix: string, exactMatch: boolean): boolean =>
+  suffix.length >= 2 || (exactMatch && suffix.length === 1 && /^[aeiouy]$/.test(suffix));
+
+const findBestSharedRhymeSuffix = (a: string, b: string): string | null => {
+  const aCandidates = getRhymeCandidates(a);
+  const bCandidates = getRhymeCandidates(b);
+  let bestMatch = '';
+
+  for (const aCandidate of aCandidates) {
+    for (const bCandidate of bCandidates) {
+      const exactMatch = aCandidate.normalizedSuffix === bCandidate.normalizedSuffix;
+      const sharedSuffix = exactMatch
+        ? aCandidate.normalizedSuffix
+        : getLongestCommonSuffix(aCandidate.normalizedSuffix, bCandidate.normalizedSuffix);
+      if (!isSharedRhymeStrongEnough(sharedSuffix, exactMatch)) continue;
+      if (sharedSuffix.length > bestMatch.length) bestMatch = sharedSuffix;
+    }
+  }
+
+  return bestMatch || null;
+};
+
+const splitLineByNormalizedSuffix = (text: string, normalizedSuffix: string): { before: string; rhyme: string } | null => {
+  const word = extractLastWord(text);
+  if (!word) return null;
+
+  const suffixStart = word.normalizedWord.lastIndexOf(normalizedSuffix);
+  if (suffixStart < 0) return null;
+
+  const absoluteStart = word.wordStart + suffixStart;
+  return {
+    before: text.slice(0, absoluteStart),
+    rhyme: text.slice(absoluteStart),
+  };
+};
+
+const getFallbackRhymingSuffix = (text: string): { before: string; rhyme: string } | null => {
+  const word = extractLastWord(text);
+  if (!word) return null;
+
+  const vowelGroups = getVowelGroups(word.normalizedWord);
+  if (vowelGroups.length === 0) {
+    return {
+      before: text.slice(0, word.wordStart),
+      rhyme: text.slice(word.wordStart),
+    };
+  }
+
+  return splitLineByNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start));
+};
+
+export const splitRhymingSuffix = (text: string, peerLines: string[] = []): { before: string; rhyme: string } | null => {
+  let bestSuffix: string | null = null;
+
+  for (const peerLine of peerLines) {
+    const sharedSuffix = findBestSharedRhymeSuffix(text, peerLine);
+    if (sharedSuffix && (!bestSuffix || sharedSuffix.length > bestSuffix.length)) {
+      bestSuffix = sharedSuffix;
+    }
+  }
+
+  if (bestSuffix) {
+    const split = splitLineByNormalizedSuffix(text, bestSuffix);
+    if (split) return split;
+  }
+
+  return getFallbackRhymingSuffix(text);
 };
 
 /**
- * Two lines rhyme if their vocalic keys match by one of two criteria:
- *
- * 1. EXACT (rich rhyme): keys are identical
- * 2. SUFFIX CONTAINMENT (sufficient rhyme): the shorter key is a suffix
- *    of the longer key, with min length 2 to avoid trivial matches.
+ * Two lines rhyme when they share a strong enough rime suffix derived from
+ * vowel-group candidates. This keeps scheme detection aligned with the same
+ * rime logic used by the UI highlight overlay. Exact one-vowel matches are
+ * allowed for short words such as "zéro" / "ego", while longer matches use a
+ * suffix overlap.
  */
-const rhymesKeys = (a: string, b: string): boolean => {
-  if (!a || !b) return false;
-  if (a === b) return true;
-  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
-  if (shorter.length >= 2 && longer.endsWith(shorter)) return true;
-  return false;
-};
+const rhymesLines = (a: string, b: string): boolean => findBestSharedRhymeSuffix(a, b) !== null;
 
 /**
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
- *
- * v3.7.2: vocalicRhymeKey now uses second-to-last vowel group (aligned
- * with splitRhymingSuffix in LyricInput.tsx).
  */
 export function detectRhymeSchemeLocally(lines: string[]): string | null {
   const lyricLines = lines.filter(l => l.trim().length > 0);
   const n = lyricLines.length;
   if (n < 2) return null;
-
-  const keys = lyricLines.map(vocalicRhymeKey);
 
   const letters: (string | null)[] = new Array(n).fill(null);
   let nextLetter = 0;
@@ -185,19 +276,19 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
     if (letters[i] !== null) continue;
     let matchedLetter: string | null = null;
     for (let j = 0; j < i; j++) {
-      if (rhymesKeys(keys[i]!, keys[j]!)) {
+      if (rhymesLines(lyricLines[i]!, lyricLines[j]!)) {
         matchedLetter = letters[j]!;
         break;
       }
     }
     if (matchedLetter) {
       letters[i] = matchedLetter;
-    } else {
-      letters[i] = LETTERS[nextLetter] ?? String.fromCharCode(65 + nextLetter);
-      nextLetter++;
-    }
+      } else {
+        letters[i] = LETTERS[nextLetter] ?? String.fromCharCode(65 + nextLetter);
+        nextLetter++;
+      }
     for (let k = i + 1; k < n; k++) {
-      if (letters[k] === null && rhymesKeys(keys[i]!, keys[k]!)) {
+      if (letters[k] === null && rhymesLines(lyricLines[i]!, lyricLines[k]!)) {
         letters[k] = letters[i]!;
       }
     }
