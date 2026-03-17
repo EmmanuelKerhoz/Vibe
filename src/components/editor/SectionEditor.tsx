@@ -2,6 +2,7 @@ import React from 'react';
 import { Loader2, Wand2, ChevronUp, ChevronDown, Plus, Languages } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
+import { isPureMetaLine } from '../../utils/metaUtils';
 import { LyricInput } from './LyricInput';
 import { MetaLine } from './MetaLine';
 import { InstructionEditor } from './InstructionEditor';
@@ -52,15 +53,27 @@ type MetaGroup = { kind: 'meta'; lines: Section['lines'] };
 type LyricItem = { kind: 'lyric'; line: Section['lines'][number]; index: number };
 type RenderItem = MetaGroup | LyricItem;
 
+/**
+ * Builds render items from section lines.
+ * Defensively recomputes isMeta from line content when the flag is absent
+ * (guards against regression where isMeta is not persisted on loaded lines).
+ */
 function buildRenderItems(lines: Section['lines']): RenderItem[] {
   const items: RenderItem[] = [];
   let lyricIdx = 0;
   let i = 0;
   while (i < lines.length) {
     const line = lines[i]!;
-    if (line.isMeta) {
+    // Recompute isMeta defensively if flag is absent/undefined
+    const isMeta = line.isMeta ?? isPureMetaLine(line.text);
+    if (isMeta) {
       const group: Section['lines'] = [line];
-      while (i + 1 < lines.length && lines[i + 1]!.isMeta) { i++; group.push(lines[i]!); }
+      while (i + 1 < lines.length) {
+        const next = lines[i + 1]!;
+        const nextIsMeta = next.isMeta ?? isPureMetaLine(next.text);
+        if (!nextIsMeta) break;
+        i++; group.push(lines[i]!);
+      }
       items.push({ kind: 'meta', lines: group });
     } else {
       items.push({ kind: 'lyric', line, index: lyricIdx++ });
@@ -133,10 +146,10 @@ export const SectionEditor = React.memo(function SectionEditor({
       className={`lcars-band w-full ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
       style={{ overflow: 'visible' }}
     >
-      {/* Fix BL corner: '24px 0 24px 24px' = top-left, top-right, bottom-right, bottom-left */}
+      {/* LCARS stripe — asymmetric design: TL rounded, TR/BR/BL square */}
       <div
         className={`lcars-band-stripe ${getSectionDotColor(sectionName)}`}
-        style={{ borderRadius: '24px 0 24px 24px', flexShrink: 0 }}
+        style={{ borderRadius: '24px 0 0 0', flexShrink: 0 }}
       />
 
       <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>

@@ -33,21 +33,26 @@ export interface LyricInputProps {
 /**
  * Extracts the rhyming suffix of a line's last word.
  *
- * Highlights from the LAST VOWEL NUCLEUS onward — no onset backtracking.
- * This gives the phonetically correct rhyme highlight:
- *   mentir  → "ir"
- *   partir  → "ir"
- *   chanter → "er"
- *   amour   → "our"  (last vowel=o, slice from o)
- *   transaction → "ion" (last vowel=o, but 'io' cluster → slice from i)
- *   vie     → "ie"
- *   nuit    → "uit"
+ * Highlights from the LAST VOWEL NUCLEUS onward, including adjacent vowel
+ * cluster AND the preceding consonant, giving the phonetically correct suffix:
+ *   mentir      → "ir"
+ *   partir      → "ir"
+ *   chanter     → "er"
+ *   amour       → "our"
+ *   transaction → "tion"  (t + io cluster)
+ *   acquisition → "tion"
+ *   certitudes  → "tudes" (t + ude cluster)
+ *   servitude   → "tude"
+ *   vie         → "ie"
+ *   nuit        → "uit"
  *
  * Algorithm:
  *   1. Strip trailing punctuation, extract last word (accented chars included).
  *   2. Normalize to ASCII to find last vowel index.
- *   3. Slice original word from that index.
- *   4. Right-anchor onto full text to get split position.
+ *   3. Extend leftward through adjacent vowels (vowel cluster).
+ *   4. Extend one more step leftward to include the preceding consonant.
+ *   5. Slice original word from that index.
+ *   6. Right-anchor onto full text to get split position.
  */
 function splitRhymingSuffix(text: string): { before: string; rhyme: string } | null {
   if (!text.trim()) return null;
@@ -76,9 +81,16 @@ function splitRhymingSuffix(text: string): { before: string; rhyme: string } | n
   if (lastVowelIdx < 0) return null;
 
   // Extend leftward to include adjacent vowels (vowel cluster)
-  // e.g. "tion" → lastVowel='o' at idx 2, but 'io' is the cluster → go to idx 1
+  // e.g. "tion" → lastVowel='o' at idx 2, 'io' is the cluster → go to idx 1
   let clusterStart = lastVowelIdx;
   while (clusterStart > 0 && VOWELS.includes(normalized[clusterStart - 1]!)) {
+    clusterStart--;
+  }
+
+  // Extend one more step to include the preceding consonant
+  // e.g. "tion": cluster='io' at idx 1, preceding char 't' is consonant → idx 0
+  // e.g. "tudes": cluster='ude' at idx 1, preceding char 't' → idx 0
+  if (clusterStart > 0 && !VOWELS.includes(normalized[clusterStart - 1]!)) {
     clusterStart--;
   }
 
