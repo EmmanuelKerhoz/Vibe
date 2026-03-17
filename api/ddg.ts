@@ -4,6 +4,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * Serverless proxy for DuckDuckGo Instant Answer API.
  * Avoids CORS issues in production (Vercel). No API key required.
  * GET /api/ddg?q=<query>&format=json&no_html=1&skip_disambig=1
+ *
+ * M5 fix: added retry×1 with 300ms backoff on upstream 5xx to absorb
+ * transient DDG rate-limiting (502s observed when many sections fire at once).
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -24,14 +27,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     skip_disambig: '1',
   });
 
+  const fetchOnce = async (signal: AbortSignal) =>
+    fetch(`https://api.duckduckgo.com/?${params}`, {
+      headers: { 'User-Agent': 'Lyricist/1.0 similarity-check' },
+      signal,
+    });
+
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 6000);
+  const timer = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const upstream = await fetch(`https://api.duckduckgo.com/?${params}`, {
-      headers: { 'User-Agent': 'Lyricist/1.0 similarity-check' },
-      signal: controller.signal,
-    });
+    let upstream = await fetchOnce(controller.signal);
+
+    // Retry once on 5xx with a short backoff
+    if (!upstream.ok && upstream.status >= 500) {
+      await new Promise(r => setTimeout(r, 300));
+      upstream = await fetchOnce(controller.signal);
+    }
+
     clearTimeout(timer);
 
     if (!upstream.ok) {

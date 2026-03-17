@@ -133,9 +133,10 @@ export const SectionEditor = React.memo(function SectionEditor({
       className={`lcars-band w-full ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
       style={{ overflow: 'visible' }}
     >
+      {/* Fix BL corner: '24px 0 24px 24px' = top-left, top-right, bottom-right, bottom-left */}
       <div
         className={`lcars-band-stripe ${getSectionDotColor(sectionName)}`}
-        style={{ borderRadius: '24px 0 0 24px', flexShrink: 0 }}
+        style={{ borderRadius: '24px 0 24px 24px', flexShrink: 0 }}
       />
 
       <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>

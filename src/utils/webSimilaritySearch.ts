@@ -2,6 +2,9 @@
  * Web Similarity Search Engine
  * Hybrid search tree using DuckDuckGo Instant Answer API + Wikipedia Search API
  * No API key required. CORS handled via Vite proxy in dev (see vite.config.ts).
+ *
+ * M5 fix: sectionQueries now run sequentially with 200ms gap between each
+ * to avoid bursting DDG and triggering rate-limit 502s.
  */
 
 import type { Section } from '../types';
@@ -65,7 +68,6 @@ export const extractSegments = (sections: Section[]): string[] => {
 };
 
 // M3 fix: compose caller abortSignal with a per-request timeout signal.
-// AbortSignal.any() is available in all modern browsers and Node 20+.
 const makeSearchSignal = (outerSignal?: AbortSignal, timeoutMs = 5000): AbortSignal => {
   const timeoutSignal = AbortSignal.timeout(timeoutMs);
   if (!outerSignal) return timeoutSignal;
@@ -134,6 +136,21 @@ const deduplicateNodes = (nodes: SearchTreeNode[]): SearchTreeNode[] => {
   });
 };
 
+/** Sequential execution with a delay between iterations to avoid DDG rate-limiting. */
+const sequentialWithDelay = async (
+  tasks: Array<() => Promise<void>>,
+  delayMs: number,
+  abortSignal?: AbortSignal,
+): Promise<void> => {
+  for (const task of tasks) {
+    if (abortSignal?.aborted) return;
+    await task();
+    if (delayMs > 0 && tasks.indexOf(task) < tasks.length - 1) {
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+};
+
 /**
  * Run the search tree.
  * Returns up to 3 candidates with score > 5%, sorted by score desc.
@@ -156,6 +173,7 @@ export const runSearchTree = async (
     allNodes.push(...nodes);
   };
 
+  // Level 0: title + fullText + last hook — parallel (low volume, 3 pairs)
   const level0Queries = [title, fullText, segments[segments.length - 1]]
     .filter((q): q is string => typeof q === 'string' && q.trim().length > 0)
     .slice(0, 3);
@@ -165,9 +183,14 @@ export const runSearchTree = async (
 
   if (abortSignal?.aborted) return [];
 
+  // Level 1: section segments — sequential with 200ms gap to avoid DDG burst
   const sectionQueries = segments.slice(1, sections.length + 1);
-  await Promise.allSettled(
-    sectionQueries.flatMap(q => [safeSearch('ddg', q), safeSearch('wikipedia', q)]),
+  await sequentialWithDelay(
+    sectionQueries.map(q => async () => {
+      await Promise.allSettled([safeSearch('ddg', q), safeSearch('wikipedia', q)]);
+    }),
+    200,
+    abortSignal,
   );
 
   if (abortSignal?.aborted) return [];

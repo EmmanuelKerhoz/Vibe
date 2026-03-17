@@ -33,23 +33,21 @@ export interface LyricInputProps {
 /**
  * Extracts the rhyming suffix of a line's last word.
  *
- * The rhyme starts at the **onset of the final syllable** — i.e. the consonant
- * cluster immediately preceding the last vowel group — not at the bare vowel.
- *
- * Examples (French):
- *   mentir  → "tir"   (not "ir")
- *   partir  → "tir"   (not "ir")
- *   chanter → "ter"   (not "er")
- *   amour   → "our"   (not "ur")
- *   vie     → "vie"   (vowel at pos 0, no leading consonant → full word)
- *   nuit    → "nuit"
+ * Highlights from the LAST VOWEL NUCLEUS onward — no onset backtracking.
+ * This gives the phonetically correct rhyme highlight:
+ *   mentir  → "ir"
+ *   partir  → "ir"
+ *   chanter → "er"
+ *   amour   → "our"  (last vowel=o, slice from o)
+ *   transaction → "ion" (last vowel=o, but 'io' cluster → slice from i)
+ *   vie     → "ie"
+ *   nuit    → "uit"
  *
  * Algorithm:
- *   1. Strip trailing punctuation, extract last word.
- *   2. Find last vowel position (lastVowelIdx).
- *   3. Walk backwards from lastVowelIdx to find the start of the preceding
- *      consonant cluster (onsetStart). The rhyme = word.slice(onsetStart).
- *   4. Right-anchor that suffix back onto the full text to get split indices.
+ *   1. Strip trailing punctuation, extract last word (accented chars included).
+ *   2. Normalize to ASCII to find last vowel index.
+ *   3. Slice original word from that index.
+ *   4. Right-anchor onto full text to get split position.
  */
 function splitRhymingSuffix(text: string): { before: string; rhyme: string } | null {
   if (!text.trim()) return null;
@@ -61,35 +59,44 @@ function splitRhymingSuffix(text: string): { before: string; rhyme: string } | n
   if (!lastWordMatch) return null;
   const lastWord = lastWordMatch[0];
 
-  const vowelRe = /[aeiouyàâäéèêëîïôùûüœæ]/gi;
+  // Normalize to find vowel positions (strip accents)
+  const normalized = lastWord
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  const VOWELS = 'aeiouy';
   let lastVowelIdx = -1;
-  let m: RegExpExecArray | null;
-  while ((m = vowelRe.exec(lastWord)) !== null) {
-    lastVowelIdx = m.index;
+  for (let i = normalized.length - 1; i >= 0; i--) {
+    if (VOWELS.includes(normalized[i]!)) {
+      lastVowelIdx = i;
+      break;
+    }
   }
   if (lastVowelIdx < 0) return null;
 
-  // Walk backwards from lastVowelIdx to find onset of final syllable.
-  // We include any consonants immediately before the vowel (the onset cluster).
-  // Stop when we hit another vowel or the start of the word.
-  const consonantRe = /[^aeiouyàâäéèêëîïôùûüœæ]/i;
-  let onsetStart = lastVowelIdx;
-  while (onsetStart > 0 && consonantRe.test(lastWord[onsetStart - 1]!)) {
-    onsetStart--;
-    // Don't consume more than 3 consonants (avoids grabbing too much in
-    // complex clusters like "str-", "spr-" — keep it phonetically reasonable)
-    if (lastVowelIdx - onsetStart >= 3) break;
+  // Extend leftward to include adjacent vowels (vowel cluster)
+  // e.g. "tion" → lastVowel='o' at idx 2, but 'io' is the cluster → go to idx 1
+  let clusterStart = lastVowelIdx;
+  while (clusterStart > 0 && VOWELS.includes(normalized[clusterStart - 1]!)) {
+    clusterStart--;
   }
 
-  const rhymeSuffix = lastWord.slice(onsetStart);
+  // Slice the original word (with accents) from clusterStart
+  const rhymeSuffix = lastWord.slice(clusterStart);
 
-  // Find rightmost occurrence of that suffix in original text (preserve case)
-  const suffixIdx = text.toLowerCase().lastIndexOf(rhymeSuffix.toLowerCase());
-  if (suffixIdx < 0) return null;
+  // Right-anchor back onto full original text
+  const suffixIdx = text.toLowerCase().lastIndexOf(
+    rhymeSuffix.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
+  );
+  // Fallback: search normalized version didn't match, try direct
+  const directIdx = text.lastIndexOf(rhymeSuffix);
+  const splitAt = directIdx >= 0 ? directIdx : suffixIdx;
+  if (splitAt < 0) return null;
 
   return {
-    before: text.slice(0, suffixIdx),
-    rhyme: text.slice(suffixIdx),
+    before: text.slice(0, splitAt),
+    rhyme: text.slice(splitAt),
   };
 }
 
