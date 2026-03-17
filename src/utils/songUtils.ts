@@ -116,6 +116,11 @@ const VOWELS = 'aeiouy';
 
 const isVowel = (ch: string) => VOWELS.includes(ch);
 
+/**
+ * Extract the final word-like token from a lyric line, normalize it for
+ * comparisons, and keep the original start offset so UI highlighting can be
+ * mapped back onto the untouched line text.
+ */
 const extractLastWord = (text: string): WordMatch | null => {
   const trimmedText = text.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
   if (!trimmedText) return null;
@@ -134,6 +139,10 @@ const extractLastWord = (text: string): WordMatch | null => {
   };
 };
 
+/**
+ * Identify contiguous vowel groups inside a normalized word. These spans act
+ * as the candidate starting points for rime comparisons and fallback splits.
+ */
 const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
   const vowelGroups: VowelSpan[] = [];
   let i = 0;
@@ -149,9 +158,14 @@ const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
   return vowelGroups;
 };
 
+/**
+ * Keep short endings intact, but normalise common trailing plural markers on
+ * longer endings so pairs like "certitudes"/"servitude" and
+ * "possessifs"/"adjectif" can still converge on the same rime family.
+ */
 const canonicalizeRhymeSuffix = (suffix: string): string => {
   if (suffix.length <= 3) return suffix;
-  return suffix.replace(/[sx]$/g, '');
+  return suffix.replace(/[sx]$/, '');
 };
 
 const getRhymeCandidates = (text: string): RhymeCandidate[] => {
@@ -170,6 +184,10 @@ const getRhymeCandidates = (text: string): RhymeCandidate[] => {
   }));
 };
 
+/**
+ * Compare two normalized suffixes from right to left and return the longest
+ * suffix they share verbatim.
+ */
 const getLongestCommonSuffix = (a: string, b: string): string => {
   let sharedLength = 0;
   while (
@@ -182,9 +200,18 @@ const getLongestCommonSuffix = (a: string, b: string): string => {
   return sharedLength > 0 ? a.slice(a.length - sharedLength) : '';
 };
 
+/**
+ * Require at least 2 shared characters for general rhyme matching, but allow
+ * exact one-vowel matches for short endings such as "zéro"/"ego" so we do not
+ * discard valid monosyllabic vowel rhymes.
+ */
 const isSharedRhymeStrongEnough = (suffix: string, exactMatch: boolean): boolean =>
   suffix.length >= 2 || (exactMatch && suffix.length === 1 && /^[aeiouy]$/.test(suffix));
 
+/**
+ * Compare every vowel-group-based candidate suffix from two lines and keep the
+ * longest shared rime that is strong enough to count as an actual rhyme.
+ */
 const findBestSharedRhymeSuffix = (a: string, b: string): string | null => {
   const aCandidates = getRhymeCandidates(a);
   const bCandidates = getRhymeCandidates(b);
@@ -204,7 +231,12 @@ const findBestSharedRhymeSuffix = (a: string, b: string): string | null => {
   return bestMatch || null;
 };
 
-const splitLineByNormalizedSuffix = (text: string, normalizedSuffix: string): { before: string; rhyme: string } | null => {
+/**
+ * Split a line at the start of a normalized suffix found inside its last word,
+ * preserving the original spelling and trailing punctuation in the rhyming
+ * fragment returned to the UI overlay.
+ */
+const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string): { before: string; rhyme: string } | null => {
   const word = extractLastWord(text);
   if (!word) return null;
 
@@ -218,6 +250,10 @@ const splitLineByNormalizedSuffix = (text: string, normalizedSuffix: string): { 
   };
 };
 
+/**
+ * When no matching peer line is available, fall back to highlighting from the
+ * last vowel group of the word so the UI still marks a plausible rhyming tail.
+ */
 const getFallbackRhymingSuffix = (text: string): { before: string; rhyme: string } | null => {
   const word = extractLastWord(text);
   if (!word) return null;
@@ -230,7 +266,7 @@ const getFallbackRhymingSuffix = (text: string): { before: string; rhyme: string
     };
   }
 
-  return splitLineByNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start));
+  return splitLineAtNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start));
 };
 
 export const splitRhymingSuffix = (text: string, peerLines: string[] = []): { before: string; rhyme: string } | null => {
@@ -244,7 +280,7 @@ export const splitRhymingSuffix = (text: string, peerLines: string[] = []): { be
   }
 
   if (bestSuffix) {
-    const split = splitLineByNormalizedSuffix(text, bestSuffix);
+    const split = splitLineAtNormalizedSuffix(text, bestSuffix);
     if (split) return split;
   }
 
