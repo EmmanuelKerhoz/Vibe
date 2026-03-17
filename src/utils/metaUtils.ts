@@ -34,14 +34,51 @@ export const isSectionHeader = (inner: string): boolean =>
   SECTION_HEADER_PATTERNS.some(re => re.test(inner.trim()));
 
 /**
- * Returns true if a raw text line is a pure bracketed meta-instruction
- * AND that something is NOT a known section header.
- * Rejects empty brackets [] or whitespace-only brackets [  ].
+ * Returns true if a raw text line is a pure bracketed meta-instruction line.
+ *
+ * Handles both single-bracket lines and multi-bracket lines:
+ *   [Rhythmic Upbeat | Alto harmonica riff]     → true  (single, non-header)
+ *   [Intro][Deep dry kicks]                     → true  (prefix header skipped, real meta found)
+ *   [Pre-Chorus][Soft Women choir answers]      → true
+ *   [Chorus][Alto harmonica answers]            → true
+ *   Si ton amour est comme une transaction.     → false (plain lyric)
+ *   [Verse 1]                                   → false (pure section header)
+ *
+ * Algorithm:
+ *   1. The trimmed line must consist ONLY of bracket tokens (no text outside brackets).
+ *   2. At least one bracket token must be a non-section-header.
+ *   Section-header tokens ([Intro], [Chorus]…) are silently skipped — they do
+ *   not invalidate the line; they are just not rendered as meta badges.
  */
 export const isPureMetaLine = (line: string): boolean => {
-  const m = line.trim().match(/^\[(.+)\]$/);
-  if (!m || !m[1] || !m[1].trim()) return false;
-  return !isSectionHeader(m[1]);
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+
+  // Must contain at least one opening bracket
+  if (!trimmed.includes('[')) return false;
+
+  // Collect all bracket tokens and verify nothing exists outside them
+  const tokens: string[] = [];
+  const regex = /\[([^\]]+)\]/g;
+  let last = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(trimmed)) !== null) {
+    // Any text between brackets means this is not a pure meta line
+    if (match.index > last) {
+      const between = trimmed.slice(last, match.index);
+      if (between.trim()) return false;
+    }
+    tokens.push(match[1]!.trim());
+    last = match.index + match[0].length;
+  }
+  // Any trailing text after the last bracket
+  if (last < trimmed.length && trimmed.slice(last).trim()) return false;
+
+  // Need at least one non-empty token
+  if (tokens.length === 0) return false;
+
+  // At least one token must be a non-section-header
+  return tokens.some(t => t.length > 0 && !isSectionHeader(t));
 };
 
 /**
@@ -58,6 +95,9 @@ export const isEmptyBracketLine = (line: string): boolean => {
  * Tokenizes a meta line into display parts.
  * For meta tokens, returns `inner` (WITHOUT surrounding brackets) so MetaLine
  * can render them without duplication with its own bracket badge.
+ *
+ * Section-header tokens ([Intro], [Chorus]…) embedded in meta lines are
+ * skipped — not rendered as badges, not rendered as plain text.
  *
  * Fallback: if the text contains NO brackets at all (AI omitted them),
  * the entire text is treated as a single isMeta token so MetaLine always
@@ -82,12 +122,13 @@ export const tokenizeMetaInline = (
   while ((match = regex.exec(text)) !== null) {
     const inner = match[1] ?? '';
     if (match.index > last) {
-      parts.push({ text: text.slice(last, match.index), isMeta: false });
+      const between = text.slice(last, match.index);
+      if (between.trim()) parts.push({ text: between, isMeta: false });
     }
     const innerTrimmed = inner.trim();
-    if (innerTrimmed) {
-      // Return inner text WITHOUT brackets — MetaLine renders its own [ ] badge
-      parts.push({ text: innerTrimmed, isMeta: !isSectionHeader(inner) });
+    if (innerTrimmed && !isSectionHeader(innerTrimmed)) {
+      // Section-header tokens are silently skipped (not rendered)
+      parts.push({ text: innerTrimmed, isMeta: true });
     }
     last = match.index + match[0].length;
   }
