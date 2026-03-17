@@ -1,14 +1,32 @@
 import { useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { Section } from '../../types';
-import { countSyllables } from '../../utils/songUtils';
+import { countSyllables, detectRhymeSchemeLocally } from '../../utils/songUtils';
 import { generateId } from '../../utils/idUtils';
+import { isPureMetaLine } from '../../utils/metaUtils';
 
 const computeSyllables = (text: string) =>
   text
     .split(/\s+/)
     .filter(Boolean)
     .reduce((acc, word) => acc + countSyllables(word), 0);
+
+/**
+ * Recomputes the rhyme scheme for a section based on its current lyric lines.
+ * Skips sections manually set to FREE.
+ * Returns the existing scheme unchanged if detection yields null or no change.
+ */
+const redetectScheme = (section: Section): string | undefined => {
+  if ((section.rhymeScheme ?? '').toUpperCase() === 'FREE') return section.rhymeScheme;
+  const lyricTexts = section.lines
+    .filter(l => !(l.isMeta ?? isPureMetaLine(l.text)) && l.text.trim().length > 0)
+    .map(l => l.text);
+  if (lyricTexts.length < 2) return section.rhymeScheme;
+  const detected = detectRhymeSchemeLocally(lyricTexts);
+  if (!detected) return section.rhymeScheme;
+  if (detected === section.rhymeScheme) return section.rhymeScheme;
+  return detected;
+};
 
 type UseLineEditorParams = {
   song: Section[];
@@ -44,18 +62,22 @@ export const useLineEditor = ({
       updateSong(currentSong =>
         currentSong.map(section => {
           if (section.id !== sectionId) return section;
-          return {
-            ...section,
-            lines: section.lines.map(line => {
-              if (line.id !== lineId) return line;
-              return {
-                ...line,
-                text: newText,
-                syllables: computeSyllables(newText),
-                isManual: true,
-              };
-            }),
-          };
+          // 1. Update the line text + syllables
+          const updatedLines = section.lines.map(line => {
+            if (line.id !== lineId) return line;
+            return {
+              ...line,
+              text: newText,
+              syllables: computeSyllables(newText),
+              isManual: true,
+            };
+          });
+          const updatedSection: Section = { ...section, lines: updatedLines };
+          // 2. Re-detect rhyme scheme in the same atomic pass
+          const newScheme = redetectScheme(updatedSection);
+          return newScheme !== section.rhymeScheme
+            ? { ...updatedSection, rhymeScheme: newScheme }
+            : updatedSection;
         }),
       );
     },
@@ -89,7 +111,9 @@ export const useLineEditor = ({
               isManual: true,
             };
             newLines.splice(lineIndex + 1, 1);
-            return { ...s, lines: newLines };
+            const updatedSection: Section = { ...s, lines: newLines };
+            const newScheme = redetectScheme(updatedSection);
+            return newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
           }),
         );
         setTimeout(() => {
@@ -120,7 +144,9 @@ export const useLineEditor = ({
               isManual: true,
             };
             newLines.splice(lineIndex, 1);
-            return { ...s, lines: newLines };
+            const updatedSection: Section = { ...s, lines: newLines };
+            const newScheme = redetectScheme(updatedSection);
+            return newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
           }),
         );
         setSelectedLineId(prevLineId);
@@ -160,7 +186,9 @@ export const useLineEditor = ({
               concept: 'New line',
               isManual: true,
             });
-            return { ...s, lines: newLines };
+            const updatedSection: Section = { ...s, lines: newLines };
+            const newScheme = redetectScheme(updatedSection);
+            return newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
           }),
         );
         setSelectedLineId(newLineId);
