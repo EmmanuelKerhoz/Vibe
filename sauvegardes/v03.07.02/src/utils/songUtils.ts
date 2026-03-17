@@ -95,24 +95,27 @@ const normalizeWord = (s: string): string =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 
 /**
- * Universal phonetic rhyme key — v3.9.0
+ * Universal phonetic rhyme key — v3.7.2
  *
- * Extracts the rhyming nucleus of the last word of a line.
+ * Uses the same second-to-last vowel group strategy as splitRhymingSuffix
+ * in LyricInput.tsx, ensuring the schema letter (A, B, C…) is always
+ * computed from the same phonetic nucleus that gets highlighted.
  *
  * Algorithm:
  *   1. Extract last word, normalize to ASCII.
  *   2. Build list of all vowel-group spans (left-to-right).
- *   3. Slice from the last vowel group's start position.
- *   4. Strip trailing consonants to normalise plurals and silent endings
- *      (e.g. "certitudes" → "e", "ant" → "a", "ego" → "o").
+ *   3. If 1 group  → key = entire normalized word.
+ *   4. If 2+ groups → cutPoint = end of (n-2)th group → key = norm.slice(cutPoint).
  *
  * Examples:
- *   FR: certitudes → last vowel-group [e] at 8 → raw "es" → strip → "e"
- *       servitude  → last vowel-group [e] at 8 → raw "e"  → strip → "e"
- *       maintenant → last vowel-group [a] at 7 → raw "ant" → strip → "a"
- *       enfant     → last vowel-group [a] at 3 → raw "ant" → strip → "a"
- *       zéro       → last vowel-group [o] at 3 → raw "o"  → strip → "o"
- *       ego        → last vowel-group [o] at 2 → raw "o"  → strip → "o"
+ *   FR: certitudes → groups [e][i][u][e] → cut after u → key = "udes"
+ *       servitude  → groups [e][i][u][e] → cut after u → key = "ude"
+ *       mentir     → groups [e][i]       → cut after e → key = "ir"
+ *       amour      → groups [a][ou]      → cut after a → key = "our"
+ *       chanter    → groups [a][e]       → cut after a → key = "er"
+ *   EN: freedom    → groups [ee][o]      → cut after ee→ key = "dom" (norm: "eedo" → "dom")
+ *       together   → groups [o][e][e]    → cut after 2nd e → key = "er"
+ *   ES: corazón    → groups [o][a][o]    → cut after a → key = "on"
  */
 const vocalicRhymeKey = (line: string): string => {
   const stripped = line.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
@@ -138,9 +141,15 @@ const vocalicRhymeKey = (line: string): string => {
 
   if (vowelGroups.length === 0) return norm.slice(-2);
 
-  const lastGroup = vowelGroups[vowelGroups.length - 1]!;
-  const raw = norm.slice(lastGroup.start);
-  return raw.replace(/[^aeiouy]+$/, '') || raw;
+  let cutPoint: number;
+  if (vowelGroups.length === 1) {
+    cutPoint = 0;
+  } else {
+    const secondToLast = vowelGroups[vowelGroups.length - 2]!;
+    cutPoint = secondToLast.end;
+  }
+
+  return norm.slice(cutPoint);
 };
 
 /**
