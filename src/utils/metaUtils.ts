@@ -58,10 +58,23 @@ export const isEmptyBracketLine = (line: string): boolean => {
  * Tokenizes a meta line into display parts.
  * For meta tokens, returns `inner` (WITHOUT surrounding brackets) so MetaLine
  * can render them without duplication with its own bracket badge.
+ *
+ * Fallback: if the text contains NO brackets at all (AI omitted them),
+ * the entire text is treated as a single isMeta token so MetaLine always
+ * renders the [ ] visual wrapper and cyan styling.
  */
 export const tokenizeMetaInline = (
   text: string
 ): Array<{ text: string; isMeta: boolean }> => {
+  const trimmed = text.trim();
+
+  // Fast path: no brackets at all — treat entire text as meta token
+  if (!trimmed.includes('[')) {
+    const content = trimmed;
+    if (content) return [{ text: content, isMeta: true }];
+    return [];
+  }
+
   const parts: Array<{ text: string; isMeta: boolean }> = [];
   const regex = /\[([^\]]+)\]/g;
   let last = 0;
@@ -79,7 +92,8 @@ export const tokenizeMetaInline = (
     last = match.index + match[0].length;
   }
   if (last < text.length) {
-    parts.push({ text: text.slice(last), isMeta: false });
+    const tail = text.slice(last);
+    if (tail.trim()) parts.push({ text: tail, isMeta: false });
   }
   return parts;
 };

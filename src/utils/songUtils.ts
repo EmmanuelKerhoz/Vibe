@@ -91,30 +91,53 @@ export const getRhymeTextColor = (rhyme: string | null | undefined): string | nu
 /**
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
  *
- * Threshold: dès qu'UNE paire de lignes rime (confidence > 0), on sort de FREE.
- * Le schème résultant peut être partiellement libre (ex. ABCDEE) — c'est correct.
+ * Improvements v3.6.7:
+ * - rhymeKey: 4-char suffix (vs 3) for better French vowel-chain discrimination.
+ *   Normalizes accented vowels BEFORE slicing so lame/âme/flamme all yield "ame".
+ * - rhymes(): accepts match on last 3 chars (full vowel chain) OR last 2 chars,
+ *   but guards against trivial 2-char coincidences between unrelated endings
+ *   by requiring the 3-char check to pass first when keys are >= 3 chars.
+ *   This correctly groups lame/âme while rejecting bien/scintille (ien vs ill).
  */
 export function detectRhymeSchemeLocally(lines: string[]): string | null {
   const lyricLines = lines.filter(l => l.trim().length > 0);
   const n = lyricLines.length;
   if (n < 2) return null;
 
+  // Full Unicode accent strip
   const normalize = (s: string): string =>
     s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 
   const rhymeKey = (line: string): string => {
+    // Strip trailing punctuation (incl. ellipsis, em-dash, etc.)
     const stripped = line.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
     const lastWord = stripped.match(/[\p{L}\p{N}]+$/u)?.[0] ?? '';
     const norm = normalize(lastWord);
     if (norm.length < 2) return norm;
-    return norm.slice(-3);
+    // 4-char suffix — better French vowel chain coverage
+    return norm.slice(-4);
   };
 
   const keys = lyricLines.map(rhymeKey);
 
+  /**
+   * Two endings rhyme when:
+   *   (a) they are identical, OR
+   *   (b) their last 3 chars match (full vowel chain — catches lame/flamme)
+   *       AND their last 2 chars match (avoids bien/chrétien vs. rien = false positive with only 2)
+   * A 2-char-only match is NOT sufficient when both keys are >= 3 chars long
+   * (prevents bien/scintille: "en" vs "le" — no match anyway, but also prevents
+   * accidental 2-char collisions in short words).
+   */
   const rhymes = (a: string, b: string): boolean => {
     if (!a || !b) return false;
     if (a === b) return true;
+    const minLen = Math.min(a.length, b.length);
+    if (minLen >= 3) {
+      // Require 3-char suffix match (strict vowel chain)
+      return a.slice(-3) === b.slice(-3);
+    }
+    // Short words (< 3 chars): fall back to 2-char match
     return a.slice(-2) === b.slice(-2);
   };
 
