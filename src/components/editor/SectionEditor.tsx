@@ -7,6 +7,7 @@ import { MetaLine } from './MetaLine';
 import { InstructionEditor } from './InstructionEditor';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
+import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import { useEditorContext } from '../../contexts/EditorContext';
@@ -114,13 +115,7 @@ export const SectionEditor = React.memo(function SectionEditor({
     value: lang.aiName,
     label: (
       <span className="flex items-center gap-1.5 min-w-0 w-full">
-        <span
-          className="flex-shrink-0 text-base leading-none"
-          style={{ fontFamily: '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif' }}
-          aria-hidden="true"
-        >
-          {lang.sign}
-        </span>
+        <EmojiSign sign={lang.sign} />
         <span className="truncate text-[11px]">
           {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}
         </span>
@@ -220,18 +215,7 @@ export const SectionEditor = React.memo(function SectionEditor({
           </div>
         </div>
 
-        {/* ── Column headers
-          Layout (mirrors LyricInput exactly):
-            drag-handle: w-3.5 = 14px
-            gap-1.5 = 6px
-            text: flex-1
-            gap-1.5 = 6px
-            controls: 4×16 + 3×2 = 70px
-            gap-1.5 = 6px
-            COUNT: w-[2.25rem] = 36px  (wider for readability)
-            gap-1.5 = 6px
-            SCHEMA: w-5 = 20px
-        */}
+        {/* ── Column headers */}
         <div className="flex items-center gap-1.5 px-1 mb-0.5 select-none" aria-hidden="true">
           <span className="flex-shrink-0 w-3.5" />
           <span className="flex-1 min-w-0" />

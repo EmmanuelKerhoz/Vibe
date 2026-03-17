@@ -4,9 +4,9 @@ import { Section } from '../../types';
 import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
+import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES, getLanguageDisplay } from '../../i18n';
-import { emojiToTwemojiUrl } from '../../utils/emojiUtils';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 
@@ -37,36 +37,6 @@ interface InsightsBarProps {
   toggleMetronome?: () => void;
   adaptationProgress?: AdaptationProgress;
   adaptationResult?: AdaptationResult | null;
-}
-
-function EmojiSign({ sign }: { sign: string }) {
-  const [useFallback, setUseFallback] = React.useState(false);
-
-  if (useFallback) {
-    return (
-      <span
-        aria-hidden="true"
-        style={{
-          fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
-          lineHeight: 1,
-          display: 'inline-block',
-          fontSize: '1em',
-        }}
-      >
-        {sign}
-      </span>
-    );
-  }
-
-  return (
-    <img
-      src={emojiToTwemojiUrl(sign)}
-      alt={sign}
-      aria-hidden="true"
-      onError={() => setUseFallback(true)}
-      style={{ width: '1em', height: '1em', display: 'inline-block', verticalAlign: '-0.1em' }}
-    />
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -216,17 +186,11 @@ function AdaptationProgressBanner({
     </div>
   );
 
-  // When actively adapting (not done/failed), show as a centred modal overlay
   if (isOverlay && !isDone && !isFailed) {
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-        {/* Backdrop */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
-        {/* Particle shimmer layer */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden adaptation-particles" aria-hidden="true" />
-
-        {/* Modal card */}
         <div className="relative z-10 w-full max-w-md glass-panel border border-[var(--accent-color)]/20 rounded-2xl p-6 shadow-2xl adaptation-modal-glow">
           {banner}
         </div>
@@ -302,16 +266,14 @@ export function InsightsBar({
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 
-        {/* Row 1: Language tools — single line, no wrap */}
+        {/* Row 1: Language tools */}
         <div className="flex items-center gap-2 overflow-hidden min-w-0">
-          {/* Left: label + separator (desktop only) */}
           <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
             <BarChart2 className="w-3.5 h-3.5" />
             {t.insights.title}
           </h3>
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
 
-          {/* Language selector — takes remaining space, clips if needed */}
           <div className="flex-1 min-w-0 overflow-hidden">
             <LcarsSelect
               value={targetLanguage}
@@ -323,7 +285,6 @@ export function InsightsBar({
             />
           </div>
 
-          {/* ADAPTATION button */}
           <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText)}>
             <button
               onClick={() => adaptSongLanguage(targetLanguage)}
@@ -335,7 +296,6 @@ export function InsightsBar({
             </button>
           </Tooltip>
 
-          {/* Detect language button */}
           <Tooltip title={detectedDisplay ? `Detected: ${detectedDisplay.sign} ${detectedDisplay.label} — click to re-detect` : '🌐 Detect song language'}>
             <button
               onClick={() => void detectLanguage()}
@@ -351,7 +311,6 @@ export function InsightsBar({
             </button>
           </Tooltip>
 
-          {/* KPIs — mobile only */}
           <div className="flex lg:hidden items-center gap-3 shrink-0 ml-auto">
             <div className="flex flex-col items-end">
               <span className="micro-label text-zinc-500">{t.insights.sections}</span>
@@ -368,7 +327,6 @@ export function InsightsBar({
           </div>
         </div>
 
-        {/* Adaptation pipeline progress — modal overlay while active, inline when done/failed */}
         {showBanner && adaptationProgress && (
           <AdaptationProgressBanner
             progress={adaptationProgress}
@@ -380,7 +338,6 @@ export function InsightsBar({
 
         {/* Row 2: Section chips + action buttons */}
         <div className="flex items-center gap-2 w-full min-w-0">
-          {/* Section chips */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar min-w-0 flex-1" style={{ scrollbarWidth: 'none' }}>
             {song.map((section) => {
               const sectionWordCount = section.lines
@@ -406,7 +363,6 @@ export function InsightsBar({
             })}
           </div>
 
-          {/* Action buttons */}
           <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
             {toggleMetronome && (
               <Tooltip title={t.musical?.metronome ?? 'Metronome'}>
