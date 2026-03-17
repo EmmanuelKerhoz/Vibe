@@ -291,6 +291,17 @@ export interface Translations {
     language: {
       label: string;
     };
+    scale?: {
+      label: string;
+      small: string;
+      medium: string;
+      large: string;
+    };
+    editMode?: {
+      label: string;
+      section: string;
+      markdown: string;
+    };
     actions: {
       default: string;
       save: string;

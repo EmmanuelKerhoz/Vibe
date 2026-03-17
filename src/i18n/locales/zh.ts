@@ -274,6 +274,17 @@ const zh: Translations = {
     language: {
       label: 'UI 语言',
     },
+    scale: {
+      label: 'UI 缩放',
+      small: '小',
+      medium: '中',
+      large: '大',
+    },
+    editMode: {
+      label: '默认编辑器',
+      section: '节编辑器',
+      markdown: 'Markdown 编辑器',
+    },
     actions: {
       default: '默认',
       save: '保存',

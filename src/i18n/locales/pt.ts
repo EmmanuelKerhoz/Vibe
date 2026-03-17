@@ -274,6 +274,17 @@ const pt: Translations = {
     language: {
       label: 'Idioma UI',
     },
+    scale: {
+      label: 'Escala UI',
+      small: 'Pequeno',
+      medium: 'Médio',
+      large: 'Grande',
+    },
+    editMode: {
+      label: 'Editor padrão',
+      section: 'Editor de secções',
+      markdown: 'Editor Markdown',
+    },
     actions: {
       default: 'Padrão',
       save: 'Salvar',

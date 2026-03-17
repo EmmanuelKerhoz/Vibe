@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles, Download, Upload, Undo2, Redo2, Trash2, History,
-  PanelRight, Library, Menu, FilePlus, Settings, Info, WandSparkles, ClipboardPaste
+  PanelRight, Library, Menu, FilePlus, Settings, Info, WandSparkles, ClipboardPaste, Heart
 } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
@@ -177,6 +177,13 @@ export function TopRibbon({
                 <Info className="w-4 h-4 text-[var(--text-secondary)]" />
                 About
               </button>
+              <button
+                onClick={() => runMenuAction(() => window.open('https://github.com/sponsors/EmmanuelKerhoz', '_blank', 'noopener,noreferrer'))}
+                className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-pink-400 hover:bg-pink-500/10 transition-colors"
+              >
+                <Heart className="w-4 h-4" />
+                Sponsor
+              </button>
             </div>
           )}
         </div>
@@ -256,7 +263,7 @@ export function TopRibbon({
               backgroundColor: isStructureOpen ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)' : undefined,
             }}
           >
-            <PanelRight className="w-5 h-5" />
+            <PanelRight className="w-4 h-4" />
           </button>
         </Tooltip>
       </div>

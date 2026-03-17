@@ -274,6 +274,17 @@ const ar: Translations = {
     language: {
       label: 'لغة الواجهة',
     },
+    scale: {
+      label: 'حجم الواجهة',
+      small: 'صغير',
+      medium: 'متوسط',
+      large: 'كبير',
+    },
+    editMode: {
+      label: 'المحرر الافتراضي',
+      section: 'محرر الأقسام',
+      markdown: 'محرر Markdown',
+    },
     actions: {
       default: 'افتراضي',
       save: 'حفظ',

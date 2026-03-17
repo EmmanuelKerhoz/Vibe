@@ -70,8 +70,16 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       const el = document.getElementById(`section-${section.id}`);
       if (el) {
         const container = el.closest('.overflow-y-auto');
-        if (container) container.scrollTo({ top: (el as HTMLElement).offsetTop - 20, behavior: 'smooth' });
-        else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          container.scrollTo({
+            top: container.scrollTop + elRect.top - containerRect.top - 20,
+            behavior: 'smooth',
+          });
+        } else {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
     }
   }, [isMarkupMode, markupText, markupTextareaRef]);
