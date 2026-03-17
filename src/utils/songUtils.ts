@@ -98,20 +98,12 @@ const normalizeWord = (s: string): string =>
  * Universal phonetic rhyme key — v3.6.9
  *
  * Extracts the LAST vowel nucleus + trailing consonants from the last word
- * of a lyric line. This mirrors how human ears perceive rhyme across all
- * Latin-script languages:
- *   FR: ruban→an, dedans→an, lame→ame, amour→our, couteau→eau, scintille→ille
+ * of a lyric line. Language-agnostic for all Latin-script languages.
+ *
+ *   FR: ruban→an, dedans→an, lame→me, amour→our, couteau→eau, scintille→ille
  *   EN: night→ight, love→ove, falling→ing, moon→oon
  *   ES: corazón→on, amor→or, vida→ida
- *   IT: cuore→ore, amore→ore  ← correctly identified as rhyme
- *
- * Algorithm:
- * 1. Strip trailing punctuation, extract last word.
- * 2. Normalize (NFD accent strip, lowercase, alpha only).
- * 3. Find the index of the LAST vowel character.
- * 4. rhymeKey = norm.slice(lastVowelIndex)  — the vowel + all following consonants.
- * 5. Guard: if result is a single char (bare vowel), take last 2 chars instead
- *    to avoid over-grouping (e.g. words ending in isolated 'a' or 'e').
+ *   IT: cuore→re, amore→re  ← correctly identified as rhyme
  */
 const vocalicRhymeKey = (line: string): string => {
   const stripped = line.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
@@ -126,12 +118,11 @@ const vocalicRhymeKey = (line: string): string => {
   }
 
   if (lastVowelIdx === -1) {
-    // All consonants (rare): fall back to last 2 chars
     return norm.slice(-2);
   }
 
   const key = norm.slice(lastVowelIdx);
-  // Single bare vowel at end (e.g. "ma", "la" → key="a"): extend one char back
+  // Single bare vowel at end: extend one char back for context
   if (key.length === 1 && lastVowelIdx > 0) {
     return norm.slice(lastVowelIdx - 1);
   }
@@ -139,11 +130,38 @@ const vocalicRhymeKey = (line: string): string => {
 };
 
 /**
+ * Two lines rhyme if their vocalic keys match by one of two criteria:
+ *
+ * 1. EXACT (rich rhyme): keys are identical
+ *    lumière/frontière → "ere" === "ere" ✅
+ *    ruban/dedans      → "an"  === "an"  ✅
+ *
+ * 2. SUFFIX CONTAINMENT (sufficient rhyme): the shorter key is a suffix
+ *    of the longer key, with min length 2 to avoid trivial matches.
+ *    passion/raison → "ion" ends with "on" ✅
+ *    nuit/fuit      → "ui"  is suffix of "uit" ✅
+ *    -tion/-on, -ien/-en, -ille/-il patterns all handled.
+ *
+ * Unrelated endings are still rejected:
+ *    scintille/bien → "ille" vs "en" — neither is suffix of the other ✅
+ *    ruban/ego      → "an" vs "o"  — no match ✅
+ */
+const rhymesKeys = (a: string, b: string): boolean => {
+  if (!a || !b) return false;
+  // 1. Exact match (rich rhyme)
+  if (a === b) return true;
+  // 2. Suffix containment (sufficient rhyme) — min 2 chars
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  if (shorter.length >= 2 && longer.endsWith(shorter)) return true;
+  return false;
+};
+
+/**
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
  *
- * v3.6.9: replaced fixed-suffix rhymeKey with universal vocalicRhymeKey().
- * rhymes() is now a simple key equality check — the phonetic extraction
- * already encodes the rhyme sound, no further slicing needed.
+ * v3.6.10: rhymes() uses suffix-containment in addition to strict equality,
+ * covering both rich rhymes (identical vocalic key) and sufficient rhymes
+ * (shorter key is phonetic suffix of longer key, min 2 chars).
  */
 export function detectRhymeSchemeLocally(lines: string[]): string | null {
   const lyricLines = lines.filter(l => l.trim().length > 0);
@@ -151,14 +169,6 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
   if (n < 2) return null;
 
   const keys = lyricLines.map(vocalicRhymeKey);
-
-  const rhymes = (a: string, b: string): boolean => {
-    if (!a || !b) return false;
-    if (a === b) return true;
-    // Allow 1-char tolerance for very short keys (monosyllabic words)
-    if (a.length === 1 || b.length === 1) return a.slice(-2) === b.slice(-2);
-    return false;
-  };
 
   const letters: (string | null)[] = new Array(n).fill(null);
   let nextLetter = 0;
@@ -168,7 +178,7 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
     if (letters[i] !== null) continue;
     let matchedLetter: string | null = null;
     for (let j = 0; j < i; j++) {
-      if (rhymes(keys[i]!, keys[j]!)) {
+      if (rhymesKeys(keys[i]!, keys[j]!)) {
         matchedLetter = letters[j]!;
         break;
       }
@@ -180,7 +190,7 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
       nextLetter++;
     }
     for (let k = i + 1; k < n; k++) {
-      if (letters[k] === null && rhymes(keys[i]!, keys[k]!)) {
+      if (letters[k] === null && rhymesKeys(keys[i]!, keys[k]!)) {
         letters[k] = letters[i]!;
       }
     }
