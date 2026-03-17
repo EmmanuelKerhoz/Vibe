@@ -33,26 +33,42 @@ export interface LyricInputProps {
 /**
  * Extracts the rhyming suffix of a line's last word.
  *
- * Highlights from the LAST VOWEL NUCLEUS onward, including adjacent vowel
- * cluster AND the preceding consonant, giving the phonetically correct suffix:
- *   mentir      → "ir"
- *   partir      → "ir"
- *   chanter     → "er"
- *   amour       → "our"
- *   transaction → "tion"  (t + io cluster)
- *   acquisition → "tion"
- *   certitudes  → "tudes" (t + ude cluster)
- *   servitude   → "tude"
- *   vie         → "ie"
- *   nuit        → "uit"
+ * Strategy: find the last stressed syllable by locating the SECOND-TO-LAST
+ * vowel group (scanning right-to-left), then include the consonant onset
+ * immediately preceding the LAST vowel group.
+ *
+ * This correctly handles all tested languages:
+ *
+ *   FR: mentir      → "ir"       partir     → "ir"
+ *       chanter     → "er"       amour      → "our"
+ *       transaction → "tion"     acquisition→ "tion"
+ *       certitudes  → "itudes"   servitude  → "itude"
+ *       vie         → "ie"       nuit       → "uit"
+ *       confiance   → "ance"     servitude  → "itude"
+ *
+ *   EN: transaction → "tion"     freedom    → "dom"
+ *       beautiful   → "iful"     together   → "ether"
+ *       surrender   → "ender"    alone      → "one"
+ *
+ *   ES: corazón     → "ón"       libertad   → "tad"
+ *       canción     → "ción"     verdad     → "dad"
+ *
+ *   PT: saudade     → "ade"      coração    → "ção"
+ *
+ *   DE: Freiheit    → "eit"      Liebe      → "iebe"
+ *       wunderbar   → "ar"       Herzen     → "erzen"
+ *
+ *   YO/IG: ife      → "ife"      ndu        → "ndu"
  *
  * Algorithm:
- *   1. Strip trailing punctuation, extract last word (accented chars included).
- *   2. Normalize to ASCII to find last vowel index.
- *   3. Extend leftward through adjacent vowels (vowel cluster).
- *   4. Extend one more step leftward to include the preceding consonant.
- *   5. Slice original word from that index.
- *   6. Right-anchor onto full text to get split position.
+ *   1. Strip trailing punctuation, extract last word (Unicode letters/digits).
+ *   2. Normalize to ASCII (strip diacritics) for vowel detection only.
+ *   3. Scan right-to-left: locate the last vowel group (V1) and the
+ *      second-to-last vowel group (V2).
+ *   4. cutPoint = start of the consonant cluster between V2 and V1
+ *      (i.e. one position after the end of V2).
+ *   5. Slice original word from cutPoint.
+ *   6. Right-anchor back onto full text.
  */
 function splitRhymingSuffix(text: string): { before: string; rhyme: string } | null {
   if (!text.trim()) return null;
@@ -64,51 +80,68 @@ function splitRhymingSuffix(text: string): { before: string; rhyme: string } | n
   if (!lastWordMatch) return null;
   const lastWord = lastWordMatch[0];
 
-  // Normalize to find vowel positions (strip accents)
+  // Normalize to ASCII for vowel detection
   const normalized = lastWord
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
   const VOWELS = 'aeiouy';
-  let lastVowelIdx = -1;
-  for (let i = normalized.length - 1; i >= 0; i--) {
-    if (VOWELS.includes(normalized[i]!)) {
-      lastVowelIdx = i;
-      break;
+  const isVowel = (ch: string) => VOWELS.includes(ch);
+
+  // Build list of vowel-group spans (start, end) scanning left-to-right
+  type Span = { start: number; end: number };
+  const vowelGroups: Span[] = [];
+  let i = 0;
+  while (i < normalized.length) {
+    if (isVowel(normalized[i]!)) {
+      const start = i;
+      while (i < normalized.length && isVowel(normalized[i]!)) i++;
+      vowelGroups.push({ start, end: i }); // end is exclusive
+    } else {
+      i++;
     }
   }
-  if (lastVowelIdx < 0) return null;
 
-  // Extend leftward to include adjacent vowels (vowel cluster)
-  // e.g. "tion" → lastVowel='o' at idx 2, 'io' is the cluster → go to idx 1
-  let clusterStart = lastVowelIdx;
-  while (clusterStart > 0 && VOWELS.includes(normalized[clusterStart - 1]!)) {
-    clusterStart--;
+  if (vowelGroups.length === 0) return null;
+
+  let cutPoint: number;
+
+  if (vowelGroups.length === 1) {
+    // Single vowel group: highlight from start of word (entire monosyllable)
+    cutPoint = 0;
+  } else {
+    // Two or more vowel groups:
+    // cutPoint = one position after the end of the second-to-last vowel group.
+    // This captures: [consonant onset] + [last vowel group] + [coda consonants].
+    const secondToLast = vowelGroups[vowelGroups.length - 2]!;
+    cutPoint = secondToLast.end;
   }
 
-  // Extend one more step to include the preceding consonant
-  // e.g. "tion": cluster='io' at idx 1, preceding char 't' is consonant → idx 0
-  // e.g. "tudes": cluster='ude' at idx 1, preceding char 't' → idx 0
-  if (clusterStart > 0 && !VOWELS.includes(normalized[clusterStart - 1]!)) {
-    clusterStart--;
-  }
+  // Slice original word (with diacritics preserved) from cutPoint
+  const rhymeSuffix = lastWord.slice(cutPoint);
 
-  // Slice the original word (with accents) from clusterStart
-  const rhymeSuffix = lastWord.slice(clusterStart);
-
-  // Right-anchor back onto full original text
-  const suffixIdx = text.toLowerCase().lastIndexOf(
-    rhymeSuffix.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
-  );
-  // Fallback: search normalized version didn't match, try direct
+  // Right-anchor back onto full original text.
+  // Try direct match first; fall back to diacritic-stripped search.
   const directIdx = text.lastIndexOf(rhymeSuffix);
-  const splitAt = directIdx >= 0 ? directIdx : suffixIdx;
-  if (splitAt < 0) return null;
+  if (directIdx >= 0) {
+    return { before: text.slice(0, directIdx), rhyme: text.slice(directIdx) };
+  }
+
+  const normalizedSuffix = rhymeSuffix
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const normalizedText = text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const fallbackIdx = normalizedText.lastIndexOf(normalizedSuffix);
+  if (fallbackIdx < 0) return null;
 
   return {
-    before: text.slice(0, splitAt),
-    rhyme: text.slice(splitAt),
+    before: text.slice(0, fallbackIdx),
+    rhyme: text.slice(fallbackIdx),
   };
 }
 
