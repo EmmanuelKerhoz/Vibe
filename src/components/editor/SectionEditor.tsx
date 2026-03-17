@@ -256,6 +256,15 @@ export const SectionEditor = React.memo(function SectionEditor({
             const { line, index: lyricIndex } = item;
             const schemeLabel = getSchemeLetterForLine(section, lyricIndex, section.rhymeScheme || rhymeScheme);
             const rhymeColor = getRhymeColor(schemeLabel);
+            const rhymePeerTexts = schemeLabel
+              ? renderItems
+                .filter((candidate): candidate is LyricItem =>
+                  candidate.kind === 'lyric'
+                  && candidate.line.id !== line.id
+                  && getSchemeLetterForLine(section, candidate.index, section.rhymeScheme || rhymeScheme) === schemeLabel,
+                )
+                .map(candidate => candidate.line.text)
+              : [];
             const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo?.lineId === line.id;
             const isDragOverLine = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo?.lineId === line.id;
             return (
@@ -265,6 +274,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                 lineIndex={lyricIndex}
                 sectionId={section.id}
                 sectionLinesCount={section.lines.filter(l => !l.isMeta).length}
+                rhymePeerTexts={rhymePeerTexts}
                 selectedLineId={selectedLineId}
                 schemeLabel={schemeLabel}
                 rhymeColor={rhymeColor}
