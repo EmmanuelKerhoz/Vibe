@@ -114,6 +114,10 @@ export function AboutModal({ isOpen, onClose }: Props) {
 
             {/* Social Links */}
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <a href="https://github.com/sponsors/EmmanuelKerhoz" target="_blank" rel="noopener noreferrer" aria-label="Visit GitHub Sponsors page"
+                className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 hover:border-pink-500/40 text-pink-400 hover:text-pink-300 rounded-lg text-xs font-medium">
+                <Github className="w-4 h-4" /><span>GitHub Sponsors</span><ExternalLink className="w-3 h-3 opacity-50" />
+              </a>
               <a href="https://www.youtube.com/@voxnova42" target="_blank" rel="noopener noreferrer" aria-label="Visit YouTube channel"
                 className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium">
                 <Youtube className="w-4 h-4" /><span>YouTube</span><ExternalLink className="w-3 h-3 opacity-50" />
@@ -125,10 +129,6 @@ export function AboutModal({ isOpen, onClose }: Props) {
               <a href="https://www.linkedin.com/in/emmanuelkerhoz/" target="_blank" rel="noopener noreferrer" aria-label="Visit LinkedIn profile"
                 className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 hover:border-sky-500/40 text-sky-400 hover:text-sky-300 rounded-lg text-xs font-medium">
                 <Linkedin className="w-4 h-4" /><span>LinkedIn</span><ExternalLink className="w-3 h-3 opacity-50" />
-              </a>
-              <a href="https://github.com/sponsors/EmmanuelKerhoz" target="_blank" rel="noopener noreferrer" aria-label="Visit GitHub Sponsors page"
-                className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 hover:border-pink-500/40 text-pink-400 hover:text-pink-300 rounded-lg text-xs font-medium">
-                <Github className="w-4 h-4" /><span>GitHub Sponsors</span><ExternalLink className="w-3 h-3 opacity-50" />
               </a>
               <a href="https://network.landr.com/users/emmanueldk" target="_blank" rel="noopener noreferrer" aria-label="Visit Landr profile"
                 className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 hover:border-violet-500/40 text-violet-400 hover:text-violet-300 rounded-lg text-xs font-medium">

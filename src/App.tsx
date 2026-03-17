@@ -84,7 +84,8 @@ function AppInner() {
     title, setTitle, titleOrigin, setTitleOrigin, topic, setTopic, mood, setMood,
     rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables, genre, setGenre, tempo, setTempo,
     instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative, musicalPrompt, setMusicalPrompt,
-    audioFeedback, setAudioFeedback, newSectionName, setNewSectionName,
+    audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
+    newSectionName, setNewSectionName,
     draggedItemIndex, setDraggedItemIndex, dragOverIndex, setDragOverIndex,
     draggedLineInfo, setDraggedLineInfo, dragOverLineInfo, setDragOverLineInfo,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
@@ -176,6 +177,17 @@ function AppInner() {
   });
 
   useEffect(() => { isGeneratingRef.current = isGenerating; }, [isGenerating]);
+
+  // Apply defaultEditMode once after session hydration
+  const hasAppliedDefaultEditModeRef = useRef(false);
+  useEffect(() => {
+    if (isSessionHydrated && !hasAppliedDefaultEditModeRef.current) {
+      hasAppliedDefaultEditModeRef.current = true;
+      if (defaultEditMode === 'markdown') {
+        setIsMarkupMode(true);
+      }
+    }
+  }, [isSessionHydrated, defaultEditMode, setIsMarkupMode]);
 
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
@@ -572,6 +584,7 @@ function AppInner() {
 
         <AppModals
           theme={theme} setTheme={setTheme} audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+          uiScale={uiScale} setUiScale={setUiScale} defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
           hasExistingWork={hasExistingWork} handleImportChooseFile={handleImportChooseFile}
           onOpenPasteLyrics={() => { setIsImportModalOpen(false); setIsPasteModalOpen(true); }}
           importInputRef={importInputRef} handleImportInputChange={handleImportInputChange}

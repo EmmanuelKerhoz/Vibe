@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { SimilarityMatch } from '../utils/similarityUtils';
 import { LibraryAsset } from '../utils/libraryUtils';
+import { safeGetItem, safeSetItem } from '../utils/safeStorage';
+
+const UI_SCALE_KEY = 'vibe_ui_scale';
+const DEFAULT_EDIT_MODE_KEY = 'vibe_default_edit_mode';
 
 export function useSessionState() {
   // ── Theme ─────────────────────────────────────────────────────────────────
@@ -14,6 +18,29 @@ export function useSessionState() {
 
   // ── Audio ─────────────────────────────────────────────────────────────────
   const [audioFeedback, setAudioFeedback] = useState(true);
+
+  // ── UI Scale ──────────────────────────────────────────────────────────────
+  const [uiScale, setUiScaleRaw] = useState<'small' | 'medium' | 'large'>(() => {
+    const stored = safeGetItem(UI_SCALE_KEY);
+    if (stored === 'small' || stored === 'medium') return stored as 'small' | 'medium';
+    return 'large';
+  });
+
+  const setUiScale = (v: 'small' | 'medium' | 'large') => {
+    setUiScaleRaw(v);
+    safeSetItem(UI_SCALE_KEY, v);
+  };
+
+  // ── Default Edit Mode ─────────────────────────────────────────────────────
+  const [defaultEditMode, setDefaultEditModeRaw] = useState<'section' | 'markdown'>(() => {
+    const stored = safeGetItem(DEFAULT_EDIT_MODE_KEY);
+    return stored === 'markdown' ? 'markdown' : 'section';
+  });
+
+  const setDefaultEditMode = (v: 'section' | 'markdown') => {
+    setDefaultEditModeRaw(v);
+    safeSetItem(DEFAULT_EDIT_MODE_KEY, v);
+  };
 
   // ── Drag state ────────────────────────────────────────────────────────────
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
@@ -33,6 +60,12 @@ export function useSessionState() {
     else document.documentElement.classList.remove('dark');
   }, [theme]);
 
+  // ── UI Scale on <html> ────────────────────────────────────────────────────
+  useEffect(() => {
+    const sizes: Record<string, string> = { small: '12px', medium: '14px', large: '16px' };
+    document.documentElement.style.fontSize = sizes[uiScale] ?? '16px';
+  }, [uiScale]);
+
   // ── API key status check ──────────────────────────────────────────────────
   useEffect(() => {
     const controller = new AbortController();
@@ -49,6 +82,8 @@ export function useSessionState() {
     isSessionHydrated, setIsSessionHydrated,
     hasSavedSession, setHasSavedSession,
     audioFeedback, setAudioFeedback,
+    uiScale, setUiScale,
+    defaultEditMode, setDefaultEditMode,
     draggedItemIndex, setDraggedItemIndex,
     dragOverIndex, setDragOverIndex,
     draggedLineInfo, setDraggedLineInfo,

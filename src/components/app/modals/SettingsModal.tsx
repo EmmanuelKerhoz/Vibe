@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings } from 'lucide-react';
+import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCode } from 'lucide-react';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
 import { Button } from '../../ui/Button';
@@ -12,6 +12,10 @@ interface Props {
   setTheme: (theme: 'light' | 'dark') => void;
   audioFeedback: boolean;
   setAudioFeedback: (value: boolean) => void;
+  uiScale: 'small' | 'medium' | 'large';
+  setUiScale: (v: 'small' | 'medium' | 'large') => void;
+  defaultEditMode: 'section' | 'markdown';
+  setDefaultEditMode: (v: 'section' | 'markdown') => void;
 }
 
 /**
@@ -58,24 +62,34 @@ export function SettingsModal({
   setTheme,
   audioFeedback,
   setAudioFeedback,
+  uiScale,
+  setUiScale,
+  defaultEditMode,
+  setDefaultEditMode,
 }: Props) {
   const { t, language, setLanguage } = useTranslation();
   const [draftTheme, setDraftTheme] = useState(theme);
   const [draftAudioFeedback, setDraftAudioFeedback] = useState(audioFeedback);
   const [draftLanguage, setDraftLanguage] = useState(language);
+  const [draftUiScale, setDraftUiScale] = useState(uiScale);
+  const [draftDefaultEditMode, setDraftDefaultEditMode] = useState(defaultEditMode);
 
   useEffect(() => {
     if (isOpen) {
       setDraftTheme(theme);
       setDraftAudioFeedback(audioFeedback);
       setDraftLanguage(language);
+      setDraftUiScale(uiScale);
+      setDraftDefaultEditMode(defaultEditMode);
     }
-  }, [isOpen, theme, audioFeedback, language]);
+  }, [isOpen, theme, audioFeedback, language, uiScale, defaultEditMode]);
 
   const handleApply = () => {
     setTheme(draftTheme);
     setAudioFeedback(draftAudioFeedback);
     setLanguage(draftLanguage);
+    setUiScale(draftUiScale);
+    setDefaultEditMode(draftDefaultEditMode);
     onClose();
   };
 
@@ -83,6 +97,8 @@ export function SettingsModal({
     setDraftTheme('dark');
     setDraftAudioFeedback(true);
     setDraftLanguage('en');
+    setDraftUiScale('large');
+    setDraftDefaultEditMode('section');
   };
 
   return (
@@ -206,6 +222,63 @@ export function SettingsModal({
                       {loc.code === draftLanguage && (
                         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] flex-shrink-0" />
                       )}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* UI Scale section */}
+              <section aria-labelledby="settings-scale-heading">
+                <h3 id="settings-scale-heading" className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-3 flex items-center gap-2">
+                  <Type className="w-3.5 h-3.5" />
+                  {t.settings.scale?.label ?? 'UI Scale'}
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['small', 'medium', 'large'] as const).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => setDraftUiScale(opt)}
+                      className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                        draftUiScale === opt
+                          ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/40 text-[var(--accent-color)]'
+                          : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-color)]/20 hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      <span className={opt === 'small' ? 'text-[10px]' : opt === 'medium' ? 'text-xs' : 'text-sm'}>A</span>
+                      <span>
+                        {opt === 'small'
+                          ? (t.settings.scale?.small ?? 'Small')
+                          : opt === 'medium'
+                          ? (t.settings.scale?.medium ?? 'Medium')
+                          : (t.settings.scale?.large ?? 'Large')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* Default Edit Mode section */}
+              <section aria-labelledby="settings-editmode-heading">
+                <h3 id="settings-editmode-heading" className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-3 flex items-center gap-2">
+                  <FileCode className="w-3.5 h-3.5" />
+                  {t.settings.editMode?.label ?? 'Default Editor'}
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['section', 'markdown'] as const).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => setDraftDefaultEditMode(opt)}
+                      className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                        draftDefaultEditMode === opt
+                          ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/40 text-[var(--accent-color)]'
+                          : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-color)]/20 hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      <span>
+                        {opt === 'section'
+                          ? (t.settings.editMode?.section ?? 'Section Editor')
+                          : (t.settings.editMode?.markdown ?? 'Markdown Editor')}
+                      </span>
                     </button>
                   ))}
                 </div>

@@ -8,6 +8,10 @@ import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
 import { EditorContextProvider, type EditorHandlers } from '../../contexts/EditorContext';
 
+// Module-level helpers for tied section detection
+const isSectionPreChorus = (s: Section) => /pre.?chorus/i.test(s.name);
+const isSectionChorus = (s: Section) => /^chorus(\s|$)/i.test(s.name.trim()) && !isSectionPreChorus(s);
+
 interface LyricsViewProps {
   song: Section[];
   rhymeScheme: string;
@@ -77,16 +81,43 @@ export const LyricsView = memo(function LyricsView({
   const moveSectionUp = useCallback((sectionId: string) => {
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx <= 0) return;
+
+    // Determine the block to move (Pre-Chorus + Chorus tied)
+    let blockStart = idx;
+    let blockEnd = idx;
+    const section = song[idx]!;
+    if (isSectionPreChorus(section) && idx + 1 < song.length && isSectionChorus(song[idx + 1]!)) {
+      blockEnd = idx + 1;
+    } else if (isSectionChorus(section) && idx > 0 && isSectionPreChorus(song[idx - 1]!)) {
+      blockStart = idx - 1;
+    }
+
+    if (blockStart === 0) return;
     const newSong = [...song];
-    [newSong[idx - 1], newSong[idx]] = [newSong[idx]!, newSong[idx - 1]!];
+    const block = newSong.splice(blockStart, blockEnd - blockStart + 1);
+    newSong.splice(blockStart - 1, 0, ...block);
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
   const moveSectionDown = useCallback((sectionId: string) => {
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx < 0 || idx >= song.length - 1) return;
+
+    // Determine the block to move (Pre-Chorus + Chorus tied)
+    let blockStart = idx;
+    let blockEnd = idx;
+    const section = song[idx]!;
+    if (isSectionPreChorus(section) && idx + 1 < song.length && isSectionChorus(song[idx + 1]!)) {
+      blockEnd = idx + 1;
+    } else if (isSectionChorus(section) && idx > 0 && isSectionPreChorus(song[idx - 1]!)) {
+      blockStart = idx - 1;
+      blockEnd = idx;
+    }
+
+    if (blockEnd >= song.length - 1) return;
     const newSong = [...song];
-    [newSong[idx], newSong[idx + 1]] = [newSong[idx + 1]!, newSong[idx]!];
+    const block = newSong.splice(blockStart, blockEnd - blockStart + 1);
+    newSong.splice(blockStart + 1, 0, ...block);
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 

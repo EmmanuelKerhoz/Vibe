@@ -32,6 +32,10 @@ interface Props {
   setTheme: (v: 'light' | 'dark') => void;
   audioFeedback: boolean;
   setAudioFeedback: (v: boolean) => void;
+  uiScale: 'small' | 'medium' | 'large';
+  setUiScale: (v: 'small' | 'medium' | 'large') => void;
+  defaultEditMode: 'section' | 'markdown';
+  setDefaultEditMode: (v: 'section' | 'markdown') => void;
 
   // Import
   hasExistingWork: boolean;
@@ -103,7 +107,7 @@ interface Props {
 }
 
 export function AppModals({
-  theme, setTheme, audioFeedback, setAudioFeedback,
+  theme, setTheme, audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
   hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, importInputRef, handleImportInputChange,
   exportSong,
   selectedLineId, setSelectedLineId, suggestions, isSuggesting, applySuggestion, generateSuggestions,
@@ -126,6 +130,8 @@ export function AppModals({
         isOpen={ui.isSettingsOpen} onClose={() => closeModal('settings')}
         theme={theme} setTheme={setTheme}
         audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+        uiScale={uiScale} setUiScale={setUiScale}
+        defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
       />
       <ImportModal
         isOpen={ui.isImportModalOpen} hasExistingWork={hasExistingWork}

@@ -274,6 +274,17 @@ const de: Translations = {
     language: {
       label: 'UI-Sprache',
     },
+    scale: {
+      label: 'UI-Skalierung',
+      small: 'Klein',
+      medium: 'Mittel',
+      large: 'Groß',
+    },
+    editMode: {
+      label: 'Standard-Editor',
+      section: 'Abschnittseditor',
+      markdown: 'Markdown-Editor',
+    },
     actions: {
       default: 'Standard',
       save: 'Speichern',
