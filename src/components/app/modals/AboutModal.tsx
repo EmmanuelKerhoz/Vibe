@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Apple, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag, Info, X } from 'lucide-react';
+import { Apple, Github, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag, Info, X } from 'lucide-react';
 import { useTranslation } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
 import { AI_KEY_ENV_VAR, AI_MODEL_NAME } from '../../../utils/aiUtils';
@@ -125,6 +125,10 @@ export function AboutModal({ isOpen, onClose }: Props) {
               <a href="https://www.linkedin.com/in/emmanuelkerhoz/" target="_blank" rel="noopener noreferrer" aria-label="Visit LinkedIn profile"
                 className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 hover:border-sky-500/40 text-sky-400 hover:text-sky-300 rounded-lg text-xs font-medium">
                 <Linkedin className="w-4 h-4" /><span>LinkedIn</span><ExternalLink className="w-3 h-3 opacity-50" />
+              </a>
+              <a href="https://github.com/sponsors/EmmanuelKerhoz" target="_blank" rel="noopener noreferrer" aria-label="Visit GitHub Sponsors page"
+                className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 hover:border-pink-500/40 text-pink-400 hover:text-pink-300 rounded-lg text-xs font-medium">
+                <Github className="w-4 h-4" /><span>GitHub Sponsors</span><ExternalLink className="w-3 h-3 opacity-50" />
               </a>
               <a href="https://network.landr.com/users/emmanueldk" target="_blank" rel="noopener noreferrer" aria-label="Visit Landr profile"
                 className="about-sweep-item ux-interactive flex items-center gap-2 px-4 py-2 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 hover:border-violet-500/40 text-violet-400 hover:text-violet-300 rounded-lg text-xs font-medium">
