@@ -210,6 +210,15 @@ const fr: Translations = {
     load: 'Charger',
     loadDescription: 'Charger cette chanson dans l\'éditeur',
     close: 'Fermer',
+    storageTitle: 'Stockage Navigateur',
+    storageUsed: 'Utilisé',
+    storageQuota: 'Quota',
+    storageSaturation: 'Saturation',
+    libraryItems: 'Éléments',
+    purge: 'Purger Toute la Bibliothèque',
+    purgeWarning: 'Cela supprimera définitivement toutes les chansons de votre bibliothèque. Cette action est irréversible.',
+    confirmPurge: 'Confirmer la Purge',
+    cancel: 'Annuler',
   },
 
   paste: {

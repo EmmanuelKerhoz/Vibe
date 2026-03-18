@@ -1,6 +1,7 @@
 import React from 'react';
 import { Info, Moon, Settings, Sun } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
+import { StorageGauge } from '../ui/StorageGauge';
 import { useTranslation } from '../../i18n';
 import { tPlural } from '../../i18n/plurals';
 import { APP_VERSION } from '../../version';
@@ -72,8 +73,9 @@ export function StatusBar({
         </span>
       </div>
 
-      {/* Right: settings + theme + version */}
+      {/* Right: storage + settings + theme + version */}
       <div className="flex items-center gap-1">
+        <StorageGauge />
         <Tooltip title={t.statusBar.settings}>
           <button
             onClick={onOpenSettings}

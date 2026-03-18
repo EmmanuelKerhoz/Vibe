@@ -214,6 +214,15 @@ const en: Translations = {
     load: 'Load',
     loadDescription: 'Load this song into the editor',
     close: 'Close',
+    storageTitle: 'Browser Storage',
+    storageUsed: 'Used',
+    storageQuota: 'Quota',
+    storageSaturation: 'Saturation',
+    libraryItems: 'Library Items',
+    purge: 'Purge All Library Data',
+    purgeWarning: 'This will permanently delete all songs from your library. This action cannot be undone.',
+    confirmPurge: 'Confirm Purge',
+    cancel: 'Cancel',
   },
 
   paste: {

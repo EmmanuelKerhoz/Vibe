@@ -1,7 +1,8 @@
-import React from 'react';
-import { Save, X, BookOpen, Music, Clock, Loader2, Library, Trash2, FolderOpen } from 'lucide-react';
+import React, { useState } from 'react';
+import { Save, X, BookOpen, Music, Clock, Loader2, Library, Trash2, FolderOpen, HardDrive, AlertTriangle } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
+import { useStorageEstimate } from '../../../hooks/useStorageEstimate';
 import type { LibraryAsset } from '../../../utils/libraryUtils';
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
   onSave: () => Promise<void>;
   onLoadAsset?: (asset: LibraryAsset) => void;
   onDeleteAsset?: (assetId: string) => void;
+  onPurgeLibrary?: () => Promise<void>;
   isSaving: boolean;
   currentTitle: string;
   libraryAssets: LibraryAsset[];
@@ -22,14 +24,32 @@ export function SaveToLibraryModal({
   onSave,
   onLoadAsset,
   onDeleteAsset,
+  onPurgeLibrary,
   isSaving,
   currentTitle,
   libraryAssets,
   hasCurrentSong = true,
 }: Props) {
   const { t } = useTranslation();
+  const storage = useStorageEstimate();
+  const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
+
+  const handlePurge = async () => {
+    if (onPurgeLibrary) {
+      await onPurgeLibrary();
+      setShowPurgeConfirm(false);
+    }
+  };
 
   if (!isOpen) return null;
+
+  const tierColor = storage.tier === 'red' ? 'text-red-400' :
+                    storage.tier === 'orange' ? 'text-orange-400' :
+                    'text-[var(--accent-color)]';
+
+  const tierBg = storage.tier === 'red' ? 'bg-red-500/10 border-red-500/20' :
+                 storage.tier === 'orange' ? 'bg-orange-500/10 border-orange-500/20' :
+                 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/20';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
@@ -159,6 +179,89 @@ export function SaveToLibraryModal({
             </div>
           )}
         </div>
+
+        {/* Storage details section */}
+        {storage.supported && (
+          <div className="px-6 pb-4 border-t border-[var(--border-color)]">
+            <div className={`p-4 rounded-[12px_4px_12px_4px] border ${tierBg} mt-4`}>
+              <div className="flex items-center gap-2 mb-3">
+                <HardDrive className={`w-4 h-4 ${tierColor}`} />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                  {t.saveToLibrary.storageTitle}
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="h-2 w-full rounded-full bg-[var(--bg-app)] overflow-hidden mb-3">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.round(storage.ratio * 100)}%`,
+                    background: storage.tier === 'red' ? '#ef4444' :
+                               storage.tier === 'orange' ? '#f59e0b' :
+                               'var(--accent-color)'
+                  }}
+                />
+              </div>
+
+              {/* Storage stats */}
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageUsed}</span>
+                  <span className={`font-semibold ${tierColor}`}>{storage.usageMB}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageQuota}</span>
+                  <span className="font-semibold text-[var(--text-primary)]">{storage.quotaMB}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageSaturation}</span>
+                  <span className={`font-bold ${tierColor}`}>{Math.round(storage.ratio * 100)}%</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-[var(--border-color)] mt-2">
+                  <span className="text-[var(--text-secondary)]">{t.saveToLibrary.libraryItems}</span>
+                  <span className="font-semibold text-[var(--text-primary)]">{libraryAssets.length}</span>
+                </div>
+              </div>
+
+              {/* Purge button */}
+              {onPurgeLibrary && libraryAssets.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
+                  {!showPurgeConfirm ? (
+                    <button
+                      onClick={() => setShowPurgeConfirm(true)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold rounded-lg transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {t.saveToLibrary.purge}
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2 p-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>{t.saveToLibrary.purgeWarning}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handlePurge}
+                          className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded transition-all"
+                        >
+                          {t.saveToLibrary.confirmPurge}
+                        </button>
+                        <button
+                          onClick={() => setShowPurgeConfirm(false)}
+                          className="flex-1 px-3 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs font-bold rounded transition-all"
+                        >
+                          {t.saveToLibrary.cancel}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-end">

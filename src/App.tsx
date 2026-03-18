@@ -26,7 +26,7 @@ import { LyricsView } from './components/app/LyricsView';
 import { AppModals } from './components/app/AppModals';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
-import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, loadAssetIntoEditor, type LibraryAsset } from './utils/libraryUtils';
+import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, purgeLibrary, loadAssetIntoEditor, type LibraryAsset } from './utils/libraryUtils';
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
 import { buildResetPayload, buildPartialResetPayload, clearPersistedSession } from './utils/sessionReset';
 import { safeJsonGet } from './utils/safeStorage';
@@ -391,6 +391,15 @@ function AppInner() {
     } catch (e) { console.error('Failed to delete library asset:', e); }
   }, [setLibraryAssets, setSimilarityMatches, setLibraryCount]);
 
+  const handlePurgeLibrary = useCallback(async () => {
+    try {
+      await purgeLibrary();
+      setLibraryAssets([]);
+      setSimilarityMatches([]);
+      setLibraryCount(0);
+    } catch (e) { console.error('Failed to purge library:', e); }
+  }, [setLibraryAssets, setSimilarityMatches, setLibraryCount]);
+
   const handleImportInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; e.target.value = '';
     if (!file) return;
@@ -610,6 +619,7 @@ function AppInner() {
           handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
           title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
           handleLoadLibraryAsset={handleLoadLibraryAsset}
+          handlePurgeLibrary={handlePurgeLibrary}
           saveVersion={saveVersion} handleRequestVersionName={handleRequestVersionName}
           resetSong={resetSong}
         />

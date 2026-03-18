@@ -97,6 +97,7 @@ interface Props {
   // Library
   handleSaveToLibrary: () => Promise<void>;
   handleLoadLibraryAsset: (asset: LibraryAsset) => void;
+  handlePurgeLibrary: () => Promise<void>;
   isSavingToLibrary: boolean;
   title: string;
   libraryAssets: LibraryAsset[];
@@ -117,7 +118,7 @@ export function AppModals({
   toggleAnalysisItemSelection, applySelectedAnalysisItems, clearAppliedAnalysisItems,
   versions, rollbackToVersion, saveVersion, handleRequestVersionName,
   similarityMatches, libraryCount, webSimilarityIndex, triggerWebSimilarity, handleDeleteLibraryAsset,
-  handleSaveToLibrary, handleLoadLibraryAsset, isSavingToLibrary, title, libraryAssets, hasCurrentSong,
+  handleSaveToLibrary, handleLoadLibraryAsset, handlePurgeLibrary, isSavingToLibrary, title, libraryAssets, hasCurrentSong,
   resetSong,
 }: Props) {
   const { t } = useTranslation();
@@ -168,7 +169,8 @@ export function AppModals({
       <SaveToLibraryModal
         isOpen={ui.isSaveToLibraryModalOpen} onClose={() => closeModal('saveToLibrary')}
         onSave={handleSaveToLibrary} onLoadAsset={handleLoadLibraryAsset}
-        onDeleteAsset={handleDeleteLibraryAsset} isSaving={isSavingToLibrary}
+        onDeleteAsset={handleDeleteLibraryAsset} onPurgeLibrary={handlePurgeLibrary}
+        isSaving={isSavingToLibrary}
         currentTitle={title} libraryAssets={libraryAssets} hasCurrentSong={hasCurrentSong}
       />
       <VersionsModal

@@ -211,6 +211,15 @@ const de: Translations = {
     load: 'Laden',
     loadDescription: 'Diesen Song in den Editor laden',
     close: 'Schließen',
+    storageTitle: 'Browser-Speicher',
+    storageUsed: 'Verwendet',
+    storageQuota: 'Kontingent',
+    storageSaturation: 'Auslastung',
+    libraryItems: 'Bibliotheks-Elemente',
+    purge: 'Alle Bibliotheksdaten löschen',
+    purgeWarning: 'Dies löscht alle Songs aus deiner Bibliothek dauerhaft. Diese Aktion kann nicht rückgängig gemacht werden.',
+    confirmPurge: 'Löschen bestätigen',
+    cancel: 'Abbrechen',
   },
 
   paste: {

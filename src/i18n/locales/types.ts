@@ -226,6 +226,15 @@ export interface Translations {
     load: string;
     loadDescription: string;
     close: string;
+    storageTitle: string;
+    storageUsed: string;
+    storageQuota: string;
+    storageSaturation: string;
+    libraryItems: string;
+    purge: string;
+    purgeWarning: string;
+    confirmPurge: string;
+    cancel: string;
   };
 
   paste: {
