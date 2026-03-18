@@ -64,7 +64,8 @@ export function getSchemeLetterForLine(
   if (scheme.toUpperCase() === 'FREE') return null;
   const upper = scheme.toUpperCase();
   if (upper.length === 0) return null;
-  return upper[lineIndex % upper.length] ?? null;
+  const letter = upper[lineIndex % upper.length] ?? null;
+  return letter === 'X' ? null : letter;
 }
 
 export const getRhymeColor = (rhyme: string | null | undefined): string => {
@@ -165,9 +166,16 @@ const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
  * "possessifs"/"adjectif" can still converge on the same rime family.
  */
 const canonicalizeRhymeSuffix = (suffix: string): string => {
-  const canonicalSuffix = suffix.length <= 3 ? suffix : suffix.replace(/[sx]$/, '');
-  if (/^oi(?:[destx]|e)?$/.test(canonicalSuffix)) return 'oi';
-  return canonicalSuffix;
+  const s = suffix.length <= 3 ? suffix : suffix.replace(/[sx]$/, '');
+  if (/^oi/.test(s)) return 'oi';
+  if (/^(?:an|en|am|em)/.test(s)) return 'an';
+  if (/^(?:in|ain|ein|im|yn|ym)/.test(s)) return 'in';
+  if (/^(?:on|om)/.test(s)) return 'on';
+  if (/^(?:un|um)/.test(s)) return 'un';
+  if (/^(?:eu|oeu|oe)/.test(s)) return 'eu';
+  if (/^ou/.test(s)) return 'ou';
+  if (/^(?:au|eau)/.test(s)) return 'au';
+  return s;
 };
 
 const getRhymeCandidates = (text: string): RhymeCandidate[] => {
@@ -336,21 +344,20 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
   for (const l of letters) {
     if (l) letterCounts[l] = (letterCounts[l] ?? 0) + 1;
   }
-  const rhymingLines = Object.values(letterCounts).filter(c => c >= 2).reduce((a, b) => a + b, 0);
 
-  if (rhymingLines === 0) return null;
-
-  const raw = letters.map(l => l ?? 'X').join('');
-
-  const KNOWN: Record<string, string> = {
-    AABB: 'AABB', ABAB: 'ABAB', ABCB: 'ABCB', AAAA: 'AAAA',
-    AABBA: 'AABBA', AAABBB: 'AAABBB', AABBCC: 'AABBCC',
-    ABABAB: 'ABABAB', ABCABC: 'ABCABC', AABCCB: 'AABCCB', ABACBC: 'ABACBC',
-    ABBA: 'ABBA', ABAC: 'ABAC', AAAB: 'AAAB', ABBB: 'ABBB',
-    AABBAA: 'AABBAA', ABABCC: 'ABABCC',
-  };
-
-  return KNOWN[raw] ?? raw;
+  const counts = new Map<string, number>(Object.entries(letterCounts));
+  const remap = new Map<string, string>();
+  let remapIndex = 0;
+  const finalLetters = letters.map((letter) => {
+    if (!letter || (counts.get(letter) ?? 0) < 2) return null;
+    if (!remap.has(letter)) {
+      remap.set(letter, LETTERS[remapIndex] ?? String.fromCharCode(65 + remapIndex));
+      remapIndex++;
+    }
+    return remap.get(letter)!;
+  });
+  if (!finalLetters.some(Boolean)) return null;
+  return finalLetters.map(l => l ?? 'X').join('');
 }
 
 export { DEFAULT_STRUCTURE, MUSICAL_INSTRUCTIONS } from '../constants/editor';
@@ -360,18 +367,25 @@ export const cleanSectionName = (name: string) => {
   return name.replace(/[\[\]\*]/g, '').trim();
 };
 
-export const countSyllables = (text: string) => {
+export const countSyllables = (text: string): number => {
   if (!text) return 0;
-  const word = text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z]/g, '');
-  if (!word) return 0;
-  if (word.length <= 3) return 1;
-  const syllables = word
-    .replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '')
-    .replace(/^y/, '')
-    .match(/[aeiouy]{1,2}/g);
-  return syllables ? syllables.length : 1;
+  const words = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().match(/[a-z]+/g);
+  if (!words) return 0;
+  let total = 0;
+  for (const raw of words) {
+    let w = raw
+      .replace(/eau/g, '#').replace(/oeu/g, '#').replace(/ai/g, '#').replace(/ei/g, '#')
+      .replace(/au/g, '#').replace(/ou/g, '#').replace(/oi/g, '#').replace(/eu/g, '#')
+      .replace(/ain/g, '#').replace(/ein/g, '#').replace(/an/g, '#').replace(/en/g, '#')
+      .replace(/am(?=[^aeiouy#]|$)/g, '#').replace(/em(?=[^aeiouy#]|$)/g, '#')
+      .replace(/in(?=[^aeiouy#]|$)/g, '#').replace(/ion(?=[^aeiouy#]|$)/g, '#').replace(/on/g, '#')
+      .replace(/om(?=[^aeiouy#]|$)/g, '#').replace(/un/g, '#')
+      .replace(/um(?=[^aeiouy#]|$)/g, '#');
+    let count = (w.match(/[aeiouy#]/g) ?? []).length;
+    if (count > 1 && /(?<![aeiouy#])e$/.test(w)) count--;
+    if (count > 1 && /(?<![aeiouy#])es$/.test(w)) count--;
+    total += Math.max(1, count);
+  }
+  return total;
 };
