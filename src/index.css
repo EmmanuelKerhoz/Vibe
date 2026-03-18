@@ -535,6 +535,29 @@
   z-index: 0;
 }
 
+/* ===========================================================================
+   DIALOG SURFACE — neutralise le background-image dégradé hérité de
+   .dark.ui-fluent sur le root. S'applique à tous les panneaux de dialogue
+   (modals). Les popovers n'utilisent PAS cette classe et conservent
+   la transparence qui laisse voir le dégradé du fond.
+   =========================================================================== */
+
+.glass-panel[role="dialog"],
+.glass-panel[role="alertdialog"],
+.dialog-surface {
+  background-image: none !important;
+  background: rgba(14, 14, 14, 0.82);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+
+.dark .glass-panel[role="dialog"],
+.dark .glass-panel[role="alertdialog"],
+.dark .dialog-surface {
+  background: rgba(10, 10, 10, 0.88);
+  background-image: none !important;
+}
+
 .glass-button {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(8px);
