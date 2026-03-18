@@ -137,14 +137,15 @@ export function StructureSidebar({
                           ) : (
                             <div className="w-3.5" />
                           )}
-                          <button
-                            type="button"
-                            className={`flex-1 text-left truncate transition-colors ${getSectionTextColor(item)} hover:text-[var(--accent-color)]`}
-                            onClick={() => sectionId && onScrollToSection(sectionId)}
-                            title={getSectionTooltipText(item)}
-                          >
-                            {item}
-                          </button>
+                          <Tooltip title={getSectionTooltipText(item)}>
+                            <button
+                              type="button"
+                              className={`flex-1 text-left truncate transition-colors ${getSectionTextColor(item)} hover:text-[var(--accent-color)]`}
+                              onClick={() => sectionId && onScrollToSection(sectionId)}
+                            >
+                              {item}
+                            </button>
+                          </Tooltip>
                           <Tooltip title={t.tooltips.removeSection}>
                             <button onClick={() => removeStructureItem(idx)} className="p-1 hover:bg-black/20 rounded transition-colors opacity-0 group-hover:opacity-100">
                               <X className="w-3 h-3" />
@@ -191,15 +192,15 @@ export function StructureSidebar({
                             return true;
                           })
                           .map(name => (
-                            <button
-                              key={name}
-                              onClick={() => { addStructureItem(name); setIsSectionDropdownOpen(false); }}
-                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 transition-colors flex items-center gap-2"
-                              title={getSectionTooltipText(name)}
-                            >
-                              <Plus className="w-3 h-3 text-[var(--accent-color)]" />
-                              {name}
-                            </button>
+                            <Tooltip key={name} title={getSectionTooltipText(name)}>
+                              <button
+                                onClick={() => { addStructureItem(name); setIsSectionDropdownOpen(false); }}
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 transition-colors flex items-center gap-2"
+                              >
+                                <Plus className="w-3 h-3 text-[var(--accent-color)]" />
+                                {name}
+                              </button>
+                            </Tooltip>
                           ))}
                       </div>
                     )}
