@@ -44,7 +44,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
         <div className="w-[600px] h-[400px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
       </div>
 
-      {/* Gradient border wrapper */}
+      {/* Gradient border wrapper — replaces border border-white/10 */}
       <div
         className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
         style={{
@@ -53,7 +53,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
           boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
         }}
       >
-        {/* Modal panel */}
+        {/* Modal panel — interior unchanged */}
         <div
           role="dialog"
           aria-modal="true"
@@ -88,7 +88,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
           {/* Scrollable body */}
           <div ref={bodyRef} className="flex-1 overflow-y-auto custom-scrollbar">
 
-            {/* Banner */}
+            {/* Banner — natural height, no aspect-ratio wrapper, no gap */}
             <img
               src={bannerImage}
               alt="Lyricist splash screen"
