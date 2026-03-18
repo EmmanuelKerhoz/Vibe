@@ -59,20 +59,18 @@ export function SaveToLibraryModal({
         onClick={onClose}
       />
 
-      {/* Gradient border wrapper — outer shell only, 2px padding */}
+      {/* Gradient border wrapper — isolation prevents gradient from bleeding into interior */}
       <div
         className="relative w-full sm:max-w-lg h-full sm:h-auto rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
         style={{
           padding: '2px',
           background: 'var(--accent-rail-gradient-h)',
           boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+          isolation: 'isolate',
         }}
       >
-        {/* Modal panel — solid background blocks gradient bleed */}
-        <div
-          className="relative w-full h-full flex flex-col shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]"
-          style={{ background: 'var(--bg-card)' }}
-        >
+        {/* Modal panel — original glass-panel class preserved */}
+        <div className="relative w-full h-full flex flex-col fluent-animate-panel glass-panel shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]">
           {/* Header */}
           <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)]">
             <div className="flex items-center gap-3">

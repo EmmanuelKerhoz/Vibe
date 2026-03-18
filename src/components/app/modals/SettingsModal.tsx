@@ -28,16 +28,10 @@ function applyUiScalePreview(scale: 'small' | 'medium' | 'large') {
   document.documentElement.style.fontSize = UI_SCALE_FONT_SIZES[scale];
 }
 
-/**
- * Renders a flag emoji as a Twemoji SVG image so it displays correctly on
- * every platform (Windows doesn't render flag-emoji natively).
- * Falls back to the raw emoji character (or country code) if the image fails.
- */
 function FlagEmoji({ flag, code }: { flag: string; code: string }) {
   const [useFallback, setUseFallback] = React.useState(false);
   const display = flag || code.toUpperCase();
 
-  // Only attempt the Twemoji image for real emoji characters, not plain ASCII
   if (useFallback || isPlainAscii(display)) {
     return (
       <span
@@ -101,7 +95,6 @@ export function SettingsModal({
       applyUiScalePreview(draftUiScale);
       return;
     }
-
     if (closeActionRef.current !== 'save') {
       applyUiScalePreview(uiScale);
     }
@@ -147,22 +140,22 @@ export function SettingsModal({
             <div className="w-[500px] h-[400px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
           </div>
 
-          {/* Gradient border wrapper — outer shell only, 2px padding */}
+          {/* Gradient border wrapper — isolation prevents gradient from bleeding into interior */}
           <div
             className="relative w-full sm:max-w-lg h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
             style={{
               padding: '2px',
               background: 'var(--accent-rail-gradient-h)',
               boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+              isolation: 'isolate',
             }}
           >
-            {/* Modal panel — solid background blocks gradient bleed */}
+            {/* Modal panel — original glass-panel class preserved */}
             <div
               role="dialog"
               aria-modal="true"
               aria-label={t.settings.title}
-              className="relative w-full h-full flex flex-col animate-in zoom-in-95 duration-300 shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]"
-              style={{ background: 'var(--bg-card)' }}
+              className="relative w-full h-full flex flex-col animate-in zoom-in-95 duration-300 glass-panel shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]"
             >
               {/* Header */}
               <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
