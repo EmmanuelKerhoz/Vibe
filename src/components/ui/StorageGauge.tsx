@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { HardDrive } from 'lucide-react';
 import { useStorageEstimate } from '../../hooks/useStorageEstimate';
 import type { StorageTier } from '../../hooks/useStorageEstimate';
@@ -21,27 +21,21 @@ export function StorageGauge() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close popover on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
   if (!est.supported) return null;
 
   const color = TIER_COLOR[est.tier];
   const pct = Math.round(est.ratio * 100);
 
   return (
-    <div ref={ref} className="relative">
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
       {/* Trigger */}
       <button
         aria-label={`Storage: ${pct}% used`}
-        onClick={() => setOpen(v => !v)}
         className="lcars-meta-btn min-h-[44px] lg:min-h-0 flex items-center gap-1"
       >
         {/* Layered icon: outline + fill clip */}
@@ -66,7 +60,11 @@ export function StorageGauge() {
       {/* Mini popover */}
       {open && (
         <div
-          className="absolute bottom-full right-0 mb-2 z-50 w-56 glass-panel border border-[var(--border-color)] rounded-[12px_4px_12px_4px] shadow-xl p-3 text-[11px]"
+          className="absolute bottom-full right-0 mb-1 z-50 w-56 border border-[var(--border-color)] rounded-[12px_4px_12px_4px] shadow-xl p-3 text-[11px] bg-white/95 dark:bg-black/92"
+          style={{
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          }}
           role="tooltip"
         >
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-2">
