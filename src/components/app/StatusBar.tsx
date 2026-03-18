@@ -42,7 +42,7 @@ export function StatusBar({
     // FIX C/D: added `relative` so that `z-40` (z-index:40) takes effect and
     // buttons are not blocked by lower-z overlays or the acrylic backdrop.
     <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
-      {/* Left: system status + KPIs desktop only */}
+      {/* Left: system status + KPIs + storage gauge (desktop only) */}
       <div className="flex items-center gap-2 lg:gap-4">
         <div className="flex items-center gap-1.5">
           <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isBusy ? 'bg-[var(--accent-warning)] animate-pulse' : 'bg-[var(--accent-color)] lcars-pulse'}`} />
@@ -71,11 +71,12 @@ export function StatusBar({
             {t.insights.characters}
           </span>
         </span>
+        <div className="lcars-divider hidden lg:block" />
+        <StorageGauge />
       </div>
 
-      {/* Right: storage + settings + theme + version */}
+      {/* Right: settings + theme + version */}
       <div className="flex items-center gap-1">
-        <StorageGauge />
         <Tooltip title={t.statusBar.settings}>
           <button
             onClick={onOpenSettings}

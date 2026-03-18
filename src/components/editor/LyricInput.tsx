@@ -92,9 +92,9 @@ export const LyricInput = React.memo(function LyricInput({
 
   /**
    * Renders the styled text overlay:
-   *  - Parenthesised stage directions: amber
+   *  - Parenthesised stage directions: amber (intentional accent, both themes)
    *  - Rhyming suffix of last word: rhymeTextColor
-   *  - Everything else: zinc-200
+   *  - Everything else: var(--text-primary) — readable in both light and dark themes
    */
   const renderStyledOverlay = (text: string) => {
     if (!text) return null;
@@ -112,14 +112,14 @@ export const LyricInput = React.memo(function LyricInput({
         if (split) {
           return (
             <span key={i}>
-              <span className="text-zinc-200">{split.before}</span>
+              <span className="text-[var(--text-primary)]">{split.before}</span>
               <span style={{ color: rhymeTextColor, fontWeight: 600 }}>{split.rhyme}</span>
             </span>
           );
         }
       }
 
-      return <span key={i} className="text-zinc-200">{part}</span>;
+      return <span key={i} className="text-[var(--text-primary)]">{part}</span>;
     });
   };
 
@@ -163,7 +163,7 @@ export const LyricInput = React.memo(function LyricInput({
           onKeyDown={handleKeyDown}
           disabled={isGenerating}
           placeholder={t.editor?.linePlaceholder ?? 'Write a lyric line…'}
-          className="w-full bg-transparent text-sm font-mono text-transparent caret-zinc-200 outline-none border-none focus:ring-0 placeholder:text-zinc-700 disabled:cursor-not-allowed relative z-10"
+          className="w-full bg-transparent text-sm font-mono text-transparent caret-[color:var(--text-primary)] outline-none border-none focus:ring-0 placeholder:text-[var(--text-secondary)] disabled:cursor-not-allowed relative z-10"
           style={{ font: 'inherit', letterSpacing: 'inherit' }}
           spellCheck
           autoComplete="off"
