@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
 import { EditorContextProvider, type EditorHandlers } from '../../contexts/EditorContext';
+import { SECTION_TYPE_OPTIONS } from '../../constants/sections';
 
 // Module-level helpers for tied section detection
 const isSectionPreChorus = (s: Section) => /pre.?chorus/i.test(s.name);
@@ -74,7 +75,6 @@ export const LyricsView = memo(function LyricsView({
   const { t } = useTranslation();
 
   const RHYME_KEYS = Object.keys(t.rhymeSchemes) as Array<keyof typeof t.rhymeSchemes>;
-  const SECTION_TYPE_OPTIONS = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Breakdown', 'Final Chorus', 'Outro'];
 
   // ── Handlers locaux — stables via useCallback ────────────────────────────
 

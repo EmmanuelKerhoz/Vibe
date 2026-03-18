@@ -12,6 +12,7 @@ import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import { useEditorContext } from '../../contexts/EditorContext';
+import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection } from '../../constants/sections';
 
 interface SectionEditorProps {
   section: Section;
@@ -160,14 +161,14 @@ export const SectionEditor = React.memo(function SectionEditor({
             <div className="flex flex-col gap-0.5">
               <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>
                 <button type="button" onClick={() => moveSectionUp(section.id)}
-                  disabled={sectionIndex === 0 || sectionName.toLowerCase() === 'intro'}
+                  disabled={sectionIndex === 0 || isAnchoredStartSection(sectionName)}
                   className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                   <ChevronUp className="h-3 w-3" />
                 </button>
               </Tooltip>
               <Tooltip title={t.editor.moveSectionDown ?? 'Move section down'}>
                 <button type="button" onClick={() => moveSectionDown(section.id)}
-                  disabled={sectionIndex === songLength - 1 || sectionName.toLowerCase() === 'outro'}
+                  disabled={sectionIndex === songLength - 1 || isAnchoredEndSection(sectionName)}
                   className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
                   <ChevronDown className="h-3 w-3" />
                 </button>
@@ -177,9 +178,13 @@ export const SectionEditor = React.memo(function SectionEditor({
               <LcarsSelect
                 value={sectionName}
                 onChange={(v) => setSectionName(section.id, v)}
-                options={sectionTypeSelectOptions}
+                options={sectionTypeSelectOptions.map(option => ({
+                  ...option,
+                  title: getSectionTooltipText(option.value),
+                }))}
                 accentColor={sectionColor}
                 style={{ color: sectionColor }}
+                buttonTitle={getSectionTooltipText(sectionName)}
               />
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">

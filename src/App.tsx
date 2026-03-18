@@ -30,6 +30,7 @@ import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, dele
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
 import { buildResetPayload, buildPartialResetPayload, clearPersistedSession } from './utils/sessionReset';
 import { safeJsonGet } from './utils/safeStorage';
+import { isAnchoredEndSection, isAnchoredStartSection } from './constants/sections';
 
 type StateBag = ReturnType<typeof useAppState>;
 
@@ -293,10 +294,10 @@ function AppInner() {
   const introOutroSortedRef = useRef<string | null>(null);
   useEffect(() => {
     if (song.length === 0) return;
-    const introIdx = song.findIndex(s => s.name.toLowerCase() === 'intro');
-    const outroIdx = song.findIndex(s => s.name.toLowerCase() === 'outro');
+    const introIdx = song.findIndex(s => isAnchoredStartSection(s.name));
+    const outroIdx = song.findIndex(s => isAnchoredEndSection(s.name));
     if (introIdx <= 0 && (outroIdx === -1 || outroIdx === song.length - 1)) return;
-    const others = song.filter(s => s.name.toLowerCase() !== 'intro' && s.name.toLowerCase() !== 'outro');
+    const others = song.filter(s => !isAnchoredStartSection(s.name) && !isAnchoredEndSection(s.name));
     const sorted = [...(introIdx !== -1 ? [song[introIdx]!] : []), ...others, ...(outroIdx !== -1 ? [song[outroIdx]!] : [])];
     const key = JSON.stringify(sorted.map(s => s.id));
     if (key === introOutroSortedRef.current) return;

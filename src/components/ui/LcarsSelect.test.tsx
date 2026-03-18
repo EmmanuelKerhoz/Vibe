@@ -9,11 +9,14 @@ describe('LcarsSelect', () => {
         value="verse"
         onChange={() => {}}
         options={[
-          { value: 'verse', label: 'VERSE' },
-          { value: 'chorus', label: 'CHORUS' },
+          { value: 'verse', label: 'VERSE', title: 'Tell the story' },
+          { value: 'chorus', label: 'CHORUS', title: 'Main hook' },
         ]}
+        buttonTitle="Tell the story"
       />,
     );
+
+    expect(screen.getByRole('button').getAttribute('title')).toBe('Tell the story');
 
     fireEvent.click(screen.getByRole('button'));
 
@@ -22,7 +25,7 @@ describe('LcarsSelect', () => {
 
     expect(listbox).not.toBeNull();
     expect((listbox as HTMLElement).parentElement?.style.width).toBe('320px');
-    expect(screen.getByRole('option', { name: 'CHORUS' })).not.toBeNull();
+    expect(screen.getByRole('option', { name: 'CHORUS' }).getAttribute('title')).toBe('Main hook');
 
     fireEvent.mouseDown(document.body);
 

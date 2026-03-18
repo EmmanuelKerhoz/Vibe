@@ -5,6 +5,14 @@ import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
 import { createSongExport, type ExportFormat } from '../utils/exportUtils';
 import { extractTextFromDocx, extractTextFromOdt } from '../utils/libraryUtils';
+import {
+  getSectionTypeKey,
+  isAnchoredEndSection,
+  isAnchoredStartSection,
+  isSectionType,
+  isUniqueSectionType,
+  shouldAutoNumberSection,
+} from '../constants/sections';
 
 type SaveFilePickerOptions = {
   suggestedName: string;
@@ -101,31 +109,32 @@ export const useSongEditor = ({
     const itemToAdd = cleanSectionName(name || newSectionName.trim());
     if (!itemToAdd) return;
 
-    if (['Intro', 'Bridge', 'Outro', 'Final Chorus', 'Refrain final'].includes(itemToAdd)) {
-      if (structure.some(s => s.toLowerCase() === itemToAdd.toLowerCase())) return;
+    const itemTypeKey = getSectionTypeKey(itemToAdd);
+    if (isUniqueSectionType(itemToAdd)) {
+      if (structure.some(s => getSectionTypeKey(s) === itemTypeKey)) return;
     }
 
     let finalName = itemToAdd;
-    if (['Verse', 'Pre-Chorus', 'Chorus'].includes(itemToAdd)) {
-      const count = structure.filter(s => s.startsWith(itemToAdd)).length;
+    if (shouldAutoNumberSection(itemToAdd)) {
+      const count = structure.filter(s => getSectionTypeKey(s) === itemTypeKey).length;
       if (itemToAdd === 'Verse' || count > 0) finalName = `${itemToAdd} ${count + 1}`;
     }
 
     let insertIndex = structure.length;
-    if (itemToAdd === 'Intro') {
+    if (isAnchoredStartSection(itemToAdd)) {
       insertIndex = 0;
-    } else if (itemToAdd === 'Pre-Chorus') {
-      const nextChorusIndex = structure.findIndex(s => s.startsWith('Chorus'));
+    } else if (isSectionType(itemToAdd, 'pre-chorus')) {
+      const nextChorusIndex = structure.findIndex(s => isSectionType(s, 'chorus'));
       if (nextChorusIndex !== -1) insertIndex = nextChorusIndex;
-    } else if (itemToAdd === 'Chorus') {
-      const lastPreChorusIndex = [...structure].reverse().findIndex(s => s.startsWith('Pre-Chorus'));
-      const lastVerseIndex = [...structure].reverse().findIndex(s => s.startsWith('Verse'));
+    } else if (isSectionType(itemToAdd, 'chorus')) {
+      const lastPreChorusIndex = [...structure].reverse().findIndex(s => isSectionType(s, 'pre-chorus'));
+      const lastVerseIndex = [...structure].reverse().findIndex(s => isSectionType(s, 'verse'));
       if (lastPreChorusIndex !== -1) insertIndex = structure.length - 1 - lastPreChorusIndex + 1;
       else if (lastVerseIndex !== -1) insertIndex = structure.length - 1 - lastVerseIndex + 1;
     }
 
-    const outroIndex = structure.findIndex(s => s.toLowerCase().includes('outro'));
-    if (outroIndex !== -1 && insertIndex > outroIndex) insertIndex = outroIndex;
+    const anchoredEndIndex = structure.findIndex(isAnchoredEndSection);
+    if (anchoredEndIndex !== -1 && insertIndex > anchoredEndIndex && !isAnchoredEndSection(itemToAdd)) insertIndex = anchoredEndIndex;
 
     const newStructure = [...structure];
     const newSong = [...song];
@@ -136,15 +145,23 @@ export const useSongEditor = ({
   }, [song, structure, newSectionName, setNewSectionName, updateSongAndStructureWithHistory]);
 
   const normalizeStructure = useCallback(() => {
-    const intros = structure.filter(s => s.toLowerCase().includes('intro'));
-    const verses = structure.filter(s => s.toLowerCase().includes('verse'));
-    const preChoruses = structure.filter(s => s.toLowerCase().includes('pre-chorus') || s.toLowerCase().includes('prechorus'));
-    const choruses = structure.filter(s => s.toLowerCase().includes('chorus') && !s.toLowerCase().includes('pre'));
-    const bridges = structure.filter(s => s.toLowerCase().includes('bridge'));
-    const outros = structure.filter(s => s.toLowerCase().includes('outro'));
+    const intros = structure.filter(isAnchoredStartSection);
+    const verses = structure.filter(s => isSectionType(s, 'verse'));
+    const preChoruses = structure.filter(s => isSectionType(s, 'pre-chorus'));
+    const choruses = structure.filter(s => ['chorus', 'refrain', 'final-chorus'].includes(getSectionTypeKey(s) ?? ''));
+    const bridges = structure.filter(s => ['bridge', 'middle-8'].includes(getSectionTypeKey(s) ?? ''));
+    const outros = structure.filter(isAnchoredEndSection);
     const others = structure.filter(s => {
-      const l = s.toLowerCase();
-      return !l.includes('intro') && !l.includes('verse') && !l.includes('pre-chorus') && !l.includes('prechorus') && !l.includes('chorus') && !l.includes('bridge') && !l.includes('outro');
+      const key = getSectionTypeKey(s);
+      return !isAnchoredStartSection(s)
+        && key !== 'verse'
+        && key !== 'pre-chorus'
+        && key !== 'chorus'
+        && key !== 'refrain'
+        && key !== 'final-chorus'
+        && key !== 'bridge'
+        && key !== 'middle-8'
+        && !isAnchoredEndSection(s);
     });
 
     const newStructure: string[] = [];
@@ -192,14 +209,14 @@ export const useSongEditor = ({
       return { base: name, num: null };
     };
     const draggedInfo = getBaseAndNumber(draggedItemName);
-    if (draggedItemName.toLowerCase().includes('intro') && dropIndex !== 0) return;
-    if (draggedItemName.toLowerCase().includes('outro')) {
+    if (isAnchoredStartSection(draggedItemName) && dropIndex !== 0) return;
+    if (isAnchoredEndSection(draggedItemName)) {
       if (dropIndex !== structure.length - 1) return;
     } else {
-      const outroIndex = structure.findIndex(s => s.toLowerCase().includes('outro'));
-      if (outroIndex !== -1) {
-        if (dropIndex > outroIndex && draggedItemIndex !== outroIndex) return;
-        if (draggedItemIndex === outroIndex && dropIndex !== structure.length - 1) return;
+      const anchoredEndIndex = structure.findIndex(isAnchoredEndSection);
+      if (anchoredEndIndex !== -1) {
+        if (dropIndex > anchoredEndIndex && draggedItemIndex !== anchoredEndIndex) return;
+        if (draggedItemIndex === anchoredEndIndex && dropIndex !== structure.length - 1) return;
       }
     }
     const tempStructure = [...structure];

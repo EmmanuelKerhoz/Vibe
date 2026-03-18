@@ -1,4 +1,5 @@
 import type { Section } from '../types';
+import { getSectionFamily } from '../constants/sections';
 
 export const getSectionText = (section: Section): string =>
   section.lines.map(l => l.text).join('\n');
@@ -7,42 +8,42 @@ export const getSongText = (song: Section[]): string =>
   song.map(getSectionText).join('\n\n');
 
 export const getSectionColor = (name: string) => {
-  const n = (name ?? '').toLowerCase();
-  if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500/10 border-orange-500/20 text-orange-500';
-  if (n.includes('chorus')) return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
-  if (n.includes('verse')) return 'bg-cyan-500/10 border-cyan-500/20 text-cyan-500';
-  if (n.includes('bridge') || n.includes('breakdown')) return 'bg-violet-500/10 border-violet-500/20 text-violet-500';
-  if (n.includes('intro') || n.includes('outro')) return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500';
+  const family = getSectionFamily(name);
+  if (family === 'pre-chorus') return 'bg-orange-500/10 border-orange-500/20 text-orange-500';
+  if (family === 'chorus') return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
+  if (family === 'verse') return 'bg-cyan-500/10 border-cyan-500/20 text-cyan-500';
+  if (family === 'contrast') return 'bg-violet-500/10 border-violet-500/20 text-violet-500';
+  if (family === 'intro' || family === 'outro') return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500';
   return 'bg-zinc-800/50 border-white/10 text-zinc-400';
 };
 
 export const getSectionTextColor = (name: string) => {
-  const n = (name ?? '').toLowerCase();
-  if (n.includes('pre-chorus') || n.includes('prechorus')) return 'text-orange-500';
-  if (n.includes('chorus')) return 'text-amber-500';
-  if (n.includes('verse')) return 'text-cyan-400';
-  if (n.includes('bridge') || n.includes('breakdown')) return 'text-violet-500';
-  if (n.includes('intro') || n.includes('outro')) return 'text-emerald-500';
+  const family = getSectionFamily(name);
+  if (family === 'pre-chorus') return 'text-orange-500';
+  if (family === 'chorus') return 'text-amber-500';
+  if (family === 'verse') return 'text-cyan-400';
+  if (family === 'contrast') return 'text-violet-500';
+  if (family === 'intro' || family === 'outro') return 'text-emerald-500';
   return 'text-zinc-600 dark:text-zinc-400';
 };
 
 export const getSectionColorHex = (name: string): string => {
-  const n = (name ?? '').toLowerCase();
-  if (n.includes('pre-chorus') || n.includes('prechorus')) return '#f97316';
-  if (n.includes('chorus')) return '#f59e0b';
-  if (n.includes('verse')) return '#06b6d4';
-  if (n.includes('bridge') || n.includes('breakdown')) return '#a78bfa';
-  if (n.includes('intro') || n.includes('outro')) return '#10b981';
+  const family = getSectionFamily(name);
+  if (family === 'pre-chorus') return '#f97316';
+  if (family === 'chorus') return '#f59e0b';
+  if (family === 'verse') return '#06b6d4';
+  if (family === 'contrast') return '#a78bfa';
+  if (family === 'intro' || family === 'outro') return '#10b981';
   return '#71717a';
 };
 
 export const getSectionDotColor = (name: string) => {
-  const n = (name ?? '').toLowerCase();
-  if (n.includes('pre-chorus') || n.includes('prechorus')) return 'bg-orange-500';
-  if (n.includes('chorus')) return 'bg-amber-500';
-  if (n.includes('verse')) return 'bg-cyan-500';
-  if (n.includes('bridge') || n.includes('breakdown')) return 'bg-violet-500';
-  if (n.includes('intro') || n.includes('outro')) return 'bg-emerald-500';
+  const family = getSectionFamily(name);
+  if (family === 'pre-chorus') return 'bg-orange-500';
+  if (family === 'chorus') return 'bg-amber-500';
+  if (family === 'verse') return 'bg-cyan-500';
+  if (family === 'contrast') return 'bg-violet-500';
+  if (family === 'intro' || family === 'outro') return 'bg-emerald-500';
   return 'bg-zinc-500';
 };
 
