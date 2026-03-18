@@ -57,17 +57,16 @@ export function StorageGauge() {
         </span>
       </button>
 
-      {/* Mini popover */}
+      {/* Mini popover — floats above the status bar, right-aligned to avoid right-panel overlap */}
       {open && (
         <div
-          className="absolute left-1/2 bottom-[calc(100%+12px)] z-[320] w-56 -translate-x-1/2 rounded-[12px_4px_12px_4px] shadow-xl p-3 text-[11px]"
+          className="absolute right-0 bottom-[calc(100%+8px)] z-[320] w-56 rounded-[12px_4px_12px_4px] shadow-xl p-3 text-[11px]"
           style={{
             background: 'var(--bg-card)',
             backdropFilter: 'blur(24px) saturate(200%)',
             WebkitBackdropFilter: 'blur(24px) saturate(200%)',
             border: '2px solid transparent',
             backgroundClip: 'padding-box',
-            position: 'relative',
           }}
           role="tooltip"
         >
