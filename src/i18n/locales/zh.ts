@@ -211,6 +211,15 @@ const zh: Translations = {
     load: '加载',
     loadDescription: '将这首歌加载到编辑器中',
     close: '关闭',
+    storageTitle: '浏览器存储',
+    storageUsed: '已使用',
+    storageQuota: '配额',
+    storageSaturation: '饱和度',
+    libraryItems: '库项目',
+    purge: '清除所有库数据',
+    purgeWarning: '这将永久删除您库中的所有歌曲。此操作无法撤销。',
+    confirmPurge: '确认清除',
+    cancel: '取消',
   },
 
   paste: {

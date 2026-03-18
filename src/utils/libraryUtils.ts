@@ -153,6 +153,18 @@ export const deleteAssetFromLibrary = async (assetId: string): Promise<void> => 
 };
 
 /**
+ * Purge all library assets (clear entire library).
+ */
+export const purgeLibrary = async (): Promise<void> => {
+  try {
+    writeStore({ version: 0, assets: [] });
+  } catch (error) {
+    console.error('Failed to purge library:', error);
+    throw error;
+  }
+};
+
+/**
  * Find top 3 similar assets in library.
  * Always returns up to 3 results regardless of score.
  */

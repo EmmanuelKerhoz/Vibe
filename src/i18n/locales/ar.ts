@@ -211,6 +211,15 @@ const ar: Translations = {
     load: 'تحميل',
     loadDescription: 'تحميل هذه الأغنية في المحرر',
     close: 'إغلاق',
+    storageTitle: 'تخزين المتصفح',
+    storageUsed: 'المستخدم',
+    storageQuota: 'الحد الأقصى',
+    storageSaturation: 'درجة الامتلاء',
+    libraryItems: 'عناصر المكتبة',
+    purge: 'حذف جميع بيانات المكتبة',
+    purgeWarning: 'سيؤدي هذا إلى حذف جميع الأغاني من مكتبتك بشكل دائم. لا يمكن التراجع عن هذا الإجراء.',
+    confirmPurge: 'تأكيد الحذف',
+    cancel: 'إلغاء',
   },
 
   paste: {

@@ -211,6 +211,15 @@ const pt: Translations = {
     load: 'Carregar',
     loadDescription: 'Carregar esta música no editor',
     close: 'Fechar',
+    storageTitle: 'Armazenamento do Navegador',
+    storageUsed: 'Usado',
+    storageQuota: 'Quota',
+    storageSaturation: 'Saturação',
+    libraryItems: 'Itens da Biblioteca',
+    purge: 'Purgar Todos os Dados da Biblioteca',
+    purgeWarning: 'Isto eliminará permanentemente todas as músicas da sua biblioteca. Esta ação não pode ser desfeita.',
+    confirmPurge: 'Confirmar Purga',
+    cancel: 'Cancelar',
   },
 
   paste: {
