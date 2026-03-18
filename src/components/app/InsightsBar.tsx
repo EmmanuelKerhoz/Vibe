@@ -2,6 +2,7 @@ import React from 'react';
 import { Loader2, BarChart2, Languages, ScanText, Layout, Search, RefreshCw, Timer, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { Section } from '../../types';
 import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
+import { getSectionTooltipText } from '../../constants/sections';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
@@ -340,16 +341,8 @@ export function InsightsBar({
         <div className="flex items-center gap-2 w-full min-w-0">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar min-w-0 flex-1" style={{ scrollbarWidth: 'none' }}>
             {song.map((section) => {
-              const sectionWordCount = section.lines
-                .filter(l => !l.isMeta)
-                .reduce((acc, line) => acc + line.text.split(/\s+/).filter(w => w.length > 0).length, 0);
               return (
-                <Tooltip key={section.id} title={
-                  <div className="flex flex-col gap-1 text-xs">
-                    <div><span>{t.editor.sectionTooltip.lines}:</span> {section.lines.filter(l => !l.isMeta).length}</div>
-                    <div><span>{t.editor.sectionTooltip.words}:</span> {sectionWordCount}</div>
-                  </div>
-                }>
+                <Tooltip key={section.id} title={getSectionTooltipText(section.name)}>
                   <button
                     onClick={() => scrollToSection(section)}
                     className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-white/20 transition-all lcars-section-chip glass-button"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getSectionExplanation, getSectionTypeKey, SECTION_TYPE_OPTIONS } from './sections';
+import { getSectionExplanation, getSectionTooltipText, getSectionTypeKey, SECTION_TYPE_OPTIONS } from './sections';
 
 describe('section definitions', () => {
   it('includes the newly supported structural section types', () => {
@@ -23,5 +23,13 @@ describe('section definitions', () => {
     expect(getSectionTypeKey('Pont')).toBe('bridge');
     expect(getSectionTypeKey('Pré-refrain')).toBe('pre-chorus');
     expect(getSectionExplanation('Drop')).toContain('Pic d’énergie');
+  });
+
+  it('formats supported section tooltips over three concise lines', () => {
+    expect(getSectionTooltipText('Intro').split('\n')).toEqual([
+      'Intro',
+      'Ouvre le morceau et pose l’atmosphère.',
+      'Repère : presque toujours au début, souvent courte.',
+    ]);
   });
 });

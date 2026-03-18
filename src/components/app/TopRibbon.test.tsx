@@ -44,31 +44,31 @@ describe('TopRibbon burger menu', () => {
       </LanguageProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'New generation' }));
     expect(onOpenNewGeneration).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'New empty' }));
     expect(onOpenNewEmpty).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
           fireEvent.click(screen.getByRole('button', { name: 'Load/Import' }));
     expect(onImportClick).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Library' }));
     expect(onOpenLibraryClick).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'MUSICAL' }));
     expect(setActiveTab).toHaveBeenCalledWith('musical');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     expect(onOpenSettingsClick).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'About' }));
     expect(onOpenAboutClick).toHaveBeenCalledTimes(1);
   });
