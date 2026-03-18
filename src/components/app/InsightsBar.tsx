@@ -339,7 +339,7 @@ export function InsightsBar({
 
         {/* Row 2: Section chips + action buttons */}
         <div className="flex items-center gap-2 w-full min-w-0">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar min-w-0 flex-1" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex items-center gap-2 overflow-x-auto overflow-y-visible pb-1 custom-scrollbar min-w-0 flex-1" style={{ scrollbarWidth: 'none' }}>
             {song.map((section) => {
               return (
                 <Tooltip key={section.id} title={getSectionTooltipText(section.name)}>
