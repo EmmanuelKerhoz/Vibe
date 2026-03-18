@@ -20,28 +20,37 @@ export function PasteModal({ isOpen, onClose, pastedText, setPastedText, isAnaly
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="acrylic w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 lcars-panel rounded-none sm:rounded-[24px_8px_24px_8px]">
-        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-          <h3 className="text-lg text-zinc-100 flex items-center gap-2.5">
-            <ClipboardPaste className="w-5 h-5 text-[var(--accent-color)]" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.paste.title}
+        className="glass-panel w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 rounded-none sm:rounded-[24px_8px_24px_8px] border border-white/10 dark:border-white/8 shadow-2xl"
+      >
+        <div className="p-6 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)]">
+          <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase flex items-center gap-2.5">
+            <ClipboardPaste className="w-4 h-4 text-[var(--accent-color)]" />
             {t.paste.title}
           </h3>
-          <button onClick={onClose} className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors">
-            <X className="w-5 h-5" />
+          <button
+            onClick={onClose}
+            aria-label={t.paste.cancel}
+            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
-          <p className="text-sm text-zinc-400 mb-6 leading-relaxed">{t.paste.description}</p>
+        <div className="p-8 flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-app)]">
+          <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">{t.paste.description}</p>
           <textarea
             value={pastedText}
             onChange={(e) => setPastedText(e.target.value)}
             placeholder={t.paste.placeholder}
-            className="w-full h-80 bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl p-5 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[var(--accent-color)]/50 focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all resize-none placeholder:text-zinc-400 dark:placeholder:text-zinc-800 font-mono leading-relaxed"
+            className="w-full h-80 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl p-5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-color)]/50 focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all resize-none placeholder:text-[var(--text-secondary)] font-mono leading-relaxed"
           />
         </div>
 
-        <div className="p-6 border-t border-white/5 bg-white/[0.02] flex justify-end gap-3">
+        <div className="p-6 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-end gap-3">
           <Tooltip title={t.tooltips.analysisCancel}>
             <Button onClick={onClose} variant="text" color="inherit">{t.paste.cancel}</Button>
           </Tooltip>

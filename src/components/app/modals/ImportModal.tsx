@@ -30,7 +30,12 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, on
       </div>
 
       {/* Modal panel */}
-      <div className="relative w-full sm:max-w-md h-full sm:h-auto flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.importDialog.title}
+        className="relative w-full sm:max-w-md h-full sm:h-auto flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8"
+      >
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0 bg-[var(--bg-sidebar)]">

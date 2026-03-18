@@ -544,6 +544,8 @@
 
 .glass-panel[role="dialog"],
 .glass-panel[role="alertdialog"],
+.about-dialog-shimmer[role="dialog"],
+.acrylic[role="dialog"],
 .dialog-surface {
   background-image: none !important;
   background: rgba(14, 14, 14, 0.82);
@@ -553,6 +555,8 @@
 
 .dark .glass-panel[role="dialog"],
 .dark .glass-panel[role="alertdialog"],
+.dark .about-dialog-shimmer[role="dialog"],
+.dark .acrylic[role="dialog"],
 .dark .dialog-surface {
   background: rgba(10, 10, 10, 0.88);
   background-image: none !important;

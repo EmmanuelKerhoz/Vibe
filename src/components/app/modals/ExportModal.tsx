@@ -87,7 +87,12 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
         onClick={onClose}
       />
 
-      <div className="relative w-full sm:max-w-lg h-full sm:h-auto flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.exportDialog.title}
+        className="relative w-full sm:max-w-lg h-full sm:h-auto flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8"
+      >
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">

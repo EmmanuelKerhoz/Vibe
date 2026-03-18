@@ -16,19 +16,26 @@ const TIER_BG: Record<StorageTier, string> = {
   red:    'var(--accent-error,   #ef4444)',
 };
 
+const POPOVER_WIDTH = 224;
+
 /** Small gauge widget for the StatusBar. */
 export function StorageGauge() {
   const est = useStorageEstimate();
   const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState<{ bottom: number; right: number } | null>(null);
+  const [coords, setCoords] = useState<{ bottom: number; left: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   const updateCoords = useCallback(() => {
     if (ref.current) {
       const r = ref.current.getBoundingClientRect();
+      // Anchor to the left edge of the trigger, clamped so popover stays in viewport
+      const left = Math.min(
+        Math.max(8, r.left),
+        window.innerWidth - POPOVER_WIDTH - 8
+      );
       setCoords({
         bottom: window.innerHeight - r.top + 8,
-        right:  window.innerWidth  - r.right,
+        left,
       });
     }
   }, []);
@@ -40,9 +47,9 @@ export function StorageGauge() {
 
   useEffect(() => {
     if (!open) return;
-    const onScroll = () => updateCoords();
-    window.addEventListener('resize', onScroll, { passive: true });
-    return () => window.removeEventListener('resize', onScroll);
+    const onResize = () => updateCoords();
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => window.removeEventListener('resize', onResize);
   }, [open, updateCoords]);
 
   if (!est.supported) return null;
@@ -57,9 +64,9 @@ export function StorageGauge() {
       style={{
         position: 'fixed',
         bottom: coords.bottom,
-        right:  coords.right,
+        left:   coords.left,
         zIndex: 9999,
-        width: '224px',
+        width: `${POPOVER_WIDTH}px`,
       }}
     >
       <div
