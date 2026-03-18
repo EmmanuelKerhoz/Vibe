@@ -25,9 +25,8 @@ describe('section definitions', () => {
     expect(getSectionExplanation('Drop')).toContain('Pic d’énergie');
   });
 
-  it('formats supported section tooltips over three concise lines', () => {
+  it('formats supported section tooltips without repeating the section title', () => {
     expect(getSectionTooltipText('Intro').split('\n')).toEqual([
-      'Intro',
       'Ouvre le morceau et pose l’atmosphère.',
       'Repère : presque toujours au début, souvent courte.',
     ]);

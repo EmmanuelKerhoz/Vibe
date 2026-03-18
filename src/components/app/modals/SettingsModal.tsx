@@ -18,6 +18,16 @@ interface Props {
   setDefaultEditMode: (v: 'section' | 'markdown') => void;
 }
 
+const UI_SCALE_FONT_SIZES: Record<'small' | 'medium' | 'large', string> = {
+  small: '12px',
+  medium: '14px',
+  large: '16px',
+};
+
+function applyUiScalePreview(scale: 'small' | 'medium' | 'large') {
+  document.documentElement.style.fontSize = UI_SCALE_FONT_SIZES[scale];
+}
+
 /**
  * Renders a flag emoji as a Twemoji SVG image so it displays correctly on
  * every platform (Windows doesn't render flag-emoji natively).
@@ -73,9 +83,11 @@ export function SettingsModal({
   const [draftLanguage, setDraftLanguage] = useState(language);
   const [draftUiScale, setDraftUiScale] = useState(uiScale);
   const [draftDefaultEditMode, setDraftDefaultEditMode] = useState(defaultEditMode);
+  const closeActionRef = useRef<'save' | 'close' | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      closeActionRef.current = null;
       setDraftTheme(theme);
       setDraftAudioFeedback(audioFeedback);
       setDraftLanguage(language);
@@ -84,7 +96,26 @@ export function SettingsModal({
     }
   }, [isOpen, theme, audioFeedback, language, uiScale, defaultEditMode]);
 
+  useEffect(() => {
+    if (isOpen) {
+      applyUiScalePreview(draftUiScale);
+      return;
+    }
+
+    if (closeActionRef.current !== 'save') {
+      applyUiScalePreview(uiScale);
+    }
+    closeActionRef.current = null;
+  }, [draftUiScale, isOpen, uiScale]);
+
+  const handleClose = () => {
+    closeActionRef.current = 'close';
+    applyUiScalePreview(uiScale);
+    onClose();
+  };
+
   const handleApply = () => {
+    closeActionRef.current = 'save';
     setTheme(draftTheme);
     setAudioFeedback(draftAudioFeedback);
     setLanguage(draftLanguage);
@@ -108,7 +139,7 @@ export function SettingsModal({
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-xl animate-in fade-in duration-300"
-            onClick={onClose}
+            onClick={handleClose}
           />
 
           {/* Ambient glow – dark theme only */}
@@ -139,7 +170,7 @@ export function SettingsModal({
                 </div>
               </div>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 aria-label={t.about.close}
                 className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors"
               >
@@ -324,7 +355,7 @@ export function SettingsModal({
                 {t.settings.actions.default}
               </Button>
               <div className="flex gap-2">
-                <Button onClick={onClose} variant="outlined" color="inherit">
+                <Button onClick={handleClose} variant="outlined" color="inherit">
                   {t.settings.actions.close}
                 </Button>
                 <Button onClick={handleApply} variant="contained" color="primary">
