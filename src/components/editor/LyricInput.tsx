@@ -199,13 +199,13 @@ export const LyricInput = React.memo(function LyricInput({
       </div>
 
       {/* COL: COUNT */}
-      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors w-[2.25rem] text-right">
+      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors w-[2.75rem] text-right">
         {line.syllables > 0 ? line.syllables : ''}
       </span>
 
       {/* COL: SCHEMA */}
       <span
-        className={`flex-shrink-0 inline-flex h-4 w-5 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
+        className={`flex-shrink-0 inline-flex h-4 w-7 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
       >
         {schemeLabel ?? ''}
       </span>

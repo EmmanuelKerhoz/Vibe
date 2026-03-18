@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { LyricsMusicAnalysis } from './LyricsMusicAnalysis';
 import { MusicalParamsPanel } from './MusicalParamsPanel';
 import { MusicalPromptBuilder } from './MusicalPromptBuilder';
@@ -31,6 +31,12 @@ export function MusicalTab({
   isGeneratingMusicalPrompt, isAnalyzingLyrics,
   hasApiKey, generateMusicalPrompt, analyzeLyricsForMusic,
 }: Props) {
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+  const handleWorkflowStepComplete = useCallback((step: number) => {
+    setCompletedSteps(prev => new Set(prev).add(step));
+  }, []);
+
   const hasLyrics  = song.some(s => s.lines.some(l => l.text.trim() !== ''));
   const hasContext = !!(title || topic || mood || hasLyrics);
     const canGenerate = hasApiKey && !!(hasContext || genre || instrumentation);
@@ -43,6 +49,7 @@ export function MusicalTab({
         isAnalyzingLyrics={isAnalyzingLyrics}
         isGeneratingMusicalPrompt={isGeneratingMusicalPrompt}
         analyzeLyricsForMusic={analyzeLyricsForMusic}
+        completedSteps={completedSteps}
       />
       <div className="flex-1 p-6 space-y-5">
         <MusicalParamsPanel
@@ -51,6 +58,7 @@ export function MusicalTab({
           instrumentation={instrumentation} setInstrumentation={setInstrumentation}
           rhythm={rhythm} setRhythm={setRhythm}
           narrative={narrative} setNarrative={setNarrative}
+          onWorkflowStepComplete={handleWorkflowStepComplete}
         />
         <MusicalPromptBuilder
           musicalPrompt={musicalPrompt} setMusicalPrompt={setMusicalPrompt}

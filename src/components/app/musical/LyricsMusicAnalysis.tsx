@@ -21,9 +21,10 @@ interface Props {
   isAnalyzingLyrics: boolean;
   isGeneratingMusicalPrompt: boolean;
   analyzeLyricsForMusic: () => void;
+  completedSteps?: Set<number>;
 }
 
-export function LyricsMusicAnalysis({ title, topic, mood, hasContext, hasApiKey, isAnalyzingLyrics, isGeneratingMusicalPrompt, analyzeLyricsForMusic }: Props) {
+export function LyricsMusicAnalysis({ title, topic, mood, hasContext, hasApiKey, isAnalyzingLyrics, isGeneratingMusicalPrompt, analyzeLyricsForMusic, completedSteps = new Set() }: Props) {
   const { t } = useTranslation();
   const m = t.musical;
 
@@ -68,22 +69,38 @@ export function LyricsMusicAnalysis({ title, topic, mood, hasContext, hasApiKey,
 
       {/* Guide steps */}
       <div className="grid gap-2 lg:grid-cols-4 px-6 pt-2">
-        {MUSICAL_GUIDE_STEPS.map((step, index) => (
-          <div key={step.title} className="ux-interactive border px-3 py-2.5"
-            style={{ borderRadius: '14px 4px 14px 4px', background: `${AMBER_SECONDARY}10`, borderColor: `${AMBER_SECONDARY}30` }}
-          >
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.18em] uppercase"
-                style={{ color: index === 0 ? AMBER_PRIMARY : AMBER_SECONDARY }}
-              >
-                <span className="inline-flex h-5 w-5 items-center justify-center border text-[9px] font-bold" style={{ borderRadius: '50%', borderColor: `${AMBER_SECONDARY}45`, background: index === 0 ? `${AMBER_PRIMARY}22` : 'transparent' }}>{index + 1}</span>
-                {step.title}
+        {MUSICAL_GUIDE_STEPS.map((step, index) => {
+          const stepNumber = index + 1;
+          const isCompleted = completedSteps.has(stepNumber);
+          return (
+            <div key={step.title} className="ux-interactive border px-3 py-2.5"
+              style={{
+                borderRadius: '14px 4px 14px 4px',
+                background: isCompleted ? `${AMBER_PRIMARY}20` : `${AMBER_SECONDARY}10`,
+                borderColor: isCompleted ? `${AMBER_PRIMARY}50` : `${AMBER_SECONDARY}30`
+              }}
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.18em] uppercase"
+                  style={{ color: isCompleted ? AMBER_PRIMARY : (index === 0 ? AMBER_PRIMARY : AMBER_SECONDARY) }}
+                >
+                  <span className="inline-flex h-5 w-5 items-center justify-center border text-[9px] font-bold"
+                    style={{
+                      borderRadius: '50%',
+                      borderColor: isCompleted ? AMBER_PRIMARY : `${AMBER_SECONDARY}45`,
+                      background: isCompleted ? AMBER_PRIMARY : (index === 0 ? `${AMBER_PRIMARY}22` : 'transparent'),
+                      color: isCompleted ? '#000' : 'inherit'
+                    }}>
+                    {isCompleted ? '✓' : stepNumber}
+                  </span>
+                  {step.title}
+                </div>
               </div>
+              <p className="text-[10px] font-semibold leading-4 mb-1" style={{ color: isCompleted ? AMBER_PRIMARY : AMBER_PRIMARY }}>{step.action}</p>
+              <p className="text-[11px] leading-5 text-[var(--text-secondary)]">{step.description}</p>
             </div>
-            <p className="text-[10px] font-semibold leading-4 mb-1" style={{ color: AMBER_PRIMARY }}>{step.action}</p>
-            <p className="text-[11px] leading-5 text-[var(--text-secondary)]">{step.description}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
