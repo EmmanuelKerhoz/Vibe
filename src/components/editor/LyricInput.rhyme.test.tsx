@@ -75,9 +75,31 @@ describe('detectRhymeSchemeLocally', () => {
       'Pas déclarer une guerre cachée sous la soie.',
     ]);
     expect(result).not.toBeNull();
-    expect(result?.[1]).toBe('B');
-    expect(result?.[3]).toBe('B');
-    expect(result?.[5]).toBe('B');
+    expect(result?.[1]).toBe('A');
+    expect(result?.[3]).toBe('A');
+    expect(result?.[5]).toBe('A');
+  });
+
+  it('CHORUS 1: singleton lines get X, oi-family lines get A — no spurious badges', () => {
+    const result = detectRhymeSchemeLocally([
+      'Tu veux un amour vrai ? Alors aime vraiment.',
+      'Sans cadenas, sans piège ni sans "tu me dois".',
+      'Aime sans facture, deal ou condition,',
+      "Aime et laisse vivre, même quand t'as froid.",
+      'Ton "je t\'aime" doit lui apporter la paix,',
+      'Pas déclarer une guerre cachée sous la soie.',
+    ]);
+    expect(result).not.toBeNull();
+    const s = result!;
+    expect(s[0]).toBe('X');
+    expect(s[2]).toBe('X');
+    expect(s[4]).toBe('X');
+    expect(s[1]).toBe(s[3]);
+    expect(s[3]).toBe(s[5]);
+  });
+
+  it('returns null when no two lines rhyme', () => {
+    expect(detectRhymeSchemeLocally(['alpha', 'monde', 'soleil'])).toBeNull();
   });
 });
 
