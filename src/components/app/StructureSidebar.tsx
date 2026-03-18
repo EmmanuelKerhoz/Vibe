@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical } from 'lucide-react';
+import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical, Link2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';
@@ -33,6 +33,13 @@ interface Props {
   className?: string;
 }
 
+/** Detect a Pre-Chorus/Chorus pair: returns true if item at idx is a Pre-Chorus
+ *  and the next item is a Chorus (any casing / numbering). */
+function isPreChorusOf(current: string, next: string | undefined): boolean {
+  if (!next) return false;
+  return /pre.?chorus/i.test(current) && /^chorus/i.test(next);
+}
+
 export function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
   structure, song, newSectionName, setNewSectionName,
@@ -47,18 +54,38 @@ export function StructureSidebar({
   const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /*
-   * FIX #4: stopPropagation prevents the touch event from bubbling to the
-   * backdrop (which would call closeMobilePanels and trigger a second state
-   * update). Closing is exclusively owned by this handler — the nav toggle
-   * button is now open-only (see MobileBottomNav).
-   */
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsStructureOpen(false);
   };
 
+  /** Drop handler for grouped Pre-Chorus+Chorus: moves both items together. */
+  const handleGroupDrop = (targetIdx: number) => {
+    if (draggedItemIndex === null) return;
+    handleDrop(targetIdx);
+    // The second item of the group follows immediately after
+    // handleDrop will have shifted indices; we trigger a second drop for the pair.
+    // Since handleDrop operates on the current draggedItemIndex state, we
+    // simply call it twice: parent's handleDrop must be idempotent per call.
+    // This relies on parent re-rendering between calls, so we use setTimeout.
+    const pairIdx = draggedItemIndex + 1;
+    const adjustedTarget = targetIdx < draggedItemIndex ? targetIdx + 1 : targetIdx + 1;
+    window.setTimeout(() => {
+      // Re-trigger with the chorus index
+      setDraggedItemIndex(pairIdx);
+      window.setTimeout(() => handleDrop(adjustedTarget), 0);
+    }, 0);
+  };
+
   const sectionOptions = SECTION_TYPE_OPTIONS;
+
+  // Build a set of indices to skip (Chorus items already rendered as part of a group)
+  const groupedChorusIndices = new Set<number>();
+  structure.forEach((item, idx) => {
+    if (isPreChorusOf(item, structure[idx + 1])) {
+      groupedChorusIndices.add(idx + 1);
+    }
+  });
 
   return (
     <AnimatePresence>
@@ -110,10 +137,95 @@ export function StructureSidebar({
                 <div className="space-y-2">
                   <div className="flex flex-col gap-1.5">
                     {structure.map((item, idx) => {
+                      // Skip chorus items already rendered inside a Pre-Chorus group
+                      if (groupedChorusIndices.has(idx)) return null;
+
+                      const isGroupLeader = isPreChorusOf(item, structure[idx + 1]);
+                      const chorusItem = isGroupLeader ? structure[idx + 1] : undefined;
+                      const chorusIdx = isGroupLeader ? idx + 1 : undefined;
+
                       const isIntro = isAnchoredStartSection(item);
                       const isOutro = isAnchoredEndSection(item);
                       const isDraggable = !isIntro && !isOutro;
                       const sectionId = song[idx]?.id ?? null;
+                      const chorusSectionId = chorusIdx !== undefined ? (song[chorusIdx]?.id ?? null) : null;
+
+                      const SectionRow = ({ sectionItem, sectionIdx, sectionId: sid, draggable: drag }: {
+                        sectionItem: string;
+                        sectionIdx: number;
+                        sectionId: string | null;
+                        draggable: boolean;
+                      }) => (
+                        <div
+                          draggable={drag}
+                          onDragStart={() => drag && setDraggedItemIndex(sectionIdx)}
+                          onDragOver={(e) => {
+                            e.preventDefault(); e.stopPropagation();
+                            if (draggedItemIndex === null || draggedItemIndex === sectionIdx) return;
+                            if (sectionIdx === 0 && isAnchoredStartSection(structure[0] ?? '')) return;
+                            if (sectionIdx === structure.length - 1 && isAnchoredEndSection(structure[structure.length - 1] ?? '')) return;
+                            setDragOverIndex(sectionIdx);
+                          }}
+                          onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
+                          onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(sectionIdx); }}
+                          className={`group flex items-center gap-3 rounded-[16px_6px_16px_6px] border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(sectionItem)} ${drag ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === sectionIdx ? 'opacity-30' : ''} ${dragOverIndex === sectionIdx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                        >
+                          <span className={`h-7 w-1.5 rounded-full ${getSectionDotColor(sectionItem)}`} aria-hidden="true" />
+                          {drag ? (
+                            <GripVertical className="w-3.5 h-3.5 opacity-30 group-hover:opacity-60 transition-opacity" />
+                          ) : (
+                            <div className="w-3.5" />
+                          )}
+                          <Tooltip title={getSectionTooltipText(sectionItem)}>
+                            <button
+                              type="button"
+                              className={`flex-1 text-left truncate transition-colors ${getSectionTextColor(sectionItem)} hover:text-[var(--accent-color)]`}
+                              onClick={() => sid && onScrollToSection(sid)}
+                            >
+                              {sectionItem}
+                            </button>
+                          </Tooltip>
+                          <Tooltip title={t.tooltips.removeSection}>
+                            <button onClick={() => removeStructureItem(sectionIdx)} className="p-1 hover:bg-black/20 rounded transition-colors opacity-0 group-hover:opacity-100">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      );
+
+                      if (isGroupLeader && chorusItem !== undefined && chorusIdx !== undefined) {
+                        // Render Pre-Chorus + Chorus as a coupled group
+                        return (
+                          <div
+                            key={idx}
+                            draggable={isDraggable}
+                            onDragStart={() => isDraggable && setDraggedItemIndex(idx)}
+                            onDragOver={(e) => {
+                              e.preventDefault(); e.stopPropagation();
+                              if (draggedItemIndex === null || draggedItemIndex === idx) return;
+                              if (idx === 0 && isAnchoredStartSection(structure[0] ?? '')) return;
+                              if (idx === structure.length - 1 && isAnchoredEndSection(structure[structure.length - 1] ?? '')) return;
+                              setDragOverIndex(idx);
+                            }}
+                            onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                            onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
+                            onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleGroupDrop(idx); }}
+                            className={`relative flex flex-col gap-0 ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[16px_6px_16px_6px]' : ''}`}
+                          >
+                            {/* Link indicator */}
+                            <div className="absolute left-[18px] top-[calc(50%-8px)] bottom-[calc(50%-8px)] w-px bg-[var(--accent-color)] opacity-30 pointer-events-none" style={{ top: '38px', bottom: '38px' }} />
+                            <div className="absolute left-[12px] top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                              <Link2 className="w-3 h-3 text-[var(--accent-color)] opacity-50" />
+                            </div>
+                            <SectionRow sectionItem={item} sectionIdx={idx} sectionId={sectionId} draggable={isDraggable} />
+                            <div className="ml-6 border-l-2 border-[var(--accent-color)] border-opacity-20 pl-1">
+                              <SectionRow sectionItem={chorusItem} sectionIdx={chorusIdx} sectionId={chorusSectionId} draggable={false} />
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div
                           key={idx}
