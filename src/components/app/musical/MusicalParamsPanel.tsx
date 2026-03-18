@@ -69,9 +69,10 @@ interface Props {
   instrumentation: string; setInstrumentation: (v: string) => void;
   rhythm: string; setRhythm: (v: string) => void;
   narrative: string; setNarrative: (v: string) => void;
+  onWorkflowStepComplete?: (step: number) => void;
 }
 
-export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative }: Props) {
+export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative, onWorkflowStepComplete }: Props) {
   const { t } = useTranslation();
   const m = t.musical;
   const AMBER_SECONDARY = '#38bdf8';
@@ -104,14 +105,22 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
     setTempo((RHYTHM_BPM[tile.rhythm] ?? tile.bpm).toString());
     setRhythm(tile.rhythm);
     setInstrumentation(tile.instruments.join(', '));
-  }, [selectedVibeTile, setGenre, setTempo, setRhythm, setInstrumentation]);
+    // Step 1 complete: Genre selected
+    onWorkflowStepComplete?.(1);
+    // Step 3 complete: References auto-populated
+    onWorkflowStepComplete?.(3);
+    // Step 4 complete: BPM & instruments auto-set
+    onWorkflowStepComplete?.(4);
+  }, [selectedVibeTile, setGenre, setTempo, setRhythm, setInstrumentation, onWorkflowStepComplete]);
 
   const handleSubStyleSelect = useCallback((subStyle: string) => {
     const next = selectedSubStyle === subStyle ? '' : subStyle;
     setSelectedSubStyle(next);
     if (selectedVibeTile) setGenre(next ? `${selectedVibeTile.name} / ${next}` : selectedVibeTile.name);
     setRhythm(next || (selectedVibeTile?.rhythm ?? ''));
-  }, [selectedSubStyle, selectedVibeTile, setGenre, setRhythm]);
+    // Step 2 complete: Sub-style selected
+    if (next) onWorkflowStepComplete?.(2);
+  }, [selectedSubStyle, selectedVibeTile, setGenre, setRhythm, onWorkflowStepComplete]);
 
   return (
     <div className="space-y-5">
