@@ -59,6 +59,26 @@ describe('detectRhymeSchemeLocally', () => {
     ]);
     expect(result).toBe('AABB');
   });
+
+  it('treats French oi endings like dois, froid and soie as the same rhyme family', () => {
+    const result = detectRhymeSchemeLocally(['dois', 'froid', 'soie']);
+    expect(result).toBe('AAA');
+  });
+
+  it('keeps dois, froid and soie together in the screenshot section regression case', () => {
+    const result = detectRhymeSchemeLocally([
+      'Tu veux un amour vrai ? Alors aime vraiment.',
+      'Sans cadenas, sans piège ni sans “tu me dois”.',
+      'Aime sans facture, deal ou condition,',
+      'Aime et laisse vivre, même quand t’as froid.',
+      'Ton “je t’aime” doit lui apporter la paix,',
+      'Pas déclarer une guerre cachée sous la soie.',
+    ]);
+    expect(result).not.toBeNull();
+    expect(result?.[1]).toBe('B');
+    expect(result?.[3]).toBe('B');
+    expect(result?.[5]).toBe('B');
+  });
 });
 
 describe('splitRhymingSuffix', () => {
