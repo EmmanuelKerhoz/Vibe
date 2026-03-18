@@ -107,10 +107,6 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
     setInstrumentation(tile.instruments.join(', '));
     // Step 1 complete: Genre selected
     onWorkflowStepComplete?.(1);
-    // Step 3 complete: References auto-populated
-    onWorkflowStepComplete?.(3);
-    // Step 4 complete: BPM & instruments auto-set
-    onWorkflowStepComplete?.(4);
   }, [selectedVibeTile, setGenre, setTempo, setRhythm, setInstrumentation, onWorkflowStepComplete]);
 
   const handleSubStyleSelect = useCallback((subStyle: string) => {
