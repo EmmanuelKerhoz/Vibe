@@ -8,6 +8,7 @@ import { Input } from '../ui/Input';
 import { useTranslation } from '../../i18n';
 import { getSectionColor, getSectionDotColor, getSectionTextColor } from '../../utils/songUtils';
 import type { Section } from '../../types';
+import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection, SECTION_TYPE_OPTIONS } from '../../constants/sections';
 
 interface Props {
   isStructureOpen: boolean;
@@ -57,10 +58,7 @@ export function StructureSidebar({
     setIsStructureOpen(false);
   };
 
-  const sectionOptions = [
-    t.sections.intro, t.sections.verse, t.sections.preChorus,
-    t.sections.chorus, t.sections.bridge, t.sections.breakdown, t.sections.finalChorus, t.sections.outro,
-  ];
+  const sectionOptions = SECTION_TYPE_OPTIONS;
 
   return (
     <AnimatePresence>
@@ -112,8 +110,8 @@ export function StructureSidebar({
                 <div className="space-y-2">
                   <div className="flex flex-col gap-1.5">
                     {structure.map((item, idx) => {
-                      const isIntro = item.toLowerCase() === 'intro';
-                      const isOutro = item.toLowerCase() === 'outro';
+                      const isIntro = isAnchoredStartSection(item);
+                      const isOutro = isAnchoredEndSection(item);
                       const isDraggable = !isIntro && !isOutro;
                       const sectionId = song[idx]?.id ?? null;
                       return (
@@ -122,10 +120,10 @@ export function StructureSidebar({
                           draggable={isDraggable}
                           onDragStart={() => isDraggable && setDraggedItemIndex(idx)}
                           onDragOver={(e) => {
-                            e.preventDefault(); e.stopPropagation();
+                           e.preventDefault(); e.stopPropagation();
                             if (draggedItemIndex === null || draggedItemIndex === idx) return;
-                            if (idx === 0 && structure[0]?.toLowerCase() === 'intro') return;
-                            if (idx === structure.length - 1 && structure[structure.length - 1]?.toLowerCase() === 'outro') return;
+                            if (idx === 0 && isAnchoredStartSection(structure[0] ?? '')) return;
+                            if (idx === structure.length - 1 && isAnchoredEndSection(structure[structure.length - 1] ?? '')) return;
                             setDragOverIndex(idx);
                           }}
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
@@ -143,7 +141,7 @@ export function StructureSidebar({
                             type="button"
                             className={`flex-1 text-left truncate transition-colors ${getSectionTextColor(item)} hover:text-[var(--accent-color)]`}
                             onClick={() => sectionId && onScrollToSection(sectionId)}
-                            title={`Scroll to ${item}`}
+                            title={getSectionTooltipText(item)}
                           >
                             {item}
                           </button>
@@ -184,8 +182,11 @@ export function StructureSidebar({
                       <div className="absolute left-0 right-0 mt-1 py-1 bg-fluent-card border border-fluent-border rounded-md shadow-xl z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 lcars-panel">
                         {sectionOptions
                           .filter(name => {
-                            if (name === t.sections.intro || name === t.sections.outro) {
-                              return !structure.some(s => s.toLowerCase() === name.toLowerCase());
+                            if (isAnchoredStartSection(name)) {
+                              return !structure.some(isAnchoredStartSection);
+                            }
+                            if (isAnchoredEndSection(name)) {
+                              return !structure.some(isAnchoredEndSection);
                             }
                             return true;
                           })
@@ -194,6 +195,7 @@ export function StructureSidebar({
                               key={name}
                               onClick={() => { addStructureItem(name); setIsSectionDropdownOpen(false); }}
                               className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 transition-colors flex items-center gap-2"
+                              title={getSectionTooltipText(name)}
                             >
                               <Plus className="w-3 h-3 text-[var(--accent-color)]" />
                               {name}

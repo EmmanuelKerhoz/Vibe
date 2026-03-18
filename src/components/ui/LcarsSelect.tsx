@@ -8,13 +8,14 @@ const EMOJI_FONT_STACK =
 interface LcarsSelectProps {
   value: string;
   onChange: (value: string) => void;
-  options: { value: string; label: React.ReactNode }[];
+  options: { value: string; label: React.ReactNode; title?: string }[];
   placeholder?: string;
   className?: string;
   style?: CSSProperties;
   disabled?: boolean;
   /** Override the glow/border accent colour (CSS colour string or var()). Defaults to var(--accent-color). */
   accentColor?: string;
+  buttonTitle?: string;
 }
 
 export function LcarsSelect({
@@ -26,6 +27,7 @@ export function LcarsSelect({
   style,
   disabled = false,
   accentColor,
+  buttonTitle,
 }: LcarsSelectProps) {
   const accent = accentColor ?? 'var(--accent-color)';
   const [isOpen, setIsOpen] = useState(false);
@@ -171,6 +173,7 @@ export function LcarsSelect({
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-controls={isOpen ? listboxId : undefined}
+          title={buttonTitle}
           onClick={handleTriggerClick}
           onKeyDown={handleKeyDown}
           className={['ux-interactive', className].filter(Boolean).join(' ')}
@@ -264,11 +267,12 @@ export function LcarsSelect({
                 <li
                   key={opt.value}
                   id={`${listboxId}-opt-${idx}`}
-                  role="option"
-                  aria-selected={isSelected}
-                  onMouseDown={(e) => { e.preventDefault(); handleSelect(opt.value); }}
-                  onMouseEnter={() => setFocusedIndex(idx)}
-                  style={{
+                   role="option"
+                   aria-selected={isSelected}
+                   title={opt.title}
+                   onMouseDown={(e) => { e.preventDefault(); handleSelect(opt.value); }}
+                   onMouseEnter={() => setFocusedIndex(idx)}
+                   style={{
                     padding: '10px 14px',
                     cursor: 'pointer',
                     fontFamily: EMOJI_FONT_STACK,

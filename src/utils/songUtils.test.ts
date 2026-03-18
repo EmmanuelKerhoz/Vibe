@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countSyllables, splitRhymingSuffix } from './songUtils';
+import { countSyllables, getSectionColorHex, getSectionDotColor, splitRhymingSuffix } from './songUtils';
 
 describe('countSyllables', () => {
   it('ignores punctuation-only tokens', () => {
@@ -53,5 +53,14 @@ describe('splitRhymingSuffix', () => {
       before: 'Tu veux des preuves, tu veux des cert',
       rhyme: 'itudes,',
     });
+  });
+});
+
+describe('section color families', () => {
+  it('maps newly supported section families to the expected colors', () => {
+    expect(getSectionColorHex('Refrain')).toBe('#f59e0b');
+    expect(getSectionDotColor('Middle 8')).toBe('bg-violet-500');
+    expect(getSectionColorHex('Interlude')).toBe('#06b6d4');
+    expect(getSectionColorHex('Coda')).toBe('#10b981');
   });
 });
