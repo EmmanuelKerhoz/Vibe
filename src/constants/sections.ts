@@ -208,8 +208,16 @@ export const getSectionFamily = (name: string): SectionFamily =>
 export const getSectionExplanation = (name: string): string | null =>
   getSectionTypeDefinition(name)?.description ?? null;
 
+export const getSectionTooltipLines = (name: string): string[] => {
+  const definition = getSectionTypeDefinition(name);
+  if (!definition) return [name];
+
+  const [summary, cue] = definition.description.split(/(?<=\.)\s+(?=Repère\s*:)/);
+  return [definition.label, summary, cue].filter((line): line is string => Boolean(line && line.trim()));
+};
+
 export const getSectionTooltipText = (name: string): string =>
-  getSectionExplanation(name) ?? name;
+  getSectionTooltipLines(name).join('\n');
 
 export const isSectionType = (name: string, key: SectionTypeKey): boolean =>
   getSectionTypeKey(name) === key;

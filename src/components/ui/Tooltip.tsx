@@ -9,7 +9,9 @@ interface Props extends Omit<TooltipProps, 'content' | 'positioning' | 'relation
 export function Tooltip({ title, children, ...props }: Props) {
   return (
     <FluentTooltip
-      content={title}
+      content={typeof title === 'string'
+        ? <span style={{ display: 'block', maxWidth: '18rem', whiteSpace: 'pre-line' }}>{title}</span>
+        : title}
       relationship="label"
       positioning={{ position: 'above', align: 'center' }}
       {...props}

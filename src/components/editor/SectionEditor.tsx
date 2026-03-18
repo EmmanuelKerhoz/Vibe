@@ -150,7 +150,7 @@ export const SectionEditor = React.memo(function SectionEditor({
       {/* LCARS stripe — asymmetric design: TL rounded, TR/BR/BL square */}
       <div
         className={`lcars-band-stripe ${getSectionDotColor(sectionName)}`}
-        style={{ borderRadius: '24px 0 0 0', flexShrink: 0 }}
+        style={{ flexShrink: 0 }}
       />
 
       <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
