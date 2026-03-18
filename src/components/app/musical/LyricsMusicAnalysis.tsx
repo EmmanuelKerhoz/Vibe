@@ -6,10 +6,10 @@ const AMBER_PRIMARY = '#f59e0b';
 const AMBER_SECONDARY = '#38bdf8';
 
 const MUSICAL_GUIDE_STEPS = [
-  { title: 'Start broad',         description: 'Choose the family that gets closest to the track before refining the micro-scene.' },
-  { title: 'Refine the niche',    description: 'Use a sub-style to tell whether it leans indie, club-ready, cinematic, soulful, or hybrid.' },
-  { title: 'Give references',     description: 'Artist touchpoints, mood words, and era cues help define the intended lane instantly.' },
-  { title: 'Lock the production', description: 'Confirm BPM, groove, and instruments so the prompt sounds intentional instead of generic.' },
+  { title: '1. Start broad',         action: 'Select your genre family', description: 'Choose from ÉLECTRONIQUE, URBAIN, ROCK, SOUL/JAZZ, WORLD, POP, or CLASSIQUE below to set the foundation.' },
+  { title: '2. Refine the niche',    action: 'Pick a sub-style',        description: 'After selecting a genre, choose a sub-style (Indie, Club-ready, Cinematic, etc.) to define the specific lane.' },
+  { title: '3. Give references',     action: 'Review artist & mood cues', description: 'Check the auto-filled artist references, mood tags, and era information to validate the intended vibe.' },
+  { title: '4. Lock production',     action: 'Confirm BPM & instruments', description: 'Verify the auto-set tempo, instruments, and rhythm, or adjust them to match your vision.' },
 ];
 
 interface Props {
@@ -72,13 +72,16 @@ export function LyricsMusicAnalysis({ title, topic, mood, hasContext, hasApiKey,
           <div key={step.title} className="ux-interactive border px-3 py-2.5"
             style={{ borderRadius: '14px 4px 14px 4px', background: `${AMBER_SECONDARY}10`, borderColor: `${AMBER_SECONDARY}30` }}
           >
-            <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.18em] uppercase"
-              style={{ color: index === 0 ? AMBER_PRIMARY : AMBER_SECONDARY }}
-            >
-              <span className="inline-flex h-5 w-5 items-center justify-center border text-[9px]" style={{ borderRadius: '50%', borderColor: `${AMBER_SECONDARY}45` }}>{index + 1}</span>
-              {step.title}
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.18em] uppercase"
+                style={{ color: index === 0 ? AMBER_PRIMARY : AMBER_SECONDARY }}
+              >
+                <span className="inline-flex h-5 w-5 items-center justify-center border text-[9px] font-bold" style={{ borderRadius: '50%', borderColor: `${AMBER_SECONDARY}45`, background: index === 0 ? `${AMBER_PRIMARY}22` : 'transparent' }}>{index + 1}</span>
+                {step.title}
+              </div>
             </div>
-            <p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">{step.description}</p>
+            <p className="text-[10px] font-semibold leading-4 mb-1" style={{ color: AMBER_PRIMARY }}>{step.action}</p>
+            <p className="text-[11px] leading-5 text-[var(--text-secondary)]">{step.description}</p>
           </div>
         ))}
       </div>

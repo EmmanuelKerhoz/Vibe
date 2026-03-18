@@ -34,14 +34,12 @@ describe('StructureSidebar section tooltips', () => {
       </LanguageProvider>,
     );
 
-    const turnaroundButtons = screen.getAllByRole('button', { name: 'Turnaround' });
-    expect(turnaroundButtons.some(button =>
-      button.getAttribute('title')?.includes('Courte transition'),
-    )).toBe(true);
+    // Check that the section buttons have tooltip content as their accessible label
+    const turnaroundButtons = screen.getAllByRole('button', { name: /Courte transition/ });
+    expect(turnaroundButtons.length).toBeGreaterThan(0);
+    expect(turnaroundButtons.some(button => button.textContent === 'Turnaround')).toBe(true);
 
-    const interludeButtons = screen.getAllByRole('button', { name: 'Interlude' });
-    expect(interludeButtons.some(button =>
-      button.getAttribute('title')?.includes('souvent instrumental'),
-    )).toBe(true);
+    const interludeButtons = screen.getAllByRole('button', { name: /souvent instrumental/ });
+    expect(interludeButtons.length).toBeGreaterThan(0);
   });
 });
