@@ -213,7 +213,7 @@ export const getSectionTooltipLines = (name: string): string[] => {
   if (!definition) return [name];
 
   const [summary, cue] = definition.description.split(/(?<=\.)\s+(?=Repère\s*:)/);
-  return [definition.label, summary, cue].filter((line): line is string => Boolean(line && line.trim()));
+  return [summary, cue].filter((line): line is string => Boolean(line && line.trim()));
 };
 
 export const getSectionTooltipText = (name: string): string =>

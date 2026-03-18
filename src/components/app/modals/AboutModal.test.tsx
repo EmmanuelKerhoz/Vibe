@@ -4,15 +4,16 @@ import { LanguageProvider } from '../../../i18n';
 import { AboutModal } from './AboutModal';
 
 describe('AboutModal', () => {
-  it('includes a GitHub Sponsors link in the about dialog', () => {
+  it('shows the donation sponsor link and preserves all social links in the about dialog', () => {
     render(
       <LanguageProvider>
         <AboutModal isOpen onClose={() => {}} />
       </LanguageProvider>,
     );
 
-    expect(
-      screen.getByRole('link', { name: 'Visit GitHub Sponsors page' }).getAttribute('href'),
-    ).toBe('https://github.com/sponsors/EmmanuelKerhoz');
+    const donationLink = screen.getByText('Donation (Github Sponsor)').closest('a');
+
+    expect(donationLink?.getAttribute('href')).toBe('https://github.com/sponsors/EmmanuelKerhoz');
+    expect(screen.getAllByRole('link')).toHaveLength(7);
   });
 });
