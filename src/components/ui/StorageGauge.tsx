@@ -60,7 +60,7 @@ export function StorageGauge() {
       {/* Mini popover */}
       {open && (
         <div
-          className="absolute right-0 bottom-[calc(100%+6px)] z-[320] w-56 rounded-[12px_4px_12px_4px] shadow-xl p-3 text-[11px]"
+          className="absolute left-1/2 bottom-[calc(100%+12px)] z-[320] w-56 -translate-x-1/2 rounded-[12px_4px_12px_4px] shadow-xl p-3 text-[11px]"
           style={{
             background: 'var(--bg-card)',
             backdropFilter: 'blur(24px) saturate(200%)',

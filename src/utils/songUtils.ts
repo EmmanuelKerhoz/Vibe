@@ -165,8 +165,9 @@ const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
  * "possessifs"/"adjectif" can still converge on the same rime family.
  */
 const canonicalizeRhymeSuffix = (suffix: string): string => {
-  if (suffix.length <= 3) return suffix;
-  return suffix.replace(/[sx]$/, '');
+  const canonicalSuffix = suffix.length <= 3 ? suffix : suffix.replace(/[sx]$/, '');
+  if (/^oi(?:[destx]|e)?$/.test(canonicalSuffix)) return 'oi';
+  return canonicalSuffix;
 };
 
 const getRhymeCandidates = (text: string): RhymeCandidate[] => {
