@@ -23,7 +23,16 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-200">
-        <div className="acrylic w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[80vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 lcars-panel rounded-none sm:rounded-[24px_8px_24px_8px]">
+      {/* Gradient border wrapper */}
+      <div
+        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[80vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        style={{
+          padding: '2px',
+          background: 'var(--accent-rail-gradient-h)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+        }}
+      >
+        <div className="acrylic w-full h-full overflow-hidden flex flex-col lcars-panel rounded-none sm:rounded-[22px_6px_22px_6px]">
           <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
             <h3 className="text-lg text-zinc-100 flex items-center gap-2.5">
               <History className="w-5 h-5 text-[var(--accent-color)]" />
@@ -99,6 +108,7 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
               Close
             </Button>
           </div>
+        </div>
       </div>
     </div>
   );
