@@ -238,7 +238,7 @@ export const SectionEditor = React.memo(function SectionEditor({
         <div className="flex items-center gap-1.5 px-1 mb-0.5 select-none" aria-hidden="true">
           <span className="flex-shrink-0 w-3.5" />
           <span className="flex-1 min-w-0" />
-          <span className="flex-shrink-0 w-[70px]" />
+          <span className="flex-shrink-0 w-16" />
           <span className="flex-shrink-0 w-[2.25rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
             {t.editor?.syllableCount ?? 'Count'}
           </span>

@@ -171,7 +171,7 @@ export const LyricInput = React.memo(function LyricInput({
       </div>
 
       {/* Line controls — visible on hover */}
-      <div className="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity w-16">
         <Tooltip title={t.editor?.moveLineUp ?? 'Move line up'}>
           <button type="button" onClick={() => { moveLineUp(sectionId, line.id); playAudioFeedback('click'); }} disabled={lineIndex === 0}
             className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">
