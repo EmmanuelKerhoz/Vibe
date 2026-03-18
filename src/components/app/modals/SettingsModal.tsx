@@ -147,7 +147,7 @@ export function SettingsModal({
             <div className="w-[500px] h-[400px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
           </div>
 
-          {/* Gradient border wrapper — replaces border border-white/10 */}
+          {/* Gradient border wrapper — outer shell only, 2px padding */}
           <div
             className="relative w-full sm:max-w-lg h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
             style={{
@@ -156,12 +156,13 @@ export function SettingsModal({
               boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
             }}
           >
-            {/* Modal panel — interior unchanged */}
+            {/* Modal panel — solid background blocks gradient bleed */}
             <div
               role="dialog"
               aria-modal="true"
               aria-label={t.settings.title}
-              className="relative w-full h-full flex flex-col animate-in zoom-in-95 duration-300 glass-panel shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]"
+              className="relative w-full h-full flex flex-col animate-in zoom-in-95 duration-300 shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]"
+              style={{ background: 'var(--bg-card)' }}
             >
               {/* Header */}
               <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">

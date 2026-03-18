@@ -23,7 +23,7 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-200">
-      {/* Gradient border wrapper — replaces implicit lcars-panel border */}
+      {/* Gradient border wrapper — outer shell only, 2px padding */}
       <div
         className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[80vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
         style={{
@@ -32,16 +32,19 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
           boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
         }}
       >
-        {/* Modal panel — interior unchanged */}
-        <div className="acrylic w-full h-full overflow-hidden flex flex-col lcars-panel rounded-none sm:rounded-[22px_6px_22px_6px]">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-            <h3 className="text-lg text-zinc-100 flex items-center gap-2.5">
+        {/* Modal panel — solid background blocks gradient bleed */}
+        <div
+          className="w-full h-full overflow-hidden flex flex-col rounded-none sm:rounded-[22px_6px_22px_6px]"
+          style={{ background: 'var(--bg-card)' }}
+        >
+          <div className="p-6 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)]">
+            <h3 className="text-lg text-[var(--text-primary)] flex items-center gap-2.5">
               <History className="w-5 h-5 text-[var(--accent-color)]" />
               Song Versions
             </h3>
             <button
               onClick={onClose}
-              className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-md transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -49,7 +52,7 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
 
           <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
             <div className="flex items-center justify-between mb-6">
-              <p className="text-sm text-zinc-400">Track your progress and rollback to any previous version of your song.</p>
+              <p className="text-sm text-[var(--text-secondary)]">Track your progress and rollback to any previous version of your song.</p>
               <Button
                 onClick={handleOpenSaveDialog}
                 variant="outlined"
@@ -62,20 +65,20 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
             </div>
 
             {versions.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-center space-y-4 border border-dashed border-white/10 rounded-2xl">
-                <div className="w-12 h-12 rounded-full bg-white/[0.02] flex items-center justify-center">
-                  <History className="w-6 h-6 text-zinc-800" />
+              <div className="h-64 flex flex-col items-center justify-center text-center space-y-4 border border-dashed border-[var(--border-color)] rounded-2xl">
+                <div className="w-12 h-12 rounded-full bg-[var(--bg-app)] flex items-center justify-center">
+                  <History className="w-6 h-6 text-[var(--text-secondary)]" />
                 </div>
-                <p className="text-sm text-zinc-500">No versions saved yet.</p>
+                <p className="text-sm text-[var(--text-secondary)]">No versions saved yet.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {versions.map((version) => (
-                  <div key={version.id} className="group p-4 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-[var(--accent-color)]/30 rounded-xl transition-all">
+                  <div key={version.id} className="group p-4 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--accent-color)]/30 rounded-xl transition-all">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
-                        <h4 className="text-sm font-medium text-zinc-200">{version.name}</h4>
-                        <span className="text-[10px] text-zinc-500 font-mono">{new Date(version.timestamp).toLocaleString()}</span>
+                        <h4 className="text-sm font-medium text-[var(--text-primary)]">{version.name}</h4>
+                        <span className="text-[10px] text-[var(--text-secondary)] font-mono">{new Date(version.timestamp).toLocaleString()}</span>
                       </div>
                       <Button
                         onClick={() => onRollback(version)}
@@ -88,7 +91,7 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
                         Rollback
                       </Button>
                     </div>
-                    <div className="flex items-center gap-4 text-[10px] text-zinc-500">
+                    <div className="flex items-center gap-4 text-[10px] text-[var(--text-secondary)]">
                       <div className="flex items-center gap-1">
                         <Layout className="w-3 h-3" />
                         {version.song.length} Sections
@@ -104,7 +107,7 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
             )}
           </div>
 
-          <div className="p-6 border-t border-white/5 bg-white/[0.02] flex justify-end">
+          <div className="p-6 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-end">
             <Button onClick={onClose} variant="contained" color="inherit">
               Close
             </Button>
