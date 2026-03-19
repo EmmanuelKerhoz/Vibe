@@ -89,7 +89,7 @@ export function LyricsMusicAnalysis({ title, topic, mood, hasContext, hasApiKey,
                       borderRadius: '50%',
                       borderColor: isCompleted ? AMBER_PRIMARY : `${AMBER_SECONDARY}45`,
                       background: isCompleted ? AMBER_PRIMARY : (index === 0 ? `${AMBER_PRIMARY}22` : 'transparent'),
-                      color: isCompleted ? '#000' : (isCompleted ? AMBER_PRIMARY : (index === 0 ? AMBER_PRIMARY : AMBER_SECONDARY)),
+                      color: isCompleted ? '#000' : (index === 0 ? AMBER_PRIMARY : AMBER_SECONDARY),
                     }}>
                     {isCompleted ? '✓' : stepNumber}
                   </span>
