@@ -227,6 +227,7 @@ export interface Translations {
     loadDescription: string;
     close: string;
     storageTitle: string;
+    storageLibraryData: string;
     storageUsed: string;
     storageQuota: string;
     storageSaturation: string;

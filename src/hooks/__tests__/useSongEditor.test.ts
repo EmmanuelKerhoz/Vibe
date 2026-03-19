@@ -22,9 +22,12 @@ const lastCreatedBlob = () => {
   return firstCall ? firstCall[0] : undefined;
 };
 
-const buildHook = (song: Section[], structure = DEFAULT_STRUCTURE) => {
+const buildHook = (
+  song: Section[],
+  structure = DEFAULT_STRUCTURE,
+  options: { draggedItemIndex?: number | null } = {},
+) => {
   const updateState = vi.fn();
-  
   const updateStructureWithHistory = vi.fn();
   const updateSongAndStructureWithHistory = vi.fn();
   const openPasteModalWithText = vi.fn();
@@ -36,14 +39,13 @@ const buildHook = (song: Section[], structure = DEFAULT_STRUCTURE) => {
       structure,
       newSectionName: '',
       setNewSectionName: vi.fn(),
-      draggedItemIndex: null,
+      draggedItemIndex: options.draggedItemIndex ?? null,
       setDraggedItemIndex: vi.fn(),
       setDragOverIndex: vi.fn(),
       draggedLineInfo: null,
       setDraggedLineInfo: vi.fn(),
       setDragOverLineInfo: vi.fn(),
       updateState,
-      
       updateStructureWithHistory,
       updateSongAndStructureWithHistory,
       title: 'Test Song',
@@ -53,7 +55,7 @@ const buildHook = (song: Section[], structure = DEFAULT_STRUCTURE) => {
       playAudioFeedback,
     })
   );
-  return { result, updateSongAndStructureWithHistory, updateStructureWithHistory,  updateState };
+  return { result, updateSongAndStructureWithHistory, updateStructureWithHistory, updateState };
 };
 
 describe('useSongEditor', () => {
@@ -146,6 +148,30 @@ describe('useSongEditor', () => {
       const { result, updateStructureWithHistory } = buildHook(song, ['Verse 1']);
       act(() => result.current.normalizeStructure());
       expect(updateStructureWithHistory).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleDrop', () => {
+    it('moves a pre-chorus and chorus pair together when dragging the chorus', () => {
+      const song = [
+        makeSection('s1', 'Verse 1'),
+        makeSection('s2', 'Pre-Chorus 1'),
+        makeSection('s3', 'Chorus 1'),
+        makeSection('s4', 'Verse 2'),
+      ];
+
+      const { result, updateSongAndStructureWithHistory } = buildHook(
+        song,
+        song.map(section => section.name),
+        { draggedItemIndex: 2 },
+      );
+
+      act(() => result.current.handleDrop(3));
+
+      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
+      const [newSong, newStructure] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
+      expect(newStructure).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
+      expect(newSong.map(section => section.name)).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
     });
   });
 

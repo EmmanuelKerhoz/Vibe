@@ -59,24 +59,6 @@ export function StructureSidebar({
     setIsStructureOpen(false);
   };
 
-  /** Drop handler for grouped Pre-Chorus+Chorus: moves both items together. */
-  const handleGroupDrop = (targetIdx: number) => {
-    if (draggedItemIndex === null) return;
-    handleDrop(targetIdx);
-    // The second item of the group follows immediately after
-    // handleDrop will have shifted indices; we trigger a second drop for the pair.
-    // Since handleDrop operates on the current draggedItemIndex state, we
-    // simply call it twice: parent's handleDrop must be idempotent per call.
-    // This relies on parent re-rendering between calls, so we use setTimeout.
-    const pairIdx = draggedItemIndex + 1;
-    const adjustedTarget = targetIdx < draggedItemIndex ? targetIdx + 1 : targetIdx + 1;
-    window.setTimeout(() => {
-      // Re-trigger with the chorus index
-      setDraggedItemIndex(pairIdx);
-      window.setTimeout(() => handleDrop(adjustedTarget), 0);
-    }, 0);
-  };
-
   const sectionOptions = SECTION_TYPE_OPTIONS;
 
   // Build a set of indices to skip (Chorus items already rendered as part of a group)
@@ -151,11 +133,12 @@ export function StructureSidebar({
                       const sectionId = song[idx]?.id ?? null;
                       const chorusSectionId = chorusIdx !== undefined ? (song[chorusIdx]?.id ?? null) : null;
 
-                      const SectionRow = ({ sectionItem, sectionIdx, sectionId: sid, draggable: drag }: {
+                      const SectionRow = ({ sectionItem, sectionIdx, sectionId: sid, draggable: drag, showDragHandle = drag }: {
                         sectionItem: string;
                         sectionIdx: number;
                         sectionId: string | null;
                         draggable: boolean;
+                        showDragHandle?: boolean;
                       }) => (
                         <div
                           draggable={drag}
@@ -173,7 +156,7 @@ export function StructureSidebar({
                           className={`group flex items-center gap-3 rounded-[16px_6px_16px_6px] border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(sectionItem)} ${drag ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === sectionIdx ? 'opacity-30' : ''} ${dragOverIndex === sectionIdx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                         >
                           <span className={`h-7 w-1.5 rounded-full ${getSectionDotColor(sectionItem)}`} aria-hidden="true" />
-                          {drag ? (
+                          {showDragHandle ? (
                             <GripVertical className="w-3.5 h-3.5 opacity-30 group-hover:opacity-60 transition-opacity" />
                           ) : (
                             <div className="w-3.5" />
@@ -211,18 +194,15 @@ export function StructureSidebar({
                             }}
                             onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                             onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
-                            onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleGroupDrop(idx); }}
-                            className={`relative flex flex-col gap-0 ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[16px_6px_16px_6px]' : ''}`}
+                            onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }}
+                            className={`relative flex flex-col gap-1.5 pl-4 ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[16px_6px_16px_6px]' : ''}`}
                           >
-                            {/* Link indicator */}
-                            <div className="absolute left-[18px] top-[calc(50%-8px)] bottom-[calc(50%-8px)] w-px bg-[var(--accent-color)] opacity-30 pointer-events-none" style={{ top: '38px', bottom: '38px' }} />
-                            <div className="absolute left-[12px] top-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                              <Link2 className="w-3 h-3 text-[var(--accent-color)] opacity-50" />
+                            <div className="absolute left-[14px] top-9 bottom-9 w-px bg-[var(--accent-color)]/40 pointer-events-none" />
+                            <div className="absolute left-[8px] top-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
+                              <Link2 className="w-2.5 h-2.5 text-[var(--accent-color)] opacity-60" />
                             </div>
-                            <SectionRow sectionItem={item} sectionIdx={idx} sectionId={sectionId} draggable={isDraggable} />
-                            <div className="ml-6 border-l-2 border-[var(--accent-color)] border-opacity-20 pl-1">
-                              <SectionRow sectionItem={chorusItem} sectionIdx={chorusIdx} sectionId={chorusSectionId} draggable={false} />
-                            </div>
+                            <SectionRow sectionItem={item} sectionIdx={idx} sectionId={sectionId} draggable={false} showDragHandle={isDraggable} />
+                            <SectionRow sectionItem={chorusItem} sectionIdx={chorusIdx} sectionId={chorusSectionId} draggable={false} />
                           </div>
                         );
                       }

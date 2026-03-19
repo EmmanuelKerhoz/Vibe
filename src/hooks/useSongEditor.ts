@@ -68,6 +68,21 @@ const makeEmptySection = (name: string): Section => ({
   lines: makeEmptyLines(),
 });
 
+const isPreChorusSection = (name: string) => /pre.?chorus/i.test(name);
+const isChorusSection = (name: string) => /^chorus(\s|$)/i.test(name.trim()) && !isPreChorusSection(name);
+
+const getTiedSectionRange = (items: string[], index: number) => {
+  if (index < 0 || index >= items.length) return { start: index, end: index };
+  const current = items[index] ?? '';
+  if (isPreChorusSection(current) && index + 1 < items.length && isChorusSection(items[index + 1] ?? '')) {
+    return { start: index, end: index + 1 };
+  }
+  if (isChorusSection(current) && index > 0 && isPreChorusSection(items[index - 1] ?? '')) {
+    return { start: index - 1, end: index };
+  }
+  return { start: index, end: index };
+};
+
 export const useSongEditor = ({
   song,
   structure,
@@ -201,7 +216,13 @@ export const useSongEditor = ({
   const handleDrop = useCallback((dropIndex: number) => {
     setDragOverIndex(null);
     if (draggedItemIndex === null || draggedItemIndex === dropIndex) return;
-    const draggedItemName = structure[draggedItemIndex];
+    const draggedRange = getTiedSectionRange(structure, draggedItemIndex);
+    const targetRange = getTiedSectionRange(structure, dropIndex);
+    if (targetRange.start >= draggedRange.start && targetRange.start <= draggedRange.end) return;
+    const draggedBlockLength = draggedRange.end - draggedRange.start + 1;
+    const canonicalDropIndex = draggedRange.start < targetRange.start ? targetRange.end : targetRange.start;
+
+    const draggedItemName = structure[draggedRange.start];
     if (!draggedItemName) return;
     const getBaseAndNumber = (name: string) => {
       const match = name.match(/^(.+?)\s+(\d+)$/);
@@ -209,34 +230,39 @@ export const useSongEditor = ({
       return { base: name, num: null };
     };
     const draggedInfo = getBaseAndNumber(draggedItemName);
-    if (isAnchoredStartSection(draggedItemName) && dropIndex !== 0) return;
+    if (isAnchoredStartSection(draggedItemName) && targetRange.start !== 0) return;
     if (isAnchoredEndSection(draggedItemName)) {
-      if (dropIndex !== structure.length - 1) return;
+      if (targetRange.start !== structure.length - 1) return;
     } else {
       const anchoredEndIndex = structure.findIndex(isAnchoredEndSection);
       if (anchoredEndIndex !== -1) {
-        if (dropIndex > anchoredEndIndex && draggedItemIndex !== anchoredEndIndex) return;
-        if (draggedItemIndex === anchoredEndIndex && dropIndex !== structure.length - 1) return;
+        if (targetRange.start > anchoredEndIndex && draggedRange.start !== anchoredEndIndex) return;
+        if (draggedRange.start === anchoredEndIndex && targetRange.start !== structure.length - 1) return;
       }
     }
     const tempStructure = [...structure];
-    tempStructure.splice(draggedItemIndex, 1);
-    tempStructure.splice(dropIndex, 0, draggedItemName);
+    const draggedBlock = tempStructure.splice(draggedRange.start, draggedBlockLength);
+    let insertIndex = canonicalDropIndex;
+    if (insertIndex > draggedRange.end) insertIndex -= draggedBlockLength - 1;
+    tempStructure.splice(insertIndex, 0, ...draggedBlock);
     if (draggedInfo.num !== null) {
-      const sameBaseSections = tempStructure
-        .map((name, index) => ({ name, index, ...getBaseAndNumber(name) }))
-        .filter(item => item.base === draggedInfo.base && item.num !== null);
-      for (let i = 0; i < sameBaseSections.length - 1; i++) {
-        if (sameBaseSections[i]!.num! > sameBaseSections[i + 1]!.num!) return;
+      const numberedSectionsByBase = new Map<string, number[]>();
+      for (const name of tempStructure) {
+        const { base, num } = getBaseAndNumber(name);
+        if (num === null) continue;
+        const numbers = numberedSectionsByBase.get(base) ?? [];
+        if (numbers.length > 0 && numbers[numbers.length - 1]! > num) return;
+        numbers.push(num);
+        numberedSectionsByBase.set(base, numbers);
       }
     }
     const newStructure = [...structure];
-    const draggedItem = newStructure.splice(draggedItemIndex, 1)[0]!;
-    newStructure.splice(dropIndex, 0, draggedItem);
+    const movedBlock = newStructure.splice(draggedRange.start, draggedBlockLength);
+    newStructure.splice(insertIndex, 0, ...movedBlock);
     const newSong = [...song];
     if (newSong.length > 0) {
-      const draggedSection = newSong.splice(draggedItemIndex, 1)[0]!;
-      newSong.splice(dropIndex, 0, draggedSection);
+      const movedSections = newSong.splice(draggedRange.start, draggedBlockLength);
+      newSong.splice(insertIndex, 0, ...movedSections);
     }
     updateSongAndStructureWithHistory(newSong, newStructure);
     setDraggedItemIndex(null);

@@ -3,51 +3,7 @@ import { Save, X, BookOpen, Music, Clock, Loader2, Library, Trash2, FolderOpen, 
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { LibraryAsset } from '../../../utils/libraryUtils';
-import { safeGetItem } from '../../../utils/safeStorage';
-
-type StorageTier = 'green' | 'orange' | 'red';
-
-type LocalLibraryStorageEstimate = {
-  usage: number;
-  quota: number;
-  ratio: number;
-  tier: StorageTier;
-  usageMB: string;
-  quotaMB: string;
-  supported: boolean;
-};
-
-const LOCAL_LIBRARY_KEY = 'lyricist_library';
-const LOCAL_STORAGE_QUOTA_BYTES = 5 * 1024 * 1024;
-
-function toMB(bytes: number): string {
-  if (bytes === 0) return '0';
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function getStorageTier(ratio: number): StorageTier {
-  if (ratio >= 0.8) return 'red';
-  if (ratio >= 0.5) return 'orange';
-  return 'green';
-}
-
-function getLocalLibraryStorageEstimate(): LocalLibraryStorageEstimate {
-  const supported = typeof window !== 'undefined' && 'localStorage' in window;
-  const raw = supported ? safeGetItem(LOCAL_LIBRARY_KEY) : null;
-  const usage = raw ? new Blob([raw]).size : 0;
-  const quota = LOCAL_STORAGE_QUOTA_BYTES;
-  const ratio = quota > 0 ? usage / quota : 0;
-
-  return {
-    usage,
-    quota,
-    ratio,
-    tier: getStorageTier(ratio),
-    usageMB: toMB(usage),
-    quotaMB: toMB(quota),
-    supported,
-  };
-}
+import { useStorageEstimate } from '../../../hooks/useStorageEstimate';
 
 type Props = {
   isOpen: boolean;
@@ -75,7 +31,7 @@ export function SaveToLibraryModal({
   hasCurrentSong = true,
 }: Props) {
   const { t } = useTranslation();
-  const storage = getLocalLibraryStorageEstimate();
+  const storage = useStorageEstimate();
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
 
   const handlePurge = async () => {
@@ -240,17 +196,16 @@ export function SaveToLibraryModal({
           </div>
 
           {/* Storage details section */}
-          {storage.supported && (
-            <div className="px-6 pb-4 border-t border-[var(--border-color)]">
-              <div className={`p-4 rounded-[12px_4px_12px_4px] border ${tierBg} mt-4`}>
-                <div className="flex items-center gap-2 mb-3">
-                  <HardDrive className={`w-4 h-4 ${tierColor}`} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
-                    {t.saveToLibrary.storageTitle}
-                  </span>
-                </div>
+          <div className="px-6 pb-4 border-t border-[var(--border-color)]">
+            <div className={`p-4 rounded-[12px_4px_12px_4px] border ${tierBg} mt-4`}>
+              <div className="flex items-center gap-2 mb-3">
+                <HardDrive className={`w-4 h-4 ${tierColor}`} />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                  {t.saveToLibrary.storageTitle}
+                </span>
+              </div>
 
-                {/* Progress bar */}
+              {storage.supported && (
                 <div className="h-2 w-full rounded-full bg-[var(--bg-app)] overflow-hidden mb-3">
                   <div
                     className="h-full rounded-full transition-all duration-500"
@@ -262,68 +217,75 @@ export function SaveToLibraryModal({
                     }}
                   />
                 </div>
+              )}
 
-                {/* Storage stats */}
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageUsed}</span>
-                    <span className={`font-semibold ${tierColor}`}>{storage.usageMB}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageQuota}</span>
-                    <span className="font-semibold text-[var(--text-primary)]">{storage.quotaMB}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageSaturation}</span>
-                    <span className={`font-bold ${tierColor}`}>{Math.round(storage.ratio * 100)}%</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-[var(--border-color)] mt-2">
-                    <span className="text-[var(--text-secondary)]">{t.saveToLibrary.libraryItems}</span>
-                    <span className="font-semibold text-[var(--text-primary)]">{libraryAssets.length}</span>
-                  </div>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageLibraryData}</span>
+                  <span className="font-semibold text-[var(--text-primary)]">{storage.libraryUsageMB}</span>
                 </div>
-                <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-secondary)]">
-                  {t.saveToLibrary.storageScopeLocal}
-                </p>
-
-                {/* Purge button */}
-                {onPurgeLibrary && libraryAssets.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
-                    {!showPurgeConfirm ? (
-                      <button
-                        onClick={() => setShowPurgeConfirm(true)}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        {t.saveToLibrary.purge}
-                      </button>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-start gap-2 p-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400">
-                          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                          <span>{t.saveToLibrary.purgeWarning}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handlePurge}
-                            className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded transition-all"
-                          >
-                            {t.saveToLibrary.confirmPurge}
-                          </button>
-                          <button
-                            onClick={() => setShowPurgeConfirm(false)}
-                            className="flex-1 px-3 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs font-bold rounded transition-all"
-                          >
-                            {t.saveToLibrary.cancel}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                {storage.supported && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageUsed}</span>
+                      <span className={`font-semibold ${tierColor}`}>{storage.usageMB}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageQuota}</span>
+                      <span className="font-semibold text-[var(--text-primary)]">{storage.quotaMB}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)]">{t.saveToLibrary.storageSaturation}</span>
+                      <span className={`font-bold ${tierColor}`}>{Math.round(storage.ratio * 100)}%</span>
+                    </div>
+                  </>
                 )}
+                <div className="flex justify-between pt-2 border-t border-[var(--border-color)] mt-2">
+                  <span className="text-[var(--text-secondary)]">{t.saveToLibrary.libraryItems}</span>
+                  <span className="font-semibold text-[var(--text-primary)]">{libraryAssets.length}</span>
+                </div>
               </div>
+              <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+                {t.saveToLibrary.storageScopeLocal}
+              </p>
+
+              {/* Purge button */}
+              {onPurgeLibrary && libraryAssets.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
+                  {!showPurgeConfirm ? (
+                    <button
+                      onClick={() => setShowPurgeConfirm(true)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold rounded-lg transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {t.saveToLibrary.purge}
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2 p-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>{t.saveToLibrary.purgeWarning}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handlePurge}
+                          className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded transition-all"
+                        >
+                          {t.saveToLibrary.confirmPurge}
+                        </button>
+                        <button
+                          onClick={() => setShowPurgeConfirm(false)}
+                          className="flex-1 px-3 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs font-bold rounded transition-all"
+                        >
+                          {t.saveToLibrary.cancel}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-end">
