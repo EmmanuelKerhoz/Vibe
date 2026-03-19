@@ -49,7 +49,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={t.app.name}
-        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden about-dialog-shimmer rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300 border border-white/10 dark:border-white/8"
+        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden about-dialog-shimmer glass-panel rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300 border border-white/10 dark:border-white/8"
         style={{
           background: 'var(--bg-card)',
           boxShadow: '0 25px 60px rgba(0,0,0,0.6)',

@@ -203,6 +203,9 @@ export const LyricInput = React.memo(function LyricInput({
         {line.syllables > 0 ? line.syllables : ''}
       </span>
 
+      {/* COL: SPACER */}
+      <span className="flex-shrink-0 w-2" />
+
       {/* COL: SCHEMA */}
       <span
         className={`flex-shrink-0 inline-flex h-4 w-7 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
