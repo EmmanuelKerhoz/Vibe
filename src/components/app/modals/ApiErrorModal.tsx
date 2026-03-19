@@ -18,7 +18,7 @@ export function ApiErrorModal({ isOpen, onClose, message }: ApiErrorModalProps) 
         role="button"
         tabIndex={0}
         aria-label="Close dialog"
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300"
+        className="absolute inset-0 bg-black/40 backdrop-blur-[1px] animate-in fade-in duration-300"
         onClick={onClose}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(); }}
       />

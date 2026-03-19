@@ -75,8 +75,8 @@ export function StorageGauge() {
         className="w-full rounded-[12px_4px_12px_4px] shadow-xl p-3 text-[11px]"
         style={{
           background: 'var(--bg-card)',
-          backdropFilter: 'blur(24px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+          backdropFilter: 'blur(4px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(4px) saturate(200%)',
           border: '2px solid transparent',
           backgroundClip: 'padding-box',
           position: 'relative',
@@ -96,8 +96,8 @@ export function StorageGauge() {
         <div
           className="relative bg-white/98 dark:bg-black/95 rounded-[10px_2px_10px_2px] -m-3 p-3"
           style={{
-            backdropFilter: 'blur(24px) saturate(200%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+            backdropFilter: 'blur(4px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(4px) saturate(200%)',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
           }}
         >

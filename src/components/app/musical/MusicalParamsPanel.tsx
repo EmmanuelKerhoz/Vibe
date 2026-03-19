@@ -38,21 +38,97 @@ export function buildGenreTooltip(summary: string, tile: { name: string; bpm: nu
   return `${tile.name}\n${summary}\n${tile.bpm} BPM · ${tile.rhythm}\n${tile.instruments.join(', ')}`;
 }
 
-const SUB_STYLES: Record<string, string[]> = {
-  'Rock': ['Classic', 'Indie', 'Psychedelic', 'Prog', 'Alternative'],
-  'Jazz': ['Swing', 'Bebop', 'Fusion', 'Smooth', 'Latin'],
-  'Hip-Hop': ['Trap', 'Boom Bap', 'Lo-Fi', 'Cloud Rap', 'Drill'],
-  'Pop': ['Indie Pop', 'K-Pop', 'Synth-Pop', 'Dance Pop'],
-  'R&B': ['Neo Soul', 'Contemporary', 'Future R&B'],
-  'Metal': ['Heavy', 'Death', 'Thrash', 'Progressive'],
-  'Funk': ['Classic', 'P-Funk', 'Neo-Funk', 'Electro-Funk'],
-  'Reggae': ['Roots', 'Dancehall', 'Dub'],
-  'Blues': ['Delta', 'Chicago', 'Electric', 'Texas'],
-  'Electronic': ['House', 'Techno', 'Ambient', 'IDM'],
-  'Synthwave': ['Retrowave', 'Darksynth', 'Chillwave'],
-  'Soul': ['Classic', 'Neo Soul', 'Northern Soul'],
-  'Afrobeat': ['Afrobeats', 'Highlife', 'J\u00f9j\u00fa'],
+interface SubStyleEntry {
+  name: string;
+  description: string;
+  bpmOffset: number;
+  mood: string;
+  signature: string;
+  addInstruments: string[];
+}
+
+const SUB_STYLE_DATA: Record<string, SubStyleEntry[]> = {
+  'Rock': [
+    { name: 'Classic', description: 'Big riffs, driving rhythm, arena-ready dynamics.', bpmOffset: 0, mood: 'Anthemic', signature: 'Power chords, verse-chorus-solo arc', addInstruments: ['Lead Vocals'] },
+    { name: 'Indie', description: 'Lo-fi warmth, jangly guitars, understated vocals.', bpmOffset: -10, mood: 'Introspective', signature: 'Clean tones, reverb-drenched hooks', addInstruments: ['Acoustic Guitar'] },
+    { name: 'Psychedelic', description: 'Swirling textures, phased effects, consciousness-expanding sound.', bpmOffset: -20, mood: 'Dreamy', signature: 'Tape delay, backward guitars, sitar accents', addInstruments: ['Synthesizer', 'Sitar'] },
+    { name: 'Prog', description: 'Complex time signatures, extended compositions, technical mastery.', bpmOffset: +10, mood: 'Epic', signature: 'Odd meters, synth layers, dynamic shifts', addInstruments: ['Synthesizer', 'Grand Piano'] },
+    { name: 'Alternative', description: 'Genre-fluid experimentation, angular melodies, raw emotion.', bpmOffset: -5, mood: 'Restless', signature: 'Dissonant textures, dynamic contrast', addInstruments: [] },
+  ],
+  'Jazz': [
+    { name: 'Swing', description: 'Bouncy shuffle feel, big-band punch, infectious groove.', bpmOffset: +15, mood: 'Joyful', signature: 'Walking bass, brass stabs, swing feel', addInstruments: ['Trumpet', 'Trombone'] },
+    { name: 'Bebop', description: 'Virtuosic improv, rapid harmonic movement, intimate combo.', bpmOffset: +40, mood: 'Intense', signature: 'Fast unison heads, complex changes', addInstruments: ['Trumpet'] },
+    { name: 'Fusion', description: 'Electric jazz meets rock energy, groove-forward sophistication.', bpmOffset: -15, mood: 'Driving', signature: 'Distorted keys, slap bass, polyrhythm', addInstruments: ['Electric Guitar', 'Synthesizer'] },
+    { name: 'Smooth', description: 'Polished production, accessible melody, velvet atmosphere.', bpmOffset: -30, mood: 'Relaxed', signature: 'Soprano sax lead, lush pads', addInstruments: ['Synthesizer'] },
+    { name: 'Latin', description: 'Afro-Cuban clave patterns, percussive heat, harmonic color.', bpmOffset: -5, mood: 'Fiery', signature: 'Montuno piano, conga patterns, horn riffs', addInstruments: ['Latin Percussion', 'Trumpet'] },
+  ],
+  'Hip-Hop': [
+    { name: 'Trap', description: 'Sub-heavy 808s, hi-hat rolls, dark atmospheric pads.', bpmOffset: -20, mood: 'Menacing', signature: 'Triplet hi-hats, pitched 808, sparse vocals', addInstruments: ['Synthesizer'] },
+    { name: 'Boom Bap', description: 'Punchy drums, sample-based loops, lyric-forward production.', bpmOffset: 0, mood: 'Gritty', signature: 'Chopped samples, snappy snare, vinyl crackle', addInstruments: [] },
+    { name: 'Lo-Fi', description: 'Dusty textures, detuned samples, beatmaking as meditation.', bpmOffset: -15, mood: 'Chill', signature: 'Vinyl hiss, jazz piano chops, soft kicks', addInstruments: ['Rhodes'] },
+    { name: 'Cloud Rap', description: 'Ethereal pads, reverb-washed vocals, dreamy slow-motion feel.', bpmOffset: -25, mood: 'Ethereal', signature: 'Spacious reverb, airy synths, Auto-Tune', addInstruments: ['Synthesizer'] },
+    { name: 'Drill', description: 'Sliding 808s, ominous melodies, relentless rhythmic energy.', bpmOffset: +50, mood: 'Aggressive', signature: 'Sliding bass, dark piano loops, rapid hi-hats', addInstruments: ['Grand Piano'] },
+  ],
+  'Pop': [
+    { name: 'Indie Pop', description: 'Hand-crafted charm, quirky arrangements, authentic texture.', bpmOffset: -10, mood: 'Whimsical', signature: 'Ukulele/glockenspiel accents, lo-fi sheen', addInstruments: ['Acoustic Guitar'] },
+    { name: 'K-Pop', description: 'Maximalist production, genre-blending sections, precision choreography sound.', bpmOffset: +8, mood: 'Explosive', signature: 'Beat drops, rap verses, key changes', addInstruments: ['Sampler'] },
+    { name: 'Synth-Pop', description: 'Analog synth warmth, retro pulse, neon-lit atmosphere.', bpmOffset: 0, mood: 'Nostalgic', signature: 'Arpeggiator lines, gated reverb drums', addInstruments: ['Arp Synth'] },
+    { name: 'Dance Pop', description: 'Four-on-the-floor energy, euphoric drops, club-radio crossover.', bpmOffset: +8, mood: 'Euphoric', signature: 'Build-drop-chorus, side-chain compression', addInstruments: ['Sampler', 'TR-909'] },
+  ],
+  'R&B': [
+    { name: 'Neo Soul', description: 'Organic warmth, jazzy chords, conscious lyricism.', bpmOffset: -10, mood: 'Warm', signature: 'Rhodes chords, live bass, airy vocals', addInstruments: ['Rhodes'] },
+    { name: 'Contemporary', description: 'Polished production, vocal runs, crossover-ready sound.', bpmOffset: 0, mood: 'Smooth', signature: 'Layered harmonies, punchy kicks, synth bass', addInstruments: ['Synthesizer'] },
+    { name: 'Future R&B', description: 'Glitchy textures, pitch-shifted vocals, experimental atmospheres.', bpmOffset: -5, mood: 'Otherworldly', signature: 'Granular synthesis, chopped vocals, sub bass', addInstruments: ['Synthesizer', 'Sampler'] },
+  ],
+  'Metal': [
+    { name: 'Heavy', description: 'Chugging riffs, pounding double kicks, wall-of-sound power.', bpmOffset: -10, mood: 'Crushing', signature: 'Palm mutes, power chords, mid-tempo groove', addInstruments: ['Lead Vocals'] },
+    { name: 'Death', description: 'Blast beats, guttural vocals, extreme technical precision.', bpmOffset: +30, mood: 'Brutal', signature: 'Tremolo picking, blast beats, growl vocals', addInstruments: [] },
+    { name: 'Thrash', description: 'Blazing speed, tight riffing, relentless aggression.', bpmOffset: +20, mood: 'Furious', signature: 'Speed picking, gallop rhythms, rapid fills', addInstruments: [] },
+    { name: 'Progressive', description: 'Odd time signatures, long-form structure, melodic sophistication.', bpmOffset: -5, mood: 'Epic', signature: 'Complex arrangements, clean/heavy contrast', addInstruments: ['Synthesizer', 'Grand Piano'] },
+  ],
+  'Funk': [
+    { name: 'Classic', description: 'Tight pocket grooves, horn stabs, call-and-response energy.', bpmOffset: 0, mood: 'Groovy', signature: 'Chicken scratch guitar, slap bass, brass hits', addInstruments: ['Trumpet', 'Trombone'] },
+    { name: 'P-Funk', description: 'Cosmic synth layers, deep grooves, psychedelic theatrics.', bpmOffset: -5, mood: 'Cosmic', signature: 'Moog bass, vocal chants, extended jams', addInstruments: ['Moog Bass', 'Synthesizer'] },
+    { name: 'Neo-Funk', description: 'Modern production on classic foundations, crossover polish.', bpmOffset: +5, mood: 'Slick', signature: 'Compressed drums, filtered guitars, synth bass', addInstruments: ['Synthesizer'] },
+    { name: 'Electro-Funk', description: 'Drum machines meet live bass, robotic vocals, dance floor heat.', bpmOffset: +10, mood: 'Electric', signature: 'TR-808/909, vocoder, side-chain groove', addInstruments: ['TR-909', 'Synthesizer'] },
+  ],
+  'Reggae': [
+    { name: 'Roots', description: 'One-drop rhythm, conscious lyrics, earthy warmth.', bpmOffset: 0, mood: 'Spiritual', signature: 'One-drop drums, organ bubble, horn melodies', addInstruments: ['Organ'] },
+    { name: 'Dancehall', description: 'Digital riddims, toasting vocals, high-energy bounce.', bpmOffset: +15, mood: 'Hype', signature: 'Digital drums, singjay flow, bass-heavy mix', addInstruments: ['Electronic Kit', 'Sampler'] },
+    { name: 'Dub', description: 'Echo-drenched soundscapes, bass as lead, minimalist deconstruction.', bpmOffset: -10, mood: 'Hypnotic', signature: 'Spring reverb, tape delay, bass drops', addInstruments: ['Synthesizer'] },
+  ],
+  'Blues': [
+    { name: 'Delta', description: 'Raw acoustic slide guitar, field-holler roots, primal emotion.', bpmOffset: -10, mood: 'Raw', signature: 'Slide guitar, fingerpicking, sparse arrangement', addInstruments: ['Acoustic Guitar'] },
+    { name: 'Chicago', description: 'Amplified grit, shuffling drums, harmonica wails.', bpmOffset: 0, mood: 'Gritty', signature: 'Amplified harp, shuffle beat, call-response', addInstruments: ['Alto Harmonica'] },
+    { name: 'Electric', description: 'Overdriven lead tones, band-driven power, stadium blues.', bpmOffset: +10, mood: 'Fiery', signature: 'Overdriven guitar, strong backbeat, solos', addInstruments: ['Electric Guitar'] },
+    { name: 'Texas', description: 'Swinging shuffle, horn-section punch, big-hearted sound.', bpmOffset: +5, mood: 'Soulful', signature: 'Shuffle feel, brass section, call-response', addInstruments: ['Trumpet', 'Saxophone'] },
+  ],
+  'Electronic': [
+    { name: 'House', description: 'Four-on-the-floor kick, warm basslines, diva vocal chops.', bpmOffset: 0, mood: 'Euphoric', signature: 'Steady kick, offbeat hi-hat, filtered loops', addInstruments: ['Sampler'] },
+    { name: 'Techno', description: 'Industrial precision, hypnotic loops, warehouse intensity.', bpmOffset: +12, mood: 'Industrial', signature: 'Relentless kick, acid lines, dark pads', addInstruments: [] },
+    { name: 'Ambient', description: 'Textural landscapes, slow evolution, immersive space.', bpmOffset: -60, mood: 'Meditative', signature: 'Granular textures, field recordings, drones', addInstruments: [] },
+    { name: 'IDM', description: 'Glitchy rhythms, cerebral sound design, avant-garde electronic.', bpmOffset: -10, mood: 'Cerebral', signature: 'Broken beats, complex modulation, micro-edits', addInstruments: ['Sampler'] },
+  ],
+  'Synthwave': [
+    { name: 'Retrowave', description: 'Neon nostalgia, pulsing arpeggios, 80s sunset chase.', bpmOffset: 0, mood: 'Nostalgic', signature: 'Arp sequences, gated snare, analog warmth', addInstruments: ['Arp Synth'] },
+    { name: 'Darksynth', description: 'Horror-tinged aggression, distorted synths, cyberpunk menace.', bpmOffset: +10, mood: 'Menacing', signature: 'Distorted leads, industrial drums, evil bass', addInstruments: ['Moog Bass'] },
+    { name: 'Chillwave', description: 'Hazy lo-fi wash, detuned tapes, blissed-out warmth.', bpmOffset: -20, mood: 'Blissful', signature: 'Tape warble, soft pads, reverb-heavy mix', addInstruments: [] },
+  ],
+  'Soul': [
+    { name: 'Classic', description: 'Motown-era elegance, orchestral sweetness, timeless vocal power.', bpmOffset: 0, mood: 'Elegant', signature: 'String arrangements, tight rhythm section', addInstruments: ['Violin', 'Backing Vocals'] },
+    { name: 'Neo Soul', description: 'Jazz-inflected grooves, live instrumentation, conscious artistry.', bpmOffset: -5, mood: 'Warm', signature: 'Rhodes keys, live drums, breathy vocals', addInstruments: ['Rhodes'] },
+    { name: 'Northern Soul', description: 'Uptempo Motown energy, dance-floor urgency, rare-groove fire.', bpmOffset: +15, mood: 'Energetic', signature: 'Driving backbeat, brass stabs, stomping floor', addInstruments: ['Trumpet', 'Tambourine'] },
+  ],
+  'Afrobeat': [
+    { name: 'Afrobeats', description: 'Modern crossover pop, infectious log-drum patterns, global appeal.', bpmOffset: +8, mood: 'Festive', signature: 'Log drums, guitar licks, sing-along hooks', addInstruments: ['Sampler'] },
+    { name: 'Highlife', description: 'Jazzy guitar lines, swinging horns, West African elegance.', bpmOffset: +5, mood: 'Joyful', signature: 'Clean guitar arpeggios, brass, palm-wine feel', addInstruments: ['Trumpet', 'Acoustic Guitar'] },
+    { name: 'Jùjú', description: 'Talking drum conversations, layered percussion, Yoruba praise-song tradition.', bpmOffset: 0, mood: 'Celebratory', signature: 'Talking drum, layered percussion, call-response', addInstruments: ['Tribal Percussion'] },
+  ],
 };
+
+const SUB_STYLES: Record<string, string[]> = Object.fromEntries(
+  Object.entries(SUB_STYLE_DATA).map(([genre, entries]) => [genre, entries.map(e => e.name)])
+);
 
 const VIBE_CATEGORIES: VibeCategory[] = [
   { id: 'electronic', label: 'ÉLECTRONIQUE', color: '#06b6d4', summary: 'Synthetic textures, club energy, and precise pulse-driven production.', artists: ['Fred again..', 'BICEP', 'Justice'], moods: ['Driving', 'Futuristic', 'Late-night'], era: '90s club DNA → modern festival polish', tiles: [{ name: 'House', emoji: '\uD83C\uDFE0', bpm: 128, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Sampler', 'TR-909'] }, { name: 'Techno', emoji: '\u2699\uFE0F', bpm: 140, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'TR-909', 'Electronic Kit'] }, { name: 'Trap', emoji: '\uD83D\uDD0A', bpm: 70, rhythm: 'Trap', instruments: ['808', 'Electronic Kit', 'Sampler'] }, { name: 'Synthwave', emoji: '\uD83C\uDF06', bpm: 110, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Sampler'] }, { name: 'Drum & Bass', emoji: '\uD83E\uDD41', bpm: 174, rhythm: 'Breakbeat', instruments: ['Electronic Kit', 'Synthesizer', 'Sampler'] }] },
@@ -91,6 +167,9 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
   const selectedAccent = selectedCategory?.color ?? AMBER_PRIMARY;
   const genreBlueprint = selectedVibeTile ? (selectedSubStyle ? `${selectedVibeTile.name} / ${selectedSubStyle}` : selectedVibeTile.name) : genre;
   const suggestedSubStyles = selectedVibeTile ? (SUB_STYLES[selectedVibeTile.name] ?? []) : [];
+  const selectedSubStyleEntry = selectedVibeTile && selectedSubStyle
+    ? (SUB_STYLE_DATA[selectedVibeTile.name] ?? []).find(e => e.name === selectedSubStyle) ?? null
+    : null;
 
   const bpmValue = parseInt(tempo) || 120;
   const metronome = useMetronome(bpmValue);
@@ -119,9 +198,24 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
     setSelectedSubStyle(next);
     if (selectedVibeTile) setGenre(next ? `${selectedVibeTile.name} / ${next}` : selectedVibeTile.name);
     setRhythm(next || (selectedVibeTile?.rhythm ?? ''));
+    if (next && selectedVibeTile) {
+      const entry = (SUB_STYLE_DATA[selectedVibeTile.name] ?? []).find(e => e.name === next);
+      if (entry) {
+        const baseBpm = RHYTHM_BPM[selectedVibeTile.rhythm] ?? selectedVibeTile.bpm;
+        setTempo(Math.max(40, Math.min(220, baseBpm + entry.bpmOffset)).toString());
+        if (entry.addInstruments.length > 0) {
+          const current = selectedVibeTile.instruments;
+          const merged = [...current, ...entry.addInstruments.filter(i => !current.includes(i))];
+          setInstrumentation(merged.join(', '));
+        }
+      }
+    } else if (!next && selectedVibeTile) {
+      setTempo((RHYTHM_BPM[selectedVibeTile.rhythm] ?? selectedVibeTile.bpm).toString());
+      setInstrumentation(selectedVibeTile.instruments.join(', '));
+    }
     // Step 2 complete: Sub-style selected
     if (next) onWorkflowStepComplete?.(2);
-  }, [selectedSubStyle, selectedVibeTile, setGenre, setRhythm, onWorkflowStepComplete]);
+  }, [selectedSubStyle, selectedVibeTile, setGenre, setRhythm, setTempo, setInstrumentation, onWorkflowStepComplete]);
 
   return (
     <div className="space-y-5">
@@ -174,15 +268,47 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
             <div className="pt-2 border-t border-[var(--border-color)]">
               <div className="text-[9px] font-bold tracking-widest uppercase mb-1.5 text-[var(--text-secondary)]">{m.subStyle ?? 'SUB-STYLE'}</div>
               <div className="flex flex-wrap gap-1.5">
-                {(SUB_STYLES[selectedVibeTile.name] as string[]).map(sub => (
-                  <button key={sub} onClick={() => handleSubStyleSelect(sub)}
-                    className="ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border"
-                    style={selectedSubStyle === sub
-                      ? { borderRadius: '8px 2px 8px 2px', background: selectedAccent, borderColor: selectedAccent, color: '#000' }
-                      : { borderRadius: '8px 2px 8px 2px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
-                  >{sub}</button>
+                {(SUB_STYLE_DATA[selectedVibeTile.name] ?? []).map(entry => (
+                  <FluentTooltip
+                    key={entry.name}
+                    content={<span style={{ display: 'block', maxWidth: '18rem', whiteSpace: 'pre-line' }}>{`${entry.name}\n${entry.description}\nMood: ${entry.mood} · BPM ${entry.bpmOffset >= 0 ? '+' : ''}${entry.bpmOffset}`}</span>}
+                    relationship="description"
+                    positioning={{ position: 'above', align: 'center' }}
+                  >
+                    <button onClick={() => handleSubStyleSelect(entry.name)}
+                      className="ux-interactive px-2.5 py-1 text-[10px] font-medium tracking-wide border"
+                      style={selectedSubStyle === entry.name
+                        ? { borderRadius: '8px 2px 8px 2px', background: selectedAccent, borderColor: selectedAccent, color: '#000' }
+                        : { borderRadius: '8px 2px 8px 2px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+                    >{entry.name}</button>
+                  </FluentTooltip>
                 ))}
               </div>
+              {selectedSubStyleEntry && (
+                <div className="mt-2 border px-3 py-2.5 space-y-2" style={{ borderRadius: '14px 4px 14px 4px', background: `${selectedAccent}14`, borderColor: `${selectedAccent}40` }}>
+                  <div className="flex items-center gap-2">
+                    <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: selectedAccent }}>NICHE PROFILE</div>
+                    <span className="ml-auto px-2 py-0.5 text-[9px] font-bold tracking-wide" style={{ borderRadius: '999px', background: `${selectedAccent}22`, color: selectedAccent }}>{selectedSubStyleEntry.mood}</span>
+                  </div>
+                  <p className="text-[11px] leading-5 text-[var(--text-secondary)]">{selectedSubStyleEntry.description}</p>
+                  <div className="space-y-1">
+                    <div className="text-[9px] font-bold tracking-widest uppercase text-[var(--text-secondary)] opacity-70">SONIC SIGNATURE</div>
+                    <p className="text-[10px] leading-4 italic" style={{ color: selectedAccent }}>{selectedSubStyleEntry.signature}</p>
+                  </div>
+                  {selectedSubStyleEntry.addInstruments.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {selectedSubStyleEntry.addInstruments.map(inst => (
+                        <span key={inst} className="px-1.5 py-0.5 text-[9px] font-medium" style={{ borderRadius: '6px 2px 6px 2px', background: `${selectedAccent}1a`, color: selectedAccent }}>+ {inst}</span>
+                      ))}
+                    </div>
+                  )}
+                  {selectedSubStyleEntry.bpmOffset !== 0 && (
+                    <div className="text-[10px] font-medium" style={{ color: AMBER_SECONDARY }}>
+                      BPM {selectedSubStyleEntry.bpmOffset > 0 ? '↑' : '↓'} {Math.abs(selectedSubStyleEntry.bpmOffset)} from base
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           {selectedVibeTile && selectedCategory && (

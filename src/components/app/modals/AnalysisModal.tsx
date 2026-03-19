@@ -46,7 +46,7 @@ export function AnalysisModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+        className="absolute inset-0 bg-black/60 backdrop-blur-[1px] animate-in fade-in duration-200"
         onClick={!isAnalyzing && isApplyingAnalysis === null ? onClose : undefined}
       />
 
