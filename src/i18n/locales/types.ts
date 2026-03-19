@@ -230,6 +230,7 @@ export interface Translations {
     storageUsed: string;
     storageQuota: string;
     storageSaturation: string;
+    storageScopeLocal: string;
     libraryItems: string;
     purge: string;
     purgeWarning: string;

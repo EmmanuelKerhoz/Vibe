@@ -215,6 +215,7 @@ const ar: Translations = {
     storageUsed: 'المستخدم',
     storageQuota: 'الحد الأقصى',
     storageSaturation: 'درجة الامتلاء',
+    storageScopeLocal: 'يقيس فقط بيانات lyricist_library المخزنة محليًا في هذا المتصفح.',
     libraryItems: 'عناصر المكتبة',
     purge: 'حذف جميع بيانات المكتبة',
     purgeWarning: 'سيؤدي هذا إلى حذف جميع الأغاني من مكتبتك بشكل دائم. لا يمكن التراجع عن هذا الإجراء.',
