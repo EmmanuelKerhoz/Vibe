@@ -69,8 +69,13 @@ export function SaveToLibraryModal({
           isolation: 'isolate',
         }}
       >
-        {/* Modal panel — original glass-panel class preserved */}
-        <div className="relative w-full h-full flex flex-col fluent-animate-panel glass-panel shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]">
+        {/* Modal panel — dialog-surface ensures opaque dark background */}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t.saveToLibrary.title}
+          className="relative w-full h-full flex flex-col fluent-animate-panel dialog-surface shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]"
+        >
           {/* Header */}
           <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)]">
             <div className="flex items-center gap-3">

@@ -150,12 +150,12 @@ export function SettingsModal({
               isolation: 'isolate',
             }}
           >
-            {/* Modal panel — original glass-panel class preserved */}
+            {/* Modal panel — dialog-surface ensures opaque dark background */}
             <div
               role="dialog"
               aria-modal="true"
               aria-label={t.settings.title}
-              className="relative w-full h-full flex flex-col animate-in zoom-in-95 duration-300 glass-panel shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]"
+              className="relative w-full h-full flex flex-col animate-in zoom-in-95 duration-300 dialog-surface shadow-2xl overflow-hidden rounded-none sm:rounded-[22px_6px_22px_6px]"
             >
               {/* Header */}
               <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
