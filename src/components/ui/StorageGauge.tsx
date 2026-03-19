@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { HardDrive } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 import { useStorageEstimate } from '../../hooks/useStorageEstimate';
 import type { StorageTier } from '../../hooks/useStorageEstimate';
 
@@ -20,6 +21,7 @@ const POPOVER_WIDTH = 224;
 
 /** Small gauge widget for the StatusBar. */
 export function StorageGauge() {
+  const { t } = useTranslation();
   const est = useStorageEstimate();
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState<{ bottom: number; left: number } | null>(null);
@@ -100,7 +102,7 @@ export function StorageGauge() {
           }}
         >
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-2">
-            Browser Storage
+            {t.saveToLibrary.storageTitle}
           </p>
           <div className="h-1.5 w-full rounded-full bg-[var(--bg-app)] overflow-hidden mb-2">
             <div
@@ -109,17 +111,24 @@ export function StorageGauge() {
             />
           </div>
           <div className="flex justify-between text-[var(--text-secondary)]">
-            <span>Used</span>
+            <span>{t.saveToLibrary.storageLibraryData}</span>
+            <span className="font-semibold text-[var(--text-primary)]">{est.libraryUsageMB}</span>
+          </div>
+          <div className="flex justify-between text-[var(--text-secondary)] mt-0.5">
+            <span>{t.saveToLibrary.storageUsed}</span>
             <span style={{ color }} className="font-semibold">{est.usageMB}</span>
           </div>
           <div className="flex justify-between text-[var(--text-secondary)] mt-0.5">
-            <span>Quota</span>
+            <span>{t.saveToLibrary.storageQuota}</span>
             <span className="font-semibold text-[var(--text-primary)]">{est.quotaMB}</span>
           </div>
           <div className="flex justify-between text-[var(--text-secondary)] mt-0.5">
-            <span>Saturation</span>
+            <span>{t.saveToLibrary.storageSaturation}</span>
             <span style={{ color }} className="font-bold">{pct}%</span>
           </div>
+          <p className="mt-2 text-[10px] leading-relaxed text-[var(--text-secondary)]">
+            {t.saveToLibrary.storageScopeLocal}
+          </p>
         </div>
       </div>
     </div>,
@@ -134,7 +143,7 @@ export function StorageGauge() {
       onMouseLeave={() => setOpen(false)}
     >
       <button
-        aria-label={`Storage: ${pct}% used`}
+        aria-label={`${t.saveToLibrary.storageTitle}: ${pct}%`}
         className="lcars-meta-btn min-h-[44px] lg:min-h-0 flex items-center gap-1"
       >
         <span className="relative w-3.5 h-3.5 flex-shrink-0">
