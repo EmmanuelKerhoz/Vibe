@@ -42,6 +42,16 @@
     var(--lcars-violet) 88%,
     transparent 100%
   );
+  /* Reversed variant for panel title dividers — full bleed, violet→amber */
+  --accent-rail-gradient-h-rev: linear-gradient(
+    90deg,
+    var(--lcars-violet) 0%,
+    var(--lcars-blue)   18%,
+    var(--lcars-cyan)   40%,
+    var(--lcars-sage)   60%,
+    var(--lcars-amber)  82%,
+    var(--lcars-rust)   100%
+  );
   --accent-rail-gradient-v: linear-gradient(
     180deg,
     var(--lcars-amber)  0%,

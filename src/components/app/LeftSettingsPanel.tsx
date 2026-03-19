@@ -152,13 +152,13 @@ function PanelContent({
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
 
-      {/* Header — accent rail top via unified token */}
+      {/* Header — accent rail bottom, reversed gradient, full-width bleed */}
       <div className="h-16 px-5 flex items-center justify-between shrink-0" style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
-        {/* Unified accent rail — bottom of header = top of body separator, using standard gradient */}
+        {/* Reversed accent rail — touches both panel borders */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           height: 'var(--accent-rail-thickness, 2px)',
-          background: 'var(--accent-rail-gradient-h)',
+          background: 'var(--accent-rail-gradient-h-rev)',
           opacity: 0.85, pointerEvents: 'none', zIndex: 1,
         }} />
         <div className="flex items-center gap-3">
