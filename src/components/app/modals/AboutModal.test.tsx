@@ -25,6 +25,6 @@ describe('AboutModal', () => {
       </LanguageProvider>,
     );
 
-    expect(screen.getByText(new RegExp(APP_VERSION_LABEL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeTruthy();
+    expect(screen.getByText(APP_VERSION_LABEL, { exact: false })).toBeTruthy();
   });
 });

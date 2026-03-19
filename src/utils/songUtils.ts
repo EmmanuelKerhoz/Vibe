@@ -382,7 +382,9 @@ export const normalizeLoadedLine = (line: Record<string, unknown>): Line => {
     : typeof line['syllables'] === 'string'
       ? Number(line['syllables'])
       : NaN;
-  const syllables = Number.isFinite(rawSyllables)
+  const canUseStoredSyllables = Number.isFinite(rawSyllables)
+    && (rawSyllables > 0 || isMeta || text.trim().length === 0);
+  const syllables = canUseStoredSyllables
     ? rawSyllables
     : (!isMeta && text.trim().length > 0 ? computeLineSyllables(text) : 0);
 
@@ -391,7 +393,7 @@ export const normalizeLoadedLine = (line: Record<string, unknown>): Line => {
     text,
     rhymingSyllables: typeof line['rhymingSyllables'] === 'string' ? line['rhymingSyllables'] : '',
     rhyme: typeof line['rhyme'] === 'string' ? line['rhyme'] : '',
-    syllables: syllables > 0 || isMeta || text.trim().length === 0 ? syllables : computeLineSyllables(text),
+    syllables,
     concept: typeof line['concept'] === 'string' ? line['concept'] : 'New line',
     isMeta,
     isManual: typeof line['isManual'] === 'boolean' ? line['isManual'] : false,
