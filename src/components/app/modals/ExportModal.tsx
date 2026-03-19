@@ -83,15 +83,25 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-xl animate-in fade-in duration-200"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
       />
 
+      {/* Gradient border wrapper */}
+      <div
+        className="relative w-full sm:max-w-lg h-full sm:h-auto rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        style={{
+          padding: '2px',
+          background: 'var(--accent-rail-gradient-h)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+          isolation: 'isolate',
+        }}
+      >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t.exportDialog.title}
-        className="relative w-full sm:max-w-lg h-full sm:h-auto flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8"
+        className="relative w-full h-full flex flex-col dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px] shadow-2xl overflow-hidden"
       >
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)]">
           <div className="flex items-center gap-3">
@@ -187,6 +197,7 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
             {t.exportDialog.save}
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );
