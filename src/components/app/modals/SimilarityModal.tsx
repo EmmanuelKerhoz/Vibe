@@ -52,7 +52,7 @@ export function SimilarityModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] animate-in fade-in duration-300" onClick={onClose} />
       <div className="absolute inset-0 pointer-events-none overflow-hidden items-center justify-center hidden dark:flex">
         <div className="w-[700px] h-[500px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
       </div>

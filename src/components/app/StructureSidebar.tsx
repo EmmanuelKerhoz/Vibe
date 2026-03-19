@@ -271,7 +271,7 @@ export function StructureSidebar({
                       </Tooltip>
                     </div>
                     {isSectionDropdownOpen && (
-                      <div className="absolute left-0 right-0 mt-1 py-1 bg-fluent-card border border-fluent-border rounded-md shadow-xl z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 lcars-panel">
+                      <div className="absolute left-0 right-0 mt-1 py-1 bg-fluent-card border border-fluent-border rounded-md shadow-xl z-50 backdrop-blur-[1px] animate-in fade-in zoom-in-95 duration-100 lcars-panel">
                         {sectionOptions
                           .filter(name => {
                             if (isAnchoredStartSection(name)) {

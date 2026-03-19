@@ -12,7 +12,7 @@ export const ResetModal = ({ isOpen, onClose, onConfirm }: ResetModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-0 sm:p-4 animate-in fade-in duration-200">
       {/* Gradient border wrapper */}
       <div
         className="relative w-full sm:max-w-md h-full sm:h-auto rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"

@@ -55,7 +55,7 @@ export function SaveToLibraryModal({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300"
+        className="absolute inset-0 bg-black/40 backdrop-blur-[1px] animate-in fade-in duration-300"
         onClick={onClose}
       />
 

@@ -250,7 +250,7 @@ export function LcarsSelect({
               /* Light: keep solid border. Dark: transparent — gradient outline wrapper takes over. */
               border: '1px solid var(--border-color)',
               background: 'var(--bg-card)',
-              backdropFilter: 'blur(12px)',
+              backdropFilter: 'blur(2px)',
               boxShadow: `0 0 20px 2px color-mix(in srgb, ${accent} 30%, transparent)`,
               overflowY: 'auto',
               listStyle: 'none',

@@ -190,7 +190,7 @@ function AdaptationProgressBanner({
   if (isOverlay && !isDone && !isFailed) {
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
         <div className="absolute inset-0 pointer-events-none overflow-hidden adaptation-particles" aria-hidden="true" />
         <div className="relative z-10 w-full max-w-md glass-panel border border-[var(--accent-color)]/20 rounded-2xl p-6 shadow-2xl adaptation-modal-glow">
           {banner}
