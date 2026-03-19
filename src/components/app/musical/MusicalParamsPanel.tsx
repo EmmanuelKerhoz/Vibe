@@ -144,8 +144,6 @@ const TILE_SUBSTYLE_FALLBACK: Record<string, string> = {
   'Synth-Pop': 'Pop',
   'Bossa Nova': 'Jazz',
   'Tango': 'Jazz',
-  'Samba': 'Afrobeat',
-  'Flamenco': 'Reggae',
   'Reggaeton': 'Afrobeat',
 };
 
@@ -427,7 +425,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
               {isRhythmDropdownOpen && (
                 <div className="flex flex-wrap gap-1.5">
                   {RHYTHM_SUGGESTIONS.map(s => (
-                    <button key={s} onClick={() => { setRhythm(rhythm ? `${rhythm}, ${s.toLowerCase()}` : s); setIsRhythmDropdownOpen(false); }}
+                    <button key={s} onClick={() => { setRhythm(rhythm ? `${rhythm}, ${s}` : s); setIsRhythmDropdownOpen(false); }}
                       className="ux-interactive px-2 py-0.5 text-[9px] font-medium tracking-wide border bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--accent-color)]/40 hover:text-[var(--text-primary)] transition-colors"
                       style={{ borderRadius: '8px 2px 8px 2px' }}
                     >{s}</button>
@@ -454,7 +452,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
               {isNarrativeDropdownOpen && (
                 <div className="flex flex-wrap gap-1.5">
                   {NARRATIVE_SUGGESTIONS.map(s => (
-                    <button key={s} onClick={() => { setNarrative(narrative ? `${narrative}, ${s.toLowerCase()}` : s); setIsNarrativeDropdownOpen(false); }}
+                    <button key={s} onClick={() => { setNarrative(narrative ? `${narrative}, ${s}` : s); setIsNarrativeDropdownOpen(false); }}
                       className="ux-interactive px-2 py-0.5 text-[9px] font-medium tracking-wide border bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--accent-color)]/40 hover:text-[var(--text-primary)] transition-colors"
                       style={{ borderRadius: '8px 2px 8px 2px' }}
                     >{s}</button>
