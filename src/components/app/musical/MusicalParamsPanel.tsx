@@ -244,6 +244,28 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                 >{label}</button>
               ))}
             </div>
+            {/* Rhythm & Groove */}
+            <div className="pt-3 border-t border-[var(--border-color)] space-y-2">
+              <div className="flex items-center gap-2">
+                <Drum className="w-3.5 h-3.5" style={{ color: AMBER_PRIMARY }} />
+                <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.rhythm}</label>
+              </div>
+              <textarea value={rhythm} onChange={e => setRhythm(e.target.value)} placeholder={m.rhythmPlaceholder} rows={2}
+                className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
+                style={{ borderRadius: '10px 3px 10px 3px' }}
+              />
+            </div>
+            {/* Narrative / Vibe */}
+            <div className="pt-3 border-t border-[var(--border-color)] space-y-2">
+              <div className="flex items-center gap-2">
+                <ListMusic className="w-3.5 h-3.5" style={{ color: AMBER_PRIMARY }} />
+                <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.narrative}</label>
+              </div>
+              <textarea value={narrative} onChange={e => setNarrative(e.target.value)} placeholder={m.narrativePlaceholder} rows={2}
+                className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
+                style={{ borderRadius: '10px 3px 10px 3px' }}
+              />
+            </div>
           </div>
         </GBPanel>
 
@@ -287,34 +309,6 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
             </div>
             <textarea value={instrumentation} onChange={e => setInstrumentation(e.target.value)} placeholder={m.instrumentationPlaceholder} rows={2}
               className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
-              style={{ borderRadius: '10px 3px 10px 3px' }}
-            />
-          </div>
-        </GBPanel>
-      </div>
-
-      {/* Rhythm + Narrative */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <GBPanel>
-          <div className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Drum className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
-              <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.rhythm}</label>
-            </div>
-            <textarea value={rhythm} onChange={e => setRhythm(e.target.value)} placeholder={m.rhythmPlaceholder} rows={3}
-              className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
-              style={{ borderRadius: '10px 3px 10px 3px' }}
-            />
-          </div>
-        </GBPanel>
-        <GBPanel>
-          <div className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <ListMusic className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
-              <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.narrative}</label>
-            </div>
-            <textarea value={narrative} onChange={e => setNarrative(e.target.value)} placeholder={m.narrativePlaceholder} rows={3}
-              className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
               style={{ borderRadius: '10px 3px 10px 3px' }}
             />
           </div>
