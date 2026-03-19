@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music } from 'lucide-react';
+import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music, ChevronDown } from 'lucide-react';
 import { Tooltip as FluentTooltip } from '@fluentui/react-components';
 import { useTranslation } from '../../../i18n';
 import { useMetronome } from '../../../hooks/useMetronome';
@@ -130,6 +130,46 @@ const SUB_STYLES: Record<string, string[]> = Object.fromEntries(
   Object.entries(SUB_STYLE_DATA).map(([genre, entries]) => [genre, entries.map(e => e.name)])
 );
 
+const TILE_SUBSTYLE_FALLBACK: Record<string, string> = {
+  'House': 'Electronic',
+  'Techno': 'Electronic',
+  'Drum & Bass': 'Electronic',
+  'Trap': 'Hip-Hop',
+  'Hard Rock': 'Rock',
+  'Punk': 'Rock',
+  'Grunge': 'Rock',
+  'Gospel': 'Soul',
+  'Indie Pop': 'Pop',
+  'K-Pop': 'Pop',
+  'Synth-Pop': 'Pop',
+  'Bossa Nova': 'Jazz',
+  'Tango': 'Jazz',
+  'Samba': 'Afrobeat',
+  'Flamenco': 'Reggae',
+  'Reggaeton': 'Afrobeat',
+};
+
+function getSubStyleEntries(tileName: string): SubStyleEntry[] {
+  return SUB_STYLE_DATA[tileName] ?? SUB_STYLE_DATA[TILE_SUBSTYLE_FALLBACK[tileName] ?? ''] ?? [];
+}
+
+function getSubStyleNames(tileName: string): string[] {
+  return getSubStyleEntries(tileName).map(e => e.name);
+}
+
+const RHYTHM_SUGGESTIONS = [
+  'Steady 4/4 pulse', 'Syncopated groove', 'Half-time feel', 'Shuffle',
+  'Swing', 'Double-time', 'Triplet feel', 'Polyrhythmic',
+  'Laid-back groove', 'Driving pulse', 'Breakbeat', 'Waltz 3/4',
+];
+
+const NARRATIVE_SUGGESTIONS = [
+  'Cinematic build', 'Melancholic introspection', 'Anthemic release',
+  'Dark & moody', 'Euphoric energy', 'Nostalgic warmth', 'Aggressive intensity',
+  'Dreamy atmosphere', 'Intimate & raw', 'Epic journey', 'Playful & upbeat',
+  'Haunting & ethereal',
+];
+
 const VIBE_CATEGORIES: VibeCategory[] = [
   { id: 'electronic', label: 'ÉLECTRONIQUE', color: '#06b6d4', summary: 'Synthetic textures, club energy, and precise pulse-driven production.', artists: ['Fred again..', 'BICEP', 'Justice'], moods: ['Driving', 'Futuristic', 'Late-night'], era: '90s club DNA → modern festival polish', tiles: [{ name: 'House', emoji: '\uD83C\uDFE0', bpm: 128, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Sampler', 'TR-909'] }, { name: 'Techno', emoji: '\u2699\uFE0F', bpm: 140, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'TR-909', 'Electronic Kit'] }, { name: 'Trap', emoji: '\uD83D\uDD0A', bpm: 70, rhythm: 'Trap', instruments: ['808', 'Electronic Kit', 'Sampler'] }, { name: 'Synthwave', emoji: '\uD83C\uDF06', bpm: 110, rhythm: 'Electronic (4/4)', instruments: ['Synthesizer', 'Sampler'] }, { name: 'Drum & Bass', emoji: '\uD83E\uDD41', bpm: 174, rhythm: 'Breakbeat', instruments: ['Electronic Kit', 'Synthesizer', 'Sampler'] }] },
   { id: 'urban', label: 'URBAIN', color: '#ec4899', summary: 'Beat-first songwriting with vocal attitude, bounce, and contemporary crossover appeal.', artists: ['SZA', 'Travis Scott', 'Burna Boy'], moods: ['Confident', 'Sensual', 'Hypnotic'], era: 'Streaming-era polish with roots in 90s/2000s rhythm culture', tiles: [{ name: 'Hip-Hop', emoji: '\uD83C\uDFA4', bpm: 90, rhythm: 'Hip-Hop', instruments: ['808', 'Electronic Kit', 'Sampler', 'Lead Vocals'] }, { name: 'R&B', emoji: '\uD83D\uDC9C', bpm: 90, rhythm: 'Funk', instruments: ['Rhodes', 'Electronic Kit', 'Lead Vocals', 'Backing Vocals'] }, { name: 'Afrobeat', emoji: '\uD83C\uDF0D', bpm: 100, rhythm: 'Afrobeat', instruments: ['Afrobeat Kit', 'Electric Guitar', 'Lead Vocals'] }, { name: 'Reggaeton', emoji: '\uD83D\uDD25', bpm: 95, rhythm: 'Cumbia', instruments: ['Electronic Kit', 'Sampler', 'Lead Vocals'] }] },
@@ -162,13 +202,15 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
   const [expandedFamily, setExpandedFamily] = useState<string | null>(null);
   const [selectedVibeTile, setSelectedVibeTile] = useState<VibeTile | null>(null);
   const [selectedSubStyle, setSelectedSubStyle] = useState<string>('');
+  const [isRhythmDropdownOpen, setIsRhythmDropdownOpen] = useState(false);
+  const [isNarrativeDropdownOpen, setIsNarrativeDropdownOpen] = useState(false);
 
   const selectedCategory = selectedVibeTile ? VIBE_CATEGORIES.find(cat => cat.tiles.some(t => t.name === selectedVibeTile.name)) ?? null : null;
   const selectedAccent = selectedCategory?.color ?? AMBER_PRIMARY;
   const genreBlueprint = selectedVibeTile ? (selectedSubStyle ? `${selectedVibeTile.name} / ${selectedSubStyle}` : selectedVibeTile.name) : genre;
-  const suggestedSubStyles = selectedVibeTile ? (SUB_STYLES[selectedVibeTile.name] ?? []) : [];
+  const suggestedSubStyles = selectedVibeTile ? getSubStyleNames(selectedVibeTile.name) : [];
   const selectedSubStyleEntry = selectedVibeTile && selectedSubStyle
-    ? (SUB_STYLE_DATA[selectedVibeTile.name] ?? []).find(e => e.name === selectedSubStyle) ?? null
+    ? getSubStyleEntries(selectedVibeTile.name).find(e => e.name === selectedSubStyle) ?? null
     : null;
 
   const bpmValue = parseInt(tempo) || 120;
@@ -199,7 +241,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
     if (selectedVibeTile) setGenre(next ? `${selectedVibeTile.name} / ${next}` : selectedVibeTile.name);
     setRhythm(next || (selectedVibeTile?.rhythm ?? ''));
     if (next && selectedVibeTile) {
-      const entry = (SUB_STYLE_DATA[selectedVibeTile.name] ?? []).find(e => e.name === next);
+      const entry = getSubStyleEntries(selectedVibeTile.name).find(e => e.name === next);
       if (entry) {
         const baseBpm = RHYTHM_BPM[selectedVibeTile.rhythm] ?? selectedVibeTile.bpm;
         setTempo(Math.max(40, Math.min(220, baseBpm + entry.bpmOffset)).toString());
@@ -264,11 +306,11 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
               </div>
             ))}
           </div>
-          {selectedVibeTile && SUB_STYLES[selectedVibeTile.name] && (
+          {selectedVibeTile && getSubStyleNames(selectedVibeTile.name).length > 0 && (
             <div className="pt-2 border-t border-[var(--border-color)]">
               <div className="text-[9px] font-bold tracking-widest uppercase mb-1.5 text-[var(--text-secondary)]">{m.subStyle ?? 'SUB-STYLE'}</div>
               <div className="flex flex-wrap gap-1.5">
-                {(SUB_STYLE_DATA[selectedVibeTile.name] ?? []).map(entry => (
+                {getSubStyleEntries(selectedVibeTile.name).map(entry => (
                   <FluentTooltip
                     key={entry.name}
                     content={<span style={{ display: 'block', maxWidth: '18rem', whiteSpace: 'pre-line' }}>{`${entry.name}\n${entry.description}\nMood: ${entry.mood} · BPM ${entry.bpmOffset >= 0 ? '+' : ''}${entry.bpmOffset}`}</span>}
@@ -375,7 +417,23 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
               <div className="flex items-center gap-2">
                 <Drum className="w-3.5 h-3.5" style={{ color: AMBER_PRIMARY }} />
                 <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.rhythm}</label>
+                <button
+                  onClick={() => setIsRhythmDropdownOpen(!isRhythmDropdownOpen)}
+                  className="ml-auto p-0.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isRhythmDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
               </div>
+              {isRhythmDropdownOpen && (
+                <div className="flex flex-wrap gap-1.5">
+                  {RHYTHM_SUGGESTIONS.map(s => (
+                    <button key={s} onClick={() => { setRhythm(rhythm ? `${rhythm}, ${s.toLowerCase()}` : s); setIsRhythmDropdownOpen(false); }}
+                      className="ux-interactive px-2 py-0.5 text-[9px] font-medium tracking-wide border bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--accent-color)]/40 hover:text-[var(--text-primary)] transition-colors"
+                      style={{ borderRadius: '8px 2px 8px 2px' }}
+                    >{s}</button>
+                  ))}
+                </div>
+              )}
               <textarea value={rhythm} onChange={e => setRhythm(e.target.value)} placeholder={m.rhythmPlaceholder} rows={2}
                 className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
                 style={{ borderRadius: '10px 3px 10px 3px' }}
@@ -386,7 +444,23 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
               <div className="flex items-center gap-2">
                 <ListMusic className="w-3.5 h-3.5" style={{ color: AMBER_PRIMARY }} />
                 <label className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.narrative}</label>
+                <button
+                  onClick={() => setIsNarrativeDropdownOpen(!isNarrativeDropdownOpen)}
+                  className="ml-auto p-0.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isNarrativeDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
               </div>
+              {isNarrativeDropdownOpen && (
+                <div className="flex flex-wrap gap-1.5">
+                  {NARRATIVE_SUGGESTIONS.map(s => (
+                    <button key={s} onClick={() => { setNarrative(narrative ? `${narrative}, ${s.toLowerCase()}` : s); setIsNarrativeDropdownOpen(false); }}
+                      className="ux-interactive px-2 py-0.5 text-[9px] font-medium tracking-wide border bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--accent-color)]/40 hover:text-[var(--text-primary)] transition-colors"
+                      style={{ borderRadius: '8px 2px 8px 2px' }}
+                    >{s}</button>
+                  ))}
+                </div>
+              )}
               <textarea value={narrative} onChange={e => setNarrative(e.target.value)} placeholder={m.narrativePlaceholder} rows={2}
                 className="w-full bg-transparent border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-secondary)] lcars-glow-focus transition-colors resize-none"
                 style={{ borderRadius: '10px 3px 10px 3px' }}
