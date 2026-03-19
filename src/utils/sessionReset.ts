@@ -69,10 +69,14 @@ export const buildResetPayload = (rhymeScheme = 'AABB'): ResetPayload => ({
  */
 export const buildPartialResetPayload = (currentRhymeScheme: string): Pick<
   ResetPayload,
-  'song' | 'structure' | 'markupText' | 'similarityMatches' | 'hasSavedSession'
+  'song' | 'structure' | 'title' | 'titleOrigin' | 'topic' | 'mood' | 'markupText' | 'similarityMatches' | 'hasSavedSession'
 > => ({
   song:             createEmptySong(DEFAULT_STRUCTURE, currentRhymeScheme),
   structure:        DEFAULT_STRUCTURE,
+  title:            '',
+  titleOrigin:      'user',
+  topic:            DEFAULT_TOPIC,
+  mood:             DEFAULT_MOOD,
   markupText:       '',
   similarityMatches: [],
   hasSavedSession:  false,

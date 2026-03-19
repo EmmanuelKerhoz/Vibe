@@ -235,7 +235,7 @@ export const SectionEditor = React.memo(function SectionEditor({
         </div>
 
         {/* ── Column headers */}
-        <div className="flex items-center gap-1.5 px-1 mb-0.5 select-none" aria-hidden="true">
+        <div className="flex items-center gap-1.5 pl-1 pr-8 mb-0.5 select-none" aria-hidden="true">
           <span className="flex-shrink-0 w-3.5" />
           <span className="flex-1 min-w-0" />
           <span className="flex-shrink-0 w-16" />

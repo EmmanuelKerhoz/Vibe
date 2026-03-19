@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCode } from 'lucide-react';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
-import { APP_VERSION } from '../../../version';
+import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';
 import { emojiToTwemojiUrl, isPlainAscii } from '../../../utils/emojiUtils';
 
@@ -168,7 +168,7 @@ export function SettingsModal({
                       {t.settings.title}
                     </h3>
                     <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
-                      {APP_VERSION}
+                      {APP_VERSION_LABEL}
                     </p>
                   </div>
                 </div>
@@ -325,7 +325,7 @@ export function SettingsModal({
                   </h3>
                   <div className="flex items-center justify-between px-4 py-3 bg-[var(--bg-app)] border border-[var(--border-color)] rounded-lg mb-3">
                     <span className="text-xs text-[var(--text-secondary)]">{t.app.name}</span>
-                    <span className="text-xs font-mono text-[var(--text-primary)]">{APP_VERSION}</span>
+                    <span className="text-xs font-mono text-[var(--text-primary)]">{APP_VERSION_LABEL}</span>
                   </div>
                   <div className="flex gap-2">
                     <a

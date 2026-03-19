@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AI_MODEL_NAME, getAi } from '../utils/aiUtils';
 
 interface TopicMoodSuggestion {
@@ -15,7 +15,7 @@ export function useTopicMoodSuggester(
   const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
   const [hasSuggested, setHasSuggested] = useState(false);
 
-  const generateSuggestion = async (): Promise<TopicMoodSuggestion | null> => {
+  const generateSuggestion = useCallback(async (): Promise<TopicMoodSuggestion | null> => {
     setIsGeneratingSuggestion(true);
     try {
       const prompt = `Generate a creative, inspiring song topic and matching mood for a songwriting session.\nReturn as JSON:\n{\n  "topic": "short description (2-8 words)",\n  "mood": "comma-separated mood descriptors (e.g., 'Melancholic, nostalgic, bittersweet')"\n}\n\nExamples:\n- {"topic": "A lonely astronaut drifting in deep space", "mood": "Isolated, contemplative, yearning"}\n- {"topic": "Dancing in a neon-lit city at midnight", "mood": "Energetic, euphoric, cyberpunk"}\n- {"topic": "The last letter from a lost love", "mood": "Heartbreaking, tender, regretful"}\n\nBe original and evocative.`;
@@ -38,7 +38,11 @@ export function useTopicMoodSuggester(
     } finally {
       setIsGeneratingSuggestion(false);
     }
-  };
+  }, []);
+
+  const resetSuggestionCycle = useCallback(() => {
+    setHasSuggested(false);
+  }, []);
 
   useEffect(() => {
     const shouldAutoSuggest =
@@ -55,7 +59,7 @@ export function useTopicMoodSuggester(
         }
       });
     }
-  }, [currentTopic, currentMood, hasSuggested, setTopic, setMood]);
+  }, [currentTopic, currentMood, generateSuggestion, hasSuggested, setTopic, setMood]);
 
-  return { generateSuggestion, isGeneratingSuggestion };
+  return { generateSuggestion, isGeneratingSuggestion, resetSuggestionCycle };
 }

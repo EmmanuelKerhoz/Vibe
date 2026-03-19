@@ -1,5 +1,6 @@
-import type { Section } from '../types';
+import type { Line, Section } from '../types';
 import { getSectionFamily } from '../constants/sections';
+import { isPureMetaLine } from './metaUtils';
 
 export const getSectionText = (section: Section): string =>
   section.lines.map(l => l.text).join('\n');
@@ -365,6 +366,61 @@ export { DEFAULT_STRUCTURE, MUSICAL_INSTRUCTIONS } from '../constants/editor';
 export const cleanSectionName = (name: string) => {
   if (!name) return '';
   return name.replace(/[\[\]\*]/g, '').trim();
+};
+
+const computeLineSyllables = (text: string): number =>
+  text
+    .split(/\s+/)
+    .filter(Boolean)
+    .reduce((acc, word) => acc + countSyllables(word), 0);
+
+export const normalizeLoadedLine = (line: Record<string, unknown>): Line => {
+  const text = typeof line['text'] === 'string' ? line['text'] : '';
+  const isMeta = typeof line['isMeta'] === 'boolean' ? line['isMeta'] : isPureMetaLine(text.trim());
+  const rawSyllables = typeof line['syllables'] === 'number'
+    ? line['syllables']
+    : typeof line['syllables'] === 'string'
+      ? Number(line['syllables'])
+      : NaN;
+  const canUseStoredSyllables = Number.isFinite(rawSyllables)
+    && (rawSyllables > 0 || isMeta || text.trim().length === 0);
+  const syllables = canUseStoredSyllables
+    ? rawSyllables
+    : (!isMeta && text.trim().length > 0 ? computeLineSyllables(text) : 0);
+
+  return {
+    id: typeof line['id'] === 'string' ? line['id'] : '',
+    text,
+    rhymingSyllables: typeof line['rhymingSyllables'] === 'string' ? line['rhymingSyllables'] : '',
+    rhyme: typeof line['rhyme'] === 'string' ? line['rhyme'] : '',
+    syllables,
+    concept: typeof line['concept'] === 'string' ? line['concept'] : 'New line',
+    isMeta,
+    isManual: typeof line['isManual'] === 'boolean' ? line['isManual'] : false,
+  };
+};
+
+export const normalizeLoadedSection = (section: Record<string, unknown>): Section => {
+  const lines = Array.isArray(section['lines'])
+    ? (section['lines'] as Record<string, unknown>[]).map(normalizeLoadedLine)
+    : [];
+  const storedScheme = typeof section['rhymeScheme'] === 'string' ? section['rhymeScheme'].trim() : '';
+  const lyricTexts = lines.filter(line => !line.isMeta && line.text.trim().length > 0).map(line => line.text);
+  const detectedScheme = (storedScheme.length === 0 || storedScheme.toUpperCase() === 'FREE')
+    ? detectRhymeSchemeLocally(lyricTexts) ?? undefined
+    : undefined;
+
+  return {
+    id: typeof section['id'] === 'string' ? section['id'] : '',
+    name: cleanSectionName(typeof section['name'] === 'string' ? section['name'] : ''),
+    rhymeScheme: detectedScheme ?? (storedScheme || undefined),
+    targetSyllables: typeof section['targetSyllables'] === 'number' ? section['targetSyllables'] : undefined,
+    mood: typeof section['mood'] === 'string' ? section['mood'] : '',
+    preInstructions: Array.isArray(section['preInstructions']) ? (section['preInstructions'] as string[]) : [],
+    postInstructions: Array.isArray(section['postInstructions']) ? (section['postInstructions'] as string[]) : [],
+    language: typeof section['language'] === 'string' ? section['language'] : undefined,
+    lines,
+  };
 };
 
 export const countSyllables = (text: string): number => {
