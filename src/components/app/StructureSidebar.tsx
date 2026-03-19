@@ -94,7 +94,7 @@ export function StructureSidebar({
             <div className="h-16 px-5 flex items-center justify-between" style={{ position: 'relative' }}>
               {/* Reversed accent rail — touches both panel borders */}
               <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
+                position: 'absolute', bottom: -1, left: 0, right: 0,
                 height: 'var(--accent-rail-thickness, 2px)',
                 background: 'var(--accent-rail-gradient-h-rev)',
                 opacity: 0.85, pointerEvents: 'none', zIndex: 1,

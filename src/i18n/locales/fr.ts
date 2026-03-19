@@ -72,7 +72,7 @@ const fr: Translations = {
       description: 'Configurez les paramètres de votre chanson dans la barre latérale ou importez des paroles existantes pour commencer.',
       loadSession: 'Charger la dernière session',
       pasteLyrics: 'Coller des paroles',
-      generateSong: 'Générer la chanson',
+      generateSong: 'Générer une chanson',
     },
     markupMode: {
       title: 'Mode Markdown',
