@@ -215,6 +215,7 @@ const zh: Translations = {
     storageUsed: '已使用',
     storageQuota: '配额',
     storageSaturation: '饱和度',
+    storageScopeLocal: '仅统计此浏览器中本地存储的 lyricist_library 数据。',
     libraryItems: '库项目',
     purge: '清除所有库数据',
     purgeWarning: '这将永久删除您库中的所有歌曲。此操作无法撤销。',

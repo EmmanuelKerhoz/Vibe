@@ -214,6 +214,7 @@ const fr: Translations = {
     storageUsed: 'Utilisé',
     storageQuota: 'Quota',
     storageSaturation: 'Saturation',
+    storageScopeLocal: 'Mesure uniquement les données lyricist_library stockées localement dans ce navigateur.',
     libraryItems: 'Éléments',
     purge: 'Purger Toute la Bibliothèque',
     purgeWarning: 'Cela supprimera définitivement toutes les chansons de votre bibliothèque. Cette action est irréversible.',

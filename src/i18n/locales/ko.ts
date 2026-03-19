@@ -221,6 +221,7 @@ const ko: Translations = {
     storageUsed: '사용 중',
     storageQuota: '할당량',
     storageSaturation: '포화도',
+    storageScopeLocal: '이 브라우저에 로컬로 저장된 lyricist_library 데이터만 측정합니다.',
     libraryItems: '라이브러리 항목',
     purge: '모든 라이브러리 데이터 삭제',
     purgeWarning: '이 작업을 수행하면 라이브러리의 모든 곡이 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.',

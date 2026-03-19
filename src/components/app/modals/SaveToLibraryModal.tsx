@@ -2,8 +2,52 @@ import React, { useState } from 'react';
 import { Save, X, BookOpen, Music, Clock, Loader2, Library, Trash2, FolderOpen, HardDrive, AlertTriangle } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
-import { useStorageEstimate } from '../../../hooks/useStorageEstimate';
 import type { LibraryAsset } from '../../../utils/libraryUtils';
+import { safeGetItem } from '../../../utils/safeStorage';
+
+type StorageTier = 'green' | 'orange' | 'red';
+
+type LocalLibraryStorageEstimate = {
+  usage: number;
+  quota: number;
+  ratio: number;
+  tier: StorageTier;
+  usageMB: string;
+  quotaMB: string;
+  supported: boolean;
+};
+
+const LOCAL_LIBRARY_KEY = 'lyricist_library';
+const LOCAL_STORAGE_QUOTA_BYTES = 5 * 1024 * 1024;
+
+function toMB(bytes: number): string {
+  if (bytes === 0) return '0';
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getStorageTier(ratio: number): StorageTier {
+  if (ratio >= 0.8) return 'red';
+  if (ratio >= 0.5) return 'orange';
+  return 'green';
+}
+
+function getLocalLibraryStorageEstimate(): LocalLibraryStorageEstimate {
+  const supported = typeof window !== 'undefined' && 'localStorage' in window;
+  const raw = supported ? safeGetItem(LOCAL_LIBRARY_KEY) : null;
+  const usage = raw ? new Blob([raw]).size : 0;
+  const quota = LOCAL_STORAGE_QUOTA_BYTES;
+  const ratio = quota > 0 ? usage / quota : 0;
+
+  return {
+    usage,
+    quota,
+    ratio,
+    tier: getStorageTier(ratio),
+    usageMB: toMB(usage),
+    quotaMB: toMB(quota),
+    supported,
+  };
+}
 
 type Props = {
   isOpen: boolean;
@@ -31,7 +75,7 @@ export function SaveToLibraryModal({
   hasCurrentSong = true,
 }: Props) {
   const { t } = useTranslation();
-  const storage = useStorageEstimate();
+  const storage = getLocalLibraryStorageEstimate();
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
 
   const handlePurge = async () => {
@@ -238,6 +282,9 @@ export function SaveToLibraryModal({
                     <span className="font-semibold text-[var(--text-primary)]">{libraryAssets.length}</span>
                   </div>
                 </div>
+                <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+                  {t.saveToLibrary.storageScopeLocal}
+                </p>
 
                 {/* Purge button */}
                 {onPurgeLibrary && libraryAssets.length > 0 && (
