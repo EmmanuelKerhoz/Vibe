@@ -35,7 +35,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-xl animate-in fade-in duration-300"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300"
         onClick={onClose}
       />
 
@@ -44,16 +44,22 @@ export function AboutModal({ isOpen, onClose }: Props) {
         <div className="w-[600px] h-[400px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
       </div>
 
+      {/* Gradient border wrapper */}
+      <div
+        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        style={{
+          padding: '2px',
+          background: 'var(--accent-rail-gradient-h)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+          isolation: 'isolate',
+        }}
+      >
       {/* Modal panel */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t.app.name}
-        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden about-dialog-shimmer glass-panel rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300 border border-white/10 dark:border-white/8"
-        style={{
-          background: 'var(--bg-card)',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
-        }}
+        className="relative w-full h-full flex flex-col shadow-2xl overflow-hidden about-dialog-shimmer dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px]"
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0" style={{ background: 'var(--bg-sidebar)' }}>
@@ -157,6 +163,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
             {t.about.close}
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );

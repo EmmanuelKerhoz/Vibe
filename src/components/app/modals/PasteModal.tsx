@@ -19,12 +19,22 @@ export function PasteModal({ isOpen, onClose, pastedText, setPastedText, isAnaly
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+      {/* Gradient border wrapper */}
+      <div
+        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        style={{
+          padding: '2px',
+          background: 'var(--accent-rail-gradient-h)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+          isolation: 'isolate',
+        }}
+      >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t.paste.title}
-        className="glass-panel w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 rounded-none sm:rounded-[24px_8px_24px_8px] border border-white/10 dark:border-white/8 shadow-2xl"
+        className="dialog-surface w-full h-full overflow-hidden flex flex-col rounded-none sm:rounded-[22px_6px_22px_6px] shadow-2xl"
       >
         <div className="p-6 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)]">
           <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase flex items-center gap-2.5">
@@ -65,6 +75,7 @@ export function PasteModal({ isOpen, onClose, pastedText, setPastedText, isAnaly
             </Button>
           </Tooltip>
         </div>
+      </div>
       </div>
     </div>
   );

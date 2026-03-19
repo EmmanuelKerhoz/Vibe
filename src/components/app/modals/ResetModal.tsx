@@ -12,12 +12,22 @@ export const ResetModal = ({ isOpen, onClose, onConfirm }: ResetModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+      {/* Gradient border wrapper */}
+      <div
+        className="relative w-full sm:max-w-md h-full sm:h-auto rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        style={{
+          padding: '2px',
+          background: 'var(--accent-rail-gradient-h)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+          isolation: 'isolate',
+        }}
+      >
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="reset-modal-title"
-        className="glass-panel relative rounded-none sm:rounded-[24px_8px_24px_8px] w-full sm:max-w-md h-full sm:h-auto shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/10 dark:border-white/8"
+        className="dialog-surface relative rounded-none sm:rounded-[22px_6px_22px_6px] w-full h-full shadow-2xl overflow-hidden flex flex-col"
       >
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
           <h3 id="reset-modal-title" className="text-sm font-bold tracking-widest text-[var(--accent-critical)] uppercase flex items-center gap-2.5">
@@ -46,6 +56,7 @@ export const ResetModal = ({ isOpen, onClose, onConfirm }: ResetModalProps) => {
             Clear Everything
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );

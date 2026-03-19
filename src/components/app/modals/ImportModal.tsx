@@ -20,7 +20,7 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, on
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-xl animate-in fade-in duration-200"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
       />
 
@@ -29,12 +29,22 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, on
         <div className={`w-[400px] h-[300px] blur-[120px] rounded-full ${hasExistingWork ? 'bg-amber-500/10' : 'bg-[var(--accent-color)]/10'}`} />
       </div>
 
+      {/* Gradient border wrapper */}
+      <div
+        className="relative w-full sm:max-w-md h-full sm:h-auto rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        style={{
+          padding: '2px',
+          background: 'var(--accent-rail-gradient-h)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+          isolation: 'isolate',
+        }}
+      >
       {/* Modal panel */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t.importDialog.title}
-        className="relative w-full sm:max-w-md h-full sm:h-auto flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8"
+        className="relative w-full h-full flex flex-col dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px] shadow-2xl overflow-hidden"
       >
 
         {/* Header */}
@@ -90,6 +100,7 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, on
             {t.importDialog.chooseFile}
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -55,12 +55,22 @@ export function AnalysisModal({
         <div className="w-[600px] h-[400px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
       </div>
 
+      {/* Gradient border wrapper */}
+      <div
+        className="relative w-full sm:max-w-3xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        style={{
+          padding: '2px',
+          background: 'var(--accent-rail-gradient-h)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+          isolation: 'isolate',
+        }}
+      >
       {/* Modal panel */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t.analysis.title}
-        className="relative w-full sm:max-w-3xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-300 glass-panel border border-white/10 rounded-none sm:rounded-[24px_8px_24px_8px] shadow-2xl overflow-hidden dark:border-white/8"
+        className="relative w-full h-full flex flex-col dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px] shadow-2xl overflow-hidden"
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
@@ -222,6 +232,7 @@ export function AnalysisModal({
             </Tooltip>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
