@@ -251,7 +251,8 @@ export const useSongEditor = ({
         const { base, num } = getBaseAndNumber(name);
         if (num === null) continue;
         const numbers = numberedSectionsByBase.get(base) ?? [];
-        if (numbers.length > 0 && numbers[numbers.length - 1]! > num) return;
+        const lastNumber = numbers.at(-1);
+        if (lastNumber !== undefined && lastNumber > num) return;
         numbers.push(num);
         numberedSectionsByBase.set(base, numbers);
       }
