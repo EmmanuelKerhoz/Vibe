@@ -196,7 +196,7 @@ export function StructureSidebar({
                             onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }}
                             className={`relative flex flex-col gap-1.5 ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[16px_6px_16px_6px]' : ''}`}
                           >
-                            <div className="absolute left-3 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
+                            <div className="absolute left-2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
                               <Link2 className="w-2.5 h-2.5 text-[var(--accent-color)] opacity-60" />
                             </div>
                             <SectionRow sectionItem={item} sectionIdx={idx} sectionId={sectionId} draggable={false} showDragHandle={isDraggable} />
