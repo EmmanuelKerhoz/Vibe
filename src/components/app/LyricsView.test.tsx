@@ -60,4 +60,50 @@ describe('LyricsView empty state', () => {
     expect(onPasteLyrics).toHaveBeenCalledTimes(1);
     expect(onGenerateSong).toHaveBeenCalledTimes(1);
   });
+
+  it('uses the shared gradient container surface in markup mode', () => {
+    const { container } = render(
+      <LanguageProvider>
+        <LyricsView
+          song={[]}
+          rhymeScheme="AABB"
+          updateState={() => ({ song: [], structure: [] })}
+          updateSongAndStructureWithHistory={() => {}}
+          selectedLineId={null}
+          isGenerating={false}
+          isAnalyzing={false}
+          isRegeneratingSection={() => false}
+          handleLineClick={() => {}}
+          updateLineText={() => {}}
+          handleLineKeyDown={() => {}}
+          handleInstructionChange={() => {}}
+          addInstruction={() => {}}
+          removeInstruction={() => {}}
+          regenerateSection={() => {}}
+          draggedItemIndex={null}
+          dragOverIndex={null}
+          draggedLineInfo={null}
+          dragOverLineInfo={null}
+          setDraggedItemIndex={() => {}}
+          setDragOverIndex={() => {}}
+          setDraggedLineInfo={() => {}}
+          setDragOverLineInfo={() => {}}
+          playAudioFeedback={() => {}}
+          handleDrop={() => {}}
+          handleLineDragStart={() => {}}
+          handleLineDrop={() => {}}
+          isMarkupMode
+          setIsMarkupMode={() => {}}
+          markupText="[Verse]\nHello"
+          setMarkupText={() => {}}
+          markupTextareaRef={{ current: null }}
+          onOpenLibrary={() => {}}
+          onPasteLyrics={() => {}}
+          onGenerateSong={() => {}}
+        />
+      </LanguageProvider>,
+    );
+
+    expect(container.querySelector('.lcars-gradient-container')).not.toBeNull();
+  });
 });
