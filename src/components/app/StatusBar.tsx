@@ -4,7 +4,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { StorageGauge } from '../ui/StorageGauge';
 import { useTranslation } from '../../i18n';
 import { tPlural } from '../../i18n/plurals';
-import { APP_VERSION } from '../../version';
+import { APP_VERSION_LABEL } from '../../version';
 
 interface Props {
   song: { length: number };
@@ -102,7 +102,7 @@ export function StatusBar({
             className="lcars-meta-btn lcars-app-id min-h-[44px] lg:min-h-0"
           >
             <Info className="w-3.5 h-3.5" />
-            <span>{APP_VERSION}</span>
+            <span>{APP_VERSION_LABEL}</span>
           </button>
         </Tooltip>
       </div>

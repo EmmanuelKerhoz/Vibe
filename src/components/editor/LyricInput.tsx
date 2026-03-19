@@ -126,7 +126,7 @@ export const LyricInput = React.memo(function LyricInput({
   return (
     <div
       className={[
-        'group relative flex items-center gap-1.5 rounded px-1 py-0.5 transition-all',
+        'group relative flex items-center gap-1.5 rounded pl-1 pr-8 py-0.5 transition-all',
         isSelected ? 'bg-white/5' : 'hover:bg-white/[0.03]',
         isDraggedLine ? 'opacity-40' : '',
         isDragOverLine ? 'border-t border-[var(--accent-color)]/60' : '',

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Apple, Github, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag, Info, X } from 'lucide-react';
 import { useTranslation } from '../../../i18n';
-import { APP_VERSION } from '../../../version';
+import { APP_VERSION_LABEL } from '../../../version';
 import { AI_KEY_ENV_VAR, AI_MODEL_NAME } from '../../../utils/aiUtils';
 import { Button } from '../../ui/Button';
 import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
@@ -66,7 +66,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
                 {t.app.name}
               </h3>
               <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
-                {APP_VERSION} · VoxNova42
+                {APP_VERSION_LABEL} · VoxNova42
               </p>
             </div>
           </div>

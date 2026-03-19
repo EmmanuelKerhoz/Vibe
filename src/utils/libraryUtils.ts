@@ -3,6 +3,7 @@ import type { SimilarityMatch } from './similarityUtils';
 import { calculateSimilarityWithMetadata } from './similarityUtils';
 import { DEFAULT_MOOD, DEFAULT_TOPIC } from './songDefaults';
 import { safeGetItem, safeSetItem } from './safeStorage';
+import { normalizeLoadedSection } from './songUtils';
 
 export type LibraryAsset = {
   id: string;
@@ -101,7 +102,7 @@ export type LoadedLibraryAssetState = {
 };
 
 export const loadAssetIntoEditor = (asset: LibraryAsset): LoadedLibraryAssetState => {
-  const song = JSON.parse(JSON.stringify(asset.sections)) as Section[];
+  const song = asset.sections.map(section => normalizeLoadedSection(section as unknown as Record<string, unknown>));
   const firstSection = song[0];
   const metadata = asset.metadata;
 

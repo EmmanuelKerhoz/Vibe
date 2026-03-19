@@ -199,7 +199,7 @@ function AppInner() {
   });
 
   const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood, songLanguage);
-  const { generateSuggestion: handleSurprise, isGeneratingSuggestion: isSurprising } =
+  const { generateSuggestion: handleSurprise, isGeneratingSuggestion: isSurprising, resetSuggestionCycle } =
     useTopicMoodSuggester(topic, mood, setTopic, setMood);
   const handleSurpriseClick = useCallback(async () => {
     const suggestion = await handleSurprise();
@@ -346,7 +346,8 @@ function AppInner() {
       replaceStateWithoutHistory, clearHistory, clearSelection, resetWebSimilarityIndex,
       appState,
     );
-  }, [appState, clearHistory, clearSelection, replaceStateWithoutHistory, resetWebSimilarityIndex]);
+    resetSuggestionCycle();
+  }, [appState, clearHistory, clearSelection, replaceStateWithoutHistory, resetSuggestionCycle, resetWebSimilarityIndex]);
 
   const resetSong = useCallback(() => {
     const partial = buildPartialResetPayload(rhymeScheme);
@@ -354,11 +355,16 @@ function AppInner() {
     clearPersistedSession();
     appState.setHasSavedSession(false);
     clearSelection();
+    appState.setTitle(partial.title);
+    appState.setTitleOrigin(partial.titleOrigin);
+    appState.setTopic(partial.topic);
+    appState.setMood(partial.mood);
     appState.setMarkupText('');
     appState.setSimilarityMatches([]);
     resetWebSimilarityIndex();
+    resetSuggestionCycle();
     setIsResetModalOpen(false);
-  }, [appState, clearSelection, resetWebSimilarityIndex, rhymeScheme, setIsResetModalOpen, updateSongAndStructureWithHistory]);
+  }, [appState, clearSelection, resetSuggestionCycle, resetWebSimilarityIndex, rhymeScheme, setIsResetModalOpen, updateSongAndStructureWithHistory]);
 
   const handleSaveToLibrary = async () => {
     if (song.length === 0) return;

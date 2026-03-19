@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Section } from '../types';
-import { cleanSectionName } from '../utils/songUtils';
+import { cleanSectionName, normalizeLoadedSection } from '../utils/songUtils';
 import { DEFAULT_STRUCTURE } from '../constants/editor';
 import { safeSetItem, safeGetItem } from '../utils/safeStorage';
 import { isPristineDraft } from '../utils/songDefaults';
@@ -42,27 +42,7 @@ interface UseSessionPersistenceParams {
 }
 
 /** Normalize a raw section read from storage — ensures no field is undefined. */
-const normalizeStoredSection = (s: Record<string, unknown>): Section => ({
-  id: (s['id'] as string) || '',
-  name: cleanSectionName((s['name'] as string) || ''),
-  rhymeScheme: (s['rhymeScheme'] as string) ?? '',
-  targetSyllables: typeof s['targetSyllables'] === 'number' ? (s['targetSyllables'] as number) : undefined,
-  mood: (s['mood'] as string) ?? '',
-  preInstructions: Array.isArray(s['preInstructions']) ? (s['preInstructions'] as string[]) : [],
-  postInstructions: Array.isArray(s['postInstructions']) ? (s['postInstructions'] as string[]) : [],
-  lines: Array.isArray(s['lines'])
-    ? (s['lines'] as Record<string, unknown>[]).map(l => ({
-        id: (l['id'] as string) || '',
-        text: (l['text'] as string) ?? '',
-        rhymingSyllables: (l['rhymingSyllables'] as string) ?? '',
-        rhyme: (l['rhyme'] as string) ?? '',
-        syllables: typeof l['syllables'] === 'number' ? (l['syllables'] as number) : 0,
-        concept: (l['concept'] as string) ?? 'New line',
-        isMeta: (l['isMeta'] as boolean) ?? false,
-        isManual: (l['isManual'] as boolean) ?? false,
-      }))
-    : [],
-});
+const normalizeStoredSection = (s: Record<string, unknown>): Section => normalizeLoadedSection(s);
 
 export function useSessionPersistence(params: UseSessionPersistenceParams): void {
   const {

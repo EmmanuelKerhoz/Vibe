@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../../i18n';
 import { SettingsModal } from './SettingsModal';
+import { APP_VERSION_LABEL } from '../../../version';
 
 const createProps = () => ({
   isOpen: true,
@@ -58,5 +59,17 @@ describe('SettingsModal', () => {
     expect(document.documentElement.style.fontSize).toBe('14px');
     expect(props.setUiScale).toHaveBeenCalledWith('medium');
     expect(props.onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the beta-prefixed app version in the settings surface', () => {
+    const props = createProps();
+
+    render(
+      <LanguageProvider>
+        <SettingsModal {...props} />
+      </LanguageProvider>,
+    );
+
+    expect(screen.getAllByText(APP_VERSION_LABEL).length).toBeGreaterThan(0);
   });
 });
