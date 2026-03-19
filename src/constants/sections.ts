@@ -202,6 +202,17 @@ export const getSectionTypeDefinition = (name: string): SectionTypeDefinition | 
 export const getSectionTypeKey = (name: string): SectionTypeKey | null =>
   getSectionTypeDefinition(name)?.key ?? null;
 
+export const isPreChorusSectionName = (name: string): boolean =>
+  getSectionTypeKey(name) === 'pre-chorus';
+
+export const isLinkedChorusSectionName = (name: string): boolean => {
+  const key = getSectionTypeKey(name);
+  return key === 'chorus' || key === 'final-chorus';
+};
+
+export const isLinkedPreChorusPair = (current: string, next: string | undefined): boolean =>
+  Boolean(next) && isPreChorusSectionName(current) && isLinkedChorusSectionName(next ?? '');
+
 export const getSectionFamily = (name: string): SectionFamily =>
   getSectionTypeDefinition(name)?.family ?? 'default';
 

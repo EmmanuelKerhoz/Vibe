@@ -7,11 +7,11 @@ import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
 import { EditorContextProvider, type EditorHandlers } from '../../contexts/EditorContext';
-import { SECTION_TYPE_OPTIONS } from '../../constants/sections';
+import { isLinkedChorusSectionName, isLinkedPreChorusPair, isPreChorusSectionName, SECTION_TYPE_OPTIONS } from '../../constants/sections';
 
 // Module-level helpers for tied section detection
-const isSectionPreChorus = (s: Section) => /pre.?chorus/i.test(s.name);
-const isSectionChorus = (s: Section) => /^chorus(\s|$)/i.test(s.name.trim()) && !isSectionPreChorus(s);
+const isSectionPreChorus = (s: Section) => isPreChorusSectionName(s.name);
+const isSectionChorus = (s: Section) => isLinkedChorusSectionName(s.name);
 
 interface LyricsViewProps {
   song: Section[];
@@ -86,7 +86,7 @@ export const LyricsView = memo(function LyricsView({
     let blockStart = idx;
     let blockEnd = idx;
     const section = song[idx]!;
-    if (isSectionPreChorus(section) && idx + 1 < song.length && isSectionChorus(song[idx + 1]!)) {
+    if (idx + 1 < song.length && isLinkedPreChorusPair(section.name, song[idx + 1]!.name)) {
       blockEnd = idx + 1;
     } else if (isSectionChorus(section) && idx > 0 && isSectionPreChorus(song[idx - 1]!)) {
       blockStart = idx - 1;
@@ -107,7 +107,7 @@ export const LyricsView = memo(function LyricsView({
     let blockStart = idx;
     let blockEnd = idx;
     const section = song[idx]!;
-    if (isSectionPreChorus(section) && idx + 1 < song.length && isSectionChorus(song[idx + 1]!)) {
+    if (idx + 1 < song.length && isLinkedPreChorusPair(section.name, song[idx + 1]!.name)) {
       blockEnd = idx + 1;
     } else if (isSectionChorus(section) && idx > 0 && isSectionPreChorus(song[idx - 1]!)) {
       blockStart = idx - 1;

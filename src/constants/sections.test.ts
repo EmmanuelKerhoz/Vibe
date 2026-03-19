@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getSectionExplanation, getSectionTooltipText, getSectionTypeKey, SECTION_TYPE_OPTIONS } from './sections';
+import {
+  getSectionExplanation,
+  getSectionTooltipText,
+  getSectionTypeKey,
+  isLinkedPreChorusPair,
+  SECTION_TYPE_OPTIONS,
+} from './sections';
 
 describe('section definitions', () => {
   it('includes the newly supported structural section types', () => {
@@ -30,5 +36,11 @@ describe('section definitions', () => {
       'Ouvre le morceau et pose l’atmosphère.',
       'Repère : presque toujours au début, souvent courte.',
     ]);
+  });
+
+  it('treats final chorus as a valid linked target for a pre-chorus', () => {
+    expect(isLinkedPreChorusPair('Pre-Chorus 3', 'Final Chorus')).toBe(true);
+    expect(isLinkedPreChorusPair('Pre-Chorus 1', 'Chorus 1')).toBe(true);
+    expect(isLinkedPreChorusPair('Pre-Chorus 1', 'Bridge')).toBe(false);
   });
 });

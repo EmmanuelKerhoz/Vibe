@@ -8,7 +8,13 @@ import { Input } from '../ui/Input';
 import { useTranslation } from '../../i18n';
 import { getSectionColor, getSectionDotColor, getSectionTextColor } from '../../utils/songUtils';
 import type { Section } from '../../types';
-import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection, SECTION_TYPE_OPTIONS } from '../../constants/sections';
+import {
+  getSectionTooltipText,
+  isAnchoredEndSection,
+  isAnchoredStartSection,
+  isLinkedPreChorusPair,
+  SECTION_TYPE_OPTIONS,
+} from '../../constants/sections';
 
 interface Props {
   isStructureOpen: boolean;
@@ -31,13 +37,6 @@ interface Props {
   onScrollToSection: (sectionId: string) => void;
   isMobileOverlay?: boolean;
   className?: string;
-}
-
-/** Detect a Pre-Chorus/Chorus pair: returns true if item at idx is a Pre-Chorus
- *  and the next item is a Chorus (any casing / numbering). */
-function isPreChorusOf(current: string, next: string | undefined): boolean {
-  if (!next) return false;
-  return /pre.?chorus/i.test(current) && /^chorus/i.test(next);
 }
 
 export function StructureSidebar({
@@ -64,7 +63,7 @@ export function StructureSidebar({
   // Build a set of indices to skip (Chorus items already rendered as part of a group)
   const groupedChorusIndices = new Set<number>();
   structure.forEach((item, idx) => {
-    if (isPreChorusOf(item, structure[idx + 1])) {
+    if (isLinkedPreChorusPair(item, structure[idx + 1])) {
       groupedChorusIndices.add(idx + 1);
     }
   });
@@ -123,7 +122,7 @@ export function StructureSidebar({
                       // Skip chorus items already rendered inside a Pre-Chorus group
                       if (groupedChorusIndices.has(idx)) return null;
 
-                      const isGroupLeader = isPreChorusOf(item, structure[idx + 1]);
+                      const isGroupLeader = isLinkedPreChorusPair(item, structure[idx + 1]);
                       const chorusItem = isGroupLeader ? structure[idx + 1] : undefined;
                       const chorusIdx = isGroupLeader ? idx + 1 : undefined;
 
@@ -195,10 +194,9 @@ export function StructureSidebar({
                             onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                             onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
                             onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }}
-                            className={`relative flex flex-col gap-1.5 pl-4 ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[16px_6px_16px_6px]' : ''}`}
+                            className={`relative flex flex-col gap-1.5 ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[16px_6px_16px_6px]' : ''}`}
                           >
-                            <div className="absolute left-[14px] top-9 bottom-9 w-px bg-[var(--accent-color)]/40 pointer-events-none" />
-                            <div className="absolute left-[8px] top-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
+                            <div className="absolute left-2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
                               <Link2 className="w-2.5 h-2.5 text-[var(--accent-color)] opacity-60" />
                             </div>
                             <SectionRow sectionItem={item} sectionIdx={idx} sectionId={sectionId} draggable={false} showDragHandle={isDraggable} />

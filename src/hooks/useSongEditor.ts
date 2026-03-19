@@ -9,6 +9,9 @@ import {
   getSectionTypeKey,
   isAnchoredEndSection,
   isAnchoredStartSection,
+  isLinkedChorusSectionName,
+  isLinkedPreChorusPair,
+  isPreChorusSectionName,
   isSectionType,
   isUniqueSectionType,
   shouldAutoNumberSection,
@@ -68,16 +71,13 @@ const makeEmptySection = (name: string): Section => ({
   lines: makeEmptyLines(),
 });
 
-const isPreChorusSection = (name: string) => /pre.?chorus/i.test(name);
-const isChorusSection = (name: string) => /^chorus(\s|$)/i.test(name.trim()) && !isPreChorusSection(name);
-
 const getTiedSectionRange = (items: string[], index: number) => {
   if (index < 0 || index >= items.length) return { start: index, end: index };
   const current = items[index] ?? '';
-  if (isPreChorusSection(current) && index + 1 < items.length && isChorusSection(items[index + 1] ?? '')) {
+  if (index + 1 < items.length && isLinkedPreChorusPair(current, items[index + 1])) {
     return { start: index, end: index + 1 };
   }
-  if (isChorusSection(current) && index > 0 && isPreChorusSection(items[index - 1] ?? '')) {
+  if (isLinkedChorusSectionName(current) && index > 0 && isPreChorusSectionName(items[index - 1] ?? '')) {
     return { start: index - 1, end: index };
   }
   return { start: index, end: index };
