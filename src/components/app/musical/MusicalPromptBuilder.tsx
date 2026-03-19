@@ -3,6 +3,7 @@ import { Sparkles, Loader2, Copy, Check } from 'lucide-react';
 import { useTranslation } from '../../../i18n';
 
 const AMBER_PRIMARY = '#f59e0b';
+const PROMPT_CHARACTER_LIMIT = 1000;
 
 function GBPanel({ children, className = '', style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
   return <div className={`lcars-gb-panel ${className}`} style={style}>{children}</div>;
@@ -25,6 +26,10 @@ export function MusicalPromptBuilder({
   const { t } = useTranslation();
   const m = t.musical;
   const [copied, setCopied] = useState(false);
+  const promptLength = musicalPrompt.length;
+  const promptUsageRatio = promptLength / PROMPT_CHARACTER_LIMIT;
+  const promptUsagePercent = Math.min(100, promptUsageRatio * 100);
+  const promptCounterColor = promptUsageRatio >= 0.9 ? '#f87171' : promptUsageRatio >= 0.7 ? AMBER_PRIMARY : '#34d399';
 
   const handleCopy = useCallback(() => {
     if (!musicalPrompt) return;
@@ -54,6 +59,17 @@ export function MusicalPromptBuilder({
                 <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.promptLabel}</span>
               </div>
               <div className="flex items-center gap-2">
+                <div className="hidden min-w-[8rem] sm:block">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-[var(--border-color)]">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${promptUsagePercent}%`, background: promptCounterColor }}
+                    />
+                  </div>
+                </div>
+                <span className="text-[10px] font-medium" style={{ color: promptCounterColor }}>
+                  {promptLength} / {PROMPT_CHARACTER_LIMIT}
+                </span>
                 <span className="text-[9px] text-[var(--text-secondary)] opacity-60">{m.optimizedFor}</span>
                 {musicalPrompt && (
                   <button onClick={handleCopy}
@@ -72,7 +88,7 @@ export function MusicalPromptBuilder({
                 <span className="text-sm text-[var(--text-secondary)]">{m.analyzing}</span>
               </div>
             ) : (
-              <textarea value={musicalPrompt} onChange={e => setMusicalPrompt(e.target.value)} rows={6}
+              <textarea value={musicalPrompt} onChange={e => setMusicalPrompt(e.target.value)} rows={6} maxLength={PROMPT_CHARACTER_LIMIT}
                 className="w-full bg-transparent px-3 py-2.5 text-sm text-[var(--text-primary)] lcars-glow-focus transition-colors resize-none leading-relaxed border"
                 style={{ borderRadius: '10px 3px 10px 3px', borderColor: `${AMBER_PRIMARY}55` }}
               />

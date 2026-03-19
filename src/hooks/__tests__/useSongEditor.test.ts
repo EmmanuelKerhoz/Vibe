@@ -173,6 +173,28 @@ describe('useSongEditor', () => {
       expect(newStructure).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
       expect(newSong.map(section => section.name)).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
     });
+
+    it('moves a pre-chorus and final chorus pair together when dragging the final chorus', () => {
+      const song = [
+        makeSection('s1', 'Verse 1'),
+        makeSection('s2', 'Pre-Chorus 3'),
+        makeSection('s3', 'Final Chorus'),
+        makeSection('s4', 'Outro'),
+      ];
+
+      const { result, updateSongAndStructureWithHistory } = buildHook(
+        song,
+        song.map(section => section.name),
+        { draggedItemIndex: 2 },
+      );
+
+      act(() => result.current.handleDrop(3));
+
+      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
+      const [newSong, newStructure] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
+      expect(newStructure).toEqual(['Verse 1', 'Outro', 'Pre-Chorus 3', 'Final Chorus']);
+      expect(newSong.map(section => section.name)).toEqual(['Verse 1', 'Outro', 'Pre-Chorus 3', 'Final Chorus']);
+    });
   });
 
   describe('exportSong', () => {

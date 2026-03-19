@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music } from 'lucide-react';
+import { Tooltip as FluentTooltip } from '@fluentui/react-components';
 import { useTranslation } from '../../../i18n';
 import { useMetronome } from '../../../hooks/useMetronome';
 import { RHYTHM_BPM } from '../../../constants/rhythmBpm';
@@ -16,21 +17,25 @@ const BPM_PRESETS = [
 ];
 
 const INSTRUMENT_FAMILIES: { emoji: string; label: string; instruments: string[] }[] = [
-  { emoji: '\uD83C\uDFBA', label: 'Brass',       instruments: ['Trumpet', 'Trombone', 'French Horn', 'Tuba'] },
-  { emoji: '\uD83C\uDFBB', label: 'Strings',     instruments: ['Violin', 'Alto Violin', 'Viola', 'Cello', 'Double Bass', 'Harp'] },
-  { emoji: '\uD83C\uDFB8', label: 'Guitar',      instruments: ['Acoustic Guitar', 'Electric Guitar', 'Bass Guitar'] },
-  { emoji: '\uD83C\uDFB9', label: 'Keys',        instruments: ['Grand Piano', 'Piano', 'Rhodes', 'Organ', 'Synth'] },
-  { emoji: '\uD83C\uDFB7', label: 'Woodwinds',   instruments: ['Saxophone', 'Flute', 'Clarinet', 'Oboe'] },
-  { emoji: '\uD83E\uDD41', label: 'Percussion',  instruments: ['Standard Drum Kit', 'Afrobeat Kit', 'Electronic Kit', 'Orchestral Percussion', 'Latin Percussion', 'Tribal Percussion'] },
+  { emoji: '\uD83C\uDFBA', label: 'Brass',       instruments: ['Trumpet', 'Trombone', 'French Horn', 'Tuba', 'Cornet'] },
+  { emoji: '\uD83C\uDFBB', label: 'Strings',     instruments: ['Violin', 'Alto Violin', 'Viola', 'Cello', 'Double Bass', 'Harp', 'Mandolin'] },
+  { emoji: '\uD83C\uDFB8', label: 'Guitar',      instruments: ['Acoustic Guitar', 'Electric Guitar', 'Bass Guitar', 'Twelve-String Guitar'] },
+  { emoji: '\uD83C\uDFB9', label: 'Keys',        instruments: ['Grand Piano', 'Piano', 'Rhodes', 'Organ', 'Synth', 'Celesta'] },
+  { emoji: '\uD83C\uDFB7', label: 'Woodwinds',   instruments: ['Saxophone', 'Flute', 'Clarinet', 'Oboe', 'Piccolo', 'Tin Whistle'] },
+  { emoji: '\uD83E\uDD41', label: 'Percussion',  instruments: ['Standard Drum Kit', 'Afrobeat Kit', 'Electronic Kit', 'Orchestral Percussion', 'Latin Percussion', 'Tribal Percussion', 'Tambourine', 'Guiro', 'Triangle', 'Shaker', 'Cowbell'] },
   { emoji: '\uD83C\uDFA4', label: 'Vocals',      instruments: ['Lead Vocals', 'Backing Vocals', 'Choir'] },
-  { emoji: '\uD83C\uDF9B\uFE0F', label: 'Electronic', instruments: ['Synthesizer', 'Sampler', '808', 'TR-909'] },
-  { emoji: '\uD83E\uDE97', label: 'Folk / Ethnic', instruments: ['Alto Harmonica', 'Kazoo', 'Jaw Harp', 'Pan Flute', 'Tribal Percussion', 'Bouzouki', 'Sitar', 'Duduk'] },
+  { emoji: '\uD83C\uDF9B\uFE0F', label: 'Electronic', instruments: ['Synthesizer', 'Sampler', '808', 'TR-909', 'Moog Bass', 'Arp Synth'] },
+  { emoji: '\uD83E\uDE97', label: 'Folk / Ethnic', instruments: ['Alto Harmonica', 'Kazoo', 'Jaw Harp', 'Pan Flute', 'Tribal Percussion', 'Bouzouki', 'Sitar', 'Duduk', 'Bodhrán', 'Whistle'] },
 ];
 
 interface VibeTile { name: string; emoji: string; bpm: number; rhythm: string; instruments: string[] }
 interface VibeCategory {
   id: string; label: string; color: string; summary: string;
   artists: string[]; moods: string[]; era: string; tiles: VibeTile[];
+}
+
+export function buildGenreTooltip(summary: string, tile: { name: string; bpm: number; rhythm: string; instruments: string[] }) {
+  return `${tile.name}\n${summary}\n${tile.bpm} BPM · ${tile.rhythm}\n${tile.instruments.join(', ')}`;
 }
 
 const SUB_STYLES: Record<string, string[]> = {
@@ -133,28 +138,35 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
             )}
           </div>
           <p className="text-[10px] text-[var(--text-secondary)] opacity-70">{m.vibeBoardDescription ?? 'Select your genre to auto-set BPM & instruments'}</p>
-          <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
-            {VIBE_CATEGORIES.map(category => (
-              <div key={category.id}>
-                <div className="mb-1.5 flex items-end justify-between gap-3 px-0.5">
-                  <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: category.color }}>{category.label}</div>
-                  <p className="text-[10px] text-right leading-4 text-[var(--text-secondary)] opacity-75">{category.summary}</p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {category.tiles.map(tile => {
-                    const isSelected = selectedVibeTile?.name === tile.name;
-                    return (
-                      <button key={tile.name} onClick={() => handleVibeTileSelect(tile)}
-                        className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border"
-                        style={isSelected
-                          ? { borderRadius: '12px 4px 12px 4px', background: `${category.color}22`, borderColor: category.color, color: category.color, boxShadow: `0 0 8px ${category.color}55`, transform: 'scale(1.04)' }
-                          : { borderRadius: '12px 4px 12px 4px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
-                      >
-                        <span>{tile.emoji}</span><span>{tile.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+              {VIBE_CATEGORIES.map(category => (
+                <div key={category.id}>
+                  <div className="mb-1.5 space-y-1 px-0.5">
+                    <div className="text-[9px] font-bold tracking-widest uppercase" style={{ color: category.color }}>{category.label}</div>
+                    <p className="text-[10px] leading-4 text-[var(--text-secondary)] opacity-75">{category.summary}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {category.tiles.map(tile => {
+                      const isSelected = selectedVibeTile?.name === tile.name;
+                      return (
+                        <FluentTooltip
+                          key={tile.name}
+                          content={<span style={{ display: 'block', maxWidth: '18rem', whiteSpace: 'pre-line' }}>{buildGenreTooltip(category.summary, tile)}</span>}
+                          relationship="description"
+                          positioning={{ position: 'above', align: 'center' }}
+                        >
+                          <button onClick={() => handleVibeTileSelect(tile)}
+                            className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border"
+                            style={isSelected
+                              ? { borderRadius: '12px 4px 12px 4px', background: `${category.color}22`, borderColor: category.color, color: category.color, boxShadow: `0 0 8px ${category.color}55`, transform: 'scale(1.04)' }
+                              : { borderRadius: '12px 4px 12px 4px', background: 'transparent', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+                          >
+                            <span>{tile.emoji}</span><span>{tile.name}</span>
+                          </button>
+                        </FluentTooltip>
+                      );
+                    })}
+                  </div>
               </div>
             ))}
           </div>
