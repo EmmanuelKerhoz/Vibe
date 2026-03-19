@@ -509,6 +509,7 @@
   --lcars-gradient-border-background: var(--accent-rail-gradient-v);
   --lcars-gradient-border-opacity: 0;
   --lcars-gradient-border-hover-opacity: var(--lcars-gradient-border-opacity);
+  --lcars-gradient-border-render-opacity: 0;
   --lcars-gradient-border-shadow: none;
 }
 
@@ -534,7 +535,7 @@
   mask-composite: exclude;
   pointer-events: none;
   z-index: 1;
-  opacity: 0;
+  opacity: var(--lcars-gradient-border-render-opacity);
   box-shadow: var(--lcars-gradient-border-shadow);
   transition: opacity 0.2s ease;
 }
@@ -581,7 +582,7 @@
 .dark .ui-fluent .fluent-card::after,
 .dark .ui-fluent .lcars-panel::after,
 .dark .lcars-band::after {
-  opacity: var(--lcars-gradient-border-opacity);
+  --lcars-gradient-border-render-opacity: var(--lcars-gradient-border-opacity);
 }
 
 .dark .lcars-gradient-container:hover::after,
@@ -602,7 +603,7 @@
 .dark .ui-fluent .lcars-panel:focus-within::after,
 .dark .lcars-band:hover::after,
 .dark .lcars-band:focus-within::after {
-  opacity: var(--lcars-gradient-border-hover-opacity);
+  --lcars-gradient-border-render-opacity: var(--lcars-gradient-border-hover-opacity);
 }
 
 .dark .lcars-gradient-container,
