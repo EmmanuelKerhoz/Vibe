@@ -153,7 +153,7 @@ const ko: Translations = {
     autoSuggestLabel: '가사, 주제, 분위기를 기반으로 한 AI 제안',
     generatePrompt: '마스터 프롬프트 생성',
     promptLabel: '생성된 마스터 프롬프트',
-    promptPlaceholder: '생성된 음악 프롬프트가 여기에 표시됩니다...',
+    promptPlaceholder: '구조화된 음악 프롬프트(STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY)가 여기에 표시됩니다...',
     optimizedFor: 'Suno, Udio, Stable Audio에 최적화됨',
     copyPrompt: '프롬프트 복사',
     copied: '복사됨!',
