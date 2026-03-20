@@ -9,7 +9,7 @@ const AMBER_SECONDARY = '#38bdf8';
 const MUSICAL_GUIDE_STEPS = [
   { title: '1. Start broad',         action: 'Select your genre family', description: 'Choose from ÉLECTRONIQUE, URBAIN, ROCK, SOUL/JAZZ, WORLD, POP, or CLASSIQUE below to set the foundation.' },
   { title: '2. Refine the niche',    action: 'Pick a sub-style',        description: 'After selecting a genre, choose a sub-style (Indie, Club-ready, Cinematic, etc.) to define the specific lane.' },
-  { title: '3. Give references',     action: 'Review artist & mood cues', description: 'Check the auto-filled artist references, mood tags, and era information to validate the intended vibe.' },
+  { title: '3. Give references',     action: 'Copy 2-3 artist cues', description: 'Use the “Copy references” control under For fans of, then paste them into the Musical Prompt under REFERENCES.' },
   { title: '4. Lock production',     action: 'Confirm BPM & instruments', description: 'Verify the auto-set tempo, instruments, and rhythm, or adjust them to match your vision.' },
 ];
 

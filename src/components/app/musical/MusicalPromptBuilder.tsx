@@ -4,6 +4,7 @@ import { useTranslation } from '../../../i18n';
 
 const AMBER_PRIMARY = '#f59e0b';
 const PROMPT_CHARACTER_LIMIT = 1000;
+const PROMPT_SECTIONS = ['STYLE', 'MOOD', 'VOCALS', 'INSTRUMENTATION', 'RHYTHM/GROOVE', 'STRUCTURE', 'MIX/SPACE', 'REFERENCES', 'DELIVERY'];
 
 function GBPanel({ children, className = '', style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
   return <div className={`lcars-gb-panel ${className}`} style={style}>{children}</div>;
@@ -49,6 +50,21 @@ export function MusicalPromptBuilder({
         {isGeneratingMusicalPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
         {m.generatePrompt}
       </button>
+
+      <div className="border px-3 py-2.5 space-y-1.5" style={{ borderRadius: '12px 4px 12px 4px', borderColor: `${AMBER_PRIMARY}55`, background: `${AMBER_PRIMARY}0f` }}>
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4" style={{ color: AMBER_PRIMARY }} />
+          <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)]">{m.promptStructureLabel ?? 'Prompt structure'}</span>
+        </div>
+        <p className="text-[11px] leading-5 text-[var(--text-secondary)]">{m.promptStructureHint ?? 'Use labeled lines so AI music tools keep context clear.'}</p>
+        <div className="flex flex-wrap gap-1">
+          {PROMPT_SECTIONS.map(section => (
+            <span key={section} className="px-2 py-0.5 text-[10px] font-semibold tracking-wide border" style={{ borderRadius: '8px 2px 8px 2px', borderColor: `${AMBER_PRIMARY}55`, background: `${AMBER_PRIMARY}12`, color: AMBER_PRIMARY }}>
+              {section}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {(musicalPrompt || isGeneratingMusicalPrompt) && (
         <GBPanel>

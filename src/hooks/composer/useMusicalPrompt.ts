@@ -51,20 +51,30 @@ export const useMusicalPrompt = ({
       const lyricsSnippet = getSongText(song.slice(0, 3));
       const response = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
-        contents: `Generate a detailed musical production prompt for an AI music generator (like Suno or Udio).
-        Song Title: ${title}
-        Topic/Theme: ${topic}
-        Mood: ${mood}
-        Genre: ${genre}
-        Tempo: ${tempo} BPM
-        Rhythm & Groove: ${rhythm}
-        Instrumentation: ${instrumentation}
-        Narrative / Vibe: ${narrative}
-        Song Language: ${lang}
-        Lyrics:
-        ${lyricsSnippet}
-        
-        Produce a single, concise, highly descriptive prompt (max 200 words) optimized for AI music generators. Capture production style, sonic atmosphere, vocal texture, emotional arc, and arrangement. The prompt output language should be English (required by music AI tools). Do NOT include headers or bullet points -- output only the prompt text.`,
+        contents: `Generate a structured musical production prompt for an AI music generator (like Suno or Udio).
+Song Title: ${title}
+Topic/Theme: ${topic}
+Mood: ${mood}
+Genre: ${genre}
+Tempo: ${tempo} BPM
+Rhythm & Groove: ${rhythm}
+Instrumentation: ${instrumentation}
+Narrative / Vibe: ${narrative}
+Song Language: ${lang}
+Lyrics:
+${lyricsSnippet}
+
+Return a concise prompt (<= 900 characters) using this exact labeled, line-by-line format:
+STYLE: [style/genre lane and sonic fingerprint]
+MOOD: [emotional tone + energy level]
+VOCALS: [lead style, gender/texture, harmonies/ad-libs]
+INSTRUMENTATION: [key instruments/sound sources + treatment]
+RHYTHM/GROOVE: [rhythmic feel, swing, percussion details]
+STRUCTURE: [arrangement arc and section highlights]
+MIX/SPACE: [space/reverb, width, tonal balance, mix notes]
+REFERENCES: [2-3 artist or song anchors to emulate]
+DELIVERY: [what to ask the model to prioritize/output]
+Keep the response in English (required by music AI tools) and avoid markdown or extra commentary outside of these labeled lines.`,
       });
       setMusicalPrompt(response.text || '');
     } catch (error) {

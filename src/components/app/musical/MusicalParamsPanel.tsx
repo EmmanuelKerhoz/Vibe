@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music, ChevronDown, Check, Sparkles, Compass } from 'lucide-react';
+import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music, ChevronDown, Check, Sparkles, Compass, Copy } from 'lucide-react';
 import { Tooltip as FluentTooltip } from '@fluentui/react-components';
 import { useTranslation } from '../../../i18n';
 import { useMetronome } from '../../../hooks/useMetronome';
@@ -263,6 +263,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
   const [selectedSubStyle, setSelectedSubStyle] = useState<string>('');
   const [isRhythmDropdownOpen, setIsRhythmDropdownOpen] = useState(false);
   const [isNarrativeDropdownOpen, setIsNarrativeDropdownOpen] = useState(false);
+  const [referencesCopied, setReferencesCopied] = useState(false);
 
   const selectedCategory = selectedVibeTile ? VIBE_CATEGORIES.find(cat => cat.tiles.some(t => t.name === selectedVibeTile.name)) ?? null : null;
   const selectedAccent = selectedCategory?.color ?? AMBER_PRIMARY;
@@ -317,6 +318,17 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
     // Step 2 complete: Sub-style selected
     if (next) onWorkflowStepComplete?.(2);
   }, [selectedSubStyle, selectedVibeTile, setGenre, setRhythm, setTempo, setInstrumentation, onWorkflowStepComplete]);
+
+  const handleCopyReferences = useCallback(() => {
+    if (!selectedCategory) return;
+    const refs = selectedCategory.artists.join(', ');
+    navigator.clipboard?.writeText(refs).then(() => {
+      setReferencesCopied(true);
+      setTimeout(() => setReferencesCopied(false), 1600);
+    }).catch(() => {
+      /* noop */
+    });
+  }, [selectedCategory]);
 
   return (
     <div className="space-y-5">
@@ -446,12 +458,18 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                   <Compass className="w-3 h-3" />
                   Step 3
                 </span>
-                <span className="text-[10px] font-semibold text-[var(--text-secondary)]">Review the references & mood cues before locking tempo and instruments.</span>
+                <span className="text-[10px] font-semibold text-[var(--text-secondary)]">Copy 2-3 artist references, then lock tempo and instruments.</span>
               </div>
+              {selectedCategory && (
+                <div className="flex flex-wrap items-center gap-1 text-[9px] font-medium text-[var(--text-secondary)]">
+                  <span className="uppercase tracking-[0.18em] font-bold text-[var(--text-secondary)]/80">Reference tip:</span>
+                  <span>Tap “Copy references” below and paste them into the Musical Prompt under REFERENCES.</span>
+                </div>
+              )}
               <div className="grid gap-2 lg:grid-cols-4 sm:grid-cols-2">
                 {[{ title: 'Broad lane', color: selectedCategory.color, content: <><p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.label}</p><p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.summary}</p></> },
                   { title: 'Sub-style clues', color: selectedAccent, content: <div className="mt-2 flex flex-wrap gap-1.5">{suggestedSubStyles.map(sub => <span key={sub} className="px-2 py-1 text-[10px] font-medium" style={{ borderRadius: '999px', background: `${selectedAccent}1c`, color: selectedAccent }}>{sub}</span>)}</div> },
-                  { title: 'For fans of', color: AMBER_SECONDARY, content: <><p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.artists.join(' · ')}</p><p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">Use references to position the song quickly for collaborators and music tools.</p></> },
+                  { title: 'For fans of', color: AMBER_SECONDARY, content: <><p className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{selectedCategory.artists.join(' · ')}</p><p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">Click below to copy these as your song references.</p><button onClick={handleCopyReferences} className="ux-interactive mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-semibold tracking-wide border" style={referencesCopied ? { borderRadius: '8px 2px 8px 2px', background: `${AMBER_SECONDARY}33`, borderColor: AMBER_SECONDARY, color: AMBER_SECONDARY } : { borderRadius: '8px 2px 8px 2px', borderColor: `${AMBER_SECONDARY}55`, color: AMBER_SECONDARY }}><span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-current text-[var(--text-secondary)]/70" style={referencesCopied ? { background: `${AMBER_SECONDARY}22` } : {}} aria-hidden="true">{referencesCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}</span><span>{referencesCopied ? 'Copied to clipboard' : 'Copy references'}</span></button></> },
                   { title: 'Mood + era cues', color: selectedCategory.color, content: <><div className="mt-2 flex flex-wrap gap-1.5">{selectedCategory.moods.map(moodTag => <span key={moodTag} className="px-2 py-1 text-[10px] font-medium" style={{ borderRadius: '999px', background: `${selectedCategory.color}1a`, color: selectedCategory.color }}>{moodTag}</span>)}</div><p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">{selectedCategory.era}</p></> },
                 ].map(card => (
                   <div key={card.title} className="border px-3 py-2.5" style={{ borderRadius: '14px 4px 14px 4px', background: `${card.color}14`, borderColor: `${card.color}40` }}>
@@ -594,7 +612,13 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                               className={`ux-interactive flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium tracking-wide border ${sel ? 'border-transparent' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]'}`}
                               style={sel ? { borderRadius: '8px 2px 8px 2px', background: `${AMBER_PRIMARY}33`, borderColor: AMBER_PRIMARY, color: AMBER_PRIMARY } : { borderRadius: '8px 2px 8px 2px' }}
                             >
-                              <span aria-hidden="true">{instrument.icon}</span>
+                              <span
+                                aria-hidden="true"
+                                className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-[var(--border-color)] bg-[var(--bg-sidebar)] text-xs"
+                                style={sel ? { borderColor: AMBER_PRIMARY, color: AMBER_PRIMARY, background: `${AMBER_PRIMARY}15` } : undefined}
+                              >
+                                {instrument.icon || family.emoji}
+                              </span>
                               <span>{instrument.name}</span>
                             </button>
                           );

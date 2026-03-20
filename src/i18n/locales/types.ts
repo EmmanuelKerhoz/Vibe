@@ -159,6 +159,8 @@ export interface Translations {
     generatePrompt: string;
     promptLabel: string;
     promptPlaceholder: string;
+    promptStructureLabel?: string;
+    promptStructureHint?: string;
     optimizedFor: string;
     copyPrompt: string;
     copied: string;
