@@ -59,5 +59,6 @@ describe('MusicalParamsPanel', () => {
     expect(screen.getByRole('button', { name: 'Guiro' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Triangle' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Shaker' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Tubular Bells/i })).toBeTruthy();
   });
 });
