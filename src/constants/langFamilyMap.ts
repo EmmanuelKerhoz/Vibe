@@ -327,7 +327,8 @@ export const getTonalDiacriticsPattern = (langCode?: string): RegExp => {
     return /[\u0300-\u036f]/g;
   }
 
-  // For tonal languages, preserve tone diacritics
-  // This is a simplified version - full implementation would need more nuance
-  return /[\u0300-\u036f]/g;
+  // For tonal languages, preserve tone diacritics (grave, acute, circumflex, tilde, macron, caron)
+  // Strip only non-tonal diacritics: breve, ring, cedilla, ogonek, dot, etc.
+  // Exclude: \u0300 (grave), \u0301 (acute), \u0302 (circumflex), \u0303 (tilde), \u0304 (macron), \u030C (caron)
+  return /[\u0305-\u030B\u030D-\u036f]/g;
 };

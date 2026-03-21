@@ -134,6 +134,101 @@ const ENGLISH_G2P: Record<string, string> = {
 };
 
 /**
+ * KWA family (Baoulé, Dioula, Ewe, Mina) grapheme-to-IPA mapping
+ * CV structure with tone marking preserved
+ * Simplified mapping - full implementation would use language-specific rules
+ */
+const KWA_G2P: Record<string, string> = {
+  // Vowels - 7-vowel system common in Kwa languages
+  'a': 'a',
+  'e': 'e',
+  'ɛ': 'ɛ',
+  'i': 'i',
+  'o': 'o',
+  'ɔ': 'ɔ',
+  'u': 'u',
+
+  // Consonants - common inventory
+  'b': 'b',
+  'c': 'k',
+  'd': 'd',
+  'f': 'f',
+  'g': 'g',
+  'h': 'h',
+  'j': 'dʒ',
+  'k': 'k',
+  'l': 'l',
+  'm': 'm',
+  'n': 'n',
+  'ɲ': 'ɲ',
+  'ŋ': 'ŋ',
+  'p': 'p',
+  'r': 'r',
+  's': 's',
+  't': 't',
+  'v': 'v',
+  'w': 'w',
+  'y': 'j',
+  'z': 'z',
+
+  // Digraphs
+  'gb': 'ɡb',
+  'kp': 'kp',
+  'ny': 'ɲ',
+  'ng': 'ŋ',
+};
+
+/**
+ * CRV family (Hausa, Cross River) grapheme-to-IPA mapping
+ * CVC structure with tone and glottalization
+ * Simplified mapping - full implementation would use language-specific rules
+ */
+const CRV_G2P: Record<string, string> = {
+  // Vowels - typically 5-vowel system with length distinction
+  'a': 'a',
+  'e': 'e',
+  'i': 'i',
+  'o': 'o',
+  'u': 'u',
+  'aa': 'aː',
+  'ee': 'eː',
+  'ii': 'iː',
+  'oo': 'oː',
+  'uu': 'uː',
+
+  // Consonants - includes glottalized consonants (Hausa)
+  'b': 'b',
+  'ɓ': 'ɓ',  // Implosive b
+  'c': 'k',
+  'd': 'd',
+  'ɗ': 'ɗ',  // Implosive d
+  'f': 'f',
+  'g': 'g',
+  'h': 'h',
+  'j': 'dʒ',
+  'k': 'k',
+  'ƙ': 'kʼ', // Ejective k (Hausa)
+  'l': 'l',
+  'm': 'm',
+  'n': 'n',
+  'p': 'p',
+  'r': 'r',
+  'ɽ': 'ɽ',  // Retroflex flap
+  's': 's',
+  't': 't',
+  'v': 'v',
+  'w': 'w',
+  'y': 'j',
+  'ƴ': 'ʔʲ', // Glottalized y (Hausa)
+  'z': 'z',
+
+  // Digraphs
+  'ts': 'ʦ',
+  'sh': 'ʃ',
+  'ng': 'ŋ',
+};
+
+/**
  * Simple grapheme-to-IPA conversion with fallback
  * This is a very basic implementation for client-side fallback
  */
@@ -156,10 +251,88 @@ const graphemeToIPAFallback = (text: string, family: AlgoFamily): string => {
       mapping = ENGLISH_G2P;
       break;
 
+    case 'ALGO-KWA':
+      // KWA family (Baoulé, Dioula, Ewe, Mina)
+      mapping = KWA_G2P;
+      break;
+
+    case 'ALGO-CRV':
+      // CRV family (Hausa, Bekwarra, Calabari, Ogoja)
+      mapping = CRV_G2P;
+      break;
+
+    case 'ALGO-SLV':
+      // Slavic: use English as rough approximation
+      mapping = ENGLISH_G2P;
+      break;
+
+    case 'ALGO-SEM':
+      // Semitic: use French vowels + English consonants as approximation
+      mapping = { ...FRENCH_G2P, ...ENGLISH_G2P };
+      break;
+
+    case 'ALGO-SIN':
+      // Sinitic: preserve tones, use basic vowel mapping
+      mapping = { 'a': 'a', 'e': 'ə', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      break;
+
+    case 'ALGO-JAP':
+      // Japanese: use basic CV mapping
+      mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'ɯ', ...ENGLISH_G2P };
+      break;
+
+    case 'ALGO-KOR':
+      // Korean: use basic mapping
+      mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      break;
+
+    case 'ALGO-BNT':
+      // Bantu: similar to KWA but with different inventory
+      mapping = KWA_G2P;
+      break;
+
+    case 'ALGO-IIR':
+      // Indo-Iranian: use English as approximation
+      mapping = ENGLISH_G2P;
+      break;
+
+    case 'ALGO-DRV':
+      // Dravidian: use English as approximation
+      mapping = ENGLISH_G2P;
+      break;
+
+    case 'ALGO-TRK':
+      // Turkic: use English as approximation
+      mapping = ENGLISH_G2P;
+      break;
+
+    case 'ALGO-FIN':
+      // Uralic: use English as approximation
+      mapping = ENGLISH_G2P;
+      break;
+
+    case 'ALGO-TAI':
+      // Tai-Kadai: tonal, use basic mapping similar to Sinitic
+      mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      break;
+
+    case 'ALGO-VIET':
+      // Austroasiatic (Vietnamese): tonal, use basic mapping
+      mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      break;
+
+    case 'ALGO-AUS':
+      // Austronesian: use basic mapping
+      mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      break;
+
     default:
       // Generic fallback: just use the text as-is
       return normalized;
   }
+
+  // For tonal languages, preserve tone diacritics during processing
+  const isTonal = ['ALGO-KWA', 'ALGO-CRV', 'ALGO-SIN', 'ALGO-TAI', 'ALGO-VIET', 'ALGO-BNT'].includes(family);
 
   // Process text character by character with lookahead for digraphs
   while (i < normalized.length) {
@@ -179,9 +352,13 @@ const graphemeToIPAFallback = (text: string, family: AlgoFamily): string => {
     }
 
     if (!matched) {
-      // Skip unknown characters (diacritics, punctuation)
-      if (!/[\u0300-\u036f\s]/.test(normalized[i]!)) {
-        ipa += normalized[i];
+      const char = normalized[i]!;
+      // For tonal languages, preserve tone diacritics (\u0300-\u0304, \u030C)
+      if (isTonal && /[\u0300-\u0304\u030C]/.test(char)) {
+        ipa += char;
+      } else if (!/[\u0300-\u036f\s]/.test(char)) {
+        // Skip non-tonal diacritics and spaces, but keep other characters
+        ipa += char;
       }
       i++;
     }
