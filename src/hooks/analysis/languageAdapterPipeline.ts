@@ -93,7 +93,7 @@ export const reviewFidelity = async (
   });
 
   return safeJsonParse<{ score: number; warnings: string[] }>(
-    response.text || '{"score":50,"warnings":[]}',
-    { score: 50, warnings: [] },
+    response.text || '{"score":0,"warnings":["Review failed: empty or invalid AI response"]}',
+    { score: 0, warnings: ['Review failed: could not parse AI response'] },
   );
 };

@@ -64,12 +64,14 @@ export const validateTranslatedLineRhyme = async (
  * @param sourceLines - Array of source text lines
  * @param sourceLang - Source language code (e.g., 'en', 'fr')
  * @param targetLang - Target language code (e.g., 'ee', 'fr')
+ * @param signal - Optional AbortSignal to cancel the operation
  * @returns Promise<AdaptationResult> - Complete adaptation result with constraints
  */
 export const matchRhymeSchemeAcrossLang = async (
   sourceLines: string[],
   sourceLang: string,
-  targetLang: string
+  targetLang: string,
+  signal?: AbortSignal
 ): Promise<AdaptationResult> => {
   // Validate inputs
   if (!sourceLines || sourceLines.length === 0) {
@@ -97,6 +99,18 @@ export const matchRhymeSchemeAcrossLang = async (
   try {
     // Step 1: Extract source rhyme scheme via IPA pipeline
     const sourceAnalysis = await runIPAPipelineBatch(sourceLines, sourceLang);
+
+    // Check if aborted after IPA pipeline
+    if (signal?.aborted) {
+      return {
+        success: false,
+        sourceScheme: '',
+        targetScheme: '',
+        constrainedPrompt: '',
+        sourceAnalysis: [],
+        error: 'Operation aborted',
+      };
+    }
 
     // Build rhyme scheme from source analysis
     // Group lines by rhyme nucleus similarity
