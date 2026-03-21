@@ -147,8 +147,9 @@ const syllabifyKwa = (ipa: string): IPASyllable[] => {
     }
     const nucleus = chars.slice(nucleusStart, nucleusEnd).join('');
 
-    // Extract tone
-    const tone = extractTone(nucleus);
+    // Extract tone with post-voiced depression context
+    // Pass the onset to detect if it contains voiced consonants (b, d, g, gb, v, z)
+    const tone = extractTone(nucleus, onset);
 
     // Coda is minimal in Kwa languages (CV structure)
     // But if present, extract up to next nucleus
@@ -200,9 +201,6 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
     }
     const nucleus = chars.slice(nucleusStart, nucleusEnd).join('');
 
-    // Extract tone
-    const tone = extractTone(nucleus);
-
     // Extract coda (important for CRV weight distinction)
     let codaEnd = nextNucleusStart ?? chars.length;
     // Assign one consonant to coda, rest to next onset
@@ -212,9 +210,19 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
     const coda = chars.slice(nucleusEnd, codaEnd).join('');
 
     // Determine syllable weight (bimoraic)
-    // Heavy: CVC or CVV (long vowel)
+    // Heavy: CVC or CVː (long vowel)
     // Light: CV
-    const weight = coda.length > 0 || nucleus.length > 1 ? 'heavy' : 'light';
+    const hasLongVowel = nucleus.includes('ː');
+    const weight = coda.length > 0 || hasLongVowel || nucleus.length > 1 ? 'heavy' : 'light';
+
+    // Extract tone - pass onset for context (though CRV doesn't have post-voiced depression)
+    let tone = extractTone(nucleus, onset);
+
+    // Apply HL contour rule: Heavy syllables with H tone → HL contour
+    // This is a characteristic of Hausa and related CRV languages
+    if (tone === 'H' && weight === 'heavy') {
+      tone = 'HL'; // High-Low falling contour on heavy syllables
+    }
 
     syllables.push({
       onset,
