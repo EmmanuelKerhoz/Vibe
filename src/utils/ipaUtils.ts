@@ -359,12 +359,13 @@ export const isIPAVowel = (char: string): boolean => {
 /**
  * Extract tone from IPA phoneme (for tonal languages)
  * Returns tone symbol or undefined
+ * Extended to support 5-tone systems (Baoulé, Ewe) with MH/ML distinction
  */
-export const extractTone = (phoneme: string): string | undefined => {
+export const extractTone = (phoneme: string, previousConsonant?: string): string | undefined => {
   // Common tone diacritics
   const toneDiacritics: Record<string, string> = {
     '\u0300': 'L',  // Grave = low tone
-    '\u0301': 'H',  // Acute = high tone
+    '\u0301': 'H',  // Acute = high tone (may become MH in post-voiced context)
     '\u0302': 'F',  // Circumflex = falling tone
     '\u0303': 'M',  // Tilde = mid tone
     '\u0304': 'M',  // Macron = level/mid tone
@@ -373,11 +374,27 @@ export const extractTone = (phoneme: string): string | undefined => {
 
   for (const [diacritic, tone] of Object.entries(toneDiacritics)) {
     if (phoneme.includes(diacritic)) {
+      // Check for post-voiced depression in KWA languages (Ewe)
+      // After b, d, g, gb, v, z: H → MH
+      if (tone === 'H' && previousConsonant) {
+        const voicedStops = /[bdgvz]|ɡb|gb/;
+        if (voicedStops.test(previousConsonant)) {
+          return 'MH'; // Mid-high (depressed high tone)
+        }
+      }
       return tone;
     }
   }
 
   return undefined;
+};
+
+/**
+ * Check if a consonant triggers tone depression in KWA languages
+ */
+export const isVoicedDepressionTrigger = (consonant: string): boolean => {
+  const voicedConsonants = /[bdgvz]|ɡb|gb/;
+  return voicedConsonants.test(consonant);
 };
 
 /**
