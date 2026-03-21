@@ -379,3 +379,49 @@ export const extractTone = (phoneme: string): string | undefined => {
 
   return undefined;
 };
+
+/**
+ * Enhanced rhyme similarity calculation that includes syllable weight for CRV family
+ * This is used for Hausa and other CRV languages where bimoraic weight affects rhyming
+ *
+ * @param ipa1 - First IPA rhyme nucleus
+ * @param ipa2 - Second IPA rhyme nucleus
+ * @param weight1 - Syllable weight for first nucleus (light/heavy)
+ * @param weight2 - Syllable weight for second nucleus (light/heavy)
+ * @param useFeatureWeighted - Whether to use feature-weighted distance
+ */
+export const calculateRhymeSimilarityWithWeight = (
+  ipa1: string,
+  ipa2: string,
+  weight1?: 'light' | 'heavy',
+  weight2?: 'light' | 'heavy',
+  useFeatureWeighted = true
+): RhymeSimilarityResult => {
+  // First calculate base similarity
+  const baseSimilarity = calculateRhymeSimilarity(ipa1, ipa2, useFeatureWeighted);
+
+  // If no weight information provided, return base similarity
+  if (!weight1 || !weight2) {
+    return baseSimilarity;
+  }
+
+  // For CRV family: weight mismatch reduces rhyme quality
+  // Heavy vs Light syllables have different prosodic properties
+  // According to spec: Hausa contour HL appears on heavy syllables (bimoraic)
+  const weightMatch = weight1 === weight2;
+
+  if (!weightMatch) {
+    // Reduce score for weight mismatch (penalty of ~0.1)
+    const penalizedScore = Math.max(0, baseSimilarity.score - 0.1);
+    const penalizedQuality = classifyRhymeQuality(penalizedScore);
+
+    return {
+      ...baseSimilarity,
+      score: penalizedScore,
+      quality: penalizedQuality,
+    };
+  }
+
+  return baseSimilarity;
+};
+

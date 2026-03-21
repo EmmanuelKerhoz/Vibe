@@ -15,7 +15,7 @@ import { getAlgoFamily, getFamilyConfig, type AlgoFamily } from '../constants/la
 import { phonemizeText, type PhonemeResponse } from './phonemizeClient';
 import { graphemeToIPA } from './g2pUtils';
 import { syllabifyIPA, extractRhymeNucleus, type IPASyllable } from './ipaSyllabification';
-import { calculateRhymeSimilarity, type RhymeSimilarityResult } from './ipaUtils';
+import { calculateRhymeSimilarity, calculateRhymeSimilarityWithWeight, type RhymeSimilarityResult } from './ipaUtils';
 
 /**
  * Complete IPA pipeline result
@@ -159,6 +159,20 @@ export const compareTextsWithIPA = async (
   const rn1 = result1.rhymeNucleus || result1.ipa;
   const rn2 = result2.rhymeNucleus || result2.ipa;
 
+  // For CRV family (Hausa etc.), use weight-aware scoring
+  if (result1.family === 'ALGO-CRV' && result2.family === 'ALGO-CRV') {
+    // Extract weight from last syllable (where rhyme nucleus comes from)
+    const weight1 = result1.syllables.length > 0
+      ? result1.syllables[result1.syllables.length - 1]?.weight
+      : undefined;
+    const weight2 = result2.syllables.length > 0
+      ? result2.syllables[result2.syllables.length - 1]?.weight
+      : undefined;
+
+    return calculateRhymeSimilarityWithWeight(rn1, rn2, weight1, weight2, true);
+  }
+
+  // For other families, use standard similarity
   return calculateRhymeSimilarity(rn1, rn2, true);
 };
 

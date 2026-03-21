@@ -3,6 +3,7 @@ import { getSectionFamily } from '../constants/sections';
 import { isPureMetaLine } from './metaUtils';
 import { countSyllables } from './syllableUtils';
 import { isTonalLanguage } from '../constants/langFamilyMap';
+import { compareTextsWithIPA } from './ipaPipeline';
 
 // Re-export for backward compatibility
 export { countSyllables } from './syllableUtils';
@@ -330,6 +331,26 @@ export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langC
 const rhymesLines = (a: string, b: string, langCode?: string): boolean => findBestSharedRhymeSuffix(a, b, langCode) !== null;
 
 /**
+ * IPA-based rhyme detection for two lines
+ * Uses the full phonemic pipeline with feature-weighted distance
+ * @param a - First line text
+ * @param b - Second line text
+ * @param langCode - Language code for IPA processing
+ * @param threshold - Similarity threshold (default 0.75)
+ * @returns Promise<boolean> indicating if lines rhyme
+ */
+const rhymesLinesIPA = async (a: string, b: string, langCode: string, threshold = 0.75): Promise<boolean> => {
+  try {
+    const similarity = await compareTextsWithIPA(a, b, langCode);
+    return similarity.score >= threshold;
+  } catch (error) {
+    // Fallback to graphemic if IPA fails
+    console.debug('IPA rhyme detection failed, falling back to graphemic:', error);
+    return rhymesLines(a, b, langCode);
+  }
+};
+
+/**
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
  * @param lines - Array of line texts to analyze
  * @param langCode - Optional language code for tonal preservation
@@ -360,6 +381,69 @@ export function detectRhymeSchemeLocally(lines: string[], langCode?: string): st
       }
     for (let k = i + 1; k < n; k++) {
       if (letters[k] === null && rhymesLines(lyricLines[i]!, lyricLines[k]!, langCode)) {
+        letters[k] = letters[i]!;
+      }
+    }
+  }
+
+  const letterCounts: Record<string, number> = {};
+  for (const l of letters) {
+    if (l) letterCounts[l] = (letterCounts[l] ?? 0) + 1;
+  }
+
+  const counts = new Map<string, number>(Object.entries(letterCounts));
+  const remap = new Map<string, string>();
+  let remapIndex = 0;
+  const finalLetters = letters.map((letter) => {
+    if (!letter || (counts.get(letter) ?? 0) < 2) return null;
+    if (!remap.has(letter)) {
+      remap.set(letter, LETTERS[remapIndex] ?? String.fromCharCode(65 + remapIndex));
+      remapIndex++;
+    }
+    return remap.get(letter)!;
+  });
+  if (!finalLetters.some(Boolean)) return null;
+  return finalLetters.map(l => l ?? 'X').join('');
+}
+
+/**
+ * IPA-based rhyme scheme detector (experimental)
+ * Uses phonemic similarity instead of graphemic matching
+ * @param lines - Array of line texts to analyze
+ * @param langCode - Language code (required for IPA processing)
+ * @param threshold - Similarity threshold (default 0.75)
+ * @returns Promise<string | null> - The detected rhyme scheme
+ */
+export async function detectRhymeSchemeLocallyIPA(
+  lines: string[],
+  langCode: string,
+  threshold = 0.75
+): Promise<string | null> {
+  const lyricLines = lines.filter(l => l.trim().length > 0);
+  const n = lyricLines.length;
+  if (n < 2) return null;
+
+  const letters: (string | null)[] = new Array(n).fill(null);
+  let nextLetter = 0;
+  const LETTERS = 'ABCDEFGH';
+
+  for (let i = 0; i < n; i++) {
+    if (letters[i] !== null) continue;
+    let matchedLetter: string | null = null;
+    for (let j = 0; j < i; j++) {
+      if (await rhymesLinesIPA(lyricLines[i]!, lyricLines[j]!, langCode, threshold)) {
+        matchedLetter = letters[j]!;
+        break;
+      }
+    }
+    if (matchedLetter) {
+      letters[i] = matchedLetter;
+    } else {
+      letters[i] = LETTERS[nextLetter] ?? String.fromCharCode(65 + nextLetter);
+      nextLetter++;
+    }
+    for (let k = i + 1; k < n; k++) {
+      if (letters[k] === null && await rhymesLinesIPA(lyricLines[i]!, lyricLines[k]!, langCode, threshold)) {
         letters[k] = letters[i]!;
       }
     }
