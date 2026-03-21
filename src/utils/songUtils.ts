@@ -1,6 +1,11 @@
 import type { Line, Section } from '../types';
 import { getSectionFamily } from '../constants/sections';
 import { isPureMetaLine } from './metaUtils';
+import { countSyllables } from './syllableUtils';
+import { isTonalLanguage } from '../constants/langFamilyMap';
+
+// Re-export for backward compatibility
+export { countSyllables } from './syllableUtils';
 
 export const getSectionText = (section: Section): string =>
   section.lines.map(l => l.text).join('\n');
@@ -98,10 +103,22 @@ export const getRhymeTextColor = (rhyme: string | null | undefined): string | nu
 };
 
 /**
- * Strip Unicode accents and lowercase — language-agnostic.
+ * Strip Unicode accents and lowercase — with optional tonal preservation.
+ * For tonal languages (KWA, CRV families), tone diacritics are preserved.
+ * @param s - The string to normalize
+ * @param langCode - Optional language code for tonal language detection
  */
-const normalizeWord = (s: string): string =>
-  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+const normalizeWord = (s: string, langCode?: string): string => {
+  const normalized = s.normalize('NFD');
+
+  // For tonal languages, we preserve tone diacritics during normalization
+  // This is a simplified approach - full implementation would handle tone more precisely
+  const stripDiacritics = isTonalLanguage(langCode || '')
+    ? normalized // Keep all diacritics for tonal languages for now
+    : normalized.replace(/[\u0300-\u036f]/g, '');
+
+  return stripDiacritics.toLowerCase().replace(/[^a-z\u0300-\u036f]/g, '');
+};
 
 type WordMatch = {
   lastWord: string;
@@ -123,8 +140,10 @@ const isVowel = (ch: string) => VOWELS.includes(ch);
  * Extract the final word-like token from a lyric line, normalize it for
  * comparisons, and keep the original start offset so UI highlighting can be
  * mapped back onto the untouched line text.
+ * @param text - The text to extract from
+ * @param langCode - Optional language code for tonal preservation
  */
-const extractLastWord = (text: string): WordMatch | null => {
+const extractLastWord = (text: string, langCode?: string): WordMatch | null => {
   const trimmedText = text.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
   if (!trimmedText) return null;
 
@@ -132,7 +151,7 @@ const extractLastWord = (text: string): WordMatch | null => {
   if (!lastWordMatch) return null;
 
   const lastWord = lastWordMatch[0];
-  const normalizedWord = normalizeWord(lastWord);
+  const normalizedWord = normalizeWord(lastWord, langCode);
   if (!normalizedWord) return null;
 
   return {
@@ -179,8 +198,8 @@ const canonicalizeRhymeSuffix = (suffix: string): string => {
   return s;
 };
 
-const getRhymeCandidates = (text: string): RhymeCandidate[] => {
-  const word = extractLastWord(text);
+const getRhymeCandidates = (text: string, langCode?: string): RhymeCandidate[] => {
+  const word = extractLastWord(text, langCode);
   if (!word) return [];
 
   const vowelGroups = getVowelGroups(word.normalizedWord);
@@ -222,10 +241,13 @@ const isSharedRhymeStrongEnough = (suffix: string, exactMatch: boolean): boolean
 /**
  * Compare every vowel-group-based candidate suffix from two lines and keep the
  * longest shared rime that is strong enough to count as an actual rhyme.
+ * @param a - First line text
+ * @param b - Second line text
+ * @param langCode - Optional language code for tonal preservation
  */
-const findBestSharedRhymeSuffix = (a: string, b: string): string | null => {
-  const aCandidates = getRhymeCandidates(a);
-  const bCandidates = getRhymeCandidates(b);
+const findBestSharedRhymeSuffix = (a: string, b: string, langCode?: string): string | null => {
+  const aCandidates = getRhymeCandidates(a, langCode);
+  const bCandidates = getRhymeCandidates(b, langCode);
   let bestMatch = '';
 
   for (const aCandidate of aCandidates) {
@@ -247,8 +269,8 @@ const findBestSharedRhymeSuffix = (a: string, b: string): string | null => {
  * preserving the original spelling and trailing punctuation in the rhyming
  * fragment returned to the UI overlay.
  */
-const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string): { before: string; rhyme: string } | null => {
-  const word = extractLastWord(text);
+const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, langCode?: string): { before: string; rhyme: string } | null => {
+  const word = extractLastWord(text, langCode);
   if (!word) return null;
 
   const suffixStart = word.normalizedWord.lastIndexOf(normalizedSuffix);
@@ -265,8 +287,8 @@ const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string): { 
  * When no matching peer line is available, fall back to highlighting from the
  * last vowel group of the word so the UI still marks a plausible rhyming tail.
  */
-const getFallbackRhymingSuffix = (text: string): { before: string; rhyme: string } | null => {
-  const word = extractLastWord(text);
+const getFallbackRhymingSuffix = (text: string, langCode?: string): { before: string; rhyme: string } | null => {
+  const word = extractLastWord(text, langCode);
   if (!word) return null;
 
   const vowelGroups = getVowelGroups(word.normalizedWord);
@@ -277,25 +299,25 @@ const getFallbackRhymingSuffix = (text: string): { before: string; rhyme: string
     };
   }
 
-  return splitLineAtNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start));
+  return splitLineAtNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start), langCode);
 };
 
-export const splitRhymingSuffix = (text: string, peerLines: string[] = []): { before: string; rhyme: string } | null => {
+export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langCode?: string): { before: string; rhyme: string } | null => {
   let bestSuffix: string | null = null;
 
   for (const peerLine of peerLines) {
-    const sharedSuffix = findBestSharedRhymeSuffix(text, peerLine);
+    const sharedSuffix = findBestSharedRhymeSuffix(text, peerLine, langCode);
     if (sharedSuffix && (!bestSuffix || sharedSuffix.length > bestSuffix.length)) {
       bestSuffix = sharedSuffix;
     }
   }
 
   if (bestSuffix) {
-    const split = splitLineAtNormalizedSuffix(text, bestSuffix);
+    const split = splitLineAtNormalizedSuffix(text, bestSuffix, langCode);
     if (split) return split;
   }
 
-  return getFallbackRhymingSuffix(text);
+  return getFallbackRhymingSuffix(text, langCode);
 };
 
 /**
@@ -305,12 +327,14 @@ export const splitRhymingSuffix = (text: string, peerLines: string[] = []): { be
  * allowed for short words such as "zéro" / "ego", while longer matches use a
  * suffix overlap.
  */
-const rhymesLines = (a: string, b: string): boolean => findBestSharedRhymeSuffix(a, b) !== null;
+const rhymesLines = (a: string, b: string, langCode?: string): boolean => findBestSharedRhymeSuffix(a, b, langCode) !== null;
 
 /**
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
+ * @param lines - Array of line texts to analyze
+ * @param langCode - Optional language code for tonal preservation
  */
-export function detectRhymeSchemeLocally(lines: string[]): string | null {
+export function detectRhymeSchemeLocally(lines: string[], langCode?: string): string | null {
   const lyricLines = lines.filter(l => l.trim().length > 0);
   const n = lyricLines.length;
   if (n < 2) return null;
@@ -323,7 +347,7 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
     if (letters[i] !== null) continue;
     let matchedLetter: string | null = null;
     for (let j = 0; j < i; j++) {
-      if (rhymesLines(lyricLines[i]!, lyricLines[j]!)) {
+      if (rhymesLines(lyricLines[i]!, lyricLines[j]!, langCode)) {
         matchedLetter = letters[j]!;
         break;
       }
@@ -335,7 +359,7 @@ export function detectRhymeSchemeLocally(lines: string[]): string | null {
         nextLetter++;
       }
     for (let k = i + 1; k < n; k++) {
-      if (letters[k] === null && rhymesLines(lyricLines[i]!, lyricLines[k]!)) {
+      if (letters[k] === null && rhymesLines(lyricLines[i]!, lyricLines[k]!, langCode)) {
         letters[k] = letters[i]!;
       }
     }
@@ -406,8 +430,9 @@ export const normalizeLoadedSection = (section: Record<string, unknown>): Sectio
     : [];
   const storedScheme = typeof section['rhymeScheme'] === 'string' ? section['rhymeScheme'].trim() : '';
   const lyricTexts = lines.filter(line => !line.isMeta && line.text.trim().length > 0).map(line => line.text);
+  const langCode = typeof section['language'] === 'string' ? section['language'] : undefined;
   const detectedScheme = (storedScheme.length === 0 || storedScheme.toUpperCase() === 'FREE')
-    ? detectRhymeSchemeLocally(lyricTexts) ?? undefined
+    ? detectRhymeSchemeLocally(lyricTexts, langCode) ?? undefined
     : undefined;
 
   return {
@@ -421,27 +446,4 @@ export const normalizeLoadedSection = (section: Record<string, unknown>): Sectio
     language: typeof section['language'] === 'string' ? section['language'] : undefined,
     lines,
   };
-};
-
-export const countSyllables = (text: string): number => {
-  if (!text) return 0;
-  const words = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase().match(/[a-z]+/g);
-  if (!words) return 0;
-  let total = 0;
-  for (const raw of words) {
-    let w = raw
-      .replace(/eau/g, '#').replace(/oeu/g, '#').replace(/ai/g, '#').replace(/ei/g, '#')
-      .replace(/au/g, '#').replace(/ou/g, '#').replace(/oi/g, '#').replace(/eu/g, '#')
-      .replace(/ain/g, '#').replace(/ein/g, '#').replace(/an/g, '#').replace(/en/g, '#')
-      .replace(/am(?=[^aeiouy#]|$)/g, '#').replace(/em(?=[^aeiouy#]|$)/g, '#')
-      .replace(/in(?=[^aeiouy#]|$)/g, '#').replace(/ion(?=[^aeiouy#]|$)/g, '#').replace(/on/g, '#')
-      .replace(/om(?=[^aeiouy#]|$)/g, '#').replace(/un/g, '#')
-      .replace(/um(?=[^aeiouy#]|$)/g, '#');
-    let count = (w.match(/[aeiouy#]/g) ?? []).length;
-    if (count > 1 && /(?<![aeiouy#])e$/.test(w)) count--;
-    if (count > 1 && /(?<![aeiouy#])es$/.test(w)) count--;
-    total += Math.max(1, count);
-  }
-  return total;
 };
