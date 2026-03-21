@@ -1,0 +1,232 @@
+/**
+ * IPA Pipeline Integration
+ * Orchestrates the complete 5-step phonemic processing pipeline
+ * Based on docs_fusion_optimal.md specification
+ *
+ * Pipeline Steps:
+ * 1. Normalization/tokenization (already in syllableUtils)
+ * 2. G2P → IPA (g2pUtils + phonemizeClient)
+ * 3. Syllabification phonémique (ipaSyllabification)
+ * 4. Extraction Rhyme Nucleus (ipaSyllabification)
+ * 5. Scoring IPA (ipaUtils)
+ */
+
+import { getAlgoFamily, getFamilyConfig, type AlgoFamily } from '../constants/langFamilyMap';
+import { phonemizeText, type PhonemeResponse } from './phonemizeClient';
+import { graphemeToIPA } from './g2pUtils';
+import { syllabifyIPA, extractRhymeNucleus, type IPASyllable } from './ipaSyllabification';
+import { calculateRhymeSimilarity, type RhymeSimilarityResult } from './ipaUtils';
+
+/**
+ * Complete IPA pipeline result
+ */
+export interface IPAPipelineResult {
+  success: boolean;
+  text: string;
+  langCode: string;
+  family: AlgoFamily;
+  ipa: string;
+  syllables: IPASyllable[];
+  rhymeNucleus: string;
+  method: 'service' | 'client-fallback' | 'graphemic';
+  lowResource: boolean;
+}
+
+/**
+ * Run the complete IPA pipeline for a text segment
+ * Step 1-4 implementation
+ *
+ * @param text - Input text to process
+ * @param langCode - ISO 639 language code
+ * @returns Complete pipeline result with IPA, syllables, and rhyme nucleus
+ */
+export const runIPAPipeline = async (
+  text: string,
+  langCode: string
+): Promise<IPAPipelineResult> => {
+  // Step 1: Normalization (already handled in input)
+  const normalized = text.normalize('NFD').trim();
+
+  if (!normalized) {
+    return {
+      success: false,
+      text,
+      langCode,
+      family: 'ALGO-ROM',
+      ipa: '',
+      syllables: [],
+      rhymeNucleus: '',
+      method: 'graphemic',
+      lowResource: true,
+    };
+  }
+
+  // Determine language family
+  const family = getAlgoFamily(langCode) || 'ALGO-ROM';
+  const config = getFamilyConfig(langCode);
+
+  // Step 2: G2P conversion (try service first, then client fallback)
+  let ipaText = '';
+  let syllables: IPASyllable[] = [];
+  let method: 'service' | 'client-fallback' | 'graphemic' = 'graphemic';
+  let lowResource = true;
+
+  // Try phonemization service
+  try {
+    const serviceResult = await phonemizeText(normalized, langCode);
+    if (serviceResult) {
+      ipaText = serviceResult.ipa;
+      method = 'service';
+      lowResource = serviceResult.low_resource;
+
+      // Convert service syllables to IPASyllable format
+      if (serviceResult.syllables && serviceResult.syllables.length > 0) {
+        syllables = serviceResult.syllables.map(s => ({
+          onset: s.onset,
+          nucleus: s.nucleus,
+          coda: s.coda,
+          tone: s.tone,
+          stress: s.stress,
+        }));
+      }
+    }
+  } catch (error) {
+    // Service unavailable, will fall back to client-side
+    console.debug('Phonemization service unavailable, using client fallback');
+  }
+
+  // Client-side fallback if service didn't work
+  if (!ipaText) {
+    ipaText = graphemeToIPA(normalized, family);
+    method = 'client-fallback';
+    lowResource = true;
+  }
+
+  // Step 3: Syllabification (if not provided by service)
+  if (syllables.length === 0 && ipaText) {
+    syllables = syllabifyIPA(ipaText, family);
+  }
+
+  // Step 4: Extract rhyme nucleus
+  const rhymeNucleus = syllables.length > 0
+    ? extractRhymeNucleus(syllables, family)
+    : '';
+
+  return {
+    success: true,
+    text: normalized,
+    langCode,
+    family,
+    ipa: ipaText,
+    syllables,
+    rhymeNucleus,
+    method,
+    lowResource,
+  };
+};
+
+/**
+ * Compare two texts using the full IPA pipeline
+ * Step 5 implementation
+ *
+ * @param text1 - First text
+ * @param text2 - Second text
+ * @param langCode - ISO 639 language code
+ * @returns Rhyme similarity result with quality classification
+ */
+export const compareTextsWithIPA = async (
+  text1: string,
+  text2: string,
+  langCode: string
+): Promise<RhymeSimilarityResult> => {
+  // Run pipeline for both texts
+  const [result1, result2] = await Promise.all([
+    runIPAPipeline(text1, langCode),
+    runIPAPipeline(text2, langCode),
+  ]);
+
+  // If either failed, return no match
+  if (!result1.success || !result2.success) {
+    return {
+      score: 0,
+      quality: 'none',
+      distance: Infinity,
+      method: 'exact',
+    };
+  }
+
+  // Compare rhyme nuclei using feature-weighted Levenshtein
+  const rn1 = result1.rhymeNucleus || result1.ipa;
+  const rn2 = result2.rhymeNucleus || result2.ipa;
+
+  return calculateRhymeSimilarity(rn1, rn2, true);
+};
+
+/**
+ * Batch process multiple texts through the IPA pipeline
+ * Useful for processing all lines in a section
+ */
+export const runIPAPipelineBatch = async (
+  texts: string[],
+  langCode: string
+): Promise<IPAPipelineResult[]> => {
+  return Promise.all(texts.map(text => runIPAPipeline(text, langCode)));
+};
+
+/**
+ * Compare multiple texts for rhyme detection
+ * Returns pairwise similarity matrix
+ */
+export const compareMultipleTexts = async (
+  texts: string[],
+  langCode: string
+): Promise<RhymeSimilarityResult[][]> => {
+  const results = await runIPAPipelineBatch(texts, langCode);
+
+  // Build similarity matrix
+  const matrix: RhymeSimilarityResult[][] = [];
+  for (let i = 0; i < results.length; i++) {
+    matrix[i] = [];
+    for (let j = 0; j < results.length; j++) {
+      if (i === j) {
+        matrix[i]![j] = {
+          score: 1.0,
+          quality: 'rich',
+          distance: 0,
+          method: 'exact',
+        };
+      } else {
+        const rn1 = results[i]!.rhymeNucleus || results[i]!.ipa;
+        const rn2 = results[j]!.rhymeNucleus || results[j]!.ipa;
+        matrix[i]![j] = calculateRhymeSimilarity(rn1, rn2, true);
+      }
+    }
+  }
+
+  return matrix;
+};
+
+/**
+ * Enhanced rhyme detection for songUtils integration
+ * Returns whether two lines rhyme based on IPA similarity
+ */
+export const doLinesRhymeIPA = async (
+  line1: string,
+  line2: string,
+  langCode: string,
+  threshold = 0.75
+): Promise<boolean> => {
+  const similarity = await compareTextsWithIPA(line1, line2, langCode);
+  return similarity.score >= threshold;
+};
+
+/**
+ * Get rhyme quality classification for a pair of lines
+ */
+export const getRhymeQualityForLines = async (
+  line1: string,
+  line2: string,
+  langCode: string
+): Promise<RhymeSimilarityResult> => {
+  return compareTextsWithIPA(line1, line2, langCode);
+};
