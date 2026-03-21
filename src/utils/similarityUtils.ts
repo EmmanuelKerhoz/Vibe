@@ -1,8 +1,10 @@
 import type { Section, SongVersion } from '../types';
+import type { RhymeQuality } from './ipaUtils';
 
 export type SimilaritySectionMatch = {
   name: string;
   score: number;
+  rhymeQuality?: RhymeQuality; // IPA-based rhyme quality if available
 };
 
 export type SimilarityMatch = {
@@ -15,6 +17,8 @@ export type SimilarityMatch = {
   sharedLines: number;
   sharedKeywords: string[];
   matchedSections: SimilaritySectionMatch[];
+  rhymeQuality?: RhymeQuality; // Overall rhyme quality if IPA-based
+  method?: 'graphemic' | 'ipa-based'; // Which method was used
 };
 
 export const normalizeText = (text: string) =>
@@ -176,8 +180,36 @@ export const getTopSimilarSongMatches = (
         sharedLines,
         sharedKeywords: getSharedKeywords(currentTokens, version.song),
         matchedSections: getMatchedSections(currentSong, version.song).slice(0, 3),
+        method: 'graphemic' as const,
       };
     })
     .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp)
     .slice(0, limit);
+};
+
+/**
+ * IPA-based rhyme similarity calculation (Phase 2-5 implementation)
+ * This is currently a placeholder that will be fully activated when:
+ * 1. The phonemization microservice is deployed
+ * 2. Client-side IPA processing is integrated
+ *
+ * For now, it falls back to graphemic similarity
+ */
+export const calculateIPABasedSimilarity = (
+  currentSong: Section[],
+  candidateSong: Section[],
+): Omit<SimilarityMatch, 'versionId' | 'versionName' | 'title' | 'timestamp'> => {
+  // TODO: When phonemization service is available:
+  // 1. Convert lines to IPA using phonemizeText()
+  // 2. Extract rhyme nuclei
+  // 3. Calculate feature-weighted Levenshtein distance
+  // 4. Classify rhyme quality
+  // 5. Return enhanced similarity with IPA-based scoring
+
+  // For now, fall back to graphemic method
+  const result = calculateSimilarityWithMetadata(currentSong, candidateSong);
+  return {
+    ...result,
+    method: 'graphemic', // Will be 'ipa-based' when service is available
+  };
 };
