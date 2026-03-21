@@ -1,0 +1,16 @@
+# Python requirements for G2P phonemization microservice
+# Vercel Python runtime dependencies
+
+# Web framework
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.2
+
+# G2P conversion
+epitran==1.27
+# Note: espeak-ng is a system dependency - must be installed on deployment platform
+# For Vercel, this may require a custom build or Docker-based deployment
+
+# Optional: Additional language support
+# cmudict for English (can be added later)
+# panphon for feature-based phonological analysis
