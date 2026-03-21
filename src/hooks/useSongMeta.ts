@@ -13,6 +13,14 @@ export function useSongMeta() {
   // Elevated from useLanguageAdapter — shared between useSongAnalysis and useSongComposer
   const [songLanguage, setSongLanguage] = useState('');
 
+  // Musical metadata (merged from useMusicalMeta.ts)
+  const [genre, setGenre] = useState('');
+  const [tempo, setTempo] = useState('120');
+  const [instrumentation, setInstrumentation] = useState('');
+  const [rhythm, setRhythm] = useState('');
+  const [narrative, setNarrative] = useState('');
+  const [musicalPrompt, setMusicalPrompt] = useState('');
+
   return {
     title, setTitle,
     titleOrigin, setTitleOrigin,
@@ -23,5 +31,17 @@ export function useSongMeta() {
     newSectionName, setNewSectionName,
     shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     songLanguage, setSongLanguage,
+    // Musical metadata
+    genre, setGenre,
+    tempo, setTempo,
+    instrumentation, setInstrumentation,
+    rhythm, setRhythm,
+    narrative, setNarrative,
+    musicalPrompt, setMusicalPrompt,
   };
 }
+
+/**
+ * @deprecated Use useSongMeta() instead. Musical metadata has been merged into useSongMeta.
+ */
+export const useMusicalMeta = useSongMeta;

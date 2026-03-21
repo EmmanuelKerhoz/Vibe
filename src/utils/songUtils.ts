@@ -352,6 +352,8 @@ const rhymesLinesIPA = async (a: string, b: string, langCode: string, threshold 
 
 /**
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
+ * @deprecated Use detectRhymeSchemeLocallyIPA() instead for phonemic (IPA-based) rhyme detection.
+ * This graphemic version is less accurate for cross-language rhymes and non-standard pronunciations.
  * @param lines - Array of line texts to analyze
  * @param langCode - Optional language code for tonal preservation
  */

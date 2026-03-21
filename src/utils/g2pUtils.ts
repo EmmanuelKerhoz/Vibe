@@ -229,16 +229,25 @@ const CRV_G2P: Record<string, string> = {
 };
 
 /**
+ * G2P result with approximation metadata
+ */
+export interface G2PResult {
+  ipa: string;
+  isApproximated: boolean;
+}
+
+/**
  * Simple grapheme-to-IPA conversion with fallback
  * This is a very basic implementation for client-side fallback
  */
-const graphemeToIPAFallback = (text: string, family: AlgoFamily): string => {
+const graphemeToIPAFallback = (text: string, family: AlgoFamily): G2PResult => {
   const normalized = text.toLowerCase().normalize('NFD');
   let ipa = '';
   let i = 0;
 
   // Select mapping based on family
   let mapping: Record<string, string> = {};
+  let isApproximated = false; // Track if this is a proxy approximation
 
   switch (family) {
     case 'ALGO-ROM':
@@ -264,71 +273,84 @@ const graphemeToIPAFallback = (text: string, family: AlgoFamily): string => {
     case 'ALGO-SLV':
       // Slavic: use English as rough approximation
       mapping = ENGLISH_G2P;
+      isApproximated = true;
       break;
 
     case 'ALGO-SEM':
       // Semitic: use French vowels + English consonants as approximation
       mapping = { ...FRENCH_G2P, ...ENGLISH_G2P };
+      isApproximated = true;
       break;
 
     case 'ALGO-SIN':
       // Sinitic: preserve tones, use basic vowel mapping
       mapping = { 'a': 'a', 'e': 'ə', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      isApproximated = true;
       break;
 
     case 'ALGO-JAP':
       // Japanese: use basic CV mapping
       mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'ɯ', ...ENGLISH_G2P };
+      isApproximated = true;
       break;
 
     case 'ALGO-KOR':
       // Korean: use basic mapping
       mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      isApproximated = true;
       break;
 
     case 'ALGO-BNT':
       // Bantu: similar to KWA but with different inventory
       mapping = KWA_G2P;
+      isApproximated = true;
       break;
 
     case 'ALGO-IIR':
       // Indo-Iranian: use English as approximation
       mapping = ENGLISH_G2P;
+      isApproximated = true;
       break;
 
     case 'ALGO-DRV':
       // Dravidian: use English as approximation
       mapping = ENGLISH_G2P;
+      isApproximated = true;
       break;
 
     case 'ALGO-TRK':
       // Turkic: use English as approximation
       mapping = ENGLISH_G2P;
+      isApproximated = true;
       break;
 
     case 'ALGO-FIN':
       // Uralic: use English as approximation
       mapping = ENGLISH_G2P;
+      isApproximated = true;
       break;
 
     case 'ALGO-TAI':
       // Tai-Kadai: tonal, use basic mapping similar to Sinitic
       mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      isApproximated = true;
       break;
 
     case 'ALGO-VIET':
       // Austroasiatic (Vietnamese): tonal, use basic mapping
       mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      isApproximated = true;
       break;
 
     case 'ALGO-AUS':
       // Austronesian: use basic mapping
       mapping = { 'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'u', ...ENGLISH_G2P };
+      isApproximated = true;
       break;
 
     default:
       // Generic fallback: just use the text as-is
-      return normalized;
+      return { ipa: normalized, isApproximated: true };
   }
 
   // For tonal languages, preserve tone diacritics during processing
@@ -364,15 +386,15 @@ const graphemeToIPAFallback = (text: string, family: AlgoFamily): string => {
     }
   }
 
-  return ipa;
+  return { ipa, isApproximated };
 };
 
 /**
  * Client-side G2P conversion with family dispatch
- * Returns approximate IPA representation
+ * Returns G2P result with approximation flag
  */
-export const graphemeToIPA = (text: string, family: AlgoFamily): string => {
-  if (!text || !text.trim()) return '';
+export const graphemeToIPA = (text: string, family: AlgoFamily): G2PResult => {
+  if (!text || !text.trim()) return { ipa: '', isApproximated: false };
 
   // For now, all families use the fallback
   // In the future, this could call family-specific converters
