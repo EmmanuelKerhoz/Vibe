@@ -14,6 +14,8 @@ import {
   IDLE_PROGRESS,
 } from './languageAdapterTypes';
 import { reverseTranslate, reviewFidelity } from './languageAdapterPipeline';
+import { matchRhymeSchemeAcrossLang, validateTranslatedLineRhyme } from '../../utils/adaptationUtils';
+import { languageNameToCode } from '../../constants/langFamilyMap';
 
 export type {
   AdaptationStepId,
@@ -154,7 +156,38 @@ export const useLanguageAdapter = ({
     try {
       setStep('adapting', progressLabel);
 
-      const adaptPrompt = `You are an expert lyricist specializing in creative song adaptation across languages.\n\nYour task: Adapt the following song lyrics to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\n\nCRITICAL GUIDELINES:\n\n1. EMOTIONAL IMPACT FIRST\n   - Preserve the emotional journey and core message\n   - Prioritize how the lyrics make people FEEL over word-for-word accuracy\n   - Maintain the song's vibe, tone, and artistic intent\n\n2. NATURAL LANGUAGE\n   - Write as if the song was originally composed in ${newLanguage}\n   - Use idioms, expressions, and cultural references native to ${newLanguage}\n   - Avoid "translation-speak" - make it sound authentic and poetic\n   - Respect ${newLanguage} grammar, syntax, and natural word order\n\n3. POETIC STRUCTURE\n   - Maintain rhyme scheme quality (e.g., if AABB, keep clean rhymes in ${newLanguage})\n   - Match syllable counts when possible, but prioritize natural phrasing\n   - Preserve rhythm and singability\n   - Adapt imagery and metaphors to resonate in the target culture\n\n4. CULTURAL ADAPTATION\n   - Replace culture-specific references with equivalent concepts in ${newLanguage} culture\n   - Adapt humor, wordplay, and double meanings creatively\n   - Ensure themes and stories make sense to ${newLanguage} speakers\n\n5. TECHNICAL REQUIREMENTS\n   - Maintain the existing section structure (same section names)\n   - Return the FULL updated song in the same JSON format as input\n   - Update rhymingSyllables to reflect actual ${newLanguage} rhymes\n   - Adjust syllable counts to match the adapted lyrics\n   - Write the "concept" field for each line in ${uiLang}\n\nCurrent Song Data:\n${JSON.stringify(song)}\n\nReturn the fully adapted song that feels native to ${newLanguage} speakers while preserving the soul of the original.`;
+      // Extract source lines (filter out meta lines and section headers)
+      const sourceLines = song.flatMap(s =>
+        s.lines
+          .filter(l => !l.isMeta && !isSectionHeader(l.text.replace(/^\[|\]$/g, '').trim()))
+          .map(l => l.text)
+      );
+
+      // Convert language names to ISO codes for IPA pipeline
+      const sourceLangCode = languageNameToCode(sourceLanguage);
+      const targetLangCode = languageNameToCode(newLanguage);
+
+      // Try to apply IPA-based rhyme constraints if languages are supported
+      let ipaEnhancedPrompt = '';
+      if (sourceLangCode && targetLangCode && sourceLines.length > 0) {
+        try {
+          const adaptationResult = await matchRhymeSchemeAcrossLang(
+            sourceLines,
+            sourceLangCode,
+            targetLangCode
+          );
+
+          if (adaptationResult.success) {
+            // Use IPA-enhanced prompt
+            ipaEnhancedPrompt = `\n\n${adaptationResult.constrainedPrompt}`;
+            console.debug('IPA constraints applied:', adaptationResult.sourceScheme);
+          }
+        } catch (error) {
+          console.debug('IPA pipeline not available, continuing with standard prompt:', error);
+        }
+      }
+
+      const adaptPrompt = `You are an expert lyricist specializing in creative song adaptation across languages.\n\nYour task: Adapt the following song lyrics to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\n\nCRITICAL GUIDELINES:\n\n1. EMOTIONAL IMPACT FIRST\n   - Preserve the emotional journey and core message\n   - Prioritize how the lyrics make people FEEL over word-for-word accuracy\n   - Maintain the song's vibe, tone, and artistic intent\n\n2. NATURAL LANGUAGE\n   - Write as if the song was originally composed in ${newLanguage}\n   - Use idioms, expressions, and cultural references native to ${newLanguage}\n   - Avoid "translation-speak" - make it sound authentic and poetic\n   - Respect ${newLanguage} grammar, syntax, and natural word order\n\n3. POETIC STRUCTURE\n   - Maintain rhyme scheme quality (e.g., if AABB, keep clean rhymes in ${newLanguage})\n   - Match syllable counts when possible, but prioritize natural phrasing\n   - Preserve rhythm and singability\n   - Adapt imagery and metaphors to resonate in the target culture\n\n4. CULTURAL ADAPTATION\n   - Replace culture-specific references with equivalent concepts in ${newLanguage} culture\n   - Adapt humor, wordplay, and double meanings creatively\n   - Ensure themes and stories make sense to ${newLanguage} speakers\n\n5. TECHNICAL REQUIREMENTS\n   - Maintain the existing section structure (same section names)\n   - Return the FULL updated song in the same JSON format as input\n   - Update rhymingSyllables to reflect actual ${newLanguage} rhymes\n   - Adjust syllable counts to match the adapted lyrics\n   - Write the "concept" field for each line in ${uiLang}\n\nCurrent Song Data:\n${JSON.stringify(song)}${ipaEnhancedPrompt}\n\nReturn the fully adapted song that feels native to ${newLanguage} speakers while preserving the soul of the original.`;
 
       const adaptResponse = await getAi().models.generateContent({
         model: AI_MODEL_NAME,
@@ -239,7 +272,36 @@ export const useLanguageAdapter = ({
     try {
       setStep('adapting', progressLabel);
 
-      const sectionPrompt = `You are an expert lyricist specializing in creative song adaptation across languages.\n\nAdapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\nKeep section name unchanged. Update rhymingSyllables. Adjust syllable counts.\nWrite the "concept" field for each line in ${uiLang}.\n\nCurrent Section Data:\n${JSON.stringify(section)}`;
+      // Extract source lines from the section (filter out meta lines and section headers)
+      const sourceLines = section.lines
+        .filter(l => !l.isMeta && !isSectionHeader(l.text.replace(/^\[|\]$/g, '').trim()))
+        .map(l => l.text);
+
+      // Convert language names to ISO codes for IPA pipeline
+      const sourceLangCode = languageNameToCode(sourceLanguage);
+      const targetLangCode = languageNameToCode(newLanguage);
+
+      // Try to apply IPA-based rhyme constraints if languages are supported
+      let ipaEnhancedPrompt = '';
+      if (sourceLangCode && targetLangCode && sourceLines.length > 0) {
+        try {
+          const adaptationResult = await matchRhymeSchemeAcrossLang(
+            sourceLines,
+            sourceLangCode,
+            targetLangCode
+          );
+
+          if (adaptationResult.success) {
+            // Use IPA-enhanced prompt
+            ipaEnhancedPrompt = `\n\n${adaptationResult.constrainedPrompt}`;
+            console.debug('IPA constraints applied for section:', section.name, adaptationResult.sourceScheme);
+          }
+        } catch (error) {
+          console.debug('IPA pipeline not available for section, continuing with standard prompt:', error);
+        }
+      }
+
+      const sectionPrompt = `You are an expert lyricist specializing in creative song adaptation across languages.\n\nAdapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\nKeep section name unchanged. Update rhymingSyllables. Adjust syllable counts.\nWrite the "concept" field for each line in ${uiLang}.\n\nCurrent Section Data:\n${JSON.stringify(section)}${ipaEnhancedPrompt}`;
 
       const adaptResponse = await getAi().models.generateContent({
         model: AI_MODEL_NAME,

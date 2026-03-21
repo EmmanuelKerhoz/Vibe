@@ -332,3 +332,101 @@ export const getTonalDiacriticsPattern = (langCode?: string): RegExp => {
   // Exclude: \u0300 (grave), \u0301 (acute), \u0302 (circumflex), \u0303 (tilde), \u0304 (macron), \u030C (caron)
   return /[\u0305-\u030B\u030D-\u036f]/g;
 };
+
+/**
+ * Map common language names (as returned by LLM) to ISO 639 codes
+ * Supports both English language names and codes
+ */
+export const LANGUAGE_NAME_TO_CODE: Record<string, string> = {
+  // Germanic
+  'english': 'en',
+  'german': 'de',
+  'dutch': 'nl',
+  'swedish': 'sv',
+  'danish': 'da',
+  'norwegian': 'no',
+  'icelandic': 'is',
+
+  // Romance
+  'french': 'fr',
+  'spanish': 'es',
+  'italian': 'it',
+  'portuguese': 'pt',
+  'romanian': 'ro',
+  'catalan': 'ca',
+
+  // Slavic
+  'russian': 'ru',
+  'polish': 'pl',
+  'czech': 'cs',
+  'slovak': 'sk',
+  'ukrainian': 'uk',
+  'bulgarian': 'bg',
+  'serbian': 'sr',
+  'croatian': 'hr',
+
+  // African languages
+  'yoruba': 'yo',
+  'swahili': 'sw',
+  'zulu': 'zu',
+  'xhosa': 'xh',
+  'hausa': 'ha',
+  'baoulé': 'bci',
+  'baoule': 'bci',
+  'dioula': 'dyu',
+  'ewe': 'ee',
+  'mina': 'gej',
+
+  // Asian languages
+  'chinese': 'zh',
+  'mandarin': 'zh',
+  'cantonese': 'yue',
+  'japanese': 'ja',
+  'korean': 'ko',
+  'hindi': 'hi',
+  'urdu': 'ur',
+  'bengali': 'bn',
+  'punjabi': 'pa',
+  'persian': 'fa',
+  'tamil': 'ta',
+  'telugu': 'te',
+  'kannada': 'kn',
+  'malayalam': 'ml',
+  'thai': 'th',
+  'vietnamese': 'vi',
+  'indonesian': 'id',
+  'malay': 'ms',
+  'tagalog': 'tl',
+
+  // Middle Eastern
+  'arabic': 'ar',
+  'hebrew': 'he',
+  'amharic': 'am',
+
+  // Other
+  'turkish': 'tr',
+  'finnish': 'fi',
+  'hungarian': 'hu',
+};
+
+/**
+ * Convert language name to ISO code
+ * Handles both full names (e.g., "English") and codes (e.g., "en")
+ * Returns the input if already a valid code, or undefined if not found
+ *
+ * @param languageName - Language name or code
+ * @returns ISO 639 language code or undefined
+ */
+export const languageNameToCode = (languageName: string): string | undefined => {
+  if (!languageName) return undefined;
+
+  const normalized = languageName.toLowerCase().trim();
+
+  // Check if it's already a code
+  if (LANG_TO_FAMILY[normalized]) {
+    return normalized;
+  }
+
+  // Try to map from name
+  return LANGUAGE_NAME_TO_CODE[normalized];
+};
