@@ -10,6 +10,7 @@ import { makeSongUpdater } from '../hookUtils';
 import { withAbort, isAbortError } from '../../utils/withAbort';
 import { withRetry } from '../../utils/withRetry';
 import { getDefaultLineCount } from '../../utils/songDefaults';
+import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
 
 const sectionNamesMatch = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
 
@@ -260,7 +261,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
         else if (lowerName.includes('bridge')) lineCountPrompt = 'The section should have exactly 6 lines.';
         else if (lowerName.includes('outro'))  lineCountPrompt = 'The section should have exactly 4 lines.';
 
-        const songStructure = song.map(s => s.name).join(' \u2192 ');
+        const songStructure = song.map(s => s.name).join(' → ');
         const lang = songLanguage || 'English';
         const formatSectionLyrics = (sec: Section) =>
           sec.lines.map(l => l.text).filter(Boolean).join('\n');
@@ -280,6 +281,30 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           ? `\nCreative directives:\n${creativeDirectives.map(d => `- ${d}`).join('\n')}`
           : '';
 
+        // Build IPA-enhanced prompt if section has language and existing lines with rhymes
+        const langCode = sectionToRegenerate.language || songLanguage;
+        const hasRhymedLines = sectionToRegenerate.lines.some(line =>
+          line.rhyme && line.rhyme !== '' && line.rhyme !== 'FREE' && !line.isMeta
+        );
+        let ipaConstraints = '';
+        if (langCode && hasRhymedLines) {
+          try {
+            const enrichedPrompt = await buildRhymeConstrainedPrompt(
+              sectionToRegenerate.lines,
+              langCode,
+              sectionToRegenerate.rhymeScheme || rhymeScheme
+            );
+            // Extract just the IPA constraints portion to append
+            if (enrichedPrompt.includes('PHONEMIC RHYME CONSTRAINTS:')) {
+              ipaConstraints = '\n\n' + enrichedPrompt.substring(
+                enrichedPrompt.indexOf('PHONEMIC RHYME CONSTRAINTS:')
+              );
+            }
+          } catch (error) {
+            console.debug('Failed to build IPA-enhanced prompt, continuing without:', error);
+          }
+        }
+
         const prompt =
 `Rewrite the following section of a song titled "${title}" about "${topic}".
 Mood: ${mood}
@@ -290,7 +315,7 @@ ${lineCountPrompt}
 Song structure: ${songStructure}
 ${prevContext}${nextContext}${directivesPrompt}
 
-${RHYME_ENFORCEMENT_RULES}
+${RHYME_ENFORCEMENT_RULES}${ipaConstraints}
 
 ${META_INSTRUCTION_HINT}
 
