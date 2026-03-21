@@ -3,6 +3,7 @@ import { Type } from '@google/genai';
 import type { Line, Section } from '../../types';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { countSyllables } from '../../utils/songUtils';
+import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
 
 const computeSyllables = (text: string) =>
   text
@@ -55,12 +56,14 @@ export const useSuggestions = ({
       let previousLine: Line | null = null;
       let nextLine: Line | null = null;
       let sectionName = '';
+      let currentSection: Section | null = null;
 
       for (let s = 0; s < song.length; s++) {
         const section = song[s]!;
         for (let l = 0; l < section.lines.length; l++) {
           if (section.lines[l]!.id === lineId) {
             currentLine = section.lines[l]!;
+            currentSection = section;
             sectionName = section.name;
             if (l > 0) previousLine = section.lines[l - 1]!;
             if (l < section.lines.length - 1) nextLine = section.lines[l + 1]!;
@@ -70,13 +73,37 @@ export const useSuggestions = ({
         if (currentLine) break;
       }
 
-      if (!currentLine) {
+      if (!currentLine || !currentSection) {
         setIsSuggesting(false);
         return;
       }
 
       const lang = songLanguage || 'English';
       try {
+        // Build IPA-enhanced prompt if section has language and existing lines with rhymes
+        const langCode = currentSection.language || songLanguage;
+        const hasRhymedLines = currentSection.lines.some(line =>
+          line.rhyme && line.rhyme !== '' && line.rhyme !== 'FREE' && !line.isMeta
+        );
+        let ipaConstraints = '';
+        if (langCode && hasRhymedLines && currentLine.rhyme && currentLine.rhyme !== '' && currentLine.rhyme !== 'FREE') {
+          try {
+            const enrichedPrompt = await buildRhymeConstrainedPrompt(
+              currentSection.lines,
+              langCode,
+              currentSection.rhymeScheme || rhymeScheme
+            );
+            // Extract just the IPA constraints portion to append
+            if (enrichedPrompt.includes('PHONEMIC RHYME CONSTRAINTS:')) {
+              ipaConstraints = '\n\n' + enrichedPrompt.substring(
+                enrichedPrompt.indexOf('PHONEMIC RHYME CONSTRAINTS:')
+              );
+            }
+          } catch (error) {
+            console.debug('Failed to build IPA-enhanced prompt, continuing without:', error);
+          }
+        }
+
         const prompt = `Generate 3 creative alternative versions for a lyric line.
 Context:
 - Topic: ${topic}
@@ -86,7 +113,7 @@ Context:
 - Section: ${sectionName}
 - Previous Line: "${previousLine?.text || ''}" (Rhyme: ${previousLine?.rhyme || ''})
 - Current Line to replace: "${currentLine.text}" (Rhyme: ${currentLine.rhyme}, Concept: ${currentLine.concept})
-- Next Line: "${nextLine?.text || ''}" (Rhyme: ${nextLine?.rhyme || ''})
+- Next Line: "${nextLine?.text || ''}" (Rhyme: ${nextLine?.rhyme || ''})${ipaConstraints}
 
 IMPORTANT: All 3 alternatives MUST be written in ${lang}.
 Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
