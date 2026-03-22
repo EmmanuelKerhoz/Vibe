@@ -30,5 +30,30 @@ export const reviewFidelity = async (
 ): Promise<{ score: number; warnings: string[] }> => {
   const originalLines = originalSong
     .flatMap(s => s.lines.filter(l => !l.isMeta).map(l => l.text));
-  return reviewTranslationFidelity(originalLines, reversedLines, targetLanguage, sourceLang, signal);
+
+  try {
+    const result = await reviewTranslationFidelity(
+      originalLines,
+      reversedLines,
+      targetLanguage,
+      sourceLang,
+      signal,
+    );
+
+    if (
+      result &&
+      typeof result === 'object' &&
+      typeof result.score === 'number' &&
+      Array.isArray(result.warnings)
+    ) {
+      return result;
+    }
+  } catch {
+    // Fall through to explicit zero-score fallback below.
+  }
+
+  return {
+    score: 0,
+    warnings: ['Fidelity review failed: invalid or unavailable review response'],
+  };
 };

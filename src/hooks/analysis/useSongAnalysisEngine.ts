@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
+import { languageNameToCode } from '../../constants/langFamilyMap';
+import { compareTextsWithIPA } from '../../utils/ipaPipeline';
+import { detectRhymeSchemeLocally } from '../../utils/rhymeSchemeUtils';
 import { mapSongWithPreservedIds } from '../../utils/songMergeUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { getSectionText } from '../../utils/songUtils';
@@ -15,6 +18,94 @@ type AnalysisReport = {
   improvements: string[];
   musicalSuggestions: string[];
   summary: string;
+};
+
+export type LocalRhymePairAnalysis = {
+  lineIndexes: [number, number];
+  lines: [string, string];
+  quality: string;
+  confidenceScore: number;
+  usedIpa: boolean;
+  isApproximated: boolean;
+};
+
+export type LocalRhymeSectionAnalysis = {
+  sectionId: string;
+  sectionName: string;
+  langCode?: string;
+  detectedScheme: string | null;
+  mode: 'ipa' | 'graphemic';
+  pairs: LocalRhymePairAnalysis[];
+};
+
+const toPairConfidenceScore = (similarity: { score?: number; isApproximated?: boolean }) => {
+  const baseScore = typeof similarity.score === 'number' ? similarity.score : 0;
+  const adjustedScore = similarity.isApproximated ? baseScore * 0.85 : baseScore;
+  return Math.round(adjustedScore * 1000) / 10;
+};
+
+export const analyzeSongRhymes = async (song: Section[]): Promise<LocalRhymeSectionAnalysis[]> => {
+  return Promise.all(song.map(async section => {
+    const lyricLines = section.lines
+      .filter(line => !line.isMeta)
+      .map(line => line.text.trim())
+      .filter(Boolean);
+
+    const langCode = languageNameToCode(section.language ?? '');
+    const detectedScheme = detectRhymeSchemeLocally(lyricLines, langCode);
+
+    if (!langCode || lyricLines.length < 2) {
+      return {
+        sectionId: section.id,
+        sectionName: section.name,
+        langCode,
+        detectedScheme,
+        mode: 'graphemic' as const,
+        pairs: [],
+      };
+    }
+
+    try {
+      const pairs: LocalRhymePairAnalysis[] = [];
+
+      for (let firstIndex = 0; firstIndex < lyricLines.length; firstIndex++) {
+        for (let secondIndex = firstIndex + 1; secondIndex < lyricLines.length; secondIndex++) {
+          const similarity = await compareTextsWithIPA(
+            lyricLines[firstIndex]!,
+            lyricLines[secondIndex]!,
+            langCode,
+          );
+
+          pairs.push({
+            lineIndexes: [firstIndex, secondIndex],
+            lines: [lyricLines[firstIndex]!, lyricLines[secondIndex]!],
+            quality: similarity.quality,
+            confidenceScore: toPairConfidenceScore(similarity as { score?: number; isApproximated?: boolean }),
+            usedIpa: true,
+            isApproximated: Boolean((similarity as { isApproximated?: boolean }).isApproximated),
+          });
+        }
+      }
+
+      return {
+        sectionId: section.id,
+        sectionName: section.name,
+        langCode,
+        detectedScheme,
+        mode: 'ipa' as const,
+        pairs,
+      };
+    } catch {
+      return {
+        sectionId: section.id,
+        sectionName: section.name,
+        langCode,
+        detectedScheme,
+        mode: 'graphemic' as const,
+        pairs: [],
+      };
+    }
+  }));
 };
 
 type SaveVersionFn = (name: string, snapshot?: {
@@ -149,6 +240,8 @@ export const useSongAnalysisEngine = ({
   const clearAppliedAnalysisItems = useCallback(() => {
     setAppliedAnalysisItems(new Set());
   }, []);
+
+  const analyzeLocalRhymes = useCallback(() => analyzeSongRhymes(song), [song]);
 
   const applySelectedAnalysisItems = useCallback(async () => {
     if (selectedAnalysisItems.size === 0 || isApplyingAnalysis) return;
@@ -375,6 +468,7 @@ export const useSongAnalysisEngine = ({
     isApplyingAnalysis,
     isAnalyzingTheme,
     toggleAnalysisItemSelection,
+    analyzeLocalRhymes,
     applySelectedAnalysisItems,
     applyAnalysisItem,
     analyzeCurrentSong,
