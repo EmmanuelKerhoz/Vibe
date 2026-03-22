@@ -15,6 +15,7 @@ import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
 import { useMobileLayout } from './hooks/useMobileLayout';
+import { useMobileInitPanels } from './hooks/useMobileInitPanels';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSessionActions } from './hooks/useSessionActions';
 import { useImportHandlers } from './hooks/useImportHandlers';
@@ -65,27 +66,7 @@ function AppInnerContent() {
   // ── Mobile layout ─────────────────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
-
-  const mobileInitDoneRef = useRef(false);
-  const prevIsMobileOrTabletRef = useRef(isMobileOrTablet);
-  useEffect(() => {
-    const wasTablet = prevIsMobileOrTabletRef.current;
-    prevIsMobileOrTabletRef.current = isMobileOrTablet;
-
-    if (!mobileInitDoneRef.current) {
-      mobileInitDoneRef.current = true;
-      if (isMobileOrTablet) {
-        setIsLeftPanelOpen(false);
-        setIsStructureOpen(false);
-      }
-      return;
-    }
-
-    if (isMobileOrTablet && !wasTablet) {
-      setIsLeftPanelOpen(false);
-      setIsStructureOpen(false);
-    }
-  }, [isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen]);
+  useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
 
   const closeMobilePanels = useCallback(() => {
     setIsLeftPanelOpen(false);
