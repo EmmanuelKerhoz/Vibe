@@ -3,7 +3,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { buildRhymeConstrainedPrompt, buildRhymeConstrainedPromptFromSection } from './promptUtils';
+import {
+  buildAdaptSectionPrompt,
+  buildAdaptSongPrompt,
+  buildDetectLanguagePrompt,
+  buildRhymeConstrainedPrompt,
+  buildRhymeConstrainedPromptFromSection,
+} from './promptUtils';
 import type { Line, Section } from '../types';
 import * as ipaPipeline from './ipaPipeline';
 
@@ -346,6 +352,57 @@ describe('promptUtils', () => {
       const prompt = await buildRhymeConstrainedPromptFromSection(section);
 
       expect(prompt).toContain('FREE');
+    });
+  });
+
+  describe('language adapter prompt builders', () => {
+    const section: Section = {
+      id: 'verse-1',
+      name: 'Verse 1',
+      language: 'en',
+      rhymeScheme: 'AABB',
+      lines: [
+        {
+          id: 'line-1',
+          text: 'We chase the light',
+          rhymingSyllables: 'light',
+          rhyme: 'A',
+          syllables: 4,
+          concept: 'hope',
+        },
+      ],
+    };
+
+    it('buildDetectLanguagePrompt truncates long lyrics samples', () => {
+      const prompt = buildDetectLanguagePrompt('a'.repeat(1105));
+      expect(prompt).toContain('Detect the language of these lyrics');
+      expect(prompt.endsWith('a'.repeat(1000))).toBe(true);
+    });
+
+    it('buildAdaptSongPrompt includes adaptation instructions and optional IPA constraints', () => {
+      const prompt = buildAdaptSongPrompt({
+        sourceSong: [section],
+        newLanguage: 'French',
+        uiLanguage: 'English',
+        ipaEnhancedPrompt: '\n\nIPA BLOCK',
+      });
+
+      expect(prompt).toContain('Adapt the following song lyrics to French');
+      expect(prompt).toContain('Write the "concept" field for each line in English');
+      expect(prompt).toContain(JSON.stringify([section]));
+      expect(prompt).toContain('IPA BLOCK');
+    });
+
+    it('buildAdaptSectionPrompt keeps section-scoped instructions isolated from the hook', () => {
+      const prompt = buildAdaptSectionPrompt({
+        section,
+        newLanguage: 'Spanish',
+        uiLanguage: 'French',
+      });
+
+      expect(prompt).toContain('Adapt the following song section to Spanish');
+      expect(prompt).toContain('Write the "concept" field for each line in French');
+      expect(prompt).toContain(JSON.stringify(section));
     });
   });
 });

@@ -24,6 +24,12 @@ export async function withAbort<T>(
   return operation(controller.signal);
 }
 
+export const abortCurrent = (
+  ref: MutableRefObject<AbortController | null>,
+): void => {
+  ref.current?.abort();
+};
+
 /** True if the error is an intentional abort */
 export const isAbortError = (err: unknown): boolean =>
   err instanceof DOMException && err.name === 'AbortError';

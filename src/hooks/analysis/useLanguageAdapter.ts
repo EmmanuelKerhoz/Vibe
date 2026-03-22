@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Type } from '@google/genai';
-import { AI_MODEL_NAME, getAi, safeJsonParse } from '../../utils/aiUtils';
+import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
 import { isSectionHeader } from '../../utils/metaUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
@@ -14,8 +14,14 @@ import {
   IDLE_PROGRESS,
 } from './languageAdapterTypes';
 import { reverseTranslate, reviewFidelity } from './languageAdapterPipeline';
-import { matchRhymeSchemeAcrossLang, validateTranslatedLineRhyme } from '../../utils/adaptationUtils';
+import { matchRhymeSchemeAcrossLang } from '../../utils/adaptationUtils';
 import { languageNameToCode } from '../../constants/langFamilyMap';
+import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
+import {
+  buildAdaptSectionPrompt,
+  buildAdaptSongPrompt,
+  buildDetectLanguagePrompt,
+} from '../../utils/promptUtils';
 
 export type {
   AdaptationStepId,
@@ -70,7 +76,7 @@ export const useLanguageAdapter = ({
   const uiLang = resolveUiLanguageName(uiLanguage);
 
   useEffect(() => {
-    return () => { abortRef.current?.abort(); };
+    return () => { abortCurrent(abortRef); };
   }, []);
 
   useEffect(() => {
@@ -105,36 +111,39 @@ export const useLanguageAdapter = ({
   const detectLanguage = async () => {
     if (song.length === 0) return;
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     setIsDetectingLanguage(true);
+    let wasAborted = false;
     try {
-      const songText = song
-        .flatMap(s =>
-          s.lines
-            .filter(l => !l.isMeta && !isSectionHeader(l.text.replace(/^\[|\]$/g, '').trim()))
-            .map(l => l.text)
-        )
-        .join('\n');
+      await withAbort(abortRef, async (nextSignal) => {
+        const songText = song
+          .flatMap(s =>
+            s.lines
+              .filter(l => !l.isMeta && !isSectionHeader(l.text.replace(/^\[|\]$/g, '').trim()))
+              .map(l => l.text)
+          )
+          .join('\n');
 
-      if (!songText.trim()) {
-        setIsDetectingLanguage(false);
+        if (!songText.trim()) return;
+
+        const response = await generateContentWithRetry({
+          model: AI_MODEL_NAME,
+          contents: buildDetectLanguagePrompt(songText),
+          signal: nextSignal,
+        });
+        if (nextSignal.aborted) {
+          wasAborted = true;
+          return;
+        }
+        setSongLanguage(response.text?.trim() || 'English');
+      });
+    } catch (error) {
+      if (isAbortError(error)) {
+        wasAborted = true;
         return;
       }
-
-      const response = await getAi().models.generateContent({
-        model: AI_MODEL_NAME,
-        contents: `Detect the language of these lyrics. Return ONLY the name of the language in English (e.g., "English", "French", "Spanish").\n\nLyrics:\n${songText.substring(0, 1000)}`,
-      });
-      if (controller.signal.aborted) return;
-      setSongLanguage(response.text?.trim() || 'English');
-    } catch (error) {
-      if ((error as any)?.name === 'AbortError') return;
       console.error('Language detection error:', error);
     } finally {
-      if (!controller.signal.aborted) setIsDetectingLanguage(false);
+      if (!wasAborted) setIsDetectingLanguage(false);
     }
   };
 
@@ -144,10 +153,6 @@ export const useLanguageAdapter = ({
     // Freeze song at start to prevent race conditions
     const sourceSong = [...song];
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     const sourceLanguage = songLanguage || 'unknown';
     const progressLabel  = `${sourceLanguage} \u2192 ${newLanguage}`;
 
@@ -156,52 +161,190 @@ export const useLanguageAdapter = ({
     setAdaptationProgress({ active: 'adapting', steps: PIPELINE_STEPS, label: progressLabel });
     saveVersion(`Before Translation to ${newLanguage}`);
 
+    let wasAborted = false;
     try {
-      setStep('adapting', progressLabel);
+      await withAbort(abortRef, async (nextSignal) => {
+        setStep('adapting', progressLabel);
 
-      // Extract source lines (filter out meta lines and section headers)
-      const sourceLines = sourceSong.flatMap(s =>
-        s.lines
-          .filter(l => !l.isMeta && !isSectionHeader(l.text.replace(/^\[|\]$/g, '').trim()))
-          .map(l => l.text)
-      );
+        // Extract source lines (filter out meta lines and section headers)
+        const sourceLines = sourceSong.flatMap(s =>
+          s.lines
+            .filter(l => !l.isMeta && !isSectionHeader(l.text.replace(/^\[|\]$/g, '').trim()))
+            .map(l => l.text)
+        );
 
-      // Convert language names to ISO codes for IPA pipeline
-      const sourceLangCode = languageNameToCode(sourceLanguage);
-      const targetLangCode = languageNameToCode(newLanguage);
+        // Convert language names to ISO codes for IPA pipeline
+        const sourceLangCode = languageNameToCode(sourceLanguage);
+        const targetLangCode = languageNameToCode(newLanguage);
 
-      // Try to apply IPA-based rhyme constraints if languages are supported
-      let ipaEnhancedPrompt = '';
-      if (sourceLangCode && targetLangCode && sourceLines.length > 0) {
-        try {
-          const adaptationResult = await matchRhymeSchemeAcrossLang(
-            sourceLines,
-            sourceLangCode,
-            targetLangCode,
-            controller.signal
-          );
-          if (controller.signal.aborted) return;
+        // Try to apply IPA-based rhyme constraints if languages are supported
+        let ipaEnhancedPrompt = '';
+        if (sourceLangCode && targetLangCode && sourceLines.length > 0) {
+          try {
+            const adaptationResult = await matchRhymeSchemeAcrossLang(
+              sourceLines,
+              sourceLangCode,
+              targetLangCode,
+              nextSignal
+            );
+            if (nextSignal.aborted) {
+              wasAborted = true;
+              return;
+            }
 
-          if (adaptationResult.success) {
-            // Use IPA-enhanced prompt
-            ipaEnhancedPrompt = `\n\n${adaptationResult.constrainedPrompt}`;
-            console.debug('IPA constraints applied:', adaptationResult.sourceScheme);
+            if (adaptationResult.success) {
+              // Use IPA-enhanced prompt
+              ipaEnhancedPrompt = `\n\n${adaptationResult.constrainedPrompt}`;
+              console.debug('IPA constraints applied:', adaptationResult.sourceScheme);
+            }
+          } catch (error) {
+            console.debug('IPA pipeline not available, continuing with standard prompt:', error);
           }
-        } catch (error) {
-          console.debug('IPA pipeline not available, continuing with standard prompt:', error);
         }
+
+        const adaptResponse = await generateContentWithRetry({
+          model: AI_MODEL_NAME,
+          contents: buildAdaptSongPrompt({
+            sourceSong,
+            newLanguage,
+            uiLanguage: uiLang,
+            ipaEnhancedPrompt,
+          }),
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  rhymeScheme: { type: Type.STRING },
+                  lines: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        text:             { type: Type.STRING },
+                        rhymingSyllables: { type: Type.STRING },
+                        rhyme:            { type: Type.STRING },
+                        syllables:        { type: Type.INTEGER },
+                        concept:          { type: Type.STRING },
+                      },
+                      required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
+                    },
+                  },
+                },
+                required: ['name', 'lines'],
+              },
+            },
+          },
+          signal: nextSignal,
+        });
+
+        if (nextSignal.aborted) {
+          wasAborted = true;
+          return;
+        }
+
+        const newSongData = safeJsonParse<any[]>(adaptResponse.text || '[]', []);
+        if (newSongData.length === 0) throw new Error('Empty adaptation response');
+
+        const adaptedSong = mapSongWithPreservedIds(newSongData, sourceSong, newLanguage);
+        updateSongAndStructureWithHistory(adaptedSong, adaptedSong.map(s => s.name));
+        setSongLanguage(newLanguage);
+
+        setStep('reversing', progressLabel);
+        const reversedLines = await reverseTranslate(adaptedSong, newLanguage, sourceLanguage, nextSignal);
+        if (nextSignal.aborted) {
+          wasAborted = true;
+          return;
+        }
+
+        setStep('reviewing', progressLabel);
+        const { score, warnings } = await reviewFidelity(sourceSong, reversedLines, newLanguage, sourceLanguage, nextSignal);
+        if (nextSignal.aborted) {
+          wasAborted = true;
+          return;
+        }
+
+        const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };
+        setAdaptationResult(result);
+        setAdaptationProgress({ active: 'done', steps: PIPELINE_STEPS, label: progressLabel });
+      });
+    } catch (error) {
+      if (isAbortError(error)) {
+        wasAborted = true;
+        return;
       }
+      console.error('Language adaptation error:', error);
+      setAdaptationProgress({ active: 'failed', steps: PIPELINE_STEPS, label: progressLabel });
+    } finally {
+      if (!wasAborted) setIsAdaptingLanguage(false);
+    }
+  };
 
-      const adaptPrompt = `You are an expert lyricist specializing in creative song adaptation across languages.\n\nYour task: Adapt the following song lyrics to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\n\nCRITICAL GUIDELINES:\n\n1. EMOTIONAL IMPACT FIRST\n   - Preserve the emotional journey and core message\n   - Prioritize how the lyrics make people FEEL over word-for-word accuracy\n   - Maintain the song's vibe, tone, and artistic intent\n\n2. NATURAL LANGUAGE\n   - Write as if the song was originally composed in ${newLanguage}\n   - Use idioms, expressions, and cultural references native to ${newLanguage}\n   - Avoid "translation-speak" - make it sound authentic and poetic\n   - Respect ${newLanguage} grammar, syntax, and natural word order\n\n3. POETIC STRUCTURE\n   - Maintain rhyme scheme quality (e.g., if AABB, keep clean rhymes in ${newLanguage})\n   - Match syllable counts when possible, but prioritize natural phrasing\n   - Preserve rhythm and singability\n   - Adapt imagery and metaphors to resonate in the target culture\n\n4. CULTURAL ADAPTATION\n   - Replace culture-specific references with equivalent concepts in ${newLanguage} culture\n   - Adapt humor, wordplay, and double meanings creatively\n   - Ensure themes and stories make sense to ${newLanguage} speakers\n\n5. TECHNICAL REQUIREMENTS\n   - Maintain the existing section structure (same section names)\n   - Return the FULL updated song in the same JSON format as input\n   - Update rhymingSyllables to reflect actual ${newLanguage} rhymes\n   - Adjust syllable counts to match the adapted lyrics\n   - Write the "concept" field for each line in ${uiLang}\n\nCurrent Song Data:\n${JSON.stringify(sourceSong)}${ipaEnhancedPrompt}\n\nReturn the fully adapted song that feels native to ${newLanguage} speakers while preserving the soul of the original.`;
+  const adaptSectionLanguage = async (sectionId: string, newLanguage: string) => {
+    const section = song.find(s => s.id === sectionId);
+    if (!section) return;
 
-      const adaptResponse = await getAi().models.generateContent({
-        model: AI_MODEL_NAME,
-        contents: adaptPrompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
+    const sourceLanguage = songLanguage || 'unknown';
+    const progressLabel  = `${section.name}: ${sourceLanguage} \u2192 ${newLanguage}`;
+
+    setIsAdaptingLanguage(true);
+    setAdaptationResult(null);
+    setAdaptationProgress({ active: 'adapting', steps: PIPELINE_STEPS, label: progressLabel });
+    saveVersion(`Before Section ${section.name} Translation to ${newLanguage}`);
+
+    let wasAborted = false;
+    try {
+      await withAbort(abortRef, async (nextSignal) => {
+        setStep('adapting', progressLabel);
+
+        // Extract source lines from the section (filter out meta lines and section headers)
+        const sourceLines = section.lines
+          .filter(l => !l.isMeta && !isSectionHeader(l.text.replace(/^\[|\]$/g, '').trim()))
+          .map(l => l.text);
+
+        // Convert language names to ISO codes for IPA pipeline
+        const sourceLangCode = languageNameToCode(sourceLanguage);
+        const targetLangCode = languageNameToCode(newLanguage);
+
+        // Try to apply IPA-based rhyme constraints if languages are supported
+        let ipaEnhancedPrompt = '';
+        if (sourceLangCode && targetLangCode && sourceLines.length > 0) {
+          try {
+            const adaptationResult = await matchRhymeSchemeAcrossLang(
+              sourceLines,
+              sourceLangCode,
+              targetLangCode,
+              nextSignal
+            );
+            if (nextSignal.aborted) {
+              wasAborted = true;
+              return;
+            }
+
+            if (adaptationResult.success) {
+              // Use IPA-enhanced prompt
+              ipaEnhancedPrompt = `\n\n${adaptationResult.constrainedPrompt}`;
+              console.debug('IPA constraints applied for section:', section.name, adaptationResult.sourceScheme);
+            }
+          } catch (error) {
+            console.debug('IPA pipeline not available for section, continuing with standard prompt:', error);
+          }
+        }
+
+        const adaptResponse = await generateContentWithRetry({
+          model: AI_MODEL_NAME,
+          contents: buildAdaptSectionPrompt({
+            section,
+            newLanguage,
+            uiLanguage: uiLang,
+            ipaEnhancedPrompt,
+          }),
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
               type: Type.OBJECT,
               properties: {
                 name: { type: Type.STRING },
@@ -224,159 +367,57 @@ export const useLanguageAdapter = ({
               required: ['name', 'lines'],
             },
           },
-        },
-      });
+          signal: nextSignal,
+        });
 
-      if (controller.signal.aborted) return;
-
-      const newSongData = safeJsonParse<any[]>(adaptResponse.text || '[]', []);
-      if (newSongData.length === 0) throw new Error('Empty adaptation response');
-
-      const adaptedSong = mapSongWithPreservedIds(newSongData, sourceSong, newLanguage);
-      updateSongAndStructureWithHistory(adaptedSong, adaptedSong.map(s => s.name));
-      setSongLanguage(newLanguage);
-
-      setStep('reversing', progressLabel);
-      // P6-fix: pass controller.signal so abort propagates into pipeline steps
-      const reversedLines = await reverseTranslate(adaptedSong, newLanguage, sourceLanguage, controller.signal);
-      if (controller.signal.aborted) return;
-
-      setStep('reviewing', progressLabel);
-      const { score, warnings } = await reviewFidelity(sourceSong, reversedLines, newLanguage, sourceLanguage, controller.signal);
-      if (controller.signal.aborted) return;
-
-      const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };
-      setAdaptationResult(result);
-      setAdaptationProgress({ active: 'done', steps: PIPELINE_STEPS, label: progressLabel });
-
-    } catch (error) {
-      if ((error as any)?.name === 'AbortError') return;
-      console.error('Language adaptation error:', error);
-      setAdaptationProgress({ active: 'failed', steps: PIPELINE_STEPS, label: progressLabel });
-    } finally {
-      if (!controller.signal.aborted) setIsAdaptingLanguage(false);
-    }
-  };
-
-  const adaptSectionLanguage = async (sectionId: string, newLanguage: string) => {
-    const section = song.find(s => s.id === sectionId);
-    if (!section) return;
-
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    const sourceLanguage = songLanguage || 'unknown';
-    const progressLabel  = `${section.name}: ${sourceLanguage} \u2192 ${newLanguage}`;
-
-    setIsAdaptingLanguage(true);
-    setAdaptationResult(null);
-    setAdaptationProgress({ active: 'adapting', steps: PIPELINE_STEPS, label: progressLabel });
-    saveVersion(`Before Section ${section.name} Translation to ${newLanguage}`);
-
-    try {
-      setStep('adapting', progressLabel);
-
-      // Extract source lines from the section (filter out meta lines and section headers)
-      const sourceLines = section.lines
-        .filter(l => !l.isMeta && !isSectionHeader(l.text.replace(/^\[|\]$/g, '').trim()))
-        .map(l => l.text);
-
-      // Convert language names to ISO codes for IPA pipeline
-      const sourceLangCode = languageNameToCode(sourceLanguage);
-      const targetLangCode = languageNameToCode(newLanguage);
-
-      // Try to apply IPA-based rhyme constraints if languages are supported
-      let ipaEnhancedPrompt = '';
-      if (sourceLangCode && targetLangCode && sourceLines.length > 0) {
-        try {
-          const adaptationResult = await matchRhymeSchemeAcrossLang(
-            sourceLines,
-            sourceLangCode,
-            targetLangCode,
-            controller.signal
-          );
-          if (controller.signal.aborted) return;
-
-          if (adaptationResult.success) {
-            // Use IPA-enhanced prompt
-            ipaEnhancedPrompt = `\n\n${adaptationResult.constrainedPrompt}`;
-            console.debug('IPA constraints applied for section:', section.name, adaptationResult.sourceScheme);
-          }
-        } catch (error) {
-          console.debug('IPA pipeline not available for section, continuing with standard prompt:', error);
+        if (nextSignal.aborted) {
+          wasAborted = true;
+          return;
         }
-      }
 
-      const sectionPrompt = `You are an expert lyricist specializing in creative song adaptation across languages.\n\nAdapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\nKeep section name unchanged. Update rhymingSyllables. Adjust syllable counts.\nWrite the "concept" field for each line in ${uiLang}.\n\nCurrent Section Data:\n${JSON.stringify(section)}${ipaEnhancedPrompt}`;
+        const newSectionData = safeJsonParse<any>(adaptResponse.text || '{}', {});
+        if (!newSectionData.name) throw new Error('Empty section adaptation response');
 
-      const adaptResponse = await getAi().models.generateContent({
-        model: AI_MODEL_NAME,
-        contents: sectionPrompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              rhymeScheme: { type: Type.STRING },
-              lines: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    text:             { type: Type.STRING },
-                    rhymingSyllables: { type: Type.STRING },
-                    rhyme:            { type: Type.STRING },
-                    syllables:        { type: Type.INTEGER },
-                    concept:          { type: Type.STRING },
-                  },
-                  required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
-                },
-              },
-            },
-            required: ['name', 'lines'],
-          },
-        },
+        const adaptedSectionSong: Section[] = [{
+          ...section,
+          lines: (newSectionData.lines ?? section.lines).filter((l: any) => !l.isMeta),
+          language: newLanguage,
+        }];
+
+        updateSong(currentSong =>
+          currentSong.map(currentSection => {
+            if (currentSection.id !== sectionId) return currentSection;
+            return mergeAiSectionIntoCurrent(currentSection, newSectionData, newLanguage);
+          })
+        );
+
+        setStep('reversing', progressLabel);
+        const reversedLines = await reverseTranslate(adaptedSectionSong, newLanguage, sourceLanguage, nextSignal);
+        if (nextSignal.aborted) {
+          wasAborted = true;
+          return;
+        }
+
+        setStep('reviewing', progressLabel);
+        const { score, warnings } = await reviewFidelity([section], reversedLines, newLanguage, sourceLanguage, nextSignal);
+        if (nextSignal.aborted) {
+          wasAborted = true;
+          return;
+        }
+
+        const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };
+        setAdaptationResult(result);
+        setAdaptationProgress({ active: 'done', steps: PIPELINE_STEPS, label: progressLabel });
       });
-
-      if (controller.signal.aborted) return;
-
-      const newSectionData = safeJsonParse<any>(adaptResponse.text || '{}', {});
-      if (!newSectionData.name) throw new Error('Empty section adaptation response');
-
-      const adaptedSectionSong: Section[] = [{
-        ...section,
-        lines: (newSectionData.lines ?? section.lines).filter((l: any) => !l.isMeta),
-        language: newLanguage,
-      }];
-
-      updateSong(currentSong =>
-        currentSong.map(currentSection => {
-          if (currentSection.id !== sectionId) return currentSection;
-          return mergeAiSectionIntoCurrent(currentSection, newSectionData, newLanguage);
-        })
-      );
-
-      setStep('reversing', progressLabel);
-      // P6-fix: pass controller.signal
-      const reversedLines = await reverseTranslate(adaptedSectionSong, newLanguage, sourceLanguage, controller.signal);
-      if (controller.signal.aborted) return;
-
-      setStep('reviewing', progressLabel);
-      const { score, warnings } = await reviewFidelity([section], reversedLines, newLanguage, sourceLanguage, controller.signal);
-      if (controller.signal.aborted) return;
-
-      const result: AdaptationResult = { score, warnings, accepted: score >= 50, targetLanguage: newLanguage };
-      setAdaptationResult(result);
-      setAdaptationProgress({ active: 'done', steps: PIPELINE_STEPS, label: progressLabel });
-
     } catch (error) {
-      if ((error as any)?.name === 'AbortError') return;
+      if (isAbortError(error)) {
+        wasAborted = true;
+        return;
+      }
       console.error('Section language adaptation error:', error);
       setAdaptationProgress({ active: 'failed', steps: PIPELINE_STEPS, label: progressLabel });
     } finally {
-      if (!controller.signal.aborted) setIsAdaptingLanguage(false);
+      if (!wasAborted) setIsAdaptingLanguage(false);
     }
   };
 
