@@ -70,15 +70,19 @@ export const analyzeSongRhymes = async (song: Section[]): Promise<LocalRhymeSect
 
       for (let firstIndex = 0; firstIndex < lyricLines.length; firstIndex++) {
         for (let secondIndex = firstIndex + 1; secondIndex < lyricLines.length; secondIndex++) {
+          const firstLine = lyricLines[firstIndex];
+          const secondLine = lyricLines[secondIndex];
+          if (!firstLine || !secondLine) continue;
+
           const similarity = await compareTextsWithIPA(
-            lyricLines[firstIndex]!,
-            lyricLines[secondIndex]!,
+            firstLine,
+            secondLine,
             langCode,
           );
 
           pairs.push({
             lineIndexes: [firstIndex, secondIndex],
-            lines: [lyricLines[firstIndex]!, lyricLines[secondIndex]!],
+            lines: [firstLine, secondLine],
             quality: similarity.quality,
             confidenceScore: toPairConfidenceScore(similarity as { score?: number; isApproximated?: boolean }),
             usedIpa: true,
