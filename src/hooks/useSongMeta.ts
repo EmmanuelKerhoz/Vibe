@@ -12,6 +12,12 @@ export function useSongMeta() {
   const [shouldAutoGenerateTitle, setShouldAutoGenerateTitle] = useState(false);
   // Elevated from useLanguageAdapter — shared between useSongAnalysis and useSongComposer
   const [songLanguage, setSongLanguage] = useState('');
+  const [genre, setGenre] = useState('');
+  const [tempo, setTempo] = useState('120');
+  const [instrumentation, setInstrumentation] = useState('');
+  const [rhythm, setRhythm] = useState('');
+  const [narrative, setNarrative] = useState('');
+  const [musicalPrompt, setMusicalPrompt] = useState('');
 
   return {
     title, setTitle,
@@ -23,5 +29,11 @@ export function useSongMeta() {
     newSectionName, setNewSectionName,
     shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     songLanguage, setSongLanguage,
+    genre, setGenre,
+    tempo, setTempo,
+    instrumentation, setInstrumentation,
+    rhythm, setRhythm,
+    narrative, setNarrative,
+    musicalPrompt, setMusicalPrompt,
   };
 }

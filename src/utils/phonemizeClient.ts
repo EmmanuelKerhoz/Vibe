@@ -28,12 +28,18 @@ export interface PhonemeResponse {
   metadata?: Record<string, unknown>;
 }
 
+const isPhonemizeEnabled = () => import.meta.env.VITE_PHONEMIZE_ENABLED !== 'false';
+
 /**
  * Call the phonemization microservice
  * Returns null if service is unavailable or request fails
  */
 export const phonemizeText = async (text: string, lang: string): Promise<PhonemeResponse | null> => {
   try {
+    if (!isPhonemizeEnabled()) {
+      return null;
+    }
+
     // Check if PHONEMIZE_API_URL is configured
     const apiUrl = import.meta.env.VITE_PHONEMIZE_API_URL;
     if (!apiUrl) {
@@ -67,6 +73,8 @@ export const phonemizeText = async (text: string, lang: string): Promise<Phoneme
  */
 export const isPhonemizeServiceAvailable = async (): Promise<boolean> => {
   try {
+    if (!isPhonemizeEnabled()) return false;
+
     const apiUrl = import.meta.env.VITE_PHONEMIZE_API_URL;
     if (!apiUrl) return false;
 
