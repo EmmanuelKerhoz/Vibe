@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
-import { DEFAULT_STRUCTURE } from './constants/editor';
+import { DEFAULT_RHYME_SCHEME, DEFAULT_STRUCTURE } from './constants/editor';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
@@ -40,7 +40,7 @@ function AppInnerContent() {
   const { language } = useLanguage();
   const { song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
     updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory, undo, redo,
-  } = useSongHistoryState(createEmptySong(DEFAULT_STRUCTURE, 'AABB'), DEFAULT_STRUCTURE);
+  } = useSongHistoryState(createEmptySong(DEFAULT_STRUCTURE, DEFAULT_RHYME_SCHEME), DEFAULT_STRUCTURE);
 
   const appState = useAppState();
   const {
