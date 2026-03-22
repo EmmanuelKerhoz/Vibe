@@ -13,7 +13,8 @@ export function useSongMeta() {
   // Elevated from useLanguageAdapter — shared between useSongAnalysis and useSongComposer
   const [songLanguage, setSongLanguage] = useState('');
   const [genre, setGenre] = useState('');
-  const [tempo, setTempo] = useState('120');
+  // NOTE: tempo is stored as string for HTML  compatibility.
+  const [tempo, setTempo] = useState<string>('120');
   const [instrumentation, setInstrumentation] = useState('');
   const [rhythm, setRhythm] = useState('');
   const [narrative, setNarrative] = useState('');
