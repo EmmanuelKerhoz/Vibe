@@ -389,25 +389,3 @@ export const getTopSimilarSongMatches = (
     .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp)
     .slice(0, limit);
 };
-
-/**
- * IPA-based song similarity stays at the Section[] detection layer.
- * For phoneme distance calculations, use ipaUtils.ts via ipaPipeline.ts.
- */
-export const calculateIPABasedSimilarity = (
-  currentSong: Section[],
-  candidateSong: Section[],
-): Omit<SimilarityMatch, 'versionId' | 'versionName' | 'title' | 'timestamp'> => {
-  // TODO: When phonemization service is available:
-  // 1. Convert lines to IPA using phonemizeText()
-  // 2. Extract rhyme nuclei
-  // 3. Calculate feature-weighted Levenshtein distance
-  // 4. Classify rhyme quality
-  // 5. Return enhanced similarity with IPA-based scoring
-
-  const result = calculateSimilarityWithMetadata(currentSong, candidateSong);
-  return {
-    ...result,
-    method: 'graphemic',
-  };
-};
