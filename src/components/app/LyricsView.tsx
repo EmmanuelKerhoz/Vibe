@@ -6,7 +6,6 @@ import { MarkupInput } from '../editor/MarkupInput';
 import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
-import { EditorContextProvider, type EditorHandlers } from '../../contexts/EditorContext';
 import { isLinkedChorusSectionName, isLinkedPreChorusPair, isPreChorusSectionName, SECTION_TYPE_OPTIONS } from '../../constants/sections';
 
 // Module-level helpers for tied section detection
@@ -179,7 +178,7 @@ export const LyricsView = memo(function LyricsView({
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
-  const editorHandlers: EditorHandlers = {
+  const editorHandlers = {
     moveSectionUp, moveSectionDown,
     moveLineUp, moveLineDown,
     addLineToSection, deleteLineFromSection,
@@ -187,7 +186,7 @@ export const LyricsView = memo(function LyricsView({
   };
 
   return (
-    <EditorContextProvider value={editorHandlers}>
+    <>
       {/* FIX #1: w-full + min-w-0 ensure the sections container expands to full available width */}
       <div className="w-full min-w-0 flex flex-col gap-1 pb-32">
         {isMarkupMode ? (
@@ -246,6 +245,7 @@ export const LyricsView = memo(function LyricsView({
                 section={section}
                 sectionIndex={sectionIndex}
                 songLength={song.length}
+                {...editorHandlers}
                 rhymeScheme={rhymeScheme}
                 RHYME_KEYS={RHYME_KEYS}
                 SECTION_TYPE_OPTIONS={SECTION_TYPE_OPTIONS}
@@ -273,6 +273,6 @@ export const LyricsView = memo(function LyricsView({
           ))
         )}
       </div>
-    </EditorContextProvider>
+    </>
   );
 });
