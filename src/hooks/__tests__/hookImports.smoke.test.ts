@@ -29,7 +29,6 @@ import { useAudioFeedback } from '../useAudioFeedback';
 import { useMobileLayout } from '../useMobileLayout';
 import { useUIState } from '../useUIState';
 import { useSongMeta } from '../useSongMeta';
-import { useMusicalMeta } from '../useMusicalMeta';
 import { useSessionState } from '../useSessionState';
 import { makeSongUpdater } from '../hookUtils';
 
@@ -99,7 +98,6 @@ describe('Hook import smoke-tests', () => {
       ['useMobileLayout', useMobileLayout],
       ['useUIState', useUIState],
       ['useSongMeta', useSongMeta],
-      ['useMusicalMeta', useMusicalMeta],
       ['useSessionState', useSessionState],
       ['makeSongUpdater', makeSongUpdater],
     ])('%s is a function', (_name, hook) => {

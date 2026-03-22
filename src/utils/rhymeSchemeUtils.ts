@@ -28,6 +28,7 @@ export const finalizeDetectedRhymeScheme = (letters: (string | null)[]): string 
  * Client-side rhyme scheme detector — fallback when the AI returns FREE.
  * @param lines - Array of line texts to analyze
  * @param langCode - Optional language code for tonal preservation
+ * @deprecated Use ipaPipeline.ts for async IPA-based rhyme scheme detection.
  */
 export const detectRhymeSchemeLocally = (lines: string[], langCode?: string): string | null => {
   const lyricLines = lines.filter(line => line.trim().length > 0);
