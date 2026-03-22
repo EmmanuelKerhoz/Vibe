@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
-import type { Section } from '../types';
+import type { LineDragInfo, Section } from '../types';
+import { useDrag } from '../contexts/DragContext';
 import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
 import { createSongExport, type ExportFormat } from '../utils/exportUtils';
@@ -31,19 +32,11 @@ type WindowWithSaveFilePicker = Window & {
   showSaveFilePicker?: (options: SaveFilePickerOptions) => Promise<SaveFilePickerHandle>;
 };
 
-type LineDragInfo = { sectionId: string; lineId: string } | null;
-
 type UseSongEditorParams = {
   song: Section[];
   structure: string[];
   newSectionName: string;
   setNewSectionName: Dispatch<SetStateAction<string>>;
-  draggedItemIndex: number | null;
-  setDraggedItemIndex: Dispatch<SetStateAction<number | null>>;
-  setDragOverIndex: Dispatch<SetStateAction<number | null>>;
-  draggedLineInfo: LineDragInfo;
-  setDraggedLineInfo: Dispatch<SetStateAction<LineDragInfo>>;
-  setDragOverLineInfo: Dispatch<SetStateAction<LineDragInfo>>;
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
   updateStructureWithHistory: (newStructure: string[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
@@ -88,12 +81,6 @@ export const useSongEditor = ({
   structure,
   newSectionName,
   setNewSectionName,
-  draggedItemIndex,
-  setDraggedItemIndex,
-  setDragOverIndex,
-  draggedLineInfo,
-  setDraggedLineInfo,
-  setDragOverLineInfo,
   updateState,
   updateStructureWithHistory,
   updateSongAndStructureWithHistory,
@@ -103,6 +90,15 @@ export const useSongEditor = ({
   openPasteModalWithText,
   playAudioFeedback,
 }: UseSongEditorParams) => {
+  const {
+    draggedItemIndex,
+    setDraggedItemIndex,
+    setDragOverIndex,
+    draggedLineInfo,
+    setDraggedLineInfo,
+    setDragOverLineInfo,
+  } = useDrag();
+
   const updateSong = useCallback((transform: (currentSong: Section[]) => Section[]) => {
     updateState(current => ({
       song: transform(current.song),

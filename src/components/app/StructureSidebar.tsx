@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { IconButton } from '../ui/IconButton';
 import { Input } from '../ui/Input';
 import { useTranslation } from '../../i18n';
+import { useDrag } from '../../contexts/DragContext';
 import { getSectionColor, getSectionDotColor, getSectionTextColor } from '../../utils/songUtils';
 import type { Section } from '../../types';
 import {
@@ -25,10 +26,6 @@ interface Props {
   setNewSectionName: (v: string) => void;
   isSectionDropdownOpen: boolean;
   setIsSectionDropdownOpen: (v: boolean) => void;
-  draggedItemIndex: number | null;
-  setDraggedItemIndex: (v: number | null) => void;
-  dragOverIndex: number | null;
-  setDragOverIndex: (v: number | null) => void;
   isGenerating: boolean;
   addStructureItem: (name?: string) => void;
   removeStructureItem: (idx: number) => void;
@@ -43,14 +40,18 @@ export function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
   structure, song, newSectionName, setNewSectionName,
   isSectionDropdownOpen, setIsSectionDropdownOpen,
-  draggedItemIndex, setDraggedItemIndex,
-  dragOverIndex, setDragOverIndex,
   isGenerating, addStructureItem, removeStructureItem,
   normalizeStructure, handleDrop, onScrollToSection,
   isMobileOverlay = false,
   className,
 }: Props) {
   const { t } = useTranslation();
+  const {
+    draggedItemIndex,
+    setDraggedItemIndex,
+    dragOverIndex,
+    setDragOverIndex,
+  } = useDrag();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleClose = (e: React.MouseEvent) => {

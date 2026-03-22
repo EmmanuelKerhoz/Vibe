@@ -33,14 +33,6 @@ interface LyricsViewProps {
   addInstruction: (sectionId: string, type: 'pre' | 'post') => void;
   removeInstruction: (sectionId: string, type: 'pre' | 'post', index: number) => void;
   regenerateSection: (sectionId: string) => void;
-  draggedItemIndex: number | null;
-  dragOverIndex: number | null;
-  draggedLineInfo: { sectionId: string; lineId: string } | null;
-  dragOverLineInfo: { sectionId: string; lineId: string } | null;
-  setDraggedItemIndex: (i: number | null) => void;
-  setDragOverIndex: (i: number | null) => void;
-  setDraggedLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
-  setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
@@ -65,9 +57,6 @@ export const LyricsView = memo(function LyricsView({
   adaptSectionLanguage,
   isRegeneratingSection, handleLineClick, updateLineText, handleLineKeyDown,
   handleInstructionChange, addInstruction, removeInstruction, regenerateSection,
-  draggedItemIndex, dragOverIndex, draggedLineInfo, dragOverLineInfo,
-  setDraggedItemIndex, setDragOverIndex,
-  setDraggedLineInfo, setDragOverLineInfo,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
   isMarkupMode, setIsMarkupMode, markupText, setMarkupText, markupTextareaRef,
   onOpenLibrary, onPasteLyrics, onGenerateSong,
@@ -267,10 +256,6 @@ export const LyricsView = memo(function LyricsView({
                 sectionTargetLanguage={sectionTargetLanguages[section.id] ?? 'English'}
                 onSectionTargetLanguageChange={onSectionTargetLanguageChange}
                 adaptSectionLanguage={adaptSectionLanguage}
-                draggedItemIndex={draggedItemIndex}
-                dragOverIndex={dragOverIndex}
-                draggedLineInfo={draggedLineInfo}
-                dragOverLineInfo={dragOverLineInfo}
                 isRegeneratingSection={isRegeneratingSection}
                 handleLineClick={handleLineClick}
                 updateLineText={updateLineText}
@@ -281,10 +266,6 @@ export const LyricsView = memo(function LyricsView({
                 regenerateSection={regenerateSection}
                 handleLineDragStart={handleLineDragStart}
                 handleLineDrop={handleLineDrop}
-                setDraggedItemIndex={setDraggedItemIndex}
-                setDragOverIndex={setDragOverIndex}
-                setDraggedLineInfo={setDraggedLineInfo}
-                setDragOverLineInfo={setDragOverLineInfo}
                 playAudioFeedback={playAudioFeedback}
                 handleDrop={handleDrop}
               />

@@ -12,6 +12,7 @@ import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import { useEditorContext } from '../../contexts/EditorContext';
+import { useDrag } from '../../contexts/DragContext';
 import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection } from '../../constants/sections';
 
 interface SectionEditorProps {
@@ -28,10 +29,6 @@ interface SectionEditorProps {
   sectionTargetLanguage?: string;
   onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
   adaptSectionLanguage?: (sectionId: string, lang: string) => void;
-  draggedItemIndex: number | null;
-  dragOverIndex: number | null;
-  draggedLineInfo: { sectionId: string; lineId: string } | null;
-  dragOverLineInfo: { sectionId: string; lineId: string } | null;
   isRegeneratingSection: (sectionId: string) => boolean;
   handleLineClick: (lineId: string) => void;
   updateLineText: (sectionId: string, lineId: string, text: string) => void;
@@ -41,10 +38,6 @@ interface SectionEditorProps {
   removeInstruction: (sectionId: string, type: 'pre' | 'post', index: number) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
   handleLineDrop: (sectionId: string, lineId: string) => void;
-  setDraggedItemIndex: (i: number | null) => void;
-  setDragOverIndex: (i: number | null) => void;
-  setDraggedLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
-  setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
   regenerateSection: (sectionId: string) => void;
@@ -92,16 +85,22 @@ export const SectionEditor = React.memo(function SectionEditor({
   sectionTargetLanguage = 'English',
   onSectionTargetLanguageChange,
   adaptSectionLanguage,
-  draggedItemIndex, dragOverIndex, draggedLineInfo, dragOverLineInfo,
   isRegeneratingSection,
   handleLineClick, updateLineText, handleLineKeyDown,
   handleInstructionChange, addInstruction, removeInstruction,
   regenerateSection,
   handleLineDragStart, handleLineDrop,
-  setDraggedItemIndex, setDragOverIndex, setDraggedLineInfo, setDragOverLineInfo,
   playAudioFeedback, handleDrop,
 }: SectionEditorProps) {
   const { t } = useTranslation();
+  const {
+    draggedItemIndex,
+    dragOverIndex,
+    draggedLineInfo,
+    dragOverLineInfo,
+    setDraggedItemIndex,
+    setDragOverIndex,
+  } = useDrag();
 
   const {
     moveSectionUp, moveSectionDown,
@@ -292,8 +291,6 @@ export const SectionEditor = React.memo(function SectionEditor({
                 handleLineKeyDown={handleLineKeyDown}
                 handleLineDragStart={handleLineDragStart}
                 handleLineDrop={handleLineDrop}
-                setDraggedLineInfo={setDraggedLineInfo}
-                setDragOverLineInfo={setDragOverLineInfo}
                 moveLineUp={moveLineUp}
                 moveLineDown={moveLineDown}
                 addLineToSection={addLineToSection}

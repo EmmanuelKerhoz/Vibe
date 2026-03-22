@@ -22,6 +22,8 @@ export interface Section {
   language?: string;
 }
 
+export type LineDragInfo = { sectionId: string; lineId: string } | null;
+
 export interface SongVersion {
   id: string;
   timestamp: number;

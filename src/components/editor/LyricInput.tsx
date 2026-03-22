@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2 } from 'lucide-react';
 import type { Line } from '../../types';
+import { useDrag } from '../../contexts/DragContext';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
 import { getRhymeTextColor } from '../../utils/songUtils';
@@ -23,8 +24,6 @@ export interface LyricInputProps {
   handleLineKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
   handleLineDrop: (sectionId: string, lineId: string) => void;
-  setDraggedLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
-  setDragOverLineInfo: (info: { sectionId: string; lineId: string } | null) => void;
   moveLineUp: (sectionId: string, lineId: string) => void;
   moveLineDown: (sectionId: string, lineId: string) => void;
   addLineToSection: (sectionId: string, afterLineId?: string) => void;
@@ -49,8 +48,6 @@ export const LyricInput = React.memo(function LyricInput({
   handleLineKeyDown,
   handleLineDragStart,
   handleLineDrop,
-  setDraggedLineInfo,
-  setDragOverLineInfo,
   moveLineUp,
   moveLineDown,
   addLineToSection,
@@ -58,6 +55,7 @@ export const LyricInput = React.memo(function LyricInput({
   playAudioFeedback,
 }: LyricInputProps) {
   const { t } = useTranslation();
+  const { setDraggedLineInfo, setDragOverLineInfo } = useDrag();
   const inputRef = useRef<HTMLInputElement>(null);
   const isSelected = selectedLineId === line.id;
   const rhymeTextColor = getRhymeTextColor(schemeLabel);
