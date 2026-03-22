@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { Section } from '../../types';
-import { countSyllables, detectRhymeSchemeLocally } from '../../utils/songUtils';
+import { detectRhymeSchemeLocally } from '../../utils/rhymeSchemeUtils';
 import { generateId } from '../../utils/idUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
+import { countSyllables } from '../../utils/syllableUtils';
 
 const computeSyllables = (text: string) =>
   text

@@ -2,7 +2,8 @@
  * Regression tests for shared lyric rime detection and suffix highlighting.
  */
 import { describe, it, expect } from 'vitest';
-import { detectRhymeSchemeLocally, splitRhymingSuffix } from '../../utils/songUtils';
+import { splitRhymingSuffix } from '../../utils/rhymeDetection';
+import { detectRhymeSchemeLocally } from '../../utils/rhymeSchemeUtils';
 
 describe('detectRhymeSchemeLocally', () => {
   it('certitudes and servitude share the same rhyme key → same scheme letter', () => {

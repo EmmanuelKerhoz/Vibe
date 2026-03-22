@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { countSyllables, getSectionColorHex, getSectionDotColor, splitRhymingSuffix } from './songUtils';
+import { getSectionColorHex, getSectionDotColor } from './songUtils';
+import { splitRhymingSuffix } from './rhymeDetection';
+import { countSyllables } from './syllableUtils';
 
 describe('countSyllables', () => {
   it('ignores punctuation-only tokens', () => {
