@@ -24,5 +24,8 @@
     "noEmit": true,
     "strict": true,
     "noUncheckedIndexedAccess": true
-  }
+  },
+  "exclude": [
+    "sauvegardes"
+  ]
 }
