@@ -1,3 +1,8 @@
+/**
+ * @status dormant — implémentation complète, non exposée dans l'UI.
+ * Candidat à intégration dans MusicalParamsPanel (métronome)
+ * et StatusBar / SettingsPanel (storage estimate).
+ */
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 /**

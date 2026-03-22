@@ -11,7 +11,6 @@ import { LcarsSelect } from '../ui/LcarsSelect';
 import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
-import { useEditorContext } from '../../contexts/EditorContext';
 import { useDrag } from '../../contexts/DragContext';
 import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection } from '../../constants/sections';
 
@@ -41,6 +40,14 @@ interface SectionEditorProps {
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
   regenerateSection: (sectionId: string) => void;
+  moveSectionUp: (sectionId: string) => void;
+  moveSectionDown: (sectionId: string) => void;
+  moveLineUp: (sectionId: string, lineId: string) => void;
+  moveLineDown: (sectionId: string, lineId: string) => void;
+  addLineToSection: (sectionId: string, afterLineId?: string) => void;
+  deleteLineFromSection: (sectionId: string, lineId: string) => void;
+  setSectionName: (sectionId: string, name: string) => void;
+  setSectionRhymeScheme: (sectionId: string, scheme: string) => void;
 }
 
 type MetaGroup = { kind: 'meta'; lines: Section['lines'] };
@@ -91,6 +98,10 @@ export const SectionEditor = React.memo(function SectionEditor({
   regenerateSection,
   handleLineDragStart, handleLineDrop,
   playAudioFeedback, handleDrop,
+  moveSectionUp, moveSectionDown,
+  moveLineUp, moveLineDown,
+  addLineToSection, deleteLineFromSection,
+  setSectionName, setSectionRhymeScheme,
 }: SectionEditorProps) {
   const { t } = useTranslation();
   const {
@@ -101,13 +112,6 @@ export const SectionEditor = React.memo(function SectionEditor({
     setDraggedItemIndex,
     setDragOverIndex,
   } = useDrag();
-
-  const {
-    moveSectionUp, moveSectionDown,
-    moveLineUp, moveLineDown,
-    addLineToSection, deleteLineFromSection,
-    setSectionName, setSectionRhymeScheme,
-  } = useEditorContext();
 
   const sectionName: string = section.name ?? '';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
