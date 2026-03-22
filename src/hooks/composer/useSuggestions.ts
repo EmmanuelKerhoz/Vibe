@@ -18,7 +18,7 @@ type UseSuggestionsParams = {
   mood: string;
   rhymeScheme: string;
   targetSyllables: number;
-  songLanguage: string;
+  songLanguage?: string;
   selectedLineId: string | null;
   updateState: (
     recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] },
@@ -31,7 +31,7 @@ export const useSuggestions = ({
   mood,
   rhymeScheme,
   targetSyllables,
-  songLanguage,
+  songLanguage = '',
   selectedLineId,
   updateState,
 }: UseSuggestionsParams) => {
@@ -83,6 +83,9 @@ export const useSuggestions = ({
       }
 
       const lang = songLanguage || 'English';
+      const exclusiveLanguageInstruction = songLanguage.trim()
+        ? `Write exclusively in ${songLanguage.trim()}.`
+        : '';
       let wasAborted = false;
       try {
         await withAbort(abortControllerRef, async (nextSignal) => {
@@ -120,7 +123,7 @@ Context:
 - Next Line: "${nextLine?.text || ''}" (Rhyme: ${nextLine?.rhyme || ''})${ipaConstraints}
 
 IMPORTANT: All 3 alternatives MUST be written in ${lang}.
-Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
+${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
 
           const response = await generateContentWithRetry({
             model: AI_MODEL_NAME,

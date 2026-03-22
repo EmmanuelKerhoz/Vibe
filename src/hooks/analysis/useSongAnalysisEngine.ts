@@ -104,7 +104,7 @@ export const useSongAnalysisEngine = ({
     song,
     topic,
     mood,
-    uiLang,
+    uiLanguage: uiLang,
     setTopic,
     setMood,
   });

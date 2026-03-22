@@ -14,7 +14,7 @@ type UseMusicalPromptParams = {
   instrumentation: string;
   rhythm: string;
   narrative: string;
-  songLanguage: string;
+  songLanguage?: string;
   setMusicalPrompt: (value: string) => void;
   setGenre: (value: string) => void;
   setTempo: (value: string) => void;
@@ -33,7 +33,7 @@ export const useMusicalPrompt = ({
   instrumentation,
   rhythm,
   narrative,
-  songLanguage,
+  songLanguage = '',
   setMusicalPrompt,
   setGenre,
   setTempo,
@@ -55,6 +55,9 @@ export const useMusicalPrompt = ({
     if (!title && !topic) return;
     setIsGeneratingMusicalPrompt(true);
     const lang = songLanguage || 'English';
+    const culturalStyleInstruction = songLanguage.trim()
+      ? `Treat ${songLanguage.trim()} as a cultural style lens so the generated prompt favors idiomatic references, vocal phrasing, and genre cues that feel authentic to that language (for example, French chanson, Korean pop, or Brazilian funk when relevant).`
+      : '';
     let wasAborted = false;
     try {
       await withAbort(promptAbortRef, async (nextSignal) => {
@@ -71,11 +74,13 @@ Rhythm & Groove: ${rhythm}
 Instrumentation: ${instrumentation}
 Narrative / Vibe: ${narrative}
 Song Language: ${lang}
+${culturalStyleInstruction}
 Lyrics:
 ${lyricsSnippet}
 
 Return a concise prompt (<= 900 characters) using this exact labeled, line-by-line format:
 STYLE: [style/genre lane and sonic fingerprint]
+LANGUAGE/CULTURAL LENS: [song language and the culturally coherent stylistic scene it should evoke]
 MOOD: [emotional tone + energy level]
 VOCALS: [lead style, gender/texture, harmonies/ad-libs]
 INSTRUMENTATION: [key instruments/sound sources + treatment]
@@ -84,6 +89,7 @@ STRUCTURE: [arrangement arc and section highlights]
 MIX/SPACE: [space/reverb, width, tonal balance, mix notes]
 REFERENCES: [2-3 artist or song anchors to emulate]
 DELIVERY: [what to ask the model to prioritize/output]
+Make the STYLE, LANGUAGE/CULTURAL LENS, and REFERENCES lines culturally coherent with the song language when it is specified.
 Keep the response in English (required by music AI tools) and avoid markdown or extra commentary outside of these labeled lines.`,
           signal: nextSignal,
         });
@@ -109,6 +115,9 @@ Keep the response in English (required by music AI tools) and avoid markdown or 
     if (song.length === 0 && !topic && !mood) return;
     setIsAnalyzingLyrics(true);
     const lang = songLanguage || 'English';
+    const culturalStyleInstruction = songLanguage.trim()
+      ? `Use ${songLanguage.trim()} as a cultural context clue so the suggested genre, instrumentation, rhythm, and narrative feel native to that language's musical traditions when appropriate.`
+      : '';
     let wasAborted = false;
     try {
       await withAbort(analysisAbortRef, async (nextSignal) => {
@@ -121,6 +130,7 @@ Song Title: ${title || '(untitled)'}
 Topic/Theme: ${topic || '(not specified)'}
 Mood: ${mood || '(not specified)'}
 Song Language: ${lang}
+${culturalStyleInstruction}
 Lyrics:
 ${lyricsText || '(no lyrics yet)'}
 

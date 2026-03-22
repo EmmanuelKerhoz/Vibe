@@ -66,7 +66,7 @@ describe('useBackgroundThemeAnalysis', () => {
       song,
       topic: 'Night ride',
       mood: 'Moody',
-      uiLang: 'French',
+      uiLanguage: 'French',
       setTopic,
       setMood,
     }));
@@ -94,5 +94,33 @@ describe('useBackgroundThemeAnalysis', () => {
     expect(setTopic).toHaveBeenCalledWith('City lights');
     expect(setMood).toHaveBeenCalledWith('Reflective');
     expect(result.current.isAnalyzingTheme).toBe(false);
+  });
+
+  it('defaults the analysis response language to English when uiLanguage is omitted', async () => {
+    const song = [
+      makeSection('verse-2', 'Verse 1', 'ko', [
+        '네온 아래 걷는 밤',
+        '조용히 번지는 맘',
+      ]),
+    ];
+
+    renderHook(() => useBackgroundThemeAnalysis({
+      song,
+      topic: 'Neon night',
+      mood: 'Dreamy',
+      setTopic: vi.fn(),
+      setMood: vi.fn(),
+    }));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+
+    expect(buildThemeAnalysisPrompt).toHaveBeenLastCalledWith({
+      song,
+      topic: 'Neon night',
+      mood: 'Dreamy',
+      uiLanguage: 'English',
+    });
   });
 });
