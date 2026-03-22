@@ -83,8 +83,9 @@ export const useSuggestions = ({
       }
 
       const lang = songLanguage || 'English';
-      const explicitSongLanguage = (songLanguage || '').trim()
-        ? `\n- Song Language: ${(songLanguage || '').trim()}`
+      const trimmedSongLanguage = (songLanguage || '').trim();
+      const explicitSongLanguage = trimmedSongLanguage
+        ? `\n- Song Language: ${trimmedSongLanguage}`
         : '';
       let wasAborted = false;
       try {

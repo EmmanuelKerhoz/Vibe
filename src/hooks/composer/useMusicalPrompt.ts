@@ -33,7 +33,7 @@ const ensureLanguageStyleLine = (prompt: string, songLanguage?: string): string 
     return `STYLE: ${trimmedLanguage} song\n${prompt}`;
   }
 
-  const styleLine = lines[styleLineIndex] ?? '';
+  const styleLine = lines[styleLineIndex];
   if (styleLine.toLowerCase().includes(trimmedLanguage.toLowerCase())) {
     return prompt;
   }
