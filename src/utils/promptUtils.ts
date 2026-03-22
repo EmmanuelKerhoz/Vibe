@@ -6,6 +6,20 @@
 import type { Section, Line } from '../types';
 import { runIPAPipeline } from './ipaPipeline';
 
+type BuildAdaptSongPromptParams = {
+  sourceSong: Section[];
+  newLanguage: string;
+  uiLanguage: string;
+  ipaEnhancedPrompt?: string;
+};
+
+type BuildAdaptSectionPromptParams = {
+  section: Section;
+  newLanguage: string;
+  uiLanguage: string;
+  ipaEnhancedPrompt?: string;
+};
+
 /**
  * Builds a rhyme-constrained prompt by analyzing existing lines with the IPA pipeline
  *
@@ -116,6 +130,25 @@ export const buildRhymeConstrainedPrompt = async (
 
   return prompt;
 };
+
+export const buildDetectLanguagePrompt = (songText: string): string =>
+  `Detect the language of these lyrics. Return ONLY the name of the language in English (e.g., "English", "French", "Spanish").\n\nLyrics:\n${songText.substring(0, 1000)}`;
+
+export const buildAdaptSongPrompt = ({
+  sourceSong,
+  newLanguage,
+  uiLanguage,
+  ipaEnhancedPrompt = '',
+}: BuildAdaptSongPromptParams): string =>
+  `You are an expert lyricist specializing in creative song adaptation across languages.\n\nYour task: Adapt the following song lyrics to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\n\nCRITICAL GUIDELINES:\n\n1. EMOTIONAL IMPACT FIRST\n   - Preserve the emotional journey and core message\n   - Prioritize how the lyrics make people FEEL over word-for-word accuracy\n   - Maintain the song's vibe, tone, and artistic intent\n\n2. NATURAL LANGUAGE\n   - Write as if the song was originally composed in ${newLanguage}\n   - Use idioms, expressions, and cultural references native to ${newLanguage}\n   - Avoid "translation-speak" - make it sound authentic and poetic\n   - Respect ${newLanguage} grammar, syntax, and natural word order\n\n3. POETIC STRUCTURE\n   - Maintain rhyme scheme quality (e.g., if AABB, keep clean rhymes in ${newLanguage})\n   - Match syllable counts when possible, but prioritize natural phrasing\n   - Preserve rhythm and singability\n   - Adapt imagery and metaphors to resonate in the target culture\n\n4. CULTURAL ADAPTATION\n   - Replace culture-specific references with equivalent concepts in ${newLanguage} culture\n   - Adapt humor, wordplay, and double meanings creatively\n   - Ensure themes and stories make sense to ${newLanguage} speakers\n\n5. TECHNICAL REQUIREMENTS\n   - Maintain the existing section structure (same section names)\n   - Return the FULL updated song in the same JSON format as input\n   - Update rhymingSyllables to reflect actual ${newLanguage} rhymes\n   - Adjust syllable counts to match the adapted lyrics\n   - Write the "concept" field for each line in ${uiLanguage}\n\nCurrent Song Data:\n${JSON.stringify(sourceSong)}${ipaEnhancedPrompt}\n\nReturn the fully adapted song that feels native to ${newLanguage} speakers while preserving the soul of the original.`;
+
+export const buildAdaptSectionPrompt = ({
+  section,
+  newLanguage,
+  uiLanguage,
+  ipaEnhancedPrompt = '',
+}: BuildAdaptSectionPromptParams): string =>
+  `You are an expert lyricist specializing in creative song adaptation across languages.\n\nAdapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\nKeep section name unchanged. Update rhymingSyllables. Adjust syllable counts.\nWrite the "concept" field for each line in ${uiLanguage}.\n\nCurrent Section Data:\n${JSON.stringify(section)}${ipaEnhancedPrompt}`;
 
 /**
  * Builds a rhyme-constrained prompt from a Section object

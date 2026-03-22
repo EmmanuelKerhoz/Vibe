@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Type } from '@google/genai';
-import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
+import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { cleanSectionName } from '../../utils/songUtils';
 import { detectRhymeSchemeLocally } from '../../utils/rhymeSchemeUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
 import type { Section } from '../../types';
+import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
 
 type UsePasteImportParams = {
   rhymeScheme: string;
@@ -36,7 +37,7 @@ export const usePasteImport = ({
   const [pastedText, setPastedText] = useState('');
 
   const abortControllerRef = useRef<AbortController | null>(null);
-  useEffect(() => { return () => { abortControllerRef.current?.abort(); }; }, []);
+  useEffect(() => { return () => { abortCurrent(abortControllerRef); }; }, []);
 
   const uiLang = uiLanguage === 'fr' ? 'French'
     : uiLanguage === 'es' ? 'Spanish'
@@ -50,13 +51,11 @@ export const usePasteImport = ({
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
 
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
     setIsAnalyzing(true);
+    let wasAborted = false;
     try {
-      const prompt = `Analyze the following lyrics and structure them into sections.
+      await withAbort(abortControllerRef, async (nextSignal) => {
+        const prompt = `Analyze the following lyrics and structure them into sections.
 IMPORTANT: You MUST ONLY use the following section names (you can append numbers like "Verse 1", "Chorus 2"):
 - Intro
 - Verse
@@ -92,107 +91,114 @@ For each line: exact lyric text (preserve [meta] brackets), rhyming syllables, r
 Lyrics:
 ${pastedText}`;
 
-      const response = await getAi().models.generateContent({
-        model: AI_MODEL_NAME,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              topic: { type: Type.STRING },
-              mood: { type: Type.STRING },
-              language: { type: Type.STRING },
-              sections: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    name: { type: Type.STRING },
-                    rhymeScheme: {
-                      type: Type.STRING,
-                      description: 'Rhyme scheme: AABB, ABAB, ABCB, AAAA, AABBA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, ABACBC, or FREE',
-                    },
-                    lines: {
-                      type: Type.ARRAY,
-                      items: {
-                        type: Type.OBJECT,
-                        properties: {
-                          text: { type: Type.STRING },
-                          rhymingSyllables: { type: Type.STRING },
-                          rhyme: { type: Type.STRING },
-                          syllables: { type: Type.INTEGER },
-                          concept: { type: Type.STRING },
+        const response = await generateContentWithRetry({
+          model: AI_MODEL_NAME,
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                topic: { type: Type.STRING },
+                mood: { type: Type.STRING },
+                language: { type: Type.STRING },
+                sections: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING },
+                      rhymeScheme: {
+                        type: Type.STRING,
+                        description: 'Rhyme scheme: AABB, ABAB, ABCB, AAAA, AABBA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, ABACBC, or FREE',
+                      },
+                      lines: {
+                        type: Type.ARRAY,
+                        items: {
+                          type: Type.OBJECT,
+                          properties: {
+                            text: { type: Type.STRING },
+                            rhymingSyllables: { type: Type.STRING },
+                            rhyme: { type: Type.STRING },
+                            syllables: { type: Type.INTEGER },
+                            concept: { type: Type.STRING },
+                          },
+                          required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
                         },
-                        required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
                       },
                     },
+                    required: ['name', 'lines', 'rhymeScheme'],
                   },
-                  required: ['name', 'lines', 'rhymeScheme'],
                 },
               },
+              required: ['topic', 'mood', 'language', 'sections'],
             },
-            required: ['topic', 'mood', 'language', 'sections'],
           },
-        },
-      });
+          signal: nextSignal,
+        });
 
-      if (controller.signal.aborted) return;
-
-      const data = safeJsonParse<any>(response.text || '{}', {});
-
-      if (data.topic) setTopic(data.topic);
-      if (data.mood) setMood(data.mood);
-      if (data.language) {
-        setSongLanguage(data.language);
-        setTargetLanguage(data.language);
-      }
-
-      const sections = data.sections || [];
-      if (sections.length === 0) {
-        throw new Error('No sections could be extracted. Please check the lyrics format.');
-      }
-
-      const songWithIds: Section[] = sections.map((section: any) => {
-        const lines: Section['lines'] = section.lines.map((line: any) => ({
-          ...line,
-          id: generateId(),
-          isManual: true,
-          isMeta: isPureMetaLine(line.text ?? ''),
-          text: (line.text ?? '') as string,
-        }));
-
-        // AI returned FREE — run local fallback detector before accepting it
-        let finalScheme: string = section.rhymeScheme || rhymeScheme;
-        if (finalScheme.toUpperCase() === 'FREE') {
-          const lyricTexts = lines.filter(l => !l.isMeta).map(l => l.text);
-          const detected = detectRhymeSchemeLocally(lyricTexts);
-          if (detected && detected.toUpperCase() !== 'FREE') {
-            finalScheme = detected;
-          }
+        if (nextSignal.aborted) {
+          wasAborted = true;
+          return;
         }
 
-        return {
-          ...section,
-          name: cleanSectionName(section.name),
-          id: generateId(),
-          rhymeScheme: finalScheme,
-          lines,
-        };
+        const data = safeJsonParse<any>(response.text || '{}', {});
+
+        if (data.topic) setTopic(data.topic);
+        if (data.mood) setMood(data.mood);
+        if (data.language) {
+          setSongLanguage(data.language);
+          setTargetLanguage(data.language);
+        }
+
+        const sections = data.sections || [];
+        if (sections.length === 0) {
+          throw new Error('No sections could be extracted. Please check the lyrics format.');
+        }
+
+        const songWithIds: Section[] = sections.map((section: any) => {
+          const lines: Section['lines'] = section.lines.map((line: any) => ({
+            ...line,
+            id: generateId(),
+            isManual: true,
+            isMeta: isPureMetaLine(line.text ?? ''),
+            text: (line.text ?? '') as string,
+          }));
+
+          let finalScheme: string = section.rhymeScheme || rhymeScheme;
+          if (finalScheme.toUpperCase() === 'FREE') {
+            const lyricTexts = lines.filter(l => !l.isMeta).map(l => l.text);
+            const detected = detectRhymeSchemeLocally(lyricTexts);
+            if (detected && detected.toUpperCase() !== 'FREE') {
+              finalScheme = detected;
+            }
+          }
+
+          return {
+            ...section,
+            name: cleanSectionName(section.name),
+            id: generateId(),
+            rhymeScheme: finalScheme,
+            lines,
+          };
+        });
+
+        const newStructure = sections.map((s: any) => cleanSectionName(s.name));
+        updateSongAndStructureWithHistory(songWithIds, newStructure);
+
+        requestAutoTitleGeneration();
+        clearLineSelection();
+        setIsPasteModalOpen(false);
+        setPastedText('');
       });
-
-      const newStructure = sections.map((s: any) => cleanSectionName(s.name));
-      updateSongAndStructureWithHistory(songWithIds, newStructure);
-
-      requestAutoTitleGeneration();
-      clearLineSelection();
-      setIsPasteModalOpen(false);
-      setPastedText('');
     } catch (error) {
-      if (controller.signal.aborted) return;
+      if (isAbortError(error)) {
+        wasAborted = true;
+        return;
+      }
       handleApiError(error, 'Failed to analyze lyrics. Please try again.');
     } finally {
-      if (!controller.signal.aborted) setIsAnalyzing(false);
+      if (!wasAborted) setIsAnalyzing(false);
     }
   };
 

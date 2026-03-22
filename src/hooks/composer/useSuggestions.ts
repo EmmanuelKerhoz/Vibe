@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Type } from '@google/genai';
 import type { Line, Section } from '../../types';
-import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
+import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
 import { countSyllables } from '../../utils/syllableUtils';
+import { withAbort, isAbortError } from '../../utils/withAbort';
 
 const computeSyllables = (text: string) =>
   text
@@ -36,6 +37,9 @@ export const useSuggestions = ({
 }: UseSuggestionsParams) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => { abortControllerRef.current?.abort(); }, []);
 
   const updateSong = useCallback(
     (transform: (currentSong: Section[]) => Section[]) => {
@@ -79,32 +83,32 @@ export const useSuggestions = ({
       }
 
       const lang = songLanguage || 'English';
+      let wasAborted = false;
       try {
-        // Build IPA-enhanced prompt if section has language and existing lines with rhymes
-        const langCode = currentSection.language || songLanguage;
-        const hasRhymedLines = currentSection.lines.some(line =>
-          line.rhyme && line.rhyme !== '' && line.rhyme !== 'FREE' && !line.isMeta
-        );
-        let ipaConstraints = '';
-        if (langCode && hasRhymedLines && currentLine.rhyme && currentLine.rhyme !== '' && currentLine.rhyme !== 'FREE') {
-          try {
-            const enrichedPrompt = await buildRhymeConstrainedPrompt(
-              currentSection.lines,
-              langCode,
-              currentSection.rhymeScheme || rhymeScheme
-            );
-            // Extract just the IPA constraints portion to append
-            if (enrichedPrompt.includes('PHONEMIC RHYME CONSTRAINTS:')) {
-              ipaConstraints = '\n\n' + enrichedPrompt.substring(
-                enrichedPrompt.indexOf('PHONEMIC RHYME CONSTRAINTS:')
+        await withAbort(abortControllerRef, async (nextSignal) => {
+          const langCode = currentSection.language || songLanguage;
+          const hasRhymedLines = currentSection.lines.some(line =>
+            line.rhyme && line.rhyme !== '' && line.rhyme !== 'FREE' && !line.isMeta
+          );
+          let ipaConstraints = '';
+          if (langCode && hasRhymedLines && currentLine.rhyme && currentLine.rhyme !== '' && currentLine.rhyme !== 'FREE') {
+            try {
+              const enrichedPrompt = await buildRhymeConstrainedPrompt(
+                currentSection.lines,
+                langCode,
+                currentSection.rhymeScheme || rhymeScheme
               );
+              if (enrichedPrompt.includes('PHONEMIC RHYME CONSTRAINTS:')) {
+                ipaConstraints = '\n\n' + enrichedPrompt.substring(
+                  enrichedPrompt.indexOf('PHONEMIC RHYME CONSTRAINTS:')
+                );
+              }
+            } catch (error) {
+              console.debug('Failed to build IPA-enhanced prompt, continuing without:', error);
             }
-          } catch (error) {
-            console.debug('Failed to build IPA-enhanced prompt, continuing without:', error);
           }
-        }
 
-        const prompt = `Generate 3 creative alternative versions for a lyric line.
+          const prompt = `Generate 3 creative alternative versions for a lyric line.
 Context:
 - Topic: ${topic}
 - Mood: ${mood}
@@ -118,24 +122,33 @@ Context:
 IMPORTANT: All 3 alternatives MUST be written in ${lang}.
 Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
 
-        const response = await getAi().models.generateContent({
-          model: AI_MODEL_NAME,
-          contents: prompt,
-          config: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
+          const response = await generateContentWithRetry({
+            model: AI_MODEL_NAME,
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
             },
-          },
-        });
+            signal: nextSignal,
+          });
 
-        const data = safeJsonParse(response.text || '[]', []);
-        setSuggestions(data);
+          if (nextSignal.aborted) {
+            wasAborted = true;
+            return;
+          }
+          setSuggestions(safeJsonParse(response.text || '[]', []));
+        });
       } catch (error) {
+        if (isAbortError(error)) {
+          wasAborted = true;
+          return;
+        }
         handleApiError(error, 'Failed to generate suggestions.');
       } finally {
-        setIsSuggesting(false);
+        if (!wasAborted) setIsSuggesting(false);
       }
     },
     [song, topic, mood, rhymeScheme, targetSyllables, songLanguage],

@@ -1,3 +1,5 @@
+import { withRetry, type RetryOptions } from './withRetry';
+
 const getErrorMessage = (error: unknown) => {
   if (error && typeof error === 'object' && 'message' in error) {
     return String((error as { message?: unknown }).message ?? '');
@@ -14,7 +16,7 @@ const getErrorCode = (error: unknown) => {
   return undefined;
 };
 
-type GenerateContentParams = {
+export type GenerateContentParams = {
   model: string;
   contents: string;
   config?: Record<string, unknown>;
@@ -25,7 +27,7 @@ export const AI_PROVIDER_NAME = 'Google Gemini';
 export const AI_MODEL_NAME = 'gemini-3-flash-preview';
 export const AI_KEY_ENV_VAR = 'GEMINI_API_KEY';
 
-type GenerateContentResponse = {
+export type GenerateContentResponse = {
   text: string;
 };
 
@@ -61,6 +63,11 @@ export const getAi = () => ({
     generateContent: proxyGenerateContent,
   },
 });
+
+export const generateContentWithRetry = (
+  params: GenerateContentParams,
+  retryOptions?: RetryOptions,
+) => withRetry(() => getAi().models.generateContent(params), retryOptions);
 
 export const safeJsonParse = <T>(text: string, fallback: T): T => {
   try {
