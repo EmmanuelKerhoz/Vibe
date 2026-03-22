@@ -16,6 +16,7 @@ import { phonemizeText, type PhonemeResponse } from './phonemizeClient';
 import { graphemeToIPA } from './g2pUtils';
 import { syllabifyIPA, extractRhymeNucleus, type IPASyllable } from './ipaSyllabification';
 import { calculateRhymeSimilarity, calculateRhymeSimilarityWithWeight, type RhymeSimilarityResult } from './ipaUtils';
+import { finalizeDetectedRhymeScheme, RHYME_SCHEME_LETTERS } from './rhymeSchemeUtils';
 
 /**
  * Complete IPA pipeline result
@@ -243,4 +244,49 @@ export const getRhymeQualityForLines = async (
   langCode: string
 ): Promise<RhymeSimilarityResult> => {
   return compareTextsWithIPA(line1, line2, langCode);
+};
+
+/**
+ * IPA-based rhyme scheme detector (experimental)
+ * Uses phonemic similarity instead of graphemic matching
+ * @param lines - Array of line texts to analyze
+ * @param langCode - Language code (required for IPA processing)
+ * @param threshold - Similarity threshold (default 0.75)
+ * @returns Promise<string | null> - The detected rhyme scheme
+ */
+export const detectRhymeSchemeLocallyIPA = async (
+  lines: string[],
+  langCode: string,
+  threshold = 0.75
+): Promise<string | null> => {
+  const lyricLines = lines.filter(line => line.trim().length > 0);
+  const n = lyricLines.length;
+  if (n < 2) return null;
+
+  const letters: (string | null)[] = new Array(n).fill(null);
+  let nextLetter = 0;
+
+  for (let i = 0; i < n; i++) {
+    if (letters[i] !== null) continue;
+    let matchedLetter: string | null = null;
+    for (let j = 0; j < i; j++) {
+      if (await doLinesRhymeIPA(lyricLines[i]!, lyricLines[j]!, langCode, threshold)) {
+        matchedLetter = letters[j]!;
+        break;
+      }
+    }
+    if (matchedLetter) {
+      letters[i] = matchedLetter;
+    } else {
+      letters[i] = RHYME_SCHEME_LETTERS[nextLetter] ?? String.fromCharCode(65 + nextLetter);
+      nextLetter++;
+    }
+    for (let k = i + 1; k < n; k++) {
+      if (letters[k] === null && await doLinesRhymeIPA(lyricLines[i]!, lyricLines[k]!, langCode, threshold)) {
+        letters[k] = letters[i]!;
+      }
+    }
+  }
+
+  return finalizeDetectedRhymeScheme(letters);
 };

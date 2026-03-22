@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
 import { Section } from '../types';
-import { cleanSectionName, countSyllables } from '../utils/songUtils';
+import { cleanSectionName } from '../utils/songUtils';
 import { isPureMetaLine, isSectionHeader, isEmptyBracketLine } from '../utils/metaUtils';
 import { generateId } from '../utils/idUtils';
+import { countSyllables } from '../utils/syllableUtils';
 
 interface UseMarkupEditorParams {
   song: Section[];

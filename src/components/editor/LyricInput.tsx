@@ -3,7 +3,8 @@ import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2 } from 'lucide-react
 import type { Line } from '../../types';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
-import { getRhymeTextColor, splitRhymingSuffix } from '../../utils/songUtils';
+import { getRhymeTextColor } from '../../utils/songUtils';
+import { splitRhymingSuffix } from '../../utils/rhymeDetection';
 
 export interface LyricInputProps {
   line: Line;

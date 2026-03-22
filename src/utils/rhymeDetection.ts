@@ -1,0 +1,227 @@
+import { isTonalLanguage } from '../constants/langFamilyMap';
+
+type WordMatch = {
+  lastWord: string;
+  normalizedWord: string;
+  wordStart: number;
+};
+
+type VowelSpan = { start: number; end: number };
+
+type RhymeCandidate = {
+  normalizedSuffix: string;
+};
+
+const VOWELS = 'aeiouy';
+
+const isVowel = (ch: string) => VOWELS.includes(ch);
+
+/**
+ * Strip Unicode accents and lowercase — with optional tonal preservation.
+ * For tonal languages (KWA, CRV families), tone diacritics are preserved.
+ * @param s - The string to normalize
+ * @param langCode - Optional language code for tonal language detection
+ */
+const normalizeWord = (s: string, langCode?: string): string => {
+  const normalized = s.normalize('NFD');
+
+  const stripDiacritics = isTonalLanguage(langCode || '')
+    ? normalized
+    : normalized.replace(/[\u0300-\u036f]/g, '');
+
+  return stripDiacritics.toLowerCase().replace(/[^a-z\u0300-\u036f]/g, '');
+};
+
+/**
+ * Extract the final word-like token from a lyric line, normalize it for
+ * comparisons, and keep the original start offset so UI highlighting can be
+ * mapped back onto the untouched line text.
+ * @param text - The text to extract from
+ * @param langCode - Optional language code for tonal preservation
+ */
+const extractLastWord = (text: string, langCode?: string): WordMatch | null => {
+  const trimmedText = text.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
+  if (!trimmedText) return null;
+
+  const lastWordMatch = /[\p{L}\p{N}]+$/u.exec(trimmedText);
+  if (!lastWordMatch) return null;
+
+  const lastWord = lastWordMatch[0];
+  const normalizedWord = normalizeWord(lastWord, langCode);
+  if (!normalizedWord) return null;
+
+  return {
+    lastWord,
+    normalizedWord,
+    wordStart: lastWordMatch.index,
+  };
+};
+
+/**
+ * Identify contiguous vowel groups inside a normalized word. These spans act
+ * as the candidate starting points for rime comparisons and fallback splits.
+ */
+const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
+  const vowelGroups: VowelSpan[] = [];
+  let i = 0;
+  while (i < normalizedWord.length) {
+    if (isVowel(normalizedWord[i]!)) {
+      const start = i;
+      while (i < normalizedWord.length && isVowel(normalizedWord[i]!)) i++;
+      vowelGroups.push({ start, end: i });
+    } else {
+      i++;
+    }
+  }
+  return vowelGroups;
+};
+
+/**
+ * Keep short endings intact, but normalise common trailing plural markers on
+ * longer endings so pairs like "certitudes"/"servitude" and
+ * "possessifs"/"adjectif" can still converge on the same rime family.
+ */
+const canonicalizeRhymeSuffix = (suffix: string): string => {
+  const s = suffix.length <= 3 ? suffix : suffix.replace(/[sx]$/, '');
+  if (/^oi/.test(s)) return 'oi';
+  if (/^(?:an|en|am|em)/.test(s)) return 'an';
+  if (/^(?:in|ain|ein|im|yn|ym)/.test(s)) return 'in';
+  if (/^(?:on|om)/.test(s)) return 'on';
+  if (/^(?:un|um)/.test(s)) return 'un';
+  if (/^(?:eu|oeu|oe)/.test(s)) return 'eu';
+  if (/^ou/.test(s)) return 'ou';
+  if (/^(?:au|eau)/.test(s)) return 'au';
+  return s;
+};
+
+const getRhymeCandidates = (text: string, langCode?: string): RhymeCandidate[] => {
+  const word = extractLastWord(text, langCode);
+  if (!word) return [];
+
+  const vowelGroups = getVowelGroups(word.normalizedWord);
+  if (vowelGroups.length === 0) {
+    return [{
+      normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord),
+    }];
+  }
+
+  return vowelGroups.map(({ start }) => ({
+    normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord.slice(start)),
+  }));
+};
+
+/**
+ * Compare two normalized suffixes from right to left and return the longest
+ * suffix they share verbatim.
+ */
+const getLongestCommonSuffix = (a: string, b: string): string => {
+  let sharedLength = 0;
+  while (
+    sharedLength < a.length
+    && sharedLength < b.length
+    && a[a.length - 1 - sharedLength] === b[b.length - 1 - sharedLength]
+  ) {
+    sharedLength++;
+  }
+  return sharedLength > 0 ? a.slice(a.length - sharedLength) : '';
+};
+
+/**
+ * Require at least 2 shared characters for general rhyme matching, but allow
+ * exact one-vowel matches for short endings such as "zéro"/"ego" so we do not
+ * discard valid monosyllabic vowel rhymes.
+ */
+const isSharedRhymeStrongEnough = (suffix: string, exactMatch: boolean): boolean =>
+  suffix.length >= 2 || (exactMatch && suffix.length === 1 && /^[aeiouy]$/.test(suffix));
+
+/**
+ * Compare every vowel-group-based candidate suffix from two lines and keep the
+ * longest shared rime that is strong enough to count as an actual rhyme.
+ * @param a - First line text
+ * @param b - Second line text
+ * @param langCode - Optional language code for tonal preservation
+ */
+const findBestSharedRhymeSuffix = (a: string, b: string, langCode?: string): string | null => {
+  const aCandidates = getRhymeCandidates(a, langCode);
+  const bCandidates = getRhymeCandidates(b, langCode);
+  let bestMatch = '';
+
+  for (const aCandidate of aCandidates) {
+    for (const bCandidate of bCandidates) {
+      const exactMatch = aCandidate.normalizedSuffix === bCandidate.normalizedSuffix;
+      const sharedSuffix = exactMatch
+        ? aCandidate.normalizedSuffix
+        : getLongestCommonSuffix(aCandidate.normalizedSuffix, bCandidate.normalizedSuffix);
+      if (!isSharedRhymeStrongEnough(sharedSuffix, exactMatch)) continue;
+      if (sharedSuffix.length > bestMatch.length) bestMatch = sharedSuffix;
+    }
+  }
+
+  return bestMatch || null;
+};
+
+/**
+ * Split a line at the start of a normalized suffix found inside its last word,
+ * preserving the original spelling and trailing punctuation in the rhyming
+ * fragment returned to the UI overlay.
+ */
+const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, langCode?: string): { before: string; rhyme: string } | null => {
+  const word = extractLastWord(text, langCode);
+  if (!word) return null;
+
+  const suffixStart = word.normalizedWord.lastIndexOf(normalizedSuffix);
+  if (suffixStart < 0) return null;
+
+  const absoluteStart = word.wordStart + suffixStart;
+  return {
+    before: text.slice(0, absoluteStart),
+    rhyme: text.slice(absoluteStart),
+  };
+};
+
+/**
+ * When no matching peer line is available, fall back to highlighting from the
+ * last vowel group of the word so the UI still marks a plausible rhyming tail.
+ */
+const getFallbackRhymingSuffix = (text: string, langCode?: string): { before: string; rhyme: string } | null => {
+  const word = extractLastWord(text, langCode);
+  if (!word) return null;
+
+  const vowelGroups = getVowelGroups(word.normalizedWord);
+  if (vowelGroups.length === 0) {
+    return {
+      before: text.slice(0, word.wordStart),
+      rhyme: text.slice(word.wordStart),
+    };
+  }
+
+  return splitLineAtNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start), langCode);
+};
+
+export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langCode?: string): { before: string; rhyme: string } | null => {
+  let bestSuffix: string | null = null;
+
+  for (const peerLine of peerLines) {
+    const sharedSuffix = findBestSharedRhymeSuffix(text, peerLine, langCode);
+    if (sharedSuffix && (!bestSuffix || sharedSuffix.length > bestSuffix.length)) {
+      bestSuffix = sharedSuffix;
+    }
+  }
+
+  if (bestSuffix) {
+    const split = splitLineAtNormalizedSuffix(text, bestSuffix, langCode);
+    if (split) return split;
+  }
+
+  return getFallbackRhymingSuffix(text, langCode);
+};
+
+/**
+ * Two lines rhyme when they share a strong enough rime suffix derived from
+ * vowel-group candidates. This keeps scheme detection aligned with the same
+ * rime logic used by the UI highlight overlay. Exact one-vowel matches are
+ * allowed for short words such as "zéro" / "ego", while longer matches use a
+ * suffix overlap.
+ */
+export const doLinesRhymeGraphemic = (a: string, b: string, langCode?: string): boolean =>
+  findBestSharedRhymeSuffix(a, b, langCode) !== null;

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
-import { cleanSectionName, detectRhymeSchemeLocally } from '../../utils/songUtils';
+import { cleanSectionName } from '../../utils/songUtils';
+import { detectRhymeSchemeLocally } from '../../utils/rhymeSchemeUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
 import type { Section } from '../../types';

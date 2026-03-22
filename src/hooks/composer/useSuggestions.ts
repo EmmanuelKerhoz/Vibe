@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import { Type } from '@google/genai';
 import type { Line, Section } from '../../types';
 import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils/aiUtils';
-import { countSyllables } from '../../utils/songUtils';
 import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
+import { countSyllables } from '../../utils/syllableUtils';
 
 const computeSyllables = (text: string) =>
   text
