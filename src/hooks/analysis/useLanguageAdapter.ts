@@ -70,6 +70,8 @@ export const useLanguageAdapter = ({
   const autoDetectFiredRef = useRef(false);
   const firstSectionIdRef  = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const detectRunIdRef = useRef(0);
+  const adaptRunIdRef = useRef(0);
 
   const updateSong = makeSongUpdater(updateState);
 
@@ -111,6 +113,7 @@ export const useLanguageAdapter = ({
   const detectLanguage = async () => {
     if (song.length === 0) return;
 
+    const runId = ++detectRunIdRef.current;
     setIsDetectingLanguage(true);
     let wasAborted = false;
     try {
@@ -143,7 +146,9 @@ export const useLanguageAdapter = ({
       }
       console.error('Language detection error:', error);
     } finally {
-      if (!wasAborted) setIsDetectingLanguage(false);
+      if (detectRunIdRef.current === runId) {
+        setIsDetectingLanguage(false);
+      }
     }
   };
 
@@ -152,6 +157,7 @@ export const useLanguageAdapter = ({
 
     // Freeze song at start to prevent race conditions
     const sourceSong = [...song];
+    const runId = ++adaptRunIdRef.current;
 
     const sourceLanguage = songLanguage || 'unknown';
     const progressLabel  = `${sourceLanguage} \u2192 ${newLanguage}`;
@@ -279,7 +285,9 @@ export const useLanguageAdapter = ({
       console.error('Language adaptation error:', error);
       setAdaptationProgress({ active: 'failed', steps: PIPELINE_STEPS, label: progressLabel });
     } finally {
-      if (!wasAborted) setIsAdaptingLanguage(false);
+      if (adaptRunIdRef.current === runId) {
+        setIsAdaptingLanguage(false);
+      }
     }
   };
 
@@ -287,6 +295,7 @@ export const useLanguageAdapter = ({
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
 
+    const runId = ++adaptRunIdRef.current;
     const sourceLanguage = songLanguage || 'unknown';
     const progressLabel  = `${section.name}: ${sourceLanguage} \u2192 ${newLanguage}`;
 
@@ -417,7 +426,9 @@ export const useLanguageAdapter = ({
       console.error('Section language adaptation error:', error);
       setAdaptationProgress({ active: 'failed', steps: PIPELINE_STEPS, label: progressLabel });
     } finally {
-      if (!wasAborted) setIsAdaptingLanguage(false);
+      if (adaptRunIdRef.current === runId) {
+        setIsAdaptingLanguage(false);
+      }
     }
   };
 
