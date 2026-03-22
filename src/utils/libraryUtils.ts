@@ -312,7 +312,8 @@ export const parseTextToSections = (text: string): Section[] => {
     let contentLines = lines;
     const firstLine = (lines[0] ?? '').trim();
     if ((firstLine.startsWith('[') && firstLine.endsWith(']')) || (firstLine.startsWith('**[') && firstLine.endsWith(']**'))) {
-      sectionName = firstLine.replace(/^\*\*\[|^\[|\]\*\*$|\]$/g, '');
+      const headerMatch = firstLine.match(/^(?:\*\*)?\[(.+?)\](?:\*\*)?$/);
+      sectionName = headerMatch?.[1] ?? sectionName;
       contentLines = lines.slice(1);
     }
     const sectionLines = contentLines
