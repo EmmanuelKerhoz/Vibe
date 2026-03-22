@@ -1,6 +1,6 @@
 import type { Line, Section } from '../types';
 import { getSectionFamily } from '../constants/sections';
-import { isPureMetaLine } from './metaUtils';
+import { isPureMetaLine, unwrapBracketToken } from './metaUtils';
 import { countSyllables } from './syllableUtils';
 import { detectRhymeSchemeLocally } from './rhymeSchemeUtils';
 
@@ -103,7 +103,7 @@ export { DEFAULT_STRUCTURE, MUSICAL_INSTRUCTIONS } from '../constants/editor';
 
 export const cleanSectionName = (name: string) => {
   if (!name) return '';
-  return name.replace(/[\[\]\*]/g, '').trim();
+  return (unwrapBracketToken(name) ?? name).replace(/[\[\]［］【】「」『』〔〕〈〉《》\*]/g, '').trim();
 };
 
 const computeLineSyllables = (text: string): number =>

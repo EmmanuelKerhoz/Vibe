@@ -1,6 +1,10 @@
 /**
  * Known section-header keywords that must NOT be treated as meta-instructions.
  */
+export const BRACKET_TOKEN_REGEX = /[\[［【「『〔〈《]([^\]］】」』〕〉》]+)[\]］】」』〕〉》]/g;
+export const BRACKETED_LINE_REGEX = /^(?:\*\*)?[\[［【「『〔〈《](.+?)[\]］】」』〕〉》](?:\*\*)?$/;
+const EMPTY_BRACKET_LINE_REGEX = /^[\[［【「『〔〈《]\s*[\]］】」』〕〉》]$/;
+
 const SECTION_HEADER_PATTERNS = [
   /^intro/i,
   /^verse/i,
@@ -33,6 +37,11 @@ const SECTION_HEADER_PATTERNS = [
 export const isSectionHeader = (inner: string): boolean =>
   SECTION_HEADER_PATTERNS.some(re => re.test(inner.trim()));
 
+export const unwrapBracketToken = (value: string): string | null => {
+  const match = value.trim().match(BRACKETED_LINE_REGEX);
+  return match?.[1]?.trim() || null;
+};
+
 /**
  * Returns true if a raw text line is a pure bracketed meta-instruction line.
  *
@@ -55,11 +64,12 @@ export const isPureMetaLine = (line: string): boolean => {
   if (!trimmed) return false;
 
   // Must contain at least one opening bracket
-  if (!trimmed.includes('[')) return false;
+  if (!BRACKET_TOKEN_REGEX.test(trimmed)) return false;
+  BRACKET_TOKEN_REGEX.lastIndex = 0;
 
   // Collect all bracket tokens and verify nothing exists outside them
   const tokens: string[] = [];
-  const regex = /\[([^\]]+)\]/g;
+  const regex = BRACKET_TOKEN_REGEX;
   let last = 0;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(trimmed)) !== null) {
@@ -87,7 +97,7 @@ export const isPureMetaLine = (line: string): boolean => {
 export const isEmptyBracketLine = (line: string): boolean => {
   const t = line.trim();
   if (t === '[]') return true;
-  const m = t.match(/^\[\s*\]$/);
+  const m = t.match(EMPTY_BRACKET_LINE_REGEX);
   return m !== null;
 };
 
@@ -109,14 +119,16 @@ export const tokenizeMetaInline = (
   const trimmed = text.trim();
 
   // Fast path: no brackets at all — treat entire text as meta token
-  if (!trimmed.includes('[')) {
+  if (!BRACKET_TOKEN_REGEX.test(trimmed)) {
+    BRACKET_TOKEN_REGEX.lastIndex = 0;
     const content = trimmed;
     if (content) return [{ text: content, isMeta: true }];
     return [];
   }
+  BRACKET_TOKEN_REGEX.lastIndex = 0;
 
   const parts: Array<{ text: string; isMeta: boolean }> = [];
-  const regex = /\[([^\]]+)\]/g;
+  const regex = BRACKET_TOKEN_REGEX;
   let last = 0;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(text)) !== null) {

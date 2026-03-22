@@ -41,6 +41,7 @@ interface LyricsViewProps {
   markupText: string;
   setMarkupText: (v: string) => void;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  markupDirection?: 'ltr' | 'rtl';
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
   onGenerateSong: () => void;
@@ -57,7 +58,7 @@ export const LyricsView = memo(function LyricsView({
   isRegeneratingSection, handleLineClick, updateLineText, handleLineKeyDown,
   handleInstructionChange, addInstruction, removeInstruction, regenerateSection,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
-  isMarkupMode, setIsMarkupMode, markupText, setMarkupText, markupTextareaRef,
+  isMarkupMode, setIsMarkupMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
   onOpenLibrary, onPasteLyrics, onGenerateSong,
 }: LyricsViewProps) {
   const { t } = useTranslation();
@@ -208,6 +209,7 @@ export const LyricsView = memo(function LyricsView({
               value={markupText}
               onChange={(e) => setMarkupText(e.target.value)}
               textareaRef={markupTextareaRef}
+              direction={markupDirection}
               className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
               spellCheck={false}
             />

@@ -200,23 +200,48 @@ export const findSimilarAssetsInLibrary = async (
  * Extract plain text from a .docx file (Office Open XML).
  */
 export const extractTextFromDocx = async (file: File): Promise<string> => {
+  const payload = await extractImportPayloadFromDocx(file);
+  return payload.text;
+};
+
+export type ImportedSongFilePayload = {
+  text: string;
+  songLanguage: string;
+};
+
+export const extractImportPayloadFromText = (text: string): ImportedSongFilePayload => {
+  const normalizedText = text.replace(/^\uFEFF/, '');
+  const match = normalizedText.match(/^#\s*lang:\s*(.+?)\s*(?:\r?\n){1,2}/i);
+  if (!match) return { text: normalizedText, songLanguage: '' };
+  return {
+    text: normalizedText.slice(match[0].length),
+    songLanguage: match[1]?.trim() ?? '',
+  };
+};
+
+export const extractImportPayloadFromDocx = async (file: File): Promise<ImportedSongFilePayload> => {
   try {
     const { unzipSync, strFromU8 } = await import('fflate');
     const buffer = await file.arrayBuffer();
     const unzipped = unzipSync(new Uint8Array(buffer));
     const docXml = unzipped['word/document.xml'];
-    if (!docXml) return '';
+    if (!docXml) return { text: '', songLanguage: '' };
     const xml = strFromU8(docXml);
     const paragraphs = xml.split(/<\/w:p>/);
-    return paragraphs
+    const text = paragraphs
       .map(p => {
         const texts = [...p.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g)].map(m => m[1] ?? '');
         return texts.join('');
       })
       .filter(t => t.trim().length > 0)
       .join('\n');
+    const coreXml = unzipped['docProps/core.xml'];
+    const songLanguage = coreXml
+      ? (strFromU8(coreXml).match(/<dc:language>([^<]+)<\/dc:language>/)?.[1] ?? '').trim()
+      : '';
+    return { text, songLanguage };
   } catch {
-    return '';
+    return { text: '', songLanguage: '' };
   }
 };
 
@@ -224,20 +249,30 @@ export const extractTextFromDocx = async (file: File): Promise<string> => {
  * Extract plain text from a .odt file (ODF).
  */
 export const extractTextFromOdt = async (file: File): Promise<string> => {
+  const payload = await extractImportPayloadFromOdt(file);
+  return payload.text;
+};
+
+export const extractImportPayloadFromOdt = async (file: File): Promise<ImportedSongFilePayload> => {
   try {
     const { unzipSync, strFromU8 } = await import('fflate');
     const buffer = await file.arrayBuffer();
     const unzipped = unzipSync(new Uint8Array(buffer));
     const contentXml = unzipped['content.xml'];
-    if (!contentXml) return '';
+    if (!contentXml) return { text: '', songLanguage: '' };
     const xml = strFromU8(contentXml);
     const paragraphs = xml.split(/<\/text:p>/);
-    return paragraphs
+    const text = paragraphs
       .map(p => p.replace(/<[^>]+>/g, '').trim())
       .filter(t => t.length > 0)
       .join('\n');
+    const metaXml = unzipped['meta.xml'];
+    const songLanguage = metaXml
+      ? (strFromU8(metaXml).match(/<dc:language>([^<]+)<\/dc:language>/)?.[1] ?? '').trim()
+      : '';
+    return { text, songLanguage };
   } catch {
-    return '';
+    return { text: '', songLanguage: '' };
   }
 };
 

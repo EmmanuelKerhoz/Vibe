@@ -5,7 +5,7 @@ import { useDrag } from '../contexts/DragContext';
 import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
 import { createSongExport, type ExportFormat } from '../utils/exportUtils';
-import { extractTextFromDocx, extractTextFromOdt } from '../utils/libraryUtils';
+import { extractImportPayloadFromDocx, extractImportPayloadFromOdt, extractImportPayloadFromText } from '../utils/libraryUtils';
 import {
   getSectionTypeKey,
   isAnchoredEndSection,
@@ -43,6 +43,7 @@ type UseSongEditorParams = {
   title: string;
   topic: string;
   mood: string;
+  songLanguage: string;
   openPasteModalWithText: (text: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
 };
@@ -87,6 +88,7 @@ export const useSongEditor = ({
   title,
   topic,
   mood,
+  songLanguage,
   openPasteModalWithText,
   playAudioFeedback,
 }: UseSongEditorParams) => {
@@ -336,7 +338,7 @@ export const useSongEditor = ({
 
   const exportSong = useCallback(async (format: ExportFormat) => {
     if (song.length === 0) return;
-    const { blob, filename } = createSongExport({ song, title, topic, mood, format });
+    const { blob, filename } = createSongExport({ song, title, topic, mood, songLanguage, format });
     const saveWithPicker = async () => {
       const filePicker = (window as WindowWithSaveFilePicker).showSaveFilePicker;
       if (!filePicker) return false;
@@ -364,18 +366,19 @@ export const useSongEditor = ({
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-  }, [song, title, topic, mood]);
+  }, [song, title, topic, mood, songLanguage]);
 
   const loadFileForAnalysis = useCallback(async (file: File) => {
-    let text = '';
+    let payload = { text: '', songLanguage: '' };
     if (file.name.endsWith('.docx')) {
-      text = await extractTextFromDocx(file);
+      payload = await extractImportPayloadFromDocx(file);
     } else if (file.name.endsWith('.odt')) {
-      text = await extractTextFromOdt(file);
+      payload = await extractImportPayloadFromOdt(file);
     } else {
-      text = await file.text();
+      payload = extractImportPayloadFromText(await file.text());
     }
-    if (text) openPasteModalWithText(text);
+    if (payload.text) openPasteModalWithText(payload.text);
+    return payload;
   }, [openPasteModalWithText]);
 
   const introOutroSortedRef = useRef<string | null>(null);

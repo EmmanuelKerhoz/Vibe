@@ -37,14 +37,14 @@ const INITIAL_INDEX: WebSimilarityIndex = {
   error: null,
 };
 
-export const useSimilarityEngine = (sections: Section[], title = '') => {
+export const useSimilarityEngine = (sections: Section[], title = '', songLanguage = '') => {
   const [index, setIndex] = useState<WebSimilarityIndex>(INITIAL_INDEX);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const lastFingerprintRef = useRef<string>('');
   const effectiveTitle = title.trim() === DEFAULT_TITLE ? '' : title;
 
-  const runSearch = useCallback(async (currentSections: Section[], currentTitle: string) => {
+  const runSearch = useCallback(async (currentSections: Section[], currentTitle: string, currentSongLanguage: string) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -52,7 +52,7 @@ export const useSimilarityEngine = (sections: Section[], title = '') => {
     setIndex(prev => ({ ...prev, status: 'running', error: null }));
 
     try {
-      const candidates = await runSearchTree(currentSections, currentTitle, controller.signal);
+      const candidates = await runSearchTree(currentSections, currentTitle, currentSongLanguage, controller.signal);
       if (controller.signal.aborted) return;
       setIndex({
         candidates,
@@ -93,13 +93,13 @@ export const useSimilarityEngine = (sections: Section[], title = '') => {
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      runSearch(sections, effectiveTitle);
+      runSearch(sections, effectiveTitle, songLanguage);
     }, DEBOUNCE_MS);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [effectiveTitle, sections, runSearch]);
+  }, [effectiveTitle, sections, runSearch, songLanguage]);
 
   useEffect(() => {
     return () => {
@@ -111,8 +111,8 @@ export const useSimilarityEngine = (sections: Section[], title = '') => {
   /** Force immediate search (e.g. on user demand) */
   const triggerNow = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    runSearch(sections, effectiveTitle);
-  }, [effectiveTitle, sections, runSearch]);
+    runSearch(sections, effectiveTitle, songLanguage);
+  }, [effectiveTitle, sections, runSearch, songLanguage]);
 
   return { index, triggerNow, resetIndex };
 };

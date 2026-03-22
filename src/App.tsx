@@ -88,8 +88,8 @@ function AppInnerContent() {
     setIsVersionsModalOpen, setPromptModal, setTitle, setTitleOrigin, setTopic, setMood,
   });
   const { playAudioFeedback } = useAudioFeedback(audioFeedback);
-  const { scrollToSection, handleMarkupToggle } = useMarkupEditor({
-    song, isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
+  const { scrollToSection, handleMarkupToggle, markupDirection } = useMarkupEditor({
+    song, songLanguage, isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   });
 
   const isGeneratingRef = useRef(false);
@@ -143,6 +143,7 @@ function AppInnerContent() {
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
   } = useSongEditor({ song, structure, newSectionName, setNewSectionName,
     updateState, updateStructureWithHistory, updateSongAndStructureWithHistory, title, topic, mood,
+    songLanguage,
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); }, playAudioFeedback,
   });
 
@@ -154,13 +155,13 @@ function AppInnerContent() {
     songLength: song.length,
   });
   const { generateSuggestion: handleSurprise, isGeneratingSuggestion: isSurprising, resetSuggestionCycle } =
-    useTopicMoodSuggester(topic, mood, setTopic, setMood);
+    useTopicMoodSuggester(topic, mood, songLanguage, setTopic, setMood);
   const handleSurpriseClick = useCallback(async () => {
     const suggestion = await handleSurprise();
     if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }
   }, [handleSurprise, setTopic, setMood]);
 
-  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title);
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title, songLanguage);
 
   useKeyboardShortcuts({
     promptModal,
@@ -288,6 +289,7 @@ function AppInnerContent() {
     setIsImportModalOpen,
     setIsPasteModalOpen,
     setPastedText,
+    setSongLanguage,
   });
 
   // ── ModalProvider injection ───────────────────────────────────────────────
@@ -391,6 +393,7 @@ function AppInnerContent() {
                       handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
                       isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
                       markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
+                      markupDirection={markupDirection}
                       onOpenLibrary={handleOpenSaveToLibraryModal}
                       onPasteLyrics={() => setIsPasteModalOpen(true)}
                       onGenerateSong={handleGlobalRegenerate}

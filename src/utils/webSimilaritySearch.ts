@@ -10,6 +10,7 @@
 import type { Section } from '../types';
 import type { WebSimilarityCandidate, SearchTreeNode, SearchProvider } from '../types/webSimilarity';
 import { normalizeText } from './similarityUtils';
+import { languageNameToCode } from '../constants/langFamilyMap';
 
 const decodeHtmlEntities = (html: string): string =>
   html
@@ -120,6 +121,13 @@ export const PROVIDERS: Record<SearchProvider, (q: string, signal?: AbortSignal)
 const MAX_CANDIDATES = 20;
 const MAX_TITLE_SCORE_CONTRIBUTION = 0.08;
 
+const biasQueryByLanguage = (query: string, songLanguage = ''): string => {
+  const trimmedQuery = query.trim();
+  const languageCode = (languageNameToCode(songLanguage) ?? songLanguage).trim().toLowerCase();
+  if (!trimmedQuery || !languageCode) return trimmedQuery;
+  return `${trimmedQuery} ${languageCode}`;
+};
+
 const deduplicateNodes = (nodes: SearchTreeNode[]): SearchTreeNode[] => {
   const seen = new Set<string>();
   return nodes.filter(n => {
@@ -152,6 +160,7 @@ const sequentialWithDelay = async (
 export const runSearchTree = async (
   sections: Section[],
   title = '',
+  songLanguage = '',
   abortSignal?: AbortSignal,
 ): Promise<WebSimilarityCandidate[]> => {
   if (sections.length === 0 && title.trim().length === 0) return [];
@@ -163,7 +172,7 @@ export const runSearchTree = async (
 
   const safeSearch = async (provider: SearchProvider, query: string) => {
     if (abortSignal?.aborted) return;
-    const nodes = await PROVIDERS[provider](query, abortSignal);
+    const nodes = await PROVIDERS[provider](biasQueryByLanguage(query, songLanguage), abortSignal);
     allNodes.push(...nodes);
   };
 
