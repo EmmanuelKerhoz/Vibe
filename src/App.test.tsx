@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import type { WebSimilarityCandidate, WebSimilarityIndex } from './types/webSimilarity';
 
 const mockAppState = vi.hoisted(() => ({
   initialActiveTab: 'lyrics' as 'lyrics' | 'musical',
@@ -12,7 +13,7 @@ const mockAppState = vi.hoisted(() => ({
   initialIsTablet: false,
   song: [] as Array<{ id: string; name: string; lines: Array<{ id: string; text: string; isMeta: boolean }> }>,
   structure: [] as Array<{ id: string; name: string }>,
-  similarityIndex: { status: 'idle', candidates: [], lastUpdated: null, error: null },
+  similarityIndex: { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex,
   setActiveTabSpy: vi.fn(),
   setIsMarkupModeSpy: vi.fn(),
   setIsLeftPanelOpenSpy: vi.fn(),
@@ -402,7 +403,7 @@ describe('App markup mode reset', () => {
     mockAppState.initialIsTablet = false;
     mockAppState.song = [];
     mockAppState.structure = [];
-    mockAppState.similarityIndex = { status: 'idle', candidates: [], lastUpdated: null, error: null };
+    mockAppState.similarityIndex = { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex;
     mockAppState.setActiveTabSpy.mockClear();
     mockAppState.setIsMarkupModeSpy.mockClear();
     mockAppState.setIsLeftPanelOpenSpy.mockClear();
@@ -448,6 +449,14 @@ describe('App markup mode reset', () => {
   });
 
   it('does not build an undefined web similarity badge label when the first score is missing at runtime', () => {
+    const candidateWithoutScore = {
+      title: 'Match',
+      snippet: 'Snippet',
+      url: 'https://example.com',
+      source: 'ddg',
+      matchedSegments: [],
+    } as unknown as WebSimilarityCandidate;
+
     mockAppState.song = [{
       id: 'section-1',
       name: 'Verse',
@@ -456,7 +465,7 @@ describe('App markup mode reset', () => {
     mockAppState.structure = [{ id: 'section-1', name: 'Verse' }];
     mockAppState.similarityIndex = {
       status: 'done',
-      candidates: [{ title: 'Match', snippet: 'Snippet', url: 'https://example.com', source: 'ddg' } as never],
+      candidates: [candidateWithoutScore],
       lastUpdated: null,
       error: null,
     };
