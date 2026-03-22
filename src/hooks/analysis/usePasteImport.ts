@@ -5,8 +5,11 @@ import { cleanSectionName } from '../../utils/songUtils';
 import { detectRhymeSchemeLocally } from '../../utils/rhymeSchemeUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
+import { languageNameToCode } from '../../constants/langFamilyMap';
 import type { Section } from '../../types';
 import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
+import { buildDetectLanguagePrompt } from '../../utils/promptUtils';
+import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 
 type UsePasteImportParams = {
   rhymeScheme: string;
@@ -14,12 +17,15 @@ type UsePasteImportParams = {
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
-  setSongLanguage: (lang: string) => void;
-  setTargetLanguage: (lang: string) => void;
+  currentSongLanguage?: string;
+  onLanguageMismatch?: (lang: string) => void;
   requestAutoTitleGeneration: () => void;
   clearLineSelection: () => void;
   setIsAnalyzing: (value: boolean) => void;
 };
+
+const normalizeLanguageValue = (language: string): string =>
+  (languageNameToCode(language) ?? language).trim().toLowerCase();
 
 export const usePasteImport = ({
   rhymeScheme,
@@ -27,8 +33,8 @@ export const usePasteImport = ({
   updateSongAndStructureWithHistory,
   setTopic,
   setMood,
-  setSongLanguage,
-  setTargetLanguage,
+  currentSongLanguage = '',
+  onLanguageMismatch,
   requestAutoTitleGeneration,
   clearLineSelection,
   setIsAnalyzing,
@@ -39,14 +45,7 @@ export const usePasteImport = ({
   const abortControllerRef = useRef<AbortController | null>(null);
   useEffect(() => { return () => { abortCurrent(abortControllerRef); }; }, []);
 
-  const uiLang = uiLanguage === 'fr' ? 'French'
-    : uiLanguage === 'es' ? 'Spanish'
-    : uiLanguage === 'de' ? 'German'
-    : uiLanguage === 'pt' ? 'Portuguese'
-    : uiLanguage === 'ar' ? 'Arabic'
-    : uiLanguage === 'zh' ? 'Chinese'
-    : uiLanguage === 'ko' ? 'Korean'
-    : 'English';
+  const uiLang = resolveUiLanguageName(uiLanguage);
 
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
@@ -146,9 +145,29 @@ ${pastedText}`;
 
         if (data.topic) setTopic(data.topic);
         if (data.mood) setMood(data.mood);
-        if (data.language) {
-          setSongLanguage(data.language);
-          setTargetLanguage(data.language);
+
+        let detectedLanguage = typeof data.language === 'string' ? data.language.trim() : '';
+        try {
+          const detectionResponse = await generateContentWithRetry({
+            model: AI_MODEL_NAME,
+            contents: buildDetectLanguagePrompt(pastedText),
+            signal: nextSignal,
+          });
+          if (nextSignal.aborted) {
+            wasAborted = true;
+            return;
+          }
+          detectedLanguage = detectionResponse.text?.trim() || detectedLanguage;
+        } catch (error) {
+          console.debug('Failed to detect pasted lyrics language, continuing with parsed result:', error);
+        }
+
+        if (
+          detectedLanguage
+          && currentSongLanguage.trim()
+          && normalizeLanguageValue(detectedLanguage) !== normalizeLanguageValue(currentSongLanguage)
+        ) {
+          onLanguageMismatch?.(detectedLanguage);
         }
 
         const sections = data.sections || [];

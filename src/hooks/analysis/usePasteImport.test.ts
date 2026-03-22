@@ -54,8 +54,8 @@ const createParams = () => ({
   updateSongAndStructureWithHistory: vi.fn(),
   setTopic: vi.fn(),
   setMood: vi.fn(),
-  setSongLanguage: vi.fn(),
-  setTargetLanguage: vi.fn(),
+  currentSongLanguage: '',
+  onLanguageMismatch: vi.fn(),
   requestAutoTitleGeneration: vi.fn(),
   clearLineSelection: vi.fn(),
   setIsAnalyzing: vi.fn(),
@@ -90,9 +90,14 @@ describe('usePasteImport', () => {
     expect(structure).toEqual(['Verse 1', 'Chorus']);
   });
 
-  it('updates the detected song language from the import result', async () => {
-    const params = createParams();
-    vi.mocked(generateContentWithRetry).mockResolvedValue(makeResponse({ language: 'fr' }));
+  it('surfaces a language mismatch without auto-updating the current song language', async () => {
+    const params = {
+      ...createParams(),
+      currentSongLanguage: 'English',
+    };
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeResponse({ language: 'French' }))
+      .mockResolvedValueOnce({ text: 'French' });
 
     const { result } = renderHook(() => usePasteImport(params));
 
@@ -104,8 +109,7 @@ describe('usePasteImport', () => {
       await result.current.analyzePastedLyrics();
     });
 
-    expect(params.setSongLanguage).toHaveBeenCalledWith('fr');
-    expect(params.setTargetLanguage).toHaveBeenCalledWith('fr');
+    expect(params.onLanguageMismatch).toHaveBeenCalledWith('French');
   });
 
   it('ignores an empty import without throwing or changing state', async () => {

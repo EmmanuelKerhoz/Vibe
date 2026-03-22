@@ -98,6 +98,9 @@ SELF-VALIDATION (mandatory before returning):
 For each section, mentally check: do all lines sharing the same letter end with matching
 phonetic sounds? If any pair fails, rewrite those lines before returning.`;
 
+const buildExclusiveLanguageInstruction = (language: string): string =>
+  language.trim() ? `Write exclusively in ${language.trim()}.` : '';
+
 const GENERATION_SCHEMA = {
   type: Type.ARRAY,
   items: {
@@ -184,6 +187,7 @@ export const useAiGeneration = ({
     try {
       await withAbort(abortControllerRef, async (signal) => {
         const lang = songLanguage || 'English';
+        const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
         const prompt =
 `Write a song about "${topic}".
 Mood: ${mood}
@@ -192,7 +196,7 @@ Target Syllables per line: ${targetSyllables}
 Structure: ${structure.join(', ')}
 
 IMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY.
-Generate exactly the sections listed in the Structure field, in that specific order.
+${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Generate exactly the sections listed in the Structure field, in that specific order.
 
 ${RHYME_ENFORCEMENT_RULES}
 
@@ -263,6 +267,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
 
         const songStructure = song.map(s => s.name).join(' → ');
         const lang = songLanguage || 'English';
+        const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
         const formatSectionLyrics = (sec: Section) =>
           sec.lines.map(l => l.text).filter(Boolean).join('\n');
 
@@ -320,6 +325,7 @@ ${RHYME_ENFORCEMENT_RULES}${ipaConstraints}
 ${META_INSTRUCTION_HINT}
 
 IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${uiLanguage}.
+${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}
 
 Current Section:
 ${JSON.stringify([sectionToRegenerate], null, 2)}
@@ -369,6 +375,7 @@ Return the updated section in the exact same JSON structure (as an array with on
     if (song.length === 0) return;
     setIsGenerating(true);
     const lang = songLanguage || 'English';
+    const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
 
     try {
       await withAbort(abortControllerRef, async (signal) => {
@@ -381,7 +388,7 @@ Return the updated section in the exact same JSON structure (as an array with on
 `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables.
 Maintain the original meaning, rhyme scheme, and section structure.
 Write ALL lyrics in ${lang}.
-Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
+${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
 
 ${RHYME_ENFORCEMENT_RULES}
 
@@ -395,7 +402,7 @@ Return the updated section in the exact same JSON structure (as an array with on
 section's targetSyllables (or ${targetSyllables} if not specified).
 Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
 Write ALL lyrics in ${lang}.
-Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
+${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
 
 ${RHYME_ENFORCEMENT_RULES}
 

@@ -67,7 +67,7 @@ export const useSongComposer = ({
       mood,
       rhymeScheme,
       targetSyllables,
-      songLanguage,
+      songLanguage: songLanguage || '',
       selectedLineId,
       updateState,
     });
@@ -118,7 +118,7 @@ export const useSongComposer = ({
       instrumentation,
       rhythm,
       narrative,
-      songLanguage,
+      songLanguage: songLanguage || '',
       setMusicalPrompt,
       setGenre,
       setTempo,
