@@ -71,10 +71,13 @@ describe('usePasteImport', () => {
 
     const { result } = renderHook(() => usePasteImport(params));
 
-    await act(async () => {
+    act(() => {
       result.current.setPastedText(
         'Première ligne\nDeuxième ligne\nTroisième ligne\nQuatrième ligne\n\nRefrain un\nRefrain deux\nRefrain trois\nRefrain quatre',
       );
+    });
+
+    await act(async () => {
       await result.current.analyzePastedLyrics();
     });
 
@@ -92,8 +95,11 @@ describe('usePasteImport', () => {
 
     const { result } = renderHook(() => usePasteImport(params));
 
-    await act(async () => {
+    act(() => {
       result.current.setPastedText('Je marche encore\nSous la pluie');
+    });
+
+    await act(async () => {
       await result.current.analyzePastedLyrics();
     });
 
@@ -139,8 +145,11 @@ describe('usePasteImport', () => {
 
     const { result } = renderHook(() => usePasteImport(params));
 
-    await act(async () => {
+    act(() => {
       result.current.setPastedText('[Couplet]\nSous les néons on avance\nLa ville entière est immense\n\n[Refrain]\nNos voix se répondent\nLes ombres nous inondent');
+    });
+
+    await act(async () => {
       await result.current.analyzePastedLyrics();
     });
 

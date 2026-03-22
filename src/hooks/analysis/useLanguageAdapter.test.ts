@@ -125,10 +125,8 @@ describe('useLanguageAdapter', () => {
     const secondSong = makeSong('section-b', 'second');
     const params = createParams(firstSong);
 
-    let resolveFirstCall: ((value: { text: string }) => void) | undefined;
     vi.mocked(generateContentWithRetry)
-      .mockImplementationOnce(({ signal }) => new Promise((resolve, reject) => {
-        resolveFirstCall = resolve;
+      .mockImplementationOnce(({ signal }) => new Promise((_, reject) => {
         signal?.addEventListener(
           'abort',
           () => reject(new DOMException('Aborted', 'AbortError')),
@@ -141,15 +139,21 @@ describe('useLanguageAdapter', () => {
       initialProps: params,
     });
 
-    const firstPromise = result.current.adaptSongLanguage('Spanish');
+    let firstPromise: Promise<void> | undefined;
+    await act(async () => {
+      firstPromise = result.current.adaptSongLanguage('Spanish');
+      await Promise.resolve();
+    });
+
     rerender({ ...params, song: secondSong });
 
     await act(async () => {
       await result.current.adaptSongLanguage('German');
     });
 
-    resolveFirstCall?.({ text: buildAdaptationPayload('first') });
-    await firstPromise.catch(() => undefined);
+    await act(async () => {
+      await firstPromise?.catch(() => undefined);
+    });
 
     expect(params.updateSongAndStructureWithHistory).toHaveBeenCalledTimes(1);
     const [adaptedSong] = vi.mocked(params.updateSongAndStructureWithHistory).mock.calls[0]!;
