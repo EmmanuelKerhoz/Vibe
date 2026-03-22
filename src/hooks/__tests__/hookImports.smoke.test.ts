@@ -27,6 +27,7 @@ import { useAppKpis } from '../useAppKpis';
 import { useMetronome } from '../useMetronome';
 import { useAudioFeedback } from '../useAudioFeedback';
 import { useMobileLayout } from '../useMobileLayout';
+import { useMobileInitPanels } from '../useMobileInitPanels';
 import { useUIState } from '../useUIState';
 import { useSongMeta } from '../useSongMeta';
 import { useSessionState } from '../useSessionState';
@@ -101,6 +102,7 @@ describe('Hook import smoke-tests', () => {
       ['useMetronome', useMetronome],
       ['useAudioFeedback', useAudioFeedback],
       ['useMobileLayout', useMobileLayout],
+      ['useMobileInitPanels', useMobileInitPanels],
       ['useUIState', useUIState],
       ['useSongMeta', useSongMeta],
       ['useSessionState', useSessionState],
