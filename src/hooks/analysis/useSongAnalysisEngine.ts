@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
-import { languageNameToCode } from '../../constants/langFamilyMap';
-import { compareTextsWithIPA } from '../../utils/ipaPipeline';
-import { detectRhymeSchemeLocally } from '../../utils/rhymeSchemeUtils';
 import { mapSongWithPreservedIds } from '../../utils/songMergeUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { getSectionText } from '../../utils/songUtils';
 import type { Section } from '../../types';
 import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
+import {
+  buildApplyAnalysisBatchPrompt,
+  buildApplyAnalysisItemPrompt,
+  buildSongAnalysisPrompt,
+  buildThemeAnalysisPrompt,
+} from '../../utils/promptUtils';
+import { analyzeSongRhymes } from '../../utils/songRhymeAnalysis';
+
+export { analyzeSongRhymes } from '../../utils/songRhymeAnalysis';
 
 type AnalysisReport = {
   theme: string;
@@ -18,115 +24,6 @@ type AnalysisReport = {
   improvements: string[];
   musicalSuggestions: string[];
   summary: string;
-};
-
-/**
- * Local rhyme comparison for a pair of lyric lines.
- * `quality` mirrors the IPA rhyme classifier, `confidenceScore` is the normalized
- * 0–100 score used by the hook, and `isApproximated` flags mocked or downgraded
- * near-matches that should count below an exact pair of the same base similarity.
- */
-export type LocalRhymePairAnalysis = {
-  lineIndexes: [number, number];
-  lines: [string, string];
-  quality: string;
-  confidenceScore: number;
-  usedIpa: boolean;
-  isApproximated: boolean;
-};
-
-/**
- * Per-section rhyme diagnostics built locally before any AI analysis.
- * `mode: "ipa"` means a supported language was analyzed through compareTextsWithIPA,
- * while `mode: "graphemic"` indicates an unsupported language or graceful fallback.
- */
-export type LocalRhymeSectionAnalysis = {
-  sectionId: string;
-  sectionName: string;
-  langCode?: string;
-  detectedScheme: string | null;
-  mode: 'ipa' | 'graphemic';
-  pairs: LocalRhymePairAnalysis[];
-};
-
-const toPairConfidenceScore = (similarity: { score?: number; isApproximated?: boolean }) => {
-  const baseScore = typeof similarity.score === 'number' ? similarity.score : 0;
-  const adjustedScore = similarity.isApproximated ? baseScore * 0.85 : baseScore;
-  return Math.round(adjustedScore * 1000) / 10;
-};
-
-/**
- * Builds lightweight, local rhyme diagnostics for each song section.
- * It uses IPA comparison when the section language is supported and falls back
- * to graphemic scheme detection whenever the language is unsupported or the IPA
- * comparison fails, without throwing to the caller.
- */
-export const analyzeSongRhymes = async (song: Section[]): Promise<LocalRhymeSectionAnalysis[]> => {
-  return Promise.all(song.map(async section => {
-    const lyricLines = section.lines
-      .filter(line => !line.isMeta)
-      .map(line => line.text.trim())
-      .filter(Boolean);
-
-    const langCode = languageNameToCode(section.language ?? '');
-    const detectedScheme = detectRhymeSchemeLocally(lyricLines, langCode);
-
-    if (!langCode || lyricLines.length < 2) {
-      return {
-        sectionId: section.id,
-        sectionName: section.name,
-        langCode,
-        detectedScheme,
-        mode: 'graphemic' as const,
-        pairs: [],
-      };
-    }
-
-    try {
-      const pairs: LocalRhymePairAnalysis[] = [];
-
-      for (let firstIndex = 0; firstIndex < lyricLines.length; firstIndex++) {
-        for (let secondIndex = firstIndex + 1; secondIndex < lyricLines.length; secondIndex++) {
-          const firstLine = lyricLines[firstIndex];
-          const secondLine = lyricLines[secondIndex];
-          if (!firstLine || !secondLine) continue;
-
-          const similarity = await compareTextsWithIPA(
-            firstLine,
-            secondLine,
-            langCode,
-          );
-
-          pairs.push({
-            lineIndexes: [firstIndex, secondIndex],
-            lines: [firstLine, secondLine],
-            quality: similarity.quality,
-            confidenceScore: toPairConfidenceScore(similarity as { score?: number; isApproximated?: boolean }),
-            usedIpa: true,
-            isApproximated: Boolean((similarity as { isApproximated?: boolean }).isApproximated),
-          });
-        }
-      }
-
-      return {
-        sectionId: section.id,
-        sectionName: section.name,
-        langCode,
-        detectedScheme,
-        mode: 'ipa' as const,
-        pairs,
-      };
-    } catch {
-      return {
-        sectionId: section.id,
-        sectionName: section.name,
-        langCode,
-        detectedScheme,
-        mode: 'graphemic' as const,
-        pairs: [],
-      };
-    }
-  }));
 };
 
 type SaveVersionFn = (name: string, snapshot?: {
@@ -171,7 +68,9 @@ export const useSongAnalysisEngine = ({
 
   const lastAnalyzedSongRef = useRef<string>('');
   const backoffUntilRef = useRef<number>(0);
+  /** Background-only controller for delayed theme/mood analysis triggered by song edits. */
   const bgAbortControllerRef = useRef<AbortController | null>(null);
+  /** Foreground-only controller for user-triggered analysis/apply actions; keep separate from background aborts. */
   const fgAbortRef = useRef<AbortController | null>(null);
   const isAnalyzingThemeRef = useRef(false);
 
@@ -201,7 +100,12 @@ export const useSongAnalysisEngine = ({
       let wasAborted = false;
       try {
         await withAbort(bgAbortControllerRef, async (nextSignal) => {
-          const prompt = `Analyze the following song lyrics.\nCurrent Topic: "${topic}"\nCurrent Mood: "${mood}"\n\nIf the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.\nIMPORTANT: Return the topic and mood values in ${uiLang}.\nReturn JSON with "topic" and "mood" strings.\n\nLyrics:\n${song.map(s => s.name + '\n' + getSectionText(s)).join('\n\n')}\n`;
+          const prompt = buildThemeAnalysisPrompt({
+            song,
+            topic,
+            mood,
+            uiLanguage: uiLang,
+          });
           const response = await generateContentWithRetry({
             model: AI_MODEL_NAME,
             contents: prompt,
@@ -274,7 +178,11 @@ export const useSongAnalysisEngine = ({
     let wasAborted = false;
     try {
       await withAbort(fgAbortRef, async (nextSignal) => {
-        const prompt = `Modify the following song lyrics based on these improvement suggestions:\n      ${itemsToApply.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\n      IMPORTANT:\n      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).\n      2. Only update the lyrics as suggested.\n      3. Return the FULL updated song in the same JSON format as the input.\n      4. Do not change the section names unless specifically requested by the improvements.\n      5. Preserve the original song language in all lyric text fields.\n      6. Write the "concept" field for each line in ${uiLang}.\n\n      Current Song Data:\n      ${JSON.stringify(song)}`;
+        const prompt = buildApplyAnalysisBatchPrompt({
+          song,
+          itemsToApply,
+          uiLanguage: uiLang,
+        });
 
         const response = await generateContentWithRetry({
           model: AI_MODEL_NAME,
@@ -350,7 +258,11 @@ export const useSongAnalysisEngine = ({
     let wasAborted = false;
     try {
       await withAbort(fgAbortRef, async (nextSignal) => {
-        const prompt = `Modify the following song lyrics based on this specific improvement suggestion: "${itemText}".\n\n      IMPORTANT:\n      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).\n      2. Only update the lyrics as suggested.\n      3. Return the FULL updated song in the same JSON format as the input.\n      4. Do not change the section names unless specifically requested by the improvement.\n      5. Preserve the original song language in all lyric text fields.\n      6. Write the "concept" field for each line in ${uiLang}.\n\n      Current Song Data:\n      ${JSON.stringify(song)}`;
+        const prompt = buildApplyAnalysisItemPrompt({
+          song,
+          itemText,
+          uiLanguage: uiLang,
+        });
 
         const response = await generateContentWithRetry({
           model: AI_MODEL_NAME,
@@ -424,7 +336,10 @@ export const useSongAnalysisEngine = ({
         setAnalysisSteps(prev => [...prev, 'Analyzing structure and flow...']);
         const songText = song.map(s => `[${s.name}]\n${getSectionText(s)}`).join('\n\n');
 
-        const prompt = `Thoroughly analyze the following song lyrics.\n      Provide a detailed report including:\n      1. Overall Theme & Narrative: What is the song truly about?\n      2. Emotional Arc: How do the emotions shift throughout the song?\n      3. Technical Analysis: Rhyme schemes, syllable consistency, and rhythmic flow.\n      4. Strengths: What works well in the current version?\n      5. Actionable Improvements: Specific suggestions to improve the lyrics, structure, or impact.\n      6. Musical Suggestions: Ideas for instrumentation or vocal delivery based on the lyrics.\n\n      IMPORTANT: Write the ENTIRE analysis report in ${uiLang}.\n\n      Song Lyrics:\n      ${songText}`;
+        const prompt = buildSongAnalysisPrompt({
+          songText,
+          uiLanguage: uiLang,
+        });
 
         setAnalysisSteps(prev => [...prev, 'Consulting AI Lyricist...']);
         const response = await generateContentWithRetry({
