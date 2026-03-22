@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info, Moon, Settings, Sun } from 'lucide-react';
+import { Info, Moon, Settings, Sun } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { StorageGauge } from '../ui/StorageGauge';
 import { useTranslation } from '../../i18n';

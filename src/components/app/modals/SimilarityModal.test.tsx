@@ -33,7 +33,7 @@ vi.mock('../../../i18n', () => ({
   }),
 }));
 
-vi.mock('lucide-react', () => ({
+vi.mock('../../ui/icons', () => ({
   Search: () => null,
   X: () => null,
   Activity: () => null,

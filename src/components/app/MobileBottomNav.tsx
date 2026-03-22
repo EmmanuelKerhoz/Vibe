@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, BookOpen, Music, Menu, Sparkles } from 'lucide-react';
+import { Settings, BookOpen, Music, Menu, Sparkles } from '../ui/icons';
 import { useTranslation } from '../../i18n';
 
 interface Props {

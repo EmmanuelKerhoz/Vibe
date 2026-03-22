@@ -1,5 +1,5 @@
 import React, { useCallback, memo } from 'react';
-import { ClipboardPaste, Layout, Library, Music, Sparkles } from 'lucide-react';
+import { ClipboardPaste, Layout, Library, Music, Sparkles } from '../ui/icons';
 import { Section } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
 import { MarkupInput } from '../editor/MarkupInput';

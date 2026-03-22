@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music, ChevronDown, Check, Sparkles, Compass, Copy } from 'lucide-react';
+import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music, ChevronDown, Check, Sparkles, Compass, Copy } from '../../ui/icons';
 import { Tooltip as FluentTooltip } from '@fluentui/react-components';
 import { useTranslation } from '../../../i18n';
 import { useMetronome } from '../../../hooks/useMetronome';

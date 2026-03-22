@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, Wand2, Loader2, Zap } from 'lucide-react';
+import { Music, Wand2, Loader2, Zap } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
 

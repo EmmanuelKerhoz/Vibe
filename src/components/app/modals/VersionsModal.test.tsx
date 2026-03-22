@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SongVersion } from '../../../types';
 import { VersionsModal } from './VersionsModal';
 
-vi.mock('lucide-react', () => ({
+vi.mock('../../ui/icons', () => ({
   History: () => null,
   Layout: () => null,
   Plus: () => null,
