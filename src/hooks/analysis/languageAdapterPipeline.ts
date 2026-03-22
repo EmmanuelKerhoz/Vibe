@@ -1,5 +1,149 @@
+import { Type } from '@google/genai';
+import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../../utils/aiUtils';
+import { languageNameToCode } from '../../constants/langFamilyMap';
+import { isSectionHeader } from '../../utils/metaUtils';
+import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
+import { matchRhymeSchemeAcrossLang } from '../../utils/adaptationUtils';
 import { reverseTranslateLines, reviewTranslationFidelity } from '../../utils/llmPipelineUtils';
+import { buildDetectLanguagePrompt } from '../../utils/promptUtils';
 import type { Section } from '../../types';
+
+type AdaptationLinePayload = {
+  text?: string;
+  rhymingSyllables?: string;
+  rhyme?: string;
+  syllables?: number;
+  concept?: string;
+  isMeta?: boolean;
+};
+
+type AdaptationSectionPayload = {
+  name?: string;
+  rhymeScheme?: string;
+  lines?: AdaptationLinePayload[];
+};
+
+type ParseAdaptationResponseParams =
+  | {
+      kind: 'song';
+      responseText: string;
+      sourceSong: Section[];
+      newLanguage: string;
+    }
+  | {
+      kind: 'section';
+      responseText: string;
+      section: Section;
+      newLanguage: string;
+    };
+
+const adaptationLineSchema = {
+  type: Type.OBJECT,
+  properties: {
+    text:             { type: Type.STRING },
+    rhymingSyllables: { type: Type.STRING },
+    rhyme:            { type: Type.STRING },
+    syllables:        { type: Type.INTEGER },
+    concept:          { type: Type.STRING },
+  },
+  required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
+};
+
+const adaptationSectionSchema = {
+  type: Type.OBJECT,
+  properties: {
+    name: { type: Type.STRING },
+    rhymeScheme: { type: Type.STRING },
+    lines: {
+      type: Type.ARRAY,
+      items: adaptationLineSchema,
+    },
+  },
+  required: ['name', 'lines'],
+};
+
+export const getAdaptationResponseSchema = (kind: 'song' | 'section') =>
+  kind === 'song'
+    ? {
+        type: Type.ARRAY,
+        items: adaptationSectionSchema,
+      }
+    : adaptationSectionSchema;
+
+export const getSourceLines = (sections: Section[]) =>
+  sections.flatMap(section =>
+    section.lines
+      .filter(line => !line.isMeta && !isSectionHeader(line.text.replace(/^\[|\]$/g, '').trim()))
+      .map(line => line.text)
+  );
+
+export const detectSongLanguage = async (song: Section[], signal?: AbortSignal) => {
+  const songText = getSourceLines(song).join('\n');
+  if (!songText.trim()) return '';
+
+  const response = await generateContentWithRetry({
+    model: AI_MODEL_NAME,
+    contents: buildDetectLanguagePrompt(songText),
+    signal,
+  });
+  return response.text?.trim() || 'English';
+};
+
+export const getIpaEnhancedPrompt = async (
+  sections: Section[],
+  sourceLanguage: string,
+  newLanguage: string,
+  signal: AbortSignal,
+  sectionName?: string,
+) => {
+  const sourceLines = getSourceLines(sections);
+  const sourceLangCode = languageNameToCode(sourceLanguage);
+  const targetLangCode = languageNameToCode(newLanguage);
+
+  if (!sourceLangCode || !targetLangCode || sourceLines.length === 0) {
+    return '';
+  }
+
+  try {
+    const adaptationResult = await matchRhymeSchemeAcrossLang(
+      sourceLines,
+      sourceLangCode,
+      targetLangCode,
+      signal
+    );
+    if (signal.aborted || !adaptationResult.success) {
+      return '';
+    }
+
+    if (sectionName) {
+      console.debug('IPA constraints applied for section:', sectionName, adaptationResult.sourceScheme);
+    } else {
+      console.debug('IPA constraints applied:', adaptationResult.sourceScheme);
+    }
+    return `\n\n${adaptationResult.constrainedPrompt}`;
+  } catch (error) {
+    if (sectionName) {
+      console.debug('IPA pipeline not available for section, continuing with standard prompt:', error);
+    } else {
+      console.debug('IPA pipeline not available, continuing with standard prompt:', error);
+    }
+    return '';
+  }
+};
+
+export const parseAdaptationResponse = (
+  params: ParseAdaptationResponseParams,
+): Section[] => {
+  if (params.kind === 'song') {
+    const newSongData = safeJsonParse<AdaptationSectionPayload[]>(params.responseText || '[]', []);
+    if (newSongData.length === 0) throw new Error('Empty adaptation response');
+    return mapSongWithPreservedIds(newSongData, params.sourceSong, params.newLanguage);
+  }
+
+  const newSectionData = safeJsonParse<AdaptationSectionPayload>(params.responseText || '{}', {});
+  if (!newSectionData.name) throw new Error('Empty section adaptation response');
+  return [mergeAiSectionIntoCurrent(params.section, newSectionData, params.newLanguage)];
+};
 
 /**
  * Reverse-translates adapted lyrics literally back to the source language.
