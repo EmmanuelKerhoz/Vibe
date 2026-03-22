@@ -25,7 +25,7 @@ import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
 import { StatusBar } from './components/app/StatusBar';
-import { MusicalTab } from './components/app/MusicalTab';
+import { MusicalTab } from './components/app/musical/MusicalTab';
 import { InsightsBar } from './components/app/InsightsBar';
 import { LyricsView } from './components/app/LyricsView';
 import { AppModals } from './components/app/AppModals';
