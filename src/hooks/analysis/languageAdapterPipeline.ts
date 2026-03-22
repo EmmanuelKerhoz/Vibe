@@ -6,22 +6,10 @@ import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/
 import { matchRhymeSchemeAcrossLang } from '../../utils/adaptationUtils';
 import { reverseTranslateLines, reviewTranslationFidelity } from '../../utils/llmPipelineUtils';
 import { buildDetectLanguagePrompt } from '../../utils/promptUtils';
-import type { Section } from '../../types';
+import type { Line, Section } from '../../types';
 
-type AdaptationLinePayload = {
-  text?: string;
-  rhymingSyllables?: string;
-  rhyme?: string;
-  syllables?: number;
-  concept?: string;
-  isMeta?: boolean;
-};
-
-type AdaptationSectionPayload = {
-  name?: string;
-  rhymeScheme?: string;
-  lines?: AdaptationLinePayload[];
-};
+type AdaptationLinePayload = Partial<Line>;
+type AdaptationSectionPayload = Partial<Omit<Section, 'lines'>> & { lines?: AdaptationLinePayload[] };
 
 type ParseAdaptationResponseParams =
   | {

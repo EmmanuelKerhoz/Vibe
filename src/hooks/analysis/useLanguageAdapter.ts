@@ -248,13 +248,11 @@ export const useLanguageAdapter = ({
       saveLabel: `Before Section ${section.name} Translation to ${newLanguage}`,
       errorLabel: 'Section language adaptation error:',
       buildPrompt: ipaEnhancedPrompt => buildAdaptSectionPrompt({ section, newLanguage, uiLanguage: uiLang, ipaEnhancedPrompt }),
-      onAdapted: ([adaptedSection]) => {
-        updateSong(currentSong => currentSong.map(currentSection =>
-          currentSection.id === sectionId && adaptedSection
-            ? mergeAiSectionIntoCurrent(currentSection, adaptedSection, newLanguage)
-            : currentSection
-        ));
-      },
+      onAdapted: adaptedSong => updateSong(currentSong => currentSong.map(currentSection =>
+        currentSection.id === sectionId
+          ? mergeAiSectionIntoCurrent(currentSection, adaptedSong[0]!, newLanguage)
+          : currentSection
+      )),
     });
   };
 
