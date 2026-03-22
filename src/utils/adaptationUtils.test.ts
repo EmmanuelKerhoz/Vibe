@@ -27,10 +27,15 @@ describe('adaptationUtils', () => {
   });
 
   describe('matchRhymeSchemeAcrossLang', () => {
-    it('should return error when no source lines provided', async () => {
+    it('should return an empty scheme when no source lines are provided', async () => {
       const result = await matchRhymeSchemeAcrossLang([], 'en', 'fr');
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('No source lines');
+      expect(result.success).toBe(true);
+      expect(result.sourceScheme).toBe('');
+      expect(result.targetScheme).toBe('');
+      expect(result.constrainedPrompt).toBe('');
+      expect(result.sourceAnalysis).toEqual([]);
+      expect(result.error).toBeUndefined();
+      expect(ipaPipeline.runIPAPipelineBatch).not.toHaveBeenCalled();
     });
 
     it('should return error when source language not provided', async () => {
@@ -111,6 +116,7 @@ describe('adaptationUtils', () => {
       expect(result.constrainedPrompt).toContain('Target language: fr');
       expect(result.constrainedPrompt).toContain('Source rhyme scheme: AABB');
       expect(result.sourceAnalysis).toHaveLength(4);
+      expect(ipaPipeline.runIPAPipelineBatch).toHaveBeenCalledWith(sourceLines, 'en', undefined);
     });
 
     it('should handle lines without rhyme (X in scheme)', async () => {
@@ -193,6 +199,52 @@ describe('adaptationUtils', () => {
       expect(result.constrainedPrompt).toContain('RHYME CONSTRAINTS');
     });
 
+    it('should fall back to graphemic analysis for unsupported source languages without throwing', async () => {
+      const sourceLines = ['Ɖeka la', 'Ɖeka gba'];
+
+      vi.mocked(ipaPipeline.runIPAPipelineBatch).mockResolvedValue([
+        {
+          success: true,
+          text: sourceLines[0]!,
+          langCode: 'zz',
+          family: 'ALGO-ROM',
+          ipa: 'ɖeka la',
+          syllables: [{ onset: 'l', nucleus: 'a', coda: '', stress: true }],
+          rhymeNucleus: 'a',
+          method: 'graphemic',
+          lowResource: true,
+        },
+        {
+          success: true,
+          text: sourceLines[1]!,
+          langCode: 'zz',
+          family: 'ALGO-ROM',
+          ipa: 'ɖeka gba',
+          syllables: [{ onset: 'gb', nucleus: 'a', coda: '', stress: true }],
+          rhymeNucleus: 'a',
+          method: 'graphemic',
+          lowResource: true,
+        },
+      ]);
+
+      await expect(matchRhymeSchemeAcrossLang(sourceLines, 'zz', 'fr')).resolves.toMatchObject({
+        success: true,
+        sourceScheme: 'AA',
+        targetScheme: 'AA',
+      });
+    });
+
+    it('should return immediately when the signal is already aborted', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      const result = await matchRhymeSchemeAcrossLang(['Test line'], 'en', 'fr', controller.signal);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Operation aborted');
+      expect(ipaPipeline.runIPAPipelineBatch).not.toHaveBeenCalled();
+    });
+
     it('should handle IPA pipeline errors gracefully', async () => {
       const sourceLines = ['Test line'];
 
@@ -204,6 +256,29 @@ describe('adaptationUtils', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Pipeline failed');
+    });
+
+    it('should propagate the abort signal to the IPA batch pipeline', async () => {
+      const sourceLines = ['Test line'];
+      const controller = new AbortController();
+
+      vi.mocked(ipaPipeline.runIPAPipelineBatch).mockResolvedValue([
+        {
+          success: true,
+          text: sourceLines[0]!,
+          langCode: 'en',
+          family: 'ALGO-ROM',
+          ipa: 'tɛst laɪn',
+          syllables: [{ onset: 'l', nucleus: 'aɪ', coda: 'n', stress: true }],
+          rhymeNucleus: 'aɪn',
+          method: 'service',
+          lowResource: false,
+        },
+      ]);
+
+      await matchRhymeSchemeAcrossLang(sourceLines, 'en', 'fr', controller.signal);
+
+      expect(ipaPipeline.runIPAPipelineBatch).toHaveBeenCalledWith(sourceLines, 'en', controller.signal);
     });
   });
 

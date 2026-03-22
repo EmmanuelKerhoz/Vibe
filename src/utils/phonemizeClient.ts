@@ -29,12 +29,19 @@ export interface PhonemeResponse {
 }
 
 const isPhonemizeEnabled = () => import.meta.env.VITE_PHONEMIZE_ENABLED !== 'false';
+const isAbortError = (error: unknown) =>
+  (error instanceof DOMException && error.name === 'AbortError')
+  || (error instanceof Error && error.name === 'AbortError');
 
 /**
  * Call the phonemization microservice
  * Returns null if service is unavailable or request fails
  */
-export const phonemizeText = async (text: string, lang: string): Promise<PhonemeResponse | null> => {
+export const phonemizeText = async (
+  text: string,
+  lang: string,
+  signal?: AbortSignal,
+): Promise<PhonemeResponse | null> => {
   try {
     if (!isPhonemizeEnabled()) {
       return null;
@@ -53,6 +60,7 @@ export const phonemizeText = async (text: string, lang: string): Promise<Phoneme
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text, lang } satisfies PhonemeRequest),
+      signal,
     });
 
     if (!response.ok) {
@@ -63,6 +71,9 @@ export const phonemizeText = async (text: string, lang: string): Promise<Phoneme
     const result = await response.json() as PhonemeResponse;
     return result;
   } catch (error) {
+    if (signal?.aborted || isAbortError(error)) {
+      throw error;
+    }
     console.warn('Failed to call phonemization service:', error);
     return null;
   }
