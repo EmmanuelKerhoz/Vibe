@@ -20,6 +20,23 @@ export interface AdaptationResult {
   error?: string;
 }
 
+const createAbortedAdaptationResult = (): AdaptationResult => ({
+  success: false,
+  sourceScheme: '',
+  targetScheme: '',
+  constrainedPrompt: '',
+  sourceAnalysis: [],
+  error: 'Operation aborted',
+});
+
+const createEmptyAdaptationResult = (): AdaptationResult => ({
+  success: true,
+  sourceScheme: '',
+  targetScheme: '',
+  constrainedPrompt: '',
+  sourceAnalysis: [],
+});
+
 /**
  * Validates a translated line against its expected rhyme group
  *
@@ -73,16 +90,13 @@ export const matchRhymeSchemeAcrossLang = async (
   targetLang: string,
   signal?: AbortSignal
 ): Promise<AdaptationResult> => {
+  if (signal?.aborted) {
+    return createAbortedAdaptationResult();
+  }
+
   // Validate inputs
   if (!sourceLines || sourceLines.length === 0) {
-    return {
-      success: false,
-      sourceScheme: '',
-      targetScheme: '',
-      constrainedPrompt: '',
-      sourceAnalysis: [],
-      error: 'No source lines provided',
-    };
+    return createEmptyAdaptationResult();
   }
 
   if (!sourceLang || !targetLang) {
@@ -98,18 +112,11 @@ export const matchRhymeSchemeAcrossLang = async (
 
   try {
     // Step 1: Extract source rhyme scheme via IPA pipeline
-    const sourceAnalysis = await runIPAPipelineBatch(sourceLines, sourceLang);
+    const sourceAnalysis = await runIPAPipelineBatch(sourceLines, sourceLang, signal);
 
     // Check if aborted after IPA pipeline
     if (signal?.aborted) {
-      return {
-        success: false,
-        sourceScheme: '',
-        targetScheme: '',
-        constrainedPrompt: '',
-        sourceAnalysis: [],
-        error: 'Operation aborted',
-      };
+      return createAbortedAdaptationResult();
     }
 
     // Build rhyme scheme from source analysis
@@ -201,6 +208,9 @@ export const matchRhymeSchemeAcrossLang = async (
       sourceAnalysis,
     };
   } catch (error) {
+    if (signal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
+      return createAbortedAdaptationResult();
+    }
     return {
       success: false,
       sourceScheme: '',

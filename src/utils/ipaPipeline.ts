@@ -18,6 +18,22 @@ import { syllabifyIPA, extractRhymeNucleus, type IPASyllable } from './ipaSyllab
 import { calculateRhymeSimilarity, calculateRhymeSimilarityWithWeight, type RhymeSimilarityResult } from './ipaUtils';
 import { finalizeDetectedRhymeScheme, RHYME_SCHEME_LETTERS } from './rhymeSchemeUtils';
 
+const createAbortError = () => {
+  const error = new Error('Operation aborted');
+  error.name = 'AbortError';
+  return error;
+};
+
+const throwIfAborted = (signal?: AbortSignal) => {
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
+};
+
+const isAbortError = (error: unknown) =>
+  (error instanceof DOMException && error.name === 'AbortError')
+  || (error instanceof Error && error.name === 'AbortError');
+
 /**
  * Complete IPA pipeline result
  */
@@ -43,8 +59,11 @@ export interface IPAPipelineResult {
  */
 export const runIPAPipeline = async (
   text: string,
-  langCode: string
+  langCode: string,
+  signal?: AbortSignal,
 ): Promise<IPAPipelineResult> => {
+  throwIfAborted(signal);
+
   // Step 1: Normalization (already handled in input)
   const normalized = text.normalize('NFD').trim();
 
@@ -74,7 +93,7 @@ export const runIPAPipeline = async (
 
   // Try phonemization service
   try {
-    const serviceResult = await phonemizeText(normalized, langCode);
+    const serviceResult = await phonemizeText(normalized, langCode, signal);
     if (serviceResult) {
       ipaText = serviceResult.ipa;
       method = 'service';
@@ -92,11 +111,16 @@ export const runIPAPipeline = async (
       }
     }
   } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
     // Service unavailable, will fall back to client-side
     console.debug('Phonemization service unavailable, using client fallback');
   }
 
   // Client-side fallback if service didn't work
+  throwIfAborted(signal);
+
   if (!ipaText) {
     ipaText = graphemeToIPA(normalized, family);
     method = 'client-fallback';
@@ -112,6 +136,8 @@ export const runIPAPipeline = async (
   const rhymeNucleus = syllables.length > 0
     ? extractRhymeNucleus(syllables, family)
     : '';
+
+  throwIfAborted(signal);
 
   return {
     success: true,
@@ -183,9 +209,10 @@ export const compareTextsWithIPA = async (
  */
 export const runIPAPipelineBatch = async (
   texts: string[],
-  langCode: string
+  langCode: string,
+  signal?: AbortSignal,
 ): Promise<IPAPipelineResult[]> => {
-  return Promise.all(texts.map(text => runIPAPipeline(text, langCode)));
+  return Promise.all(texts.map(text => runIPAPipeline(text, langCode, signal)));
 };
 
 /**
