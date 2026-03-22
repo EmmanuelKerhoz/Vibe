@@ -385,12 +385,12 @@ describe('App markup mode reset', () => {
     render(<App />);
 
     expect(mockAppState.setIsMarkupModeSpy).not.toHaveBeenCalled();
-    expect(screen.getByTestId('lyrics-view')).toBeInTheDocument();
+    expect(screen.getByTestId('lyrics-view')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Switch to musical' }));
 
     await waitFor(() => expect(mockAppState.setIsMarkupModeSpy).toHaveBeenCalledWith(false));
-    expect(screen.getByTestId('musical-tab')).toBeInTheDocument();
+    expect(screen.getByTestId('musical-tab')).toBeTruthy();
   });
 
   it('does not reset markup mode when it is already disabled on a non-lyrics tab', () => {
@@ -400,6 +400,6 @@ describe('App markup mode reset', () => {
     render(<App />);
 
     expect(mockAppState.setIsMarkupModeSpy).not.toHaveBeenCalled();
-    expect(screen.getByTestId('musical-tab')).toBeInTheDocument();
+    expect(screen.getByTestId('musical-tab')).toBeTruthy();
   });
 });
