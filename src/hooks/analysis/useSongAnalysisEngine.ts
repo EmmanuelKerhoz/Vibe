@@ -20,6 +20,12 @@ type AnalysisReport = {
   summary: string;
 };
 
+/**
+ * Local rhyme comparison for a pair of lyric lines.
+ * `quality` mirrors the IPA rhyme classifier, `confidenceScore` is the normalized
+ * 0–100 score used by the hook, and `isApproximated` flags mocked or downgraded
+ * near-matches that should count below an exact pair of the same base similarity.
+ */
 export type LocalRhymePairAnalysis = {
   lineIndexes: [number, number];
   lines: [string, string];
@@ -29,6 +35,11 @@ export type LocalRhymePairAnalysis = {
   isApproximated: boolean;
 };
 
+/**
+ * Per-section rhyme diagnostics built locally before any AI analysis.
+ * `mode: "ipa"` means a supported language was analyzed through compareTextsWithIPA,
+ * while `mode: "graphemic"` indicates an unsupported language or graceful fallback.
+ */
 export type LocalRhymeSectionAnalysis = {
   sectionId: string;
   sectionName: string;
@@ -44,6 +55,12 @@ const toPairConfidenceScore = (similarity: { score?: number; isApproximated?: bo
   return Math.round(adjustedScore * 1000) / 10;
 };
 
+/**
+ * Builds lightweight, local rhyme diagnostics for each song section.
+ * It uses IPA comparison when the section language is supported and falls back
+ * to graphemic scheme detection whenever the language is unsupported or the IPA
+ * comparison fails, without throwing to the caller.
+ */
 export const analyzeSongRhymes = async (song: Section[]): Promise<LocalRhymeSectionAnalysis[]> => {
   return Promise.all(song.map(async section => {
     const lyricLines = section.lines
