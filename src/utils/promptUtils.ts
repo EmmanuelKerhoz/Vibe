@@ -5,6 +5,7 @@
 
 import type { Section, Line } from '../types';
 import { runIPAPipeline } from './ipaPipeline';
+import { getSectionText } from './songUtils';
 
 type BuildAdaptSongPromptParams = {
   sourceSong: Section[];
@@ -18,6 +19,30 @@ type BuildAdaptSectionPromptParams = {
   newLanguage: string;
   uiLanguage: string;
   ipaEnhancedPrompt?: string;
+};
+
+type BuildThemeAnalysisPromptParams = {
+  song: Section[];
+  topic: string;
+  mood: string;
+  uiLanguage: string;
+};
+
+type BuildApplyAnalysisBatchPromptParams = {
+  song: Section[];
+  itemsToApply: string[];
+  uiLanguage: string;
+};
+
+type BuildApplyAnalysisItemPromptParams = {
+  song: Section[];
+  itemText: string;
+  uiLanguage: string;
+};
+
+type BuildSongAnalysisPromptParams = {
+  songText: string;
+  uiLanguage: string;
 };
 
 /**
@@ -134,6 +159,14 @@ export const buildRhymeConstrainedPrompt = async (
 export const buildDetectLanguagePrompt = (songText: string): string =>
   `Detect the language of these lyrics. Return ONLY the name of the language in English (e.g., "English", "French", "Spanish").\n\nLyrics:\n${songText.substring(0, 1000)}`;
 
+export const buildThemeAnalysisPrompt = ({
+  song,
+  topic,
+  mood,
+  uiLanguage,
+}: BuildThemeAnalysisPromptParams): string =>
+  `Analyze the following song lyrics.\nCurrent Topic: "${topic}"\nCurrent Mood: "${mood}"\n\nIf the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.\nIMPORTANT: Return the topic and mood values in ${uiLanguage}.\nReturn JSON with "topic" and "mood" strings.\n\nLyrics:\n${song.map(section => section.name + '\n' + getSectionText(section)).join('\n\n')}\n`;
+
 export const buildAdaptSongPrompt = ({
   sourceSong,
   newLanguage,
@@ -149,6 +182,26 @@ export const buildAdaptSectionPrompt = ({
   ipaEnhancedPrompt = '',
 }: BuildAdaptSectionPromptParams): string =>
   `You are an expert lyricist specializing in creative song adaptation across languages.\n\nAdapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\nKeep section name unchanged. Update rhymingSyllables. Adjust syllable counts.\nWrite the "concept" field for each line in ${uiLanguage}.\n\nCurrent Section Data:\n${JSON.stringify(section)}${ipaEnhancedPrompt}`;
+
+export const buildApplyAnalysisBatchPrompt = ({
+  song,
+  itemsToApply,
+  uiLanguage,
+}: BuildApplyAnalysisBatchPromptParams): string =>
+  `Modify the following song lyrics based on these improvement suggestions:\n      ${itemsToApply.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\n      IMPORTANT:\n      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).\n      2. Only update the lyrics as suggested.\n      3. Return the FULL updated song in the same JSON format as the input.\n      4. Do not change the section names unless specifically requested by the improvements.\n      5. Preserve the original song language in all lyric text fields.\n      6. Write the "concept" field for each line in ${uiLanguage}.\n\n      Current Song Data:\n      ${JSON.stringify(song)}`;
+
+export const buildApplyAnalysisItemPrompt = ({
+  song,
+  itemText,
+  uiLanguage,
+}: BuildApplyAnalysisItemPromptParams): string =>
+  `Modify the following song lyrics based on this specific improvement suggestion: "${itemText}".\n\n      IMPORTANT:\n      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).\n      2. Only update the lyrics as suggested.\n      3. Return the FULL updated song in the same JSON format as the input.\n      4. Do not change the section names unless specifically requested by the improvement.\n      5. Preserve the original song language in all lyric text fields.\n      6. Write the "concept" field for each line in ${uiLanguage}.\n\n      Current Song Data:\n      ${JSON.stringify(song)}`;
+
+export const buildSongAnalysisPrompt = ({
+  songText,
+  uiLanguage,
+}: BuildSongAnalysisPromptParams): string =>
+  `Thoroughly analyze the following song lyrics.\n      Provide a detailed report including:\n      1. Overall Theme & Narrative: What is the song truly about?\n      2. Emotional Arc: How do the emotions shift throughout the song?\n      3. Technical Analysis: Rhyme schemes, syllable consistency, and rhythmic flow.\n      4. Strengths: What works well in the current version?\n      5. Actionable Improvements: Specific suggestions to improve the lyrics, structure, or impact.\n      6. Musical Suggestions: Ideas for instrumentation or vocal delivery based on the lyrics.\n\n      IMPORTANT: Write the ENTIRE analysis report in ${uiLanguage}.\n\n      Song Lyrics:\n      ${songText}`;
 
 /**
  * Builds a rhyme-constrained prompt from a Section object
