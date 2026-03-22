@@ -10,6 +10,7 @@ interface TopicMoodSuggestion {
 export function useTopicMoodSuggester(
   currentTopic: string,
   currentMood: string,
+  songLanguage: string,
   setTopic: (v: string) => void,
   setMood: (v: string) => void
 ) {
@@ -24,7 +25,10 @@ export function useTopicMoodSuggester(
     let wasAborted = false;
     try {
       return await withAbort(abortControllerRef, async (nextSignal) => {
-        const prompt = `Generate a creative, inspiring song topic and matching mood for a songwriting session.\nReturn as JSON:\n{\n  "topic": "short description (2-8 words)",\n  "mood": "comma-separated mood descriptors (e.g., 'Melancholic, nostalgic, bittersweet')"\n}\n\nExamples:\n- {"topic": "A lonely astronaut drifting in deep space", "mood": "Isolated, contemplative, yearning"}\n- {"topic": "Dancing in a neon-lit city at midnight", "mood": "Energetic, euphoric, cyberpunk"}\n- {"topic": "The last letter from a lost love", "mood": "Heartbreaking, tender, regretful"}\n\nBe original and evocative.`;
+        const languageInstruction = songLanguage.trim()
+          ? `\nWhen responding, write the "topic" and "mood" values exclusively in ${songLanguage.trim()}.`
+          : '';
+        const prompt = `Generate a creative, inspiring song topic and matching mood for a songwriting session.\nReturn as JSON:\n{\n  "topic": "short description (2-8 words)",\n  "mood": "comma-separated mood descriptors (e.g., 'Melancholic, nostalgic, bittersweet')"\n}\n\nExamples:\n- {"topic": "A lonely astronaut drifting in deep space", "mood": "Isolated, contemplative, yearning"}\n- {"topic": "Dancing in a neon-lit city at midnight", "mood": "Energetic, euphoric, cyberpunk"}\n- {"topic": "The last letter from a lost love", "mood": "Heartbreaking, tender, regretful"}\n\nBe original and evocative.${languageInstruction}`;
 
         const response = await generateContentWithRetry({
           model: AI_MODEL_NAME,
@@ -51,7 +55,7 @@ export function useTopicMoodSuggester(
     } finally {
       if (!wasAborted) setIsGeneratingSuggestion(false);
     }
-  }, []);
+  }, [songLanguage]);
 
   const resetSuggestionCycle = useCallback(() => {
     setHasSuggested(false);

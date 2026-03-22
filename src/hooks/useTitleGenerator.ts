@@ -16,7 +16,7 @@ export function useTitleGenerator(
   song: Section[],
   topic: string,
   mood: string,
-  songLanguage: string = 'English',
+  songLanguage = '',
   {
     shouldAutoGenerateTitle,
     setShouldAutoGenerateTitle,
@@ -38,6 +38,9 @@ export function useTitleGenerator(
     try {
       return await withAbort(abortControllerRef, async (nextSignal) => {
         const lyricsSnippet = getSongText(song.slice(0, 2)).substring(0, 500);
+        const languageInstruction = songLanguage.trim()
+          ? `IMPORTANT: Respond exclusively in ${songLanguage.trim()}. The title MUST be written in that language.\n`
+          : '';
 
         const prompt = `Generate a creative, concise song title (max 6 words) based on:
 Topic: ${topic}
@@ -45,8 +48,7 @@ Mood: ${mood}
 Lyrics excerpt:
 ${lyricsSnippet}
 
-IMPORTANT: The title MUST be written in ${songLanguage}.
-Return ONLY the title as plain text, no quotes, no explanation.`;
+${languageInstruction}Return ONLY the title as plain text, no quotes, no explanation.`;
 
         const response = await generateContentWithRetry({
           model: AI_MODEL_NAME,

@@ -1,12 +1,14 @@
 import { useCallback } from 'react';
 import { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
-import { isPureMetaLine, isSectionHeader, isEmptyBracketLine } from '../utils/metaUtils';
+import { BRACKET_TOKEN_REGEX, isPureMetaLine, isSectionHeader, isEmptyBracketLine, unwrapBracketToken } from '../utils/metaUtils';
 import { generateId } from '../utils/idUtils';
 import { countSyllables } from '../utils/syllableUtils';
+import { languageNameToCode } from '../constants/langFamilyMap';
 
 interface UseMarkupEditorParams {
   song: Section[];
+  songLanguage: string;
   isMarkupMode: boolean;
   markupText: string;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -29,7 +31,8 @@ const isArtifact = (text: string): boolean => {
  */
 const tokenizeLine = (rawLine: string): string[] => {
   const trimmed = rawLine.trim();
-  const tokenPattern = /\[([^\]]+)\]/g;
+  const tokenPattern = BRACKET_TOKEN_REGEX;
+  tokenPattern.lastIndex = 0;
   const tokens: string[] = [];
   let lastIdx = 0;
   let match: RegExpExecArray | null;
@@ -50,9 +53,11 @@ const tokenizeLine = (rawLine: string): string[] => {
 
 export function useMarkupEditor(params: UseMarkupEditorParams) {
   const {
-    song, isMarkupMode, markupText, markupTextareaRef,
+    song, songLanguage, isMarkupMode, markupText, markupTextareaRef,
     setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   } = params;
+  const normalizedSongLanguage = (languageNameToCode(songLanguage) ?? songLanguage).trim().toLowerCase();
+  const markupDirection: 'ltr' | 'rtl' = ['ar', 'he', 'fa', 'ur'].includes(normalizedSongLanguage) ? 'rtl' : 'ltr';
 
   const scrollToSection = useCallback((section: Section) => {
     if (isMarkupMode) {
@@ -92,7 +97,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       const usedSectionIds = new Set<string>();
       const usedLineIds = new Set<string>();
 
-          const newSections = rawBlocks.map((block, index) => {
+      const newSections = rawBlocks.map((block, blockIndex) => {
         const expandedLines = block
           .trim()
           .split('\n')
@@ -104,13 +109,11 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         let name = 'Verse';
         let remainingLines = expandedLines;
         const firstToken = (expandedLines[0] ?? '').trim();
+        const firstTokenInner = unwrapBracketToken(firstToken);
 
-        if ((firstToken.startsWith('**[') && firstToken.endsWith(']**')) || (firstToken.startsWith('[') && firstToken.endsWith(']'))) {
-          const inner = firstToken.replace(/^\*\*\[|\]\*\*$|^\[|\]$/g, '').trim();
-          if (inner && isSectionHeader(inner)) {
-            name = cleanSectionName(firstToken);
-            remainingLines = expandedLines.slice(1);
-          }
+        if (firstTokenInner && isSectionHeader(firstTokenInner)) {
+          name = cleanSectionName(firstTokenInner);
+          remainingLines = expandedLines.slice(1);
         }
 
         const preInstructions: string[] = [];
@@ -121,7 +124,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         remainingLines.forEach(tok => {
           if (isArtifact(tok)) return;
           const trimmed = tok.trim();
-          if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+          if (unwrapBracketToken(trimmed)) {
             if (isPureMetaLine(trimmed)) {
               foundLyrics = true;
               lyricLines.push(trimmed);
@@ -135,8 +138,8 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
           }
         });
 
-        let existingSection = (song[index] && song[index]!.name === name)
-          ? song[index]!
+        const existingSection = (song[blockIndex] && song[blockIndex]!.name === name)
+          ? song[blockIndex]!
           : song.find(s => s.name === name && !usedSectionIds.has(s.id));
         let sectionId = existingSection?.id || generateId();
         if (usedSectionIds.has(sectionId)) sectionId = generateId();
@@ -180,7 +183,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       setIsMarkupMode(false);
     } else {
       // STRUCTURED → MARKUP
-      const fmt = (i: string) => { const tr = i.trim(); return (tr.startsWith('[') && tr.endsWith(']')) ? tr : `[${tr}]`; };
+      const fmt = (i: string) => { const tr = i.trim(); return unwrapBracketToken(tr) ? tr : `[${tr}]`; };
       const text = song.map(sec => {
         const pre = (sec.preInstructions || []).map(fmt).join('\n');
         const post = (sec.postInstructions || []).map(fmt).join('\n');
@@ -188,9 +191,9 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
           .filter(l => {
             if (isArtifact(l.text)) return false;
             const t2 = l.text.trim();
-            if (t2.startsWith('[') && t2.endsWith(']')) {
-              const inner = t2.slice(1, -1).trim();
-              if (isSectionHeader(inner)) return false;
+            const inner = unwrapBracketToken(t2);
+            if (inner && isSectionHeader(inner)) {
+              return false;
             }
             return true;
           })
@@ -203,5 +206,5 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     }
   }, [song, isMarkupMode, markupText, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory]);
 
-  return { scrollToSection, handleMarkupToggle };
+  return { scrollToSection, handleMarkupToggle, markupDirection };
 }

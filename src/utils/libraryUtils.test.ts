@@ -13,6 +13,7 @@ vi.mock('./safeStorage', () => ({
 
 import {
   deleteAssetFromLibrary,
+  extractImportPayloadFromText,
   loadAssetIntoEditor,
   mergeAssets,
   parseTextToSections,
@@ -84,6 +85,13 @@ describe('parseTextToSections', () => {
       rhyme: '',
       syllables: 0,
     }));
+  });
+});
+
+describe('import metadata extraction', () => {
+  it('restores plain text language metadata headers', () => {
+    expect(extractImportPayloadFromText('\uFEFF# lang: ar\n\nTitle\n\n[Verse]\nLine').songLanguage).toBe('ar');
+    expect(extractImportPayloadFromText('\uFEFF# lang: ar\n\nTitle\n\n[Verse]\nLine').text).toBe('Title\n\n[Verse]\nLine');
   });
 });
 

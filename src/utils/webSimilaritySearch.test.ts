@@ -87,9 +87,11 @@ describe('runSearchTree', () => {
     await runSearchTree(
       [makeSection('verse-1', 'Verse 1', 'some lyrics about love')],
       'My Song Title',
+      'French',
     );
 
     const queries = providerMock.mock.calls.map(c => c[0]);
     expect(queries.some(q => q.includes('My Song Title') && q.includes('lyrics'))).toBe(true);
+    expect(queries.every(q => q.endsWith(' fr'))).toBe(true);
   });
 });

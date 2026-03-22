@@ -66,6 +66,7 @@ const buildHook = (
       title: 'Test Song',
       topic: 'test',
       mood: 'neutral',
+      songLanguage: '',
       openPasteModalWithText,
       playAudioFeedback,
     }),

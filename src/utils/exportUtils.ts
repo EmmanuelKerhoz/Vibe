@@ -11,6 +11,7 @@ type SongExportParams = {
   title: string;
   topic: string;
   mood: string;
+  songLanguage?: string;
   format: ExportFormat;
 };
 
@@ -31,8 +32,9 @@ const isArtifactLine = (text: string): boolean => {
   return t === '' || t === '[]';
 };
 
-const buildTxtContent = (song: Section[], title: string) => {
-  let content = `${title}\n\n`;
+const buildTxtContent = (song: Section[], title: string, songLanguage = '') => {
+  let content = songLanguage.trim() ? `# lang: ${songLanguage.trim()}\n\n` : '';
+  content += `${title}\n\n`;
   song.forEach(section => {
     content += `[${section.name}]\n`;
     section.lines
@@ -66,7 +68,7 @@ const buildWordParagraph = (text: string, options?: { bold?: boolean }) => {
   return `<w:p><w:r>${options?.bold ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
 };
 
-const buildDocxBlob = (song: Section[], title: string, topic: string, mood: string) => {
+const buildDocxBlob = (song: Section[], title: string, topic: string, mood: string, songLanguage = '') => {
   const paragraphs = [
     buildWordParagraph(title, { bold: true }),
     buildWordParagraph(`Topic: ${topic}`),
@@ -80,6 +82,7 @@ const buildDocxBlob = (song: Section[], title: string, topic: string, mood: stri
       '<w:p/>',
     ]),
   ].join('');
+  const trimmedSongLanguage = songLanguage.trim();
 
   const files = {
     '[Content_Types].xml': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -87,10 +90,12 @@ const buildDocxBlob = (song: Section[], title: string, topic: string, mood: stri
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  ${trimmedSongLanguage ? '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' : ''}
 </Types>`),
     '_rels/.rels': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+  ${trimmedSongLanguage ? '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>' : ''}
 </Relationships>`),
     'word/document.xml': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -102,12 +107,20 @@ const buildDocxBlob = (song: Section[], title: string, topic: string, mood: stri
     </w:sectPr>
   </w:body>
 </w:document>`),
+    ...(trimmedSongLanguage ? {
+      'docProps/core.xml': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties
+  xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+  xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <dc:language>${escapeXml(trimmedSongLanguage)}</dc:language>
+</cp:coreProperties>`),
+    } : {}),
   };
 
   return new Blob([zipSync(files, { level: 0 })], { type: DOCX_MIME });
 };
 
-const buildOdtBlob = (song: Section[], title: string, topic: string, mood: string) => {
+const buildOdtBlob = (song: Section[], title: string, topic: string, mood: string, songLanguage = '') => {
   const paragraphs = [
     `<text:p text:style-name="Title">${escapeXml(title)}</text:p>`,
     `<text:p text:style-name="Standard">${escapeXml(`Topic: ${topic}`)}</text:p>`,
@@ -121,6 +134,7 @@ const buildOdtBlob = (song: Section[], title: string, topic: string, mood: strin
       '<text:p text:style-name="Standard"/>',
     ]),
   ].join('');
+  const trimmedSongLanguage = songLanguage.trim();
 
   const files = {
     mimetype: strToU8(ODT_MIME),
@@ -158,10 +172,12 @@ const buildOdtBlob = (song: Section[], title: string, topic: string, mood: strin
     'meta.xml': strToU8(`<?xml version="1.0" encoding="UTF-8"?>
 <office:document-meta
   xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
   xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0"
   office:version="1.2">
   <office:meta>
     <meta:generator>Vibe Export</meta:generator>
+    ${trimmedSongLanguage ? `<dc:language>${escapeXml(trimmedSongLanguage)}</dc:language>` : ''}
   </office:meta>
 </office:document-meta>`),
     'settings.xml': strToU8(`<?xml version="1.0" encoding="UTF-8"?>
@@ -186,13 +202,13 @@ const buildOdtBlob = (song: Section[], title: string, topic: string, mood: strin
 };
 
 export const createSongExport = ({
-  song, title, topic, mood, format,
+  song, title, topic, mood, songLanguage = '', format,
 }: SongExportParams): { blob: Blob; filename: string } => {
   const baseFileName = getBaseFileName(title);
   switch (format) {
     case 'txt':
       return {
-        blob: new Blob(['\uFEFF' + buildTxtContent(song, title)], { type: 'text/plain;charset=utf-8' }),
+        blob: new Blob(['\uFEFF' + buildTxtContent(song, title, songLanguage)], { type: 'text/plain;charset=utf-8' }),
         filename: `${baseFileName}.txt`,
       };
     case 'markup':
@@ -201,8 +217,8 @@ export const createSongExport = ({
         filename: `${baseFileName}.md`,
       };
     case 'docx':
-      return { blob: buildDocxBlob(song, title, topic, mood), filename: `${baseFileName}.docx` };
+      return { blob: buildDocxBlob(song, title, topic, mood, songLanguage), filename: `${baseFileName}.docx` };
     case 'odt':
-      return { blob: buildOdtBlob(song, title, topic, mood), filename: `${baseFileName}.odt` };
+      return { blob: buildOdtBlob(song, title, topic, mood, songLanguage), filename: `${baseFileName}.odt` };
   }
 };
