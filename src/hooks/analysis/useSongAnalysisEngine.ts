@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Type } from '@google/genai';
-import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
+import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../../utils/aiUtils';
 import { mapSongWithPreservedIds } from '../../utils/songMergeUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { getSectionText } from '../../utils/songUtils';
 import type { Section } from '../../types';
 import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
+import { useBackgroundThemeAnalysis } from './useBackgroundThemeAnalysis';
 import {
   buildApplyAnalysisBatchPrompt,
   buildApplyAnalysisItemPrompt,
   buildSongAnalysisPrompt,
-  buildThemeAnalysisPrompt,
 } from '../../utils/promptUtils';
 import { analyzeSongRhymes } from '../../utils/songRhymeAnalysis';
 
@@ -47,6 +47,32 @@ type UseSongAnalysisEngineParams = {
   setIsAnalyzing: (value: boolean) => void;
 };
 
+const SONG_SECTIONS_RESPONSE_SCHEMA = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      name: { type: Type.STRING },
+      rhymeScheme: { type: Type.STRING },
+      lines: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            text: { type: Type.STRING },
+            rhymingSyllables: { type: Type.STRING },
+            rhyme: { type: Type.STRING },
+            syllables: { type: Type.INTEGER },
+            concept: { type: Type.STRING },
+          },
+          required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
+        },
+      },
+    },
+    required: ['name', 'lines'],
+  },
+};
+
 export const useSongAnalysisEngine = ({
   song,
   topic,
@@ -64,94 +90,24 @@ export const useSongAnalysisEngine = ({
   const [appliedAnalysisItems, setAppliedAnalysisItems] = useState<Set<string>>(new Set());
   const [selectedAnalysisItems, setSelectedAnalysisItems] = useState<Set<string>>(new Set());
   const [isApplyingAnalysis, setIsApplyingAnalysis] = useState<string | null>(null);
-  const [isAnalyzingTheme, setIsAnalyzingTheme] = useState(false);
-
-  const lastAnalyzedSongRef = useRef<string>('');
-  const backoffUntilRef = useRef<number>(0);
-  /** Background-only controller for delayed theme/mood analysis triggered by song edits. */
-  const bgAbortControllerRef = useRef<AbortController | null>(null);
   /** Foreground-only controller for user-triggered analysis/apply actions; keep separate from background aborts. */
   const fgAbortRef = useRef<AbortController | null>(null);
-  const isAnalyzingThemeRef = useRef(false);
 
   useEffect(() => {
     return () => {
-      abortCurrent(bgAbortControllerRef);
       abortCurrent(fgAbortRef);
     };
   }, []);
 
   const uiLang = resolveUiLanguageName(uiLanguage);
-
-  useEffect(() => {
-    if (song.length === 0) return;
-
-    const currentSongStr = JSON.stringify(song);
-    if (currentSongStr === lastAnalyzedSongRef.current) return;
-
-    const timer = setTimeout(async () => {
-      if (Date.now() < backoffUntilRef.current) return;
-      if (isAnalyzingThemeRef.current) return;
-
-      lastAnalyzedSongRef.current = currentSongStr;
-      isAnalyzingThemeRef.current = true;
-      setIsAnalyzingTheme(true);
-
-      let wasAborted = false;
-      try {
-        await withAbort(bgAbortControllerRef, async (nextSignal) => {
-          const prompt = buildThemeAnalysisPrompt({
-            song,
-            topic,
-            mood,
-            uiLanguage: uiLang,
-          });
-          const response = await generateContentWithRetry({
-            model: AI_MODEL_NAME,
-            contents: prompt,
-            config: {
-              responseMimeType: 'application/json',
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  topic: { type: Type.STRING },
-                  mood: { type: Type.STRING },
-                },
-              },
-            },
-            signal: nextSignal,
-          });
-
-          if (nextSignal.aborted) {
-            wasAborted = true;
-            return;
-          }
-
-          const data = safeJsonParse<{ topic?: string; mood?: string }>(response.text || '{}', {});
-          if (data.topic && data.topic !== topic) setTopic(data.topic);
-          if (data.mood && data.mood !== mood) setMood(data.mood);
-        });
-      } catch (e) {
-        if (isAbortError(e)) {
-          wasAborted = true;
-          return;
-        }
-        const msg = e instanceof Error ? e.message : '';
-        const isQuota = (e as { code?: unknown })?.code === 429 || msg.includes('429') || msg.includes('quota');
-        if (isQuota) {
-          backoffUntilRef.current = Date.now() + 5 * 60 * 1000;
-          console.warn('[useSongAnalysisEngine] Quota exceeded — background analysis paused for 5 minutes.');
-        } else {
-          handleApiError(e, 'Background analysis failed.');
-        }
-      } finally {
-        isAnalyzingThemeRef.current = false;
-        if (!wasAborted) setIsAnalyzingTheme(false);
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [song, topic, mood, uiLang, setTopic, setMood]);
+  const { isAnalyzingTheme } = useBackgroundThemeAnalysis({
+    song,
+    topic,
+    mood,
+    uiLang,
+    setTopic,
+    setMood,
+  });
 
   const toggleAnalysisItemSelection = useCallback((itemText: string) => {
     setSelectedAnalysisItems(prev => {
@@ -189,31 +145,7 @@ export const useSongAnalysisEngine = ({
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  name: { type: Type.STRING },
-                  rhymeScheme: { type: Type.STRING },
-                  lines: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.OBJECT,
-                      properties: {
-                        text: { type: Type.STRING },
-                        rhymingSyllables: { type: Type.STRING },
-                        rhyme: { type: Type.STRING },
-                        syllables: { type: Type.INTEGER },
-                        concept: { type: Type.STRING },
-                      },
-                      required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
-                    },
-                  },
-                },
-                required: ['name', 'lines'],
-              },
-            },
+            responseSchema: SONG_SECTIONS_RESPONSE_SCHEMA,
           },
           signal: nextSignal,
         });
@@ -269,31 +201,7 @@ export const useSongAnalysisEngine = ({
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  name: { type: Type.STRING },
-                  rhymeScheme: { type: Type.STRING },
-                  lines: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.OBJECT,
-                      properties: {
-                        text: { type: Type.STRING },
-                        rhymingSyllables: { type: Type.STRING },
-                        rhyme: { type: Type.STRING },
-                        syllables: { type: Type.INTEGER },
-                        concept: { type: Type.STRING },
-                      },
-                      required: ['text', 'rhymingSyllables', 'rhyme', 'syllables', 'concept'],
-                    },
-                  },
-                },
-                required: ['name', 'lines'],
-              },
-            },
+            responseSchema: SONG_SECTIONS_RESPONSE_SCHEMA,
           },
           signal: nextSignal,
         });

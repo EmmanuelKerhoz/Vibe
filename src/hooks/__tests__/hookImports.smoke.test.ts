@@ -41,6 +41,7 @@ import { makeSongUpdater } from '../hookUtils';
 /* ------------------------------------------------------------------ */
 import { usePasteImport } from '../analysis/usePasteImport';
 import { useSongAnalysisEngine } from '../analysis/useSongAnalysisEngine';
+import { useBackgroundThemeAnalysis } from '../analysis/useBackgroundThemeAnalysis';
 import { useLanguageAdapter } from '../analysis/useLanguageAdapter';
 import { reverseTranslate, reviewFidelity } from '../analysis/languageAdapterPipeline';
 import {
@@ -117,6 +118,7 @@ describe('Hook import smoke-tests', () => {
     it.each([
       ['usePasteImport', usePasteImport],
       ['useSongAnalysisEngine', useSongAnalysisEngine],
+      ['useBackgroundThemeAnalysis', useBackgroundThemeAnalysis],
       ['useLanguageAdapter', useLanguageAdapter],
       ['reverseTranslate', reverseTranslate],
       ['reviewFidelity', reviewFidelity],
