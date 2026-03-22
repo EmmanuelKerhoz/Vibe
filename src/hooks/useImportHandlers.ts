@@ -17,6 +17,12 @@ type UseImportHandlersParams = {
 
 export const useImportHandlers = (params: UseImportHandlersParams) => {
   const { importInputRef, loadFileForAnalysis, setIsImportModalOpen, setSongLanguage } = params;
+  const restoreImportedSongLanguage = useCallback((payload: { songLanguage?: string } | void) => {
+    const importedLanguage = payload && typeof payload === 'object' && 'songLanguage' in payload
+      ? payload.songLanguage?.trim()
+      : '';
+    if (importedLanguage) setSongLanguage(importedLanguage);
+  }, [setSongLanguage]);
 
   const handleImportInputChange = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -24,11 +30,8 @@ export const useImportHandlers = (params: UseImportHandlersParams) => {
     if (!file) return;
     setIsImportModalOpen(false);
     const payload = await loadFileForAnalysis(file);
-    const importedLanguage = payload && typeof payload === 'object' && 'songLanguage' in payload
-      ? payload.songLanguage?.trim()
-      : '';
-    if (importedLanguage) setSongLanguage(importedLanguage);
-  }, [loadFileForAnalysis, setIsImportModalOpen, setSongLanguage]);
+    restoreImportedSongLanguage(payload);
+  }, [loadFileForAnalysis, restoreImportedSongLanguage, setIsImportModalOpen]);
 
   const handleImportChooseFile = useCallback(async () => {
     const pickerWindow = window as WindowWithOpenFilePicker;
@@ -46,10 +49,7 @@ export const useImportHandlers = (params: UseImportHandlersParams) => {
         const file = await handle.getFile();
         setIsImportModalOpen(false);
         const payload = await loadFileForAnalysis(file);
-        const importedLanguage = payload && typeof payload === 'object' && 'songLanguage' in payload
-          ? payload.songLanguage?.trim()
-          : '';
-        if (importedLanguage) setSongLanguage(importedLanguage);
+        restoreImportedSongLanguage(payload);
       } catch (error) {
         if (!(error instanceof DOMException && error.name === 'AbortError')) {
           console.error('Failed to open import file picker', error);
@@ -58,7 +58,7 @@ export const useImportHandlers = (params: UseImportHandlersParams) => {
       return;
     }
     importInputRef.current?.click();
-  }, [importInputRef, loadFileForAnalysis, setIsImportModalOpen, setSongLanguage]);
+  }, [importInputRef, loadFileForAnalysis, restoreImportedSongLanguage, setIsImportModalOpen]);
 
   return { handleImportInputChange, handleImportChooseFile };
 };

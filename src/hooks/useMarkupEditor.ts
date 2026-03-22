@@ -57,7 +57,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   } = params;
   const normalizedSongLanguage = (languageNameToCode(songLanguage) ?? songLanguage).trim().toLowerCase();
-  const markupDirection = ['ar', 'he', 'fa', 'ur'].includes(normalizedSongLanguage) ? 'rtl' : 'ltr';
+  const markupDirection: 'ltr' | 'rtl' = ['ar', 'he', 'fa', 'ur'].includes(normalizedSongLanguage) ? 'rtl' : 'ltr';
 
   const scrollToSection = useCallback((section: Section) => {
     if (isMarkupMode) {
@@ -97,7 +97,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       const usedSectionIds = new Set<string>();
       const usedLineIds = new Set<string>();
 
-      const newSections = rawBlocks.map((block, index) => {
+      const newSections = rawBlocks.map((block, blockIndex) => {
         const expandedLines = block
           .trim()
           .split('\n')
@@ -138,8 +138,8 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
           }
         });
 
-        let existingSection = (song[index] && song[index]!.name === name)
-          ? song[index]!
+        const existingSection = (song[blockIndex] && song[blockIndex]!.name === name)
+          ? song[blockIndex]!
           : song.find(s => s.name === name && !usedSectionIds.has(s.id));
         let sectionId = existingSection?.id || generateId();
         if (usedSectionIds.has(sectionId)) sectionId = generateId();

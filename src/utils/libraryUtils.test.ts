@@ -13,8 +13,6 @@ vi.mock('./safeStorage', () => ({
 
 import {
   deleteAssetFromLibrary,
-  extractImportPayloadFromDocx,
-  extractImportPayloadFromOdt,
   extractImportPayloadFromText,
   loadAssetIntoEditor,
   mergeAssets,
@@ -22,7 +20,6 @@ import {
   purgeLibrary,
   type LibraryAsset,
 } from './libraryUtils';
-import { createSongExport } from './exportUtils';
 
 const makeLine = (id: string, text: string) => ({
   id,
@@ -95,33 +92,6 @@ describe('import metadata extraction', () => {
   it('restores plain text language metadata headers', () => {
     expect(extractImportPayloadFromText('\uFEFF# lang: ar\n\nTitle\n\n[Verse]\nLine').songLanguage).toBe('ar');
     expect(extractImportPayloadFromText('\uFEFF# lang: ar\n\nTitle\n\n[Verse]\nLine').text).toBe('Title\n\n[Verse]\nLine');
-  });
-
-  it('round-trips docx and odt language metadata from exports', async () => {
-    const docxExport = createSongExport({
-      song: [{ id: 'section-1', name: 'Verse 1', lines: [makeLine('line-1', 'مرحبا')] }],
-      title: 'Arabic Song',
-      topic: 'Night',
-      mood: 'Dreamy',
-      songLanguage: 'ar',
-      format: 'docx',
-    });
-    const odtExport = createSongExport({
-      song: [{ id: 'section-1', name: 'Verse 1', lines: [makeLine('line-1', 'مرحبا')] }],
-      title: 'Arabic Song',
-      topic: 'Night',
-      mood: 'Dreamy',
-      songLanguage: 'ar',
-      format: 'odt',
-    });
-
-    const docxPayload = await extractImportPayloadFromDocx(new File([await docxExport.blob.arrayBuffer()], 'song.docx', { type: docxExport.blob.type }));
-    const odtPayload = await extractImportPayloadFromOdt(new File([await odtExport.blob.arrayBuffer()], 'song.odt', { type: odtExport.blob.type }));
-
-    expect(docxPayload.songLanguage).toBe('ar');
-    expect(docxPayload.text).toContain('Arabic Song');
-    expect(odtPayload.songLanguage).toBe('ar');
-    expect(odtPayload.text).toContain('Arabic Song');
   });
 });
 

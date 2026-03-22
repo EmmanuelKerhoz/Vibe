@@ -2,12 +2,14 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Section } from '../../types';
 
-const generateContentWithRetry = vi.fn(async () => ({ text: 'Generated output' }));
-const handleApiError = vi.fn();
+const aiUtilsMocks = vi.hoisted(() => ({
+  generateContentWithRetry: vi.fn(async () => ({ text: 'Generated output' })),
+  handleApiError: vi.fn(),
+}));
 
 vi.mock('../../utils/aiUtils', () => ({
   AI_MODEL_NAME: 'test-model',
-  generateContentWithRetry,
+  generateContentWithRetry: aiUtilsMocks.generateContentWithRetry,
   safeJsonParse: <T,>(text: string, fallback: T) => {
     try {
       return JSON.parse(text) as T;
@@ -15,7 +17,7 @@ vi.mock('../../utils/aiUtils', () => ({
       return fallback;
     }
   },
-  handleApiError,
+  handleApiError: aiUtilsMocks.handleApiError,
 }));
 
 import { useTitleGenerator } from '../useTitleGenerator';
@@ -34,10 +36,13 @@ const song: Section[] = [{
   }],
 }];
 
+const getPromptAt = (index: number): string =>
+  (((aiUtilsMocks.generateContentWithRetry.mock.calls as unknown as Array<[{ contents?: string }]>)[index]?.[0]?.contents) ?? '');
+
 describe('AI prompt language enforcement', () => {
   beforeEach(() => {
-    generateContentWithRetry.mockClear();
-    handleApiError.mockClear();
+    aiUtilsMocks.generateContentWithRetry.mockClear();
+    aiUtilsMocks.handleApiError.mockClear();
   });
 
   it('adds an exclusive language instruction to title generation only when songLanguage is set', async () => {
@@ -50,8 +55,8 @@ describe('AI prompt language enforcement', () => {
       await result.current.generateTitle();
     });
 
-    expect(generateContentWithRetry).toHaveBeenCalled();
-    const firstPrompt = generateContentWithRetry.mock.calls[0]?.[0]?.contents as string;
+    expect(aiUtilsMocks.generateContentWithRetry).toHaveBeenCalled();
+    const firstPrompt = getPromptAt(0);
     expect(firstPrompt).toContain('Respond exclusively in Arabic');
 
     rerender({ language: '' });
@@ -59,12 +64,12 @@ describe('AI prompt language enforcement', () => {
       await result.current.generateTitle();
     });
 
-    const secondPrompt = generateContentWithRetry.mock.calls[1]?.[0]?.contents as string;
+    const secondPrompt = getPromptAt(1);
     expect(secondPrompt).not.toContain('Respond exclusively in');
   });
 
   it('adds an exclusive language instruction to topic/mood suggestions only when songLanguage is set', async () => {
-    generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"Ville","mood":"Brumeux"}' });
+    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"Ville","mood":"Brumeux"}' });
     const { result, rerender } = renderHook(
       ({ language }) => useTopicMoodSuggester('Existing topic', 'Existing mood', language, vi.fn(), vi.fn()),
       { initialProps: { language: 'French' } },
@@ -74,16 +79,16 @@ describe('AI prompt language enforcement', () => {
       await result.current.generateSuggestion();
     });
 
-    const firstPrompt = generateContentWithRetry.mock.calls[0]?.[0]?.contents as string;
+    const firstPrompt = getPromptAt(0);
     expect(firstPrompt).toContain('write the "topic" and "mood" values exclusively in French');
 
-    generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"City","mood":"Moody"}' });
+    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"City","mood":"Moody"}' });
     rerender({ language: '' });
     await act(async () => {
       await result.current.generateSuggestion();
     });
 
-    const secondPrompt = generateContentWithRetry.mock.calls[1]?.[0]?.contents as string;
+    const secondPrompt = getPromptAt(1);
     expect(secondPrompt).not.toContain('values exclusively in');
   });
 });
