@@ -74,7 +74,7 @@ const writeStore = (store: LibraryStore): boolean =>
  * Merge `incoming` assets into `base`, keeping all unique ids.
  * `incoming` wins on conflict (same id → keep incoming version).
  */
-const mergeAssets = (base: LibraryAsset[], incoming: LibraryAsset[]): LibraryAsset[] => {
+export const mergeAssets = (base: LibraryAsset[], incoming: LibraryAsset[]): LibraryAsset[] => {
   const map = new Map<string, LibraryAsset>();
   for (const a of base) map.set(a.id, a);
   for (const a of incoming) map.set(a.id, a); // incoming overwrites
@@ -299,7 +299,8 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
   return assets;
 };
 
-const parseTextToSections = (text: string): Section[] => {
+/** @internal Exported for focused unit tests. */
+export const parseTextToSections = (text: string): Section[] => {
   const blocks = text.split(/\n\s*\n/);
   const sections: Section[] = [];
   let uid = Date.now();
@@ -311,7 +312,8 @@ const parseTextToSections = (text: string): Section[] => {
     let contentLines = lines;
     const firstLine = (lines[0] ?? '').trim();
     if ((firstLine.startsWith('[') && firstLine.endsWith(']')) || (firstLine.startsWith('**[') && firstLine.endsWith(']**'))) {
-      sectionName = firstLine.replace(/^\*\*?\[|\]\*\*?$/g, '');
+      const headerMatch = firstLine.match(/^(?:\*\*)?\[(.+?)\](?:\*\*)?$/);
+      sectionName = headerMatch?.[1] ?? sectionName;
       contentLines = lines.slice(1);
     }
     const sectionLines = contentLines
