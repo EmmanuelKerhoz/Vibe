@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 import { DEFAULT_STRUCTURE } from './constants/editor';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
@@ -19,7 +19,8 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSessionActions } from './hooks/useSessionActions';
 import { useImportHandlers } from './hooks/useImportHandlers';
 import { useLibraryActions } from './hooks/useLibraryActions';
-import { ModalProvider, type UIStateBag } from './contexts/ModalContext';
+import { useUIStateForProvider } from './hooks/useUIStateForProvider';
+import { ModalProvider } from './contexts/ModalContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -66,20 +67,22 @@ function AppInner() {
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
 
-  const prevIsMobileOrTablet = useRef(isMobileOrTablet);
+  const mobileInitDoneRef = useRef(false);
+  const prevIsMobileOrTabletRef = useRef(isMobileOrTablet);
   useEffect(() => {
-    if (isMobileOrTablet && !prevIsMobileOrTablet.current) {
-      setIsLeftPanelOpen(false);
-      setIsStructureOpen(false);
-    }
-    prevIsMobileOrTablet.current = isMobileOrTablet;
-  }, [isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen]);
+    const wasTablet = prevIsMobileOrTabletRef.current;
+    prevIsMobileOrTabletRef.current = isMobileOrTablet;
 
-  const mobileInitRef = useRef(false);
-  useEffect(() => {
-    if (mobileInitRef.current) return;
-    mobileInitRef.current = true;
-    if (isMobileOrTablet) {
+    if (!mobileInitDoneRef.current) {
+      mobileInitDoneRef.current = true;
+      if (isMobileOrTablet) {
+        setIsLeftPanelOpen(false);
+        setIsStructureOpen(false);
+      }
+      return;
+    }
+
+    if (isMobileOrTablet && !wasTablet) {
       setIsLeftPanelOpen(false);
       setIsStructureOpen(false);
     }
@@ -302,7 +305,7 @@ function AppInner() {
   // ── ModalProvider injection ───────────────────────────────────────────────
   // Construct UIStateBag directly from destructured appState values.
   // NO cast, NO dynamic import — fully type-checked against UIStateBag.
-  const uiStateForProvider = useMemo<UIStateBag>(() => ({
+  const uiStateForProvider = useUIStateForProvider({
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
@@ -316,21 +319,7 @@ function AppInner() {
     isMarkupMode, markupText, setMarkupText,
     markupTextareaRef, importInputRef,
     shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
-  }), [
-    setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
-    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
-    setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
-    setIsResetModalOpen, setConfirmModal, setPromptModal, setIsMarkupMode,
-    isAboutOpen, isSettingsOpen, apiErrorModal,
-    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
-    isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
-    isResetModalOpen, confirmModal, promptModal,
-    activeTab, setActiveTab, isStructureOpen, setIsStructureOpen,
-    isLeftPanelOpen, setIsLeftPanelOpen,
-    isMarkupMode, markupText, setMarkupText,
-    markupTextareaRef, importInputRef,
-    shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
-  ]);
+  });
 
   return (
     <ModalProvider uiState={uiStateForProvider}>
