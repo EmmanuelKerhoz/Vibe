@@ -133,6 +133,12 @@ function AppInnerContent() {
     }
   }, [isSessionHydrated, defaultEditMode, setIsMarkupMode]);
 
+  useEffect(() => {
+    if (activeTab !== 'lyrics' && isMarkupMode) {
+      setIsMarkupMode(false);
+    }
+  }, [activeTab, isMarkupMode, setIsMarkupMode]);
+
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
   } = useSongEditor({ song, structure, newSectionName, setNewSectionName,
