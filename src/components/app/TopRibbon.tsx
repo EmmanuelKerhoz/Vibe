@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles, Download, Upload, Undo2, Redo2, Trash2, History,
   PanelRight, Library, Menu, FilePlus, Settings, Info, WandSparkles, ClipboardPaste, Heart
-} from 'lucide-react';
+} from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
 import { motion } from 'motion/react';

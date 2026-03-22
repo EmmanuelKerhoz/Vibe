@@ -29,7 +29,7 @@ vi.mock('../../../i18n', () => ({
   }),
 }));
 
-vi.mock('lucide-react', () => ({
+vi.mock('../../ui/icons', () => ({
   X: () => null,
   BarChart2: () => null,
   Sparkles: () => null,

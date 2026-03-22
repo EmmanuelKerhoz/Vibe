@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCode } from 'lucide-react';
+import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCode } from '../../ui/icons';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';

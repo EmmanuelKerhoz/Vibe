@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, X } from 'lucide-react';
+import { Trash2, X } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 
 type ResetModalProps = {

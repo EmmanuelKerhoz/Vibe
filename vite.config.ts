@@ -122,9 +122,8 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor-fluent': ['@fluentui/react-components'],
+          'vendor-fluent': ['@fluentui/react-components', '@fluentui/react-icons'],
           'vendor-motion': ['motion'],
-          'vendor-lucide': ['lucide-react'],
         },
       },
     },

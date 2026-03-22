@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle } from 'lucide-react';
+import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Label } from '../ui/Label';

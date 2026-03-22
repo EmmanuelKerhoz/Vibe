@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Lightbulb, Sparkles, Hash, RefreshCw, Check } from 'lucide-react';
+import { X, Lightbulb, Sparkles, Hash, RefreshCw, Check } from '../ui/icons';
 import { useTranslation } from '../../i18n';
 
 interface Props {

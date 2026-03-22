@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, X, BookOpen, Music, Clock, Loader2, Library, Trash2, FolderOpen, HardDrive, AlertTriangle } from 'lucide-react';
+import { Save, X, BookOpen, Music, Clock, Loader2, Library, Trash2, FolderOpen, HardDrive, AlertTriangle } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { LibraryAsset } from '../../../utils/libraryUtils';

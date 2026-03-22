@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { HardDrive } from 'lucide-react';
+import { HardDrive } from './icons';
 import { useTranslation } from '../../i18n';
 import { useStorageEstimate } from '../../hooks/useStorageEstimate';
 import type { StorageTier } from '../../hooks/useStorageEstimate';
