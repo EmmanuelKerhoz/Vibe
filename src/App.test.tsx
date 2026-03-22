@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import type { WebSimilarityCandidate, WebSimilarityIndex } from './types/webSimilarity';
 
 const mockAppState = vi.hoisted(() => ({
   initialActiveTab: 'lyrics' as 'lyrics' | 'musical',
@@ -10,6 +11,9 @@ const mockAppState = vi.hoisted(() => ({
   initialIsStructureOpen: false,
   initialIsMobile: false,
   initialIsTablet: false,
+  song: [] as Array<{ id: string; name: string; lines: Array<{ id: string; text: string; isMeta: boolean }> }>,
+  structure: [] as Array<{ id: string; name: string }>,
+  similarityIndex: { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex,
   setActiveTabSpy: vi.fn(),
   setIsMarkupModeSpy: vi.fn(),
   setIsLeftPanelOpenSpy: vi.fn(),
@@ -111,8 +115,8 @@ vi.mock('./hooks/useSongComposer', () => ({
 
 vi.mock('./hooks/useSongHistoryState', () => ({
   useSongHistoryState: () => ({
-    song: [],
-    structure: [],
+    song: mockAppState.song,
+    structure: mockAppState.structure,
     past: [],
     future: [],
     updateState: mockAppState.noop,
@@ -143,7 +147,7 @@ vi.mock('./hooks/useTopicMoodSuggester', () => ({
 
 vi.mock('./hooks/useSimilarityEngine', () => ({
   useSimilarityEngine: () => ({
-    index: { status: 'idle', candidates: [] },
+    index: mockAppState.similarityIndex,
     triggerNow: mockAppState.asyncNoop,
     resetIndex: mockAppState.noop,
   }),
@@ -357,7 +361,9 @@ vi.mock('./components/app/StatusBar', () => ({
 }));
 
 vi.mock('./components/app/InsightsBar', () => ({
-  InsightsBar: () => <div data-testid="insights-bar" />,
+  InsightsBar: ({ webBadgeLabel }: { webBadgeLabel: string | null }) => (
+    <div data-testid="insights-bar">{webBadgeLabel ?? 'no-web-badge-label'}</div>
+  ),
 }));
 
 vi.mock('./components/app/LyricsView', () => ({
@@ -395,6 +401,9 @@ describe('App markup mode reset', () => {
     mockAppState.initialIsStructureOpen = false;
     mockAppState.initialIsMobile = false;
     mockAppState.initialIsTablet = false;
+    mockAppState.song = [];
+    mockAppState.structure = [];
+    mockAppState.similarityIndex = { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex;
     mockAppState.setActiveTabSpy.mockClear();
     mockAppState.setIsMarkupModeSpy.mockClear();
     mockAppState.setIsLeftPanelOpenSpy.mockClear();
@@ -437,5 +446,33 @@ describe('App markup mode reset', () => {
     await waitFor(() => expect(mockAppState.setIsLeftPanelOpenSpy).toHaveBeenCalledWith(false));
     expect(mockAppState.setIsStructureOpenSpy).toHaveBeenCalledWith(false);
     expect(screen.queryByRole('button', { name: 'Close mobile panels' })).toBeNull();
+  });
+
+  it('does not build an undefined web similarity badge label when the first score is missing at runtime', () => {
+    const candidateWithoutScore = {
+      title: 'Match',
+      snippet: 'Snippet',
+      url: 'https://example.com',
+      source: 'ddg',
+      matchedSegments: [],
+    } as unknown as WebSimilarityCandidate;
+
+    mockAppState.song = [{
+      id: 'section-1',
+      name: 'Verse',
+      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
+    }];
+    mockAppState.structure = [{ id: 'section-1', name: 'Verse' }];
+    mockAppState.similarityIndex = {
+      status: 'done',
+      candidates: [candidateWithoutScore],
+      lastUpdated: null,
+      error: null,
+    };
+
+    render(<App />);
+
+    expect(screen.getByTestId('insights-bar').textContent).toBe('no-web-badge-label');
+    expect(screen.queryByText('undefined%')).toBeNull();
   });
 });
