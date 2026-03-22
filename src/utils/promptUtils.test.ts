@@ -9,6 +9,7 @@ import {
   buildApplyAnalysisBatchPrompt,
   buildApplyAnalysisItemPrompt,
   buildDetectLanguagePrompt,
+  buildThemeAnalysisPrompt,
   buildRhymeConstrainedPrompt,
   buildRhymeConstrainedPromptFromSection,
 } from './promptUtils';
@@ -267,6 +268,29 @@ describe('promptUtils', () => {
       expect(prompt).toContain('AABB');
       expect(prompt).toContain('Test line');
     });
+  });
+
+  it('buildThemeAnalysisPrompt keeps user-facing topic and mood output in the UI language', () => {
+    const prompt = buildThemeAnalysisPrompt({
+      song: [{
+        id: 'section-1',
+        name: 'Verse 1',
+        lines: [{
+          id: 'line-1',
+          text: 'Je marche seul sous la pluie',
+          rhymingSyllables: '',
+          rhyme: '',
+          syllables: 7,
+          concept: 'marche',
+        }],
+      }],
+      topic: 'Night walk',
+      mood: 'Reflective',
+      uiLanguage: 'German',
+    });
+
+    expect(prompt).toContain('Return the topic and mood values in German');
+    expect(prompt).toContain('user interface display');
   });
 
   describe('buildRhymeConstrainedPromptFromSection', () => {

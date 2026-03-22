@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getLanguageDisplay } from '../i18n';
 import type { Section } from '../types';
 import { usePasteImport } from './analysis/usePasteImport';
 import { useLanguageAdapter } from './analysis/useLanguageAdapter';
@@ -48,6 +49,16 @@ export const useSongAnalysis = ({
   requestAutoTitleGeneration,
 }: UseSongAnalysisParams) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [importLanguageSuggestion, setImportLanguageSuggestion] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!importLanguageSuggestion || !songLanguage) return;
+    const suggested = getLanguageDisplay(importLanguageSuggestion).label.trim().toLowerCase();
+    const current = getLanguageDisplay(songLanguage).label.trim().toLowerCase();
+    if (suggested === current) {
+      setImportLanguageSuggestion(null);
+    }
+  }, [importLanguageSuggestion, songLanguage]);
 
   const languageAdapter = useLanguageAdapter({
     song,
@@ -63,15 +74,27 @@ export const useSongAnalysis = ({
   const pasteImport = usePasteImport({
     rhymeScheme,
     uiLanguage,
+    currentSongLanguage: songLanguage,
     updateSongAndStructureWithHistory,
     setTopic,
     setMood,
     setSongLanguage: languageAdapter.setSongLanguage,
     setTargetLanguage: languageAdapter.setTargetLanguage,
+    onLanguageMismatch: setImportLanguageSuggestion,
     requestAutoTitleGeneration,
     clearLineSelection,
     setIsAnalyzing,
   });
+
+  const applyImportLanguageSuggestion = (detectedLang: string) => {
+    languageAdapter.setSongLanguage(detectedLang);
+    languageAdapter.setTargetLanguage(detectedLang);
+    setImportLanguageSuggestion(null);
+  };
+
+  const dismissImportLanguageSuggestion = () => {
+    setImportLanguageSuggestion(null);
+  };
 
   const analysisEngine = useSongAnalysisEngine({
     song,
@@ -108,6 +131,9 @@ export const useSongAnalysis = ({
     isAdaptingLanguage: languageAdapter.isAdaptingLanguage,
     adaptationProgress: languageAdapter.adaptationProgress,
     adaptationResult: languageAdapter.adaptationResult,
+    importLanguageSuggestion,
+    applyImportLanguageSuggestion,
+    dismissImportLanguageSuggestion,
     toggleAnalysisItemSelection: analysisEngine.toggleAnalysisItemSelection,
     applySelectedAnalysisItems: analysisEngine.applySelectedAnalysisItems,
     applyAnalysisItem: analysisEngine.applyAnalysisItem,

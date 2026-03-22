@@ -38,6 +38,9 @@ interface InsightsBarProps {
   toggleMetronome?: () => void;
   adaptationProgress?: AdaptationProgress;
   adaptationResult?: AdaptationResult | null;
+  importLanguageSuggestion?: string | null;
+  applyImportLanguageSuggestion?: (lang: string) => void;
+  dismissImportLanguageSuggestion?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -233,6 +236,9 @@ export function InsightsBar({
   toggleMetronome,
   adaptationProgress,
   adaptationResult,
+  importLanguageSuggestion,
+  applyImportLanguageSuggestion,
+  dismissImportLanguageSuggestion,
 }: InsightsBarProps) {
   const { t } = useTranslation();
   const [bannerDismissed, setBannerDismissed] = React.useState(false);
@@ -245,6 +251,7 @@ export function InsightsBar({
 
   const targetDisplay = getLanguageDisplay(targetLanguage);
   const detectedDisplay = songLanguage ? getLanguageDisplay(songLanguage) : null;
+  const importedLanguageDisplay = importLanguageSuggestion ? getLanguageDisplay(importLanguageSuggestion) : null;
   const targetLanguageDisplayText = targetDisplay ? `${targetDisplay.sign} ${targetDisplay.label}` : targetLanguage;
 
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
@@ -335,6 +342,33 @@ export function InsightsBar({
             onDismiss={() => setBannerDismissed(true)}
             isOverlay
           />
+        )}
+
+        {importedLanguageDisplay && (
+          <div className="flex items-center justify-between gap-3 rounded border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-[10px] text-amber-100">
+            <div className="min-w-0">
+              <span className="font-semibold uppercase tracking-wider text-amber-300">Import hint</span>
+              <p className="mt-0.5 text-amber-100/90">
+                Imported lyrics look like {importedLanguageDisplay.sign} {importedLanguageDisplay.label}. Update the song language?
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => importLanguageSuggestion && applyImportLanguageSuggestion?.(importLanguageSuggestion)}
+                className="ux-interactive rounded bg-amber-300/20 px-2.5 py-1 font-bold uppercase tracking-wider text-amber-200 hover:bg-amber-300/30"
+              >
+                Apply
+              </button>
+              <button
+                type="button"
+                onClick={() => dismissImportLanguageSuggestion?.()}
+                className="ux-interactive rounded border border-white/10 px-2.5 py-1 font-bold uppercase tracking-wider text-zinc-300 hover:bg-white/5"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Row 2: Section chips + action buttons */}

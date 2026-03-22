@@ -98,6 +98,13 @@ SELF-VALIDATION (mandatory before returning):
 For each section, mentally check: do all lines sharing the same letter end with matching
 phonetic sounds? If any pair fails, rewrite those lines before returning.`;
 
+const buildSongLanguagePrompt = (songLanguage?: string) => {
+  const trimmedLanguage = (songLanguage || '').trim();
+  return trimmedLanguage
+    ? `Song Language: ${trimmedLanguage}\nIMPORTANT: Write ALL lyrics in ${trimmedLanguage}.`
+    : 'IMPORTANT: Write ALL lyrics in English.';
+};
+
 const GENERATION_SCHEMA = {
   type: Type.ARRAY,
   items: {
@@ -184,6 +191,7 @@ export const useAiGeneration = ({
     try {
       await withAbort(abortControllerRef, async (signal) => {
         const lang = songLanguage || 'English';
+        const songLanguagePrompt = buildSongLanguagePrompt(songLanguage);
         const prompt =
 `Write a song about "${topic}".
 Mood: ${mood}
@@ -191,7 +199,7 @@ Default Rhyme Scheme: ${rhymeScheme}
 Target Syllables per line: ${targetSyllables}
 Structure: ${structure.join(', ')}
 
-IMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY.
+${songLanguagePrompt} You MUST follow the provided structure EXACTLY.
 Generate exactly the sections listed in the Structure field, in that specific order.
 
 ${RHYME_ENFORCEMENT_RULES}
@@ -262,7 +270,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
         else if (lowerName.includes('outro'))  lineCountPrompt = 'The section should have exactly 4 lines.';
 
         const songStructure = song.map(s => s.name).join(' → ');
-        const lang = songLanguage || 'English';
+        const songLanguagePrompt = buildSongLanguagePrompt(songLanguage);
         const formatSectionLyrics = (sec: Section) =>
           sec.lines.map(l => l.text).filter(Boolean).join('\n');
 
@@ -319,7 +327,7 @@ ${RHYME_ENFORCEMENT_RULES}${ipaConstraints}
 
 ${META_INSTRUCTION_HINT}
 
-IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${uiLanguage}.
+${songLanguagePrompt} Concepts may be written in ${uiLanguage}.
 
 Current Section:
 ${JSON.stringify([sectionToRegenerate], null, 2)}
@@ -368,7 +376,7 @@ Return the updated section in the exact same JSON structure (as an array with on
   const quantizeSyllables = useCallback(async (sectionId?: string) => {
     if (song.length === 0) return;
     setIsGenerating(true);
-    const lang = songLanguage || 'English';
+    const songLanguagePrompt = buildSongLanguagePrompt(songLanguage);
 
     try {
       await withAbort(abortControllerRef, async (signal) => {
@@ -380,7 +388,7 @@ Return the updated section in the exact same JSON structure (as an array with on
           prompt =
 `Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables.
 Maintain the original meaning, rhyme scheme, and section structure.
-Write ALL lyrics in ${lang}.
+${songLanguagePrompt}
 Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
 
 ${RHYME_ENFORCEMENT_RULES}
@@ -394,7 +402,7 @@ Return the updated section in the exact same JSON structure (as an array with on
 `Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its
 section's targetSyllables (or ${targetSyllables} if not specified).
 Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
-Write ALL lyrics in ${lang}.
+${songLanguagePrompt}
 Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
 
 ${RHYME_ENFORCEMENT_RULES}

@@ -98,6 +98,7 @@ function AppInnerContent() {
     isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, targetLanguage, setTargetLanguage,
     isAdaptingLanguage, isDetectingLanguage, adaptationProgress, adaptationResult,
+    importLanguageSuggestion, applyImportLanguageSuggestion, dismissImportLanguageSuggestion,
     sectionTargetLanguages, setSectionTargetLanguages,
     toggleAnalysisItemSelection, applySelectedAnalysisItems,
     analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
@@ -370,6 +371,9 @@ function AppInnerContent() {
                 handleMarkupToggle={handleMarkupToggle}
                 setIsSimilarityModalOpen={setIsSimilarityModalOpen} scrollToSection={scrollToSection}
                 adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
+                importLanguageSuggestion={importLanguageSuggestion}
+                applyImportLanguageSuggestion={applyImportLanguageSuggestion}
+                dismissImportLanguageSuggestion={dismissImportLanguageSuggestion}
               />
             )}
             <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}

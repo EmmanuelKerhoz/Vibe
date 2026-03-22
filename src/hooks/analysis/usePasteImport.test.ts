@@ -51,11 +51,13 @@ const makeResponse = (overrides?: Record<string, unknown>) => ({
 const createParams = () => ({
   rhymeScheme: 'AABB',
   uiLanguage: 'fr',
+  currentSongLanguage: '',
   updateSongAndStructureWithHistory: vi.fn(),
   setTopic: vi.fn(),
   setMood: vi.fn(),
   setSongLanguage: vi.fn(),
   setTargetLanguage: vi.fn(),
+  onLanguageMismatch: vi.fn(),
   requestAutoTitleGeneration: vi.fn(),
   clearLineSelection: vi.fn(),
   setIsAnalyzing: vi.fn(),
@@ -68,7 +70,9 @@ describe('usePasteImport', () => {
 
   it('imports standard multiline lyrics into two sections with the expected line distribution', async () => {
     const params = createParams();
-    vi.mocked(generateContentWithRetry).mockResolvedValue(makeResponse());
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeResponse())
+      .mockResolvedValueOnce({ text: 'French' });
 
     const { result } = renderHook(() => usePasteImport(params));
 
@@ -92,7 +96,9 @@ describe('usePasteImport', () => {
 
   it('updates the detected song language from the import result', async () => {
     const params = createParams();
-    vi.mocked(generateContentWithRetry).mockResolvedValue(makeResponse({ language: 'fr' }));
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeResponse({ language: 'French' }))
+      .mockResolvedValueOnce({ text: 'French' });
 
     const { result } = renderHook(() => usePasteImport(params));
 
@@ -104,8 +110,33 @@ describe('usePasteImport', () => {
       await result.current.analyzePastedLyrics();
     });
 
-    expect(params.setSongLanguage).toHaveBeenCalledWith('fr');
-    expect(params.setTargetLanguage).toHaveBeenCalledWith('fr');
+    expect(params.setSongLanguage).toHaveBeenCalledWith('French');
+    expect(params.setTargetLanguage).toHaveBeenCalledWith('French');
+    expect(params.onLanguageMismatch).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a non-blocking language mismatch instead of auto-updating an existing song language', async () => {
+    const params = {
+      ...createParams(),
+      currentSongLanguage: 'English',
+    };
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeResponse({ language: 'French' }))
+      .mockResolvedValueOnce({ text: 'French' });
+
+    const { result } = renderHook(() => usePasteImport(params));
+
+    act(() => {
+      result.current.setPastedText('Je marche encore\nSous la pluie');
+    });
+
+    await act(async () => {
+      await result.current.analyzePastedLyrics();
+    });
+
+    expect(params.onLanguageMismatch).toHaveBeenCalledWith('French');
+    expect(params.setSongLanguage).not.toHaveBeenCalled();
+    expect(params.setTargetLanguage).not.toHaveBeenCalled();
   });
 
   it('ignores an empty import without throwing or changing state', async () => {
@@ -123,26 +154,28 @@ describe('usePasteImport', () => {
 
   it('preserves existing markup-based sections without duplicating their tags as lyric lines', async () => {
     const params = createParams();
-    vi.mocked(generateContentWithRetry).mockResolvedValue(makeResponse({
-      sections: [
-        {
-          name: 'Verse',
-          rhymeScheme: 'AABB',
-          lines: [
-            { text: 'Sous les néons on avance', rhymingSyllables: 'ance', rhyme: 'A', syllables: 6, concept: 'marche' },
-            { text: 'La ville entière est immense', rhymingSyllables: 'ense', rhyme: 'A', syllables: 6, concept: 'ville' },
-          ],
-        },
-        {
-          name: 'Chorus',
-          rhymeScheme: 'AABB',
-          lines: [
-            { text: 'Nos voix se répondent', rhymingSyllables: 'onde', rhyme: 'B', syllables: 5, concept: 'voix' },
-            { text: 'Les ombres nous inondent', rhymingSyllables: 'onde', rhyme: 'B', syllables: 5, concept: 'ombre' },
-          ],
-        },
-      ],
-    }));
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeResponse({
+        sections: [
+          {
+            name: 'Verse',
+            rhymeScheme: 'AABB',
+            lines: [
+              { text: 'Sous les néons on avance', rhymingSyllables: 'ance', rhyme: 'A', syllables: 6, concept: 'marche' },
+              { text: 'La ville entière est immense', rhymingSyllables: 'ense', rhyme: 'A', syllables: 6, concept: 'ville' },
+            ],
+          },
+          {
+            name: 'Chorus',
+            rhymeScheme: 'AABB',
+            lines: [
+              { text: 'Nos voix se répondent', rhymingSyllables: 'onde', rhyme: 'B', syllables: 5, concept: 'voix' },
+              { text: 'Les ombres nous inondent', rhymingSyllables: 'onde', rhyme: 'B', syllables: 5, concept: 'ombre' },
+            ],
+          },
+        ],
+      }))
+      .mockResolvedValueOnce({ text: 'French' });
 
     const { result } = renderHook(() => usePasteImport(params));
 

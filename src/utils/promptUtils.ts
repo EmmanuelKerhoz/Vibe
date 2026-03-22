@@ -165,7 +165,7 @@ export const buildThemeAnalysisPrompt = ({
   mood,
   uiLanguage,
 }: BuildThemeAnalysisPromptParams): string =>
-  `Analyze the following song lyrics.\nCurrent Topic: "${topic}"\nCurrent Mood: "${mood}"\n\nIf the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.\nIMPORTANT: Return the topic and mood values in ${uiLanguage}.\nReturn JSON with "topic" and "mood" strings.\n\nLyrics:\n${song.map(section => section.name + '\n' + getSectionText(section)).join('\n\n')}\n`;
+  `Analyze the following song lyrics.\nCurrent Topic: "${topic}"\nCurrent Mood: "${mood}"\n\nIf the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.\nIMPORTANT: Return the topic and mood values in ${uiLanguage}. These labels are for the user interface display, not the lyric language unless both happen to match.\nReturn JSON with "topic" and "mood" strings.\n\nLyrics:\n${song.map(section => section.name + '\n' + getSectionText(section)).join('\n\n')}\n`;
 
 export const buildAdaptSongPrompt = ({
   sourceSong,

@@ -9,7 +9,7 @@ type UseBackgroundThemeAnalysisParams = {
   song: Section[];
   topic: string;
   mood: string;
-  uiLang: string;
+  uiLanguage: string;
   setTopic: (v: string) => void;
   setMood: (v: string) => void;
 };
@@ -18,7 +18,7 @@ export const useBackgroundThemeAnalysis = ({
   song,
   topic,
   mood,
-  uiLang,
+  uiLanguage,
   setTopic,
   setMood,
 }: UseBackgroundThemeAnalysisParams): { isAnalyzingTheme: boolean } => {
@@ -55,7 +55,7 @@ export const useBackgroundThemeAnalysis = ({
             song,
             topic,
             mood,
-            uiLanguage: uiLang,
+            uiLanguage,
           });
           const response = await generateContentWithRetry({
             model: AI_MODEL_NAME,
@@ -102,7 +102,7 @@ export const useBackgroundThemeAnalysis = ({
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [song, topic, mood, uiLang, setTopic, setMood]);
+  }, [song, topic, mood, uiLanguage, setTopic, setMood]);
 
   return { isAnalyzingTheme };
 };

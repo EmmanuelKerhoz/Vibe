@@ -66,7 +66,7 @@ describe('useBackgroundThemeAnalysis', () => {
       song,
       topic: 'Night ride',
       mood: 'Moody',
-      uiLang: 'French',
+      uiLanguage: 'French',
       setTopic,
       setMood,
     }));

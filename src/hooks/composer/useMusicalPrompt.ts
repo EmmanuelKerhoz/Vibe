@@ -23,6 +23,25 @@ type UseMusicalPromptParams = {
   setNarrative: (value: string) => void;
 };
 
+const ensureLanguageStyleLine = (prompt: string, songLanguage?: string): string => {
+  const trimmedLanguage = (songLanguage || '').trim();
+  if (!trimmedLanguage || !prompt.trim()) return prompt;
+
+  const lines = prompt.split('\n');
+  const styleLineIndex = lines.findIndex(line => line.trim().toUpperCase().startsWith('STYLE:'));
+  if (styleLineIndex === -1) {
+    return `STYLE: ${trimmedLanguage} song\n${prompt}`;
+  }
+
+  const styleLine = lines[styleLineIndex] ?? '';
+  if (styleLine.toLowerCase().includes(trimmedLanguage.toLowerCase())) {
+    return prompt;
+  }
+
+  lines[styleLineIndex] = styleLine.replace(/^STYLE:\s*/i, `STYLE: ${trimmedLanguage} `);
+  return lines.join('\n');
+};
+
 export const useMusicalPrompt = ({
   song,
   title,
@@ -75,7 +94,7 @@ Lyrics:
 ${lyricsSnippet}
 
 Return a concise prompt (<= 900 characters) using this exact labeled, line-by-line format:
-STYLE: [style/genre lane and sonic fingerprint]
+STYLE: [style/genre lane and sonic fingerprint — MUST explicitly include the song language as part of the style label, e.g. "French chanson", "Spanish pop", "Arabic orchestral ballad"]
 MOOD: [emotional tone + energy level]
 VOCALS: [lead style, gender/texture, harmonies/ad-libs]
 INSTRUMENTATION: [key instruments/sound sources + treatment]
@@ -92,7 +111,7 @@ Keep the response in English (required by music AI tools) and avoid markdown or 
           wasAborted = true;
           return;
         }
-        setMusicalPrompt(response.text || '');
+        setMusicalPrompt(ensureLanguageStyleLine(response.text || '', songLanguage));
       });
     } catch (error) {
       if (isAbortError(error)) {
@@ -124,7 +143,7 @@ Song Language: ${lang}
 Lyrics:
 ${lyricsText || '(no lyrics yet)'}
 
-Based on this, provide JSON with exactly these keys:
+Based on this, provide JSON with exactly these keys. Favor culturally coherent references and genre framing for ${lang}-language lyrics:
 {
   "genre": "(string) specific genre/style (e.g. Cinematic Pop, Dark Trap, Indie Folk)",
   "tempo": "(string) BPM as a number string (e.g. 95)",

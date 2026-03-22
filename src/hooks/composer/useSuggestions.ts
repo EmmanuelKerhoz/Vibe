@@ -83,6 +83,9 @@ export const useSuggestions = ({
       }
 
       const lang = songLanguage || 'English';
+      const explicitSongLanguage = (songLanguage || '').trim()
+        ? `\n- Song Language: ${(songLanguage || '').trim()}`
+        : '';
       let wasAborted = false;
       try {
         await withAbort(abortControllerRef, async (nextSignal) => {
@@ -115,6 +118,7 @@ Context:
 - Rhyme Scheme: ${song.find(s => s.lines.some(l => l.id === lineId))?.rhymeScheme || rhymeScheme}
 - Target Syllables: ${targetSyllables}
 - Section: ${sectionName}
+- Song Output Language: ${lang}${explicitSongLanguage}
 - Previous Line: "${previousLine?.text || ''}" (Rhyme: ${previousLine?.rhyme || ''})
 - Current Line to replace: "${currentLine.text}" (Rhyme: ${currentLine.rhyme}, Concept: ${currentLine.concept})
 - Next Line: "${nextLine?.text || ''}" (Rhyme: ${nextLine?.rhyme || ''})${ipaConstraints}

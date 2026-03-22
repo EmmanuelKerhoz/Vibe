@@ -7,15 +7,21 @@ import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
 import type { Section } from '../../types';
 import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
+import { buildDetectLanguagePrompt } from '../../utils/promptUtils';
+import { getLanguageDisplay } from '../../i18n';
+
+const normalizeLanguage = (value: string) => getLanguageDisplay(value).label.trim().toLowerCase();
 
 type UsePasteImportParams = {
   rhymeScheme: string;
   uiLanguage: string;
+  currentSongLanguage: string;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
   setSongLanguage: (lang: string) => void;
   setTargetLanguage: (lang: string) => void;
+  onLanguageMismatch: (detectedLang: string) => void;
   requestAutoTitleGeneration: () => void;
   clearLineSelection: () => void;
   setIsAnalyzing: (value: boolean) => void;
@@ -24,11 +30,13 @@ type UsePasteImportParams = {
 export const usePasteImport = ({
   rhymeScheme,
   uiLanguage,
+  currentSongLanguage,
   updateSongAndStructureWithHistory,
   setTopic,
   setMood,
   setSongLanguage,
   setTargetLanguage,
+  onLanguageMismatch,
   requestAutoTitleGeneration,
   clearLineSelection,
   setIsAnalyzing,
@@ -146,11 +154,6 @@ ${pastedText}`;
 
         if (data.topic) setTopic(data.topic);
         if (data.mood) setMood(data.mood);
-        if (data.language) {
-          setSongLanguage(data.language);
-          setTargetLanguage(data.language);
-        }
-
         const sections = data.sections || [];
         if (sections.length === 0) {
           throw new Error('No sections could be extracted. Please check the lyrics format.');
@@ -185,6 +188,35 @@ ${pastedText}`;
 
         const newStructure = sections.map((s: any) => cleanSectionName(s.name));
         updateSongAndStructureWithHistory(songWithIds, newStructure);
+
+        let detectedLanguage = data.language?.trim() || '';
+        try {
+          const detectedLanguageResponse = await generateContentWithRetry({
+            model: AI_MODEL_NAME,
+            contents: buildDetectLanguagePrompt(pastedText),
+            signal: nextSignal,
+          });
+
+          if (nextSignal.aborted) {
+            wasAborted = true;
+            return;
+          }
+
+          detectedLanguage = detectedLanguageResponse.text?.trim() || detectedLanguage;
+        } catch (languageDetectionError) {
+          console.warn('Imported lyrics language detection failed, using parsed language if available.', languageDetectionError);
+        }
+
+        if (detectedLanguage) {
+          if (currentSongLanguage?.trim()) {
+            if (normalizeLanguage(detectedLanguage) !== normalizeLanguage(currentSongLanguage)) {
+              onLanguageMismatch(detectedLanguage);
+            }
+          } else {
+            setSongLanguage(detectedLanguage);
+            setTargetLanguage(detectedLanguage);
+          }
+        }
 
         requestAutoTitleGeneration();
         clearLineSelection();
