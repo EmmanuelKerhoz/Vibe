@@ -91,7 +91,7 @@ export const useBackgroundThemeAnalysis = ({
         const isQuota = (e as { code?: unknown })?.code === 429 || msg.includes('429') || msg.includes('quota');
         if (isQuota) {
           backoffUntilRef.current = Date.now() + 5 * 60 * 1000;
-          console.warn('[useSongAnalysisEngine] Quota exceeded — background analysis paused for 5 minutes.');
+          console.warn('[useBackgroundThemeAnalysis] Quota exceeded — background analysis paused for 5 minutes.');
         } else {
           handleApiError(e, 'Background analysis failed.');
         }
