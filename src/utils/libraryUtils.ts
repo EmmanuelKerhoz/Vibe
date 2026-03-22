@@ -1,6 +1,6 @@
 import type { Section } from '../types';
 import type { SimilarityMatch } from './similarityUtils';
-import { calculateSimilarityWithMetadata } from './similarityUtils';
+import { calculateSimilarityWithMetadata } from './rhymeDetection';
 import { DEFAULT_MOOD, DEFAULT_TOPIC } from './songDefaults';
 import { safeGetItem, safeSetItem } from './safeStorage';
 import { normalizeLoadedSection } from './songUtils';
