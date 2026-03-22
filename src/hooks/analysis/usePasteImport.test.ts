@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Section } from '../../types';
 import { usePasteImport } from './usePasteImport';
 import { generateContentWithRetry, handleApiError } from '../../utils/aiUtils';
 
@@ -154,9 +155,9 @@ describe('usePasteImport', () => {
     });
 
     const [song] = vi.mocked(params.updateSongAndStructureWithHistory).mock.calls[0]!;
-    const importedTexts = song.flatMap(section => section.lines.map(line => line.text));
+    const importedTexts = song.flatMap((section: Section) => section.lines.map(line => line.text));
     expect(importedTexts).not.toContain('[Couplet]');
     expect(importedTexts).not.toContain('[Refrain]');
-    expect(song.map(section => section.name)).toEqual(['Verse', 'Chorus']);
+    expect(song.map((section: Section) => section.name)).toEqual(['Verse', 'Chorus']);
   });
 });

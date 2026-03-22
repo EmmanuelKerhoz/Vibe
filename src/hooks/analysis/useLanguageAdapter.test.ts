@@ -90,6 +90,10 @@ describe('useLanguageAdapter', () => {
     abortMocks.lastController = null;
     vi.mocked(matchRhymeSchemeAcrossLang).mockResolvedValue({
       success: false,
+      sourceScheme: '',
+      targetScheme: '',
+      constrainedPrompt: '',
+      sourceAnalysis: [],
       error: 'not needed in these tests',
     });
     vi.mocked(reverseTranslateLines).mockResolvedValue(['back translated line 1', 'back translated line 2']);
