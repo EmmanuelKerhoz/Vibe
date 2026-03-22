@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
 import { generateId } from '../utils/idUtils';
@@ -381,6 +381,20 @@ export const useSongEditor = ({
     }
     if (text) openPasteModalWithText(text);
   }, [openPasteModalWithText]);
+
+  const introOutroSortedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (song.length === 0) return;
+    const introIdx = song.findIndex(s => isAnchoredStartSection(s.name));
+    const outroIdx = song.findIndex(s => isAnchoredEndSection(s.name));
+    if (introIdx <= 0 && (outroIdx === -1 || outroIdx === song.length - 1)) return;
+    const others = song.filter(s => !isAnchoredStartSection(s.name) && !isAnchoredEndSection(s.name));
+    const sorted = [...(introIdx !== -1 ? [song[introIdx]!] : []), ...others, ...(outroIdx !== -1 ? [song[outroIdx]!] : [])];
+    const key = JSON.stringify(sorted.map(s => s.id));
+    if (key === introOutroSortedRef.current) return;
+    introOutroSortedRef.current = key;
+    updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
+  }, [song, updateSongAndStructureWithHistory]);
 
   return {
     removeStructureItem,

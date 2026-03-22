@@ -30,6 +30,10 @@ import { useMobileLayout } from '../useMobileLayout';
 import { useUIState } from '../useUIState';
 import { useSongMeta } from '../useSongMeta';
 import { useSessionState } from '../useSessionState';
+import { useKeyboardShortcuts } from '../useKeyboardShortcuts';
+import { useSessionActions } from '../useSessionActions';
+import { useImportHandlers } from '../useImportHandlers';
+import { useLibraryActions } from '../useLibraryActions';
 import { makeSongUpdater } from '../hookUtils';
 
 /* ------------------------------------------------------------------ */
@@ -99,6 +103,10 @@ describe('Hook import smoke-tests', () => {
       ['useUIState', useUIState],
       ['useSongMeta', useSongMeta],
       ['useSessionState', useSessionState],
+      ['useKeyboardShortcuts', useKeyboardShortcuts],
+      ['useSessionActions', useSessionActions],
+      ['useImportHandlers', useImportHandlers],
+      ['useLibraryActions', useLibraryActions],
       ['makeSongUpdater', makeSongUpdater],
     ])('%s is a function', (_name, hook) => {
       expect(typeof hook).toBe('function');
