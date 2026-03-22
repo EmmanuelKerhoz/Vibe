@@ -39,12 +39,13 @@ describe('ipaUtils', () => {
       expect(features).toBeUndefined();
     });
 
-    it('should handle French nasal vowels by stripping diacritics', () => {
-      // Note: The function strips combining diacritics for lookup
-      // so 'ɔ̃' becomes 'ɔ' and looks up the base phoneme
-      const features = getPhonemeFeatures('ɔ̃');
-      expect(features).toBeDefined();
-      expect(features?.place).toBe('vowel');
+    describe('French nasal vowels', () => {
+      it.each([['ɛ̃', 'nasal'], ['ɑ̃', 'nasal'], ['ɔ̃', 'nasal'], ['œ̃', 'nasal']])(
+        'getPhonemeFeatures(%s) returns nasality=%s',
+        (phoneme, expected) => {
+          expect(getPhonemeFeatures(phoneme)?.nasality).toBe(expected);
+        }
+      );
     });
   });
 
