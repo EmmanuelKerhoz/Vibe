@@ -21,6 +21,7 @@ import { useImportHandlers } from './hooks/useImportHandlers';
 import { useLibraryActions } from './hooks/useLibraryActions';
 import { useUIStateForProvider } from './hooks/useUIStateForProvider';
 import { ModalProvider } from './contexts/ModalContext';
+import { DragProvider } from './contexts/DragContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -33,7 +34,7 @@ import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
 
-function AppInner() {
+function AppInnerContent() {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const { song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
@@ -48,8 +49,6 @@ function AppInner() {
     instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative, musicalPrompt, setMusicalPrompt,
     audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
     newSectionName, setNewSectionName,
-    draggedItemIndex, setDraggedItemIndex, dragOverIndex, setDragOverIndex,
-    draggedLineInfo, setDraggedLineInfo, dragOverLineInfo, setDragOverLineInfo,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
     isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
     isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
@@ -156,7 +155,6 @@ function AppInner() {
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
   } = useSongEditor({ song, structure, newSectionName, setNewSectionName,
-    draggedItemIndex, setDraggedItemIndex, setDragOverIndex, draggedLineInfo, setDraggedLineInfo, setDragOverLineInfo,
     updateState, updateStructureWithHistory, updateSongAndStructureWithHistory, title, topic, mood,
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); }, playAudioFeedback,
   });
@@ -394,10 +392,6 @@ function AppInner() {
                       updateLineText={updateLineText} handleLineKeyDown={handleLineKeyDown}
                       handleInstructionChange={handleInstructionChange} addInstruction={addInstruction}
                       removeInstruction={removeInstruction} regenerateSection={regenerateSection}
-                      draggedItemIndex={draggedItemIndex} dragOverIndex={dragOverIndex}
-                      draggedLineInfo={draggedLineInfo} dragOverLineInfo={dragOverLineInfo}
-                      setDraggedItemIndex={setDraggedItemIndex} setDragOverIndex={setDragOverIndex}
-                      setDraggedLineInfo={setDraggedLineInfo} setDragOverLineInfo={setDragOverLineInfo}
                       playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
                       handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
                       isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
@@ -428,8 +422,7 @@ function AppInner() {
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
             structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
             isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-            draggedItemIndex={draggedItemIndex} setDraggedItemIndex={setDraggedItemIndex}
-            dragOverIndex={dragOverIndex} setDragOverIndex={setDragOverIndex} isGenerating={isGenerating}
+            isGenerating={isGenerating}
             addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
             normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
           />
@@ -488,6 +481,14 @@ function AppInner() {
       </div>
       </FluentProvider>
     </ModalProvider>
+  );
+}
+
+function AppInner() {
+  return (
+    <DragProvider>
+      <AppInnerContent />
+    </DragProvider>
   );
 }
 

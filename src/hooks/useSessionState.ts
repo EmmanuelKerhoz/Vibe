@@ -42,12 +42,6 @@ export function useSessionState() {
     safeSetItem(DEFAULT_EDIT_MODE_KEY, v);
   };
 
-  // ── Drag state ────────────────────────────────────────────────────────────
-  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [draggedLineInfo, setDraggedLineInfo] = useState<{ sectionId: string; lineId: string } | null>(null);
-  const [dragOverLineInfo, setDragOverLineInfo] = useState<{ sectionId: string; lineId: string } | null>(null);
-
   // ── Library / similarity ──────────────────────────────────────────────────
   const [similarityMatches, setSimilarityMatches] = useState<SimilarityMatch[]>([]);
   const [libraryCount, setLibraryCount] = useState(0);
@@ -84,10 +78,6 @@ export function useSessionState() {
     audioFeedback, setAudioFeedback,
     uiScale, setUiScale,
     defaultEditMode, setDefaultEditMode,
-    draggedItemIndex, setDraggedItemIndex,
-    dragOverIndex, setDragOverIndex,
-    draggedLineInfo, setDraggedLineInfo,
-    dragOverLineInfo, setDragOverLineInfo,
     similarityMatches, setSimilarityMatches,
     libraryCount, setLibraryCount,
     libraryAssets, setLibraryAssets,

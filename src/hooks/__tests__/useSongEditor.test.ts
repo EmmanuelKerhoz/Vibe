@@ -1,7 +1,9 @@
+import React, { useLayoutEffect } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSongEditor } from '../useSongEditor';
 import type { Section } from '../../types';
+import { DragProvider, useDrag } from '../../contexts/DragContext';
 
 const makeSection = (id: string, name: string, lines: Section['lines'] = []): Section => ({ id, name, lines });
 const makeLine = (id: string, text: string) => ({
@@ -22,6 +24,18 @@ const lastCreatedBlob = () => {
   return firstCall ? firstCall[0] : undefined;
 };
 
+function DragInitializer(
+  { children, draggedItemIndex }: { children?: React.ReactNode; draggedItemIndex?: number | null }
+) {
+  const { setDraggedItemIndex } = useDrag();
+
+  useLayoutEffect(() => {
+    setDraggedItemIndex(draggedItemIndex ?? null);
+  }, [draggedItemIndex, setDraggedItemIndex]);
+
+  return React.createElement(React.Fragment, null, children);
+}
+
 const buildHook = (
   song: Section[],
   structure = DEFAULT_STRUCTURE,
@@ -32,6 +46,13 @@ const buildHook = (
   const updateSongAndStructureWithHistory = vi.fn();
   const openPasteModalWithText = vi.fn();
   const playAudioFeedback = vi.fn();
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    React.createElement(
+      DragProvider,
+      null,
+      React.createElement(DragInitializer, { draggedItemIndex: options.draggedItemIndex }, children),
+    )
+  );
 
   const { result } = renderHook(() =>
     useSongEditor({
@@ -39,12 +60,6 @@ const buildHook = (
       structure,
       newSectionName: '',
       setNewSectionName: vi.fn(),
-      draggedItemIndex: options.draggedItemIndex ?? null,
-      setDraggedItemIndex: vi.fn(),
-      setDragOverIndex: vi.fn(),
-      draggedLineInfo: null,
-      setDraggedLineInfo: vi.fn(),
-      setDragOverLineInfo: vi.fn(),
       updateState,
       updateStructureWithHistory,
       updateSongAndStructureWithHistory,
@@ -53,7 +68,8 @@ const buildHook = (
       mood: 'neutral',
       openPasteModalWithText,
       playAudioFeedback,
-    })
+    }),
+    { wrapper },
   );
   return { result, updateSongAndStructureWithHistory, updateStructureWithHistory, updateState };
 };
