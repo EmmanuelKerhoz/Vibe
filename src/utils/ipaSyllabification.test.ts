@@ -23,6 +23,39 @@ describe('ipaSyllabification', () => {
       expect(syllables.length).toBeGreaterThan(1);
     });
 
+    it('keeps a nasal vowel nucleus intact when tracking syllable boundaries', () => {
+      const syllables = syllabifyIPA('pɑ̃ta', 'ALGO-ROM');
+      expect(syllables).toHaveLength(2);
+      expect(syllables[0]).toMatchObject({
+        onset: 'p',
+        nucleus: 'ɑ̃',
+        coda: '',
+      });
+      expect(syllables[1]).toMatchObject({
+        onset: 't',
+        nucleus: 'a',
+        coda: '',
+      });
+    });
+
+    it('preserves onset, nucleus, and coda splits for multi-syllable IPA with separators', () => {
+      const syllables = syllabifyIPA('pa.ta', 'ALGO-ROM');
+      expect(syllables).toEqual([
+        {
+          onset: 'p',
+          nucleus: 'a',
+          coda: '',
+          stress: false,
+        },
+        {
+          onset: 't',
+          nucleus: 'a',
+          coda: '',
+          stress: false,
+        },
+      ]);
+    });
+
     it('should handle words without consonants', () => {
       const syllables = syllabifyIPA('eau', 'ALGO-ROM');
       expect(syllables).toHaveLength(1);
@@ -54,6 +87,19 @@ describe('ipaSyllabification', () => {
       }
     });
 
+    it('keeps a tonal vowel nucleus together and extracts high tone', () => {
+      const syllables = syllabifyIPA('ka\u0301ta', 'ALGO-KWA');
+      expect(syllables).toHaveLength(2);
+      expect(syllables[0]).toMatchObject({
+        onset: 'k',
+        nucleus: 'a\u0301',
+        tone: 'H',
+      });
+      expect(syllables[1]).toMatchObject({
+        nucleus: 'a',
+      });
+    });
+
     it('should handle multiple syllables with tone', () => {
       const syllables = syllabifyIPA('bábá', 'ALGO-KWA');
       expect(syllables.length).toBeGreaterThan(0);
@@ -81,6 +127,20 @@ describe('ipaSyllabification', () => {
       // Light: CV
       const lightSyllables = syllabifyIPA('ba', 'ALGO-CRV');
       expect(lightSyllables[0]?.weight).toBe('light');
+    });
+
+    it('keeps a long vowel nucleus together and marks it heavy', () => {
+      const syllables = syllabifyIPA('kaːta', 'ALGO-CRV');
+      expect(syllables).toHaveLength(2);
+      expect(syllables[0]).toMatchObject({
+        onset: 'k',
+        nucleus: 'aː',
+        weight: 'heavy',
+      });
+      expect(syllables[1]).toMatchObject({
+        nucleus: 'a',
+        weight: 'light',
+      });
     });
 
     it('should preserve tone with weight when diacritics present', () => {

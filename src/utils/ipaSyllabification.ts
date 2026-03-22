@@ -49,6 +49,7 @@ const syllabifyRomance = (ipa: string): IPASyllable[] => {
   const syllables: IPASyllable[] = [];
   const nuclei = findVowelNuclei(ipa);
   const chars = Array.from(ipa);
+  let cursor = 0;
 
   if (nuclei.length === 0) {
     // No vowels - treat entire string as onset
@@ -64,17 +65,16 @@ const syllabifyRomance = (ipa: string): IPASyllable[] => {
     const nextNucleusStart = nuclei[i + 1];
 
     // Extract onset (consonants before nucleus)
-    const onsetStart = i === 0 ? 0 : syllables[syllables.length - 1]!.onset.length +
-      syllables[syllables.length - 1]!.nucleus.length +
-      syllables[syllables.length - 1]!.coda.length;
-    const onset = chars.slice(onsetStart, nucleusStart).join('');
+    const onset = chars.slice(cursor, nucleusStart).join('');
+    cursor = nucleusStart;
 
     // Extract nucleus (vowel sequence with diacritics)
-    let nucleusEnd = nucleusStart + 1;
-    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036f]/.test(chars[nucleusEnd]!))) {
+    let nucleusEnd = cursor + 1;
+    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036fː]/.test(chars[nucleusEnd]!))) {
       nucleusEnd++;
     }
-    const nucleus = chars.slice(nucleusStart, nucleusEnd).join('');
+    const nucleus = chars.slice(cursor, nucleusEnd).join('');
+    cursor = nucleusEnd;
 
     // Extract coda (consonants after nucleus, up to next nucleus)
     let codaEnd = nextNucleusStart ?? chars.length;
@@ -88,7 +88,8 @@ const syllabifyRomance = (ipa: string): IPASyllable[] => {
       codaEnd = nucleusEnd + splitPoint;
     }
 
-    const coda = chars.slice(nucleusEnd, codaEnd).join('');
+    const coda = chars.slice(cursor, codaEnd).join('');
+    cursor = codaEnd;
 
     // Check for stress mark (ˈ or ˌ) in onset or before
     const stress = onset.includes('ˈ') || (i > 0 && chars[nucleusStart - 1] === 'ˈ');
@@ -105,8 +106,10 @@ const syllabifyRomance = (ipa: string): IPASyllable[] => {
 };
 
 /**
- * Syllabify IPA string for Germanic languages (ALGO-GER)
- * Similar to Romance but with more complex codas (CVCC structure)
+ * ALGO-GER: delegates to Romance syllabification.
+ * Germanic complex codas (CVCC) are handled acceptably by the Romance
+ * algorithm for rhyme detection purposes. Revisit if onset cluster
+ * accuracy is required.
  */
 const syllabifyGermanic = (ipa: string): IPASyllable[] => {
   // Germanic allows more complex codas, but basic structure is similar to Romance
@@ -121,6 +124,7 @@ const syllabifyKwa = (ipa: string): IPASyllable[] => {
   const syllables: IPASyllable[] = [];
   const nuclei = findVowelNuclei(ipa);
   const chars = Array.from(ipa);
+  let cursor = 0;
 
   if (nuclei.length === 0) {
     return [{
@@ -135,17 +139,16 @@ const syllabifyKwa = (ipa: string): IPASyllable[] => {
     const nextNucleusStart = nuclei[i + 1];
 
     // Extract onset
-    const onsetStart = i === 0 ? 0 : syllables[syllables.length - 1]!.onset.length +
-      syllables[syllables.length - 1]!.nucleus.length +
-      syllables[syllables.length - 1]!.coda.length;
-    const onset = chars.slice(onsetStart, nucleusStart).join('');
+    const onset = chars.slice(cursor, nucleusStart).join('');
+    cursor = nucleusStart;
 
     // Extract nucleus with tone diacritics
-    let nucleusEnd = nucleusStart + 1;
-    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036f]/.test(chars[nucleusEnd]!))) {
+    let nucleusEnd = cursor + 1;
+    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036fː]/.test(chars[nucleusEnd]!))) {
       nucleusEnd++;
     }
-    const nucleus = chars.slice(nucleusStart, nucleusEnd).join('');
+    const nucleus = chars.slice(cursor, nucleusEnd).join('');
+    cursor = nucleusEnd;
 
     // Extract tone with post-voiced depression context
     // Pass the onset to detect if it contains voiced consonants (b, d, g, gb, v, z)
@@ -154,7 +157,8 @@ const syllabifyKwa = (ipa: string): IPASyllable[] => {
     // Coda is minimal in Kwa languages (CV structure)
     // But if present, extract up to next nucleus
     const codaEnd = nextNucleusStart ?? chars.length;
-    const coda = chars.slice(nucleusEnd, codaEnd).join('');
+    const coda = chars.slice(cursor, codaEnd).join('');
+    cursor = codaEnd;
 
     syllables.push({
       onset,
@@ -175,6 +179,7 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
   const syllables: IPASyllable[] = [];
   const nuclei = findVowelNuclei(ipa);
   const chars = Array.from(ipa);
+  let cursor = 0;
 
   if (nuclei.length === 0) {
     return [{
@@ -189,17 +194,16 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
     const nextNucleusStart = nuclei[i + 1];
 
     // Extract onset
-    const onsetStart = i === 0 ? 0 : syllables[syllables.length - 1]!.onset.length +
-      syllables[syllables.length - 1]!.nucleus.length +
-      syllables[syllables.length - 1]!.coda.length;
-    const onset = chars.slice(onsetStart, nucleusStart).join('');
+    const onset = chars.slice(cursor, nucleusStart).join('');
+    cursor = nucleusStart;
 
     // Extract nucleus with tone diacritics
-    let nucleusEnd = nucleusStart + 1;
-    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036f]/.test(chars[nucleusEnd]!))) {
+    let nucleusEnd = cursor + 1;
+    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036fː]/.test(chars[nucleusEnd]!))) {
       nucleusEnd++;
     }
-    const nucleus = chars.slice(nucleusStart, nucleusEnd).join('');
+    const nucleus = chars.slice(cursor, nucleusEnd).join('');
+    cursor = nucleusEnd;
 
     // Extract coda (important for CRV weight distinction)
     let codaEnd = nextNucleusStart ?? chars.length;
@@ -207,7 +211,8 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
     if (nextNucleusStart !== undefined && codaEnd > nucleusEnd + 1) {
       codaEnd = nucleusEnd + 1;
     }
-    const coda = chars.slice(nucleusEnd, codaEnd).join('');
+    const coda = chars.slice(cursor, codaEnd).join('');
+    cursor = codaEnd;
 
     // Determine syllable weight (bimoraic)
     // Heavy: CVC or CVː (long vowel)
@@ -237,8 +242,9 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
 };
 
 /**
- * Syllabify IPA string for Sinitic languages (ALGO-SIN)
- * Simple: 1 character = 1 syllable with tone
+ * ALGO-SIN: delegates to Romance syllabification as a temporary fallback.
+ * Sinitic languages (Mandarin, Cantonese) require tone-based syllabification.
+ * TODO: implement dedicated ALGO-SIN handler.
  */
 const syllabifySinitic = (ipa: string): IPASyllable[] => {
   // Sinitic syllabification is typically at character level
@@ -247,8 +253,9 @@ const syllabifySinitic = (ipa: string): IPASyllable[] => {
 };
 
 /**
- * Syllabify IPA string for Japanese (ALGO-JAP)
- * Moraic structure: each mora is a timing unit
+ * ALGO-JAP: delegates to Romance syllabification as a temporary fallback.
+ * Japanese moraic timing requires a dedicated mora-based handler.
+ * TODO: implement dedicated ALGO-JAP handler.
  */
 const syllabifyJapanese = (ipa: string): IPASyllable[] => {
   // Japanese uses moraic timing, not syllabic
@@ -272,7 +279,7 @@ export const syllabifyIPA = (ipa: string, family: AlgoFamily): IPASyllable[] => 
   if (!ipa || !ipa.trim()) return [];
 
   // Remove IPA slashes if present
-  const cleanIPA = ipa.replace(/^\/|\/$/g, '').trim();
+  const cleanIPA = ipa.replace(/^\/|\/$/g, '').replace(/\./g, '').trim();
 
   switch (family) {
     case 'ALGO-ROM':
