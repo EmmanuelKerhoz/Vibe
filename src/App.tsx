@@ -201,8 +201,11 @@ function AppInnerContent() {
   const hasExistingWork = (hasRealLyricContent && !isPristineDraft(song, structure, rhymeScheme))
     || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
 
-  const webBadgeLabel = webSimilarityIndex.status === 'done' && webSimilarityIndex.candidates.length > 0
-    ? `${webSimilarityIndex.candidates[0]?.score}%` : null;
+  const webBadgeLabel = webSimilarityIndex.status === 'done'
+    && webSimilarityIndex.candidates.length > 0
+    && webSimilarityIndex.candidates[0]?.score !== undefined
+    ? `${webSimilarityIndex.candidates[0].score}%`
+    : null;
 
   const handleApiKeyHelp = () => setApiErrorModal({ open: true, message: t.tooltips.aiUnavailableHelp });
   const handleTitleChange = (value: string) => { setTitle(value); setTitleOrigin('user'); };
