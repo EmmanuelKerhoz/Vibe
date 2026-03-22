@@ -312,7 +312,12 @@ function AppInnerContent() {
       <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
 
         {showBackdrop && (
-          <div className="mobile-panel-backdrop" onClick={closeMobilePanels} aria-hidden="true" />
+          <button
+            type="button"
+            className="mobile-panel-backdrop"
+            onClick={closeMobilePanels}
+            aria-label="Close mobile panels"
+          />
         )}
 
         <div className="flex-1 flex overflow-hidden">
