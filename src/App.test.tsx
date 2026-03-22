@@ -6,8 +6,14 @@ import App from './App';
 const mockAppState = vi.hoisted(() => ({
   initialActiveTab: 'lyrics' as 'lyrics' | 'musical',
   initialIsMarkupMode: true,
+  initialIsLeftPanelOpen: false,
+  initialIsStructureOpen: false,
+  initialIsMobile: false,
+  initialIsTablet: false,
   setActiveTabSpy: vi.fn(),
   setIsMarkupModeSpy: vi.fn(),
+  setIsLeftPanelOpenSpy: vi.fn(),
+  setIsStructureOpenSpy: vi.fn(),
   noop: vi.fn(),
   asyncNoop: vi.fn(async () => {}),
 }));
@@ -158,6 +164,8 @@ vi.mock('./hooks/useAppState', async () => {
     useAppState: () => {
       const [activeTab, setActiveTabState] = ReactModule.useState<'lyrics' | 'musical'>(mockAppState.initialActiveTab);
       const [isMarkupMode, setIsMarkupModeState] = ReactModule.useState(mockAppState.initialIsMarkupMode);
+      const [isStructureOpen, setIsStructureOpenState] = ReactModule.useState(mockAppState.initialIsStructureOpen);
+      const [isLeftPanelOpen, setIsLeftPanelOpenState] = ReactModule.useState(mockAppState.initialIsLeftPanelOpen);
       const markupTextareaRef = ReactModule.useRef<HTMLTextAreaElement>(null);
       const importInputRef = ReactModule.useRef<HTMLInputElement>(null);
 
@@ -169,10 +177,16 @@ vi.mock('./hooks/useAppState', async () => {
           mockAppState.setActiveTabSpy(value);
           setActiveTabState(value);
         },
-        isStructureOpen: false,
-        setIsStructureOpen: mockAppState.noop,
-        isLeftPanelOpen: false,
-        setIsLeftPanelOpen: mockAppState.noop,
+        isStructureOpen,
+        setIsStructureOpen: (value: React.SetStateAction<boolean>) => {
+          mockAppState.setIsStructureOpenSpy(value);
+          setIsStructureOpenState(value);
+        },
+        isLeftPanelOpen,
+        setIsLeftPanelOpen: (value: React.SetStateAction<boolean>) => {
+          mockAppState.setIsLeftPanelOpenSpy(value);
+          setIsLeftPanelOpenState(value);
+        },
         title: 'Test Title',
         setTitle: mockAppState.noop,
         titleOrigin: 'user',
@@ -281,8 +295,8 @@ vi.mock('./hooks/useMarkupEditor', () => ({
 
 vi.mock('./hooks/useMobileLayout', () => ({
   useMobileLayout: () => ({
-    isMobile: false,
-    isTablet: false,
+    isMobile: mockAppState.initialIsMobile,
+    isTablet: mockAppState.initialIsTablet,
   }),
 }));
 
@@ -377,8 +391,14 @@ describe('App markup mode reset', () => {
   beforeEach(() => {
     mockAppState.initialActiveTab = 'lyrics';
     mockAppState.initialIsMarkupMode = true;
+    mockAppState.initialIsLeftPanelOpen = false;
+    mockAppState.initialIsStructureOpen = false;
+    mockAppState.initialIsMobile = false;
+    mockAppState.initialIsTablet = false;
     mockAppState.setActiveTabSpy.mockClear();
     mockAppState.setIsMarkupModeSpy.mockClear();
+    mockAppState.setIsLeftPanelOpenSpy.mockClear();
+    mockAppState.setIsStructureOpenSpy.mockClear();
   });
 
   it('keeps markup mode while the lyrics tab remains active and resets it after switching tabs', async () => {
@@ -401,5 +421,21 @@ describe('App markup mode reset', () => {
 
     expect(mockAppState.setIsMarkupModeSpy).not.toHaveBeenCalled();
     expect(screen.getByTestId('musical-tab')).toBeTruthy();
+  });
+
+  it('renders the mobile backdrop as an accessible button that closes mobile panels', async () => {
+    mockAppState.initialIsMobile = true;
+    mockAppState.initialIsLeftPanelOpen = true;
+
+    render(<App />);
+
+    const backdrop = screen.getByRole('button', { name: 'Close mobile panels' });
+    expect(backdrop.className).toContain('mobile-panel-backdrop');
+
+    fireEvent.click(backdrop);
+
+    await waitFor(() => expect(mockAppState.setIsLeftPanelOpenSpy).toHaveBeenCalledWith(false));
+    expect(mockAppState.setIsStructureOpenSpy).toHaveBeenCalledWith(false);
+    expect(screen.queryByRole('button', { name: 'Close mobile panels' })).toBeNull();
   });
 });

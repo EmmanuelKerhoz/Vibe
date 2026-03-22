@@ -324,9 +324,14 @@
 .mobile-panel-backdrop {
   position: fixed;
   inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
   background: rgba(0, 0, 0, 0.4);
   z-index: 30;
   backdrop-filter: blur(1px);
+  cursor: pointer;
+  appearance: none;
 }
 
 /* ===========================================================================
