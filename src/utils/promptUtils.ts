@@ -7,6 +7,16 @@ import type { Section, Line } from '../types';
 import { runIPAPipeline } from './ipaPipeline';
 import { getSectionText } from './songUtils';
 
+const APPLY_PROMPT_RULES = (uiLanguage: string): string => `IMPORTANT:
+1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).
+2. Only update the lyrics as suggested.
+3. Return the FULL updated song in the same JSON format as the input.
+4. Do not change the section names unless specifically requested.
+5. Preserve the original song language in all lyric text fields.
+6. Write the "concept" field for each line in ${uiLanguage}.
+
+Current Song Data:`;
+
 type BuildAdaptSongPromptParams = {
   sourceSong: Section[];
   newLanguage: string;
@@ -97,21 +107,11 @@ export const buildRhymeConstrainedPrompt = async (
   // Group lines by rhyme identifier and extract last line's phonemics
   for (const analysis of lineAnalyses) {
     if (analysis.success && analysis.rhyme && analysis.rhyme !== '' && analysis.rhyme !== 'FREE') {
-      // Update or create constraint for this rhyme group
-      if (!rhymeConstraints.has(analysis.rhyme)) {
-        rhymeConstraints.set(analysis.rhyme, {
-          rhymeNucleus: analysis.rhymeNucleus,
-          syllableCount: analysis.syllableCount,
-          exampleLine: analysis.text,
-        });
-      } else {
-        // Update with latest line in this rhyme group
-        rhymeConstraints.set(analysis.rhyme, {
-          rhymeNucleus: analysis.rhymeNucleus,
-          syllableCount: analysis.syllableCount,
-          exampleLine: analysis.text,
-        });
-      }
+      rhymeConstraints.set(analysis.rhyme, {
+        rhymeNucleus: analysis.rhymeNucleus,
+        syllableCount: analysis.syllableCount,
+        exampleLine: analysis.text,
+      });
     }
   }
 
@@ -188,14 +188,14 @@ export const buildApplyAnalysisBatchPrompt = ({
   itemsToApply,
   uiLanguage,
 }: BuildApplyAnalysisBatchPromptParams): string =>
-  `Modify the following song lyrics based on these improvement suggestions:\n      ${itemsToApply.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\n      IMPORTANT:\n      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).\n      2. Only update the lyrics as suggested.\n      3. Return the FULL updated song in the same JSON format as the input.\n      4. Do not change the section names unless specifically requested by the improvements.\n      5. Preserve the original song language in all lyric text fields.\n      6. Write the "concept" field for each line in ${uiLanguage}.\n\n      Current Song Data:\n      ${JSON.stringify(song)}`;
+  `Modify the following song lyrics based on these improvement suggestions:\n${itemsToApply.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\n${APPLY_PROMPT_RULES(uiLanguage)}\n${JSON.stringify(song)}`;
 
 export const buildApplyAnalysisItemPrompt = ({
   song,
   itemText,
   uiLanguage,
 }: BuildApplyAnalysisItemPromptParams): string =>
-  `Modify the following song lyrics based on this specific improvement suggestion: "${itemText}".\n\n      IMPORTANT:\n      1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).\n      2. Only update the lyrics as suggested.\n      3. Return the FULL updated song in the same JSON format as the input.\n      4. Do not change the section names unless specifically requested by the improvement.\n      5. Preserve the original song language in all lyric text fields.\n      6. Write the "concept" field for each line in ${uiLanguage}.\n\n      Current Song Data:\n      ${JSON.stringify(song)}`;
+  `Modify the following song lyrics based on this specific improvement suggestion: "${itemText}".\n\n${APPLY_PROMPT_RULES(uiLanguage)}\n${JSON.stringify(song)}`;
 
 export const buildSongAnalysisPrompt = ({
   songText,

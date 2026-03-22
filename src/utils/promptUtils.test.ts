@@ -6,6 +6,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   buildAdaptSectionPrompt,
   buildAdaptSongPrompt,
+  buildApplyAnalysisBatchPrompt,
+  buildApplyAnalysisItemPrompt,
   buildDetectLanguagePrompt,
   buildRhymeConstrainedPrompt,
   buildRhymeConstrainedPromptFromSection,
@@ -352,6 +354,87 @@ describe('promptUtils', () => {
       const prompt = await buildRhymeConstrainedPromptFromSection(section);
 
       expect(prompt).toContain('FREE');
+    });
+  });
+
+  describe('apply analysis prompt builders', () => {
+    const song: Section[] = [
+      {
+        id: 'verse-1',
+        name: 'Verse 1',
+        language: 'en',
+        rhymeScheme: 'AABB',
+        lines: [
+          {
+            id: 'line-1',
+            text: 'We chase the light',
+            rhymingSyllables: 'light',
+            rhyme: 'A',
+            syllables: 4,
+            concept: 'hope',
+          },
+        ],
+      },
+    ];
+    const expectedRules = `IMPORTANT:
+1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).
+2. Only update the lyrics as suggested.
+3. Return the FULL updated song in the same JSON format as the input.
+4. Do not change the section names unless specifically requested.
+5. Preserve the original song language in all lyric text fields.
+6. Write the "concept" field for each line in English.
+
+Current Song Data:`;
+
+    it('buildApplyAnalysisBatchPrompt includes all item strings and shared rules', () => {
+      const itemsToApply = [
+        'Tighten the internal rhyme in the second line',
+        'Make the chorus imagery more vivid',
+      ];
+
+      const prompt = buildApplyAnalysisBatchPrompt({
+        song,
+        itemsToApply,
+        uiLanguage: 'English',
+      });
+
+      itemsToApply.forEach(item => {
+        expect(prompt).toContain(item);
+      });
+      expect(prompt).toContain(expectedRules);
+      expect(prompt).toContain(JSON.stringify(song));
+    });
+
+    it('buildApplyAnalysisItemPrompt includes the item text and shared rules', () => {
+      const itemText = 'Add more emotional specificity to the verse';
+
+      const prompt = buildApplyAnalysisItemPrompt({
+        song,
+        itemText,
+        uiLanguage: 'English',
+      });
+
+      expect(prompt).toContain(itemText);
+      expect(prompt).toContain(expectedRules);
+      expect(prompt).toContain(JSON.stringify(song));
+    });
+
+    it('shares identical apply rules text between batch and item prompts', () => {
+      const batchPrompt = buildApplyAnalysisBatchPrompt({
+        song,
+        itemsToApply: ['Strengthen the bridge transition'],
+        uiLanguage: 'English',
+      });
+      const itemPrompt = buildApplyAnalysisItemPrompt({
+        song,
+        itemText: 'Strengthen the bridge transition',
+        uiLanguage: 'English',
+      });
+
+      const batchRules = batchPrompt.slice(batchPrompt.indexOf('IMPORTANT:'));
+      const itemRules = itemPrompt.slice(itemPrompt.indexOf('IMPORTANT:'));
+
+      expect(batchRules).toBe(itemRules);
     });
   });
 
