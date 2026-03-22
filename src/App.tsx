@@ -15,6 +15,10 @@ import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
 import { useMobileLayout } from './hooks/useMobileLayout';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useSessionActions } from './hooks/useSessionActions';
+import { useImportHandlers } from './hooks/useImportHandlers';
+import { useLibraryActions } from './hooks/useLibraryActions';
 import { ModalProvider, type UIStateBag } from './contexts/ModalContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
@@ -26,51 +30,7 @@ import { LyricsView } from './components/app/LyricsView';
 import { AppModals } from './components/app/AppModals';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
-import { findSimilarAssetsInLibrary, saveAssetToLibrary, loadLibraryAssets, deleteAssetFromLibrary, purgeLibrary, loadAssetIntoEditor, type LibraryAsset } from './utils/libraryUtils';
 import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
-import { buildResetPayload, buildPartialResetPayload, clearPersistedSession } from './utils/sessionReset';
-import { safeJsonGet } from './utils/safeStorage';
-import { isAnchoredEndSection, isAnchoredStartSection } from './constants/sections';
-
-type StateBag = ReturnType<typeof useAppState>;
-
-function applyResetPayload(
-  payload: ReturnType<typeof buildResetPayload>,
-  replaceStateWithoutHistory: (song: ReturnType<typeof createEmptySong>, structure: string[]) => void,
-  clearHistory: () => void,
-  clearSelection: () => void,
-  resetWebSimilarityIndex: () => void,
-  s: StateBag,
-) {
-  replaceStateWithoutHistory(payload.song, payload.structure);
-  clearHistory();
-  clearPersistedSession();
-  clearSelection();
-  s.setHasSavedSession(payload.hasSavedSession);
-  s.setTitle(payload.title);
-  s.setTitleOrigin(payload.titleOrigin);
-  s.setTopic(payload.topic);
-  s.setMood(payload.mood);
-  s.setRhymeScheme(payload.rhymeScheme);
-  s.setTargetSyllables(payload.targetSyllables);
-  s.setGenre(payload.genre);
-  s.setTempo(payload.tempo);
-  s.setInstrumentation(payload.instrumentation);
-  s.setRhythm(payload.rhythm);
-  s.setNarrative(payload.narrative);
-  s.setMusicalPrompt(payload.musicalPrompt);
-  s.setMarkupText(payload.markupText);
-  s.setActiveTab(payload.activeTab);
-  s.setIsLeftPanelOpen(payload.isLeftPanelOpen);
-  s.setSimilarityMatches(payload.similarityMatches);
-  resetWebSimilarityIndex();
-}
-
-function lyricalKey(song: ReturnType<typeof createEmptySong>): string {
-  return song
-    .map(s => s.lines.filter(l => !l.isMeta).map(l => l.text).join('|'))
-    .join('//');
-}
 
 function AppInner() {
   const { t } = useTranslation();
@@ -198,7 +158,13 @@ function AppInner() {
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); }, playAudioFeedback,
   });
 
-  const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood, songLanguage);
+  const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood, songLanguage, {
+    shouldAutoGenerateTitle,
+    setShouldAutoGenerateTitle,
+    setTitle,
+    setTitleOrigin,
+    songLength: song.length,
+  });
   const { generateSuggestion: handleSurprise, isGeneratingSuggestion: isSurprising, resetSuggestionCycle } =
     useTopicMoodSuggester(topic, mood, setTopic, setMood);
   const handleSurpriseClick = useCallback(async () => {
@@ -208,102 +174,40 @@ function AppInner() {
 
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title);
 
-  // ── Keyboard shortcuts ────────────────────────────────────────────────────
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented) return;
-      if (e.key === 'Escape') {
-        if (promptModal?.open) { setPromptModal(null); return; }
-        if (confirmModal?.open) { setConfirmModal(null); return; }
-        if (apiErrorModal.open) { setApiErrorModal({ open: false, message: '' }); return; }
-        if (isResetModalOpen) { setIsResetModalOpen(false); return; }
-        if (isVersionsModalOpen) { setIsVersionsModalOpen(false); return; }
-        if (isSaveToLibraryModalOpen) { setIsSaveToLibraryModalOpen(false); return; }
-        if (isSimilarityModalOpen) { setIsSimilarityModalOpen(false); return; }
-        if (isAnalysisModalOpen) { setIsAnalysisModalOpen(false); return; }
-        if (isPasteModalOpen) { setIsPasteModalOpen(false); return; }
-        if (isExportModalOpen) { setIsExportModalOpen(false); return; }
-        if (isImportModalOpen) { setIsImportModalOpen(false); return; }
-        if (isSettingsOpen) { setIsSettingsOpen(false); return; }
-        if (isAboutOpen) { setIsAboutOpen(false); return; }
-        if (isMobileOrTablet) { closeMobilePanels(); return; }
-        return;
-      }
-      if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-      e.preventDefault();
-      if (e.shiftKey) redo(); else undo();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [
-    apiErrorModal.open, confirmModal, isAboutOpen, isAnalysisModalOpen, isExportModalOpen,
-    isImportModalOpen, isPasteModalOpen, isResetModalOpen, isSaveToLibraryModalOpen,
-    isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen, promptModal,
-    isMobileOrTablet, closeMobilePanels,
-    redo, setApiErrorModal, setConfirmModal, setIsAboutOpen, setIsAnalysisModalOpen,
-    setIsExportModalOpen, setIsImportModalOpen, setIsPasteModalOpen, setIsResetModalOpen,
-    setIsSaveToLibraryModalOpen, setIsSettingsOpen, setIsSimilarityModalOpen, setIsVersionsModalOpen,
-    setPromptModal, undo,
-  ]);
-
-  useEffect(() => {
-    if (!shouldAutoGenerateTitle || song.length === 0) return;
-    let isCancelled = false;
-    const run = async () => {
-      const newTitle = await generateTitle();
-      if (!isCancelled && newTitle) { setTitle(newTitle); setTitleOrigin('ai'); }
-      if (!isCancelled) setShouldAutoGenerateTitle(false);
-    };
-    void run();
-    return () => { isCancelled = true; };
-  }, [generateTitle, shouldAutoGenerateTitle, song.length, setTitle, setTitleOrigin, setShouldAutoGenerateTitle]);
+  useKeyboardShortcuts({
+    promptModal,
+    confirmModal,
+    apiErrorModal,
+    isResetModalOpen,
+    isVersionsModalOpen,
+    isSaveToLibraryModalOpen,
+    isSimilarityModalOpen,
+    isAnalysisModalOpen,
+    isPasteModalOpen,
+    isExportModalOpen,
+    isImportModalOpen,
+    isSettingsOpen,
+    isAboutOpen,
+    isMobileOrTablet,
+    closeMobilePanels,
+    undo,
+    redo,
+    setPromptModal,
+    setConfirmModal,
+    setApiErrorModal,
+    setIsResetModalOpen,
+    setIsVersionsModalOpen,
+    setIsSaveToLibraryModalOpen,
+    setIsSimilarityModalOpen,
+    setIsAnalysisModalOpen,
+    setIsPasteModalOpen,
+    setIsExportModalOpen,
+    setIsImportModalOpen,
+    setIsSettingsOpen,
+    setIsAboutOpen,
+  });
 
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
-
-  // ── Library similarity — debounced 800ms, lyrical content only ────────────
-  const currentLyricalKey = useMemo(() => lyricalKey(song), [song]);
-  const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSimilarityKeyRef = useRef<string>('');
-
-  useEffect(() => {
-    if (currentLyricalKey === lastSimilarityKeyRef.current) return;
-    if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
-    let isCancelled = false;
-    similarityDebounceRef.current = setTimeout(() => {
-      lastSimilarityKeyRef.current = currentLyricalKey;
-      const runSimilarity = async () => {
-        if (song.length === 0) { setSimilarityMatches([]); return; }
-        const matches = await findSimilarAssetsInLibrary(song, 0, 3);
-        if (!isCancelled) setSimilarityMatches(matches);
-      };
-      void runSimilarity();
-    }, 800);
-    return () => {
-      isCancelled = true;
-      if (similarityDebounceRef.current) clearTimeout(similarityDebounceRef.current);
-    };
-  }, [currentLyricalKey, song, setSimilarityMatches]);
-
-  useEffect(() => {
-    const assets = safeJsonGet<unknown[]>('lyricist_library');
-    if (Array.isArray(assets)) setLibraryCount(assets.length);
-  }, [setLibraryCount]);
-
-  const introOutroSortedRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (song.length === 0) return;
-    const introIdx = song.findIndex(s => isAnchoredStartSection(s.name));
-    const outroIdx = song.findIndex(s => isAnchoredEndSection(s.name));
-    if (introIdx <= 0 && (outroIdx === -1 || outroIdx === song.length - 1)) return;
-    const others = song.filter(s => !isAnchoredStartSection(s.name) && !isAnchoredEndSection(s.name));
-    const sorted = [...(introIdx !== -1 ? [song[introIdx]!] : []), ...others, ...(outroIdx !== -1 ? [song[outroIdx]!] : [])];
-    const key = JSON.stringify(sorted.map(s => s.id));
-    if (key === introOutroSortedRef.current) return;
-    introOutroSortedRef.current = key;
-    updateSongAndStructureWithHistory(sorted, sorted.map(s => s.name));
-  }, [song, updateSongAndStructureWithHistory]);
 
   const hasRealLyricContent = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
   const hasExistingWork = (hasRealLyricContent && !isPristineDraft(song, structure, rhymeScheme))
@@ -329,108 +233,71 @@ function AppInner() {
     if (sec) scrollToSection(sec);
   }, [song, scrollToSection]);
 
-  const handleOpenSaveToLibraryModal = useCallback(async () => {
-    setLibraryAssets(await loadLibraryAssets());
-    setIsSaveToLibraryModalOpen(true);
-  }, [setLibraryAssets, setIsSaveToLibraryModalOpen]);
-
   const handleOpenNewGeneration = useCallback(() => {
     setActiveTab('lyrics');
     setIsLeftPanelOpen(true);
     if (isMobileOrTablet) setIsStructureOpen(false);
   }, [isMobileOrTablet, setActiveTab, setIsLeftPanelOpen, setIsStructureOpen]);
 
-  const handleCreateEmptySong = useCallback(() => {
-    applyResetPayload(
-      buildResetPayload('AABB'),
-      replaceStateWithoutHistory, clearHistory, clearSelection, resetWebSimilarityIndex,
-      appState,
-    );
-    resetSuggestionCycle();
-  }, [appState, clearHistory, clearSelection, replaceStateWithoutHistory, resetSuggestionCycle, resetWebSimilarityIndex]);
-
-  const resetSong = useCallback(() => {
-    const partial = buildPartialResetPayload(rhymeScheme);
-    updateSongAndStructureWithHistory(partial.song, partial.structure);
-    clearPersistedSession();
-    appState.setHasSavedSession(false);
-    clearSelection();
-    appState.setTitle(partial.title);
-    appState.setTitleOrigin(partial.titleOrigin);
-    appState.setTopic(partial.topic);
-    appState.setMood(partial.mood);
-    appState.setMarkupText('');
-    appState.setSimilarityMatches([]);
-    resetWebSimilarityIndex();
-    resetSuggestionCycle();
-    setIsResetModalOpen(false);
-  }, [appState, clearSelection, resetSuggestionCycle, resetWebSimilarityIndex, rhymeScheme, setIsResetModalOpen, updateSongAndStructureWithHistory]);
-
-  const handleSaveToLibrary = async () => {
-    if (song.length === 0) return;
-    setIsSavingToLibrary(true);
-    try {
-      await saveAssetToLibrary({ title: title || 'Untitled Song', type: 'song', sections: song, metadata: { topic, mood, genre, tempo: parseInt(tempo) || 120, instrumentation, rhythm, narrative, musicalPrompt } });
-      const updated = await loadLibraryAssets(); setLibraryCount(updated.length); setLibraryAssets(updated);
-    } catch (e) { console.error('Failed to save to library:', e); } finally { setIsSavingToLibrary(false); }
-  };
-
-  const handleLoadLibraryAsset = useCallback((asset: LibraryAsset) => {
-    const loadedAsset = loadAssetIntoEditor(asset);
-    replaceStateWithoutHistory(loadedAsset.song, loadedAsset.structure);
-    clearHistory();
-    setTitle(loadedAsset.title); setTitleOrigin('user');
-    setTopic(loadedAsset.topic); setMood(loadedAsset.mood);
-    setRhymeScheme(loadedAsset.rhymeScheme); setTargetSyllables(loadedAsset.targetSyllables);
-    setGenre(loadedAsset.genre); setTempo(loadedAsset.tempo);
-    setInstrumentation(loadedAsset.instrumentation); setRhythm(loadedAsset.rhythm);
-    setNarrative(loadedAsset.narrative); setMusicalPrompt(loadedAsset.musicalPrompt);
-    setIsSaveToLibraryModalOpen(false);
-  }, [clearHistory, replaceStateWithoutHistory, setGenre, setInstrumentation, setMood, setMusicalPrompt, setNarrative, setRhymeScheme, setRhythm, setTargetSyllables, setTempo, setTitle, setTitleOrigin, setTopic, setIsSaveToLibraryModalOpen]);
-
-  const handleDeleteLibraryAsset = useCallback(async (versionId: string) => {
-    try {
-      await deleteAssetFromLibrary(versionId);
-      setLibraryAssets(prev => prev.filter(a => a.id !== versionId));
-      setSimilarityMatches(prev => prev.filter(m => m.versionId !== versionId));
-      setLibraryCount(prev => Math.max(0, prev - 1));
-    } catch (e) { console.error('Failed to delete library asset:', e); }
-  }, [setLibraryAssets, setSimilarityMatches, setLibraryCount]);
-
-  const handlePurgeLibrary = useCallback(async () => {
-    try {
-      await purgeLibrary();
-      setLibraryAssets([]);
-      setSimilarityMatches([]);
-      setLibraryCount(0);
-    } catch (e) { console.error('Failed to purge library:', e); }
-  }, [setLibraryAssets, setSimilarityMatches, setLibraryCount]);
-
-  const handleImportInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; e.target.value = '';
-    if (!file) return;
-    setIsImportModalOpen(false); loadFileForAnalysis(file);
-  };
-
-  const handleImportChooseFile = async () => {
-    const pw = window as Window & { showOpenFilePicker?: (o: object) => Promise<Array<{ getFile: () => Promise<File> }>> };
-    if (pw.showOpenFilePicker) {
-      try {
-        const [h] = await pw.showOpenFilePicker({
-          multiple: false,
-          types: [{ description: 'Lyrics files', accept: {
-            'text/plain': ['.txt', '.md'], 'text/markdown': ['.md'],
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-            'application/vnd.oasis.opendocument.text': ['.odt'],
-          }}],
-        });
-        if (!h) return;
-        const file = await h.getFile(); setIsImportModalOpen(false); loadFileForAnalysis(file);
-      } catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) console.error('Failed to open import file picker', e); }
-      return;
-    }
-    importInputRef.current?.click();
-  };
+  const { handleCreateEmptySong, resetSong } = useSessionActions({
+    song,
+    structure,
+    rhymeScheme,
+    appState,
+    replaceStateWithoutHistory,
+    clearHistory,
+    clearSelection,
+    resetWebSimilarityIndex,
+    resetSuggestionCycle,
+    updateSongAndStructureWithHistory,
+    setIsResetModalOpen,
+  });
+  const {
+    handleSaveToLibrary,
+    handleLoadLibraryAsset,
+    handleDeleteLibraryAsset,
+    handlePurgeLibrary,
+    handleOpenSaveToLibraryModal,
+  } = useLibraryActions({
+    song,
+    title,
+    topic,
+    mood,
+    genre,
+    tempo,
+    instrumentation,
+    rhythm,
+    narrative,
+    musicalPrompt,
+    rhymeScheme,
+    targetSyllables,
+    replaceStateWithoutHistory,
+    clearHistory,
+    setTitle,
+    setTitleOrigin,
+    setTopic,
+    setMood,
+    setRhymeScheme,
+    setTargetSyllables,
+    setGenre,
+    setTempo,
+    setInstrumentation,
+    setRhythm,
+    setNarrative,
+    setMusicalPrompt,
+    setSimilarityMatches,
+    setLibraryCount,
+    setLibraryAssets,
+    setIsSavingToLibrary,
+    setIsSaveToLibraryModalOpen,
+  });
+  const { handleImportInputChange, handleImportChooseFile } = useImportHandlers({
+    importInputRef,
+    loadFileForAnalysis,
+    setIsImportModalOpen,
+    setIsPasteModalOpen,
+    setPastedText,
+  });
 
   // ── ModalProvider injection ───────────────────────────────────────────────
   // Construct UIStateBag directly from destructured appState values.

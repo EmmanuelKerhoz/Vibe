@@ -1,21 +1,36 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AI_MODEL_NAME, generateContentWithRetry, handleApiError } from '../utils/aiUtils';
 import type { Section } from '../types';
 import { getSongText } from '../utils/songUtils';
 import { withAbort, isAbortError } from '../utils/withAbort';
+
+type AutoTitleOptions = {
+  shouldAutoGenerateTitle?: boolean;
+  setShouldAutoGenerateTitle?: (v: boolean) => void;
+  setTitle?: (v: string) => void;
+  setTitleOrigin?: (v: 'user' | 'ai') => void;
+  songLength?: number;
+};
 
 export function useTitleGenerator(
   song: Section[],
   topic: string,
   mood: string,
   songLanguage: string = 'English',
+  {
+    shouldAutoGenerateTitle,
+    setShouldAutoGenerateTitle,
+    setTitle,
+    setTitleOrigin,
+    songLength = song.length,
+  }: AutoTitleOptions = {},
 ) {
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => { abortControllerRef.current?.abort(); }, []);
 
-  const generateTitle = async (): Promise<string | null> => {
+  const generateTitle = useCallback(async (): Promise<string | null> => {
     if (song.length === 0) return null;
 
     setIsGeneratingTitle(true);
@@ -55,7 +70,23 @@ Return ONLY the title as plain text, no quotes, no explanation.`;
     } finally {
       if (!wasAborted) setIsGeneratingTitle(false);
     }
-  };
+  }, [mood, song, songLanguage, topic]);
+
+  useEffect(() => {
+    if (shouldAutoGenerateTitle === undefined) return;
+    if (!shouldAutoGenerateTitle || songLength === 0 || !setTitle || !setTitleOrigin || !setShouldAutoGenerateTitle) return;
+    let isCancelled = false;
+    const run = async () => {
+      const newTitle = await generateTitle();
+      if (!isCancelled && newTitle) {
+        setTitle(newTitle);
+        setTitleOrigin('ai');
+      }
+      if (!isCancelled) setShouldAutoGenerateTitle(false);
+    };
+    void run();
+    return () => { isCancelled = true; };
+  }, [generateTitle, setShouldAutoGenerateTitle, setTitle, setTitleOrigin, shouldAutoGenerateTitle, songLength]);
 
   return { generateTitle, isGeneratingTitle };
 }
