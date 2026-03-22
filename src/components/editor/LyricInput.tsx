@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2 } from '../ui/icons';
 import type { Line } from '../../types';
 import { useDrag } from '../../contexts/DragContext';
 import { Tooltip } from '../ui/Tooltip';

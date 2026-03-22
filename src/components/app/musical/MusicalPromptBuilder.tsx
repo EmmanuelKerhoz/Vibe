@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Sparkles, Loader2, Copy, Check } from 'lucide-react';
+import { Sparkles, Loader2, Copy, Check } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 
 const AMBER_PRIMARY = '#f59e0b';

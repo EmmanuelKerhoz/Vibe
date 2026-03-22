@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, Wand2, ChevronUp, ChevronDown, Plus, Languages } from 'lucide-react';
+import { Loader2, Wand2, ChevronUp, ChevronDown, Plus, Languages } from '../ui/icons';
 import { Section } from '../../types';
 import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';

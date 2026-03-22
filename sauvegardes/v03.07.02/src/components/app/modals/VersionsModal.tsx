@@ -1,5 +1,5 @@
 import React from 'react';
-import { History, Layout, Plus, Sparkles, Undo2, X } from 'lucide-react';
+import { History, Layout, Plus, Sparkles, Undo2, X } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import type { SongVersion } from '../../../types';
 

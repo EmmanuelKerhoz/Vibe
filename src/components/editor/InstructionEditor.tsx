@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus } from '../ui/icons';
 import { MUSICAL_INSTRUCTIONS } from '../../constants/editor';
 
 export const InstructionEditor = ({ 

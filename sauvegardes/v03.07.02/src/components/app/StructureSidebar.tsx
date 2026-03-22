@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical } from 'lucide-react';
+import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';

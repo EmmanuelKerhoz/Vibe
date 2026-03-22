@@ -2,7 +2,7 @@ import React from 'react';
 import {
   X, BarChart2, Sparkles, Loader2, BookOpen, Activity, CheckCircle2, Target,
   Music, Plus, Check, Undo2
-} from 'lucide-react';
+} from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';

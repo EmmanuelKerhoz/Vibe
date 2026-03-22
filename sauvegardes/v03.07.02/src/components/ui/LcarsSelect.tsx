@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useId, type CSSProperties } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from './icons';
 import { createPortal } from 'react-dom';
 
 const EMOJI_FONT_STACK =

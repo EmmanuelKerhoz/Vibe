@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Download, FileCode2, FileText, X } from 'lucide-react';
+import { Download, FileCode2, FileText, X } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { ExportFormat } from '../../../utils/exportUtils';

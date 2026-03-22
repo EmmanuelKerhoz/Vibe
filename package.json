@@ -1,7 +1,7 @@
 {
   "name": "lyricist-pro",
   "private": true,
-  "version": "3.17.13",
+  "version": "3.17.14",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
@@ -17,7 +17,6 @@
     "@fluentui/react-components": "^9.73.1",
     "@google/genai": "^1.29.0",
     "fflate": "^0.8.2",
-    "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

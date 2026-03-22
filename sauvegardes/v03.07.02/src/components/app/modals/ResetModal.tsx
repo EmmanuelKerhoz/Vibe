@@ -1,4 +1,4 @@
-import { Trash2, X } from 'lucide-react';
+import { Trash2, X } from '../../ui/icons';
 
 type ResetModalProps = {
   isOpen: boolean;

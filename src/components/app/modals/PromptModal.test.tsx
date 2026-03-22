@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PromptModal } from './PromptModal';
 
-vi.mock('lucide-react', () => ({
+vi.mock('../../ui/icons', () => ({
   AlertTriangle: () => null,
 }));
 

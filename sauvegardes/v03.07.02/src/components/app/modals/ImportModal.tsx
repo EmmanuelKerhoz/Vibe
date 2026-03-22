@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload, AlertTriangle, X } from 'lucide-react';
+import { Upload, AlertTriangle, X } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 import { Button } from '../../ui/Button';
 

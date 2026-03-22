@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Search, X, Activity, Globe, ExternalLink, RefreshCw,
   AlertCircle, Clock, Loader2, Trash2,
-} from 'lucide-react';
+} from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { SimilarityMatch } from '../../../utils/similarityUtils';

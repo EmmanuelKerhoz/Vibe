@@ -21,7 +21,7 @@ vi.mock('../../../i18n', () => ({
   }),
 }));
 
-vi.mock('lucide-react', () => ({
+vi.mock('../../ui/icons', () => ({
   X: () => null,
   ClipboardPaste: () => null,
   Sparkles: () => null,

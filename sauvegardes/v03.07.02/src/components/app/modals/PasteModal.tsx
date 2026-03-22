@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ClipboardPaste, Sparkles, Loader2 } from 'lucide-react';
+import { X, ClipboardPaste, Sparkles, Loader2 } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';

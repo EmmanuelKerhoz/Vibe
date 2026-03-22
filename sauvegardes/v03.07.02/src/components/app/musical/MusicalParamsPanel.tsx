@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music } from 'lucide-react';
+import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 import { useMetronome } from '../../../hooks/useMetronome';
 import { RHYTHM_BPM } from '../../../constants/rhythmBpm';

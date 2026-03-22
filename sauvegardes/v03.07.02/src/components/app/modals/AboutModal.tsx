@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Apple, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag, Info, X } from 'lucide-react';
+import { Apple, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag, Info, X } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 import { APP_VERSION } from '../../../version';
 import { AI_KEY_ENV_VAR, AI_MODEL_NAME } from '../../../utils/aiUtils';

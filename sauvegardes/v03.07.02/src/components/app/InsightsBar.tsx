@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, Languages, ScanText, Layout, Search, RefreshCw, Timer, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { Loader2, BarChart2, Languages, ScanText, Layout, Search, RefreshCw, Timer, CheckCircle2, AlertTriangle, XCircle } from '../ui/icons';
 import { Section } from '../../types';
 import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
 import { LcarsSelect } from '../ui/LcarsSelect';
