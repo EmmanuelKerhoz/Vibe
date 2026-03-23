@@ -195,7 +195,7 @@ describe('loadAssetIntoEditor', () => {
     expect(loaded.rhymeScheme).toBe('ABAB');
     expect(loaded.targetSyllables).toBe(12);
     expect(loaded.genre).toBe('Synthwave');
-    expect(loaded.tempo).toBe('98');
+    expect(loaded.tempo).toBe(98);
     expect(loaded.instrumentation).toBe('Analog synths');
     expect(loaded.rhythm).toBe('Steady pulse');
     expect(loaded.narrative).toBe('City escape');
@@ -211,15 +211,15 @@ describe('loadAssetIntoEditor', () => {
     expect(loaded.mood).toBe(DEFAULT_MOOD);
     expect(loaded.rhymeScheme).toBe('AABB');
     expect(loaded.targetSyllables).toBe(10);
-    expect(loaded.tempo).toBe('120');
+    expect(loaded.tempo).toBe(120);
   });
 
-  it('converts legacy numeric tempo metadata to a string', () => {
+  it('converts legacy tempo metadata to a number', () => {
     const loaded = loadAssetIntoEditor(makeAsset({
       metadata: { tempo: 90 },
     }));
 
-    expect(loaded.tempo).toBe('90');
+    expect(loaded.tempo).toBe(90);
   });
 });
 

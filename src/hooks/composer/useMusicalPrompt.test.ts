@@ -61,7 +61,7 @@ describe('useMusicalPrompt', () => {
       topic: 'City lights',
       mood: 'Romantic',
       genre: '',
-      tempo: '92',
+      tempo: 92,
       instrumentation: '',
       rhythm: '',
       narrative: '',

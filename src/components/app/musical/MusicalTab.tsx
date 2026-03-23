@@ -10,7 +10,7 @@ interface Props {
   topic: string;
   mood: string;
   genre: string; setGenre: (v: string) => void;
-  tempo: string; setTempo: (v: string) => void;
+  tempo: number; setTempo: (v: number) => void;
   instrumentation: string; setInstrumentation: (v: string) => void;
   rhythm: string; setRhythm: (v: string) => void;
   narrative: string; setNarrative: (v: string) => void;

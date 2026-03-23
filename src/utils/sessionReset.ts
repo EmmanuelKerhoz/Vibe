@@ -24,7 +24,7 @@ export interface ResetPayload {
   targetSyllables: number;
   // Musical metadata
   genre: string;
-  tempo: string;
+  tempo: number;
   instrumentation: string;
   rhythm: string;
   narrative: string;
@@ -51,7 +51,7 @@ export const buildResetPayload = (rhymeScheme = 'AABB'): ResetPayload => ({
   rhymeScheme,
   targetSyllables:  10,
   genre:            '',
-  tempo:            '120',
+  tempo:            120,
   instrumentation:  '',
   rhythm:           '',
   narrative:        '',

@@ -10,14 +10,14 @@ type UseMusicalPromptParams = {
   topic: string;
   mood: string;
   genre: string;
-  tempo: string;
+  tempo: number;
   instrumentation: string;
   rhythm: string;
   narrative: string;
   songLanguage?: string;
   setMusicalPrompt: (value: string) => void;
   setGenre: (value: string) => void;
-  setTempo: (value: string) => void;
+  setTempo: (value: number) => void;
   setInstrumentation: (value: string) => void;
   setRhythm: (value: string) => void;
   setNarrative: (value: string) => void;
@@ -69,7 +69,7 @@ Song Title: ${title}
 Topic/Theme: ${topic}
 Mood: ${mood}
 Genre: ${genre}
-Tempo: ${tempo} BPM
+Tempo: ${tempo.toString()} BPM
 Rhythm & Groove: ${rhythm}
 Instrumentation: ${instrumentation}
 Narrative / Vibe: ${narrative}
@@ -159,7 +159,7 @@ Return only valid JSON, no markdown, no explanations.`,
           narrative?: string;
         }>(response.text || '{}', {});
         if (parsed.genre) setGenre(parsed.genre);
-        if (parsed.tempo) setTempo(parsed.tempo);
+        if (parsed.tempo) setTempo(parseInt(parsed.tempo, 10) || 120);
         if (parsed.instrumentation) setInstrumentation(parsed.instrumentation);
         if (parsed.rhythm) setRhythm(parsed.rhythm);
         if (parsed.narrative) setNarrative(parsed.narrative);

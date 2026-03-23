@@ -209,7 +209,7 @@ vi.mock('./hooks/useAppState', async () => {
         setTargetSyllables: mockAppState.noop,
         genre: '',
         setGenre: mockAppState.noop,
-        tempo: '',
+        tempo: 120,
         setTempo: mockAppState.noop,
         instrumentation: '',
         setInstrumentation: mockAppState.noop,

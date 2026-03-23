@@ -8,12 +8,12 @@ import { RHYTHM_BPM } from '../../../constants/rhythmBpm';
 const AMBER_PRIMARY = '#f59e0b';
 
 const BPM_PRESETS = [
-  { label: 'Very Slow', value: '60' },
-  { label: 'Slow',      value: '80' },
-  { label: 'Moderate',  value: '100' },
-  { label: 'Upbeat',    value: '120' },
-  { label: 'Fast',      value: '140' },
-  { label: 'Very Fast', value: '160' },
+  { label: 'Very Slow', value: 60 },
+  { label: 'Slow',      value: 80 },
+  { label: 'Moderate',  value: 100 },
+  { label: 'Upbeat',    value: 120 },
+  { label: 'Fast',      value: 140 },
+  { label: 'Very Fast', value: 160 },
 ];
 
 interface InstrumentOption { name: string; icon: string }
@@ -245,7 +245,7 @@ function GBPanel({ children, className = '', style = {} }: { children: React.Rea
 
 interface Props {
   genre: string; setGenre: (v: string) => void;
-  tempo: string; setTempo: (v: string) => void;
+  tempo: number; setTempo: (v: number) => void;
   instrumentation: string; setInstrumentation: (v: string) => void;
   rhythm: string; setRhythm: (v: string) => void;
   narrative: string; setNarrative: (v: string) => void;
@@ -273,7 +273,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
     ? getSubStyleEntries(selectedVibeTile.name).find(e => e.name === selectedSubStyle) ?? null
     : null;
 
-  const bpmValue = parseInt(tempo) || 120;
+  const bpmValue = tempo || 120;
   const metronome = useMetronome(bpmValue);
   const bpmPercent = Math.min(100, Math.max(0, ((bpmValue - 40) / (220 - 40)) * 100));
   const selectedInstruments = parseInstrumentation(instrumentation);
@@ -288,7 +288,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
     if (selectedVibeTile?.name === tile.name) { setSelectedVibeTile(null); setSelectedSubStyle(''); return; }
     setSelectedVibeTile(tile); setSelectedSubStyle('');
     setGenre(tile.name);
-    setTempo((RHYTHM_BPM[tile.rhythm] ?? tile.bpm).toString());
+    setTempo(RHYTHM_BPM[tile.rhythm] ?? tile.bpm);
     setRhythm(tile.rhythm);
     setInstrumentation(tile.instruments.join(', '));
     // Step 1 complete: Genre selected
@@ -304,7 +304,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
       const entry = getSubStyleEntries(selectedVibeTile.name).find(e => e.name === next);
       if (entry) {
         const baseBpm = RHYTHM_BPM[selectedVibeTile.rhythm] ?? selectedVibeTile.bpm;
-        setTempo(Math.max(40, Math.min(220, baseBpm + entry.bpmOffset)).toString());
+        setTempo(Math.max(40, Math.min(220, baseBpm + entry.bpmOffset)));
         if (entry.addInstruments.length > 0) {
           const current = selectedVibeTile.instruments;
           const merged = [...current, ...entry.addInstruments.filter(i => !current.includes(i))];
@@ -312,7 +312,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
         }
       }
     } else if (!next && selectedVibeTile) {
-      setTempo((RHYTHM_BPM[selectedVibeTile.rhythm] ?? selectedVibeTile.bpm).toString());
+      setTempo(RHYTHM_BPM[selectedVibeTile.rhythm] ?? selectedVibeTile.bpm);
       setInstrumentation(selectedVibeTile.instruments.join(', '));
     }
     // Step 2 complete: Sub-style selected
@@ -499,7 +499,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                     : { borderRadius: '8px 2px 8px 2px', color: 'var(--text-primary)', borderColor: 'var(--border-color)', background: 'transparent' }}>
                   {bpmValue}
                 </span>
-                <input type="number" value={tempo} onChange={e => setTempo(e.target.value)} min="40" max="220"
+                <input type="number" value={tempo} onChange={e => setTempo(parseInt(e.target.value, 10) || 120)} min="40" max="220"
                   className="w-16 bg-transparent border border-[var(--border-color)] px-2 py-1 text-sm text-center text-[var(--text-primary)] lcars-glow-focus transition-colors"
                   style={{ borderRadius: '8px 2px 8px 2px' }}
                 />
@@ -516,7 +516,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
             <div className="relative h-2 bg-[var(--border-color)] rounded-full overflow-hidden">
               <div className="absolute left-0 top-0 h-full rounded-full transition-all" style={{ width: `${bpmPercent}%`, background: AMBER_PRIMARY }} />
             </div>
-            <input type="range" min="40" max="220" value={bpmValue} onChange={e => setTempo(e.target.value)} className="w-full h-2 opacity-0 cursor-pointer -mt-4 relative z-10" />
+            <input type="range" min="40" max="220" value={bpmValue} onChange={e => setTempo(parseInt(e.target.value, 10) || 120)} className="w-full h-2 opacity-0 cursor-pointer -mt-4 relative z-10" />
             <div className="flex flex-wrap gap-1.5">
               {BPM_PRESETS.map(({ label, value }) => (
                 <button key={value} onClick={() => setTempo(value)}
