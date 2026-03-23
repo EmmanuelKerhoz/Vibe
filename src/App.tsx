@@ -322,7 +322,6 @@ function AppInnerContent() {
             topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
             rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
             targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-            song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
             isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
             onSurprise={handleSurpriseClick} isSurprising={isSurprising}
             isSessionHydrated={isSessionHydrated}

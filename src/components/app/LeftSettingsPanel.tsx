@@ -7,7 +7,8 @@ import { Label } from '../ui/Label';
 import { Input } from '../ui/Input';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
-import type { Section } from '../../types';
+import { useSongContext } from '../../contexts/SongContext';
+import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface Props {
   title: string;
@@ -23,9 +24,6 @@ interface Props {
   setRhymeScheme: (v: string) => void;
   targetSyllables: number;
   setTargetSyllables: (v: number) => void;
-  song: Section[];
-  isGenerating: boolean;
-  quantizeSyllables: () => void;
   isLeftPanelOpen: boolean;
   setIsLeftPanelOpen: (v: boolean | ((v: boolean) => boolean)) => void;
   onSurprise: () => void;
@@ -37,11 +35,18 @@ interface Props {
 
 const SOLID_BG_DARK = 'var(--bg-app, #0c0c0c)';
 
+type PanelContentProps = Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & {
+  t: ReturnType<typeof useTranslation>['t'];
+  isMobileOverlay: boolean;
+  song: ReturnType<typeof useSongContext>['song'];
+  isGenerating: ReturnType<typeof useComposerContext>['isGenerating'];
+  quantizeSyllables: ReturnType<typeof useComposerContext>['quantizeSyllables'];
+};
+
 export function LeftSettingsPanel({
   title, setTitle, titleOrigin, onGenerateTitle, isGeneratingTitle,
   topic, setTopic, mood, setMood,
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
-  song, isGenerating, quantizeSyllables,
   isLeftPanelOpen, setIsLeftPanelOpen,
   onSurprise, isSurprising,
   onGenerateSong,
@@ -49,6 +54,8 @@ export function LeftSettingsPanel({
   isMobileOverlay,
 }: Props) {
   const { t } = useTranslation();
+  const { song } = useSongContext();
+  const { isGenerating, quantizeSyllables } = useComposerContext();
 
   // ── Mobile/tablet: fixed overlay ────────────────────────────────────────────────────────
   if (isMobileOverlay) {
@@ -145,10 +152,7 @@ function PanelContent({
   isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen: _setIsLeftPanelOpen,
   onSurprise, isSurprising, onGenerateSong,
   isMobileOverlay,
-}: Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & {
-  t: ReturnType<typeof useTranslation>['t'];
-  isMobileOverlay: boolean;
-}) {
+}: PanelContentProps) {
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
 
@@ -291,7 +295,7 @@ function PanelContent({
           </div>
           <Tooltip title={t.tooltips.quantize}>
             <Button
-              onClick={quantizeSyllables}
+              onClick={() => { void quantizeSyllables(); }}
               disabled={song.length === 0 || isGenerating}
               variant="outlined" color="primary" fullWidth
               startIcon={<Ruler className="w-3.5 h-3.5" />}
