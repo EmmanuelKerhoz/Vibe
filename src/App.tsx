@@ -168,36 +168,10 @@ function AppInnerContent() {
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title, songLanguage);
 
   useKeyboardShortcuts({
-    promptModal,
-    confirmModal,
-    apiErrorModal,
-    isResetModalOpen,
-    isVersionsModalOpen,
-    isSaveToLibraryModalOpen,
-    isSimilarityModalOpen,
-    isAnalysisModalOpen,
-    isPasteModalOpen,
-    isExportModalOpen,
-    isImportModalOpen,
-    isSettingsOpen,
-    isAboutOpen,
     isMobileOrTablet,
     closeMobilePanels,
     undo,
     redo,
-    setPromptModal,
-    setConfirmModal,
-    setApiErrorModal,
-    setIsResetModalOpen,
-    setIsVersionsModalOpen,
-    setIsSaveToLibraryModalOpen,
-    setIsSimilarityModalOpen,
-    setIsAnalysisModalOpen,
-    setIsPasteModalOpen,
-    setIsExportModalOpen,
-    setIsImportModalOpen,
-    setIsSettingsOpen,
-    setIsAboutOpen,
   });
 
   const { sectionCount, wordCount, charCount } = useAppKpis(song);

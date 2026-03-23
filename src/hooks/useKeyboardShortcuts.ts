@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useModalContext } from '../contexts/ModalContext';
 
 export type KeyboardShortcutCategory = 'edit' | 'navigation' | 'file' | 'ai';
 
@@ -57,70 +58,48 @@ export const KEYBOARD_SHORTCUTS_METADATA: readonly KeyboardShortcutMetadata[] = 
 ] as const;
 
 type UseKeyboardShortcutsParams = {
-  promptModal: { open: boolean } | null;
-  confirmModal: { open: boolean } | null;
-  apiErrorModal: { open: boolean; message: string };
-  isResetModalOpen: boolean;
-  isVersionsModalOpen: boolean;
-  isSaveToLibraryModalOpen: boolean;
-  isSimilarityModalOpen: boolean;
-  isAnalysisModalOpen: boolean;
-  isPasteModalOpen: boolean;
-  isExportModalOpen: boolean;
-  isImportModalOpen: boolean;
-  isSettingsOpen: boolean;
-  isAboutOpen: boolean;
   isMobileOrTablet: boolean;
   closeMobilePanels: () => void;
   undo: () => void;
   redo: () => void;
-  setPromptModal: (v: null) => void;
-  setConfirmModal: (v: null) => void;
-  setApiErrorModal: (v: { open: boolean; message: string }) => void;
-  setIsResetModalOpen: (v: boolean) => void;
-  setIsVersionsModalOpen: (v: boolean) => void;
-  setIsSaveToLibraryModalOpen: (v: boolean) => void;
-  setIsSimilarityModalOpen: (v: boolean) => void;
-  setIsAnalysisModalOpen: (v: boolean) => void;
-  setIsPasteModalOpen: (v: boolean) => void;
-  setIsExportModalOpen: (v: boolean) => void;
-  setIsImportModalOpen: (v: boolean) => void;
-  setIsSettingsOpen: (v: boolean) => void;
-  setIsAboutOpen: (v: boolean) => void;
 };
 
 export const useKeyboardShortcuts = ({
-  promptModal,
-  confirmModal,
-  apiErrorModal,
-  isResetModalOpen,
-  isVersionsModalOpen,
-  isSaveToLibraryModalOpen,
-  isSimilarityModalOpen,
-  isAnalysisModalOpen,
-  isPasteModalOpen,
-  isExportModalOpen,
-  isImportModalOpen,
-  isSettingsOpen,
-  isAboutOpen,
   isMobileOrTablet,
   closeMobilePanels,
   undo,
   redo,
-  setPromptModal,
-  setConfirmModal,
-  setApiErrorModal,
-  setIsResetModalOpen,
-  setIsVersionsModalOpen,
-  setIsSaveToLibraryModalOpen,
-  setIsSimilarityModalOpen,
-  setIsAnalysisModalOpen,
-  setIsPasteModalOpen,
-  setIsExportModalOpen,
-  setIsImportModalOpen,
-  setIsSettingsOpen,
-  setIsAboutOpen,
 }: UseKeyboardShortcutsParams) => {
+  const { uiState } = useModalContext();
+  const {
+    promptModal,
+    confirmModal,
+    apiErrorModal,
+    isResetModalOpen,
+    isVersionsModalOpen,
+    isSaveToLibraryModalOpen,
+    isSimilarityModalOpen,
+    isAnalysisModalOpen,
+    isPasteModalOpen,
+    isExportModalOpen,
+    isImportModalOpen,
+    isSettingsOpen,
+    isAboutOpen,
+    setPromptModal,
+    setConfirmModal,
+    setApiErrorModal,
+    setIsResetModalOpen,
+    setIsVersionsModalOpen,
+    setIsSaveToLibraryModalOpen,
+    setIsSimilarityModalOpen,
+    setIsAnalysisModalOpen,
+    setIsPasteModalOpen,
+    setIsExportModalOpen,
+    setIsImportModalOpen,
+    setIsSettingsOpen,
+    setIsAboutOpen,
+  } = uiState;
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
