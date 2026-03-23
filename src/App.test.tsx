@@ -18,6 +18,8 @@ const mockAppState = vi.hoisted(() => ({
   setIsMarkupModeSpy: vi.fn(),
   setIsLeftPanelOpenSpy: vi.fn(),
   setIsStructureOpenSpy: vi.fn(),
+  useKeyboardShortcutsSpy: vi.fn(),
+  appModalsPropsSpy: vi.fn(),
   noop: vi.fn(),
   asyncNoop: vi.fn(async () => {}),
 }));
@@ -311,7 +313,9 @@ vi.mock('./hooks/useMobileInitPanels', () => ({
 }));
 
 vi.mock('./hooks/useKeyboardShortcuts', () => ({
-  useKeyboardShortcuts: mockAppState.noop,
+  useKeyboardShortcuts: (params: unknown) => {
+    mockAppState.useKeyboardShortcutsSpy(params);
+  },
 }));
 
 vi.mock('./hooks/useSessionActions', () => ({
@@ -373,7 +377,10 @@ vi.mock('./components/app/LyricsView', () => ({
 }));
 
 vi.mock('./components/app/AppModals', () => ({
-  AppModals: () => <div data-testid="app-modals" />,
+  AppModals: (props: unknown) => {
+    mockAppState.appModalsPropsSpy(props);
+    return <div data-testid="app-modals" />;
+  },
 }));
 
 vi.mock('./components/app/MobileBottomNav', () => ({
@@ -410,6 +417,8 @@ describe('App markup mode reset', () => {
     mockAppState.setIsMarkupModeSpy.mockClear();
     mockAppState.setIsLeftPanelOpenSpy.mockClear();
     mockAppState.setIsStructureOpenSpy.mockClear();
+    mockAppState.useKeyboardShortcutsSpy.mockClear();
+    mockAppState.appModalsPropsSpy.mockClear();
   });
 
   it('keeps markup mode while the lyrics tab remains active and resets it after switching tabs', async () => {
@@ -476,5 +485,52 @@ describe('App markup mode reset', () => {
 
     expect(screen.getByTestId('insights-bar').textContent).toBe('no-web-badge-label');
     expect(screen.queryByText('undefined%')).toBeNull();
+  });
+
+  it('passes only external shortcut controls and business-data modal props from App', () => {
+    render(<App />);
+
+    expect(mockAppState.useKeyboardShortcutsSpy).toHaveBeenCalledWith({
+      isMobileOrTablet: false,
+      closeMobilePanels: expect.any(Function),
+      undo: expect.any(Function),
+      redo: expect.any(Function),
+    });
+
+    const appModalsProps = mockAppState.appModalsPropsSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(appModalsProps).toBeTruthy();
+    expect(appModalsProps).toMatchObject({
+      theme: 'dark',
+      hasExistingWork: expect.any(Boolean),
+      exportSong: expect.any(Function),
+      handleImportInputChange: expect.any(Function),
+      resetSong: expect.any(Function),
+    });
+    expect(appModalsProps).not.toHaveProperty('isAboutOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsAboutOpen');
+    expect(appModalsProps).not.toHaveProperty('isSettingsOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsSettingsOpen');
+    expect(appModalsProps).not.toHaveProperty('isImportModalOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsImportModalOpen');
+    expect(appModalsProps).not.toHaveProperty('isExportModalOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsExportModalOpen');
+    expect(appModalsProps).not.toHaveProperty('isPasteModalOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsPasteModalOpen');
+    expect(appModalsProps).not.toHaveProperty('isAnalysisModalOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsAnalysisModalOpen');
+    expect(appModalsProps).not.toHaveProperty('isSimilarityModalOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsSimilarityModalOpen');
+    expect(appModalsProps).not.toHaveProperty('isSaveToLibraryModalOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsSaveToLibraryModalOpen');
+    expect(appModalsProps).not.toHaveProperty('isVersionsModalOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsVersionsModalOpen');
+    expect(appModalsProps).not.toHaveProperty('isResetModalOpen');
+    expect(appModalsProps).not.toHaveProperty('setIsResetModalOpen');
+    expect(appModalsProps).not.toHaveProperty('promptModal');
+    expect(appModalsProps).not.toHaveProperty('setPromptModal');
+    expect(appModalsProps).not.toHaveProperty('confirmModal');
+    expect(appModalsProps).not.toHaveProperty('setConfirmModal');
+    expect(appModalsProps).not.toHaveProperty('apiErrorModal');
+    expect(appModalsProps).not.toHaveProperty('setApiErrorModal');
   });
 });
