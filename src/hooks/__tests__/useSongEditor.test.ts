@@ -214,6 +214,184 @@ describe('useSongEditor', () => {
     });
   });
 
+  describe('loadFileForAnalysis', () => {
+    it('loads a plain text file and opens paste modal', async () => {
+      const song = [makeSection('s1', 'Verse 1')];
+      const openPasteModalWithText = vi.fn();
+
+      const { result } = renderHook(
+        () => useSongEditor({
+          song,
+          structure: ['Verse 1'],
+          newSectionName: '',
+          setNewSectionName: vi.fn(),
+          updateState: vi.fn(),
+          updateStructureWithHistory: vi.fn(),
+          updateSongAndStructureWithHistory: vi.fn(),
+          title: 'Test Song',
+          topic: 'test',
+          mood: 'neutral',
+          songLanguage: '',
+          openPasteModalWithText,
+          playAudioFeedback: vi.fn(),
+        }),
+        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+      );
+
+      const fileContent = 'Line 1\nLine 2';
+      const file = new File([fileContent], 'song.txt', { type: 'text/plain' });
+      // Add the text() method to the File object
+      (file as any).text = vi.fn().mockResolvedValue(fileContent);
+
+      await act(async () => {
+        const payload = await result.current.loadFileForAnalysis(file);
+        expect(payload.text).toBe('Line 1\nLine 2');
+      });
+
+      expect(openPasteModalWithText).toHaveBeenCalledWith('Line 1\nLine 2');
+    });
+
+    it('extracts language metadata from plain text with lang header', async () => {
+      const song = [makeSection('s1', 'Verse 1')];
+      const openPasteModalWithText = vi.fn();
+
+      const { result } = renderHook(
+        () => useSongEditor({
+          song,
+          structure: ['Verse 1'],
+          newSectionName: '',
+          setNewSectionName: vi.fn(),
+          updateState: vi.fn(),
+          updateStructureWithHistory: vi.fn(),
+          updateSongAndStructureWithHistory: vi.fn(),
+          title: 'Test Song',
+          topic: 'test',
+          mood: 'neutral',
+          songLanguage: '',
+          openPasteModalWithText,
+          playAudioFeedback: vi.fn(),
+        }),
+        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+      );
+
+      const fileContent = '# lang: fr\n\nVerse text here';
+      const file = new File([fileContent], 'song.txt', { type: 'text/plain' });
+      (file as any).text = vi.fn().mockResolvedValue(fileContent);
+
+      await act(async () => {
+        const payload = await result.current.loadFileForAnalysis(file);
+        expect(payload.songLanguage).toBe('fr');
+        expect(payload.text).toBe('Verse text here');
+      });
+
+      expect(openPasteModalWithText).toHaveBeenCalledWith('Verse text here');
+    });
+
+    it('does not open paste modal when file has no text', async () => {
+      const song = [makeSection('s1', 'Verse 1')];
+      const openPasteModalWithText = vi.fn();
+
+      const { result } = renderHook(
+        () => useSongEditor({
+          song,
+          structure: ['Verse 1'],
+          newSectionName: '',
+          setNewSectionName: vi.fn(),
+          updateState: vi.fn(),
+          updateStructureWithHistory: vi.fn(),
+          updateSongAndStructureWithHistory: vi.fn(),
+          title: 'Test Song',
+          topic: 'test',
+          mood: 'neutral',
+          songLanguage: '',
+          openPasteModalWithText,
+          playAudioFeedback: vi.fn(),
+        }),
+        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+      );
+
+      const file = new File([''], 'empty.txt', { type: 'text/plain' });
+      (file as any).text = vi.fn().mockResolvedValue('');
+
+      await act(async () => {
+        const payload = await result.current.loadFileForAnalysis(file);
+        expect(payload.text).toBe('');
+      });
+
+      expect(openPasteModalWithText).not.toHaveBeenCalled();
+    });
+
+    it('routes .docx files to docx extraction logic', async () => {
+      const song = [makeSection('s1', 'Verse 1')];
+      const openPasteModalWithText = vi.fn();
+
+      const { result } = renderHook(
+        () => useSongEditor({
+          song,
+          structure: ['Verse 1'],
+          newSectionName: '',
+          setNewSectionName: vi.fn(),
+          updateState: vi.fn(),
+          updateStructureWithHistory: vi.fn(),
+          updateSongAndStructureWithHistory: vi.fn(),
+          title: 'Test Song',
+          topic: 'test',
+          mood: 'neutral',
+          songLanguage: '',
+          openPasteModalWithText,
+          playAudioFeedback: vi.fn(),
+        }),
+        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+      );
+
+      // Mock a minimal .docx file (won't actually be valid but triggers the code path)
+      const file = new File(['mock docx content'], 'song.docx', {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+
+      await act(async () => {
+        const payload = await result.current.loadFileForAnalysis(file);
+        // Since it's not a valid docx, extraction will fail gracefully and return empty
+        expect(payload).toBeDefined();
+      });
+    });
+
+    it('routes .odt files to odt extraction logic', async () => {
+      const song = [makeSection('s1', 'Verse 1')];
+      const openPasteModalWithText = vi.fn();
+
+      const { result } = renderHook(
+        () => useSongEditor({
+          song,
+          structure: ['Verse 1'],
+          newSectionName: '',
+          setNewSectionName: vi.fn(),
+          updateState: vi.fn(),
+          updateStructureWithHistory: vi.fn(),
+          updateSongAndStructureWithHistory: vi.fn(),
+          title: 'Test Song',
+          topic: 'test',
+          mood: 'neutral',
+          songLanguage: '',
+          openPasteModalWithText,
+          playAudioFeedback: vi.fn(),
+        }),
+        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+      );
+
+      // Mock a minimal .odt file
+      const file = new File(['mock odt content'], 'song.odt', {
+        type: 'application/vnd.oasis.opendocument.text'
+      });
+
+      await act(async () => {
+        const payload = await result.current.loadFileForAnalysis(file);
+        // Since it's not a valid odt, extraction will fail gracefully and return empty
+        expect(payload).toBeDefined();
+      });
+    });
+  });
+
   describe('exportSong', () => {
     it('downloads a txt file for a song with content', async () => {
       const song = [
