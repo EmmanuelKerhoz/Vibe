@@ -4,8 +4,6 @@ import { DEFAULT_RHYME_SCHEME, DEFAULT_STRUCTURE } from './constants/editor';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
-import { useSongComposer } from './hooks/useSongComposer';
-import { useSongHistoryState } from './hooks/useSongHistoryState';
 import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
 import { useSimilarityEngine } from './hooks/useSimilarityEngine';
@@ -35,7 +33,8 @@ import { LyricsView } from './components/app/LyricsView';
 import { AppModals } from './components/app/AppModals';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
-import { createEmptySong, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
+import { SongProvider, useSongContext } from './contexts/SongContext';
+import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
 function ModalShortcutBindings({
   isMobileOrTablet,
@@ -63,28 +62,33 @@ function AppInnerContent() {
   const { language } = useLanguage();
   const { song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
     updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory, undo, redo,
-  } = useSongHistoryState(createEmptySong(DEFAULT_STRUCTURE, DEFAULT_RHYME_SCHEME), DEFAULT_STRUCTURE);
+    title, setTitle, titleOrigin, setTitleOrigin, topic, setTopic, mood, setMood,
+    rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables, genre, setGenre, tempo, setTempo,
+    instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative, musicalPrompt, setMusicalPrompt,
+    newSectionName, setNewSectionName, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
+    songLanguage, setSongLanguage,
+  } = useSongContext();
+  const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
+    selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
+    quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
+    generateMusicalPrompt, analyzeLyricsForMusic, handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
+  } = useComposerContext();
 
   const appState = useAppState();
   const {
     theme, setTheme, activeTab, setActiveTab, isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
-    title, setTitle, titleOrigin, setTitleOrigin, topic, setTopic, mood, setMood,
-    rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables, genre, setGenre, tempo, setTempo,
-    instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative, musicalPrompt, setMusicalPrompt,
     audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
-    newSectionName, setNewSectionName,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
      isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
      isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
      apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
      isExportModalOpen, setIsExportModalOpen,
      isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
-     isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
-     isResetModalOpen, setIsResetModalOpen, isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
-     confirmModal, setConfirmModal, promptModal, setPromptModal,
-     isPasteModalOpen, setIsPasteModalOpen, isAnalysisModalOpen, setIsAnalysisModalOpen,
+      isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
+      isResetModalOpen, setIsResetModalOpen, isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen,
+      confirmModal, setConfirmModal, promptModal, setPromptModal,
+      isPasteModalOpen, setIsPasteModalOpen, isAnalysisModalOpen, setIsAnalysisModalOpen,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
-    songLanguage, setSongLanguage,
   } = appState;
 
   // ── Mobile layout ─────────────────────────────────────────────────────────
@@ -132,17 +136,6 @@ function AppInnerContent() {
     updateState, updateSongAndStructureWithHistory,
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
     setIsPasteModalOpen, setIsAnalysisModalOpen,
-  });
-
-  const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
-    selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
-    quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
-    generateMusicalPrompt, analyzeLyricsForMusic, handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
-  } = useSongComposer({ song, structure, topic, mood, rhymeScheme, targetSyllables, title,
-    genre, tempo, instrumentation, rhythm, narrative, songLanguage, uiLanguage: language,
-    setMusicalPrompt, setGenre, setTempo, setInstrumentation, setRhythm, setNarrative,
-    updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
-    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
   useEffect(() => { isGeneratingRef.current = isGenerating; }, [isGenerating]);
@@ -482,7 +475,11 @@ function AppInnerContent() {
 function AppInner() {
   return (
     <DragProvider>
-      <AppInnerContent />
+      <SongProvider>
+        <ComposerProvider>
+          <AppInnerContent />
+        </ComposerProvider>
+      </SongProvider>
     </DragProvider>
   );
 }
