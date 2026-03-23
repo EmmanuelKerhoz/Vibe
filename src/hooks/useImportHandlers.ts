@@ -8,7 +8,7 @@ type WindowWithOpenFilePicker = Window & {
 
 type UseImportHandlersParams = {
   importInputRef: RefObject<HTMLInputElement | null>;
-  loadFileForAnalysis: (file: File) => { songLanguage?: string } | void | Promise<{ songLanguage?: string } | void>;
+  loadFileForAnalysis: (file: File) => Promise<{ songLanguage?: string }>;
   setIsImportModalOpen: (v: boolean) => void;
   setIsPasteModalOpen: (v: boolean) => void;
   setPastedText: (v: string) => void;
@@ -17,10 +17,8 @@ type UseImportHandlersParams = {
 
 export const useImportHandlers = (params: UseImportHandlersParams) => {
   const { importInputRef, loadFileForAnalysis, setIsImportModalOpen, setSongLanguage } = params;
-  const restoreImportedSongLanguage = useCallback((payload: { songLanguage?: string } | void) => {
-    const importedLanguage = payload && typeof payload === 'object' && 'songLanguage' in payload
-      ? payload.songLanguage?.trim()
-      : '';
+  const restoreImportedSongLanguage = useCallback((payload: { songLanguage?: string }) => {
+    const importedLanguage = payload.songLanguage?.trim() ?? '';
     if (importedLanguage) setSongLanguage(importedLanguage);
   }, [setSongLanguage]);
 

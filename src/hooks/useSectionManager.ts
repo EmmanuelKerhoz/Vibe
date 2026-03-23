@@ -150,19 +150,15 @@ export const useSectionManager = ({
     }
     newStructure.push(...bridges, ...others, ...outros);
 
-    let newSong: Section[] = [];
-    if (song.length > 0) {
-      const songCopy = [...song];
-      newStructure.forEach(structName => {
-        const index = songCopy.findIndex(s => s.name === structName);
-        if (index !== -1) {
-          newSong.push(songCopy[index]!);
-          songCopy.splice(index, 1);
-        } else {
-          newSong.push(makeEmptySection(structName));
-        }
-      });
-    }
+    const songCopy = [...song];
+    const newSong: Section[] = newStructure.map(structName => {
+      const index = songCopy.findIndex(s => s.name === structName);
+      if (index !== -1) {
+        const [matched] = songCopy.splice(index, 1);
+        return matched!;
+      }
+      return makeEmptySection(structName);
+    });
     updateSongAndStructureWithHistory(newSong, newStructure);
   }, [song, structure, updateSongAndStructureWithHistory]);
 
