@@ -24,6 +24,7 @@ export function useUIState() {
   const [isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen] = useState(false);
   const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; onConfirm: () => void } | null>(null);
   const [promptModal, setPromptModal] = useState<{ open: boolean; onConfirm: (value: string) => void } | null>(null);
 
@@ -61,6 +62,7 @@ export function useUIState() {
     isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen,
     isVersionsModalOpen, setIsVersionsModalOpen,
     isResetModalOpen, setIsResetModalOpen,
+    isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen,
     confirmModal, setConfirmModal,
     promptModal, setPromptModal,
     activeTab, setActiveTab,

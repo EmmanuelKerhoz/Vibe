@@ -262,6 +262,28 @@ const en: Translations = {
     },
   },
 
+  keyboardShortcuts: {
+    title: 'Keyboard Shortcuts',
+    description: 'Reference the active shortcuts available in Lyricist Pro.',
+    keysColumn: 'Keys',
+    actionColumn: 'Action',
+    close: 'Close',
+    categories: {
+      edit: 'Edit',
+      navigation: 'Navigation',
+      file: 'File',
+      ai: 'AI',
+    },
+    shortcuts: {
+      undo: 'Undo the latest change outside text inputs.',
+      redo: 'Redo the latest reverted change outside text inputs.',
+      dismissReset: 'Dismiss the reset confirmation dialog.',
+      dismissNavigation: 'Close the settings, about, similarity, or mobile side panels.',
+      dismissFileDialogs: 'Close the import, export, versions, or library dialogs.',
+      dismissAiDialogs: 'Close AI prompts, API alerts, analysis, or pasted-lyrics import dialogs.',
+    },
+  },
+
   about: {
     description: 'A professional-grade AI lyrics editor designed for songwriters and poets. Craft your masterpiece with real-time suggestions, structure management, and intelligent quantization.',
     engine: 'Google Gemini',
@@ -350,6 +372,7 @@ const en: Translations = {
     revertAnalysis: 'Revert all applied analysis changes',
     closeAnalysis: 'Close analysis report',
     generateMusical: 'Generate a musical prompt for AI music tools',
+    keyboardShortcuts: 'Show keyboard shortcuts',
     closeAbout: 'Close',
     analysisCancel: 'Cancel and close',
     analysisImport: 'Analyze and import pasted lyrics',

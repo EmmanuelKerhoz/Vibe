@@ -13,6 +13,7 @@ export interface UIStateBag {
   setIsSaveToLibraryModalOpen: (v: boolean) => void;
   setIsVersionsModalOpen: (v: boolean) => void;
   setIsResetModalOpen: (v: boolean) => void;
+  setIsKeyboardShortcutsModalOpen: (v: boolean) => void;
   setConfirmModal: (v: { open: boolean; onConfirm: () => void } | null) => void;
   setPromptModal: (v: { open: boolean; onConfirm: (value: string) => void } | null) => void;
   setIsMarkupMode: (v: boolean) => void;
@@ -26,6 +27,7 @@ export interface UIStateBag {
   isSaveToLibraryModalOpen: boolean;
   isVersionsModalOpen: boolean;
   isResetModalOpen: boolean;
+  isKeyboardShortcutsModalOpen: boolean;
   confirmModal: { open: boolean; onConfirm: () => void } | null;
   promptModal: { open: boolean; onConfirm: (value: string) => void } | null;
   activeTab: 'lyrics' | 'musical';
@@ -47,7 +49,7 @@ export interface UIStateBag {
 export type ModalName =
   | 'about' | 'settings' | 'apiError' | 'import' | 'export'
   | 'sectionDropdown' | 'similarity' | 'saveToLibrary'
-  | 'versions' | 'reset' | 'confirm' | 'prompt' | 'paste' | 'analysis';
+  | 'versions' | 'reset' | 'keyboardShortcuts' | 'confirm' | 'prompt' | 'paste' | 'analysis';
 
 // ── Context value type ────────────────────────────────────────────────────────
 export interface ModalContextValue {
@@ -78,6 +80,7 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
       case 'saveToLibrary':   uiState.setIsSaveToLibraryModalOpen(true); break;
       case 'versions':        uiState.setIsVersionsModalOpen(true); break;
       case 'reset':           uiState.setIsResetModalOpen(true); break;
+      case 'keyboardShortcuts': uiState.setIsKeyboardShortcutsModalOpen(true); break;
       case 'apiError': {
         const msg = typeof payload === 'string' ? payload : '';
         uiState.setApiErrorModal({ open: true, message: msg });
@@ -109,6 +112,7 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
       case 'saveToLibrary':   uiState.setIsSaveToLibraryModalOpen(false); break;
       case 'versions':        uiState.setIsVersionsModalOpen(false); break;
       case 'reset':           uiState.setIsResetModalOpen(false); break;
+      case 'keyboardShortcuts': uiState.setIsKeyboardShortcutsModalOpen(false); break;
       case 'apiError':        uiState.setApiErrorModal({ open: false, message: '' }); break;
       case 'confirm':         uiState.setConfirmModal(null); break;
       case 'prompt':          uiState.setPromptModal(null); break;

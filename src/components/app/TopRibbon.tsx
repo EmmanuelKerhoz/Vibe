@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles, Download, Upload, Undo2, Redo2, Trash2, History,
-  PanelRight, Library, Menu, FilePlus, Settings, Info, WandSparkles, ClipboardPaste, Heart
+  PanelRight, Library, Menu, FilePlus, Settings, Info, KeyboardRegular, WandSparkles, ClipboardPaste, Heart
 } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
@@ -30,6 +30,7 @@ interface Props {
   onOpenLibraryClick: () => void;
   onOpenSettingsClick: () => void;
   onOpenAboutClick: () => void;
+  onOpenKeyboardShortcutsClick: () => void;
   onPasteLyrics: () => void;
   isGenerating: boolean;
   isAnalyzing: boolean;
@@ -44,7 +45,7 @@ export function TopRibbon({
   onOpenNewGeneration, onOpenNewEmpty,
   onImportClick, onExportClick,
   onOpenLibraryClick,
-  onOpenSettingsClick, onOpenAboutClick,
+  onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick,
   onPasteLyrics,
   isGenerating, isAnalyzing,
 }: Props) {
@@ -264,6 +265,16 @@ export function TopRibbon({
             }}
           >
             <PanelRight className="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip title={t.tooltips.keyboardShortcuts}>
+          <button
+            onClick={onOpenKeyboardShortcutsClick}
+            aria-label={t.tooltips.keyboardShortcuts}
+            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <KeyboardRegular className="w-4 h-4" />
           </button>
         </Tooltip>
       </div>

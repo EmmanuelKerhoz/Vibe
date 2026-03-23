@@ -274,6 +274,28 @@ export interface Translations {
     };
   };
 
+  keyboardShortcuts: {
+    title: string;
+    description: string;
+    keysColumn: string;
+    actionColumn: string;
+    close: string;
+    categories: {
+      edit: string;
+      navigation: string;
+      file: string;
+      ai: string;
+    };
+    shortcuts: {
+      undo: string;
+      redo: string;
+      dismissReset: string;
+      dismissNavigation: string;
+      dismissFileDialogs: string;
+      dismissAiDialogs: string;
+    };
+  };
+
   about: {
     description: string;
     engine: string;
@@ -365,6 +387,7 @@ export interface Translations {
     revertAnalysis: string;
     closeAnalysis: string;
     generateMusical: string;
+    keyboardShortcuts: string;
     closeAbout: string;
     analysisCancel: string;
     analysisImport: string;

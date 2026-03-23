@@ -258,6 +258,28 @@ const fr: Translations = {
     },
   },
 
+  keyboardShortcuts: {
+    title: 'Raccourcis clavier',
+    description: 'Consultez les raccourcis actifs disponibles dans Lyricist Pro.',
+    keysColumn: 'Touches',
+    actionColumn: 'Action',
+    close: 'Fermer',
+    categories: {
+      edit: 'Édition',
+      navigation: 'Navigation',
+      file: 'Fichier',
+      ai: 'IA',
+    },
+    shortcuts: {
+      undo: 'Annule la dernière modification hors des champs de texte.',
+      redo: 'Rétablit la dernière modification annulée hors des champs de texte.',
+      dismissReset: 'Ferme la boîte de confirmation de réinitialisation.',
+      dismissNavigation: 'Ferme les panneaux paramètres, à propos, similarité ou les volets mobiles.',
+      dismissFileDialogs: 'Ferme les fenêtres d’import, d’export, de versions ou de bibliothèque.',
+      dismissAiDialogs: 'Ferme les prompts IA, alertes API, analyses ou fenêtres d’import par collage.',
+    },
+  },
+
   about: {
     description: 'Un éditeur de paroles IA professionnel pour les auteurs-compositeurs et poètes. Composez votre chef-d\'œuvre avec des suggestions en temps réel, la gestion de structure et la quantification intelligente.',
     engine: 'Google Gemini',
@@ -345,6 +367,7 @@ const fr: Translations = {
     revertAnalysis: 'Annuler toutes les modifications d\'analyse appliquées',
     closeAnalysis: 'Fermer le rapport d\'analyse',
     generateMusical: 'Générer un prompt musical pour les outils de création musicale IA',
+    keyboardShortcuts: 'Afficher les raccourcis clavier',
     closeAbout: 'Fermer',
     analysisCancel: 'Annuler et fermer',
     analysisImport: 'Analyser et importer les paroles collées',

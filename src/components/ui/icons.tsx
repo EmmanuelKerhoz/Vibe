@@ -36,6 +36,7 @@ import {
   HeartRegular,
   HistoryRegular,
   InfoRegular,
+  KeyboardRegular as FluentKeyboardRegular,
   LayoutColumnTwoRegular,
   LibraryRegular,
   LightbulbRegular,
@@ -155,6 +156,7 @@ export const Linkedin = createIcon(PeopleRegular, 'Linkedin');
 export const Radio = createIcon(RadioButtonRegular, 'Radio');
 export const ShoppingBag = createIcon(ShoppingBagRegular, 'ShoppingBag');
 export const Info = createIcon(InfoRegular, 'Info');
+export const KeyboardRegular = createIcon(FluentKeyboardRegular, 'KeyboardRegular');
 export const Ruler = createIcon(RulerRegular, 'Ruler');
 export const Bot = createIcon(BotRegular, 'Bot');
 export const User = createIcon(PersonRegular, 'User');
