@@ -7,10 +7,9 @@ import { tPlural } from '../../i18n/plurals';
 import { APP_VERSION_LABEL } from '../../version';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useAppKpis } from '../../hooks/useAppKpis';
 
 interface Props {
-  wordCount: number;
-  charCount: number;
   isAnalyzing: boolean;
   theme: 'light' | 'dark';
   setTheme: (v: 'light' | 'dark') => void;
@@ -23,12 +22,13 @@ interface Props {
 }
 
 export function StatusBar({
-  wordCount, charCount, isAnalyzing,
+  isAnalyzing,
   theme, setTheme, audioFeedback, setAudioFeedback,
   onOpenAbout, onOpenSettings, className,
 }: Props) {
   const { song } = useSongContext();
   const { isGenerating, isSuggesting } = useComposerContext();
+  const { wordCount, charCount } = useAppKpis();
   const { t, language } = useTranslation();
 
   const isBusy = isGenerating || isAnalyzing || isSuggesting;
