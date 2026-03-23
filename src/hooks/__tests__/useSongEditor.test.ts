@@ -4,6 +4,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useSongEditor } from '../useSongEditor';
 import type { Section } from '../../types';
 import { DragProvider, useDrag } from '../../contexts/DragContext';
+import { SongProvider, useSongContext } from '../../contexts/SongContext';
 
 const makeSection = (id: string, name: string, lines: Section['lines'] = []): Section => ({ id, name, lines });
 const makeLine = (id: string, text: string) => ({
@@ -36,43 +37,96 @@ function DragInitializer(
   return React.createElement(React.Fragment, null, children);
 }
 
+function SongContextInitializer(
+  {
+    song,
+    structure,
+    newSectionName,
+    title,
+    topic,
+    mood,
+    songLanguage,
+    children,
+  }: {
+    song: Section[];
+    structure: string[];
+    newSectionName?: string;
+    title?: string;
+    topic?: string;
+    mood?: string;
+    songLanguage?: string;
+    children?: React.ReactNode;
+  }
+) {
+  const {
+    replaceStateWithoutHistory,
+    setNewSectionName,
+    setTitle,
+    setTopic,
+    setMood,
+    setSongLanguage,
+  } = useSongContext();
+
+  useLayoutEffect(() => {
+    replaceStateWithoutHistory(song, structure);
+    setNewSectionName(newSectionName ?? '');
+    setTitle(title ?? '');
+    setTopic(topic ?? '');
+    setMood(mood ?? '');
+    setSongLanguage(songLanguage ?? '');
+  }, [
+    mood,
+    newSectionName,
+    replaceStateWithoutHistory,
+    setMood,
+    setNewSectionName,
+    setSongLanguage,
+    setTitle,
+    setTopic,
+    song,
+    songLanguage,
+    structure,
+    title,
+    topic,
+  ]);
+
+  return React.createElement(React.Fragment, null, children);
+}
+
 const buildHook = (
   song: Section[],
   structure = DEFAULT_STRUCTURE,
   options: { draggedItemIndex?: number | null } = {},
 ) => {
-  const updateState = vi.fn();
-  const updateStructureWithHistory = vi.fn();
-  const updateSongAndStructureWithHistory = vi.fn();
   const openPasteModalWithText = vi.fn();
   const playAudioFeedback = vi.fn();
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     React.createElement(
-      DragProvider,
+      SongProvider,
       null,
-      React.createElement(DragInitializer, { draggedItemIndex: options.draggedItemIndex }, children),
+      React.createElement(
+        DragProvider,
+        null,
+        React.createElement(
+          SongContextInitializer,
+          { song, structure, title: 'Test Song', topic: 'test', mood: 'neutral', songLanguage: '' },
+          React.createElement(DragInitializer, { draggedItemIndex: options.draggedItemIndex }, children),
+        ),
+      ),
     )
   );
 
   const { result } = renderHook(() =>
-    useSongEditor({
-      song,
-      structure,
-      newSectionName: '',
-      setNewSectionName: vi.fn(),
-      updateState,
-      updateStructureWithHistory,
-      updateSongAndStructureWithHistory,
-      title: 'Test Song',
-      topic: 'test',
-      mood: 'neutral',
-      songLanguage: '',
-      openPasteModalWithText,
-      playAudioFeedback,
+    ({
+      editor: useSongEditor({
+        openPasteModalWithText,
+        playAudioFeedback,
+      }),
+      context: useSongContext(),
     }),
     { wrapper },
   );
-  return { result, updateSongAndStructureWithHistory, updateStructureWithHistory, updateState };
+  return { result };
 };
 
 describe('useSongEditor', () => {
@@ -101,70 +155,71 @@ describe('useSongEditor', () => {
   });
 
   describe('removeStructureItem', () => {
-    it('removes section by index and calls updateSongAndStructureWithHistory', () => {
+    it('removes section by index', () => {
       const song = [makeSection('s1', 'Verse 1'), makeSection('s2', 'Chorus')];
-      const { result, updateSongAndStructureWithHistory } = buildHook(song);
-      act(() => result.current.removeStructureItem(0));
-      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
-      const [newSong, newStructure] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
-      expect(newSong).toHaveLength(1);
-      expect(newSong[0]?.name).toBe('Chorus');
-      expect(newStructure).toEqual(['Chorus']);
+      const { result } = buildHook(song);
+      act(() => result.current.editor.removeStructureItem(0));
+      expect(result.current.context.song).toHaveLength(1);
+      expect(result.current.context.song[0]?.name).toBe('Chorus');
+      expect(result.current.context.structure).toEqual(['Chorus']);
     });
 
     it('does nothing when index is out of range', () => {
       const song = [makeSection('s1', 'Verse 1')];
-      const { result, updateSongAndStructureWithHistory } = buildHook(song);
-      act(() => result.current.removeStructureItem(5));
-      expect(updateSongAndStructureWithHistory).not.toHaveBeenCalled();
+      const { result } = buildHook(song);
+      const initialSong = result.current.context.song;
+      const initialStructure = result.current.context.structure;
+      act(() => result.current.editor.removeStructureItem(5));
+      expect(result.current.context.song).toBe(initialSong);
+      expect(result.current.context.structure).toBe(initialStructure);
     });
   });
 
   describe('addStructureItem', () => {
     it('adds a new section when name is provided', () => {
       const song = [makeSection('s1', 'Verse 1')];
-      const { result, updateSongAndStructureWithHistory } = buildHook(song, ['Verse 1']);
-      act(() => result.current.addStructureItem('Bridge'));
-      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
-      const [newSong] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
-      expect(newSong).toHaveLength(2);
-      expect(newSong[1]?.name).toBe('Bridge');
+      const { result } = buildHook(song, ['Verse 1']);
+      act(() => result.current.editor.addStructureItem('Bridge'));
+      expect(result.current.context.song).toHaveLength(2);
+      expect(result.current.context.song[1]?.name).toBe('Bridge');
     });
 
     it('adds Final Chorus as a valid unique section', () => {
       const song = [makeSection('s1', 'Verse 1')];
-      const { result, updateSongAndStructureWithHistory } = buildHook(song, ['Verse 1']);
-      act(() => result.current.addStructureItem('Final Chorus'));
-      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
-      const [newSong, newStructure] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
-      expect(newSong[1]?.name).toBe('Final Chorus');
-      expect(newStructure).toEqual(['Verse 1', 'Final Chorus']);
+      const { result } = buildHook(song, ['Verse 1']);
+      act(() => result.current.editor.addStructureItem('Final Chorus'));
+      expect(result.current.context.song[1]?.name).toBe('Final Chorus');
+      expect(result.current.context.structure).toEqual(['Verse 1', 'Final Chorus']);
     });
 
     it('does nothing when name is empty', () => {
       const song = [makeSection('s1', 'Verse 1')];
-      const { result, updateSongAndStructureWithHistory } = buildHook(song, ['Verse 1']);
-      act(() => result.current.addStructureItem(''));
-      expect(updateSongAndStructureWithHistory).not.toHaveBeenCalled();
+      const { result } = buildHook(song, ['Verse 1']);
+      const initialSong = result.current.context.song;
+      const initialStructure = result.current.context.structure;
+      act(() => result.current.editor.addStructureItem(''));
+      expect(result.current.context.song).toBe(initialSong);
+      expect(result.current.context.structure).toBe(initialStructure);
     });
   });
 
   describe('normalizeStructure', () => {
     it('preserves unmatched custom structure entries by creating missing sections', () => {
       const song = [makeSection('s1', 'Verse 1')];
-      const { result, updateSongAndStructureWithHistory } = buildHook(song, ['Verse 1', 'Ghost Section']);
-      act(() => result.current.normalizeStructure());
-      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
-      const [normalizedSong, normalized] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
-      expect(normalized).toEqual(['Verse 1', 'Ghost Section']);
-      expect(normalizedSong[1]?.name).toBe('Ghost Section');
+      const { result } = buildHook(song, ['Verse 1', 'Ghost Section']);
+      act(() => result.current.editor.normalizeStructure());
+      expect(result.current.context.structure).toEqual(['Verse 1', 'Ghost Section']);
+      expect(result.current.context.song[1]?.name).toBe('Ghost Section');
     });
 
     it('is a no-op when structure is already clean', () => {
       const song = [makeSection('s1', 'Verse 1')];
-      const { result, updateStructureWithHistory } = buildHook(song, ['Verse 1']);
-      act(() => result.current.normalizeStructure());
-      expect(updateStructureWithHistory).not.toHaveBeenCalled();
+      const { result } = buildHook(song, ['Verse 1']);
+      const initialSong = result.current.context.song;
+      const initialStructure = result.current.context.structure;
+      act(() => result.current.editor.normalizeStructure());
+      expect(result.current.context.song).toBe(initialSong);
+      expect(result.current.context.structure).toBe(initialStructure);
     });
   });
 
@@ -177,18 +232,16 @@ describe('useSongEditor', () => {
         makeSection('s4', 'Verse 2'),
       ];
 
-      const { result, updateSongAndStructureWithHistory } = buildHook(
+      const { result } = buildHook(
         song,
         song.map(section => section.name),
         { draggedItemIndex: 2 },
       );
 
-      act(() => result.current.handleDrop(3));
+      act(() => result.current.editor.handleDrop(3));
 
-      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
-      const [newSong, newStructure] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
-      expect(newStructure).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
-      expect(newSong.map(section => section.name)).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
+      expect(result.current.context.structure).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
+      expect(result.current.context.song.map(section => section.name)).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
     });
 
     it('moves a pre-chorus and final chorus pair together when dragging the final chorus', () => {
@@ -199,18 +252,16 @@ describe('useSongEditor', () => {
         makeSection('s4', 'Outro'),
       ];
 
-      const { result, updateSongAndStructureWithHistory } = buildHook(
+      const { result } = buildHook(
         song,
         song.map(section => section.name),
         { draggedItemIndex: 2 },
       );
 
-      act(() => result.current.handleDrop(3));
+      act(() => result.current.editor.handleDrop(3));
 
-      expect(updateSongAndStructureWithHistory).toHaveBeenCalledOnce();
-      const [newSong, newStructure] = updateSongAndStructureWithHistory.mock.calls[0] as [Section[], string[]];
-      expect(newStructure).toEqual(['Verse 1', 'Outro', 'Pre-Chorus 3', 'Final Chorus']);
-      expect(newSong.map(section => section.name)).toEqual(['Verse 1', 'Outro', 'Pre-Chorus 3', 'Final Chorus']);
+      expect(result.current.context.structure).toEqual(['Verse 1', 'Pre-Chorus 3', 'Final Chorus', 'Outro']);
+      expect(result.current.context.song.map(section => section.name)).toEqual(['Verse 1', 'Pre-Chorus 3', 'Final Chorus', 'Outro']);
     });
   });
 
@@ -221,21 +272,24 @@ describe('useSongEditor', () => {
 
       const { result } = renderHook(
         () => useSongEditor({
-          song,
-          structure: ['Verse 1'],
-          newSectionName: '',
-          setNewSectionName: vi.fn(),
-          updateState: vi.fn(),
-          updateStructureWithHistory: vi.fn(),
-          updateSongAndStructureWithHistory: vi.fn(),
-          title: 'Test Song',
-          topic: 'test',
-          mood: 'neutral',
-          songLanguage: '',
           openPasteModalWithText,
           playAudioFeedback: vi.fn(),
         }),
-        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+        {
+          wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
+            SongProvider,
+            null,
+            React.createElement(
+              DragProvider,
+              null,
+              React.createElement(
+                SongContextInitializer,
+                { song, structure: ['Verse 1'], title: 'Test Song', topic: 'test', mood: 'neutral', songLanguage: '' },
+                children,
+              ),
+            ),
+          ),
+        },
       );
 
       const fileContent = 'Line 1\nLine 2';
@@ -257,21 +311,24 @@ describe('useSongEditor', () => {
 
       const { result } = renderHook(
         () => useSongEditor({
-          song,
-          structure: ['Verse 1'],
-          newSectionName: '',
-          setNewSectionName: vi.fn(),
-          updateState: vi.fn(),
-          updateStructureWithHistory: vi.fn(),
-          updateSongAndStructureWithHistory: vi.fn(),
-          title: 'Test Song',
-          topic: 'test',
-          mood: 'neutral',
-          songLanguage: '',
           openPasteModalWithText,
           playAudioFeedback: vi.fn(),
         }),
-        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+        {
+          wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
+            SongProvider,
+            null,
+            React.createElement(
+              DragProvider,
+              null,
+              React.createElement(
+                SongContextInitializer,
+                { song, structure: ['Verse 1'], title: 'Test Song', topic: 'test', mood: 'neutral', songLanguage: '' },
+                children,
+              ),
+            ),
+          ),
+        },
       );
 
       const fileContent = '# lang: fr\n\nVerse text here';
@@ -293,21 +350,24 @@ describe('useSongEditor', () => {
 
       const { result } = renderHook(
         () => useSongEditor({
-          song,
-          structure: ['Verse 1'],
-          newSectionName: '',
-          setNewSectionName: vi.fn(),
-          updateState: vi.fn(),
-          updateStructureWithHistory: vi.fn(),
-          updateSongAndStructureWithHistory: vi.fn(),
-          title: 'Test Song',
-          topic: 'test',
-          mood: 'neutral',
-          songLanguage: '',
           openPasteModalWithText,
           playAudioFeedback: vi.fn(),
         }),
-        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+        {
+          wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
+            SongProvider,
+            null,
+            React.createElement(
+              DragProvider,
+              null,
+              React.createElement(
+                SongContextInitializer,
+                { song, structure: ['Verse 1'], title: 'Test Song', topic: 'test', mood: 'neutral', songLanguage: '' },
+                children,
+              ),
+            ),
+          ),
+        },
       );
 
       const file = new File([''], 'empty.txt', { type: 'text/plain' });
@@ -327,21 +387,24 @@ describe('useSongEditor', () => {
 
       const { result } = renderHook(
         () => useSongEditor({
-          song,
-          structure: ['Verse 1'],
-          newSectionName: '',
-          setNewSectionName: vi.fn(),
-          updateState: vi.fn(),
-          updateStructureWithHistory: vi.fn(),
-          updateSongAndStructureWithHistory: vi.fn(),
-          title: 'Test Song',
-          topic: 'test',
-          mood: 'neutral',
-          songLanguage: '',
           openPasteModalWithText,
           playAudioFeedback: vi.fn(),
         }),
-        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+        {
+          wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
+            SongProvider,
+            null,
+            React.createElement(
+              DragProvider,
+              null,
+              React.createElement(
+                SongContextInitializer,
+                { song, structure: ['Verse 1'], title: 'Test Song', topic: 'test', mood: 'neutral', songLanguage: '' },
+                children,
+              ),
+            ),
+          ),
+        },
       );
 
       // Mock a minimal .docx file (won't actually be valid but triggers the code path)
@@ -362,21 +425,24 @@ describe('useSongEditor', () => {
 
       const { result } = renderHook(
         () => useSongEditor({
-          song,
-          structure: ['Verse 1'],
-          newSectionName: '',
-          setNewSectionName: vi.fn(),
-          updateState: vi.fn(),
-          updateStructureWithHistory: vi.fn(),
-          updateSongAndStructureWithHistory: vi.fn(),
-          title: 'Test Song',
-          topic: 'test',
-          mood: 'neutral',
-          songLanguage: '',
           openPasteModalWithText,
           playAudioFeedback: vi.fn(),
         }),
-        { wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(DragProvider, null, children) },
+        {
+          wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
+            SongProvider,
+            null,
+            React.createElement(
+              DragProvider,
+              null,
+              React.createElement(
+                SongContextInitializer,
+                { song, structure: ['Verse 1'], title: 'Test Song', topic: 'test', mood: 'neutral', songLanguage: '' },
+                children,
+              ),
+            ),
+          ),
+        },
       );
 
       // Mock a minimal .odt file
@@ -398,7 +464,7 @@ describe('useSongEditor', () => {
         makeSection('s1', 'Verse 1', [makeLine('l1', 'Hello world')]),
       ];
       const { result } = buildHook(song, ['Verse 1']);
-      await act(async () => { await result.current.exportSong('txt'); });
+      await act(async () => { await result.current.editor.exportSong('txt'); });
 
       expect(createObjectURLMock).toHaveBeenCalledOnce();
       expect(clickMock).toHaveBeenCalledOnce();
@@ -412,7 +478,7 @@ describe('useSongEditor', () => {
 
     it('does nothing for empty song export', async () => {
       const { result } = buildHook([], []);
-      await act(async () => { await result.current.exportSong('txt'); });
+      await act(async () => { await result.current.editor.exportSong('txt'); });
       expect(createObjectURLMock).not.toHaveBeenCalled();
     });
 
@@ -421,7 +487,7 @@ describe('useSongEditor', () => {
         makeSection('s1', 'Chorus', [makeLine('l1', 'Sing along'), { ...makeLine('l2', '[drop]'), isMeta: true }]),
       ];
       const { result } = buildHook(song, ['Chorus']);
-      await act(async () => { await result.current.exportSong('markup'); });
+      await act(async () => { await result.current.editor.exportSong('markup'); });
 
       expect(createObjectURLMock).toHaveBeenCalledOnce();
       expect(clickMock).toHaveBeenCalledOnce();
@@ -436,7 +502,7 @@ describe('useSongEditor', () => {
         makeSection('s1', 'Chorus', [makeLine('l1', 'Sing along')]),
       ];
       const { result } = buildHook(song, ['Chorus']);
-      await act(async () => { await result.current.exportSong('docx'); });
+      await act(async () => { await result.current.editor.exportSong('docx'); });
 
       const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
       expect(anchor.download).toBe('Test_Song.docx');
@@ -449,7 +515,7 @@ describe('useSongEditor', () => {
         makeSection('s1', 'Verse 1', [makeLine('l1', 'Hello world')]),
       ];
       const { result } = buildHook(song, ['Verse 1']);
-      await act(async () => { await result.current.exportSong('odt'); });
+      await act(async () => { await result.current.editor.exportSong('odt'); });
 
       const anchor = clickMock.mock.instances[0] as HTMLAnchorElement;
       expect(anchor.download).toBe('Test_Song.odt');
@@ -473,7 +539,7 @@ describe('useSongEditor', () => {
       ];
       const { result } = buildHook(song, ['Verse 1']);
 
-      await act(async () => { await result.current.exportSong('txt'); });
+      await act(async () => { await result.current.editor.exportSong('txt'); });
 
       expect(showSaveFilePickerMock).toHaveBeenCalledWith(expect.objectContaining({
         suggestedName: 'Test_Song.txt',

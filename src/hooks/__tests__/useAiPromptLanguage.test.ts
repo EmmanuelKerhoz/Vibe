@@ -1,6 +1,8 @@
+import React, { useLayoutEffect } from 'react';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Section } from '../../types';
+import { SongProvider, useSongContext } from '../../contexts/SongContext';
 
 const aiUtilsMocks = vi.hoisted(() => ({
   generateContentWithRetry: vi.fn(async () => ({ text: 'Generated output' })),
@@ -39,6 +41,22 @@ const song: Section[] = [{
 const getPromptAt = (index: number): string =>
   (((aiUtilsMocks.generateContentWithRetry.mock.calls as unknown as Array<[{ contents?: string }]>)[index]?.[0]?.contents) ?? '');
 
+function useSongContextSetup(language: string) {
+  const {
+    replaceStateWithoutHistory,
+    setTopic,
+    setMood,
+    setSongLanguage,
+  } = useSongContext();
+
+  useLayoutEffect(() => {
+    replaceStateWithoutHistory(song, song.map(section => section.name));
+    setTopic('night drive');
+    setMood('moody');
+    setSongLanguage(language);
+  }, [language, replaceStateWithoutHistory, setMood, setSongLanguage, setTopic]);
+}
+
 describe('AI prompt language enforcement', () => {
   beforeEach(() => {
     aiUtilsMocks.generateContentWithRetry.mockClear();
@@ -47,8 +65,14 @@ describe('AI prompt language enforcement', () => {
 
   it('adds an exclusive language instruction to title generation only when songLanguage is set', async () => {
     const { result, rerender } = renderHook(
-      ({ language }) => useTitleGenerator(song, 'night drive', 'moody', language),
-      { initialProps: { language: 'Arabic' } },
+      ({ language }) => {
+        useSongContextSetup(language);
+        return useTitleGenerator();
+      },
+      {
+        initialProps: { language: 'Arabic' },
+        wrapper: ({ children }) => React.createElement(SongProvider, null, children),
+      },
     );
 
     await act(async () => {
@@ -69,12 +93,19 @@ describe('AI prompt language enforcement', () => {
   });
 
   it('adds an exclusive language instruction to topic/mood suggestions only when songLanguage is set', async () => {
-    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"Ville","mood":"Brumeux"}' });
     const { result, rerender } = renderHook(
-      ({ language }) => useTopicMoodSuggester('Existing topic', 'Existing mood', language, vi.fn(), vi.fn()),
-      { initialProps: { language: 'French' } },
+      ({ language }) => {
+        useSongContextSetup(language);
+        return useTopicMoodSuggester();
+      },
+      {
+        initialProps: { language: 'French' },
+        wrapper: ({ children }) => React.createElement(SongProvider, null, children),
+      },
     );
 
+    aiUtilsMocks.generateContentWithRetry.mockClear();
+    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"Ville","mood":"Brumeux"}' });
     await act(async () => {
       await result.current.generateSuggestion();
     });
@@ -82,8 +113,9 @@ describe('AI prompt language enforcement', () => {
     const firstPrompt = getPromptAt(0);
     expect(firstPrompt).toContain('write the "topic" and "mood" values exclusively in French');
 
-    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"City","mood":"Moody"}' });
     rerender({ language: '' });
+    aiUtilsMocks.generateContentWithRetry.mockClear();
+    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"City","mood":"Moody"}' });
     await act(async () => {
       await result.current.generateSuggestion();
     });
