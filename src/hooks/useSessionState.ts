@@ -136,8 +136,13 @@ export function useSessionState() {
             setHasApiKey(false);
             return;
           }
+          const retryDelayMs = API_STATUS_RETRY_DELAYS_MS[attempt];
+          if (retryDelayMs === undefined) {
+            setHasApiKey(false);
+            return;
+          }
           try {
-            await waitWithAbort(API_STATUS_RETRY_DELAYS_MS[attempt] ?? 0, controller.signal);
+            await waitWithAbort(retryDelayMs, controller.signal);
           } catch (waitError) {
             if (waitError instanceof DOMException && waitError.name === 'AbortError') return;
             throw waitError;
