@@ -42,7 +42,6 @@ import {
   LightbulbRegular,
   LinkRegular,
   MusicNote2Regular,
-  NavigationRegular,
   NumberSymbolRegular,
   OpenRegular,
   PanelRightRegular,
