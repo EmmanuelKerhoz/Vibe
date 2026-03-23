@@ -42,7 +42,6 @@ interface Props {
   hasExistingWork: boolean;
   handleImportChooseFile: () => void;
   onOpenPasteLyrics: () => void;
-  importInputRef: React.RefObject<HTMLInputElement | null>;
   handleImportInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
   // Export
@@ -106,7 +105,7 @@ interface Props {
 
 export function AppModals({
   theme, setTheme, audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
-  hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, importInputRef, handleImportInputChange,
+  hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
   selectedLineId, setSelectedLineId, suggestions, isSuggesting, applySuggestion, generateSuggestions,
   pastedText, setPastedText, isAnalyzing, analyzePastedLyrics,
@@ -120,6 +119,7 @@ export function AppModals({
 }: Props) {
   const { t } = useTranslation();
   const { uiState: ui, closeModal } = useModalContext();
+  const { importInputRef } = ui;
 
   return (
     <>
