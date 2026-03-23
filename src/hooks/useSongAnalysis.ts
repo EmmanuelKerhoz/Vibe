@@ -4,19 +4,12 @@ import type { Section } from '../types';
 import { usePasteImport } from './analysis/usePasteImport';
 import { useLanguageAdapter } from './analysis/useLanguageAdapter';
 import { useSongAnalysisEngine } from './analysis/useSongAnalysisEngine';
+import { useSongContext } from '../contexts/SongContext';
 
 type UseSongAnalysisParams = {
-  song: Section[];
-  topic: string;
-  mood: string;
-  rhymeScheme: string;
   uiLanguage: string;
   isGeneratingRef: RefObject<boolean>;
   /** Elevated state from useAppState — shared with useSongComposer */
-  songLanguage: string;
-  setSongLanguage: (lang: string) => void;
-  setTopic: (value: string) => void;
-  setMood: (value: string) => void;
   saveVersion: (name: string, snapshot?: {
     song: Section[];
     structure: string[];
@@ -34,16 +27,8 @@ type UseSongAnalysisParams = {
 };
 
 export const useSongAnalysis = ({
-  song,
-  topic,
-  mood,
-  rhymeScheme,
   uiLanguage,
   isGeneratingRef,
-  songLanguage,
-  setSongLanguage,
-  setTopic,
-  setMood,
   saveVersion,
   updateState,
   updateSongAndStructureWithHistory,
@@ -52,6 +37,16 @@ export const useSongAnalysis = ({
   setIsPasteModalOpen,
   setIsAnalysisModalOpen,
 }: UseSongAnalysisParams) => {
+  const {
+    song,
+    topic,
+    mood,
+    rhymeScheme,
+    songLanguage,
+    setSongLanguage,
+    setTopic,
+    setMood,
+  } = useSongContext();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const languageAdapter = useLanguageAdapter({

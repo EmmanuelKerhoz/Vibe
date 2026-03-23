@@ -12,6 +12,7 @@ import {
   type LibraryAsset,
 } from '../utils/libraryUtils';
 import { safeJsonGet } from '../utils/safeStorage';
+import { useSongContext } from '../contexts/SongContext';
 
 const lyricalKey = (song: Section[]): string => {
   return song
@@ -21,31 +22,8 @@ const lyricalKey = (song: Section[]): string => {
 
 type UseLibraryActionsParams = {
   song: Section[];
-  title: string;
-  topic: string;
-  mood: string;
-  genre: string;
-  tempo: number;
-  instrumentation: string;
-  rhythm: string;
-  narrative: string;
-  musicalPrompt: string;
-  rhymeScheme: string;
-  targetSyllables: number;
   replaceStateWithoutHistory: (song: Section[], structure: string[]) => void;
   clearHistory: () => void;
-  setTitle: (v: string) => void;
-  setTitleOrigin: (v: 'user' | 'ai') => void;
-  setTopic: (v: string) => void;
-  setMood: (v: string) => void;
-  setRhymeScheme: (v: string) => void;
-  setTargetSyllables: (v: number) => void;
-  setGenre: (v: string) => void;
-  setTempo: (v: number) => void;
-  setInstrumentation: (v: string) => void;
-  setRhythm: (v: string) => void;
-  setNarrative: (v: string) => void;
-  setMusicalPrompt: (v: string) => void;
   setSimilarityMatches: Dispatch<SetStateAction<SimilarityMatch[]>>;
   setLibraryCount: Dispatch<SetStateAction<number>>;
   setLibraryAssets: Dispatch<SetStateAction<LibraryAsset[]>>;
@@ -55,37 +33,39 @@ type UseLibraryActionsParams = {
 
 export const useLibraryActions = ({
   song,
-  title,
-  topic,
-  mood,
-  genre,
-  tempo,
-  instrumentation,
-  rhythm,
-  narrative,
-  musicalPrompt,
-  rhymeScheme,
-  targetSyllables,
   replaceStateWithoutHistory,
   clearHistory,
-  setTitle,
-  setTitleOrigin,
-  setTopic,
-  setMood,
-  setRhymeScheme,
-  setTargetSyllables,
-  setGenre,
-  setTempo,
-  setInstrumentation,
-  setRhythm,
-  setNarrative,
-  setMusicalPrompt,
   setSimilarityMatches,
   setLibraryCount,
   setLibraryAssets,
   setIsSavingToLibrary,
   setIsSaveToLibraryModalOpen,
 }: UseLibraryActionsParams) => {
+  const {
+    title,
+    topic,
+    mood,
+    genre,
+    tempo,
+    instrumentation,
+    rhythm,
+    narrative,
+    musicalPrompt,
+    rhymeScheme,
+    targetSyllables,
+    setTitle,
+    setTitleOrigin,
+    setTopic,
+    setMood,
+    setRhymeScheme,
+    setTargetSyllables,
+    setGenre,
+    setTempo,
+    setInstrumentation,
+    setRhythm,
+    setNarrative,
+    setMusicalPrompt,
+  } = useSongContext();
   const currentLyricalKey = useMemo(() => lyricalKey(song), [song]);
   const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSimilarityKeyRef = useRef('');

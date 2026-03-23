@@ -109,8 +109,9 @@ function AppInnerContent() {
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession, replaceStateWithoutHistory, clearHistory,
   });
   const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionManager({
-    song, structure, title, titleOrigin, topic, mood, updateSongAndStructureWithHistory,
-    setIsVersionsModalOpen, setPromptModal, setTitle, setTitleOrigin, setTopic, setMood,
+    updateSongAndStructureWithHistory,
+    setIsVersionsModalOpen,
+    setPromptModal,
   });
   const { playAudioFeedback } = useAudioFeedback(audioFeedback);
   const { scrollToSection, handleMarkupToggle, markupDirection } = useMarkupEditor({
@@ -127,10 +128,9 @@ function AppInnerContent() {
     sectionTargetLanguages, setSectionTargetLanguages,
     toggleAnalysisItemSelection, applySelectedAnalysisItems,
     analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
-  } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language,
+  } = useSongAnalysis({ uiLanguage: language,
     isGeneratingRef,
-    songLanguage, setSongLanguage,
-    setTopic, setMood, saveVersion,
+    saveVersion,
     updateState, updateSongAndStructureWithHistory,
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
     setIsPasteModalOpen, setIsAnalysisModalOpen,
@@ -196,11 +196,8 @@ function AppInnerContent() {
     handleScrollToSection, handleOpenNewGeneration } = useAppHandlers({
     t,
     hasRealLyricContent,
-    song,
     isMobileOrTablet,
     setApiErrorModal,
-    setTitle,
-    setTitleOrigin,
     setConfirmModal,
     setActiveTab,
     setIsLeftPanelOpen,
@@ -231,31 +228,8 @@ function AppInnerContent() {
     handleOpenSaveToLibraryModal,
   } = useLibraryActions({
     song,
-    title,
-    topic,
-    mood,
-    genre,
-    tempo,
-    instrumentation,
-    rhythm,
-    narrative,
-    musicalPrompt,
-    rhymeScheme,
-    targetSyllables,
     replaceStateWithoutHistory,
     clearHistory,
-    setTitle,
-    setTitleOrigin,
-    setTopic,
-    setMood,
-    setRhymeScheme,
-    setTargetSyllables,
-    setGenre,
-    setTempo,
-    setInstrumentation,
-    setRhythm,
-    setNarrative,
-    setMusicalPrompt,
     setSimilarityMatches,
     setLibraryCount,
     setLibraryAssets,
@@ -292,6 +266,21 @@ function AppInnerContent() {
     shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
   });
 
+  const handleGenerateSongFromLeftPanel = useCallback(() => {
+    setIsLeftPanelOpen(false);
+    handleGlobalRegenerate();
+  }, [setIsLeftPanelOpen, handleGlobalRegenerate]);
+  const handleSectionTargetLanguageChange = useCallback(
+    (sectionId: string, lang: string) =>
+      setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang })),
+    [setSectionTargetLanguages]
+  );
+  const handlePasteLyricsFromView = useCallback(() => setIsPasteModalOpen(true), [setIsPasteModalOpen]);
+  const handleOpenPasteLyricsFromModals = useCallback(() => {
+    setIsImportModalOpen(false);
+    setIsPasteModalOpen(true);
+  }, [setIsImportModalOpen, setIsPasteModalOpen]);
+
   return (
     <ModalProvider uiState={uiStateForProvider}>
       <ModalShortcutBindings
@@ -317,14 +306,14 @@ function AppInnerContent() {
             isMobileOverlay={isMobileOrTablet}
             title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
             onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-            onSurprise={handleSurpriseClick} isSurprising={isSurprising}
-            isSessionHydrated={isSessionHydrated}
-            onGenerateSong={() => { setIsLeftPanelOpen(false); handleGlobalRegenerate(); }}
-          />
+             topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+             rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+             targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+             isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+             onSurprise={handleSurpriseClick} isSurprising={isSurprising}
+             isSessionHydrated={isSessionHydrated}
+             onGenerateSong={handleGenerateSongFromLeftPanel}
+           />
 
           <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
@@ -364,20 +353,20 @@ function AppInnerContent() {
                 <div className="lyrics-editor-zoom">
                   {activeTab === 'lyrics' ? (
                     <LyricsView
-                      isAnalyzing={isAnalyzing}
-                      isAdaptingLanguage={isAdaptingLanguage}
-                      sectionTargetLanguages={sectionTargetLanguages}
-                      onSectionTargetLanguageChange={(sectionId, lang) => setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang }))}
-                      adaptSectionLanguage={adaptSectionLanguage}
-                      playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
-                      handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
-                      isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
-                      markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
-                      markupDirection={markupDirection}
-                      onOpenLibrary={handleOpenSaveToLibraryModal}
-                      onPasteLyrics={() => setIsPasteModalOpen(true)}
-                      onGenerateSong={handleGlobalRegenerate}
-                    />
+                       isAnalyzing={isAnalyzing}
+                       isAdaptingLanguage={isAdaptingLanguage}
+                       sectionTargetLanguages={sectionTargetLanguages}
+                       onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
+                       adaptSectionLanguage={adaptSectionLanguage}
+                       playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
+                       handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
+                       isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
+                       markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
+                       markupDirection={markupDirection}
+                       onOpenLibrary={handleOpenSaveToLibraryModal}
+                       onPasteLyrics={handlePasteLyricsFromView}
+                       onGenerateSong={handleGlobalRegenerate}
+                     />
                   ) : (
                     <MusicalTab
                       song={song} title={title} topic={topic} mood={mood}
@@ -428,7 +417,7 @@ function AppInnerContent() {
           theme={theme} setTheme={setTheme} audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
           uiScale={uiScale} setUiScale={setUiScale} defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
           hasExistingWork={hasExistingWork} handleImportChooseFile={handleImportChooseFile}
-          onOpenPasteLyrics={() => { setIsImportModalOpen(false); setIsPasteModalOpen(true); }}
+          onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
           handleImportInputChange={handleImportInputChange}
           exportSong={exportSong}
           selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
