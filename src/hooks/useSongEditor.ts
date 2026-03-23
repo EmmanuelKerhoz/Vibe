@@ -1,11 +1,10 @@
-import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
-import type { Section } from '../types';
 import { isAnchoredEndSection, isAnchoredStartSection } from '../constants/sections';
 import { useDragHandlers } from './useDragHandlers';
 import { useSectionManager } from './useSectionManager';
 import { createSongExport, type ExportFormat } from '../utils/exportUtils';
 import { extractImportPayloadFromDocx, extractImportPayloadFromOdt, extractImportPayloadFromText } from '../utils/libraryUtils';
+import { useSongContext } from '../contexts/SongContext';
 
 type SaveFilePickerOptions = {
   suggestedName: string;
@@ -22,36 +21,27 @@ type WindowWithSaveFilePicker = Window & {
 };
 
 type UseSongEditorParams = {
-  song: Section[];
-  structure: string[];
-  newSectionName: string;
-  setNewSectionName: Dispatch<SetStateAction<string>>;
-  updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
-  updateStructureWithHistory: (newStructure: string[]) => void;
-  updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
-  title: string;
-  topic: string;
-  mood: string;
-  songLanguage: string;
   openPasteModalWithText: (text: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
 };
 
 export const useSongEditor = ({
-  song,
-  structure,
-  newSectionName,
-  setNewSectionName,
-  updateState,
-  updateStructureWithHistory,
-  updateSongAndStructureWithHistory,
-  title,
-  topic,
-  mood,
-  songLanguage,
   openPasteModalWithText,
   playAudioFeedback,
 }: UseSongEditorParams) => {
+  const {
+    song,
+    structure,
+    newSectionName,
+    setNewSectionName,
+    updateState,
+    updateStructureWithHistory,
+    updateSongAndStructureWithHistory,
+    title,
+    topic,
+    mood,
+    songLanguage,
+  } = useSongContext();
   const { removeStructureItem, addStructureItem, normalizeStructure } = useSectionManager({
     song,
     structure,

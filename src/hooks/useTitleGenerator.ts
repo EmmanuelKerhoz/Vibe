@@ -1,30 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AI_MODEL_NAME, generateContentWithRetry, handleApiError } from '../utils/aiUtils';
-import type { Section } from '../types';
 import { getSongText } from '../utils/songUtils';
 import { withAbort, isAbortError } from '../utils/withAbort';
+import { useSongContext } from '../contexts/SongContext';
 
-type AutoTitleOptions = {
-  shouldAutoGenerateTitle?: boolean;
-  setShouldAutoGenerateTitle?: (v: boolean) => void;
-  setTitle?: (v: string) => void;
-  setTitleOrigin?: (v: 'user' | 'ai') => void;
-  songLength?: number;
-};
-
-export function useTitleGenerator(
-  song: Section[],
-  topic: string,
-  mood: string,
-  songLanguage = '',
-  {
+export function useTitleGenerator() {
+  const {
+    song,
+    topic,
+    mood,
+    songLanguage,
     shouldAutoGenerateTitle,
     setShouldAutoGenerateTitle,
     setTitle,
     setTitleOrigin,
-    songLength = song.length,
-  }: AutoTitleOptions = {},
-) {
+  } = useSongContext();
+  const songLength = song.length;
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 

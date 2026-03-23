@@ -155,21 +155,13 @@ function AppInnerContent() {
 
   const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
-  } = useSongEditor({ song, structure, newSectionName, setNewSectionName,
-    updateState, updateStructureWithHistory, updateSongAndStructureWithHistory, title, topic, mood,
-    songLanguage,
+  } = useSongEditor({
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); }, playAudioFeedback,
   });
 
-  const { generateTitle, isGeneratingTitle } = useTitleGenerator(song, topic, mood, songLanguage, {
-    shouldAutoGenerateTitle,
-    setShouldAutoGenerateTitle,
-    setTitle,
-    setTitleOrigin,
-    songLength: song.length,
-  });
+  const { generateTitle, isGeneratingTitle } = useTitleGenerator();
   const { generateSuggestion: handleSurprise, isGeneratingSuggestion: isSurprising, resetSuggestionCycle } =
-    useTopicMoodSuggester(topic, mood, songLanguage, setTopic, setMood);
+    useTopicMoodSuggester();
   const handleSurpriseClick = useCallback(async () => {
     const suggestion = await handleSurprise();
     if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }

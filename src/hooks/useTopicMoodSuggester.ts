@@ -1,19 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../utils/aiUtils';
 import { withAbort, isAbortError } from '../utils/withAbort';
+import { useSongContext } from '../contexts/SongContext';
 
 interface TopicMoodSuggestion {
   topic: string;
   mood: string;
 }
 
-export function useTopicMoodSuggester(
-  currentTopic: string,
-  currentMood: string,
-  songLanguage: string,
-  setTopic: (v: string) => void,
-  setMood: (v: string) => void
-) {
+export function useTopicMoodSuggester() {
+  const {
+    topic: currentTopic,
+    mood: currentMood,
+    songLanguage,
+    setTopic,
+    setMood,
+  } = useSongContext();
   const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
   const [hasSuggested, setHasSuggested] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
