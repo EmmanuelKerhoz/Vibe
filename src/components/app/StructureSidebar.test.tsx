@@ -5,6 +5,22 @@ import { LanguageProvider } from '../../i18n';
 import { DragProvider } from '../../contexts/DragContext';
 import { StructureSidebar } from './StructureSidebar';
 
+vi.mock('../../contexts/SongContext', () => ({
+  useSongContext: () => ({
+    song: [
+      { id: 's1', name: 'Intro', lines: [] },
+      { id: 's2', name: 'Turnaround', lines: [] },
+    ],
+    structure: ['Intro', 'Turnaround'],
+  }),
+}));
+
+vi.mock('../../contexts/ComposerContext', () => ({
+  useComposerContext: () => ({
+    isGenerating: false,
+  }),
+}));
+
 describe('StructureSidebar section tooltips', () => {
   it('shows explanations for supported section buttons in the right panel', () => {
     render(
@@ -13,16 +29,10 @@ describe('StructureSidebar section tooltips', () => {
           <StructureSidebar
             isStructureOpen
             setIsStructureOpen={() => {}}
-            structure={['Intro', 'Turnaround']}
-            song={[
-              { id: 's1', name: 'Intro', lines: [] },
-              { id: 's2', name: 'Turnaround', lines: [] },
-            ]}
             newSectionName=""
             setNewSectionName={() => {}}
             isSectionDropdownOpen
             setIsSectionDropdownOpen={() => {}}
-            isGenerating={false}
             addStructureItem={vi.fn()}
             removeStructureItem={vi.fn()}
             normalizeStructure={vi.fn()}

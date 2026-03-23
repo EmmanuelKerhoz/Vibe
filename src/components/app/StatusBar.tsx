@@ -5,14 +5,13 @@ import { StorageGauge } from '../ui/StorageGauge';
 import { useTranslation } from '../../i18n';
 import { tPlural } from '../../i18n/plurals';
 import { APP_VERSION_LABEL } from '../../version';
+import { useSongContext } from '../../contexts/SongContext';
+import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface Props {
-  song: { length: number };
   wordCount: number;
   charCount: number;
-  isGenerating: boolean;
   isAnalyzing: boolean;
-  isSuggesting: boolean;
   theme: 'light' | 'dark';
   setTheme: (v: 'light' | 'dark') => void;
   audioFeedback: boolean;
@@ -24,10 +23,12 @@ interface Props {
 }
 
 export function StatusBar({
-  song, wordCount, charCount, isGenerating, isAnalyzing, isSuggesting,
+  wordCount, charCount, isAnalyzing,
   theme, setTheme, audioFeedback, setAudioFeedback,
   onOpenAbout, onOpenSettings, className,
 }: Props) {
+  const { song } = useSongContext();
+  const { isGenerating, isSuggesting } = useComposerContext();
   const { t, language } = useTranslation();
 
   const isBusy = isGenerating || isAnalyzing || isSuggesting;

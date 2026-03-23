@@ -335,7 +335,6 @@ function AppInnerContent() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
             <TopRibbon
               activeTab={activeTab} setActiveTab={setActiveTab}
-              song={song} past={past} future={future} undo={undo} redo={redo}
               setIsVersionsModalOpen={setIsVersionsModalOpen} setIsResetModalOpen={setIsResetModalOpen}
               isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
               hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
@@ -348,14 +347,14 @@ function AppInnerContent() {
               onOpenAboutClick={() => setIsAboutOpen(true)}
               onOpenKeyboardShortcutsClick={() => setIsKeyboardShortcutsModalOpen(true)}
               onPasteLyrics={() => setIsPasteModalOpen(true)}
-              isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+              isAnalyzing={isAnalyzing}
             />
             {activeTab === 'lyrics' && song.length > 0 && (
               <InsightsBar
-                song={song} sectionCount={sectionCount} wordCount={wordCount} charCount={charCount}
+                sectionCount={sectionCount} wordCount={wordCount} charCount={charCount}
                 targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
                 isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
-                songLanguage={songLanguage} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+                isAnalyzing={isAnalyzing}
                 isMarkupMode={isMarkupMode} webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel}
                 libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage} detectLanguage={detectLanguage}
                 analyzeCurrentSong={analyzeCurrentSong} handleGlobalRegenerate={handleGlobalRegenerate}
@@ -370,17 +369,11 @@ function AppInnerContent() {
                 <div className="lyrics-editor-zoom">
                   {activeTab === 'lyrics' ? (
                     <LyricsView
-                      song={song} rhymeScheme={rhymeScheme}
-                      updateState={updateState} updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
-                      selectedLineId={selectedLineId} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
+                      isAnalyzing={isAnalyzing}
                       isAdaptingLanguage={isAdaptingLanguage}
                       sectionTargetLanguages={sectionTargetLanguages}
                       onSectionTargetLanguageChange={(sectionId, lang) => setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang }))}
                       adaptSectionLanguage={adaptSectionLanguage}
-                      isRegeneratingSection={isRegeneratingSection} handleLineClick={handleLineClick}
-                      updateLineText={updateLineText} handleLineKeyDown={handleLineKeyDown}
-                      handleInstructionChange={handleInstructionChange} addInstruction={addInstruction}
-                      removeInstruction={removeInstruction} regenerateSection={regenerateSection}
                       playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
                       handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
                       isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
@@ -410,9 +403,8 @@ function AppInnerContent() {
             isMobileOverlay={isMobileOrTablet}
             className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
             isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-            structure={structure} song={song} newSectionName={newSectionName} setNewSectionName={setNewSectionName}
+            newSectionName={newSectionName} setNewSectionName={setNewSectionName}
             isSectionDropdownOpen={isSectionDropdownOpen} setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-            isGenerating={isGenerating}
             addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
             normalizeStructure={normalizeStructure} handleDrop={handleDrop} onScrollToSection={handleScrollToSection}
           />
@@ -420,8 +412,8 @@ function AppInnerContent() {
 
         <StatusBar
           className="lcars-status-bar-desktop"
-          song={song} wordCount={wordCount} charCount={charCount} isGenerating={isGenerating} isAnalyzing={isAnalyzing}
-          isSuggesting={isSuggesting} theme={theme} setTheme={setTheme}
+          wordCount={wordCount} charCount={charCount} isAnalyzing={isAnalyzing}
+          theme={theme} setTheme={setTheme}
           audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
           onOpenAbout={() => setIsAboutOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
@@ -430,7 +422,7 @@ function AppInnerContent() {
         {isMobileOrTablet && (
           <MobileBottomNav
             isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
-            activeTab={activeTab} isGenerating={isGenerating}
+            activeTab={activeTab}
             setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpen}
             setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
             onOpenSettings={() => setIsSettingsOpen(true)}

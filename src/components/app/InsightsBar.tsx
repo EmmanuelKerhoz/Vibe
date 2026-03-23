@@ -10,9 +10,10 @@ import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES, getLanguageDisplay } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
+import { useSongContext } from '../../contexts/SongContext';
+import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface InsightsBarProps {
-  song: Section[];
   sectionCount: number;
   wordCount: number;
   charCount: number;
@@ -20,8 +21,6 @@ interface InsightsBarProps {
   setTargetLanguage: (lang: string) => void;
   isAdaptingLanguage: boolean;
   isDetectingLanguage: boolean;
-  songLanguage: string;
-  isGenerating: boolean;
   isAnalyzing: boolean;
   isMarkupMode: boolean;
   webSimilarityIndex: ReturnType<typeof useSimilarityEngine>['index'];
@@ -207,7 +206,6 @@ function AdaptationProgressBanner({
 // ---------------------------------------------------------------------------
 
 export function InsightsBar({
-  song,
   sectionCount,
   wordCount,
   charCount,
@@ -215,8 +213,6 @@ export function InsightsBar({
   setTargetLanguage,
   isAdaptingLanguage,
   isDetectingLanguage,
-  songLanguage,
-  isGenerating,
   isAnalyzing,
   isMarkupMode,
   webSimilarityIndex,
@@ -234,6 +230,8 @@ export function InsightsBar({
   adaptationProgress,
   adaptationResult,
 }: InsightsBarProps) {
+  const { song, songLanguage } = useSongContext();
+  const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
   const [bannerDismissed, setBannerDismissed] = React.useState(false);
 

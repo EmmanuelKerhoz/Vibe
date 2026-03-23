@@ -13,6 +13,33 @@ vi.mock('../ui/Tooltip', () => ({
   ),
 }));
 
+vi.mock('../../contexts/SongContext', () => ({
+  useSongContext: () => ({
+    song: [
+      {
+        id: 'section-1',
+        name: 'Intro',
+        lines: [{
+          id: 'line-1',
+          text: 'Hello world',
+          rhymingSyllables: '',
+          rhyme: '',
+          syllables: 0,
+          concept: '',
+          isMeta: false,
+        }],
+      },
+    ],
+    songLanguage: 'English',
+  }),
+}));
+
+vi.mock('../../contexts/ComposerContext', () => ({
+  useComposerContext: () => ({
+    isGenerating: false,
+  }),
+}));
+
 describe('InsightsBar section chip tooltips', () => {
   it('provides section type explanations on the upper ribbon chips', () => {
     const webSimilarityIndex: WebSimilarityIndex = {
@@ -25,21 +52,6 @@ describe('InsightsBar section chip tooltips', () => {
     render(
       <LanguageProvider>
         <InsightsBar
-          song={[
-            {
-              id: 'section-1',
-              name: 'Intro',
-              lines: [{
-                id: 'line-1',
-                text: 'Hello world',
-                rhymingSyllables: '',
-                rhyme: '',
-                syllables: 0,
-                concept: '',
-                isMeta: false,
-              }],
-            },
-          ]}
           sectionCount={1}
           wordCount={2}
           charCount={11}
@@ -47,8 +59,6 @@ describe('InsightsBar section chip tooltips', () => {
           setTargetLanguage={vi.fn()}
           isAdaptingLanguage={false}
           isDetectingLanguage={false}
-          songLanguage="English"
-          isGenerating={false}
           isAnalyzing={false}
           isMarkupMode={false}
           webSimilarityIndex={webSimilarityIndex}

@@ -1,12 +1,12 @@
 import React from 'react';
 import { Settings, BookOpen, Music, Menu, Sparkles } from '../ui/icons';
 import { useTranslation } from '../../i18n';
+import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface Props {
   isLeftPanelOpen: boolean;
   isStructureOpen: boolean;
   activeTab: 'lyrics' | 'musical';
-  isGenerating?: boolean;
   setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
@@ -17,11 +17,11 @@ interface Props {
 
 export function MobileBottomNav({
   isLeftPanelOpen, isStructureOpen, activeTab,
-  isGenerating,
   setIsLeftPanelOpen, setIsStructureOpen, setActiveTab,
   onGenerateSong,
   onOpenSettings,
 }: Props) {
+  const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
 
   return (

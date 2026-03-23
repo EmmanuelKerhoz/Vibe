@@ -6,6 +6,33 @@ import { DragProvider } from '../../contexts/DragContext';
 import type { Section } from '../../types';
 import { LyricsView } from './LyricsView';
 
+const mockUpdateState = vi.fn();
+const mockSong: Section[] = [];
+
+vi.mock('../../contexts/SongContext', () => ({
+  useSongContext: () => ({
+    song: mockSong,
+    rhymeScheme: 'AABB',
+    updateState: mockUpdateState,
+    updateSongAndStructureWithHistory: vi.fn(),
+  }),
+}));
+
+vi.mock('../../contexts/ComposerContext', () => ({
+  useComposerContext: () => ({
+    selectedLineId: null,
+    isGenerating: false,
+    isRegeneratingSection: () => false,
+    handleLineClick: vi.fn(),
+    updateLineText: vi.fn(),
+    handleLineKeyDown: vi.fn(),
+    handleInstructionChange: vi.fn(),
+    addInstruction: vi.fn(),
+    removeInstruction: vi.fn(),
+    regenerateSection: vi.fn(),
+  }),
+}));
+
 describe('LyricsView empty state', () => {
   it('offers quick actions for library, paste, and generation', () => {
     const onOpenLibrary = vi.fn();
@@ -16,21 +43,7 @@ describe('LyricsView empty state', () => {
       <DragProvider>
         <LanguageProvider>
           <LyricsView
-            song={[]}
-            rhymeScheme="AABB"
-            updateState={() => ({ song: [], structure: [] })}
-            updateSongAndStructureWithHistory={() => {}}
-            selectedLineId={null}
-            isGenerating={false}
             isAnalyzing={false}
-            isRegeneratingSection={() => false}
-            handleLineClick={() => {}}
-            updateLineText={() => {}}
-            handleLineKeyDown={() => {}}
-            handleInstructionChange={() => {}}
-            addInstruction={() => {}}
-            removeInstruction={() => {}}
-            regenerateSection={() => {}}
             playAudioFeedback={() => {}}
             handleDrop={() => {}}
             handleLineDragStart={() => {}}
@@ -62,21 +75,7 @@ describe('LyricsView empty state', () => {
       <DragProvider>
         <LanguageProvider>
           <LyricsView
-            song={[]}
-            rhymeScheme="AABB"
-            updateState={() => ({ song: [], structure: [] })}
-            updateSongAndStructureWithHistory={() => {}}
-            selectedLineId={null}
-            isGenerating={false}
             isAnalyzing={false}
-            isRegeneratingSection={() => false}
-            handleLineClick={() => {}}
-            updateLineText={() => {}}
-            handleLineKeyDown={() => {}}
-            handleInstructionChange={() => {}}
-            addInstruction={() => {}}
-            removeInstruction={() => {}}
-            regenerateSection={() => {}}
             playAudioFeedback={() => {}}
             handleDrop={() => {}}
             handleLineDragStart={() => {}}
@@ -98,7 +97,6 @@ describe('LyricsView empty state', () => {
   });
 
   it('passes section editing handlers directly to rendered sections', () => {
-    const updateState = vi.fn();
     const song: Section[] = [{
       id: 'section-1',
       name: 'Verse',
@@ -114,25 +112,16 @@ describe('LyricsView empty state', () => {
       postInstructions: [],
     }];
 
+    // Update the mock to return the song with content
+    mockSong.length = 0;
+    mockSong.push(...song);
+    mockUpdateState.mockClear();
+
     render(
       <DragProvider>
         <LanguageProvider>
           <LyricsView
-            song={song}
-            rhymeScheme="AABB"
-            updateState={updateState}
-            updateSongAndStructureWithHistory={() => {}}
-            selectedLineId={null}
-            isGenerating={false}
             isAnalyzing={false}
-            isRegeneratingSection={() => false}
-            handleLineClick={() => {}}
-            updateLineText={() => {}}
-            handleLineKeyDown={() => {}}
-            handleInstructionChange={() => {}}
-            addInstruction={() => {}}
-            removeInstruction={() => {}}
-            regenerateSection={() => {}}
             playAudioFeedback={() => {}}
             handleDrop={() => {}}
             handleLineDragStart={() => {}}
@@ -152,8 +141,8 @@ describe('LyricsView empty state', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Add Line' }));
 
-    expect(updateState).toHaveBeenCalledTimes(1);
-    const updater = updateState.mock.calls[0]?.[0];
+    expect(mockUpdateState).toHaveBeenCalledTimes(1);
+    const updater = mockUpdateState.mock.calls[0]?.[0];
     expect(typeof updater).toBe('function');
     expect(updater({
       song,
@@ -169,5 +158,8 @@ describe('LyricsView empty state', () => {
         ]),
       }],
     });
+
+    // Reset for other tests
+    mockSong.length = 0;
   });
 });
