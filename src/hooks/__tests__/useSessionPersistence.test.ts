@@ -86,7 +86,7 @@ describe('useSessionPersistence', () => {
     expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
   });
 
-  it('restores all persisted fields from a valid stored session', () => {
+  it('restores all persisted fields from a valid stored session and normalizes stored names', () => {
     const params = createParams();
     localStorage.setItem('lyricist_session', JSON.stringify({
       song: [{
