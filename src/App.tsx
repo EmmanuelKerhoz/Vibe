@@ -119,7 +119,8 @@ function AppInnerContent() {
     song, songLanguage, isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   });
 
-  const isGeneratingRef = useRef(false);
+  const isGeneratingRef = useRef(isGenerating);
+  isGeneratingRef.current = isGenerating;
 
   const { pastedText, setPastedText,
     isAnalyzing, analysisReport, analysisSteps,
@@ -129,15 +130,13 @@ function AppInnerContent() {
     toggleAnalysisItemSelection, applySelectedAnalysisItems,
     analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
   } = useSongAnalysis({ song, topic, mood, rhymeScheme, uiLanguage: language,
-    isGenerating: isGeneratingRef.current,
+    isGeneratingRef,
     songLanguage, setSongLanguage,
     setTopic, setMood, saveVersion,
     updateState, updateSongAndStructureWithHistory,
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
     setIsPasteModalOpen, setIsAnalysisModalOpen,
   });
-
-  useEffect(() => { isGeneratingRef.current = isGenerating; }, [isGenerating]);
 
   // Apply defaultEditMode once after session hydration
   const hasAppliedDefaultEditModeRef = useRef(false);

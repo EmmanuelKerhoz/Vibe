@@ -11,6 +11,7 @@ const mockAppState = vi.hoisted(() => ({
   initialIsStructureOpen: false,
   initialIsMobile: false,
   initialIsTablet: false,
+  initialIsGenerating: false,
   song: [] as Array<{ id: string; name: string; lines: Array<{ id: string; text: string; isMeta: boolean }> }>,
   structure: [] as Array<{ id: string; name: string }>,
   similarityIndex: { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex,
@@ -20,6 +21,7 @@ const mockAppState = vi.hoisted(() => ({
   setIsStructureOpenSpy: vi.fn(),
   useKeyboardShortcutsSpy: vi.fn(),
   appModalsPropsSpy: vi.fn(),
+  useSongAnalysisSpy: vi.fn(),
   noop: vi.fn(),
   asyncNoop: vi.fn(async () => {}),
 }));
@@ -45,36 +47,39 @@ vi.mock('./hooks/useAudioFeedback', () => ({
 }));
 
 vi.mock('./hooks/useSongAnalysis', () => ({
-  useSongAnalysis: () => ({
-    isPasteModalOpen: false,
-    setIsPasteModalOpen: mockAppState.noop,
-    pastedText: '',
-    setPastedText: mockAppState.noop,
-    isAnalyzing: false,
-    isAnalysisModalOpen: false,
-    setIsAnalysisModalOpen: mockAppState.noop,
-    analysisReport: null,
-    analysisSteps: [],
-    appliedAnalysisItems: [],
-    selectedAnalysisItems: [],
-    isApplyingAnalysis: false,
-    targetLanguage: 'en',
-    setTargetLanguage: mockAppState.noop,
-    isAdaptingLanguage: false,
-    isDetectingLanguage: false,
-    adaptationProgress: null,
-    adaptationResult: null,
-    sectionTargetLanguages: {},
-    setSectionTargetLanguages: mockAppState.noop,
-    toggleAnalysisItemSelection: mockAppState.noop,
-    applySelectedAnalysisItems: mockAppState.noop,
-    analyzeCurrentSong: mockAppState.asyncNoop,
-    detectLanguage: mockAppState.asyncNoop,
-    adaptSongLanguage: mockAppState.asyncNoop,
-    adaptSectionLanguage: mockAppState.asyncNoop,
-    analyzePastedLyrics: mockAppState.asyncNoop,
-    clearAppliedAnalysisItems: mockAppState.noop,
-  }),
+  useSongAnalysis: (params: unknown) => {
+    mockAppState.useSongAnalysisSpy(params);
+    return {
+      isPasteModalOpen: false,
+      setIsPasteModalOpen: mockAppState.noop,
+      pastedText: '',
+      setPastedText: mockAppState.noop,
+      isAnalyzing: false,
+      isAnalysisModalOpen: false,
+      setIsAnalysisModalOpen: mockAppState.noop,
+      analysisReport: null,
+      analysisSteps: [],
+      appliedAnalysisItems: [],
+      selectedAnalysisItems: [],
+      isApplyingAnalysis: false,
+      targetLanguage: 'en',
+      setTargetLanguage: mockAppState.noop,
+      isAdaptingLanguage: false,
+      isDetectingLanguage: false,
+      adaptationProgress: null,
+      adaptationResult: null,
+      sectionTargetLanguages: {},
+      setSectionTargetLanguages: mockAppState.noop,
+      toggleAnalysisItemSelection: mockAppState.noop,
+      applySelectedAnalysisItems: mockAppState.noop,
+      analyzeCurrentSong: mockAppState.asyncNoop,
+      detectLanguage: mockAppState.asyncNoop,
+      adaptSongLanguage: mockAppState.asyncNoop,
+      adaptSectionLanguage: mockAppState.asyncNoop,
+      analyzePastedLyrics: mockAppState.asyncNoop,
+      clearAppliedAnalysisItems: mockAppState.noop,
+    };
+  },
 }));
 
 vi.mock('./hooks/useSongEditor', () => ({
@@ -92,7 +97,7 @@ vi.mock('./hooks/useSongEditor', () => ({
 
 vi.mock('./hooks/useSongComposer', () => ({
   useSongComposer: () => ({
-    isGenerating: false,
+    isGenerating: mockAppState.initialIsGenerating,
     isRegeneratingSection: () => false,
     isGeneratingMusicalPrompt: false,
     isAnalyzingLyrics: false,
@@ -417,6 +422,7 @@ describe('App markup mode reset', () => {
     mockAppState.initialIsStructureOpen = false;
     mockAppState.initialIsMobile = false;
     mockAppState.initialIsTablet = false;
+    mockAppState.initialIsGenerating = false;
     mockAppState.song = [];
     mockAppState.structure = [];
     mockAppState.similarityIndex = { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex;
@@ -426,6 +432,7 @@ describe('App markup mode reset', () => {
     mockAppState.setIsStructureOpenSpy.mockClear();
     mockAppState.useKeyboardShortcutsSpy.mockClear();
     mockAppState.appModalsPropsSpy.mockClear();
+    mockAppState.useSongAnalysisSpy.mockClear();
   });
 
   it('keeps markup mode while the lyrics tab remains active and resets it after switching tabs', async () => {
@@ -539,5 +546,21 @@ describe('App markup mode reset', () => {
     expect(appModalsProps).not.toHaveProperty('setConfirmModal');
     expect(appModalsProps).not.toHaveProperty('apiErrorModal');
     expect(appModalsProps).not.toHaveProperty('setApiErrorModal');
+  });
+
+  it('forwards the live generating ref object into useSongAnalysis', () => {
+    mockAppState.initialIsGenerating = true;
+
+    render(<App />);
+
+    const params = mockAppState.useSongAnalysisSpy.mock.calls[0]?.[0] as {
+      isGeneratingRef?: React.RefObject<boolean>;
+      isGenerating?: boolean;
+    };
+
+    expect(params).toBeTruthy();
+    expect(params.isGenerating).toBeUndefined();
+    expect(params.isGeneratingRef).toBeTruthy();
+    expect(params.isGeneratingRef?.current).toBe(true);
   });
 });

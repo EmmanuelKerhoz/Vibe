@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
 import { AI_MODEL_NAME, generateContentWithRetry } from '../../utils/aiUtils';
 import { mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
 import { isSectionHeader } from '../../utils/metaUtils';
@@ -23,7 +24,7 @@ type UseLanguageAdapterParams = {
   saveVersion: SaveVersionFn;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
-  isGenerating?: boolean;
+  isGeneratingRef: RefObject<boolean>;
   songLanguage: string;
   setSongLanguage: (lang: string) => void;
 };
@@ -34,7 +35,7 @@ export const useLanguageAdapter = ({
   saveVersion,
   updateSongAndStructureWithHistory,
   updateState,
-  isGenerating = false,
+  isGeneratingRef,
   songLanguage,
   setSongLanguage,
 }: UseLanguageAdapterParams) => {
@@ -53,6 +54,7 @@ export const useLanguageAdapter = ({
   const adaptationLabelRef = useRef('');
   const updateSong = makeSongUpdater(updateState);
   const uiLang = resolveUiLanguageName(uiLanguage);
+  const isGenerating = isGeneratingRef.current ?? false;
 
   useEffect(() => {
     return () => abortCurrent(abortRef);
@@ -69,7 +71,7 @@ export const useLanguageAdapter = ({
   }, [song, setSongLanguage]);
 
   useEffect(() => {
-    if (song.length > 0 && !songLanguage && !isGenerating && !isAdaptingLanguage && !autoDetectFiredRef.current) {
+    if (song.length > 0 && !songLanguage && !isGeneratingRef.current && !isAdaptingLanguage && !autoDetectFiredRef.current) {
       autoDetectFiredRef.current = true;
       void detectLanguage();
     }
