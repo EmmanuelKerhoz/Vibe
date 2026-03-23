@@ -7,7 +7,7 @@ describe('useSongMeta', () => {
     const { result } = renderHook(() => useSongMeta());
 
     expect(result.current.genre).toBe('');
-    expect(result.current.tempo).toBe('120');
+    expect(result.current.tempo).toBe(120);
     expect(result.current.instrumentation).toBe('');
     expect(result.current.rhythm).toBe('');
     expect(result.current.narrative).toBe('');
@@ -15,7 +15,7 @@ describe('useSongMeta', () => {
 
     act(() => {
       result.current.setGenre('Soul');
-      result.current.setTempo('96');
+      result.current.setTempo(96);
       result.current.setInstrumentation('Piano');
       result.current.setRhythm('Swing');
       result.current.setNarrative('Story');
@@ -23,7 +23,7 @@ describe('useSongMeta', () => {
     });
 
     expect(result.current.genre).toBe('Soul');
-    expect(result.current.tempo).toBe('96');
+    expect(result.current.tempo).toBe(96);
     expect(result.current.instrumentation).toBe('Piano');
     expect(result.current.rhythm).toBe('Swing');
     expect(result.current.narrative).toBe('Story');

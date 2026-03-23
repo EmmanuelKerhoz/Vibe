@@ -15,7 +15,7 @@ interface UseSessionPersistenceParams {
   rhymeScheme: string;
   targetSyllables: number;
   genre: string;
-  tempo: string;
+  tempo: number;
   instrumentation: string;
   rhythm: string;
   narrative: string;
@@ -33,7 +33,7 @@ interface UseSessionPersistenceParams {
   setRhymeScheme: (v: string) => void;
   setTargetSyllables: (v: number) => void;
   setGenre: (v: string) => void;
-  setTempo: (v: string) => void;
+  setTempo: (v: number) => void;
   setInstrumentation: (v: string) => void;
   setRhythm: (v: string) => void;
   setNarrative: (v: string) => void;
@@ -75,7 +75,7 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
           if (parsed.rhymeScheme) setRhymeScheme(parsed.rhymeScheme);
           if (parsed.targetSyllables) setTargetSyllables(parsed.targetSyllables);
           if (parsed.genre) setGenre(parsed.genre);
-          if (parsed.tempo) setTempo(parsed.tempo);
+          if (parsed.tempo) setTempo(parseInt(String(parsed.tempo), 10) || 120);
           if (parsed.instrumentation) setInstrumentation(parsed.instrumentation);
           if (parsed.rhythm) setRhythm(parsed.rhythm);
           if (parsed.narrative) setNarrative(parsed.narrative);

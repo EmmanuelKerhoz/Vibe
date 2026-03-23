@@ -14,7 +14,7 @@ type UseSongComposerParams = {
   targetSyllables: number;
   title: string;
   genre: string;
-  tempo: string;
+  tempo: number;
   instrumentation: string;
   rhythm: string;
   narrative: string;
@@ -22,7 +22,7 @@ type UseSongComposerParams = {
   uiLanguage: string;
   setMusicalPrompt: (value: string) => void;
   setGenre: (value: string) => void;
-  setTempo: (value: string) => void;
+  setTempo: (value: number) => void;
   setInstrumentation: (value: string) => void;
   setRhythm: (value: string) => void;
   setNarrative: (value: string) => void;

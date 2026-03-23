@@ -25,7 +25,7 @@ type UseLibraryActionsParams = {
   topic: string;
   mood: string;
   genre: string;
-  tempo: string;
+  tempo: number;
   instrumentation: string;
   rhythm: string;
   narrative: string;
@@ -41,7 +41,7 @@ type UseLibraryActionsParams = {
   setRhymeScheme: (v: string) => void;
   setTargetSyllables: (v: number) => void;
   setGenre: (v: string) => void;
-  setTempo: (v: string) => void;
+  setTempo: (v: number) => void;
   setInstrumentation: (v: string) => void;
   setRhythm: (v: string) => void;
   setNarrative: (v: string) => void;
@@ -129,7 +129,7 @@ export const useLibraryActions = ({
           topic,
           mood,
           genre,
-          tempo: parseInt(tempo, 10) || 120,
+          tempo: tempo || 120,
           instrumentation,
           rhythm,
           narrative,

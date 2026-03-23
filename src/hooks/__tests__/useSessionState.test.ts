@@ -14,6 +14,7 @@ describe('useSessionState', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -226,15 +227,55 @@ describe('useSessionState', () => {
       expect(result.current.defaultEditMode).toBe('section');
     });
 
-    it('sets hasApiKey to false when API status check fails', async () => {
+    it('retries API status checks on network failure before succeeding', async () => {
+      vi.useFakeTimers();
+      (global.fetch as ReturnType<typeof vi.fn>)
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce({
+          json: async () => ({ available: true }),
+        });
+
+      const { result } = renderHook(() => useSessionState());
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+
+      expect(result.current.hasApiKey).toBe(true);
+
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('sets hasApiKey to false when API status check fails after all retries', async () => {
+      vi.useFakeTimers();
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
 
       const { result } = renderHook(() => useSessionState());
 
-      await waitFor(() => {
-        expect(result.current.hasApiKey).toBe(false);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
       });
+
+      expect(result.current.hasApiKey).toBe(false);
+
+      expect(global.fetch).toHaveBeenCalledTimes(3);
     });
+
+    it('times out each API status attempt after 5 seconds', async () => {
+      vi.useFakeTimers();
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
+
+      const { result } = renderHook(() => useSessionState());
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(18000);
+      });
+
+      expect(result.current.hasApiKey).toBe(false);
+
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+    }, 10000);
 
     it('sets hasApiKey to false when API response is malformed', async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -260,18 +301,21 @@ describe('useSessionState', () => {
     });
 
     it('aborts API status check on unmount', async () => {
+      vi.useFakeTimers();
       const abortSpy = vi.spyOn(AbortController.prototype, 'abort');
-      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
-        new Promise(resolve => setTimeout(() => resolve({
-          json: async () => ({ available: true }),
-        }), 100))
-      );
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Network error'));
 
       const { unmount } = renderHook(() => useSessionState());
 
       unmount();
 
       expect(abortSpy).toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
+      expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
     it('handles localStorage setItem failures gracefully', () => {

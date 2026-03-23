@@ -11,7 +11,7 @@ describe('MusicalParamsPanel', () => {
         <MusicalParamsPanel
           genre=""
           setGenre={vi.fn()}
-          tempo="120"
+          tempo={120}
           setTempo={vi.fn()}
           instrumentation=""
           setInstrumentation={vi.fn()}
@@ -41,7 +41,7 @@ describe('MusicalParamsPanel', () => {
         <MusicalParamsPanel
           genre=""
           setGenre={vi.fn()}
-          tempo="120"
+          tempo={120}
           setTempo={vi.fn()}
           instrumentation=""
           setInstrumentation={vi.fn()}
