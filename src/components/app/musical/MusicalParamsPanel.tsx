@@ -265,7 +265,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
   const [isNarrativeDropdownOpen, setIsNarrativeDropdownOpen] = useState(false);
   const [referencesCopied, setReferencesCopied] = useState(false);
 
-  const selectedCategory = selectedVibeTile ? VIBE_CATEGORIES.find(cat => cat.tiles.some(t => t.name === selectedVibeTile.name)) ?? null : null;
+  const selectedCategory = selectedVibeTile ? VIBE_CATEGORIES.find(cat => cat.tiles.some(tile => tile.name === selectedVibeTile.name)) ?? null : null;
   const selectedAccent = selectedCategory?.color ?? AMBER_PRIMARY;
   const genreBlueprint = selectedVibeTile ? (selectedSubStyle ? `${selectedVibeTile.name} / ${selectedSubStyle}` : selectedVibeTile.name) : genre;
   const suggestedSubStyles = selectedVibeTile ? getSubStyleNames(selectedVibeTile.name) : [];

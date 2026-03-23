@@ -59,8 +59,8 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
         if (parts.some(p => p.isMeta)) {
           return parts
             .map(p => {
-              const t = p.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-              return p.isMeta ? `<span class="markup-meta-token">${t}</span>` : t;
+              const escapedText = p.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              return p.isMeta ? `<span class="markup-meta-token">${escapedText}</span>` : escapedText;
             })
             .join('');
         }
