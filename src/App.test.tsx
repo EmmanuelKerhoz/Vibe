@@ -21,6 +21,9 @@ const mockAppState = vi.hoisted(() => ({
   setIsStructureOpenSpy: vi.fn(),
   useKeyboardShortcutsSpy: vi.fn(),
   appModalsPropsSpy: vi.fn(),
+  useVersionManagerSpy: vi.fn(),
+  useLibraryActionsSpy: vi.fn(),
+  useAppHandlersSpy: vi.fn(),
   useSongAnalysisSpy: vi.fn(),
   noop: vi.fn(),
   asyncNoop: vi.fn(async () => {}),
@@ -275,6 +278,10 @@ vi.mock('./hooks/useAppState', async () => {
         setConfirmModal: mockAppState.noop,
         promptModal: null,
         setPromptModal: mockAppState.noop,
+        isPasteModalOpen: false,
+        setIsPasteModalOpen: mockAppState.noop,
+        isAnalysisModalOpen: false,
+        setIsAnalysisModalOpen: mockAppState.noop,
         setHasSavedSession: mockAppState.noop,
         isSessionHydrated: true,
         setIsSessionHydrated: mockAppState.noop,
@@ -293,12 +300,15 @@ vi.mock('./hooks/useSessionPersistence', () => ({
 }));
 
 vi.mock('./hooks/useVersionManager', () => ({
-  useVersionManager: () => ({
-    versions: [],
-    saveVersion: mockAppState.noop,
-    rollbackToVersion: mockAppState.noop,
-    handleRequestVersionName: mockAppState.noop,
-  }),
+  useVersionManager: (params: unknown) => {
+    mockAppState.useVersionManagerSpy(params);
+    return {
+      versions: [],
+      saveVersion: mockAppState.noop,
+      rollbackToVersion: mockAppState.noop,
+      handleRequestVersionName: mockAppState.noop,
+    };
+  },
 }));
 
 vi.mock('./hooks/useMarkupEditor', () => ({
@@ -345,13 +355,30 @@ vi.mock('./hooks/useImportHandlers', () => ({
 }));
 
 vi.mock('./hooks/useLibraryActions', () => ({
-  useLibraryActions: () => ({
-    handleSaveToLibrary: mockAppState.asyncNoop,
-    handleLoadLibraryAsset: mockAppState.noop,
-    handleDeleteLibraryAsset: mockAppState.noop,
-    handlePurgeLibrary: mockAppState.noop,
-    handleOpenSaveToLibraryModal: mockAppState.noop,
-  }),
+  useLibraryActions: (params: unknown) => {
+    mockAppState.useLibraryActionsSpy(params);
+    return {
+      handleSaveToLibrary: mockAppState.asyncNoop,
+      handleLoadLibraryAsset: mockAppState.noop,
+      handleDeleteLibraryAsset: mockAppState.noop,
+      handlePurgeLibrary: mockAppState.noop,
+      handleOpenSaveToLibraryModal: mockAppState.noop,
+    };
+  },
+}));
+
+vi.mock('./hooks/useAppHandlers', () => ({
+  useAppHandlers: (params: unknown) => {
+    mockAppState.useAppHandlersSpy(params);
+    return {
+      handleApiKeyHelp: mockAppState.noop,
+      handleTitleChange: mockAppState.noop,
+      handleGenerateTitle: mockAppState.asyncNoop,
+      handleGlobalRegenerate: mockAppState.noop,
+      handleScrollToSection: mockAppState.noop,
+      handleOpenNewGeneration: mockAppState.noop,
+    };
+  },
 }));
 
 vi.mock('./hooks/useUIStateForProvider', () => ({
@@ -432,6 +459,9 @@ describe('App markup mode reset', () => {
     mockAppState.setIsStructureOpenSpy.mockClear();
     mockAppState.useKeyboardShortcutsSpy.mockClear();
     mockAppState.appModalsPropsSpy.mockClear();
+    mockAppState.useVersionManagerSpy.mockClear();
+    mockAppState.useLibraryActionsSpy.mockClear();
+    mockAppState.useAppHandlersSpy.mockClear();
     mockAppState.useSongAnalysisSpy.mockClear();
   });
 
@@ -562,5 +592,100 @@ describe('App markup mode reset', () => {
     expect(params.isGenerating).toBeUndefined();
     expect(params.isGeneratingRef).toBeTruthy();
     expect(params.isGeneratingRef?.current).toBe(true);
+  });
+
+  it('passes only external params to the autonomous hooks', () => {
+    render(<App />);
+
+    const versionManagerParams = mockAppState.useVersionManagerSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(versionManagerParams).toMatchObject({
+      updateSongAndStructureWithHistory: expect.any(Function),
+      setIsVersionsModalOpen: expect.any(Function),
+      setPromptModal: expect.any(Function),
+    });
+    expect(versionManagerParams).not.toHaveProperty('song');
+    expect(versionManagerParams).not.toHaveProperty('structure');
+    expect(versionManagerParams).not.toHaveProperty('title');
+    expect(versionManagerParams).not.toHaveProperty('titleOrigin');
+    expect(versionManagerParams).not.toHaveProperty('topic');
+    expect(versionManagerParams).not.toHaveProperty('mood');
+    expect(versionManagerParams).not.toHaveProperty('setTitle');
+    expect(versionManagerParams).not.toHaveProperty('setTitleOrigin');
+    expect(versionManagerParams).not.toHaveProperty('setTopic');
+    expect(versionManagerParams).not.toHaveProperty('setMood');
+
+    const libraryActionsParams = mockAppState.useLibraryActionsSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(libraryActionsParams).toMatchObject({
+      song: expect.any(Array),
+      replaceStateWithoutHistory: expect.any(Function),
+      clearHistory: expect.any(Function),
+      setSimilarityMatches: expect.any(Function),
+      setLibraryCount: expect.any(Function),
+      setLibraryAssets: expect.any(Function),
+      setIsSavingToLibrary: expect.any(Function),
+      setIsSaveToLibraryModalOpen: expect.any(Function),
+    });
+    expect(libraryActionsParams).not.toHaveProperty('title');
+    expect(libraryActionsParams).not.toHaveProperty('topic');
+    expect(libraryActionsParams).not.toHaveProperty('mood');
+    expect(libraryActionsParams).not.toHaveProperty('genre');
+    expect(libraryActionsParams).not.toHaveProperty('tempo');
+    expect(libraryActionsParams).not.toHaveProperty('instrumentation');
+    expect(libraryActionsParams).not.toHaveProperty('rhythm');
+    expect(libraryActionsParams).not.toHaveProperty('narrative');
+    expect(libraryActionsParams).not.toHaveProperty('musicalPrompt');
+    expect(libraryActionsParams).not.toHaveProperty('rhymeScheme');
+    expect(libraryActionsParams).not.toHaveProperty('targetSyllables');
+    expect(libraryActionsParams).not.toHaveProperty('setTitle');
+    expect(libraryActionsParams).not.toHaveProperty('setTitleOrigin');
+    expect(libraryActionsParams).not.toHaveProperty('setTopic');
+    expect(libraryActionsParams).not.toHaveProperty('setMood');
+    expect(libraryActionsParams).not.toHaveProperty('setRhymeScheme');
+    expect(libraryActionsParams).not.toHaveProperty('setTargetSyllables');
+    expect(libraryActionsParams).not.toHaveProperty('setGenre');
+    expect(libraryActionsParams).not.toHaveProperty('setTempo');
+    expect(libraryActionsParams).not.toHaveProperty('setInstrumentation');
+    expect(libraryActionsParams).not.toHaveProperty('setRhythm');
+    expect(libraryActionsParams).not.toHaveProperty('setNarrative');
+    expect(libraryActionsParams).not.toHaveProperty('setMusicalPrompt');
+
+    const appHandlersParams = mockAppState.useAppHandlersSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(appHandlersParams).toMatchObject({
+      t: expect.any(Object),
+      hasRealLyricContent: expect.any(Boolean),
+      isMobileOrTablet: expect.any(Boolean),
+      setApiErrorModal: expect.any(Function),
+      setConfirmModal: expect.any(Function),
+      setActiveTab: expect.any(Function),
+      setIsLeftPanelOpen: expect.any(Function),
+      setIsStructureOpen: expect.any(Function),
+      generateTitle: expect.any(Function),
+      generateSong: expect.any(Function),
+      scrollToSection: expect.any(Function),
+    });
+    expect(appHandlersParams).not.toHaveProperty('song');
+    expect(appHandlersParams).not.toHaveProperty('setTitle');
+    expect(appHandlersParams).not.toHaveProperty('setTitleOrigin');
+
+    const songAnalysisParams = mockAppState.useSongAnalysisSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(songAnalysisParams).toMatchObject({
+      uiLanguage: 'en',
+      isGeneratingRef: expect.any(Object),
+      saveVersion: expect.any(Function),
+      updateState: expect.any(Function),
+      updateSongAndStructureWithHistory: expect.any(Function),
+      clearLineSelection: expect.any(Function),
+      requestAutoTitleGeneration: expect.any(Function),
+      setIsPasteModalOpen: expect.any(Function),
+      setIsAnalysisModalOpen: expect.any(Function),
+    });
+    expect(songAnalysisParams).not.toHaveProperty('song');
+    expect(songAnalysisParams).not.toHaveProperty('topic');
+    expect(songAnalysisParams).not.toHaveProperty('mood');
+    expect(songAnalysisParams).not.toHaveProperty('rhymeScheme');
+    expect(songAnalysisParams).not.toHaveProperty('songLanguage');
+    expect(songAnalysisParams).not.toHaveProperty('setSongLanguage');
+    expect(songAnalysisParams).not.toHaveProperty('setTopic');
+    expect(songAnalysisParams).not.toHaveProperty('setMood');
   });
 });

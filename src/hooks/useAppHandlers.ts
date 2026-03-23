@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import type { Section } from '../types';
+import { useSongContext } from '../contexts/SongContext';
 
 interface UseAppHandlersParams {
   t: {
@@ -8,11 +9,8 @@ interface UseAppHandlersParams {
     };
   };
   hasRealLyricContent: boolean;
-  song: Section[];
   isMobileOrTablet: boolean;
   setApiErrorModal: (modal: { open: boolean; message: string }) => void;
-  setTitle: (title: string) => void;
-  setTitleOrigin: (origin: 'user' | 'ai') => void;
   setConfirmModal: (modal: { open: boolean; onConfirm: () => void } | null) => void;
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
   setIsLeftPanelOpen: (open: boolean) => void;
@@ -25,11 +23,8 @@ interface UseAppHandlersParams {
 export function useAppHandlers({
   t,
   hasRealLyricContent,
-  song,
   isMobileOrTablet,
   setApiErrorModal,
-  setTitle,
-  setTitleOrigin,
   setConfirmModal,
   setActiveTab,
   setIsLeftPanelOpen,
@@ -38,6 +33,7 @@ export function useAppHandlers({
   generateSong,
   scrollToSection,
 }: UseAppHandlersParams) {
+  const { song, setTitle, setTitleOrigin } = useSongContext();
   const handleApiKeyHelp = useCallback(() => {
     setApiErrorModal({ open: true, message: t.tooltips.aiUnavailableHelp });
   }, [setApiErrorModal, t.tooltips.aiUnavailableHelp]);

@@ -2,21 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Section, SongVersion } from '../types';
 import { generateId } from '../utils/idUtils';
 import { VersionSnapshot } from '../utils/songDefaults';
+import { useSongContext } from '../contexts/SongContext';
 
 interface UseVersionManagerParams {
-  song: Section[];
-  structure: string[];
-  title: string;
-  titleOrigin: 'user' | 'ai';
-  topic: string;
-  mood: string;
   updateSongAndStructureWithHistory: (song: Section[], structure: string[]) => void;
   setIsVersionsModalOpen: (open: boolean) => void;
   setPromptModal: (modal: { open: boolean; onConfirm: (value: string) => void } | null) => void;
-  setTitle: (v: string) => void;
-  setTitleOrigin: (v: 'user' | 'ai') => void;
-  setTopic: (v: string) => void;
-  setMood: (v: string) => void;
 }
 
 /**
@@ -32,11 +23,21 @@ const fingerprintSnapshot = (song: Section[], structure: string[]): string => {
 
 export function useVersionManager(params: UseVersionManagerParams) {
   const {
-    song, structure, title, titleOrigin, topic, mood,
     updateSongAndStructureWithHistory,
     setIsVersionsModalOpen, setPromptModal,
-    setTitle, setTitleOrigin, setTopic, setMood,
   } = params;
+  const {
+    song,
+    structure,
+    title,
+    titleOrigin,
+    topic,
+    mood,
+    setTitle,
+    setTitleOrigin,
+    setTopic,
+    setMood,
+  } = useSongContext();
 
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const previousLyricsSnapshotRef = useRef<VersionSnapshot | null>(null);
