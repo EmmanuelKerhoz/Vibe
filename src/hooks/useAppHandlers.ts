@@ -48,9 +48,9 @@ export function useAppHandlers({
   }, [setTitle, setTitleOrigin]);
 
   const handleGenerateTitle = useCallback(async () => {
-    const t2 = await generateTitle();
-    if (t2) {
-      setTitle(t2);
+    const generatedTitle = await generateTitle();
+    if (generatedTitle) {
+      setTitle(generatedTitle);
       setTitleOrigin('ai');
     }
   }, [generateTitle, setTitle, setTitleOrigin]);

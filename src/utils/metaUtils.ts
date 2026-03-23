@@ -95,9 +95,9 @@ export const isPureMetaLine = (line: string): boolean => {
  * Returns true if the line is a bare empty-bracket artifact: [] or [  ]
  */
 export const isEmptyBracketLine = (line: string): boolean => {
-  const t = line.trim();
-  if (t === '[]') return true;
-  const m = t.match(EMPTY_BRACKET_LINE_REGEX);
+  const trimmedLine = line.trim();
+  if (trimmedLine === '[]') return true;
+  const m = trimmedLine.match(EMPTY_BRACKET_LINE_REGEX);
   return m !== null;
 };
 

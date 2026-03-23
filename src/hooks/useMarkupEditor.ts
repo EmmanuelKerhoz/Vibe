@@ -19,8 +19,8 @@ interface UseMarkupEditorParams {
 
 /** Returns true if a line text is an artifact that should be excluded from processing. */
 const isArtifact = (text: string): boolean => {
-  const t = text.trim();
-  return t === '' || isEmptyBracketLine(t);
+  const trimmedText = text.trim();
+  return trimmedText === '' || isEmptyBracketLine(trimmedText);
 };
 
 /**
@@ -190,8 +190,8 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         const lyricText = sec.lines
           .filter(l => {
             if (isArtifact(l.text)) return false;
-            const t2 = l.text.trim();
-            const inner = unwrapBracketToken(t2);
+            const trimmedText = l.text.trim();
+            const inner = unwrapBracketToken(trimmedText);
             if (inner && isSectionHeader(inner)) {
               return false;
             }

@@ -28,8 +28,8 @@ const getBaseFileName = (title: string) => (title.trim() || 'Untitled Song').rep
 
 /** Returns true if a lyric line text is an artifact that should be excluded from exports. */
 const isArtifactLine = (text: string): boolean => {
-  const t = text.trim();
-  return t === '' || t === '[]';
+  const trimmed = text.trim();
+  return trimmed === '' || trimmed === '[]';
 };
 
 const buildTxtContent = (song: Section[], title: string, songLanguage = '') => {
