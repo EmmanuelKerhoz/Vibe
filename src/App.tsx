@@ -272,6 +272,15 @@ function AppInnerContent() {
     setIsImportModalOpen(false);
     setIsPasteModalOpen(true);
   }, [setIsImportModalOpen, setIsPasteModalOpen]);
+  const handleOpenImport = useCallback(() => setIsImportModalOpen(true), [setIsImportModalOpen]);
+  const handleOpenExport = useCallback(() => setIsExportModalOpen(true), [setIsExportModalOpen]);
+  const handleOpenSettings = useCallback(() => setIsSettingsOpen(true), [setIsSettingsOpen]);
+  const handleOpenAbout = useCallback(() => setIsAboutOpen(true), [setIsAboutOpen]);
+  const handleOpenKeyboardShortcuts = useCallback(
+    () => setIsKeyboardShortcutsModalOpen(true),
+    [setIsKeyboardShortcutsModalOpen]
+  );
+  const handlePasteLyricsFromRibbon = useCallback(() => setIsPasteModalOpen(true), [setIsPasteModalOpen]);
 
   return (
     <ModalProvider uiState={uiStateForProvider}>
@@ -316,13 +325,13 @@ function AppInnerContent() {
               hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
               onOpenNewGeneration={handleOpenNewGeneration}
               onOpenNewEmpty={handleCreateEmptySong}
-              onImportClick={() => setIsImportModalOpen(true)}
-              onExportClick={() => setIsExportModalOpen(true)}
+              onImportClick={handleOpenImport}
+              onExportClick={handleOpenExport}
               onOpenLibraryClick={handleOpenSaveToLibraryModal}
-              onOpenSettingsClick={() => setIsSettingsOpen(true)}
-              onOpenAboutClick={() => setIsAboutOpen(true)}
-              onOpenKeyboardShortcutsClick={() => setIsKeyboardShortcutsModalOpen(true)}
-              onPasteLyrics={() => setIsPasteModalOpen(true)}
+              onOpenSettingsClick={handleOpenSettings}
+              onOpenAboutClick={handleOpenAbout}
+              onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
+              onPasteLyrics={handlePasteLyricsFromRibbon}
               isAnalyzing={isAnalyzing}
             />
             {activeTab === 'lyrics' && song.length > 0 && (
@@ -385,8 +394,8 @@ function AppInnerContent() {
           wordCount={wordCount} charCount={charCount} isAnalyzing={isAnalyzing}
           theme={theme} setTheme={setTheme}
           audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-          onOpenAbout={() => setIsAboutOpen(true)}
-          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenAbout={handleOpenAbout}
+          onOpenSettings={handleOpenSettings}
         />
 
         {isMobileOrTablet && (
@@ -395,7 +404,7 @@ function AppInnerContent() {
             activeTab={activeTab}
             setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpen}
             setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
-            onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenSettings={handleOpenSettings}
           />
         )}
 
