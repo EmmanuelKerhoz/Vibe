@@ -2,35 +2,30 @@ import React, { useState, useCallback } from 'react';
 import { LyricsMusicAnalysis } from './LyricsMusicAnalysis';
 import { MusicalParamsPanel } from './MusicalParamsPanel';
 import { MusicalPromptBuilder } from './MusicalPromptBuilder';
-import type { Section } from '../../../types';
+import { useSongContext } from '../../../contexts/SongContext';
+import { useComposerContext } from '../../../contexts/ComposerContext';
 
 interface Props {
-  song: Section[];
-  title: string;
-  topic: string;
-  mood: string;
-  genre: string; setGenre: (v: string) => void;
-  tempo: number; setTempo: (v: number) => void;
-  instrumentation: string; setInstrumentation: (v: string) => void;
-  rhythm: string; setRhythm: (v: string) => void;
-  narrative: string; setNarrative: (v: string) => void;
-  musicalPrompt: string; setMusicalPrompt: (v: string) => void;
-  isGeneratingMusicalPrompt: boolean;
-  isAnalyzingLyrics: boolean;
   hasApiKey: boolean;
-  generateMusicalPrompt: () => void;
-  analyzeLyricsForMusic: () => void;
 }
 
 export function MusicalTab({
-  song, title, topic, mood,
-  genre, setGenre, tempo, setTempo,
-  instrumentation, setInstrumentation,
-  rhythm, setRhythm, narrative, setNarrative,
-  musicalPrompt, setMusicalPrompt,
-  isGeneratingMusicalPrompt, isAnalyzingLyrics,
-  hasApiKey, generateMusicalPrompt, analyzeLyricsForMusic,
+  hasApiKey,
 }: Props) {
+  const {
+    song, title, topic, mood,
+    genre, setGenre, tempo, setTempo,
+    instrumentation, setInstrumentation,
+    rhythm, setRhythm,
+    narrative, setNarrative,
+    musicalPrompt, setMusicalPrompt,
+  } = useSongContext();
+  const {
+    isGeneratingMusicalPrompt,
+    isAnalyzingLyrics,
+    generateMusicalPrompt,
+    analyzeLyricsForMusic,
+  } = useComposerContext();
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
   const handleWorkflowStepComplete = useCallback((step: number) => {

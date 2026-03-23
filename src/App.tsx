@@ -67,10 +67,10 @@ function AppInnerContent() {
     newSectionName, setNewSectionName, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     songLanguage, setSongLanguage,
   } = useSongContext();
-  const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
+  const { isGenerating, isRegeneratingSection,
     selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
     quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
-    generateMusicalPrompt, analyzeLyricsForMusic, handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
+    handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
   } = useComposerContext();
 
   const appState = useAppState();
@@ -369,13 +369,7 @@ function AppInnerContent() {
                      />
                   ) : (
                     <MusicalTab
-                      song={song} title={title} topic={topic} mood={mood}
-                      genre={genre} setGenre={setGenre} tempo={tempo} setTempo={setTempo}
-                      instrumentation={instrumentation} setInstrumentation={setInstrumentation}
-                      rhythm={rhythm} setRhythm={setRhythm} narrative={narrative} setNarrative={setNarrative}
-                      musicalPrompt={musicalPrompt} setMusicalPrompt={setMusicalPrompt}
-                      isGeneratingMusicalPrompt={isGeneratingMusicalPrompt} isAnalyzingLyrics={isAnalyzingLyrics}
-                      hasApiKey={hasApiKey} generateMusicalPrompt={generateMusicalPrompt} analyzeLyricsForMusic={analyzeLyricsForMusic}
+                      hasApiKey={hasApiKey}
                     />
                   )}
                 </div>
