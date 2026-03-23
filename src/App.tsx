@@ -37,6 +37,27 @@ import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
 import { createEmptySong, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
 
+function ModalShortcutBindings({
+  isMobileOrTablet,
+  closeMobilePanels,
+  undo,
+  redo,
+}: {
+  isMobileOrTablet: boolean;
+  closeMobilePanels: () => void;
+  undo: () => void;
+  redo: () => void;
+}) {
+  useKeyboardShortcuts({
+    isMobileOrTablet,
+    closeMobilePanels,
+    undo,
+    redo,
+  });
+
+  return null;
+}
+
 function AppInnerContent() {
   const { t } = useTranslation();
   const { language } = useLanguage();
@@ -167,13 +188,6 @@ function AppInnerContent() {
 
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title, songLanguage);
 
-  useKeyboardShortcuts({
-    isMobileOrTablet,
-    closeMobilePanels,
-    undo,
-    redo,
-  });
-
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
 
   // ── Derived state ─────────────────────────────────────────────────────────
@@ -291,6 +305,12 @@ function AppInnerContent() {
 
   return (
     <ModalProvider uiState={uiStateForProvider}>
+      <ModalShortcutBindings
+        isMobileOrTablet={isMobileOrTablet}
+        closeMobilePanels={closeMobilePanels}
+        undo={undo}
+        redo={redo}
+      />
       <FluentProvider theme={theme === 'dark' ? webDarkTheme : webLightTheme} style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}>
       <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
 
