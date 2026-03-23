@@ -1,5 +1,61 @@
 import { useEffect } from 'react';
 
+export type KeyboardShortcutCategory = 'edit' | 'navigation' | 'file' | 'ai';
+
+export type KeyboardShortcutId =
+  | 'undo'
+  | 'redo'
+  | 'dismissReset'
+  | 'dismissNavigation'
+  | 'dismissFileDialogs'
+  | 'dismissAiDialogs';
+
+export type KeyboardShortcutModifier = 'ctrlOrMeta' | 'shift' | 'alt';
+
+export interface KeyboardShortcutCombo {
+  key: string;
+  modifiers: readonly KeyboardShortcutModifier[];
+}
+
+export interface KeyboardShortcutMetadata {
+  id: KeyboardShortcutId;
+  category: KeyboardShortcutCategory;
+  combos: readonly KeyboardShortcutCombo[];
+}
+
+export const KEYBOARD_SHORTCUTS_METADATA: readonly KeyboardShortcutMetadata[] = [
+  {
+    id: 'undo',
+    category: 'edit',
+    combos: [{ key: 'Z', modifiers: ['ctrlOrMeta'] }],
+  },
+  {
+    id: 'redo',
+    category: 'edit',
+    combos: [{ key: 'Z', modifiers: ['ctrlOrMeta', 'shift'] }],
+  },
+  {
+    id: 'dismissReset',
+    category: 'edit',
+    combos: [{ key: 'Escape', modifiers: [] }],
+  },
+  {
+    id: 'dismissNavigation',
+    category: 'navigation',
+    combos: [{ key: 'Escape', modifiers: [] }],
+  },
+  {
+    id: 'dismissFileDialogs',
+    category: 'file',
+    combos: [{ key: 'Escape', modifiers: [] }],
+  },
+  {
+    id: 'dismissAiDialogs',
+    category: 'ai',
+    combos: [{ key: 'Escape', modifiers: [] }],
+  },
+] as const;
+
 type UseKeyboardShortcutsParams = {
   promptModal: { open: boolean } | null;
   confirmModal: { open: boolean } | null;

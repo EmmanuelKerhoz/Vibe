@@ -258,6 +258,8 @@ vi.mock('./hooks/useAppState', async () => {
         setIsVersionsModalOpen: mockAppState.noop,
         isResetModalOpen: false,
         setIsResetModalOpen: mockAppState.noop,
+        isKeyboardShortcutsModalOpen: false,
+        setIsKeyboardShortcutsModalOpen: mockAppState.noop,
         shouldAutoGenerateTitle: false,
         setShouldAutoGenerateTitle: mockAppState.noop,
         confirmModal: null,

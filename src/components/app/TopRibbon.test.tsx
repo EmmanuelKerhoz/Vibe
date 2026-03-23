@@ -13,6 +13,7 @@ describe('TopRibbon burger menu', () => {
     const onOpenLibraryClick = vi.fn();
     const onOpenSettingsClick = vi.fn();
     const onOpenAboutClick = vi.fn();
+    const onOpenKeyboardShortcutsClick = vi.fn();
 
     render(
       <LanguageProvider>
@@ -38,6 +39,7 @@ describe('TopRibbon burger menu', () => {
           onOpenLibraryClick={onOpenLibraryClick}
           onOpenSettingsClick={onOpenSettingsClick}
           onOpenAboutClick={onOpenAboutClick}
+          onOpenKeyboardShortcutsClick={onOpenKeyboardShortcutsClick}
           isGenerating={false}
           isAnalyzing={false}
         />
@@ -71,5 +73,8 @@ describe('TopRibbon burger menu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'About' }));
     expect(onOpenAboutClick).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show keyboard shortcuts' }));
+    expect(onOpenKeyboardShortcutsClick).toHaveBeenCalledTimes(1);
   });
 });

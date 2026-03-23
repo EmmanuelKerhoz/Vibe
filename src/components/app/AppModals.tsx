@@ -9,6 +9,7 @@ import { SimilarityModal } from './modals/SimilarityModal';
 import { SaveToLibraryModal } from './modals/SaveToLibraryModal';
 import { VersionsModal } from './modals/VersionsModal';
 import { ResetModal } from './modals/ResetModal';
+import { KeyboardShortcutsModal } from './modals/KeyboardShortcutsModal';
 import { ApiErrorModal } from './modals/ApiErrorModal';
 import { ConfirmModal } from './modals/ConfirmModal';
 import { PromptModal } from './modals/PromptModal';
@@ -179,6 +180,10 @@ export function AppModals({
         onRollback={rollbackToVersion} onRequestVersionName={handleRequestVersionName}
       />
       <ResetModal isOpen={ui.isResetModalOpen} onClose={() => closeModal('reset')} onConfirm={resetSong} />
+      <KeyboardShortcutsModal
+        isOpen={ui.isKeyboardShortcutsModalOpen}
+        onClose={() => closeModal('keyboardShortcuts')}
+      />
       <ApiErrorModal
         isOpen={ui.apiErrorModal.open} onClose={() => closeModal('apiError')}
         message={ui.apiErrorModal.message}

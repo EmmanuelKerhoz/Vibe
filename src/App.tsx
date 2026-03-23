@@ -51,14 +51,14 @@ function AppInnerContent() {
     audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
     newSectionName, setNewSectionName,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
-    isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
-    isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
-    apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
-    isExportModalOpen, setIsExportModalOpen,
-    isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
-    isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
-    isResetModalOpen, setIsResetModalOpen, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
-    confirmModal, setConfirmModal, promptModal, setPromptModal,
+     isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
+     isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
+     apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
+     isExportModalOpen, setIsExportModalOpen,
+     isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
+     isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
+     isResetModalOpen, setIsResetModalOpen, isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
+     confirmModal, setConfirmModal, promptModal, setPromptModal,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
     songLanguage, setSongLanguage,
   } = appState;
@@ -299,11 +299,11 @@ function AppInnerContent() {
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
-    setIsResetModalOpen, setConfirmModal, setPromptModal, setIsMarkupMode,
+    setIsResetModalOpen, setIsKeyboardShortcutsModalOpen, setConfirmModal, setPromptModal, setIsMarkupMode,
     isAboutOpen, isSettingsOpen, apiErrorModal,
     isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
     isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
-    isResetModalOpen, confirmModal, promptModal,
+    isResetModalOpen, isKeyboardShortcutsModalOpen, confirmModal, promptModal,
     activeTab, setActiveTab, isStructureOpen, setIsStructureOpen,
     isLeftPanelOpen, setIsLeftPanelOpen,
     isMarkupMode, markupText, setMarkupText,
@@ -355,6 +355,7 @@ function AppInnerContent() {
               onOpenLibraryClick={handleOpenSaveToLibraryModal}
               onOpenSettingsClick={() => setIsSettingsOpen(true)}
               onOpenAboutClick={() => setIsAboutOpen(true)}
+              onOpenKeyboardShortcutsClick={() => setIsKeyboardShortcutsModalOpen(true)}
               onPasteLyrics={() => setIsPasteModalOpen(true)}
               isGenerating={isGenerating} isAnalyzing={isAnalyzing}
             />
