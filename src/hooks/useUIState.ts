@@ -27,6 +27,8 @@ export function useUIState() {
   const [isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; onConfirm: () => void } | null>(null);
   const [promptModal, setPromptModal] = useState<{ open: boolean; onConfirm: (value: string) => void } | null>(null);
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>('lyrics');
@@ -65,6 +67,8 @@ export function useUIState() {
     isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen,
     confirmModal, setConfirmModal,
     promptModal, setPromptModal,
+    isPasteModalOpen, setIsPasteModalOpen,
+    isAnalysisModalOpen, setIsAnalysisModalOpen,
     activeTab, setActiveTab,
     isStructureOpen, setIsStructureOpen,
     isLeftPanelOpen, setIsLeftPanelOpen,

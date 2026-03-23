@@ -28,6 +28,8 @@ type UseSongAnalysisParams = {
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   clearLineSelection: () => void;
   requestAutoTitleGeneration: () => void;
+  setIsPasteModalOpen: (value: boolean) => void;
+  setIsAnalysisModalOpen: (value: boolean) => void;
 };
 
 export const useSongAnalysis = ({
@@ -46,6 +48,8 @@ export const useSongAnalysis = ({
   updateSongAndStructureWithHistory,
   clearLineSelection,
   requestAutoTitleGeneration,
+  setIsPasteModalOpen,
+  setIsAnalysisModalOpen,
 }: UseSongAnalysisParams) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -71,6 +75,7 @@ export const useSongAnalysis = ({
     requestAutoTitleGeneration,
     clearLineSelection,
     setIsAnalyzing,
+    setIsPasteModalOpen,
   });
 
   const analysisEngine = useSongAnalysisEngine({
@@ -83,16 +88,13 @@ export const useSongAnalysis = ({
     setTopic,
     setMood,
     setIsAnalyzing,
+    setIsAnalysisModalOpen,
   });
 
   return {
-    isPasteModalOpen: pasteImport.isPasteModalOpen,
-    setIsPasteModalOpen: pasteImport.setIsPasteModalOpen,
     pastedText: pasteImport.pastedText,
     setPastedText: pasteImport.setPastedText,
     isAnalyzing,
-    isAnalysisModalOpen: analysisEngine.isAnalysisModalOpen,
-    setIsAnalysisModalOpen: analysisEngine.setIsAnalysisModalOpen,
     analysisReport: analysisEngine.analysisReport,
     analysisSteps: analysisEngine.analysisSteps,
     appliedAnalysisItems: analysisEngine.appliedAnalysisItems,
