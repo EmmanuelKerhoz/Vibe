@@ -59,6 +59,7 @@ const createParams = () => ({
   requestAutoTitleGeneration: vi.fn(),
   clearLineSelection: vi.fn(),
   setIsAnalyzing: vi.fn(),
+  setIsPasteModalOpen: vi.fn(),
 });
 
 describe('usePasteImport', () => {
