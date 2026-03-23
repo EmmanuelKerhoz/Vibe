@@ -56,15 +56,11 @@ interface Props {
   applySuggestion: (s: string) => void;
   generateSuggestions: (lineId: string) => void;
 
-  // Paste / analysis
-  isPasteModalOpen: boolean;
-  setIsPasteModalOpen: (v: boolean) => void;
+  // Paste / analysis (data props only)
   pastedText: string;
   setPastedText: (v: string) => void;
   isAnalyzing: boolean;
   analyzePastedLyrics: () => void;
-  isAnalysisModalOpen: boolean;
-  setIsAnalysisModalOpen: (v: boolean) => void;
   analysisReport: {
     theme: string;
     emotionalArc: string;
@@ -113,8 +109,8 @@ export function AppModals({
   hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, importInputRef, handleImportInputChange,
   exportSong,
   selectedLineId, setSelectedLineId, suggestions, isSuggesting, applySuggestion, generateSuggestions,
-  isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText, isAnalyzing, analyzePastedLyrics,
-  isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
+  pastedText, setPastedText, isAnalyzing, analyzePastedLyrics,
+  analysisReport, analysisSteps,
   appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
   toggleAnalysisItemSelection, applySelectedAnalysisItems, clearAppliedAnalysisItems,
   versions, rollbackToVersion, saveVersion, handleRequestVersionName,
@@ -147,12 +143,12 @@ export function AppModals({
         applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
       />
       <PasteModal
-        isOpen={isPasteModalOpen} onClose={() => setIsPasteModalOpen(false)}
+        isOpen={ui.isPasteModalOpen} onClose={() => closeModal('paste')}
         pastedText={pastedText} setPastedText={setPastedText}
         isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics}
       />
       <AnalysisModal
-        isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)}
+        isOpen={ui.isAnalysisModalOpen} onClose={() => closeModal('analysis')}
         isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps}
         appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
         isApplyingAnalysis={isApplyingAnalysis}

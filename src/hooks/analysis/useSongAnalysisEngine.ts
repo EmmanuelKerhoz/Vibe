@@ -45,6 +45,7 @@ type UseSongAnalysisEngineParams = {
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
   setIsAnalyzing: (value: boolean) => void;
+  setIsAnalysisModalOpen: (value: boolean) => void;
 };
 
 const SONG_SECTIONS_RESPONSE_SCHEMA = {
@@ -83,8 +84,8 @@ export const useSongAnalysisEngine = ({
   setTopic,
   setMood,
   setIsAnalyzing,
+  setIsAnalysisModalOpen,
 }: UseSongAnalysisEngineParams) => {
-  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
   const [analysisSteps, setAnalysisSteps] = useState<string[]>([]);
   const [appliedAnalysisItems, setAppliedAnalysisItems] = useState<Set<string>>(new Set());
@@ -303,8 +304,6 @@ export const useSongAnalysisEngine = ({
   }, [song, uiLang, setIsAnalyzing]);
 
   return {
-    isAnalysisModalOpen,
-    setIsAnalysisModalOpen,
     analysisReport,
     analysisSteps,
     appliedAnalysisItems,

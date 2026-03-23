@@ -22,6 +22,7 @@ type UsePasteImportParams = {
   requestAutoTitleGeneration: () => void;
   clearLineSelection: () => void;
   setIsAnalyzing: (value: boolean) => void;
+  setIsPasteModalOpen: (value: boolean) => void;
 };
 
 const normalizeLanguageValue = (language: string): string =>
@@ -38,8 +39,8 @@ export const usePasteImport = ({
   requestAutoTitleGeneration,
   clearLineSelection,
   setIsAnalyzing,
+  setIsPasteModalOpen,
 }: UsePasteImportParams) => {
-  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pastedText, setPastedText] = useState('');
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -222,8 +223,6 @@ ${pastedText}`;
   };
 
   return {
-    isPasteModalOpen,
-    setIsPasteModalOpen,
     pastedText,
     setPastedText,
     analyzePastedLyrics,

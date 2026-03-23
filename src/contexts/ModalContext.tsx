@@ -16,6 +16,8 @@ export interface UIStateBag {
   setIsKeyboardShortcutsModalOpen: (v: boolean) => void;
   setConfirmModal: (v: { open: boolean; onConfirm: () => void } | null) => void;
   setPromptModal: (v: { open: boolean; onConfirm: (value: string) => void } | null) => void;
+  setIsPasteModalOpen: (v: boolean) => void;
+  setIsAnalysisModalOpen: (v: boolean) => void;
   setIsMarkupMode: (v: boolean) => void;
   isAboutOpen: boolean;
   isSettingsOpen: boolean;
@@ -30,6 +32,8 @@ export interface UIStateBag {
   isKeyboardShortcutsModalOpen: boolean;
   confirmModal: { open: boolean; onConfirm: () => void } | null;
   promptModal: { open: boolean; onConfirm: (value: string) => void } | null;
+  isPasteModalOpen: boolean;
+  isAnalysisModalOpen: boolean;
   activeTab: 'lyrics' | 'musical';
   setActiveTab: (v: 'lyrics' | 'musical') => void;
   isStructureOpen: boolean;
@@ -81,6 +85,8 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
       case 'versions':        uiState.setIsVersionsModalOpen(true); break;
       case 'reset':           uiState.setIsResetModalOpen(true); break;
       case 'keyboardShortcuts': uiState.setIsKeyboardShortcutsModalOpen(true); break;
+      case 'paste':           uiState.setIsPasteModalOpen(true); break;
+      case 'analysis':        uiState.setIsAnalysisModalOpen(true); break;
       case 'apiError': {
         const msg = typeof payload === 'string' ? payload : '';
         uiState.setApiErrorModal({ open: true, message: msg });
@@ -96,8 +102,6 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
         uiState.setPromptModal({ open: true, onConfirm: p.onConfirm });
         break;
       }
-      case 'paste':    break;
-      case 'analysis': break;
     }
   }, [uiState]);
 
@@ -113,11 +117,11 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
       case 'versions':        uiState.setIsVersionsModalOpen(false); break;
       case 'reset':           uiState.setIsResetModalOpen(false); break;
       case 'keyboardShortcuts': uiState.setIsKeyboardShortcutsModalOpen(false); break;
+      case 'paste':           uiState.setIsPasteModalOpen(false); break;
+      case 'analysis':        uiState.setIsAnalysisModalOpen(false); break;
       case 'apiError':        uiState.setApiErrorModal({ open: false, message: '' }); break;
       case 'confirm':         uiState.setConfirmModal(null); break;
       case 'prompt':          uiState.setPromptModal(null); break;
-      case 'paste':           break;
-      case 'analysis':        break;
     }
   }, [uiState]);
 

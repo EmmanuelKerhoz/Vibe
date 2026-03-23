@@ -61,6 +61,7 @@ function AppInnerContent() {
      isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
      isResetModalOpen, setIsResetModalOpen, isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
      confirmModal, setConfirmModal, promptModal, setPromptModal,
+     isPasteModalOpen, setIsPasteModalOpen, isAnalysisModalOpen, setIsAnalysisModalOpen,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
     songLanguage, setSongLanguage,
   } = appState;
@@ -96,8 +97,8 @@ function AppInnerContent() {
 
   const isGeneratingRef = useRef(false);
 
-  const { isPasteModalOpen, setIsPasteModalOpen, pastedText, setPastedText,
-    isAnalyzing, isAnalysisModalOpen, setIsAnalysisModalOpen, analysisReport, analysisSteps,
+  const { pastedText, setPastedText,
+    isAnalyzing, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, targetLanguage, setTargetLanguage,
     isAdaptingLanguage, isDetectingLanguage, adaptationProgress, adaptationResult,
     sectionTargetLanguages, setSectionTargetLanguages,
@@ -109,6 +110,7 @@ function AppInnerContent() {
     setTopic, setMood, saveVersion,
     updateState, updateSongAndStructureWithHistory,
     clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
+    setIsPasteModalOpen, setIsAnalysisModalOpen,
   });
 
   const { isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
@@ -299,11 +301,13 @@ function AppInnerContent() {
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
-    setIsResetModalOpen, setIsKeyboardShortcutsModalOpen, setConfirmModal, setPromptModal, setIsMarkupMode,
+    setIsResetModalOpen, setIsKeyboardShortcutsModalOpen, setConfirmModal, setPromptModal,
+    setIsPasteModalOpen, setIsAnalysisModalOpen, setIsMarkupMode,
     isAboutOpen, isSettingsOpen, apiErrorModal,
     isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
     isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
     isResetModalOpen, isKeyboardShortcutsModalOpen, confirmModal, promptModal,
+    isPasteModalOpen, isAnalysisModalOpen,
     activeTab, setActiveTab, isStructureOpen, setIsStructureOpen,
     isLeftPanelOpen, setIsLeftPanelOpen,
     isMarkupMode, markupText, setMarkupText,
@@ -456,10 +460,8 @@ function AppInnerContent() {
           selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
           suggestions={suggestions} isSuggesting={isSuggesting}
           applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
-          isPasteModalOpen={isPasteModalOpen} setIsPasteModalOpen={setIsPasteModalOpen}
           pastedText={pastedText} setPastedText={setPastedText}
           isAnalyzing={isAnalyzing} analyzePastedLyrics={analyzePastedLyrics}
-          isAnalysisModalOpen={isAnalysisModalOpen} setIsAnalysisModalOpen={setIsAnalysisModalOpen}
           analysisReport={analysisReport} analysisSteps={analysisSteps}
           appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
           isApplyingAnalysis={isApplyingAnalysis}

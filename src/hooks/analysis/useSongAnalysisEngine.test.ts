@@ -48,6 +48,7 @@ const createParams = (song: Section[]) => ({
   setTopic: vi.fn(),
   setMood: vi.fn(),
   setIsAnalyzing: vi.fn(),
+  setIsAnalysisModalOpen: vi.fn(),
 });
 
 describe('useSongAnalysisEngine', () => {
