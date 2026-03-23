@@ -163,4 +163,140 @@ describe('useSongHistoryState', () => {
     expect(result.current.song[0]?.lines[1]?.isMeta).toBe(true);
     expect(result.current.song[0]?.lines[1]?.concept).toBe('');
   });
+
+  it('updateStructureWithHistory updates only structure and preserves song', () => {
+    const { result } = renderHook(() =>
+      useSongHistoryState([S1, S2], ['Verse 1', 'Chorus'])
+    );
+    act(() => result.current.updateStructureWithHistory(['Chorus', 'Verse 1']));
+    expect(result.current.structure).toEqual(['Chorus', 'Verse 1']);
+    expect(result.current.song).toHaveLength(2);
+    expect(result.current.past).toHaveLength(1);
+  });
+
+  it('updateState with recipe function updates both song and structure', () => {
+    const { result } = renderHook(() =>
+      useSongHistoryState([S1], ['Verse 1'])
+    );
+    act(() => result.current.updateState((current) => ({
+      song: [...current.song, S2],
+      structure: [...current.structure, 'Chorus'],
+    })));
+    expect(result.current.song).toHaveLength(2);
+    expect(result.current.structure).toEqual(['Verse 1', 'Chorus']);
+    expect(result.current.past).toHaveLength(1);
+  });
+
+  it('ignores duplicate updates that result in identical fingerprint', () => {
+    const { result } = renderHook(() =>
+      useSongHistoryState([S1], ['Verse 1'])
+    );
+    act(() => result.current.updateSongWithHistory([S1]));
+    expect(result.current.past).toHaveLength(0);
+  });
+
+  it('caps history at MAX_HISTORY entries', () => {
+    const { result } = renderHook(() =>
+      useSongHistoryState([S1], ['Verse 1'])
+    );
+    // Add 52 updates (exceeds MAX_HISTORY of 50)
+    for (let i = 0; i < 52; i++) {
+      act(() => result.current.updateSongWithHistory([
+        ...result.current.song,
+        makeSection(`s${i + 10}`, `Section ${i}`),
+      ]));
+    }
+    expect(result.current.past.length).toBeLessThanOrEqual(50);
+  });
+
+  it('handles empty initial state', () => {
+    const { result } = renderHook(() => useSongHistoryState([], []));
+    expect(result.current.song).toEqual([]);
+    expect(result.current.structure).toEqual([]);
+    expect(result.current.past).toHaveLength(0);
+    expect(result.current.future).toHaveLength(0);
+  });
+
+  it('applySnapshot respects trackHistory option', () => {
+    const { result } = renderHook(() =>
+      useSongHistoryState([S1], ['Verse 1'])
+    );
+    act(() => result.current.updateSongWithHistory([S1, S2]));
+    expect(result.current.past).toHaveLength(1);
+
+    // Use replaceStateWithoutHistory which internally uses applySnapshot with trackHistory: false
+    act(() => result.current.replaceStateWithoutHistory([S1, S2, S3], ['Verse 1', 'Chorus', 'Bridge']));
+    expect(result.current.past).toHaveLength(1); // Should remain 1
+  });
+
+  it('handles sections with lines correctly', () => {
+    const sectionWithLines: Section = {
+      id: 's1',
+      name: 'Verse 1',
+      lines: [
+        {
+          id: 'l1',
+          text: 'Hello world',
+          rhymingSyllables: 'world',
+          rhyme: 'A',
+          syllables: 3,
+          concept: 'greeting',
+          isMeta: false,
+        },
+      ],
+    };
+    const { result } = renderHook(() =>
+      useSongHistoryState([sectionWithLines], ['Verse 1'])
+    );
+    expect(result.current.song[0]?.lines).toHaveLength(1);
+    expect(result.current.song[0]?.lines[0]?.text).toBe('Hello world');
+  });
+
+  it('generates IDs for sections and lines missing them', () => {
+    const sectionNoId = {
+      id: '',
+      name: 'Test',
+      lines: [
+        {
+          id: '',
+          text: 'line 1',
+          rhymingSyllables: '',
+          rhyme: '',
+          syllables: 2,
+          concept: 'test',
+          isMeta: false,
+        },
+      ],
+    } as Section;
+
+    const { result } = renderHook(() =>
+      useSongHistoryState([sectionNoId], ['Test'])
+    );
+
+    expect(result.current.song[0]?.id).not.toBe('');
+    expect(result.current.song[0]?.lines[0]?.id).not.toBe('');
+  });
+
+  it('defaults missing line properties to safe values', () => {
+    const incompleteSection = {
+      id: 's1',
+      name: 'Test',
+      lines: [
+        {
+          id: 'l1',
+          text: undefined,
+        } as any,
+      ],
+    } as Section;
+
+    const { result } = renderHook(() =>
+      useSongHistoryState([incompleteSection], ['Test'])
+    );
+
+    const line = result.current.song[0]?.lines[0];
+    expect(line?.text).toBe('');
+    expect(line?.rhymingSyllables).toBe('');
+    expect(line?.rhyme).toBe('');
+    expect(line?.syllables).toBe(0);
+  });
 });
