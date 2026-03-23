@@ -4,6 +4,7 @@ import { cleanSectionName, normalizeLoadedSection } from '../utils/songUtils';
 import { DEFAULT_STRUCTURE } from '../constants/editor';
 import { safeSetItem, safeGetItem } from '../utils/safeStorage';
 import { isPristineDraft } from '../utils/songDefaults';
+import { useSongContext } from '../contexts/SongContext';
 
 interface UseSessionPersistenceParams {
   song: Section[];
@@ -26,19 +27,6 @@ interface UseSessionPersistenceParams {
   setHasSavedSession: (v: boolean) => void;
   replaceStateWithoutHistory: (song: Section[], structure: string[]) => void;
   clearHistory: () => void;
-  setTitle: (v: string) => void;
-  setTitleOrigin: (v: 'user' | 'ai') => void;
-  setTopic: (v: string) => void;
-  setMood: (v: string) => void;
-  setRhymeScheme: (v: string) => void;
-  setTargetSyllables: (v: number) => void;
-  setGenre: (v: string) => void;
-  setTempo: (v: number) => void;
-  setInstrumentation: (v: string) => void;
-  setRhythm: (v: string) => void;
-  setNarrative: (v: string) => void;
-  setMusicalPrompt: (v: string) => void;
-  setSongLanguage: (v: string) => void;
 }
 
 /** Normalize a raw section read from storage — ensures no field is undefined. */
@@ -50,10 +38,12 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
     genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
     replaceStateWithoutHistory, clearHistory,
+  } = params;
+  const {
     setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme, setTargetSyllables,
     setGenre, setTempo, setInstrumentation, setRhythm, setNarrative, setMusicalPrompt,
     setSongLanguage,
-  } = params;
+  } = useSongContext();
 
   // Mount-only: hydrate state from localStorage.
   useEffect(() => {

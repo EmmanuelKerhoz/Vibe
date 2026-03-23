@@ -4,6 +4,26 @@ import { DEFAULT_STRUCTURE } from '../../constants/editor';
 import { useSessionPersistence } from '../useSessionPersistence';
 import { createEmptySong } from '../../utils/songDefaults';
 
+const songContextSetters = vi.hoisted(() => ({
+  setTitle: vi.fn(),
+  setTitleOrigin: vi.fn(),
+  setTopic: vi.fn(),
+  setMood: vi.fn(),
+  setRhymeScheme: vi.fn(),
+  setTargetSyllables: vi.fn(),
+  setGenre: vi.fn(),
+  setTempo: vi.fn(),
+  setInstrumentation: vi.fn(),
+  setRhythm: vi.fn(),
+  setNarrative: vi.fn(),
+  setMusicalPrompt: vi.fn(),
+  setSongLanguage: vi.fn(),
+}));
+
+vi.mock('../../contexts/SongContext', () => ({
+  useSongContext: () => songContextSetters,
+}));
+
 const createMemoryStorage = (): Storage => {
   const store = new Map<string, string>();
 
@@ -46,19 +66,6 @@ const createParams = () => ({
   setHasSavedSession: vi.fn(),
   replaceStateWithoutHistory: vi.fn(),
   clearHistory: vi.fn(),
-  setTitle: vi.fn(),
-  setTitleOrigin: vi.fn(),
-  setTopic: vi.fn(),
-  setMood: vi.fn(),
-  setRhymeScheme: vi.fn(),
-  setTargetSyllables: vi.fn(),
-  setGenre: vi.fn(),
-  setTempo: vi.fn(),
-  setInstrumentation: vi.fn(),
-  setRhythm: vi.fn(),
-  setNarrative: vi.fn(),
-  setMusicalPrompt: vi.fn(),
-  setSongLanguage: vi.fn(),
 });
 
 describe('useSessionPersistence', () => {
@@ -70,6 +77,7 @@ describe('useSessionPersistence', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    Object.values(songContextSetters).forEach((spy) => spy.mockReset());
   });
 
   it('uses defaults when no stored session exists and hydrates the session', () => {
@@ -79,9 +87,9 @@ describe('useSessionPersistence', () => {
 
     expect(params.replaceStateWithoutHistory).not.toHaveBeenCalled();
     expect(params.clearHistory).not.toHaveBeenCalled();
-    expect(params.setTitle).not.toHaveBeenCalled();
-    expect(params.setTopic).not.toHaveBeenCalled();
-    expect(params.setMood).not.toHaveBeenCalled();
+    expect(songContextSetters.setTitle).not.toHaveBeenCalled();
+    expect(songContextSetters.setTopic).not.toHaveBeenCalled();
+    expect(songContextSetters.setMood).not.toHaveBeenCalled();
     expect(params.setHasSavedSession).not.toHaveBeenCalled();
     expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
   });
@@ -134,19 +142,19 @@ describe('useSessionPersistence', () => {
       })],
       ['Verse 1'],
     );
-    expect(params.setTitle).toHaveBeenCalledWith('Midnight Echo');
-    expect(params.setTitleOrigin).toHaveBeenCalledWith('ai');
-    expect(params.setTopic).toHaveBeenCalledWith('Night drive');
-    expect(params.setMood).toHaveBeenCalledWith('Electric');
-    expect(params.setRhymeScheme).toHaveBeenCalledWith('ABAB');
-    expect(params.setTargetSyllables).toHaveBeenCalledWith(8);
-    expect(params.setGenre).toHaveBeenCalledWith('Synthwave');
-    expect(params.setTempo).toHaveBeenCalledWith(98);
-    expect(params.setInstrumentation).toHaveBeenCalledWith('Analog synths');
-    expect(params.setRhythm).toHaveBeenCalledWith('Pulse');
-    expect(params.setNarrative).toHaveBeenCalledWith('Chasing neon');
-    expect(params.setMusicalPrompt).toHaveBeenCalledWith('Wide cinematic chorus');
-    expect(params.setSongLanguage).toHaveBeenCalledWith('fr');
+    expect(songContextSetters.setTitle).toHaveBeenCalledWith('Midnight Echo');
+    expect(songContextSetters.setTitleOrigin).toHaveBeenCalledWith('ai');
+    expect(songContextSetters.setTopic).toHaveBeenCalledWith('Night drive');
+    expect(songContextSetters.setMood).toHaveBeenCalledWith('Electric');
+    expect(songContextSetters.setRhymeScheme).toHaveBeenCalledWith('ABAB');
+    expect(songContextSetters.setTargetSyllables).toHaveBeenCalledWith(8);
+    expect(songContextSetters.setGenre).toHaveBeenCalledWith('Synthwave');
+    expect(songContextSetters.setTempo).toHaveBeenCalledWith(98);
+    expect(songContextSetters.setInstrumentation).toHaveBeenCalledWith('Analog synths');
+    expect(songContextSetters.setRhythm).toHaveBeenCalledWith('Pulse');
+    expect(songContextSetters.setNarrative).toHaveBeenCalledWith('Chasing neon');
+    expect(songContextSetters.setMusicalPrompt).toHaveBeenCalledWith('Wide cinematic chorus');
+    expect(songContextSetters.setSongLanguage).toHaveBeenCalledWith('fr');
     expect(params.clearHistory).toHaveBeenCalledOnce();
     expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
   });

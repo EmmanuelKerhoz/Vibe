@@ -91,6 +91,7 @@ function AppInnerContent() {
   } = appState;
 
   // ── Mobile layout ─────────────────────────────────────────────────────────
+  // isMobile/isTablet not exposed by useAppState — direct call intentional
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
@@ -106,9 +107,6 @@ function AppInnerContent() {
     song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
     genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession, replaceStateWithoutHistory, clearHistory,
-    setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme, setTargetSyllables,
-    setGenre, setTempo, setInstrumentation, setRhythm, setNarrative, setMusicalPrompt,
-    setSongLanguage,
   });
   const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionManager({
     song, structure, title, titleOrigin, topic, mood, updateSongAndStructureWithHistory,
