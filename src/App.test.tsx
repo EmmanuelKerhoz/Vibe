@@ -30,9 +30,11 @@ vi.mock('@fluentui/react-components', () => ({
   webDarkTheme: {},
 }));
 
-vi.mock('./contexts/ModalContext', () => ({
-  ModalProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('./contexts/ModalContext', async () => {
+  const actual = await vi.importActual<typeof import('./contexts/ModalContext')>('./contexts/ModalContext');
+
+  return actual;
+});
 
 vi.mock('./contexts/DragContext', () => ({
   DragProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -312,11 +314,16 @@ vi.mock('./hooks/useMobileInitPanels', () => ({
   useMobileInitPanels: mockAppState.noop,
 }));
 
-vi.mock('./hooks/useKeyboardShortcuts', () => ({
-  useKeyboardShortcuts: (params: unknown) => {
-    mockAppState.useKeyboardShortcutsSpy(params);
-  },
-}));
+vi.mock('./hooks/useKeyboardShortcuts', async () => {
+  const { useModalContext } = await vi.importActual<typeof import('./contexts/ModalContext')>('./contexts/ModalContext');
+
+  return {
+    useKeyboardShortcuts: (params: unknown) => {
+      useModalContext();
+      mockAppState.useKeyboardShortcutsSpy(params);
+    },
+  };
+});
 
 vi.mock('./hooks/useSessionActions', () => ({
   useSessionActions: () => ({
