@@ -21,6 +21,8 @@ import { useSessionActions } from './hooks/useSessionActions';
 import { useImportHandlers } from './hooks/useImportHandlers';
 import { useLibraryActions } from './hooks/useLibraryActions';
 import { useUIStateForProvider } from './hooks/useUIStateForProvider';
+import { useDerivedAppState } from './hooks/useDerivedAppState';
+import { useAppHandlers } from './hooks/useAppHandlers';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
@@ -33,7 +35,7 @@ import { LyricsView } from './components/app/LyricsView';
 import { AppModals } from './components/app/AppModals';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
-import { createEmptySong, isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
+import { createEmptySong, DEFAULT_TOPIC, DEFAULT_MOOD } from './utils/songDefaults';
 
 function AppInnerContent() {
   const { t } = useTranslation();
@@ -198,38 +200,36 @@ function AppInnerContent() {
 
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
 
-  const hasRealLyricContent = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
-  const hasExistingWork = (hasRealLyricContent && !isPristineDraft(song, structure, rhymeScheme))
-    || topic !== DEFAULT_TOPIC || mood !== DEFAULT_MOOD || (isMarkupMode && markupText.trim().length > 0);
+  // ── Derived state ─────────────────────────────────────────────────────────
+  const { hasRealLyricContent, hasExistingWork, topWebCandidate, webBadgeLabel } = useDerivedAppState({
+    song,
+    structure,
+    rhymeScheme,
+    topic,
+    mood,
+    isMarkupMode,
+    markupText,
+    webSimilarityIndex,
+  });
 
-  const topWebCandidate = webSimilarityIndex.candidates[0];
-  const webBadgeLabel = webSimilarityIndex.status === 'done'
-    && topWebCandidate?.score !== undefined
-    ? `${topWebCandidate.score}%`
-    : null;
-
-  const handleApiKeyHelp = () => setApiErrorModal({ open: true, message: t.tooltips.aiUnavailableHelp });
-  const handleTitleChange = (value: string) => { setTitle(value); setTitleOrigin('user'); };
-  const handleGenerateTitle = async () => { const t2 = await generateTitle(); if (t2) { setTitle(t2); setTitleOrigin('ai'); } };
-
-  const handleGlobalRegenerate = () => {
-    if (hasRealLyricContent) {
-      setConfirmModal({ open: true, onConfirm: () => { setConfirmModal(null); void generateSong(); } });
-    } else {
-      void generateSong();
-    }
-  };
-
-  const handleScrollToSection = useCallback((sectionId: string) => {
-    const sec = song.find(s => s.id === sectionId);
-    if (sec) scrollToSection(sec);
-  }, [song, scrollToSection]);
-
-  const handleOpenNewGeneration = useCallback(() => {
-    setActiveTab('lyrics');
-    setIsLeftPanelOpen(true);
-    if (isMobileOrTablet) setIsStructureOpen(false);
-  }, [isMobileOrTablet, setActiveTab, setIsLeftPanelOpen, setIsStructureOpen]);
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const { handleApiKeyHelp, handleTitleChange, handleGenerateTitle, handleGlobalRegenerate,
+    handleScrollToSection, handleOpenNewGeneration } = useAppHandlers({
+    t,
+    hasRealLyricContent,
+    song,
+    isMobileOrTablet,
+    setApiErrorModal,
+    setTitle,
+    setTitleOrigin,
+    setConfirmModal,
+    setActiveTab,
+    setIsLeftPanelOpen,
+    setIsStructureOpen,
+    generateTitle,
+    generateSong,
+    scrollToSection,
+  });
 
   const { handleCreateEmptySong, resetSong } = useSessionActions({
     song,
