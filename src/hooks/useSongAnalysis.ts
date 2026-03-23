@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { RefObject } from 'react';
 import type { Section } from '../types';
 import { usePasteImport } from './analysis/usePasteImport';
 import { useLanguageAdapter } from './analysis/useLanguageAdapter';
@@ -10,7 +11,7 @@ type UseSongAnalysisParams = {
   mood: string;
   rhymeScheme: string;
   uiLanguage: string;
-  isGenerating?: boolean;
+  isGeneratingRef: RefObject<boolean>;
   /** Elevated state from useAppState — shared with useSongComposer */
   songLanguage: string;
   setSongLanguage: (lang: string) => void;
@@ -38,7 +39,7 @@ export const useSongAnalysis = ({
   mood,
   rhymeScheme,
   uiLanguage,
-  isGenerating = false,
+  isGeneratingRef,
   songLanguage,
   setSongLanguage,
   setTopic,
@@ -59,7 +60,7 @@ export const useSongAnalysis = ({
     saveVersion,
     updateSongAndStructureWithHistory,
     updateState,
-    isGenerating,
+    isGeneratingRef,
     songLanguage,
     setSongLanguage,
   });

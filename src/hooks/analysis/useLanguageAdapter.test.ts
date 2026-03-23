@@ -79,7 +79,7 @@ const createParams = (song: Section[]) => ({
   saveVersion: vi.fn(),
   updateSongAndStructureWithHistory: vi.fn(),
   updateState: vi.fn(),
-  isGenerating: false,
+  isGeneratingRef: { current: false },
   songLanguage: 'English',
   setSongLanguage: vi.fn(),
 });
