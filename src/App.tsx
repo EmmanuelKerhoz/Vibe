@@ -6,7 +6,6 @@ import { useSongEditor } from './hooks/useSongEditor';
 import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
 import { useSimilarityEngine } from './hooks/useSimilarityEngine';
-import { useAppKpis } from './hooks/useAppKpis';
 import { useAppState } from './hooks/useAppState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
@@ -167,8 +166,6 @@ function AppInnerContent() {
   }, [handleSurprise, setTopic, setMood]);
 
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title, songLanguage);
-
-  useAppKpis(); // KPIs now sourced internally via useSongContext
 
   // ── Derived state ─────────────────────────────────────────────────────────
   const { hasRealLyricContent, hasExistingWork, webBadgeLabel } = useDerivedAppState({
