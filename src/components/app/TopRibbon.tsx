@@ -7,16 +7,12 @@ import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
 import { motion } from 'motion/react';
 import { useTranslation } from '../../i18n';
-import type { Section } from '../../types';
+import { useSongContext } from '../../contexts/SongContext';
+import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface Props {
   activeTab: 'lyrics' | 'musical';
   setActiveTab: (v: 'lyrics' | 'musical') => void;
-  song: Section[];
-  past: unknown[];
-  future: unknown[];
-  undo: () => void;
-  redo: () => void;
   setIsVersionsModalOpen: (v: boolean) => void;
   setIsResetModalOpen: (v: boolean) => void;
   isStructureOpen: boolean;
@@ -32,13 +28,11 @@ interface Props {
   onOpenAboutClick: () => void;
   onOpenKeyboardShortcutsClick: () => void;
   onPasteLyrics: () => void;
-  isGenerating: boolean;
   isAnalyzing: boolean;
 }
 
 export function TopRibbon({
   activeTab, setActiveTab,
-  song, past, future, undo, redo,
   setIsVersionsModalOpen, setIsResetModalOpen,
   isStructureOpen, setIsStructureOpen,
   hasApiKey, handleApiKeyHelp,
@@ -47,8 +41,10 @@ export function TopRibbon({
   onOpenLibraryClick,
   onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick,
   onPasteLyrics,
-  isGenerating, isAnalyzing,
+  isAnalyzing,
 }: Props) {
+  const { song, past, future, undo, redo } = useSongContext();
+  const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;

@@ -4,6 +4,22 @@ import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../i18n';
 import { TopRibbon } from './TopRibbon';
 
+vi.mock('../../contexts/SongContext', () => ({
+  useSongContext: () => ({
+    song: [],
+    past: [],
+    future: [],
+    undo: vi.fn(),
+    redo: vi.fn(),
+  }),
+}));
+
+vi.mock('../../contexts/ComposerContext', () => ({
+  useComposerContext: () => ({
+    isGenerating: false,
+  }),
+}));
+
 describe('TopRibbon burger menu', () => {
   it('exposes the redesigned primary navigation actions', () => {
     const setActiveTab = vi.fn();
@@ -20,11 +36,6 @@ describe('TopRibbon burger menu', () => {
         <TopRibbon
           activeTab="lyrics"
           setActiveTab={setActiveTab}
-          song={[]}
-          past={[]}
-          future={[]}
-          undo={() => {}}
-          redo={() => {}}
           setIsVersionsModalOpen={() => {}}
           setIsResetModalOpen={() => {}}
           isStructureOpen={false}
@@ -40,7 +51,6 @@ describe('TopRibbon burger menu', () => {
           onOpenSettingsClick={onOpenSettingsClick}
           onOpenAboutClick={onOpenAboutClick}
           onOpenKeyboardShortcutsClick={onOpenKeyboardShortcutsClick}
-          isGenerating={false}
           isAnalyzing={false}
         />
       </LanguageProvider>,

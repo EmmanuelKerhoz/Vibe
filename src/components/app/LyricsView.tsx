@@ -7,31 +7,19 @@ import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
 import { isLinkedChorusSectionName, isLinkedPreChorusPair, isPreChorusSectionName, SECTION_TYPE_OPTIONS } from '../../constants/sections';
+import { useSongContext } from '../../contexts/SongContext';
+import { useComposerContext } from '../../contexts/ComposerContext';
 
 // Module-level helpers for tied section detection
 const isSectionPreChorus = (s: Section) => isPreChorusSectionName(s.name);
 const isSectionChorus = (s: Section) => isLinkedChorusSectionName(s.name);
 
 interface LyricsViewProps {
-  song: Section[];
-  rhymeScheme: string;
-  updateState: (transform: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
-  updateSongAndStructureWithHistory: (song: Section[], structure: string[]) => void;
-  selectedLineId: string | null;
-  isGenerating: boolean;
   isAnalyzing: boolean;
   isAdaptingLanguage?: boolean;
   sectionTargetLanguages?: Record<string, string>;
   onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
   adaptSectionLanguage?: (sectionId: string, lang: string) => void;
-  isRegeneratingSection: (sectionId: string) => boolean;
-  handleLineClick: (lineId: string) => void;
-  updateLineText: (sectionId: string, lineId: string, text: string) => void;
-  handleLineKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => void;
-  handleInstructionChange: (sectionId: string, type: 'pre' | 'post', index: number, value: string) => void;
-  addInstruction: (sectionId: string, type: 'pre' | 'post') => void;
-  removeInstruction: (sectionId: string, type: 'pre' | 'post', index: number) => void;
-  regenerateSection: (sectionId: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
@@ -48,19 +36,19 @@ interface LyricsViewProps {
 }
 
 export const LyricsView = memo(function LyricsView({
-  song, rhymeScheme,
-  updateState, updateSongAndStructureWithHistory,
-  selectedLineId, isGenerating, isAnalyzing,
+  isAnalyzing,
   isAdaptingLanguage = false,
   sectionTargetLanguages = {},
   onSectionTargetLanguageChange,
   adaptSectionLanguage,
-  isRegeneratingSection, handleLineClick, updateLineText, handleLineKeyDown,
-  handleInstructionChange, addInstruction, removeInstruction, regenerateSection,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
   isMarkupMode, setIsMarkupMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
   onOpenLibrary, onPasteLyrics, onGenerateSong,
 }: LyricsViewProps) {
+  const { song, rhymeScheme, updateState, updateSongAndStructureWithHistory } = useSongContext();
+  const { selectedLineId, isGenerating, isRegeneratingSection, handleLineClick, updateLineText,
+    handleLineKeyDown, handleInstructionChange, addInstruction, removeInstruction, regenerateSection,
+  } = useComposerContext();
   const { t } = useTranslation();
 
   const RHYME_KEYS = Object.keys(t.rhymeSchemes) as Array<keyof typeof t.rhymeSchemes>;

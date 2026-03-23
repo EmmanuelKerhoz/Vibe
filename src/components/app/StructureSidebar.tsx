@@ -16,17 +16,16 @@ import {
   isLinkedPreChorusPair,
   SECTION_TYPE_OPTIONS,
 } from '../../constants/sections';
+import { useSongContext } from '../../contexts/SongContext';
+import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface Props {
   isStructureOpen: boolean;
   setIsStructureOpen: (v: boolean) => void;
-  structure: string[];
-  song: Section[];
   newSectionName: string;
   setNewSectionName: (v: string) => void;
   isSectionDropdownOpen: boolean;
   setIsSectionDropdownOpen: (v: boolean) => void;
-  isGenerating: boolean;
   addStructureItem: (name?: string) => void;
   removeStructureItem: (idx: number) => void;
   normalizeStructure: () => void;
@@ -38,13 +37,15 @@ interface Props {
 
 export function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
-  structure, song, newSectionName, setNewSectionName,
+  newSectionName, setNewSectionName,
   isSectionDropdownOpen, setIsSectionDropdownOpen,
-  isGenerating, addStructureItem, removeStructureItem,
+  addStructureItem, removeStructureItem,
   normalizeStructure, handleDrop, onScrollToSection,
   isMobileOverlay = false,
   className,
 }: Props) {
+  const { song, structure } = useSongContext();
+  const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
   const {
     draggedItemIndex,
