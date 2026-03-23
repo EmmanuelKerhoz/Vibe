@@ -153,7 +153,6 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     past: state.past,
     future: state.future,
     updateState,
-    applySnapshot,
     updateSongWithHistory,
     updateStructureWithHistory,
     updateSongAndStructureWithHistory,
