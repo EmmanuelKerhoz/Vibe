@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { UIStateBag } from '../contexts/ModalContext';
 
-type UseUIStateForProviderParams = Pick<UIStateBag, keyof UIStateBag>;
+type UseUIStateForProviderParams = UIStateBag;
 
 export const useUIStateForProvider = ({
   setIsAboutOpen,
