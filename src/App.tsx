@@ -455,7 +455,7 @@ function AppInnerContent() {
           uiScale={uiScale} setUiScale={setUiScale} defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
           hasExistingWork={hasExistingWork} handleImportChooseFile={handleImportChooseFile}
           onOpenPasteLyrics={() => { setIsImportModalOpen(false); setIsPasteModalOpen(true); }}
-          importInputRef={importInputRef} handleImportInputChange={handleImportInputChange}
+          handleImportInputChange={handleImportInputChange}
           exportSong={exportSong}
           selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
           suggestions={suggestions} isSuggesting={isSuggesting}
