@@ -12,6 +12,7 @@ const shouldShowSplash = (): boolean => {
   }
 };
 
+// Internal base — consumed only via useAppState. Do not merge or delete without confirming the full dependency chain.
 export function useUIState() {
   // ── Modals ────────────────────────────────────────────────────────────────
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(() => shouldShowSplash());

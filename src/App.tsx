@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
-import { DEFAULT_RHYME_SCHEME, DEFAULT_STRUCTURE } from './constants/editor';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
@@ -184,7 +183,7 @@ function AppInnerContent() {
   const { sectionCount, wordCount, charCount } = useAppKpis(song);
 
   // ── Derived state ─────────────────────────────────────────────────────────
-  const { hasRealLyricContent, hasExistingWork, topWebCandidate, webBadgeLabel } = useDerivedAppState({
+  const { hasRealLyricContent, hasExistingWork, webBadgeLabel } = useDerivedAppState({
     song,
     structure,
     rhymeScheme,

@@ -14,6 +14,7 @@ export { useSongMeta } from './useSongMeta';
 export { useSessionState } from './useSessionState';
 
 export function useAppState() {
+  // useUIState is the internal base hook for UI-only state; external consumers should continue to use useAppState().
   const ui = useUIState();
   const meta = useSongMeta();
   const session = useSessionState();

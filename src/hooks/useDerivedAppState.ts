@@ -35,23 +35,17 @@ export function useDerivedAppState({
     [hasRealLyricContent, song, structure, rhymeScheme, topic, mood, isMarkupMode, markupText]
   );
 
-  const topWebCandidate = useMemo(
-    () => webSimilarityIndex.candidates[0],
-    [webSimilarityIndex.candidates]
-  );
-
   const webBadgeLabel = useMemo(
     () => webSimilarityIndex.status === 'done'
-      && topWebCandidate?.score !== undefined
-      ? `${topWebCandidate.score}%`
+      && webSimilarityIndex.candidates[0]?.score !== undefined
+      ? `${webSimilarityIndex.candidates[0].score}%`
       : null,
-    [webSimilarityIndex.status, topWebCandidate]
+    [webSimilarityIndex.candidates, webSimilarityIndex.status]
   );
 
   return {
     hasRealLyricContent,
     hasExistingWork,
-    topWebCandidate,
     webBadgeLabel,
   };
 }
