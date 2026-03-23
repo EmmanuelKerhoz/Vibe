@@ -25,6 +25,9 @@ const mockAppState = vi.hoisted(() => ({
   useLibraryActionsSpy: vi.fn(),
   useAppHandlersSpy: vi.fn(),
   useSongAnalysisSpy: vi.fn(),
+  topRibbonPropsSpy: vi.fn(),
+  statusBarPropsSpy: vi.fn(),
+  mobileBottomNavPropsSpy: vi.fn(),
   noop: vi.fn(),
   asyncNoop: vi.fn(async () => {}),
 }));
@@ -390,8 +393,9 @@ vi.mock('./components/app/LeftSettingsPanel', () => ({
 }));
 
 vi.mock('./components/app/TopRibbon', () => ({
-  TopRibbon: ({ setActiveTab }: { setActiveTab: (value: 'lyrics' | 'musical') => void }) => (
-    <button type="button" onClick={() => setActiveTab('musical')}>
+  TopRibbon: (props: { setActiveTab: (value: 'lyrics' | 'musical') => void }) => (
+    mockAppState.topRibbonPropsSpy(props),
+    <button type="button" onClick={() => props.setActiveTab('musical')}>
       Switch to musical
     </button>
   ),
@@ -402,7 +406,10 @@ vi.mock('./components/app/StructureSidebar', () => ({
 }));
 
 vi.mock('./components/app/StatusBar', () => ({
-  StatusBar: () => <div data-testid="status-bar" />,
+  StatusBar: (props: unknown) => {
+    mockAppState.statusBarPropsSpy(props);
+    return <div data-testid="status-bar" />;
+  },
 }));
 
 vi.mock('./components/app/InsightsBar', () => ({
@@ -423,7 +430,10 @@ vi.mock('./components/app/AppModals', () => ({
 }));
 
 vi.mock('./components/app/MobileBottomNav', () => ({
-  MobileBottomNav: () => <div data-testid="mobile-bottom-nav" />,
+  MobileBottomNav: (props: unknown) => {
+    mockAppState.mobileBottomNavPropsSpy(props);
+    return <div data-testid="mobile-bottom-nav" />;
+  },
 }));
 
 vi.mock('./components/app/musical/MusicalTab', () => ({
@@ -463,6 +473,9 @@ describe('App markup mode reset', () => {
     mockAppState.useLibraryActionsSpy.mockClear();
     mockAppState.useAppHandlersSpy.mockClear();
     mockAppState.useSongAnalysisSpy.mockClear();
+    mockAppState.topRibbonPropsSpy.mockClear();
+    mockAppState.statusBarPropsSpy.mockClear();
+    mockAppState.mobileBottomNavPropsSpy.mockClear();
   });
 
   it('keeps markup mode while the lyrics tab remains active and resets it after switching tabs', async () => {
@@ -576,6 +589,62 @@ describe('App markup mode reset', () => {
     expect(appModalsProps).not.toHaveProperty('setConfirmModal');
     expect(appModalsProps).not.toHaveProperty('apiErrorModal');
     expect(appModalsProps).not.toHaveProperty('setApiErrorModal');
+  });
+
+  it('reuses shared stable modal-open handlers across AppInnerContent child props', async () => {
+    mockAppState.initialIsMobile = true;
+
+    render(<App />);
+
+    const initialTopRibbonProps = mockAppState.topRibbonPropsSpy.mock.calls.at(-1)?.[0] as {
+      onImportClick: () => void;
+      onExportClick: () => void;
+      onOpenSettingsClick: () => void;
+      onOpenAboutClick: () => void;
+      onOpenKeyboardShortcutsClick: () => void;
+      onPasteLyrics: () => void;
+    };
+    const initialStatusBarProps = mockAppState.statusBarPropsSpy.mock.calls.at(-1)?.[0] as {
+      onOpenAbout: () => void;
+      onOpenSettings: () => void;
+    };
+    const initialMobileBottomNavProps = mockAppState.mobileBottomNavPropsSpy.mock.calls.at(-1)?.[0] as {
+      onOpenSettings: () => void;
+    };
+
+    expect(initialTopRibbonProps.onOpenAboutClick).toBe(initialStatusBarProps.onOpenAbout);
+    expect(initialTopRibbonProps.onOpenSettingsClick).toBe(initialStatusBarProps.onOpenSettings);
+    expect(initialTopRibbonProps.onOpenSettingsClick).toBe(initialMobileBottomNavProps.onOpenSettings);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to musical' }));
+
+    await waitFor(() => {
+      const rerenderedTopRibbonProps = mockAppState.topRibbonPropsSpy.mock.calls.at(-1)?.[0] as {
+        onImportClick: () => void;
+        onExportClick: () => void;
+        onOpenSettingsClick: () => void;
+        onOpenAboutClick: () => void;
+        onOpenKeyboardShortcutsClick: () => void;
+        onPasteLyrics: () => void;
+      };
+      const rerenderedStatusBarProps = mockAppState.statusBarPropsSpy.mock.calls.at(-1)?.[0] as {
+        onOpenAbout: () => void;
+        onOpenSettings: () => void;
+      };
+      const rerenderedMobileBottomNavProps = mockAppState.mobileBottomNavPropsSpy.mock.calls.at(-1)?.[0] as {
+        onOpenSettings: () => void;
+      };
+
+      expect(rerenderedTopRibbonProps.onImportClick).toBe(initialTopRibbonProps.onImportClick);
+      expect(rerenderedTopRibbonProps.onExportClick).toBe(initialTopRibbonProps.onExportClick);
+      expect(rerenderedTopRibbonProps.onOpenSettingsClick).toBe(initialTopRibbonProps.onOpenSettingsClick);
+      expect(rerenderedTopRibbonProps.onOpenAboutClick).toBe(initialTopRibbonProps.onOpenAboutClick);
+      expect(rerenderedTopRibbonProps.onOpenKeyboardShortcutsClick).toBe(initialTopRibbonProps.onOpenKeyboardShortcutsClick);
+      expect(rerenderedTopRibbonProps.onPasteLyrics).toBe(initialTopRibbonProps.onPasteLyrics);
+      expect(rerenderedStatusBarProps.onOpenAbout).toBe(initialStatusBarProps.onOpenAbout);
+      expect(rerenderedStatusBarProps.onOpenSettings).toBe(initialStatusBarProps.onOpenSettings);
+      expect(rerenderedMobileBottomNavProps.onOpenSettings).toBe(initialMobileBottomNavProps.onOpenSettings);
+    });
   });
 
   it('forwards the live generating ref object into useSongAnalysis', () => {
