@@ -77,6 +77,15 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
+            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/gh\/jdecked\/twemoji\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'twemoji-cache',
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
             urlPattern: /^https:\/\/generativelanguage\.googleapis\.com\/.*/i,
             handler: 'NetworkOnly'
           },
