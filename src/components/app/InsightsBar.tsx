@@ -12,11 +12,15 @@ import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useAppKpis } from '../../hooks/useAppKpis';
 
 interface InsightsBarProps {
-  sectionCount: number;
-  wordCount: number;
-  charCount: number;
+  /** @deprecated — KPIs are now sourced internally via useAppKpis(). Kept for test rétrocompat. */
+  sectionCount?: number;
+  /** @deprecated — KPIs are now sourced internally via useAppKpis(). Kept for test rétrocompat. */
+  wordCount?: number;
+  /** @deprecated — KPIs are now sourced internally via useAppKpis(). Kept for test rétrocompat. */
+  charCount?: number;
   targetLanguage: string;
   setTargetLanguage: (lang: string) => void;
   isAdaptingLanguage: boolean;
@@ -206,9 +210,6 @@ function AdaptationProgressBanner({
 // ---------------------------------------------------------------------------
 
 export function InsightsBar({
-  sectionCount,
-  wordCount,
-  charCount,
   targetLanguage,
   setTargetLanguage,
   isAdaptingLanguage,
@@ -232,6 +233,7 @@ export function InsightsBar({
 }: InsightsBarProps) {
   const { song, songLanguage } = useSongContext();
   const { isGenerating } = useComposerContext();
+  const { sectionCount, wordCount, charCount } = useAppKpis();
   const { t } = useTranslation();
   const [bannerDismissed, setBannerDismissed] = React.useState(false);
 
