@@ -3,12 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Section } from '../../types';
 import { useMarkupEditor } from '../useMarkupEditor';
 
-const defaultSong: Section[] = [];
-const defaultSongLanguage = 'en';
-
 const mockSongContextValues = vi.hoisted(() => ({
-  song: defaultSong as Section[],
-  songLanguage: defaultSongLanguage,
+  song: [] as Section[],
+  songLanguage: 'en',
 }));
 
 vi.mock('../../contexts/SongContext', () => ({
@@ -106,7 +103,7 @@ describe('useMarkupEditor', () => {
     const { result } = renderHook(() => useMarkupEditor({
       ...baseParams(),
       isMarkupMode: true,
-      markupText: '【Verse】\nNeon lights',
+      markupText: '\u3010Verse\u3011\nNeon lights',
       updateSongAndStructureWithHistory,
     }));
 
