@@ -37,7 +37,6 @@ import { useImportHandlers } from '../useImportHandlers';
 import { useLibraryActions } from '../useLibraryActions';
 import { useSectionManager } from '../useSectionManager';
 import { useDragHandlers } from '../useDragHandlers';
-import { useModalHandlers } from '../useModalHandlers';
 import { makeSongUpdater } from '../hookUtils';
 
 /* ------------------------------------------------------------------ */
@@ -115,7 +114,6 @@ describe('Hook import smoke-tests', () => {
       ['useLibraryActions', useLibraryActions],
       ['useSectionManager', useSectionManager],
       ['useDragHandlers', useDragHandlers],
-      ['useModalHandlers', useModalHandlers],
       ['makeSongUpdater', makeSongUpdater],
     ])('%s is a function', (_name, hook) => {
       expect(typeof hook).toBe('function');
