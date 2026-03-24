@@ -5,10 +5,9 @@ import { BRACKET_TOKEN_REGEX, isPureMetaLine, isSectionHeader, isEmptyBracketLin
 import { generateId } from '../utils/idUtils';
 import { countSyllables } from '../utils/syllableUtils';
 import { languageNameToCode } from '../constants/langFamilyMap';
+import { useSongContext } from '../contexts/SongContext';
 
 interface UseMarkupEditorParams {
-  song: Section[];
-  songLanguage: string;
   isMarkupMode: boolean;
   markupText: string;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -52,8 +51,9 @@ const tokenizeLine = (rawLine: string): string[] => {
 };
 
 export function useMarkupEditor(params: UseMarkupEditorParams) {
+  const { song, songLanguage } = useSongContext();
   const {
-    song, songLanguage, isMarkupMode, markupText, markupTextareaRef,
+    isMarkupMode, markupText, markupTextareaRef,
     setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   } = params;
   const normalizedSongLanguage = (languageNameToCode(songLanguage) ?? songLanguage).trim().toLowerCase();
@@ -148,7 +148,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         return {
           id: sectionId,
           name,
-          // Use ?? to preserve intentionally empty/zero values from the existing section
           rhymeScheme: existingSection?.rhymeScheme ?? 'AABB',
           targetSyllables: existingSection?.targetSyllables ?? 8,
           mood: existingSection?.mood ?? '',

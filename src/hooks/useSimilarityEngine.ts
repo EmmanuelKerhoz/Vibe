@@ -5,15 +5,15 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Section } from '../types';
 import type { WebSimilarityIndex } from '../types/webSimilarity';
 import { DEFAULT_TITLE } from '../constants/editor';
 import { runSearchTree } from '../utils/webSimilaritySearch';
+import { useSongContext } from '../contexts/SongContext';
 
 const DEBOUNCE_MS = 30_000;        // 30s after last keystroke
 const DELTA_THRESHOLD = 0.20;     // retrigger if text changed by >20%
 
-const textFingerprint = (title: string, sections: Section[]): string =>
+const textFingerprint = (title: string, sections: import('../types').Section[]): string =>
   [title.trim(), ...sections.flatMap(s => s.lines.map(l => l.text))].join('\n');
 
 /**
@@ -27,7 +27,6 @@ const changeDelta = (prev: string, next: string): number => {
   const nextChars = [...next];
   const maxLen = Math.max(prevChars.length, nextChars.length);
   if (maxLen === 0) return 0;
-  // Early-exit: if the length difference alone exceeds threshold, skip full scan.
   if (Math.abs(prevChars.length - nextChars.length) / maxLen > DELTA_THRESHOLD) {
     return Math.abs(prevChars.length - nextChars.length) / maxLen;
   }
@@ -45,14 +44,15 @@ const INITIAL_INDEX: WebSimilarityIndex = {
   error: null,
 };
 
-export const useSimilarityEngine = (sections: Section[], title = '', songLanguage = '') => {
+export const useSimilarityEngine = () => {
+  const { song: sections, title = '', songLanguage = '' } = useSongContext();
   const [index, setIndex] = useState<WebSimilarityIndex>(INITIAL_INDEX);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const lastFingerprintRef = useRef<string>('');
   const effectiveTitle = title.trim() === DEFAULT_TITLE ? '' : title;
 
-  const runSearch = useCallback(async (currentSections: Section[], currentTitle: string, currentSongLanguage: string) => {
+  const runSearch = useCallback(async (currentSections: import('../types').Section[], currentTitle: string, currentSongLanguage: string) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -88,12 +88,6 @@ export const useSimilarityEngine = (sections: Section[], title = '', songLanguag
     setIndex(INITIAL_INDEX);
   }, []);
 
-  /**
-   * FIX: textFingerprint était calculé directement dans le corps du useEffect,
-   * donc exécuté à chaque render du composant parent même si sections/title
-   * n'avaient pas changé référentiellement.
-   * useMemo garantit que le calcul (flatMap + join) n'a lieu que sur vrais changements.
-   */
   const fingerprint = useMemo(
     () => textFingerprint(effectiveTitle, sections),
     [effectiveTitle, sections]
