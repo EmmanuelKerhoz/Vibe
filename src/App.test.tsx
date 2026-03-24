@@ -318,6 +318,7 @@ vi.mock('./hooks/useMarkupEditor', () => ({
   useMarkupEditor: () => ({
     scrollToSection: mockAppState.noop,
     handleMarkupToggle: mockAppState.noop,
+    markupDirection: 'ltr' as const,
   }),
 }));
 
