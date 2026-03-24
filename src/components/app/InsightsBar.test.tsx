@@ -51,7 +51,7 @@ vi.mock('../../hooks/useAppKpis', () => ({
 }));
 
 describe('InsightsBar', () => {
-  it('renders adaptation and language tools', () => {
+  it('renders single-row layout with detect, adaptation, markup, analyze, and similarity buttons', () => {
     const webSimilarityIndex: WebSimilarityIndex = {
       candidates: [],
       status: 'idle',
@@ -80,10 +80,18 @@ describe('InsightsBar', () => {
       </LanguageProvider>,
     );
 
-    // Detect button is present (language detect + adaptation area)
     const tooltips = screen.getAllByTestId('tooltip');
-    expect(tooltips.length).toBeGreaterThan(0);
-    // First tooltip should be the detect button
+    // Verify all expected tooltips: Detect, Adaptation, Markup, Analyze, Similarity
+    expect(tooltips.length).toBe(5);
+    // First tooltip should be the detect button (before language dropdown)
     expect(tooltips[0]!.getAttribute('data-title')).toContain('Detected');
+    // Second should be adaptation
+    expect(tooltips[1]!.getAttribute('data-title')).toContain('adapt');
+    // Third should be markup toggle
+    expect(tooltips[2]!.getAttribute('data-title')).toContain('Mode');
+    // Fourth should be analyze
+    expect(tooltips[3]!.getAttribute('data-title')).toContain('Analyze');
+    // Fifth should be similarity
+    expect(tooltips[4]!.getAttribute('data-title')).toContain('Compare');
   });
 });
