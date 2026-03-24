@@ -65,7 +65,6 @@ function buildRenderItems(lines: Section['lines']): RenderItem[] {
   let i = 0;
   while (i < lines.length) {
     const line = lines[i]!;
-    // Recompute isMeta defensively if flag is absent/undefined
     const isMeta = line.isMeta ?? isPureMetaLine(line.text);
     if (isMeta) {
       const group: Section['lines'] = [line];
@@ -83,6 +82,23 @@ function buildRenderItems(lines: Section['lines']): RenderItem[] {
   }
   return items;
 }
+
+// ---------------------------------------------------------------------------
+// Static language options — built once at module level so EmojiSign instances
+// are never remounted due to a new options array reference on each render.
+// ---------------------------------------------------------------------------
+
+const SECTION_LANGUAGE_OPTIONS = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
+  value: lang.aiName,
+  label: (
+    <span className="flex items-center gap-1.5 min-w-0 w-full">
+      <EmojiSign sign={lang.sign} />
+      <span className="truncate text-[11px]">
+        {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}
+      </span>
+    </span>
+  ) as React.ReactNode,
+}));
 
 export const SectionEditor = React.memo(function SectionEditor({
   section, sectionIndex, songLength, rhymeScheme,
@@ -128,18 +144,6 @@ export const SectionEditor = React.memo(function SectionEditor({
       : []),
   ];
 
-  const languageOptions = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
-    value: lang.aiName,
-    label: (
-      <span className="flex items-center gap-1.5 min-w-0 w-full">
-        <EmojiSign sign={lang.sign} />
-        <span className="truncate text-[11px]">
-          {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}
-        </span>
-      </span>
-    ) as React.ReactNode,
-  }));
-
   return (
     <section
       id={`section-${section.id}`}
@@ -150,7 +154,6 @@ export const SectionEditor = React.memo(function SectionEditor({
       className={`lcars-band w-full ${draggedItemIndex === sectionIndex ? 'opacity-50' : ''} ${isSectionDropTarget ? 'ring-2 ring-[var(--accent-color)]/60 ring-offset-2 ring-offset-transparent' : ''}`}
       style={{ overflow: 'visible' }}
     >
-      {/* LCARS stripe — asymmetric design: TL rounded, TR/BR/BL square */}
       <div
         className={`lcars-band-stripe ${getSectionDotColor(sectionName)}`}
         style={{ flexShrink: 0 }}
@@ -216,7 +219,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                   <LcarsSelect
                     value={sectionTargetLanguage}
                     onChange={(v) => onSectionTargetLanguageChange?.(section.id, v)}
-                    options={languageOptions}
+                    options={SECTION_LANGUAGE_OPTIONS}
                     accentColor="var(--lcars-cyan)"
                   />
                 </div>
