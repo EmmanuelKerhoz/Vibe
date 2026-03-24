@@ -7,7 +7,7 @@ import { tPlural } from '../../i18n/plurals';
 import { APP_VERSION_LABEL } from '../../version';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
-import { useAppKpis } from '../../hooks/useAppKpis';
+import { useAppKpisFromContext } from '../../hooks/useAppKpis';
 
 interface Props {
   isAnalyzing: boolean;
@@ -28,7 +28,7 @@ export function StatusBar({
 }: Props) {
   const { song } = useSongContext();
   const { isGenerating, isSuggesting } = useComposerContext();
-  const { wordCount, charCount } = useAppKpis();
+  const { wordCount, charCount } = useAppKpisFromContext();
   const { t, language } = useTranslation();
 
   const isBusy = isGenerating || isAnalyzing || isSuggesting;

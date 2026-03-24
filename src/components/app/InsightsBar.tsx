@@ -12,14 +12,14 @@ import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
-import { useAppKpis } from '../../hooks/useAppKpis';
+import { useAppKpisFromContext } from '../../hooks/useAppKpis';
 
 interface InsightsBarProps {
-  /** @deprecated — KPIs are now sourced internally via useAppKpis(). Kept for test rétrocompat. */
+  /** @deprecated KPIs sourced internally via useAppKpisFromContext — kept for test rétrocompat only */
   sectionCount?: number;
-  /** @deprecated — KPIs are now sourced internally via useAppKpis(). Kept for test rétrocompat. */
+  /** @deprecated KPIs sourced internally via useAppKpisFromContext — kept for test rétrocompat only */
   wordCount?: number;
-  /** @deprecated — KPIs are now sourced internally via useAppKpis(). Kept for test rétrocompat. */
+  /** @deprecated KPIs sourced internally via useAppKpisFromContext — kept for test rétrocompat only */
   charCount?: number;
   targetLanguage: string;
   setTargetLanguage: (lang: string) => void;
@@ -87,7 +87,6 @@ function AdaptationProgressBanner({
           : 'bg-white/3 border-white/10'
       }`}
     >
-      {/* Header: label + dismiss */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 font-semibold tracking-wider uppercase text-zinc-300">
           {isFailed
@@ -110,21 +109,19 @@ function AdaptationProgressBanner({
         )}
       </div>
 
-      {/* Stepper */}
       <div className="flex items-center gap-1">
         {ORDERED_STEP_IDS.map((stepId, idx) => {
-          const activeIdx  = ORDERED_STEP_IDS.indexOf(
+          const activeIdx = ORDERED_STEP_IDS.indexOf(
             isFailed ? 'reviewing' : (progress.active as typeof ORDERED_STEP_IDS[number]) === 'done'
               ? 'done'
               : progress.active as typeof ORDERED_STEP_IDS[number]
           );
-          const stepDone    = isDone || idx < activeIdx;
-          const stepActive  = !isDone && !isFailed && idx === activeIdx;
-          const stepPending = !stepDone && !stepActive;
+          const stepDone   = isDone || idx < activeIdx;
+          const stepActive = !isDone && !isFailed && idx === activeIdx;
 
-          const stepLabel = ORDERED_STEP_IDS[idx] === 'adapting'  ? 'Adapting'
-                          : ORDERED_STEP_IDS[idx] === 'reversing' ? 'Reverse'
-                          : ORDERED_STEP_IDS[idx] === 'reviewing' ? 'Review'
+          const stepLabel = stepId === 'adapting'  ? 'Adapting'
+                          : stepId === 'reversing' ? 'Reverse'
+                          : stepId === 'reviewing' ? 'Review'
                           : 'Done';
 
           return (
@@ -132,20 +129,16 @@ function AdaptationProgressBanner({
               <div className="flex items-center gap-1">
                 <span
                   className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    stepDone
-                      ? 'bg-emerald-400'
-                      : stepActive
-                      ? 'bg-[var(--accent-color)] animate-pulse'
-                      : 'bg-white/15'
+                    stepDone   ? 'bg-emerald-400'
+                    : stepActive ? 'bg-[var(--accent-color)] animate-pulse'
+                    : 'bg-white/15'
                   }`}
                 />
                 <span
                   className={`whitespace-nowrap ${
-                    stepDone
-                      ? 'text-emerald-400'
-                      : stepActive
-                      ? 'text-[var(--accent-color)] font-semibold'
-                      : 'text-zinc-600'
+                    stepDone   ? 'text-emerald-400'
+                    : stepActive ? 'text-[var(--accent-color)] font-semibold'
+                    : 'text-zinc-600'
                   }`}
                 >
                   {stepLabel}
@@ -159,7 +152,6 @@ function AdaptationProgressBanner({
         })}
       </div>
 
-      {/* Result: score + warnings */}
       {isDone && result && (
         <div className="flex flex-col gap-1 mt-0.5">
           <div className="flex items-center gap-2">
@@ -233,7 +225,7 @@ export function InsightsBar({
 }: InsightsBarProps) {
   const { song, songLanguage } = useSongContext();
   const { isGenerating } = useComposerContext();
-  const { sectionCount, wordCount, charCount } = useAppKpis();
+  const { sectionCount, wordCount, charCount } = useAppKpisFromContext();
   const { t } = useTranslation();
   const [bannerDismissed, setBannerDismissed] = React.useState(false);
 
@@ -255,7 +247,6 @@ export function InsightsBar({
 
   return (
     <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10" style={{ position: 'relative', overflow: 'visible' }}>
-      {/* LCARS gradient separator */}
       <div style={{
         position: 'absolute',
         bottom: -1, left: 0, right: 0,
@@ -267,7 +258,6 @@ export function InsightsBar({
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 
-        {/* Row 1: Language tools */}
         <div className="flex items-center gap-2 overflow-hidden min-w-0">
           <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
             <BarChart2 className="w-3.5 h-3.5" />
@@ -337,23 +327,20 @@ export function InsightsBar({
           />
         )}
 
-        {/* Row 2: Section chips + action buttons */}
         <div className="flex items-center gap-2 w-full min-w-0">
           <div className="flex items-center gap-2 overflow-x-auto overflow-y-visible pb-1 custom-scrollbar min-w-0 flex-1" style={{ scrollbarWidth: 'none' }}>
-            {song.map((section) => {
-              return (
-                <Tooltip key={section.id} title={getSectionTooltipText(section.name)}>
-                  <button
-                    onClick={() => scrollToSection(section)}
-                    className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-white/20 transition-all lcars-section-chip glass-button"
-                    style={{ color: getSectionColorHex(section.name) }}
-                  >
-                    <div className={`w-1.5 h-1.5 rounded-full ${getSectionDotColor(section.name)}`} />
-                    {section.name}
-                  </button>
-                </Tooltip>
-              );
-            })}
+            {song.map((section) => (
+              <Tooltip key={section.id} title={getSectionTooltipText(section.name)}>
+                <button
+                  onClick={() => scrollToSection(section)}
+                  className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-white/20 transition-all lcars-section-chip glass-button"
+                  style={{ color: getSectionColorHex(section.name) }}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${getSectionDotColor(section.name)}`} />
+                  {section.name}
+                </button>
+              </Tooltip>
+            ))}
           </div>
 
           <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
