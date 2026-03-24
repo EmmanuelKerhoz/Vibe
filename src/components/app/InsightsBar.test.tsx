@@ -84,7 +84,7 @@ describe('InsightsBar section chip tooltips', () => {
 
     const introChip = screen.getByRole('button', { name: 'Intro' });
     expect(introChip.parentElement?.getAttribute('data-title')).toBe(
-      "Ouvre le morceau et pose l\u2019atmosph\u00e8re.\nRep\u00e8re\u00a0: presque toujours au d\u00e9but, souvent courte.",
+      "Ouvre le morceau et pose l\u2019atmosph\u00e8re.\nRep\u00e8re : presque toujours au d\u00e9but, souvent courte.",
     );
   });
 });
