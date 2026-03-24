@@ -1,109 +1,83 @@
 import React from 'react';
-import { Info, Moon, Settings, Sun } from '../ui/icons';
+import { Moon, Sun, Volume2, VolumeX, Info, Settings } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
-import { StorageGauge } from '../ui/StorageGauge';
 import { useTranslation } from '../../i18n';
-import { tPlural } from '../../i18n/plurals';
-import { APP_VERSION_LABEL } from '../../version';
-import { useSongContext } from '../../contexts/SongContext';
-import { useComposerContext } from '../../contexts/ComposerContext';
+import { useAppKpis } from '../../hooks/useAppKpis';
 
-interface Props {
-  wordCount: number;
-  charCount: number;
+interface StatusBarProps {
+  className?: string;
   isAnalyzing: boolean;
-  theme: 'light' | 'dark';
-  setTheme: (v: 'light' | 'dark') => void;
+  theme: string;
+  setTheme: (theme: string) => void;
   audioFeedback: boolean;
   setAudioFeedback: (v: boolean) => void;
   onOpenAbout: () => void;
   onOpenSettings: () => void;
-  /** Extra class applied to the root element (e.g. for mobile hide/show). */
-  className?: string;
 }
 
 export function StatusBar({
-  wordCount, charCount, isAnalyzing,
-  theme, setTheme, audioFeedback, setAudioFeedback,
-  onOpenAbout, onOpenSettings, className,
-}: Props) {
-  const { song } = useSongContext();
-  const { isGenerating, isSuggesting } = useComposerContext();
-  const { t, language } = useTranslation();
-
-  const isBusy = isGenerating || isAnalyzing || isSuggesting;
-  const statusLabel = isGenerating ? t.statusBar.generating
-    : isAnalyzing ? t.statusBar.analyzing
-    : isSuggesting ? t.statusBar.suggesting
-    : t.statusBar.ready;
-
-  const statusBarDict = t.statusBar as Record<string, string | undefined>;
+  className,
+  isAnalyzing,
+  theme,
+  setTheme,
+  audioFeedback,
+  setAudioFeedback,
+  onOpenAbout,
+  onOpenSettings,
+}: StatusBarProps) {
+  const { wordCount, charCount } = useAppKpis();
+  const { t } = useTranslation();
 
   return (
-    <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
-      {/* Left: system status + storage gauge + KPIs (desktop only) */}
-      <div className="flex items-center gap-2 lg:gap-4">
-        <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isBusy ? 'bg-[var(--accent-warning)] animate-pulse' : 'bg-[var(--accent-color)] lcars-pulse'}`} />
-          <span className="telemetry-text uppercase tracking-wider text-zinc-900 dark:text-zinc-300">
-            {statusLabel}
-          </span>
-          {isBusy && <span className="lcars-cursor-blink text-[var(--accent-warning)]" />}
-        </div>
-        <div className="lcars-divider" />
-        <StorageGauge />
-        <div className="lcars-divider hidden lg:block" />
-        {/* KPIs — desktop only (hidden on mobile, shown in InsightsBar) */}
-        <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
-          {song.length}{' '}
-          <span className="text-zinc-400 dark:text-zinc-600 uppercase">
-            {tPlural(statusBarDict, 'sections', song.length, language)}
-          </span>
+    <div className={`flex items-center justify-between px-4 py-1.5 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] text-[10px] text-zinc-500 shrink-0 ${className ?? ''}`}>
+      <div className="flex items-center gap-4">
+        <span className="tabular-nums">
+          {t.statusBar?.words ?? 'Words'}: <span className="text-zinc-300">{wordCount}</span>
         </span>
-        <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
-          {wordCount}{' '}
-          <span className="text-zinc-400 dark:text-zinc-600 uppercase">
-            {tPlural(statusBarDict, 'words', wordCount, language)}
-          </span>
+        <span className="tabular-nums">
+          {t.statusBar?.chars ?? 'Chars'}: <span className="text-zinc-300">{charCount}</span>
         </span>
-        <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
-          {charCount}{' '}
-          <span className="text-zinc-400 dark:text-zinc-600 uppercase">
-            {t.insights.characters}
+        {isAnalyzing && (
+          <span className="text-[var(--accent-color)] animate-pulse">
+            {t.statusBar?.analyzing ?? 'Analyzing…'}
           </span>
-        </span>
+        )}
       </div>
-
-      {/* Right: settings + theme + version */}
-      <div className="flex items-center gap-1">
-        <Tooltip title={t.statusBar.settings}>
-          <button
-            onClick={onOpenSettings}
-            aria-label={t.statusBar.settings}
-            className="lcars-meta-btn min-h-[44px] lg:min-h-0"
-          >
-            <Settings className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t.statusBar.settings}</span>
-          </button>
-        </Tooltip>
-        <Tooltip title={t.tooltips.theme}>
+      <div className="flex items-center gap-2">
+        <Tooltip title={t.tooltips?.toggleTheme ?? 'Toggle theme'}>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            aria-label={t.statusBar.theme}
-            className="lcars-meta-btn min-h-[44px] lg:min-h-0"
+            className="ux-interactive p-1 hover:text-zinc-300 transition-colors"
+            aria-label="Toggle theme"
           >
             {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{theme === 'dark' ? t.settings.theme.light : t.settings.theme.dark}</span>
           </button>
         </Tooltip>
-        <Tooltip title={t.tooltips.appInfo}>
+        <Tooltip title={t.tooltips?.toggleAudio ?? 'Toggle audio feedback'}>
+          <button
+            onClick={() => setAudioFeedback(!audioFeedback)}
+            className="ux-interactive p-1 hover:text-zinc-300 transition-colors"
+            aria-label="Toggle audio feedback"
+          >
+            {audioFeedback ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+          </button>
+        </Tooltip>
+        <Tooltip title={t.tooltips?.openSettings ?? 'Settings'}>
+          <button
+            onClick={onOpenSettings}
+            className="ux-interactive p-1 hover:text-zinc-300 transition-colors"
+            aria-label="Open settings"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
+        <Tooltip title={t.tooltips?.openAbout ?? 'About'}>
           <button
             onClick={onOpenAbout}
-            aria-label={t.settings.about.version}
-            className="lcars-meta-btn lcars-app-id min-h-[44px] lg:min-h-0"
+            className="ux-interactive p-1 hover:text-zinc-300 transition-colors"
+            aria-label="Open about"
           >
             <Info className="w-3.5 h-3.5" />
-            <span>{APP_VERSION_LABEL}</span>
           </button>
         </Tooltip>
       </div>

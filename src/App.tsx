@@ -6,7 +6,6 @@ import { useSongEditor } from './hooks/useSongEditor';
 import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
 import { useSimilarityEngine } from './hooks/useSimilarityEngine';
-import { useAppKpis } from './hooks/useAppKpis';
 import { useAppState } from './hooks/useAppState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
@@ -59,18 +58,19 @@ function ModalShortcutBindings({
 function AppInnerContent() {
   const { t } = useTranslation();
   const { language } = useLanguage();
-  const { song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
-    updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory, undo, redo,
+  const {
+    song, structure, updateState, updateSongAndStructureWithHistory,
+    replaceStateWithoutHistory, clearHistory, undo, redo,
     title, setTitle, titleOrigin, setTitleOrigin, topic, setTopic, mood, setMood,
     rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables, genre, setGenre, tempo, setTempo,
     instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative, musicalPrompt, setMusicalPrompt,
     newSectionName, setNewSectionName, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     songLanguage, setSongLanguage,
   } = useSongContext();
-  const { isGenerating, isRegeneratingSection,
-    selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
-    quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
-    handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
+  const {
+    isGenerating,
+    selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong,
+    generateSuggestions, applySuggestion, clearSelection,
   } = useComposerContext();
 
   const appState = useAppState();
@@ -78,20 +78,19 @@ function AppInnerContent() {
     theme, setTheme, activeTab, setActiveTab, isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
     audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
-     isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
-     isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
-     apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
-     isExportModalOpen, setIsExportModalOpen,
-     isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
-      isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
-      isResetModalOpen, setIsResetModalOpen, isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen,
-      confirmModal, setConfirmModal, promptModal, setPromptModal,
-      isPasteModalOpen, setIsPasteModalOpen, isAnalysisModalOpen, setIsAnalysisModalOpen,
+    isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
+    isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
+    apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
+    isExportModalOpen, setIsExportModalOpen,
+    isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
+    isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
+    isResetModalOpen, setIsResetModalOpen, isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen,
+    confirmModal, setConfirmModal, promptModal, setPromptModal,
+    isPasteModalOpen, setIsPasteModalOpen, isAnalysisModalOpen, setIsAnalysisModalOpen,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
   } = appState;
 
   // ── Mobile layout ─────────────────────────────────────────────────────────
-  // isMobile/isTablet not exposed by useAppState — direct call intentional
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
@@ -121,18 +120,21 @@ function AppInnerContent() {
   const isGeneratingRef = useRef(isGenerating);
   isGeneratingRef.current = isGenerating;
 
-  const { pastedText, setPastedText,
+  const {
+    pastedText, setPastedText,
     isAnalyzing, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, targetLanguage, setTargetLanguage,
     isAdaptingLanguage, isDetectingLanguage, adaptationProgress, adaptationResult,
     sectionTargetLanguages, setSectionTargetLanguages,
     toggleAnalysisItemSelection, applySelectedAnalysisItems,
     analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
-  } = useSongAnalysis({ uiLanguage: language,
+  } = useSongAnalysis({
+    uiLanguage: language,
     isGeneratingRef,
     saveVersion,
     updateState, updateSongAndStructureWithHistory,
-    clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
+    clearLineSelection: () => clearSelection(),
+    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
     setIsPasteModalOpen, setIsAnalysisModalOpen,
   });
 
@@ -153,10 +155,12 @@ function AppInnerContent() {
     }
   }, [activeTab, isMarkupMode, setIsMarkupMode]);
 
-  const { removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
+  const {
+    removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
     handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
   } = useSongEditor({
-    openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); }, playAudioFeedback,
+    openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); },
+    playAudioFeedback,
   });
 
   const { generateTitle, isGeneratingTitle } = useTitleGenerator();
@@ -167,79 +171,44 @@ function AppInnerContent() {
     if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }
   }, [handleSurprise, setTopic, setMood]);
 
-  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title, songLanguage);
-
-  const { sectionCount, wordCount, charCount } = useAppKpis(song);
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } =
+    useSimilarityEngine(song, title, songLanguage);
 
   // ── Derived state ─────────────────────────────────────────────────────────
   const { hasRealLyricContent, hasExistingWork, webBadgeLabel } = useDerivedAppState({
-    song,
-    structure,
-    rhymeScheme,
-    topic,
-    mood,
-    isMarkupMode,
-    markupText,
-    webSimilarityIndex,
+    song, structure, rhymeScheme, topic, mood, isMarkupMode, markupText, webSimilarityIndex,
   });
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const { handleApiKeyHelp, handleTitleChange, handleGenerateTitle, handleGlobalRegenerate,
-    handleScrollToSection, handleOpenNewGeneration } = useAppHandlers({
-    t,
-    hasRealLyricContent,
-    isMobileOrTablet,
-    setApiErrorModal,
-    setConfirmModal,
-    setActiveTab,
-    setIsLeftPanelOpen,
-    setIsStructureOpen,
-    generateTitle,
-    generateSong,
-    scrollToSection,
+  const {
+    handleApiKeyHelp, handleTitleChange, handleGenerateTitle, handleGlobalRegenerate,
+    handleScrollToSection, handleOpenNewGeneration,
+  } = useAppHandlers({
+    t, hasRealLyricContent, isMobileOrTablet,
+    setApiErrorModal, setConfirmModal, setActiveTab, setIsLeftPanelOpen, setIsStructureOpen,
+    generateTitle, generateSong, scrollToSection,
   });
 
   const { handleCreateEmptySong, resetSong } = useSessionActions({
-    song,
-    structure,
-    rhymeScheme,
-    appState,
-    replaceStateWithoutHistory,
-    clearHistory,
-    clearSelection,
-    resetWebSimilarityIndex,
-    resetSuggestionCycle,
-    updateSongAndStructureWithHistory,
-    setIsResetModalOpen,
+    song, structure, rhymeScheme, appState,
+    replaceStateWithoutHistory, clearHistory, clearSelection,
+    resetWebSimilarityIndex, resetSuggestionCycle,
+    updateSongAndStructureWithHistory, setIsResetModalOpen,
   });
   const {
-    handleSaveToLibrary,
-    handleLoadLibraryAsset,
-    handleDeleteLibraryAsset,
-    handlePurgeLibrary,
-    handleOpenSaveToLibraryModal,
+    handleSaveToLibrary, handleLoadLibraryAsset, handleDeleteLibraryAsset,
+    handlePurgeLibrary, handleOpenSaveToLibraryModal,
   } = useLibraryActions({
-    song,
-    replaceStateWithoutHistory,
-    clearHistory,
-    setSimilarityMatches,
-    setLibraryCount,
-    setLibraryAssets,
-    setIsSavingToLibrary,
-    setIsSaveToLibraryModalOpen,
+    song, replaceStateWithoutHistory, clearHistory,
+    setSimilarityMatches, setLibraryCount, setLibraryAssets,
+    setIsSavingToLibrary, setIsSaveToLibraryModalOpen,
   });
   const { handleImportInputChange, handleImportChooseFile } = useImportHandlers({
-    importInputRef,
-    loadFileForAnalysis,
-    setIsImportModalOpen,
-    setIsPasteModalOpen,
-    setPastedText,
-    setSongLanguage,
+    importInputRef, loadFileForAnalysis,
+    setIsImportModalOpen, setIsPasteModalOpen, setPastedText, setSongLanguage,
   });
 
   // ── ModalProvider injection ───────────────────────────────────────────────
-  // Construct UIStateBag directly from destructured appState values.
-  // NO cast, NO dynamic import — fully type-checked against UIStateBag.
   const uiStateForProvider = useUIStateForProvider({
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
@@ -307,14 +276,14 @@ function AppInnerContent() {
             isMobileOverlay={isMobileOrTablet}
             title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
             onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-             topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-             rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-             targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-             isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-             onSurprise={handleSurpriseClick} isSurprising={isSurprising}
-             isSessionHydrated={isSessionHydrated}
-             onGenerateSong={handleGenerateSongFromLeftPanel}
-           />
+            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+            onSurprise={handleSurpriseClick} isSurprising={isSurprising}
+            isSessionHydrated={isSessionHydrated}
+            onGenerateSong={handleGenerateSongFromLeftPanel}
+          />
 
           <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
@@ -336,7 +305,6 @@ function AppInnerContent() {
             />
             {activeTab === 'lyrics' && song.length > 0 && (
               <InsightsBar
-                sectionCount={sectionCount} wordCount={wordCount} charCount={charCount}
                 targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
                 isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
                 isAnalyzing={isAnalyzing}
@@ -354,24 +322,22 @@ function AppInnerContent() {
                 <div className="lyrics-editor-zoom">
                   {activeTab === 'lyrics' ? (
                     <LyricsView
-                       isAnalyzing={isAnalyzing}
-                       isAdaptingLanguage={isAdaptingLanguage}
-                       sectionTargetLanguages={sectionTargetLanguages}
-                       onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
-                       adaptSectionLanguage={adaptSectionLanguage}
-                       playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
-                       handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
-                       isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
-                       markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
-                       markupDirection={markupDirection}
-                       onOpenLibrary={handleOpenSaveToLibraryModal}
-                       onPasteLyrics={handlePasteLyricsFromView}
-                       onGenerateSong={handleGlobalRegenerate}
-                     />
-                  ) : (
-                    <MusicalTab
-                      hasApiKey={hasApiKey}
+                      isAnalyzing={isAnalyzing}
+                      isAdaptingLanguage={isAdaptingLanguage}
+                      sectionTargetLanguages={sectionTargetLanguages}
+                      onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
+                      adaptSectionLanguage={adaptSectionLanguage}
+                      playAudioFeedback={playAudioFeedback} handleDrop={handleDrop}
+                      handleLineDragStart={handleLineDragStart} handleLineDrop={handleLineDrop}
+                      isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
+                      markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
+                      markupDirection={markupDirection}
+                      onOpenLibrary={handleOpenSaveToLibraryModal}
+                      onPasteLyrics={handlePasteLyricsFromView}
+                      onGenerateSong={handleGlobalRegenerate}
                     />
+                  ) : (
+                    <MusicalTab hasApiKey={hasApiKey} />
                   )}
                 </div>
               </div>
@@ -391,7 +357,7 @@ function AppInnerContent() {
 
         <StatusBar
           className="lcars-status-bar-desktop"
-          wordCount={wordCount} charCount={charCount} isAnalyzing={isAnalyzing}
+          isAnalyzing={isAnalyzing}
           theme={theme} setTheme={setTheme}
           audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
           onOpenAbout={handleOpenAbout}
