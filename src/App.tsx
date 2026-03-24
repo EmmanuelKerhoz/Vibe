@@ -261,7 +261,9 @@ function AppInnerContent() {
       setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang })),
     [setSectionTargetLanguages]
   );
-  const handlePasteLyricsFromView = useCallback(() => setIsPasteModalOpen(true), [setIsPasteModalOpen]);
+  // Paste handler — point d'entrée unique pour ouvrir la modale de collage
+  // (utilisé depuis LyricsView, TopRibbon et AppModals via handleOpenPasteLyricsFromModals)
+  const handleOpenPasteModal = useCallback(() => setIsPasteModalOpen(true), [setIsPasteModalOpen]);
   const handleOpenPasteLyricsFromModals = useCallback(() => {
     setIsImportModalOpen(false);
     setIsPasteModalOpen(true);
@@ -274,7 +276,6 @@ function AppInnerContent() {
     () => setIsKeyboardShortcutsModalOpen(true),
     [setIsKeyboardShortcutsModalOpen]
   );
-  const handlePasteLyricsFromRibbon = useCallback(() => setIsPasteModalOpen(true), [setIsPasteModalOpen]);
 
   return (
     <ModalProvider uiState={uiStateForProvider}>
@@ -325,7 +326,7 @@ function AppInnerContent() {
               onOpenSettingsClick={handleOpenSettings}
               onOpenAboutClick={handleOpenAbout}
               onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
-              onPasteLyrics={handlePasteLyricsFromRibbon}
+              onPasteLyrics={handleOpenPasteModal}
               isAnalyzing={isAnalyzing}
             />
             {activeTab === 'lyrics' && song.length > 0 && (
@@ -358,7 +359,7 @@ function AppInnerContent() {
                        markupText={markupText} setMarkupText={setMarkupText} markupTextareaRef={markupTextareaRef}
                        markupDirection={markupDirection}
                        onOpenLibrary={handleOpenSaveToLibraryModal}
-                       onPasteLyrics={handlePasteLyricsFromView}
+                       onPasteLyrics={handleOpenPasteModal}
                        onGenerateSong={handleGlobalRegenerate}
                      />
                   ) : (
