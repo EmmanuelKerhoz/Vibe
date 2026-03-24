@@ -72,7 +72,7 @@ const en: Translations = {
       description: 'Configure your song settings in the sidebar or import existing lyrics to begin.',
       loadSession: 'Load Last Session',
       pasteLyrics: 'Paste Lyrics',
-      generateSong: 'Generate Song',
+      generateSong: 'Generate Lyrics',
     },
     markupMode: {
       title: 'Markdown Mode',

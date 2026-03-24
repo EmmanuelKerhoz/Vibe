@@ -72,7 +72,7 @@ const pt: Translations = {
       description: 'Configure as configurações da música na barra lateral ou importe letras existentes para começar.',
       loadSession: 'Carregar última sessão',
       pasteLyrics: 'Colar letras',
-      generateSong: 'Gerar música',
+      generateSong: 'Gerar letras',
     },
     markupMode: {
       title: 'Modo Marcação',

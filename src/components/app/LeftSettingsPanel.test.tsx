@@ -72,7 +72,7 @@ describe('LeftSettingsPanel', () => {
 
     const { rerender } = renderPanel();
 
-    expect(screen.getByRole('button', { name: 'Generate Song' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Generate Lyrics' })).toHaveProperty('disabled', true);
     expect(screen.getByText('Quantize Syllables (GLOBAL)').closest('button')).toHaveProperty('disabled', true);
 
     mockComposerContext.isGenerating = false;

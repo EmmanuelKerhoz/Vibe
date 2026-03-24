@@ -50,8 +50,8 @@ vi.mock('../../hooks/useAppKpis', () => ({
   }),
 }));
 
-describe('InsightsBar section chip tooltips', () => {
-  it('provides section type explanations on the upper ribbon chips', () => {
+describe('InsightsBar', () => {
+  it('renders adaptation and language tools', () => {
     const webSimilarityIndex: WebSimilarityIndex = {
       candidates: [],
       status: 'idle',
@@ -74,17 +74,16 @@ describe('InsightsBar section chip tooltips', () => {
           adaptSongLanguage={vi.fn()}
           detectLanguage={vi.fn()}
           analyzeCurrentSong={vi.fn()}
-          handleGlobalRegenerate={vi.fn()}
           handleMarkupToggle={vi.fn()}
           setIsSimilarityModalOpen={vi.fn()}
-          scrollToSection={vi.fn()}
         />
       </LanguageProvider>,
     );
 
-    const introChip = screen.getByRole('button', { name: 'Intro' });
-    expect(introChip.parentElement?.getAttribute('data-title')).toBe(
-      "Ouvre le morceau et pose l\u2019atmosph\u00e8re.\nRep\u00e8re : presque toujours au d\u00e9but, souvent courte.",
-    );
+    // Detect button is present (language detect + adaptation area)
+    const tooltips = screen.getAllByTestId('tooltip');
+    expect(tooltips.length).toBeGreaterThan(0);
+    // First tooltip should be the detect button
+    expect(tooltips[0]!.getAttribute('data-title')).toContain('Detected');
   });
 });

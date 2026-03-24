@@ -329,10 +329,8 @@ function AppInnerContent() {
                   webBadgeLabel={webBadgeLabel}
                   libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
                   detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong}
-                  handleGlobalRegenerate={handleGlobalRegenerate}
                   handleMarkupToggle={handleMarkupToggle}
                   setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-                  scrollToSection={scrollToSection}
                   adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
                 />
               )}
@@ -380,6 +378,8 @@ function AppInnerContent() {
               addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
               normalizeStructure={normalizeStructure} handleDrop={handleDrop}
               onScrollToSection={handleScrollToSection}
+              onRegenerateSong={handleGlobalRegenerate}
+              onGenerateSong={generateSong}
             />
           </div>
 
