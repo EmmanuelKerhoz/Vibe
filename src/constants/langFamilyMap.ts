@@ -38,7 +38,7 @@ export interface LanguageFamilyConfig {
  * Used to recover the visual identity of the language dropdowns
  */
 export const LANGUAGE_FLAGS: Record<string, string> = {
-  'fr': '🇫🇷', 'es': '🇪🇸', 'it': '🇮🇹', 'pt': '🇵🇹', 'ro': '🇷🇴', 'ca': '🇦nd',
+  'fr': '🇫🇷', 'es': '🇪🇸', 'it': '🇮🇹', 'pt': '🇵🇹', 'ro': '🇷🇴', 'ca': '🇦🇩',
   'en': '🇬🇧', 'de': '🇩🇪', 'nl': '🇳🇱', 'sv': '🇸🇪', 'da': '🇩🇰', 'no': '🇳🇴', 'is': '🇮🇸',
   'ru': '🇷🇺', 'pl': '🇵🇱', 'cs': '🇨🇿', 'sk': '🇸🇰', 'uk': '🇺🇦', 'bg': '🇧🇬', 'sr': '🇷🇸', 'hr': '🇭🇷',
   'dyu': '🇨🇮', 'bci': '🇨🇮', 'ee': '🇹🇬', 'gej': '🇹🇬', 'sw': '🇰🇪', 'yo': '🇳🇬', 'zu': '🇿🇦', 'xh': '🇿🇦', 'ha': '🇳🇬',
