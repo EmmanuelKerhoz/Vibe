@@ -1,20 +1,18 @@
 import { useCallback } from 'react';
-import { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
 import { BRACKET_TOKEN_REGEX, isPureMetaLine, isSectionHeader, isEmptyBracketLine, unwrapBracketToken } from '../utils/metaUtils';
 import { generateId } from '../utils/idUtils';
 import { countSyllables } from '../utils/syllableUtils';
 import { languageNameToCode } from '../constants/langFamilyMap';
+import { useSongContext } from '../contexts/SongContext';
 
 interface UseMarkupEditorParams {
-  song: Section[];
-  songLanguage: string;
   isMarkupMode: boolean;
   markupText: string;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
   setIsMarkupMode: (v: boolean) => void;
   setMarkupText: (v: string) => void;
-  updateSongAndStructureWithHistory: (song: Section[], structure: string[]) => void;
+  updateSongAndStructureWithHistory: (song: import('../types').Section[], structure: string[]) => void;
 }
 
 /** Returns true if a line text is an artifact that should be excluded from processing. */
@@ -52,14 +50,15 @@ const tokenizeLine = (rawLine: string): string[] => {
 };
 
 export function useMarkupEditor(params: UseMarkupEditorParams) {
+  const { song, songLanguage } = useSongContext();
   const {
-    song, songLanguage, isMarkupMode, markupText, markupTextareaRef,
+    isMarkupMode, markupText, markupTextareaRef,
     setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   } = params;
   const normalizedSongLanguage = (languageNameToCode(songLanguage) ?? songLanguage).trim().toLowerCase();
   const markupDirection: 'ltr' | 'rtl' = ['ar', 'he', 'fa', 'ur'].includes(normalizedSongLanguage) ? 'rtl' : 'ltr';
 
-  const scrollToSection = useCallback((section: Section) => {
+  const scrollToSection = useCallback((section: import('../types').Section) => {
     if (isMarkupMode) {
       if (!markupTextareaRef.current) return;
       let searchStr = `**[${section.name}]**`;
@@ -148,7 +147,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         return {
           id: sectionId,
           name,
-          // Use ?? to preserve intentionally empty/zero values from the existing section
           rhymeScheme: existingSection?.rhymeScheme ?? 'AABB',
           targetSyllables: existingSection?.targetSyllables ?? 8,
           mood: existingSection?.mood ?? '',

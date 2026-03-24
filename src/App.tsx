@@ -113,7 +113,7 @@ function AppInnerContent() {
   });
   const { playAudioFeedback } = useAudioFeedback(audioFeedback);
   const { scrollToSection, handleMarkupToggle, markupDirection } = useMarkupEditor({
-    song, songLanguage, isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
+    isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
   });
 
   const isGeneratingRef = useRef(isGenerating);
@@ -165,7 +165,7 @@ function AppInnerContent() {
     if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }
   }, [handleSurprise, setTopic, setMood]);
 
-  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title, songLanguage);
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine();
 
   // ── Derived state ─────────────────────────────────────────────────────────
   const { hasRealLyricContent, hasExistingWork, webBadgeLabel } = useDerivedAppState({
@@ -261,8 +261,6 @@ function AppInnerContent() {
       setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang })),
     [setSectionTargetLanguages]
   );
-  // Paste handler — point d'entrée unique pour ouvrir la modale de collage
-  // (utilisé depuis LyricsView, TopRibbon et AppModals via handleOpenPasteLyricsFromModals)
   const handleOpenPasteModal = useCallback(() => setIsPasteModalOpen(true), [setIsPasteModalOpen]);
   const handleOpenPasteLyricsFromModals = useCallback(() => {
     setIsImportModalOpen(false);
