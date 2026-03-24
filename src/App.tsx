@@ -19,8 +19,14 @@ import { useLibraryActions } from './hooks/useLibraryActions';
 import { useUIStateForProvider } from './hooks/useUIStateForProvider';
 import { useDerivedAppState } from './hooks/useDerivedAppState';
 import { useAppHandlers } from './hooks/useAppHandlers';
+import { useSongHistoryState } from './hooks/useSongHistoryState';
+import { useSongMeta } from './hooks/useSongMeta';
+import { useSongComposer } from './hooks/useSongComposer';
+import { useAppKpis } from './hooks/useAppKpis';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
+import { SongProvider } from './contexts/SongContext';
+import { ComposerProvider } from './contexts/ComposerContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -31,8 +37,6 @@ import { LyricsView } from './components/app/LyricsView';
 import { AppModals } from './components/app/AppModals';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
-import { SongProvider, useSongContext } from './contexts/SongContext';
-import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
 function ModalShortcutBindings({
   isMobileOrTablet,
@@ -58,36 +62,68 @@ function ModalShortcutBindings({
 function AppInnerContent() {
   const { t } = useTranslation();
   const { language } = useLanguage();
-  const { song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
-    updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory, undo, redo,
-    title, setTitle, titleOrigin, setTitleOrigin, topic, setTopic, mood, setMood,
-    rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables, genre, setGenre, tempo, setTempo,
-    instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative, musicalPrompt, setMusicalPrompt,
-    newSectionName, setNewSectionName, shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
-    songLanguage, setSongLanguage,
-  } = useSongContext();
-  const { isGenerating, isRegeneratingSection,
-    selectedLineId, setSelectedLineId, suggestions, isSuggesting, generateSong, regenerateSection,
-    quantizeSyllables, generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
-    handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
-  } = useComposerContext();
 
+  // ── Song history (song/structure/undo-redo) ───────────────────────────────
+  const {
+    song, structure, past, future,
+    updateState, updateSongWithHistory, updateStructureWithHistory,
+    updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory, undo, redo,
+  } = useSongHistoryState();
+
+  // ── Song meta (title/topic/mood/rhymeScheme/etc.) ─────────────────────────
+  const {
+    title, setTitle, titleOrigin, setTitleOrigin,
+    topic, setTopic, mood, setMood,
+    rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
+    genre, setGenre, tempo, setTempo,
+    instrumentation, setInstrumentation, rhythm, setRhythm,
+    narrative, setNarrative, musicalPrompt, setMusicalPrompt,
+    newSectionName, setNewSectionName,
+    shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
+    songLanguage, setSongLanguage,
+  } = useSongMeta();
+
+  // ── Composer ──────────────────────────────────────────────────────────────
+  const {
+    isGenerating, isRegeneratingSection,
+    isGeneratingMusicalPrompt, isAnalyzingLyrics,
+    selectedLineId, setSelectedLineId,
+    suggestions, isSuggesting,
+    generateSong, regenerateSection, quantizeSyllables,
+    generateSuggestions, updateLineText, handleLineKeyDown, applySuggestion,
+    generateMusicalPrompt, analyzeLyricsForMusic,
+    handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
+  } = useSongComposer({
+    song, structure,
+    topic, mood, rhymeScheme, targetSyllables,
+    title, genre, tempo, instrumentation, rhythm, narrative,
+    songLanguage, uiLanguage: language,
+    setMusicalPrompt, setGenre, setTempo,
+    setInstrumentation, setRhythm, setNarrative,
+    updateState, updateSongWithHistory, updateSongAndStructureWithHistory,
+    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
+  });
+
+  // ── App UI + session state ────────────────────────────────────────────────
   const appState = useAppState();
   const {
     theme, setTheme, activeTab, setActiveTab, isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
     audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
-     isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
-     isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
-     apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
-     isExportModalOpen, setIsExportModalOpen,
-     isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
-      isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
-      isResetModalOpen, setIsResetModalOpen, isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen,
-      confirmModal, setConfirmModal, promptModal, setPromptModal,
-      isPasteModalOpen, setIsPasteModalOpen, isAnalysisModalOpen, setIsAnalysisModalOpen,
+    isSavingToLibrary, setIsSavingToLibrary, isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
+    isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
+    apiErrorModal, setApiErrorModal, isImportModalOpen, setIsImportModalOpen,
+    isExportModalOpen, setIsExportModalOpen,
+    isSectionDropdownOpen, setIsSectionDropdownOpen, isSimilarityModalOpen, setIsSimilarityModalOpen,
+    isSaveToLibraryModalOpen, setIsSaveToLibraryModalOpen, isVersionsModalOpen, setIsVersionsModalOpen,
+    isResetModalOpen, setIsResetModalOpen, isKeyboardShortcutsModalOpen, setIsKeyboardShortcutsModalOpen,
+    confirmModal, setConfirmModal, promptModal, setPromptModal,
+    isPasteModalOpen, setIsPasteModalOpen, isAnalysisModalOpen, setIsAnalysisModalOpen,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated, hasApiKey, importInputRef, markupTextareaRef,
   } = appState;
+
+  // ── KPIs ──────────────────────────────────────────────────────────────────
+  useAppKpis();
 
   // ── Mobile layout ─────────────────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
@@ -106,6 +142,7 @@ function AppInnerContent() {
     genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession, replaceStateWithoutHistory, clearHistory,
   });
+
   const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionManager({
     updateSongAndStructureWithHistory,
     setIsVersionsModalOpen,
@@ -119,18 +156,21 @@ function AppInnerContent() {
   const isGeneratingRef = useRef(isGenerating);
   isGeneratingRef.current = isGenerating;
 
-  const { pastedText, setPastedText,
+  const {
+    pastedText, setPastedText,
     isAnalyzing, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis, targetLanguage, setTargetLanguage,
     isAdaptingLanguage, isDetectingLanguage, adaptationProgress, adaptationResult,
     sectionTargetLanguages, setSectionTargetLanguages,
     toggleAnalysisItemSelection, applySelectedAnalysisItems,
     analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage, analyzePastedLyrics, clearAppliedAnalysisItems,
-  } = useSongAnalysis({ uiLanguage: language,
+  } = useSongAnalysis({
+    uiLanguage: language,
     isGeneratingRef,
     saveVersion,
     updateState, updateSongAndStructureWithHistory,
-    clearLineSelection: () => clearSelection(), requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
+    clearLineSelection: () => clearSelection(),
+    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
     setIsPasteModalOpen, setIsAnalysisModalOpen,
   });
 
@@ -448,5 +488,5 @@ function AppInner() {
 }
 
 export default function App() {
-  return <AppInner />
+  return <AppInner />;
 }
