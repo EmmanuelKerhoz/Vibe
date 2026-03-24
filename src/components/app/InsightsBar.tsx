@@ -200,6 +200,18 @@ function AdaptationProgressBanner({
 }
 
 // ---------------------------------------------------------------------------
+// Static language options — built once at module level so EmojiSign instances
+// are never remounted due to a new options array reference on each render.
+// ---------------------------------------------------------------------------
+
+const LANGUAGE_SELECT_OPTIONS = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
+  value: lang.aiName,
+  label: (
+    <><EmojiSign sign={lang.sign} /> {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</>
+  ),
+}));
+
+// ---------------------------------------------------------------------------
 // InsightsBar
 // ---------------------------------------------------------------------------
 
@@ -273,10 +285,7 @@ export const InsightsBar = React.memo(function InsightsBar({
             <LcarsSelect
               value={targetLanguage}
               onChange={setTargetLanguage}
-              options={SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
-                value: lang.aiName,
-                label: <><EmojiSign sign={lang.sign} /> {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</>,
-              }))}
+              options={LANGUAGE_SELECT_OPTIONS}
             />
           </div>
 
