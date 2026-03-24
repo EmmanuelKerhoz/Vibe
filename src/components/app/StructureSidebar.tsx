@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical, Link2 } from '../ui/icons';
+import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical, Link2, RefreshCw, Sparkles, Loader2 } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';
@@ -31,6 +31,8 @@ interface Props {
   normalizeStructure: () => void;
   handleDrop: (idx: number) => void;
   onScrollToSection: (sectionId: string) => void;
+  onRegenerateSong?: () => void;
+  onGenerateSong?: () => void;
   isMobileOverlay?: boolean;
   className?: string;
 }
@@ -41,6 +43,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
   isSectionDropdownOpen, setIsSectionDropdownOpen,
   addStructureItem, removeStructureItem,
   normalizeStructure, handleDrop, onScrollToSection,
+  onRegenerateSong, onGenerateSong,
   isMobileOverlay = false,
   className,
 }: Props) {
@@ -154,7 +157,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                           onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
                           onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(sectionIdx); }}
-                          className={`group flex items-center gap-3 rounded-[16px_6px_16px_6px] border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(sectionItem)} ${drag ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === sectionIdx ? 'opacity-30' : ''} ${dragOverIndex === sectionIdx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                          className={`group flex items-center gap-3 rounded-[16px_4px_16px_4px] border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(sectionItem)} ${drag ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === sectionIdx ? 'opacity-30' : ''} ${dragOverIndex === sectionIdx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                         >
                           <span className={`h-7 w-1.5 rounded-full ${getSectionDotColor(sectionItem)}`} aria-hidden="true" />
                           {showDragHandle ? (
@@ -195,7 +198,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                             onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                             onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
                             onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }}
-                            className={`relative flex flex-col gap-1.5 ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[16px_6px_16px_6px]' : ''}`}
+                            className={`relative flex flex-col gap-1.5 ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[16px_4px_16px_4px]' : ''}`}
                           >
                             <div className="absolute left-2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
                               <Link2 className="w-2.5 h-2.5 text-[var(--accent-color)] opacity-60" />
@@ -221,7 +224,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                           onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
                           onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }}
-                          className={`group flex items-center gap-3 rounded-[16px_6px_16px_6px] border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(item)} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                          className={`group flex items-center gap-3 rounded-[16px_4px_16px_4px] border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(item)} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                         >
                           <span className={`h-7 w-1.5 rounded-full ${getSectionDotColor(item)}`} aria-hidden="true" />
                           {isDraggable ? (
@@ -312,6 +315,34 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                   </Tooltip>
                 </div>
               </div>
+            </div>
+
+            {/* Footer — Regenerate + Generate Lyrics buttons */}
+            <div className="p-5 shrink-0 space-y-2">
+              {onRegenerateSong && (
+                <Tooltip title={t.tooltips.regenerate}>
+                  <Button
+                    onClick={onRegenerateSong}
+                    disabled={isGenerating || song.length === 0}
+                    variant="outlined" color="primary" fullWidth
+                    startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                    style={{ fontSize: '10px', padding: '6px 0' }}
+                  >
+                    {t.editor.regenerateGlobal}
+                  </Button>
+                </Tooltip>
+              )}
+              {onGenerateSong && (
+                <Button
+                  onClick={onGenerateSong}
+                  disabled={isGenerating}
+                  variant="contained" color="primary" fullWidth
+                  startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  style={{ fontSize: '11px', padding: '8px 0' }}
+                >
+                  {t.editor.emptyState.generateSong}
+                </Button>
+              )}
             </div>
           </div>
         </motion.div>

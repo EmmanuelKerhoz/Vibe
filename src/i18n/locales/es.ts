@@ -72,7 +72,7 @@ const es: Translations = {
       description: 'Configura los parámetros de tu canción en la barra lateral o importa letras existentes para comenzar.',
       loadSession: 'Cargar última sesión',
       pasteLyrics: 'Pegar letras',
-      generateSong: 'Generar canción',
+      generateSong: 'Generar letras',
     },
     markupMode: {
       title: 'Modo Markdown',

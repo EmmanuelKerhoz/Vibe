@@ -50,8 +50,8 @@ vi.mock('../../hooks/useAppKpis', () => ({
   }),
 }));
 
-describe('InsightsBar section chip tooltips', () => {
-  it('provides section type explanations on the upper ribbon chips', () => {
+describe('InsightsBar', () => {
+  it('renders single-row layout with detect, adaptation, markup, analyze, and similarity buttons', () => {
     const webSimilarityIndex: WebSimilarityIndex = {
       candidates: [],
       status: 'idle',
@@ -74,17 +74,24 @@ describe('InsightsBar section chip tooltips', () => {
           adaptSongLanguage={vi.fn()}
           detectLanguage={vi.fn()}
           analyzeCurrentSong={vi.fn()}
-          handleGlobalRegenerate={vi.fn()}
           handleMarkupToggle={vi.fn()}
           setIsSimilarityModalOpen={vi.fn()}
-          scrollToSection={vi.fn()}
         />
       </LanguageProvider>,
     );
 
-    const introChip = screen.getByRole('button', { name: 'Intro' });
-    expect(introChip.parentElement?.getAttribute('data-title')).toBe(
-      "Ouvre le morceau et pose l\u2019atmosph\u00e8re.\nRep\u00e8re : presque toujours au d\u00e9but, souvent courte.",
-    );
+    const tooltips = screen.getAllByTestId('tooltip');
+    // Verify all expected tooltips: Detect, Adaptation, Markup, Analyze, Similarity
+    expect(tooltips.length).toBe(5);
+    // First tooltip should be the detect button (before language dropdown)
+    expect(tooltips[0]!.getAttribute('data-title')).toContain('Detected');
+    // Second should be adaptation
+    expect(tooltips[1]!.getAttribute('data-title')).toContain('adapt');
+    // Third should be markup toggle
+    expect(tooltips[2]!.getAttribute('data-title')).toContain('Mode');
+    // Fourth should be analyze
+    expect(tooltips[3]!.getAttribute('data-title')).toContain('Analyze');
+    // Fifth should be similarity
+    expect(tooltips[4]!.getAttribute('data-title')).toContain('Compare');
   });
 });

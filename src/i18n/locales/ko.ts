@@ -76,7 +76,7 @@ const ko: Translations = {
       description: '사이드바에서 곡 설정을 구성하거나 기존 가사를 불러와 작업을 시작하세요.',
       loadSession: '마지막 세션 불러오기',
       pasteLyrics: '가사 붙여넣기',
-      generateSong: '곡 생성',
+      generateSong: '가사 생성',
     },
     markupMode: {
       ...en.editor.markupMode,

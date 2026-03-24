@@ -72,7 +72,7 @@ const ar: Translations = {
       description: 'اضبط إعدادات أغنيتك في الشريط الجانبي أو استورد كلمات موجودة للبدء.',
       loadSession: 'تحميل آخر جلسة',
       pasteLyrics: 'لصق الكلمات',
-      generateSong: 'توليد الأغنية',
+      generateSong: 'توليد الكلمات',
     },
     markupMode: {
       title: 'وضع الترميز',

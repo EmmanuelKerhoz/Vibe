@@ -72,7 +72,7 @@ const zh: Translations = {
       description: '在侧边栏配置歌曲设置，或导入现有歌词开始创作。',
       loadSession: '加载上次会话',
       pasteLyrics: '粘贴歌词',
-      generateSong: '生成歌曲',
+      generateSong: '生成歌词',
     },
     markupMode: {
       title: '标记模式',

@@ -72,7 +72,7 @@ const de: Translations = {
       description: 'Konfiguriere deine Song-Einstellungen in der Seitenleiste oder importiere vorhandene Liedtexte, um zu beginnen.',
       loadSession: 'Letzte Sitzung laden',
       pasteLyrics: 'Liedtexte einfügen',
-      generateSong: 'Song generieren',
+      generateSong: 'Texte generieren',
     },
     markupMode: {
       title: 'Markdown-Modus',

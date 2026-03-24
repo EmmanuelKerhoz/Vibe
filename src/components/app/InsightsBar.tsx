@@ -1,8 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, Languages, ScanText, Layout, Search, RefreshCw, Timer, CheckCircle2, AlertTriangle, XCircle } from '../ui/icons';
-import { Section } from '../../types';
-import { getSectionColorHex, getSectionDotColor } from '../../utils/songUtils';
-import { getSectionTooltipText } from '../../constants/sections';
+import { Loader2, BarChart2, Languages, ScanText, Layout, Search, Timer, CheckCircle2, AlertTriangle, XCircle } from '../ui/icons';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
@@ -27,10 +24,8 @@ interface InsightsBarProps {
   adaptSongLanguage: (lang: string) => void;
   detectLanguage: () => void;
   analyzeCurrentSong: () => void;
-  handleGlobalRegenerate: () => void;
   handleMarkupToggle: () => void;
   setIsSimilarityModalOpen: (open: boolean) => void;
-  scrollToSection: (section: Section) => void;
   isMetronomeActive?: boolean;
   toggleMetronome?: () => void;
   adaptationProgress?: AdaptationProgress;
@@ -228,10 +223,8 @@ export const InsightsBar = React.memo(function InsightsBar({
   adaptSongLanguage,
   detectLanguage,
   analyzeCurrentSong,
-  handleGlobalRegenerate,
   handleMarkupToggle,
   setIsSimilarityModalOpen,
-  scrollToSection,
   isMetronomeActive,
   toggleMetronome,
   adaptationProgress,
@@ -273,7 +266,7 @@ export const InsightsBar = React.memo(function InsightsBar({
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 
-        {/* Row 1: Language tools */}
+        {/* Single row: Language detect | Language dropdown (narrow) | ADAPTATION | Markup | Analyze | Similarity */}
         <div className="flex items-center gap-2 overflow-hidden min-w-0">
           <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
             <BarChart2 className="w-3.5 h-3.5" />
@@ -281,7 +274,22 @@ export const InsightsBar = React.memo(function InsightsBar({
           </h3>
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
 
-          <div className="flex-1 min-w-0 overflow-hidden">
+          <Tooltip title={detectedDisplay ? `Detected: ${detectedDisplay.sign} ${detectedDisplay.label} — click to re-detect` : '🌐 Detect song language'}>
+            <button
+              onClick={() => void detectLanguage()}
+              disabled={isDetectingLanguage || song.length === 0}
+              className="ux-interactive px-2.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap shrink-0"
+            >
+              {isDetectingLanguage
+                ? <Loader2 className="w-3 h-3 animate-spin" />
+                : <ScanText className="w-3 h-3" />}
+              {detectedDisplay
+                ? <><EmojiSign sign={detectedDisplay.sign} /><span className="hidden sm:inline">{detectedDisplay.label}</span></>
+                : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">Detect</span></>}
+            </button>
+          </Tooltip>
+
+          <div className="min-w-0 overflow-hidden" style={{ maxWidth: '180px' }}>
             <LcarsSelect
               value={targetLanguage}
               onChange={setTargetLanguage}
@@ -300,18 +308,55 @@ export const InsightsBar = React.memo(function InsightsBar({
             </button>
           </Tooltip>
 
-          <Tooltip title={detectedDisplay ? `Detected: ${detectedDisplay.sign} ${detectedDisplay.label} — click to re-detect` : '🌐 Detect song language'}>
+          {toggleMetronome && (
+            <Tooltip title={t.musical?.metronome ?? 'Metronome'}>
+              <button
+                onClick={toggleMetronome}
+                className={`px-2 py-1.5 text-[11px] rounded transition-all flex items-center justify-center gap-1.5 whitespace-nowrap border ${
+                  isMetronomeActive ? 'border-transparent metronome-active' : 'glass-button'
+                }`}
+                style={isMetronomeActive ? { background: '#f59e0b', color: '#000', borderColor: '#f59e0b' } : {}}
+              >
+                <Timer className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+          )}
+          <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
             <button
-              onClick={() => void detectLanguage()}
-              disabled={isDetectingLanguage || song.length === 0}
-              className="ux-interactive px-2.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap shrink-0"
+              onClick={handleMarkupToggle}
+              disabled={isGenerating || isAnalyzing}
+              className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isDetectingLanguage
-                ? <Loader2 className="w-3 h-3 animate-spin" />
-                : <ScanText className="w-3 h-3" />}
-              {detectedDisplay
-                ? <><EmojiSign sign={detectedDisplay.sign} /><span className="hidden sm:inline">{detectedDisplay.label}</span></>
-                : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">Detect</span></>}
+              <Layout className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">{isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}</span>
+            </button>
+          </Tooltip>
+          <Tooltip title={t.tooltips.analyzeTheme}>
+            <button
+              onClick={analyzeCurrentSong}
+              disabled={isGenerating || isAnalyzing || song.length === 0}
+              className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">{t.editor.analyze}</span>
+            </button>
+          </Tooltip>
+          <Tooltip title={t.tooltips.checkSimilarity}>
+            <button
+              onClick={() => setIsSimilarityModalOpen(true)}
+              disabled={isGenerating || isAnalyzing || !hasLyrics}
+              className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
+            >
+              {webSimilarityIndex.status === 'running'
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
+                : <Search className="w-3.5 h-3.5" />}
+              <span className="hidden lg:inline">{t.ribbon?.similarity || 'Similarity'}</span>
+              {webBadgeLabel && (
+                <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">{webBadgeLabel}</span>
+              )}
+              {!webBadgeLabel && libraryCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>
+              )}
             </button>
           </Tooltip>
 
@@ -339,90 +384,6 @@ export const InsightsBar = React.memo(function InsightsBar({
             isOverlay
           />
         )}
-
-        {/* Row 2: Section chips + action buttons */}
-        <div className="flex items-center gap-2 w-full min-w-0">
-          <div className="flex items-center gap-2 overflow-x-auto overflow-y-visible pb-1 custom-scrollbar min-w-0 flex-1" style={{ scrollbarWidth: 'none' }}>
-            {song.map((section) => {
-              return (
-                <Tooltip key={section.id} title={getSectionTooltipText(section.name)}>
-                  <button
-                    onClick={() => scrollToSection(section)}
-                    className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-white/20 transition-all lcars-section-chip glass-button"
-                    style={{ color: getSectionColorHex(section.name) }}
-                  >
-                    <div className={`w-1.5 h-1.5 rounded-full ${getSectionDotColor(section.name)}`} />
-                    {section.name}
-                  </button>
-                </Tooltip>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
-            {toggleMetronome && (
-              <Tooltip title={t.musical?.metronome ?? 'Metronome'}>
-                <button
-                  onClick={toggleMetronome}
-                  className={`px-2 py-1.5 text-[11px] rounded transition-all flex items-center justify-center gap-1.5 whitespace-nowrap border ${
-                    isMetronomeActive ? 'border-transparent metronome-active' : 'glass-button'
-                  }`}
-                  style={isMetronomeActive ? { background: '#f59e0b', color: '#000', borderColor: '#f59e0b' } : {}}
-                >
-                  <Timer className="w-3.5 h-3.5" />
-                </button>
-              </Tooltip>
-            )}
-            <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
-              <button
-                onClick={handleMarkupToggle}
-                disabled={isGenerating || isAnalyzing}
-                className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Layout className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">{isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}</span>
-              </button>
-            </Tooltip>
-            <Tooltip title={t.tooltips.analyzeTheme}>
-              <button
-                onClick={analyzeCurrentSong}
-                disabled={isGenerating || isAnalyzing || song.length === 0}
-                className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <BarChart2 className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">{t.editor.analyze}</span>
-              </button>
-            </Tooltip>
-            <Tooltip title={t.tooltips.checkSimilarity}>
-              <button
-                onClick={() => setIsSimilarityModalOpen(true)}
-                disabled={isGenerating || isAnalyzing || !hasLyrics}
-                className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
-              >
-                {webSimilarityIndex.status === 'running'
-                  ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
-                  : <Search className="w-3.5 h-3.5" />}
-                <span className="hidden lg:inline">{t.ribbon?.similarity || 'Similarity'}</span>
-                {webBadgeLabel && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">{webBadgeLabel}</span>
-                )}
-                {!webBadgeLabel && libraryCount > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>
-                )}
-              </button>
-            </Tooltip>
-            <Tooltip title={t.tooltips.regenerate}>
-              <button
-                onClick={handleGlobalRegenerate}
-                disabled={isGenerating || isAnalyzing}
-                className="px-2 lg:px-3 py-1.5 glass-button bg-[var(--accent-color)]/20 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40 hover:border-[var(--accent-color)] text-[11px] rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] whitespace-nowrap text-[var(--accent-color)]"
-              >
-                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                <span className="hidden lg:inline">{t.editor.regenerateGlobal}</span>
-              </button>
-            </Tooltip>
-          </div>
-        </div>
 
       </div>
     </div>

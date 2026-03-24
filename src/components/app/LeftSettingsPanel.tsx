@@ -180,6 +180,18 @@ function PanelContent({
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-amber,#f59e0b)] opacity-80" />
           <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Song Info</span>
+          <div className="flex-1" />
+          <Tooltip title="Suggest a random topic &amp; mood with AI">
+            <Button
+              onClick={onSurprise}
+              disabled={isSurprising || isGenerating}
+              variant="outlined" color="primary"
+              startIcon={isSurprising ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />}
+              style={{ fontSize: '10px', padding: '2px 8px' }}
+            >
+              Suggest
+            </Button>
+          </Tooltip>
         </div>
 
         <div className="space-y-4">
@@ -213,20 +225,6 @@ function PanelContent({
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Topic &amp; Mood</span>
-              <Tooltip title="Suggest a random topic &amp; mood with AI">
-                <Button
-                  onClick={onSurprise}
-                  disabled={isSurprising || isGenerating}
-                  variant="outlined" color="primary"
-                  startIcon={isSurprising ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />}
-                  style={{ fontSize: '10px', padding: '2px 8px' }}
-                >
-                  Suggest
-                </Button>
-              </Tooltip>
-            </div>
             <div>
               <Label>{t.leftPanel.songTopic}</Label>
               <Input value={topic} onChange={e => setTopic(e.target.value)} placeholder={t.leftPanel.songTopicPlaceholder} />
