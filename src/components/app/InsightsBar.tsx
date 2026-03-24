@@ -203,7 +203,7 @@ function AdaptationProgressBanner({
 // InsightsBar
 // ---------------------------------------------------------------------------
 
-export function InsightsBar({
+export const InsightsBar = React.memo(function InsightsBar({
   targetLanguage,
   setTargetLanguage,
   isAdaptingLanguage,
@@ -418,4 +418,4 @@ export function InsightsBar({
       </div>
     </div>
   );
-}
+});
