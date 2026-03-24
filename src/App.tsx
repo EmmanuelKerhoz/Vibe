@@ -19,6 +19,7 @@ import { useLibraryActions } from './hooks/useLibraryActions';
 import { useUIStateForProvider } from './hooks/useUIStateForProvider';
 import { useDerivedAppState } from './hooks/useDerivedAppState';
 import { useAppHandlers } from './hooks/useAppHandlers';
+import { useModalHandlers } from './hooks/useModalHandlers';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
@@ -186,7 +187,7 @@ function AppInnerContent() {
     webSimilarityIndex,
   });
 
-  // ── Handlers ───────────────────────────────────────────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────────────────────────
   const {
     handleApiKeyHelp, handleTitleChange, handleGenerateTitle,
     handleGlobalRegenerate, handleScrollToSection, handleOpenNewGeneration,
@@ -197,9 +198,28 @@ function AppInnerContent() {
     generateTitle, generateSong, scrollToSection,
   });
 
+  // ── Modal handlers ────────────────────────────────────────────────────────────────
+  const {
+    handleOpenPasteModal,
+    handleOpenPasteLyricsFromModals,
+    handleOpenImport,
+    handleOpenExport,
+    handleOpenSettings,
+    handleOpenAbout,
+    handleOpenKeyboardShortcuts,
+    handleSectionTargetLanguageChange,
+  } = useModalHandlers({
+    setIsPasteModalOpen,
+    setIsImportModalOpen,
+    setIsExportModalOpen,
+    setIsSettingsOpen,
+    setIsAboutOpen,
+    setIsKeyboardShortcutsModalOpen,
+    setSectionTargetLanguages,
+  });
+
   const { handleCreateEmptySong, resetSong } = useSessionActions({
-    song, structure, rhymeScheme,
-    appState,
+    song, structure, rhymeScheme, appState,
     replaceStateWithoutHistory, clearHistory, clearSelection,
     resetWebSimilarityIndex, resetSuggestionCycle,
     updateSongAndStructureWithHistory, setIsResetModalOpen,
@@ -219,27 +239,7 @@ function AppInnerContent() {
     setIsImportModalOpen, setIsPasteModalOpen, setPastedText, setSongLanguage,
   });
 
-  // ── Modal handlers ─────────────────────────────────────────────────────────────
-  const handleSectionTargetLanguageChange = useCallback(
-    (sectionId: string, lang: string) =>
-      setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang })),
-    [setSectionTargetLanguages]
-  );
-  const handleOpenPasteModal = useCallback(() => setIsPasteModalOpen(true), [setIsPasteModalOpen]);
-  const handleOpenPasteLyricsFromModals = useCallback(() => {
-    setIsImportModalOpen(false);
-    setIsPasteModalOpen(true);
-  }, [setIsImportModalOpen, setIsPasteModalOpen]);
-  const handleOpenImport = useCallback(() => setIsImportModalOpen(true), [setIsImportModalOpen]);
-  const handleOpenExport = useCallback(() => setIsExportModalOpen(true), [setIsExportModalOpen]);
-  const handleOpenSettings = useCallback(() => setIsSettingsOpen(true), [setIsSettingsOpen]);
-  const handleOpenAbout = useCallback(() => setIsAboutOpen(true), [setIsAboutOpen]);
-  const handleOpenKeyboardShortcuts = useCallback(
-    () => setIsKeyboardShortcutsModalOpen(true),
-    [setIsKeyboardShortcutsModalOpen]
-  );
-
-  // ── ModalProvider injection ───────────────────────────────────────────────
+  // ── ModalProvider injection ───────────────────────────────────────────────────────
   const uiStateForProvider = useUIStateForProvider({
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
