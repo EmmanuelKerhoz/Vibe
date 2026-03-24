@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useSongContext } from '../contexts/SongContext';
 import type { Section } from '../types';
 
 export interface LyricsKpis {
@@ -12,11 +13,12 @@ export interface LyricsKpis {
 const lyricLines = (sec: Section) => (sec.lines ?? []).filter(l => !l.isMeta);
 
 /**
- * Unified KPI hook (replaces useAppKpis + useLyricsKpis).
- * Returns both the legacy { sectionCount, wordCount, charCount } shape
- * and the richer LyricsKpis { sections, lines, words, characters } shape.
+ * Unified KPI hook — auto-sourcé via SongContext.
+ * Aucun paramètre externe nécessaire.
  */
-export const useAppKpis = (song: Section[]) => {
+export const useAppKpis = () => {
+  const { song } = useSongContext();
+
   const sectionCount = song.length;
 
   const wordCount = useMemo(

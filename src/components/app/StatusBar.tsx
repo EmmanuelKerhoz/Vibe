@@ -5,12 +5,10 @@ import { StorageGauge } from '../ui/StorageGauge';
 import { useTranslation } from '../../i18n';
 import { tPlural } from '../../i18n/plurals';
 import { APP_VERSION_LABEL } from '../../version';
-import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useAppKpis } from '../../hooks/useAppKpis';
 
 interface Props {
-  wordCount: number;
-  charCount: number;
   isAnalyzing: boolean;
   theme: 'light' | 'dark';
   setTheme: (v: 'light' | 'dark') => void;
@@ -23,12 +21,12 @@ interface Props {
 }
 
 export function StatusBar({
-  wordCount, charCount, isAnalyzing,
+  isAnalyzing,
   theme, setTheme, audioFeedback, setAudioFeedback,
   onOpenAbout, onOpenSettings, className,
 }: Props) {
-  const { song } = useSongContext();
   const { isGenerating, isSuggesting } = useComposerContext();
+  const { sectionCount, wordCount, charCount } = useAppKpis();
   const { t, language } = useTranslation();
 
   const isBusy = isGenerating || isAnalyzing || isSuggesting;
@@ -55,9 +53,9 @@ export function StatusBar({
         <div className="lcars-divider hidden lg:block" />
         {/* KPIs — desktop only (hidden on mobile, shown in InsightsBar) */}
         <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
-          {song.length}{' '}
+          {sectionCount}{' '}
           <span className="text-zinc-400 dark:text-zinc-600 uppercase">
-            {tPlural(statusBarDict, 'sections', song.length, language)}
+            {tPlural(statusBarDict, 'sections', sectionCount, language)}
           </span>
         </span>
         <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
