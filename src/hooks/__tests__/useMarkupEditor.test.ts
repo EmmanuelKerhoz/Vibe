@@ -3,10 +3,29 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Section } from '../../types';
 import { useMarkupEditor } from '../useMarkupEditor';
 
+const defaultSong: Section[] = [];
+const defaultSongLanguage = 'en';
+
+const mockSongContextValues = vi.hoisted(() => ({
+  song: defaultSong as Section[],
+  songLanguage: defaultSongLanguage,
+}));
+
+vi.mock('../../contexts/SongContext', () => ({
+  useSongContext: () => mockSongContextValues,
+}));
+
+const baseParams = () => ({
+  isMarkupMode: false,
+  markupText: '',
+  markupTextareaRef: { current: null } as React.RefObject<HTMLTextAreaElement | null>,
+  setIsMarkupMode: vi.fn(),
+  setMarkupText: vi.fn(),
+  updateSongAndStructureWithHistory: vi.fn(),
+});
+
 describe('useMarkupEditor', () => {
   it('serializes the current song into markdown when entering markup mode', () => {
-    const setMarkupText = vi.fn();
-    const setIsMarkupMode = vi.fn();
     const song: Section[] = [{
       id: 'section-1',
       name: 'Verse',
@@ -23,16 +42,16 @@ describe('useMarkupEditor', () => {
         isMeta: false,
       }],
     }];
+    mockSongContextValues.song = song;
+    mockSongContextValues.songLanguage = 'en';
+
+    const setMarkupText = vi.fn();
+    const setIsMarkupMode = vi.fn();
 
     const { result } = renderHook(() => useMarkupEditor({
-      song,
-      songLanguage: 'en',
-      isMarkupMode: false,
-      markupText: '',
-      markupTextareaRef: { current: null },
-      setIsMarkupMode,
+      ...baseParams(),
       setMarkupText,
-      updateSongAndStructureWithHistory: vi.fn(),
+      setIsMarkupMode,
     }));
 
     act(() => {
@@ -44,17 +63,17 @@ describe('useMarkupEditor', () => {
   });
 
   it('parses valid markdown back into sections when leaving markup mode', () => {
+    mockSongContextValues.song = [] as Section[];
+    mockSongContextValues.songLanguage = 'en';
+
     const updateSongAndStructureWithHistory = vi.fn();
     const setIsMarkupMode = vi.fn();
 
     const { result } = renderHook(() => useMarkupEditor({
-      song: [] as Section[],
-      songLanguage: 'en',
+      ...baseParams(),
       isMarkupMode: true,
       markupText: '[Verse]\n[Whispered]\nCity lights glow\n[Ad-lib]',
-      markupTextareaRef: { current: null },
       setIsMarkupMode,
-      setMarkupText: vi.fn(),
       updateSongAndStructureWithHistory,
     }));
 
@@ -68,18 +87,9 @@ describe('useMarkupEditor', () => {
         preInstructions: [],
         postInstructions: [],
         lines: [
-          expect.objectContaining({
-            text: '[Whispered]',
-            isMeta: true,
-          }),
-          expect.objectContaining({
-            text: 'City lights glow',
-            isMeta: false,
-          }),
-          expect.objectContaining({
-            text: '[Ad-lib]',
-            isMeta: true,
-          }),
+          expect.objectContaining({ text: '[Whispered]', isMeta: true }),
+          expect.objectContaining({ text: 'City lights glow', isMeta: false }),
+          expect.objectContaining({ text: '[Ad-lib]', isMeta: true }),
         ],
       })],
       ['Verse'],
@@ -88,15 +98,15 @@ describe('useMarkupEditor', () => {
   });
 
   it('parses non-ASCII bracketed section headers when leaving markup mode', () => {
+    mockSongContextValues.song = [] as Section[];
+    mockSongContextValues.songLanguage = 'ja';
+
     const updateSongAndStructureWithHistory = vi.fn();
+
     const { result } = renderHook(() => useMarkupEditor({
-      song: [] as Section[],
-      songLanguage: 'ja',
+      ...baseParams(),
       isMarkupMode: true,
       markupText: '【Verse】\nNeon lights',
-      markupTextareaRef: { current: null },
-      setIsMarkupMode: vi.fn(),
-      setMarkupText: vi.fn(),
       updateSongAndStructureWithHistory,
     }));
 
@@ -112,8 +122,6 @@ describe('useMarkupEditor', () => {
   });
 
   it('preserves the previous song state on malformed markdown without throwing', () => {
-    const updateSongAndStructureWithHistory = vi.fn();
-    const setIsMarkupMode = vi.fn();
     const previousSong: Section[] = [{
       id: 'section-1',
       name: 'Verse',
@@ -127,15 +135,17 @@ describe('useMarkupEditor', () => {
         isMeta: false,
       }],
     }];
+    mockSongContextValues.song = previousSong;
+    mockSongContextValues.songLanguage = 'en';
+
+    const updateSongAndStructureWithHistory = vi.fn();
+    const setIsMarkupMode = vi.fn();
 
     const { result } = renderHook(() => useMarkupEditor({
-      song: previousSong,
-      songLanguage: 'en',
+      ...baseParams(),
       isMarkupMode: true,
       markupText: '   \n\n   ',
-      markupTextareaRef: { current: null },
       setIsMarkupMode,
-      setMarkupText: vi.fn(),
       updateSongAndStructureWithHistory,
     }));
 
@@ -150,16 +160,10 @@ describe('useMarkupEditor', () => {
   });
 
   it('returns rtl direction for rtl song languages', () => {
-    const { result } = renderHook(() => useMarkupEditor({
-      song: [] as Section[],
-      songLanguage: 'Arabic',
-      isMarkupMode: false,
-      markupText: '',
-      markupTextareaRef: { current: null },
-      setIsMarkupMode: vi.fn(),
-      setMarkupText: vi.fn(),
-      updateSongAndStructureWithHistory: vi.fn(),
-    }));
+    mockSongContextValues.song = [] as Section[];
+    mockSongContextValues.songLanguage = 'Arabic';
+
+    const { result } = renderHook(() => useMarkupEditor(baseParams()));
 
     expect(result.current.markupDirection).toBe('rtl');
   });
