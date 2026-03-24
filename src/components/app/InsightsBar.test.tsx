@@ -40,6 +40,16 @@ vi.mock('../../contexts/ComposerContext', () => ({
   }),
 }));
 
+vi.mock('../../hooks/useAppKpis', () => ({
+  useAppKpis: () => ({
+    sectionCount: 1,
+    wordCount: 2,
+    charCount: 11,
+    lineCount: 1,
+    lyricsKpis: { sections: 1, lines: 1, words: 2, characters: 11 },
+  }),
+}));
+
 describe('InsightsBar section chip tooltips', () => {
   it('provides section type explanations on the upper ribbon chips', () => {
     const webSimilarityIndex: WebSimilarityIndex = {
@@ -52,9 +62,6 @@ describe('InsightsBar section chip tooltips', () => {
     render(
       <LanguageProvider>
         <InsightsBar
-          sectionCount={1}
-          wordCount={2}
-          charCount={11}
           targetLanguage="English"
           setTargetLanguage={vi.fn()}
           isAdaptingLanguage={false}
@@ -77,7 +84,7 @@ describe('InsightsBar section chip tooltips', () => {
 
     const introChip = screen.getByRole('button', { name: 'Intro' });
     expect(introChip.parentElement?.getAttribute('data-title')).toBe(
-      'Ouvre le morceau et pose l’atmosphère.\nRepère : presque toujours au début, souvent courte.',
+      'Ouvre le morceau et pose l’atmosphère.\nRepère : presque toujours au début, souvent courte.',
     );
   });
 });
