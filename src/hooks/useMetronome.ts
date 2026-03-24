@@ -23,13 +23,30 @@ function scheduleTick(audioCtx: AudioContext, atTime: number): void {
   osc.stop(atTime + 0.05);
 }
 
+/** Safe AudioContext factory — returns null if Web Audio API is unavailable. */
+function createAudioContext(): AudioContext | null {
+  try {
+    if (typeof AudioContext !== 'undefined') return new AudioContext();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const WebkitAC = (window as any).webkitAudioContext;
+    if (typeof WebkitAC !== 'undefined') return new WebkitAC() as AudioContext;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export interface UseMetronomeReturn {
   /** Whether the metronome is currently running. */
   isPlaying: boolean;
   /** Whether a beat has just fired (resets after 120 ms — use for flash animations). */
   isBeat: boolean;
-  /** Toggle the metronome on / off. */
-  toggle: () => void;
+  /**
+   * Toggle the metronome on / off.
+   * Returns a Promise that resolves once the AudioContext has resumed (if it was suspended).
+   * Safe to call fire-and-forget — callers that don't await it are unaffected.
+   */
+  toggle: () => Promise<void>;
   /** Stop the metronome if it is running. */
   stop: () => void;
 }
@@ -65,10 +82,8 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
   const safeBpm = Math.min(300, Math.max(20, bpm || 120));
 
   // ── Lookahead scheduler ──────────────────────────────────────────────────
-  // Runs every SCHEDULER_INTERVAL_MS, schedules any beats that fall within
-  // the next LOOKAHEAD_SEC window into the AudioContext timeline.
-  const LOOKAHEAD_SEC        = 0.1;   // schedule this many seconds ahead
-  const SCHEDULER_INTERVAL_MS = 25;   // how often we check (ms)
+  const LOOKAHEAD_SEC        = 0.1;
+  const SCHEDULER_INTERVAL_MS = 25;
 
   const runScheduler = useCallback(() => {
     const ctx = audioCtxRef.current;
@@ -81,17 +96,13 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
   }, []);
 
   // ── Visual sync via requestAnimationFrame ────────────────────────────────
-  // Fires isBeat at the moment the audio clock crosses the scheduled beat.
   const FLASH_DURATION_MS = 120;
-  // nextVisualBeatRef lags by one beat behind next scheduled audio beat,
-  // so the flash triggers precisely when the sound plays.
   const nextVisualBeatRef = useRef<number>(0);
 
   const rafLoop = useCallback(() => {
     if (!isPlayingRef.current) return;
     const ctx = audioCtxRef.current;
     if (ctx && ctx.currentTime >= nextVisualBeatRef.current) {
-      // Advance visual beat pointer to stay aligned with audio schedule.
       const intervalSec = intervalMsRef.current / 1000;
       while (nextVisualBeatRef.current <= ctx.currentTime) {
         nextVisualBeatRef.current += intervalSec;
@@ -116,14 +127,26 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
     setIsPlaying(false);
   }, [stopAll]);
 
-  const toggle = useCallback(() => {
+  /**
+   * FIX: toggle is now async so that AudioContext.resume() is awaited before
+   * setIsPlaying(true). Previously, the scheduler started firing while the
+   * context was still suspended (autoplay policy on iOS / Chrome strict mode),
+   * producing isPlaying=true with no audio output.
+   */
+  const toggle = useCallback(async () => {
     if (isPlaying) {
       stop();
     } else {
       if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioContext();
+        audioCtxRef.current = createAudioContext();
+        if (!audioCtxRef.current) return; // Web Audio not supported — bail silently
       } else if (audioCtxRef.current.state === 'suspended') {
-        void audioCtxRef.current.resume();
+        try {
+          await audioCtxRef.current.resume();
+        } catch {
+          // If resume fails (e.g. policy enforcement), bail without starting
+          return;
+        }
       }
       setIsPlaying(true);
     }
@@ -138,15 +161,11 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
     const ctx = audioCtxRef.current;
     if (!ctx) return;
 
-    // Seed both pointers at current time so the first beat fires immediately.
     nextBeatTimeRef.current  = ctx.currentTime;
     nextVisualBeatRef.current = ctx.currentTime;
 
-    // Start audio scheduler.
     runScheduler();
     schedulerRef.current = setInterval(runScheduler, SCHEDULER_INTERVAL_MS);
-
-    // Start visual RAF loop.
     rafRef.current = requestAnimationFrame(rafLoop);
 
     return () => stopAll();

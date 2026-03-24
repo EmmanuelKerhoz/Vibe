@@ -121,6 +121,11 @@ export const AppModals = React.memo(function AppModals({
   const { uiState: ui, closeModal } = useModalContext();
   const { importInputRef } = ui;
 
+  // FIX: was hardcoded 'Regenerate Song' — i18n regression.
+  // Use t.editor.regenerateTitle if available, fallback for incomplete locales.
+  const regenerateModalTitle =
+    (t.editor as Record<string, string>).regenerateTitle ?? 'Regenerate Song';
+
   return (
     <>
       <AboutModal isOpen={ui.isAboutOpen} onClose={() => closeModal('about')} />
@@ -187,7 +192,8 @@ export const AppModals = React.memo(function AppModals({
       {ui.confirmModal && (
         <ConfirmModal
           isOpen={ui.confirmModal.open}
-          title="Regenerate Song" message={t.editor.regenerateWarning}
+          title={regenerateModalTitle}
+          message={t.editor.regenerateWarning}
           confirmLabel="Regenerate" cancelLabel="Cancel"
           onConfirm={ui.confirmModal.onConfirm} onCancel={() => closeModal('confirm')}
         />

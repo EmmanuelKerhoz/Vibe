@@ -24,15 +24,24 @@ export class ErrorBoundary extends Component<Props, State> {
     const isDev = import.meta.env.DEV;
 
     return (
-      <div style={{
-        fontFamily: 'monospace',
-        padding: '2rem',
-        background: '#0a0a0a',
-        color: '#f87171',
-        minHeight: '100dvh',
-        boxSizing: 'border-box',
-        overflowY: 'auto',
-      }}>
+      /*
+       * FIX: role="alert" + aria-live="assertive" so screen readers announce the
+       * crash immediately, regardless of focus position.
+       * Previously: plain <div> — assistive technologies had no signal.
+       */
+      <div
+        role="alert"
+        aria-live="assertive"
+        style={{
+          fontFamily: 'monospace',
+          padding: '2rem',
+          background: '#0a0a0a',
+          color: '#f87171',
+          minHeight: '100dvh',
+          boxSizing: 'border-box',
+          overflowY: 'auto',
+        }}
+      >
         <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
           ⚠ Application error
         </div>
@@ -57,6 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </pre>
         )}
         <button
+          type="button"
           onClick={() => this.setState({ error: null, errorInfo: null })}
           style={{
             marginTop: '1.5rem',

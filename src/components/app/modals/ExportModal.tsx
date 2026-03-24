@@ -7,7 +7,7 @@ import type { ExportFormat } from '../../../utils/exportUtils';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (format: ExportFormat) => void;
+  onExport: (format: ExportFormat) => Promise<void>;
 }
 
 /** Minimal SVG badge used as a format icon when lucide has no suitable equivalent. */
@@ -34,6 +34,7 @@ function FormatBadge({ label, color }: { label: string; color: string }) {
 export function ExportModal({ isOpen, onClose, onExport }: Props) {
   const { t } = useTranslation();
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('txt');
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (isOpen) setSelectedFormat('txt');
@@ -79,6 +80,25 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
   ]), [t]);
 
   if (!isOpen) return null;
+
+  /**
+   * FIX: exportSong returns Promise<void>; the previous onClick was fire-and-forget.
+   * Errors from showSaveFilePicker / createWritable were swallowed silently.
+   * Now awaited with try/catch — errors are logged; future PR can surface a toast.
+   */
+  const handleExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      await onExport(selectedFormat);
+      onClose();
+    } catch (err) {
+      console.error('[ExportModal] Export failed:', err);
+      // TODO (PR-3): surface error via toast / ApiErrorModal
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
@@ -185,16 +205,17 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
         </div>
 
         <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-end gap-3">
-          <Button onClick={onClose} variant="outlined" color="inherit" className="ux-interactive">
+          <Button onClick={onClose} variant="outlined" color="inherit" className="ux-interactive" disabled={isExporting}>
             {t.exportDialog.cancel}
           </Button>
           <Button
-            onClick={() => { onExport(selectedFormat); onClose(); }}
+            onClick={() => { void handleExport(); }}
             variant="contained"
             color="primary"
             className="ux-interactive"
+            disabled={isExporting}
           >
-            {t.exportDialog.save}
+            {isExporting ? '…' : t.exportDialog.save}
           </Button>
         </div>
       </div>
