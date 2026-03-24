@@ -6,7 +6,6 @@ import { useSongEditor } from './hooks/useSongEditor';
 import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
 import { useSimilarityEngine } from './hooks/useSimilarityEngine';
-import { useAppKpis } from './hooks/useAppKpis';
 import { useAppState } from './hooks/useAppState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
@@ -91,7 +90,6 @@ function AppInnerContent() {
   } = appState;
 
   // ── Mobile layout ─────────────────────────────────────────────────────────
-  // isMobile/isTablet not exposed by useAppState — direct call intentional
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
@@ -169,8 +167,6 @@ function AppInnerContent() {
 
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine(song, title, songLanguage);
 
-  const { sectionCount, wordCount, charCount } = useAppKpis(song);
-
   // ── Derived state ─────────────────────────────────────────────────────────
   const { hasRealLyricContent, hasExistingWork, webBadgeLabel } = useDerivedAppState({
     song,
@@ -238,11 +234,9 @@ function AppInnerContent() {
   });
 
   // ── ModalProvider injection ───────────────────────────────────────────────
-  // Construct UIStateBag directly from destructured appState values.
-  // NO cast, NO dynamic import — fully type-checked against UIStateBag.
   const uiStateForProvider = useUIStateForProvider({
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
-    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsImportModalOpen, setIsExportModalValid, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
     setIsResetModalOpen, setIsKeyboardShortcutsModalOpen, setConfirmModal, setPromptModal,
     setIsPasteModalOpen, setIsAnalysisModalOpen, setIsMarkupMode,
@@ -336,7 +330,6 @@ function AppInnerContent() {
             />
             {activeTab === 'lyrics' && song.length > 0 && (
               <InsightsBar
-                sectionCount={sectionCount} wordCount={wordCount} charCount={charCount}
                 targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
                 isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
                 isAnalyzing={isAnalyzing}
@@ -391,7 +384,7 @@ function AppInnerContent() {
 
         <StatusBar
           className="lcars-status-bar-desktop"
-          wordCount={wordCount} charCount={charCount} isAnalyzing={isAnalyzing}
+          isAnalyzing={isAnalyzing}
           theme={theme} setTheme={setTheme}
           audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
           onOpenAbout={handleOpenAbout}
