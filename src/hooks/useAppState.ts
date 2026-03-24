@@ -1,8 +1,8 @@
 /**
  * useAppState — barrel re-export.
  * Consumers continue to call useAppState() and destructure freely.
- * Internal state is now managed by domain hooks.
- * Song meta (title, topic, mood, etc.) is owned by SongContext/useSongMeta.
+ * Song meta (title, topic, mood, etc.) is owned by SongContext/useSongMeta —
+ * do NOT call useSongMeta() here to avoid a second independent instance.
  *
  * @version 3.4.0
  */
