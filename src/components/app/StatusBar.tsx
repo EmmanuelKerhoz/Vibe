@@ -2,6 +2,7 @@ import React from 'react';
 import { Info, Moon, Settings, Sun } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { StorageGauge } from '../ui/StorageGauge';
+import { StatusBarLanguagePicker } from './StatusBarLanguagePicker';
 import { useTranslation } from '../../i18n';
 import { tPlural } from '../../i18n/plurals';
 import { APP_VERSION_LABEL } from '../../version';
@@ -94,6 +95,7 @@ export function StatusBar({
             <span className="hidden sm:inline">{theme === 'dark' ? t.settings.theme.light : t.settings.theme.dark}</span>
           </button>
         </Tooltip>
+        <StatusBarLanguagePicker />
         <Tooltip title={t.tooltips.appInfo}>
           <button
             onClick={onOpenAbout}

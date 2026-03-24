@@ -3,7 +3,7 @@ import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Setti
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';
-import { emojiToTwemojiUrl, isPlainAscii } from '../../../utils/emojiUtils';
+import { FlagEmoji } from '../../ui/FlagEmoji';
 
 interface Props {
   isOpen: boolean;
@@ -26,37 +26,6 @@ const UI_SCALE_FONT_SIZES: Record<'small' | 'medium' | 'large', string> = {
 
 function applyUiScalePreview(scale: 'small' | 'medium' | 'large') {
   document.documentElement.style.fontSize = UI_SCALE_FONT_SIZES[scale];
-}
-
-function FlagEmoji({ flag, code }: { flag: string; code: string }) {
-  const [useFallback, setUseFallback] = React.useState(false);
-  const display = flag || code.toUpperCase();
-
-  if (useFallback || isPlainAscii(display)) {
-    return (
-      <span
-        aria-hidden="true"
-        style={{
-          fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
-          fontSize: '1.125rem',
-          lineHeight: 1,
-          display: 'inline-block',
-        }}
-      >
-        {display}
-      </span>
-    );
-  }
-
-  return (
-    <img
-      src={emojiToTwemojiUrl(display)}
-      alt={display}
-      aria-hidden="true"
-      onError={() => setUseFallback(true)}
-      style={{ width: '1.125rem', height: '1.125rem', display: 'inline-block', verticalAlign: '-0.1em' }}
-    />
-  );
 }
 
 export function SettingsModal({
