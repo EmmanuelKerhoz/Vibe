@@ -1,5 +1,6 @@
 /**
  * Language family mapping for phonemic engine
+ * Based on docs_fusion_optimal.md specification
  * Updated to include visual metadata (flags) for Lyricist Pro UI
  */
 
@@ -37,21 +38,11 @@ export interface LanguageFamilyConfig {
  * Used to recover the visual identity of the language dropdowns
  */
 export const LANGUAGE_FLAGS: Record<string, string> = {
-  // Romance
   'fr': '🇫🇷', 'es': '🇪🇸', 'it': '🇮🇹', 'pt': '🇵🇹', 'ro': '🇷🇴', 'ca': '🇦nd',
-  // Germanic
   'en': '🇬🇧', 'de': '🇩🇪', 'nl': '🇳🇱', 'sv': '🇸🇪', 'da': '🇩🇰', 'no': '🇳🇴', 'is': '🇮🇸',
-  // Slavic
   'ru': '🇷🇺', 'pl': '🇵🇱', 'cs': '🇨🇿', 'sk': '🇸🇰', 'uk': '🇺🇦', 'bg': '🇧🇬', 'sr': '🇷🇸', 'hr': '🇭🇷',
-  // African / Kwa / Bantu
-  'dyu': '🇨🇮', // Dioula (Ivory Coast)
-  'bci': '🇨🇮', // Baoulé (Ivory Coast)
-  'ee': '🇹🇬',  // Ewe (Togo)
-  'gej': '🇹🇬', // Mina (Togo)
-  'sw': '🇰🇪', 'yo': '🇳🇬', 'zu': '🇿🇦', 'xh': '🇿🇦', 'ha': '🇳🇬',
-  // Asian
+  'dyu': '🇨🇮', 'bci': '🇨🇮', 'ee': '🇹🇬', 'gej': '🇹🇬', 'sw': '🇰🇪', 'yo': '🇳🇬', 'zu': '🇿🇦', 'xh': '🇿🇦', 'ha': '🇳🇬',
   'zh': '🇨🇳', 'yue': '🇭🇰', 'ja': '🇯🇵', 'ko': '🇰🇷', 'hi': '🇮🇳', 'th': '🇹🇭', 'vi': '🇻🇳',
-  // Others
   'ar': '🇸🇦', 'he': '🇮🇱', 'tr': '🇹🇷', 'id': '🇮🇩'
 };
 
@@ -94,4 +85,43 @@ export const FAMILY_CONFIG: Record<AlgoFamily, LanguageFamilyConfig> = {
   'ALGO-AUS': { family: 'ALGO-AUS', label: 'Austronesian', flag: '🇮🇩', hasTones: false, hasVowelHarmony: false, syllableStructure: 'CVC', codaRelevance: 'low' },
 };
 
-// ... keep all your existing helper functions (getAlgoFamily, isTonalLanguage, etc.) below this line
+export const getAlgoFamily = (langCode: string): AlgoFamily | undefined => {
+  return LANG_TO_FAMILY[langCode.toLowerCase()];
+};
+
+export const getFamilyConfig = (langCode: string): LanguageFamilyConfig | undefined => {
+  const family = getAlgoFamily(langCode);
+  return family ? FAMILY_CONFIG[family] : undefined;
+};
+
+export const isTonalLanguage = (langCode: string): boolean => {
+  const config = getFamilyConfig(langCode);
+  return config?.hasTones ?? false;
+};
+
+export const TONE_DIACRITICS = [
+  '\u0300', '\u0301', '\u0302', '\u0303', '\u0304', '\u030C',
+];
+
+export const getTonalDiacriticsPattern = (langCode?: string): RegExp => {
+  if (!langCode || !isTonalLanguage(langCode)) {
+    return /[\u0300-\u036f]/g;
+  }
+  return /[\u0305-\u030B\u030D-\u036f]/g;
+};
+
+export const LANGUAGE_NAME_TO_CODE: Record<string, string> = {
+  'english': 'en', 'german': 'de', 'dutch': 'nl', 'swedish': 'sv', 'danish': 'da', 'norwegian': 'no', 'icelandic': 'is',
+  'french': 'fr', 'spanish': 'es', 'italian': 'it', 'portuguese': 'pt', 'romanian': 'ro', 'catalan': 'ca',
+  'russian': 'ru', 'polish': 'pl', 'czech': 'cs', 'slovak': 'sk', 'uk': 'uk', 'bulgarian': 'bg', 'serbian': 'sr', 'croatian': 'hr',
+  'yoruba': 'yo', 'swahili': 'sw', 'zulu': 'zu', 'xhosa': 'xh', 'hausa': 'ha', 'baoulé': 'bci', 'baoule': 'bci', 'dioula': 'dyu', 'ewe': 'ee', 'mina': 'gej',
+  'chinese': 'zh', 'mandarin': 'zh', 'cantonese': 'yue', 'japanese': 'ja', 'korean': 'ko', 'hindi': 'hi', 'urdu': 'ur', 'bengali': 'bn', 'punjabi': 'pa', 'persian': 'fa', 'tamil': 'ta', 'telugu': 'te', 'kannada': 'kn', 'malayalam': 'ml', 'thai': 'th', 'vietnamese': 'vi', 'indonesian': 'id', 'malay': 'ms', 'tagalog': 'tl',
+  'arabic': 'ar', 'hebrew': 'he', 'amharic': 'am', 'turkish': 'tr', 'finnish': 'fi', 'hungarian': 'hu',
+};
+
+export const languageNameToCode = (languageName: string): string | undefined => {
+  if (!languageName) return undefined;
+  const normalized = languageName.toLowerCase().trim();
+  if (LANG_TO_FAMILY[normalized]) return normalized;
+  return LANGUAGE_NAME_TO_CODE[normalized];
+};
