@@ -23,10 +23,10 @@ export function useDerivedAppState({
 
   const hasExistingWork = useMemo(
     () =>
-      (hasRealLyricContent && !isPristineDraft(song, structure, rhymeScheme))
-      || topic !== DEFAULT_TOPIC
-      || mood !== DEFAULT_MOOD
-      || (isMarkupMode && markupText.trim().length > 0),
+      (hasRealLyricContent && !isPristineDraft(song, structure, rhymeScheme)) ||
+      topic !== DEFAULT_TOPIC ||
+      mood !== DEFAULT_MOOD ||
+      (isMarkupMode && markupText.trim().length > 0),
     [hasRealLyricContent, song, structure, rhymeScheme, topic, mood, isMarkupMode, markupText]
   );
 
