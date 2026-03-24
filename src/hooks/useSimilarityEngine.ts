@@ -4,7 +4,7 @@
  * Triggers automatically when lyrics change significantly.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Section } from '../types';
 import type { WebSimilarityIndex } from '../types/webSimilarity';
 import { DEFAULT_TITLE } from '../constants/editor';
@@ -16,13 +16,21 @@ const DELTA_THRESHOLD = 0.20;     // retrigger if text changed by >20%
 const textFingerprint = (title: string, sections: Section[]): string =>
   [title.trim(), ...sections.flatMap(s => s.lines.map(l => l.text))].join('\n');
 
-/** Unicode-safe character delta: iterates over code points, not UTF-16 units. */
+/**
+ * Unicode-safe character delta: iterates over code points, not UTF-16 units.
+ * FIX: early-exit when the length ratio alone exceeds DELTA_THRESHOLD —
+ * avoids O(n) scan for large mutations (AI generation replacing full song).
+ */
 const changeDelta = (prev: string, next: string): number => {
   if (!prev) return 1;
   const prevChars = [...prev];
   const nextChars = [...next];
   const maxLen = Math.max(prevChars.length, nextChars.length);
   if (maxLen === 0) return 0;
+  // Early-exit: if the length difference alone exceeds threshold, skip full scan.
+  if (Math.abs(prevChars.length - nextChars.length) / maxLen > DELTA_THRESHOLD) {
+    return Math.abs(prevChars.length - nextChars.length) / maxLen;
+  }
   let diff = 0;
   for (let i = 0; i < maxLen; i++) {
     if (prevChars[i] !== nextChars[i]) diff++;
@@ -80,8 +88,18 @@ export const useSimilarityEngine = (sections: Section[], title = '', songLanguag
     setIndex(INITIAL_INDEX);
   }, []);
 
+  /**
+   * FIX: textFingerprint était calculé directement dans le corps du useEffect,
+   * donc exécuté à chaque render du composant parent même si sections/title
+   * n'avaient pas changé référentiellement.
+   * useMemo garantit que le calcul (flatMap + join) n'a lieu que sur vrais changements.
+   */
+  const fingerprint = useMemo(
+    () => textFingerprint(effectiveTitle, sections),
+    [effectiveTitle, sections]
+  );
+
   useEffect(() => {
-    const fingerprint = textFingerprint(effectiveTitle, sections);
     const delta = changeDelta(lastFingerprintRef.current, fingerprint);
 
     if (delta < DELTA_THRESHOLD && lastFingerprintRef.current !== '') return;
@@ -99,7 +117,7 @@ export const useSimilarityEngine = (sections: Section[], title = '', songLanguag
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [effectiveTitle, sections, runSearch, songLanguage]);
+  }, [fingerprint, effectiveTitle, sections, runSearch, songLanguage]);
 
   useEffect(() => {
     return () => {

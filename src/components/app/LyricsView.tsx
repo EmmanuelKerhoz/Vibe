@@ -1,4 +1,4 @@
-import React, { useCallback, memo } from 'react';
+import React, { useCallback, useMemo, memo } from 'react';
 import { ClipboardPaste, Layout, Library, Music, Sparkles } from '../ui/icons';
 import { Section } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
@@ -59,7 +59,6 @@ export const LyricsView = memo(function LyricsView({
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx <= 0) return;
 
-    // Determine the block to move (Pre-Chorus + Chorus tied)
     let blockStart = idx;
     let blockEnd = idx;
     const section = song[idx]!;
@@ -80,7 +79,6 @@ export const LyricsView = memo(function LyricsView({
     const idx = song.findIndex(s => s.id === sectionId);
     if (idx < 0 || idx >= song.length - 1) return;
 
-    // Determine the block to move (Pre-Chorus + Chorus tied)
     let blockStart = idx;
     let blockEnd = idx;
     const section = song[idx]!;
@@ -167,16 +165,26 @@ export const LyricsView = memo(function LyricsView({
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
-  const editorHandlers = {
+  /**
+   * FIX: editorHandlers était un objet littéral recréé à chaque render.
+   * Le spread {...editorHandlers} dans SectionEditor invalidait React.memo()
+   * sur tous les enfants à chaque frappe, même dans une autre section.
+   * useMemo garantit une référence stable tant que les callbacks ne changent pas.
+   */
+  const editorHandlers = useMemo(() => ({
     moveSectionUp, moveSectionDown,
     moveLineUp, moveLineDown,
     addLineToSection, deleteLineFromSection,
     setSectionName, setSectionRhymeScheme,
-  };
+  }), [
+    moveSectionUp, moveSectionDown,
+    moveLineUp, moveLineDown,
+    addLineToSection, deleteLineFromSection,
+    setSectionName, setSectionRhymeScheme,
+  ]);
 
   return (
     <>
-      {/* FIX #1: w-full + min-w-0 ensure the sections container expands to full available width */}
       <div className="w-full min-w-0 flex flex-col gap-1 pb-32">
         {isMarkupMode ? (
           <div className="lcars-gradient-container flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
