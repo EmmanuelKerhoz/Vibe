@@ -88,15 +88,22 @@ export const useSongAnalysis = ({
   });
 
   return {
+    // ── Paste import ────────────────────────────────────────────────────────
     pastedText: pasteImport.pastedText,
     setPastedText: pasteImport.setPastedText,
+    analyzePastedLyrics: pasteImport.analyzePastedLyrics,
+    // ── Analysis state ──────────────────────────────────────────────────────
     isAnalyzing,
     analysisReport: analysisEngine.analysisReport,
     analysisSteps: analysisEngine.analysisSteps,
     appliedAnalysisItems: analysisEngine.appliedAnalysisItems,
     selectedAnalysisItems: analysisEngine.selectedAnalysisItems,
     isApplyingAnalysis: analysisEngine.isApplyingAnalysis,
-    isAnalyzingTheme: analysisEngine.isAnalyzingTheme,
+    toggleAnalysisItemSelection: analysisEngine.toggleAnalysisItemSelection,
+    applySelectedAnalysisItems: analysisEngine.applySelectedAnalysisItems,
+    analyzeCurrentSong: analysisEngine.analyzeCurrentSong,
+    clearAppliedAnalysisItems: analysisEngine.clearAppliedAnalysisItems,
+    // ── Language adapter ────────────────────────────────────────────────────
     songLanguage: languageAdapter.songLanguage,
     targetLanguage: languageAdapter.targetLanguage,
     setTargetLanguage: languageAdapter.setTargetLanguage,
@@ -106,14 +113,13 @@ export const useSongAnalysis = ({
     isAdaptingLanguage: languageAdapter.isAdaptingLanguage,
     adaptationProgress: languageAdapter.adaptationProgress,
     adaptationResult: languageAdapter.adaptationResult,
-    toggleAnalysisItemSelection: analysisEngine.toggleAnalysisItemSelection,
-    applySelectedAnalysisItems: analysisEngine.applySelectedAnalysisItems,
-    applyAnalysisItem: analysisEngine.applyAnalysisItem,
-    analyzeCurrentSong: analysisEngine.analyzeCurrentSong,
     detectLanguage: languageAdapter.detectLanguage,
     adaptSongLanguage: languageAdapter.adaptSongLanguage,
     adaptSectionLanguage: languageAdapter.adaptSectionLanguage,
-    analyzePastedLyrics: pasteImport.analyzePastedLyrics,
-    clearAppliedAnalysisItems: analysisEngine.clearAppliedAnalysisItems,
+    // ── @internal: non consommés par App.tsx — conserver pour les tests ────
+    // TODO: brancher isAnalyzingTheme sur InsightsBar ou supprimer
+    // TODO: brancher applyAnalysisItem sur un futur point d'usage ou supprimer
+    isAnalyzingTheme: analysisEngine.isAnalyzingTheme,
+    applyAnalysisItem: analysisEngine.applyAnalysisItem,
   };
 };
