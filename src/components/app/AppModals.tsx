@@ -103,7 +103,7 @@ interface Props {
   resetSong: () => void;
 }
 
-export function AppModals({
+export const AppModals = React.memo(function AppModals({
   theme, setTheme, audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
   hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
@@ -206,4 +206,4 @@ export function AppModals({
       />
     </>
   );
-}
+});

@@ -35,7 +35,7 @@ interface Props {
   className?: string;
 }
 
-export function StructureSidebar({
+export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
   newSectionName, setNewSectionName,
   isSectionDropdownOpen, setIsSectionDropdownOpen,
@@ -180,7 +180,6 @@ export function StructureSidebar({
                       );
 
                       if (isGroupLeader && chorusItem !== undefined && chorusIdx !== undefined) {
-                        // Render Pre-Chorus + Chorus as a coupled group
                         return (
                           <div
                             key={idx}
@@ -319,4 +318,4 @@ export function StructureSidebar({
       )}
     </AnimatePresence>
   );
-}
+});
