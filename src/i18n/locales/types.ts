@@ -337,6 +337,11 @@ export interface Translations {
       section: string;
       markdown: string;
     };
+    translation?: {
+      label: string;
+      show: string;
+      hide: string;
+    };
     actions: {
       default: string;
       save: string;

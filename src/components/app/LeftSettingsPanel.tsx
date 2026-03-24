@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle } from '../ui/icons';
+import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle, RefreshCw } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Label } from '../ui/Label';
@@ -29,6 +29,7 @@ interface Props {
   onSurprise: () => void;
   isSurprising: boolean;
   onGenerateSong: () => void;
+  onRegenerateSong?: () => void;
   isSessionHydrated: boolean;
   isMobileOverlay?: boolean;
 }
@@ -50,6 +51,7 @@ export function LeftSettingsPanel({
   isLeftPanelOpen, setIsLeftPanelOpen,
   onSurprise, isSurprising,
   onGenerateSong,
+  onRegenerateSong,
   isSessionHydrated: _isSessionHydrated,
   isMobileOverlay,
 }: Props) {
@@ -91,6 +93,7 @@ export function LeftSettingsPanel({
           song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
           isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
           onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
+          onRegenerateSong={onRegenerateSong}
           isMobileOverlay={true}
         />
       </div>
@@ -134,6 +137,7 @@ export function LeftSettingsPanel({
               song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
               isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
               onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
+              onRegenerateSong={onRegenerateSong}
               isMobileOverlay={false}
             />
           </div>
@@ -150,7 +154,7 @@ function PanelContent({
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   song, isGenerating, quantizeSyllables,
   isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen: _setIsLeftPanelOpen,
-  onSurprise, isSurprising, onGenerateSong,
+  onSurprise, isSurprising, onGenerateSong, onRegenerateSong,
   isMobileOverlay,
 }: PanelContentProps) {
   return (
@@ -305,8 +309,21 @@ function PanelContent({
         </div>
       </div>
 
-      {/* Footer — generate button, no separator line */}
-      <div className="p-5 shrink-0">
+      {/* Footer — regenerate + generate buttons */}
+      <div className="p-5 shrink-0 space-y-2">
+        {onRegenerateSong && (
+          <Tooltip title={t.tooltips.regenerate}>
+            <Button
+              onClick={onRegenerateSong}
+              disabled={isGenerating || song.length === 0}
+              variant="outlined" color="primary" fullWidth
+              startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              style={{ fontSize: '10px', padding: '6px 0' }}
+            >
+              {t.editor.regenerateGlobal}
+            </Button>
+          </Tooltip>
+        )}
         <Button
           onClick={onGenerateSong}
           disabled={isGenerating}

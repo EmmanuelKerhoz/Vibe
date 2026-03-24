@@ -76,6 +76,7 @@ function AppInnerContent() {
     isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
     audioFeedback, setAudioFeedback, uiScale, setUiScale,
     defaultEditMode, setDefaultEditMode,
+    showTranslationFeatures, setShowTranslationFeatures,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount,
     libraryAssets, setLibraryAssets, isSavingToLibrary, setIsSavingToLibrary,
     isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
@@ -298,6 +299,7 @@ function AppInnerContent() {
               onSurprise={handleSurpriseClick} isSurprising={isSurprising}
               isSessionHydrated={isSessionHydrated}
               onGenerateSong={handleGenerateSongFromLeftPanel}
+              onRegenerateSong={handleGlobalRegenerate}
             />
 
             <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
@@ -332,6 +334,7 @@ function AppInnerContent() {
                   handleMarkupToggle={handleMarkupToggle}
                   setIsSimilarityModalOpen={setIsSimilarityModalOpen}
                   adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
+                  showTranslationFeatures={showTranslationFeatures}
                 />
               )}
 
@@ -359,6 +362,7 @@ function AppInnerContent() {
                         onOpenLibrary={handleOpenSaveToLibraryModal}
                         onPasteLyrics={handleOpenPasteModal}
                         onGenerateSong={handleGlobalRegenerate}
+                        showTranslationFeatures={showTranslationFeatures}
                       />
                     ) : (
                       <MusicalTab hasApiKey={hasApiKey} />
@@ -407,6 +411,7 @@ function AppInnerContent() {
             audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
             uiScale={uiScale} setUiScale={setUiScale}
             defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
+            showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
             hasExistingWork={hasExistingWork}
             handleImportChooseFile={handleImportChooseFile}
             onOpenPasteLyrics={handleOpenPasteLyricsFromModals}

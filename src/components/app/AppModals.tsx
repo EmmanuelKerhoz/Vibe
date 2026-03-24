@@ -37,6 +37,8 @@ interface Props {
   setUiScale: (v: 'small' | 'medium' | 'large') => void;
   defaultEditMode: 'section' | 'markdown';
   setDefaultEditMode: (v: 'section' | 'markdown') => void;
+  showTranslationFeatures: boolean;
+  setShowTranslationFeatures: (v: boolean) => void;
 
   // Import
   hasExistingWork: boolean;
@@ -105,6 +107,7 @@ interface Props {
 
 export const AppModals = React.memo(function AppModals({
   theme, setTheme, audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
+  showTranslationFeatures, setShowTranslationFeatures,
   hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
   selectedLineId, setSelectedLineId, suggestions, isSuggesting, applySuggestion, generateSuggestions,
@@ -130,6 +133,7 @@ export const AppModals = React.memo(function AppModals({
         audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
         uiScale={uiScale} setUiScale={setUiScale}
         defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
+        showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
       />
       <ImportModal
         isOpen={ui.isImportModalOpen} hasExistingWork={hasExistingWork}

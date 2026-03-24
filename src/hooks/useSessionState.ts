@@ -5,6 +5,7 @@ import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 
 const UI_SCALE_KEY = 'vibe_ui_scale';
 const DEFAULT_EDIT_MODE_KEY = 'vibe_default_edit_mode';
+const SHOW_TRANSLATION_KEY = 'vibe_show_translation';
 const API_STATUS_RETRY_DELAYS_MS = [500, 1500];
 const API_STATUS_TIMEOUT_MS = 5000;
 
@@ -102,6 +103,17 @@ export function useSessionState() {
     safeSetItem(DEFAULT_EDIT_MODE_KEY, v);
   };
 
+  // ── Show Translation Features ─────────────────────────────────────────────
+  const [showTranslationFeatures, setShowTranslationFeaturesRaw] = useState<boolean>(() => {
+    const stored = safeGetItem(SHOW_TRANSLATION_KEY);
+    return stored === 'false' ? false : true;
+  });
+
+  const setShowTranslationFeatures = (v: boolean) => {
+    setShowTranslationFeaturesRaw(v);
+    safeSetItem(SHOW_TRANSLATION_KEY, String(v));
+  };
+
   // ── Library / similarity ──────────────────────────────────────────────────
   const [similarityMatches, setSimilarityMatches] = useState<SimilarityMatch[]>([]);
   const [libraryCount, setLibraryCount] = useState(0);
@@ -163,6 +175,7 @@ export function useSessionState() {
     audioFeedback, setAudioFeedback,
     uiScale, setUiScale,
     defaultEditMode, setDefaultEditMode,
+    showTranslationFeatures, setShowTranslationFeatures,
     similarityMatches, setSimilarityMatches,
     libraryCount, setLibraryCount,
     libraryAssets, setLibraryAssets,

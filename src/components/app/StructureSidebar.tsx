@@ -307,7 +307,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                       disabled={structure.length === 0 || isGenerating}
                       variant="outlined" fullWidth
                       startIcon={<AlignLeft className="w-3.5 h-3.5" />}
-                      style={{ fontSize: '10px', padding: '4px 0' }}
+                      style={{ fontSize: '10px', padding: '4px 0', borderRadius: '16px 4px 16px 4px' }}
                       className="mt-4"
                     >
                       {t.structure.normalize}
@@ -317,28 +317,15 @@ export const StructureSidebar = React.memo(function StructureSidebar({
               </div>
             </div>
 
-            {/* Footer — Regenerate + Generate Lyrics buttons */}
+            {/* Footer — Generate Lyrics button */}
             <div className="p-5 shrink-0 space-y-2">
-              {onRegenerateSong && (
-                <Tooltip title={t.tooltips.regenerate}>
-                  <Button
-                    onClick={onRegenerateSong}
-                    disabled={isGenerating || song.length === 0}
-                    variant="outlined" color="primary" fullWidth
-                    startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                    style={{ fontSize: '10px', padding: '6px 0' }}
-                  >
-                    {t.editor.regenerateGlobal}
-                  </Button>
-                </Tooltip>
-              )}
               {onGenerateSong && (
                 <Button
                   onClick={onGenerateSong}
                   disabled={isGenerating}
                   variant="contained" color="primary" fullWidth
                   startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  style={{ fontSize: '11px', padding: '8px 0' }}
+                  style={{ fontSize: '11px', padding: '8px 0', borderRadius: '16px 4px 16px 4px' }}
                 >
                   {t.editor.emptyState.generateSong}
                 </Button>

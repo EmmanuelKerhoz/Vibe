@@ -15,6 +15,8 @@ const createProps = () => ({
   setUiScale: vi.fn(),
   defaultEditMode: 'section' as const,
   setDefaultEditMode: vi.fn(),
+  showTranslationFeatures: true,
+  setShowTranslationFeatures: vi.fn(),
 });
 
 describe('SettingsModal', () => {

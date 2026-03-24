@@ -46,11 +46,11 @@ const pt: Translations = {
 
   leftPanel: {
     title: 'Lyricist Pro',
-    songTitle: 'TÍTULO DA MÚSICA',
+    songTitle: 'TÍTULO',
     songTitlePlaceholder: 'Insira o título da música...',
-    songTopic: 'TEMA DA MÚSICA',
+    songTopic: 'TEMA',
     songTopicPlaceholder: 'Qual é o tema da música?',
-    songMood: 'HUMOR DA MÚSICA',
+    songMood: 'HUMOR',
     songMoodPlaceholder: 'ex. Melancólico, Enérgico...',
     songMoodPresets: 'Humores predefinidos',
     rhymeScheme: 'ESQUEMA DE RIMA PADRÃO',

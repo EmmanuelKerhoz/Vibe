@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2 } from '../ui/icons';
+import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2, Bot, User } from '../ui/icons';
 import type { Line } from '../../types';
 import { useDrag } from '../../contexts/DragContext';
 import { Tooltip } from '../ui/Tooltip';
@@ -143,6 +143,15 @@ export const LyricInput = React.memo(function LyricInput({
       >
         <GripVertical className="h-3.5 w-3.5 text-zinc-500" />
       </div>
+
+      {/* AI / Human origin indicator */}
+      <Tooltip title={line.isManual ? (t.editor?.humanLine ?? 'Human line') : (t.editor?.aiLine ?? 'AI-generated line')}>
+        <span className="flex-shrink-0 flex items-center justify-center w-3.5">
+          {line.isManual
+            ? <User className="h-2.5 w-2.5 text-zinc-400" />
+            : <Bot className="h-2.5 w-2.5 text-[var(--accent-color)]" />}
+        </span>
+      </Tooltip>
 
       {/* Text input with styled overlay */}
       <div className="relative flex-1 min-w-0" onClick={handleClick}>

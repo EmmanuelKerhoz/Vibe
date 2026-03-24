@@ -46,11 +46,11 @@ const en: Translations = {
 
   leftPanel: {
     title: 'Lyricist Pro',
-    songTitle: 'SONG TITLE',
+    songTitle: 'TITLE',
     songTitlePlaceholder: 'Enter song title...',
-    songTopic: 'SONG TOPIC',
+    songTopic: 'TOPIC',
     songTopicPlaceholder: "What's the song about?",
-    songMood: 'SONG MOOD',
+    songMood: 'MOOD',
     songMoodPlaceholder: 'e.g. Melancholic, Energetic...',
     songMoodPresets: 'Preset moods',
     rhymeScheme: 'DEFAULT RHYME SCHEME',
@@ -322,6 +322,11 @@ const en: Translations = {
       label: 'Default Editor',
       section: 'Section Editor',
       markdown: 'Markdown Editor',
+    },
+    translation: {
+      label: 'Translation / Adaptation',
+      show: 'Show',
+      hide: 'Hide',
     },
     actions: {
       default: 'Default',

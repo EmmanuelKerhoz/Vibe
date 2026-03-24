@@ -13,7 +13,7 @@ export function Tooltip({ title, children, ...props }: Props) {
         ? <span style={{ display: 'block', maxWidth: '18rem', whiteSpace: 'pre-line' }}>{title}</span>
         : title}
       relationship="label"
-      positioning={{ position: 'below', align: 'center' }}
+      positioning={{ position: 'above', align: 'center' }}
       {...props}
     >
       {children}
