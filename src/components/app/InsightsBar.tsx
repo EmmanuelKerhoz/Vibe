@@ -30,6 +30,7 @@ interface InsightsBarProps {
   toggleMetronome?: () => void;
   adaptationProgress?: AdaptationProgress;
   adaptationResult?: AdaptationResult | null;
+  showTranslationFeatures?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,7 +203,10 @@ function AdaptationProgressBanner({
 const LANGUAGE_SELECT_OPTIONS = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
   value: lang.aiName,
   label: (
-    <><EmojiSign sign={lang.sign} /> {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</>
+    <span className="flex items-center gap-1.5 min-w-0 w-full">
+      <EmojiSign sign={lang.sign} />
+      <span className="truncate">{lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</span>
+    </span>
   ),
 }));
 
@@ -229,6 +233,7 @@ export const InsightsBar = React.memo(function InsightsBar({
   toggleMetronome,
   adaptationProgress,
   adaptationResult,
+  showTranslationFeatures = true,
 }: InsightsBarProps) {
   const { song, songLanguage } = useSongContext();
   const { isGenerating } = useComposerContext();
@@ -289,24 +294,28 @@ export const InsightsBar = React.memo(function InsightsBar({
             </button>
           </Tooltip>
 
-          <div className="min-w-0 overflow-hidden" style={{ maxWidth: '180px' }}>
-            <LcarsSelect
-              value={targetLanguage}
-              onChange={setTargetLanguage}
-              options={LANGUAGE_SELECT_OPTIONS}
-            />
-          </div>
+          {showTranslationFeatures && (
+            <>
+              <div className="min-w-0 overflow-hidden" style={{ maxWidth: '180px' }}>
+                <LcarsSelect
+                  value={targetLanguage}
+                  onChange={setTargetLanguage}
+                  options={LANGUAGE_SELECT_OPTIONS}
+                />
+              </div>
 
-          <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText)}>
-            <button
-              onClick={() => adaptSongLanguage(targetLanguage)}
-              disabled={isAdaptingLanguage || song.length === 0}
-              className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap shrink-0"
-            >
-              {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
-              <span className="hidden sm:inline">{t.editor.adaptation}</span>
-            </button>
-          </Tooltip>
+              <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText)}>
+                <button
+                  onClick={() => adaptSongLanguage(targetLanguage)}
+                  disabled={isAdaptingLanguage || song.length === 0}
+                  className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap shrink-0"
+                >
+                  {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
+                  <span className="hidden sm:inline">{t.editor.adaptation}</span>
+                </button>
+              </Tooltip>
+            </>
+          )}
 
           {toggleMetronome && (
             <Tooltip title={t.musical?.metronome ?? 'Metronome'}>

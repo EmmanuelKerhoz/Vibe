@@ -148,7 +148,7 @@ export function StatusBarLanguagePicker() {
           aria-label={t.statusBar.language}
           aria-haspopup="listbox"
           aria-expanded={open}
-          className="lcars-meta-btn min-h-[44px] lg:min-h-0 flex items-center gap-1"
+          className="lcars-meta-btn min-h-[44px] lg:min-h-0 flex items-center gap-1.5"
         >
           <FlagEmoji flag={currentLocale.flag} code={currentLocale.code} size="0.875rem" />
           <span className="uppercase font-semibold text-[10px] tracking-wider">{currentLocale.code}</span>

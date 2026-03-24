@@ -33,6 +33,7 @@ interface LyricsViewProps {
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
   onGenerateSong: () => void;
+  showTranslationFeatures?: boolean;
 }
 
 export const LyricsView = memo(function LyricsView({
@@ -44,6 +45,7 @@ export const LyricsView = memo(function LyricsView({
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
   isMarkupMode, setIsMarkupMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
   onOpenLibrary, onPasteLyrics, onGenerateSong,
+  showTranslationFeatures = true,
 }: LyricsViewProps) {
   const { song, rhymeScheme, updateState, updateSongAndStructureWithHistory } = useSongContext();
   const { selectedLineId, isGenerating, isRegeneratingSection, handleLineClick, updateLineText,
@@ -250,10 +252,10 @@ export const LyricsView = memo(function LyricsView({
                 selectedLineId={selectedLineId}
                 isGenerating={isGenerating}
                 isAnalyzing={isAnalyzing}
-                isAdaptingLanguage={isAdaptingLanguage}
+                isAdaptingLanguage={showTranslationFeatures ? isAdaptingLanguage : false}
                 sectionTargetLanguage={sectionTargetLanguages[section.id] ?? 'English'}
-                onSectionTargetLanguageChange={onSectionTargetLanguageChange}
-                adaptSectionLanguage={adaptSectionLanguage}
+                onSectionTargetLanguageChange={showTranslationFeatures ? onSectionTargetLanguageChange : undefined}
+                adaptSectionLanguage={showTranslationFeatures ? adaptSectionLanguage : undefined}
                 isRegeneratingSection={isRegeneratingSection}
                 handleLineClick={handleLineClick}
                 updateLineText={updateLineText}

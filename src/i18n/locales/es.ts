@@ -46,9 +46,9 @@ const es: Translations = {
 
   leftPanel: {
     title: 'Lyricist Pro',
-    songTitle: 'TÍTULO DE LA CANCIÓN',
+    songTitle: 'TÍTULO',
     songTitlePlaceholder: 'Ingresa el título de la canción...',
-    songTopic: 'TEMA DE LA CANCIÓN',
+    songTopic: 'TEMA',
     songTopicPlaceholder: '¿De qué trata la canción?',
     songMood: 'ESTADO DE ÁNIMO',
     songMoodPlaceholder: 'ej. Melancólico, Enérgico...',

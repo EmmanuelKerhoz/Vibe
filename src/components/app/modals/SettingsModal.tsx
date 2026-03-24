@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCode } from '../../ui/icons';
+import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCode, Languages } from '../../ui/icons';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';
@@ -16,6 +16,8 @@ interface Props {
   setUiScale: (v: 'small' | 'medium' | 'large') => void;
   defaultEditMode: 'section' | 'markdown';
   setDefaultEditMode: (v: 'section' | 'markdown') => void;
+  showTranslationFeatures: boolean;
+  setShowTranslationFeatures: (v: boolean) => void;
 }
 
 const UI_SCALE_FONT_SIZES: Record<'small' | 'medium' | 'large', string> = {
@@ -39,6 +41,8 @@ export function SettingsModal({
   setUiScale,
   defaultEditMode,
   setDefaultEditMode,
+  showTranslationFeatures,
+  setShowTranslationFeatures,
 }: Props) {
   const { t, language, setLanguage } = useTranslation();
   const [draftTheme, setDraftTheme] = useState(theme);
@@ -46,6 +50,7 @@ export function SettingsModal({
   const [draftLanguage, setDraftLanguage] = useState(language);
   const [draftUiScale, setDraftUiScale] = useState(uiScale);
   const [draftDefaultEditMode, setDraftDefaultEditMode] = useState(defaultEditMode);
+  const [draftShowTranslation, setDraftShowTranslation] = useState(showTranslationFeatures);
   const closeActionRef = useRef<'save' | 'close' | null>(null);
 
   useEffect(() => {
@@ -56,8 +61,9 @@ export function SettingsModal({
       setDraftLanguage(language);
       setDraftUiScale(uiScale);
       setDraftDefaultEditMode(defaultEditMode);
+      setDraftShowTranslation(showTranslationFeatures);
     }
-  }, [isOpen, theme, audioFeedback, language, uiScale, defaultEditMode]);
+  }, [isOpen, theme, audioFeedback, language, uiScale, defaultEditMode, showTranslationFeatures]);
 
   useEffect(() => {
     if (isOpen) {
@@ -83,6 +89,7 @@ export function SettingsModal({
     setLanguage(draftLanguage);
     setUiScale(draftUiScale);
     setDefaultEditMode(draftDefaultEditMode);
+    setShowTranslationFeatures(draftShowTranslation);
     onClose();
   };
 
@@ -92,6 +99,7 @@ export function SettingsModal({
     setDraftLanguage('en');
     setDraftUiScale('large');
     setDraftDefaultEditMode('section');
+    setDraftShowTranslation(true);
   };
 
   return (
@@ -282,6 +290,30 @@ export function SettingsModal({
                             ? (t.settings.editMode?.section ?? 'Section Editor')
                             : (t.settings.editMode?.markdown ?? 'Markdown Editor')}
                         </span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Translation Features toggle */}
+                <section aria-labelledby="settings-translation-heading">
+                  <h3 id="settings-translation-heading" className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-3 flex items-center gap-2">
+                    <Languages className="w-3.5 h-3.5" />
+                    {t.settings.translation?.label ?? 'Translation / Adaptation'}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([true, false] as const).map((val) => (
+                      <button
+                        key={String(val)}
+                        onClick={() => setDraftShowTranslation(val)}
+                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                          draftShowTranslation === val
+                            ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/40 text-[var(--accent-color)]'
+                            : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-color)]/20 hover:text-[var(--text-primary)]'
+                        }`}
+                      >
+                        <Languages className="w-3.5 h-3.5" />
+                        <span>{val ? (t.settings.translation?.show ?? 'Show') : (t.settings.translation?.hide ?? 'Hide')}</span>
                       </button>
                     ))}
                   </div>

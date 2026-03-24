@@ -46,11 +46,11 @@ const ar: Translations = {
 
   leftPanel: {
     title: 'Lyricist Pro',
-    songTitle: 'عنوان الأغنية',
+    songTitle: 'العنوان',
     songTitlePlaceholder: 'أدخل عنوان الأغنية...',
-    songTopic: 'موضوع الأغنية',
+    songTopic: 'الموضوع',
     songTopicPlaceholder: 'عمَّ تتحدث الأغنية؟',
-    songMood: 'مزاج الأغنية',
+    songMood: 'المزاج',
     songMoodPlaceholder: 'مثل: حزين، نشيط...',
     songMoodPresets: 'حالات مزاجية جاهزة',
     rhymeScheme: 'نظام القافية الافتراضي',

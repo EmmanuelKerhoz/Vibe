@@ -46,11 +46,11 @@ const fr: Translations = {
 
   leftPanel: {
     title: 'Lyricist Pro',
-    songTitle: 'TITRE DE LA CHANSON',
+    songTitle: 'TITRE',
     songTitlePlaceholder: 'Entrez le titre...',
-    songTopic: 'SUJET DE LA CHANSON',
+    songTopic: 'SUJET',
     songTopicPlaceholder: 'De quoi parle la chanson ?',
-    songMood: 'AMBIANCE DE LA CHANSON',
+    songMood: 'AMBIANCE',
     songMoodPlaceholder: 'ex. Mélancolique, Énergique...',
     songMoodPresets: 'Ambiances prédéfinies',
     rhymeScheme: 'SCHÉMA DE RIMES PAR DÉFAUT',

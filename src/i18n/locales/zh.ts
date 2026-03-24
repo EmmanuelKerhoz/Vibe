@@ -46,11 +46,11 @@ const zh: Translations = {
 
   leftPanel: {
     title: 'Lyricist Pro',
-    songTitle: '歌曲标题',
+    songTitle: '标题',
     songTitlePlaceholder: '输入歌曲标题...',
-    songTopic: '歌曲主题',
+    songTopic: '主题',
     songTopicPlaceholder: '歌曲讲述什么？',
-    songMood: '歌曲情感',
+    songMood: '情感',
     songMoodPlaceholder: '如：忧郁、充满活力...',
     songMoodPresets: '预设情绪',
     rhymeScheme: '默认押韵方案',
