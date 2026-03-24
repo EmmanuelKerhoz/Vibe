@@ -5,6 +5,8 @@ import { Tooltip } from '../ui/Tooltip';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../i18n';
 
 const POPOVER_WIDTH = 180;
+const VIEWPORT_PADDING = 8;
+const POPOVER_GAP = 6;
 
 /**
  * Compact language picker for the StatusBar.
@@ -19,14 +21,16 @@ export function StatusBarLanguagePicker() {
   const triggerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  const currentLocale = SUPPORTED_UI_LOCALES.find(l => l.code === language) ?? SUPPORTED_UI_LOCALES[0]!;
+  const currentLocale = SUPPORTED_UI_LOCALES.find(l => l.code === language)
+    ?? SUPPORTED_UI_LOCALES[0]
+    ?? { code: 'en', label: 'English', flag: '🇬🇧', dir: 'ltr' as const };
 
   const updateCoords = useCallback(() => {
     if (triggerRef.current) {
       const r = triggerRef.current.getBoundingClientRect();
-      const right = Math.max(8, window.innerWidth - r.right);
+      const right = Math.max(VIEWPORT_PADDING, window.innerWidth - r.right);
       setCoords({
-        bottom: window.innerHeight - r.top + 6,
+        bottom: window.innerHeight - r.top + POPOVER_GAP,
         right,
       });
     }
