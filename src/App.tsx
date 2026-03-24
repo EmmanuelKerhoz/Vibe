@@ -236,7 +236,7 @@ function AppInnerContent() {
   // ── ModalProvider injection ───────────────────────────────────────────────
   const uiStateForProvider = useUIStateForProvider({
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
-    setIsImportModalOpen, setIsExportModalValid, setIsSectionDropdownOpen,
+    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
     setIsResetModalOpen, setIsKeyboardShortcutsModalOpen, setConfirmModal, setPromptModal,
     setIsPasteModalOpen, setIsAnalysisModalOpen, setIsMarkupMode,
