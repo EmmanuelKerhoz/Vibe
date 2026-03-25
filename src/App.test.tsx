@@ -502,6 +502,26 @@ describe('App markup mode reset', () => {
     expect(screen.getByTestId('musical-tab')).toBeTruthy();
   });
 
+  it('opens the left generation panel after hydration when no lyrics are loaded', async () => {
+    render(<App />);
+
+    await waitFor(() => expect(mockAppState.setIsLeftPanelOpenSpy).toHaveBeenCalledWith(true));
+  });
+
+  it('closes the initially open left generation panel when hydrated lyrics already exist', async () => {
+    mockAppState.initialIsLeftPanelOpen = true;
+    mockAppState.song = [{
+      id: 'section-1',
+      name: 'Verse',
+      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
+    }];
+    mockAppState.structure = [{ id: 'section-1', name: 'Verse' }];
+
+    render(<App />);
+
+    await waitFor(() => expect(mockAppState.setIsLeftPanelOpenSpy).toHaveBeenCalledWith(false));
+  });
+
   it('renders the mobile backdrop as an accessible button that closes mobile panels', async () => {
     mockAppState.initialIsMobile = true;
     mockAppState.initialIsLeftPanelOpen = true;
