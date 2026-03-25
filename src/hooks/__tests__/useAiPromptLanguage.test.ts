@@ -105,17 +105,18 @@ describe('AI prompt language enforcement', () => {
     );
 
     aiUtilsMocks.generateContentWithRetry.mockClear();
-    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"Ville","mood":"Brumeux"}' });
+    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"Ville","mood":"Brumeux","title":"Nuit de Verre"}' });
     await act(async () => {
       await result.current.generateSuggestion();
     });
 
     const firstPrompt = getPromptAt(0);
-    expect(firstPrompt).toContain('write the "topic" and "mood" values exclusively in French');
+    expect(firstPrompt).toContain('write the "topic", "mood", and "title" values exclusively in French');
+    expect(firstPrompt).toContain('"title": "concise song title (2-6 words)"');
 
     rerender({ language: '' });
     aiUtilsMocks.generateContentWithRetry.mockClear();
-    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"City","mood":"Moody"}' });
+    aiUtilsMocks.generateContentWithRetry.mockResolvedValueOnce({ text: '{"topic":"City","mood":"Moody","title":"Afterglow"}' });
     await act(async () => {
       await result.current.generateSuggestion();
     });

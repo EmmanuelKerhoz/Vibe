@@ -207,16 +207,19 @@ function PanelContent({
           <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-amber,#f59e0b)] opacity-80" />
           <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Song Info</span>
           <div className="flex-1" />
-          <Tooltip title="Suggest a random topic &amp; mood with AI">
-            <Button
-              onClick={onSurprise}
-              disabled={isSurprising || isGenerating}
-              variant="outlined" color="primary"
-              startIcon={isSurprising ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />}
-              style={{ fontSize: '10px', padding: '2px 8px' }}
-            >
-              Suggest
-            </Button>
+          <Tooltip title="Suggest a random topic, mood &amp; title">
+            <div className="lcars-gradient-outline" style={{ borderRadius: '8px 2px 8px 2px' }}>
+              <Button
+                onClick={onSurprise}
+                disabled={isSurprising || isGenerating}
+                variant="outlined" color="primary"
+                className="ux-interactive"
+                startIcon={isSurprising ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />}
+                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '8px 2px 8px 2px' }}
+              >
+                Suggest
+              </Button>
+            </div>
           </Tooltip>
         </div>
 
@@ -238,15 +241,18 @@ function PanelContent({
             </Label>
             <div className="flex items-center gap-2">
               <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t.leftPanel.songTitlePlaceholder} className="flex-1" />
-              <Tooltip title={t.tooltips.generateTitle}>
-                <button
-                  onClick={onGenerateTitle}
-                  disabled={isGeneratingTitle || song.length === 0}
-                  className="ux-interactive px-2 py-1.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] rounded transition-all disabled:opacity-50"
-                >
-                  {isGeneratingTitle ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                </button>
-              </Tooltip>
+              {hasLyrics && (
+                <Tooltip title={t.tooltips.generateTitle}>
+                  <button
+                    onClick={onGenerateTitle}
+                    disabled={isGeneratingTitle}
+                    aria-label={t.tooltips.generateTitle}
+                    className="ux-interactive px-2 py-1.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] rounded transition-all disabled:opacity-50"
+                  >
+                    {isGeneratingTitle ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  </button>
+                </Tooltip>
+              )}
             </div>
           </div>
 

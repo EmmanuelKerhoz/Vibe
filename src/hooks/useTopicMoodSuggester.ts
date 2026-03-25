@@ -2,17 +2,22 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../utils/aiUtils';
 import { withAbort, isAbortError } from '../utils/withAbort';
 import { useSongContext } from '../contexts/SongContext';
+import { DEFAULT_TITLE } from '../constants/editor';
 
 interface TopicMoodSuggestion {
   topic: string;
   mood: string;
+  title: string;
 }
 
 export function useTopicMoodSuggester() {
   const {
+    title: currentTitle,
     topic: currentTopic,
     mood: currentMood,
     songLanguage,
+    setTitle,
+    setTitleOrigin,
     setTopic,
     setMood,
   } = useSongContext();
@@ -28,9 +33,9 @@ export function useTopicMoodSuggester() {
     try {
       return await withAbort(abortControllerRef, async (nextSignal) => {
         const languageInstruction = songLanguage.trim()
-          ? `\nWhen responding, write the "topic" and "mood" values exclusively in ${songLanguage.trim()}.`
+          ? `\nWhen responding, write the "topic", "mood", and "title" values exclusively in ${songLanguage.trim()}.`
           : '';
-        const prompt = `Generate a creative, inspiring song topic and matching mood for a songwriting session.\nReturn as JSON:\n{\n  "topic": "short description (2-8 words)",\n  "mood": "comma-separated mood descriptors (e.g., 'Melancholic, nostalgic, bittersweet')"\n}\n\nExamples:\n- {"topic": "A lonely astronaut drifting in deep space", "mood": "Isolated, contemplative, yearning"}\n- {"topic": "Dancing in a neon-lit city at midnight", "mood": "Energetic, euphoric, cyberpunk"}\n- {"topic": "The last letter from a lost love", "mood": "Heartbreaking, tender, regretful"}\n\nBe original and evocative.${languageInstruction}`;
+        const prompt = `Generate a creative, inspiring song topic, matching mood, and fitting title for a songwriting session.\nReturn as JSON:\n{\n  "topic": "short description (2-8 words)",\n  "mood": "comma-separated mood descriptors (e.g., 'Melancholic, nostalgic, bittersweet')",\n  "title": "concise song title (2-6 words)"\n}\n\nExamples:\n- {"topic": "A lonely astronaut drifting in deep space", "mood": "Isolated, contemplative, yearning", "title": "Orbit Without You"}\n- {"topic": "Dancing in a neon-lit city at midnight", "mood": "Energetic, euphoric, cyberpunk", "title": "Midnight Neon"}\n- {"topic": "The last letter from a lost love", "mood": "Heartbreaking, tender, regretful", "title": "The Final Letter"}\n\nBe original and evocative.${languageInstruction}`;
 
         const response = await generateContentWithRetry({
           model: AI_MODEL_NAME,
@@ -75,10 +80,14 @@ export function useTopicMoodSuggester() {
         if (suggestion) {
           setTopic(suggestion.topic);
           setMood(suggestion.mood);
+          if ((!currentTitle || currentTitle === DEFAULT_TITLE) && suggestion.title) {
+            setTitle(suggestion.title);
+            setTitleOrigin('ai');
+          }
         }
       });
     }
-  }, [currentTopic, currentMood, generateSuggestion, hasSuggested, setTopic, setMood]);
+  }, [currentMood, currentTitle, currentTopic, generateSuggestion, hasSuggested, setMood, setTitle, setTitleOrigin, setTopic]);
 
   return { generateSuggestion, isGeneratingSuggestion, resetSuggestionCycle };
 }
