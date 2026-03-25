@@ -164,9 +164,52 @@ const findBestSharedRhymeSuffix = (a: string, b: string, langCode?: string): str
 };
 
 /**
+ * Known French vowel digraphs — two-vowel sequences representing a single
+ * phoneme. "ie" is intentionally excluded because it is graphemically a
+ * hiatus in most contexts (e.g. "miette" where i and e belong to separate
+ * syllable nuclei).
+ */
+const FRENCH_DIGRAPHS = new Set(['ai', 'ei', 'oi', 'ou', 'au', 'eu']);
+
+/**
+ * Extend a shared-suffix position backward to include the preceding vowel
+ * onset so the UI highlights complete French rimes rather than bare consonant
+ * overlaps. For example, shared suffix "te" in "miette" extends to "ette",
+ * and in "défaite" extends to "aite" (recognising "ai" as a diphthong).
+ */
+const extendToVowelOnset = (normalizedWord: string, suffixStart: number): number => {
+  if (suffixStart <= 0) return suffixStart;
+
+  let pos = suffixStart;
+
+  // When the suffix starts on a consonant, walk backwards to find the
+  // nearest vowel — this becomes the vowel nucleus of the rime.
+  if (!isVowel(normalizedWord[pos]!)) {
+    while (pos >= 0 && !isVowel(normalizedWord[pos]!)) pos--;
+    if (pos < 0) return suffixStart; // no preceding vowel found
+  }
+
+  // pos is now at a vowel. Check whether the preceding character forms a
+  // recognised French diphthong (e.g. "ai" in défaite). If so, include it.
+  if (pos >= 1 && isVowel(normalizedWord[pos - 1]!)) {
+    const digraph = normalizedWord[pos - 1]! + normalizedWord[pos]!;
+    if (FRENCH_DIGRAPHS.has(digraph)) {
+      return pos - 1;
+    }
+  }
+
+  return pos;
+};
+
+/**
  * Split a line at the start of a normalized suffix found inside its last word,
  * preserving the original spelling and trailing punctuation in the rhyming
  * fragment returned to the UI overlay.
+ *
+ * For non-tonal languages the highlight is extended backward to include the
+ * vowel onset preceding the shared consonant suffix, so that complete rhyming
+ * syllables like "ette", "ête", "aite" are marked rather than just the bare
+ * consonant overlap ("te").
  */
 const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, langCode?: string): { before: string; rhyme: string } | null => {
   const word = extractLastWord(text, langCode);
@@ -175,7 +218,13 @@ const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, lan
   const suffixStart = word.normalizedWord.lastIndexOf(normalizedSuffix);
   if (suffixStart < 0) return null;
 
-  const absoluteStart = word.wordStart + suffixStart;
+  // Extend highlight to the vowel onset for complete rime marking.
+  // Skip extension for tonal languages where diacritics carry meaning.
+  const effectiveStart = isTonalLanguage(langCode || '')
+    ? suffixStart
+    : extendToVowelOnset(word.normalizedWord, suffixStart);
+
+  const absoluteStart = word.wordStart + effectiveStart;
   return {
     before: text.slice(0, absoluteStart),
     rhyme: text.slice(absoluteStart),
