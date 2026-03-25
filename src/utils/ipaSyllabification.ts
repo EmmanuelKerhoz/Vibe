@@ -347,6 +347,55 @@ export const extractRhymeNucleus = (
       // CRV: nucleus + coda + tone, weight matters
       return stressedSyllable.nucleus + stressedSyllable.coda + (stressedSyllable.tone || '');
 
+    case 'ALGO-ROM': {
+      // ALGO-ROM (FR, ES, IT, PT, RO, CA):
+      // Remove trailing schwa/e-muet syllable (FR-specific silent final -e).
+      // After removal, recover the coda that the maximal-onset principle assigned
+      // to the schwa syllable's onset rather than the exposed syllable's coda.
+      // Guard: if the schwa syllable itself carries a coda (e.g. -er → /tə.ʁ/),
+      // the exposed syllable is a legitimate open syllable — keep its empty coda.
+      const workingSyllables: IPASyllable[] = [...syllables];
+
+      if (workingSyllables.length >= 2) {
+        const lastSyl = workingSyllables[workingSyllables.length - 1]!;
+        const isSchwa = lastSyl.nucleus === 'ə' || lastSyl.nucleus === '\u0259';
+
+        if (isSchwa) {
+          const schwaSyl = workingSyllables.pop()!;
+          const exposedIdx = workingSyllables.length - 1;
+          const exposed = workingSyllables[exposedIdx]!;
+
+          // Recover the coda consonant that maximal-onset absorbed into the
+          // schwa syllable's onset — but only when the schwa syllable has no
+          // coda of its own (which would indicate a legitimate open syllable
+          // such as the -er infinitive ending /tə.ʁ/).
+          if (schwaSyl.coda === '') {
+            workingSyllables[exposedIdx] = {
+              ...exposed,
+              coda: exposed.coda + schwaSyl.onset,
+            };
+          }
+          // If schwaSyl.coda !== '' (e.g. /tə.ʁ/ for -er), leave exposed as-is.
+        }
+      }
+
+      // Re-find stressed syllable within the trimmed list (default: last).
+      let romStressedIdx = workingSyllables.findIndex(s => s.stress);
+      if (romStressedIdx === -1) {
+        romStressedIdx = workingSyllables.length - 1;
+      }
+
+      const romStressed = workingSyllables[romStressedIdx]!;
+      let rn = romStressed.nucleus + romStressed.coda;
+
+      for (let i = romStressedIdx + 1; i < workingSyllables.length; i++) {
+        const syl = workingSyllables[i]!;
+        rn += syl.onset + syl.nucleus + syl.coda;
+      }
+
+      return rn;
+    }
+
     case 'ALGO-GER': {
       // GER (EN, DE, NL, SV, DA, NO): nucleus + full coda + all following syllables.
       // Explicit case (rather than relying on default) so that future Germanic-specific
