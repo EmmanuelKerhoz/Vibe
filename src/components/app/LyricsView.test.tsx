@@ -54,6 +54,7 @@ describe('LyricsView empty state', () => {
             markupText=""
             setMarkupText={() => {}}
             markupTextareaRef={{ current: null }}
+            canPasteLyrics={true}
             onOpenLibrary={onOpenLibrary}
             onPasteLyrics={onPasteLyrics}
             onGenerateSong={onGenerateSong}
@@ -71,6 +72,33 @@ describe('LyricsView empty state', () => {
     expect(onGenerateSong).toHaveBeenCalledTimes(1);
   });
 
+  it('disables the paste action when there is no text available to paste', () => {
+    render(
+      <DragProvider>
+        <LanguageProvider>
+          <LyricsView
+            isAnalyzing={false}
+            playAudioFeedback={() => {}}
+            handleDrop={() => {}}
+            handleLineDragStart={() => {}}
+            handleLineDrop={() => {}}
+            editMode="section"
+            setEditMode={() => {}}
+            markupText=""
+            setMarkupText={() => {}}
+            markupTextareaRef={{ current: null }}
+            canPasteLyrics={false}
+            onOpenLibrary={() => {}}
+            onPasteLyrics={() => {}}
+            onGenerateSong={() => {}}
+          />
+        </LanguageProvider>
+      </DragProvider>,
+    );
+
+    expect((screen.getByRole('button', { name: 'Import and analyze existing lyrics' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('uses the shared gradient container surface in markup mode', () => {
     const { container } = render(
       <DragProvider>
@@ -86,6 +114,7 @@ describe('LyricsView empty state', () => {
             markupText="[Verse]\nHello"
             setMarkupText={() => {}}
             markupTextareaRef={{ current: null }}
+            canPasteLyrics={true}
             onOpenLibrary={() => {}}
             onPasteLyrics={() => {}}
             onGenerateSong={() => {}}
@@ -132,6 +161,7 @@ describe('LyricsView empty state', () => {
             markupText=""
             setMarkupText={() => {}}
             markupTextareaRef={{ current: null }}
+            canPasteLyrics={true}
             onOpenLibrary={() => {}}
             onPasteLyrics={() => {}}
             onGenerateSong={() => {}}
@@ -196,6 +226,7 @@ describe('LyricsView empty state', () => {
             markupText=""
             setMarkupText={() => {}}
             markupTextareaRef={{ current: null }}
+            canPasteLyrics={true}
             onOpenLibrary={() => {}}
             onPasteLyrics={() => {}}
             onGenerateSong={() => {}}

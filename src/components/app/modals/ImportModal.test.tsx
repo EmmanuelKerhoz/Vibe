@@ -14,6 +14,7 @@ describe('ImportModal', () => {
         <ImportModal
           isOpen
           hasExistingWork={false}
+          canPasteLyrics={true}
           onClose={() => {}}
           onChooseFile={onChooseFile}
           onPasteLyrics={onPasteLyrics}
@@ -26,5 +27,22 @@ describe('ImportModal', () => {
 
     expect(onPasteLyrics).toHaveBeenCalledTimes(1);
     expect(onChooseFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the paste action when there is no text available to paste', () => {
+    render(
+      <LanguageProvider>
+        <ImportModal
+          isOpen
+          hasExistingWork={false}
+          canPasteLyrics={false}
+          onClose={() => {}}
+          onChooseFile={() => {}}
+          onPasteLyrics={() => {}}
+        />
+      </LanguageProvider>,
+    );
+
+    expect((screen.getByRole('button', { name: 'Paste Lyrics' }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

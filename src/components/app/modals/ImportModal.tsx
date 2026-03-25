@@ -6,12 +6,13 @@ import { Button } from '../../ui/Button';
 interface Props {
   isOpen: boolean;
   hasExistingWork: boolean;
+  canPasteLyrics: boolean;
   onClose: () => void;
   onChooseFile: () => void;
   onPasteLyrics: () => void;
 }
 
-export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, onPasteLyrics }: Props) {
+export function ImportModal({ isOpen, hasExistingWork, canPasteLyrics, onClose, onChooseFile, onPasteLyrics }: Props) {
   const { t } = useTranslation();
 
   if (!isOpen) return null;
@@ -92,7 +93,7 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, on
           <Button onClick={onClose} variant="outlined" color="inherit">
             {t.importDialog.cancel}
           </Button>
-          <Button onClick={onPasteLyrics} variant="outlined" color="primary">
+          <Button onClick={onPasteLyrics} disabled={!canPasteLyrics} variant="outlined" color="primary">
             {t.editor.emptyState.pasteLyrics}
           </Button>
           <Button onClick={onChooseFile} variant="contained" color="primary">

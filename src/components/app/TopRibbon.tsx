@@ -29,6 +29,7 @@ interface Props {
   onOpenSettingsClick: () => void;
   onOpenAboutClick: () => void;
   onOpenKeyboardShortcutsClick: () => void;
+  canPasteLyrics: boolean;
   onPasteLyrics: () => void;
   isAnalyzing: boolean;
 }
@@ -43,6 +44,7 @@ export function TopRibbon({
   onImportClick, onExportClick,
   onOpenLibraryClick,
   onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick,
+  canPasteLyrics,
   onPasteLyrics,
   isAnalyzing,
 }: Props) {
@@ -161,9 +163,9 @@ export function TopRibbon({
               {/* Tools */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
-              <button onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                 <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
-                Coller des paroles
+                {t.editor.emptyState.pasteLyrics}
               </button>
               <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <History className="w-4 h-4 text-[var(--text-secondary)]" />
