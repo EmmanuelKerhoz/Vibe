@@ -115,7 +115,7 @@
   --input-bg:          rgba(255, 255, 255, 0.55);
 
   --fluent-shadow:     0 4px 8px rgba(0, 0, 0, 0.04), 0 0 2px rgba(0, 0, 0, 0.06);
-  --fluent-radius:     24px 8px 24px 8px;
+  --fluent-radius:     24px 4px 24px 4px;
   --glow-accent:       0 0 8px rgba(15, 123, 15, 0.3);
   --glow-accent-strong:0 0 16px rgba(15, 123, 15, 0.5);
   --status-bar-bg:     rgba(243, 242, 241, 0.9);
@@ -678,7 +678,6 @@
 .glass-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 12px currentColor, 0 0 15px rgba(255, 255, 255, 0.05);
   transform: translateY(-1px);
 }
 .glass-button:hover:not(:disabled)::after { left: 200%; }
@@ -689,7 +688,6 @@
 .dark .glass-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 12px currentColor, 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
 /* ===========================================================================
@@ -923,7 +921,7 @@ html, body, #root {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 .ui-fluent .fluent-card:hover {
-  box-shadow: var(--glow-accent), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
   transform: translateY(-1px);
 }
 
@@ -938,7 +936,6 @@ html, body, #root {
 .ui-fluent .fluent-input:focus-within {
   border-bottom-color: var(--accent-color);
   border-bottom-width: 2px;
-  box-shadow: var(--glow-accent);
   outline: none;
 }
 
@@ -971,7 +968,6 @@ html, body, #root {
 }
 .dark .lcars-band:hover {
   border-color: rgba(76, 175, 115, 0.2);
-  box-shadow: var(--glow-accent);
 }
 .dark .lcars-band {
   background-color: #000000;
@@ -1105,7 +1101,7 @@ html, body, #root {
 .lcars-glow-focus:focus {
   outline: none;
   border-color: var(--accent-color) !important;
-  box-shadow: 0 0 0 1px var(--accent-color), var(--glow-accent);
+  box-shadow: 0 0 0 1px var(--accent-color);
 }
 
 /* ===========================================================================
@@ -1156,7 +1152,7 @@ html, body, #root {
   -webkit-appearance: none;
   background-color: var(--input-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px 2px 8px 2px;
+  border-radius: 6px 2px 6px 2px;
   padding: 4px 24px 4px 8px;
   font-size: 11px;
   font-family: var(--font-mono);
@@ -1171,5 +1167,4 @@ html, body, #root {
 .lcars-select:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: var(--glow-accent);
 }
