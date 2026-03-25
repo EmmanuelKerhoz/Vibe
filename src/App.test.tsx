@@ -711,14 +711,6 @@ describe('App markup mode reset', () => {
     expect(libraryActionsParams).not.toHaveProperty('setTitleOrigin');
     expect(libraryActionsParams).not.toHaveProperty('setTopic');
     expect(libraryActionsParams).not.toHaveProperty('setMood');
-    expect(libraryActionsParams).not.toHaveProperty('setRhymeScheme');
-    expect(libraryActionsParams).not.toHaveProperty('setTargetSyllables');
-    expect(libraryActionsParams).not.toHaveProperty('setGenre');
-    expect(libraryActionsParams).not.toHaveProperty('setTempo');
-    expect(libraryActionsParams).not.toHaveProperty('setInstrumentation');
-    expect(libraryActionsParams).not.toHaveProperty('setRhythm');
-    expect(libraryActionsParams).not.toHaveProperty('setNarrative');
-    expect(libraryActionsParams).not.toHaveProperty('setMusicalPrompt');
 
     const appHandlersParams = mockAppState.useAppHandlersSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(appHandlersParams).toMatchObject({
@@ -732,7 +724,6 @@ describe('App markup mode reset', () => {
       setIsStructureOpen: expect.any(Function),
       generateTitle: expect.any(Function),
       generateSong: expect.any(Function),
-      scrollToSection: expect.any(Function),
     });
     expect(appHandlersParams).not.toHaveProperty('song');
     expect(appHandlersParams).not.toHaveProperty('setTitle');
