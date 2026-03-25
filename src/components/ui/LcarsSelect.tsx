@@ -151,8 +151,6 @@ export function LcarsSelect({
     }
   };
 
-  const glowShadow = `0 0 0 2px ${accent}, 0 0 10px 1px ${accent}`;
-
   return (
     <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
       {/* Gradient-outline wrapper — provides the multicolor border via ::before pseudo.
@@ -201,10 +199,10 @@ export function LcarsSelect({
             zIndex: 1,
             ...style,
           }}
-          onFocus={(e) => { e.currentTarget.style.boxShadow = glowShadow; e.currentTarget.style.borderColor = accent; }}
-          onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
-          onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.boxShadow = glowShadow; e.currentTarget.style.borderColor = accent; } }}
-          onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+          onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
+          onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.borderColor = accent; } }}
+          onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
         >
           <div style={{
             flex: 1,

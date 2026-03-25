@@ -3,6 +3,33 @@ import { describe, expect, it } from 'vitest';
 import { LcarsSelect } from './LcarsSelect';
 
 describe('LcarsSelect', () => {
+  it('removes the hover halo while preserving accent border feedback', () => {
+    render(
+      <LcarsSelect
+        value="verse"
+        onChange={() => {}}
+        options={[
+          { value: 'verse', label: 'VERSE' },
+          { value: 'chorus', label: 'CHORUS' },
+        ]}
+      />,
+    );
+
+    const button = screen.getByRole('button');
+
+    fireEvent.mouseEnter(button);
+    expect(button.style.boxShadow).toBe('');
+    expect(button.style.borderColor).toBe('var(--accent-color)');
+
+    fireEvent.mouseLeave(button);
+    expect(button.style.boxShadow).toBe('');
+    expect(button.style.borderColor).toBe('var(--border-color)');
+
+    fireEvent.focus(button);
+    expect(button.style.boxShadow).toBe('');
+    expect(button.style.borderColor).toBe('var(--accent-color)');
+  });
+
   it('renders the dropdown in a portal and closes on outside click', () => {
     const { container } = render(
       <LcarsSelect
