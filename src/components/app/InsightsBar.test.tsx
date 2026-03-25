@@ -53,7 +53,7 @@ vi.mock('../../hooks/useAppKpis', () => ({
 }));
 
 describe('InsightsBar', () => {
-  it('renders single-row layout with detect, adaptation, markup, analyze, and similarity buttons', () => {
+  it('renders single-row layout with adaptation, markup, detect, analyze, and similarity buttons', () => {
     const webSimilarityIndex: WebSimilarityIndex = {
       candidates: [],
       status: 'idle',
@@ -83,16 +83,16 @@ describe('InsightsBar', () => {
     );
 
     const tooltips = screen.getAllByTestId('tooltip');
-    // Verify all expected tooltips: Detect, Adaptation, Text, Markdown, Editor, Analyze, Similarity
+    // Verify all expected tooltips: Adaptation, Text, Markdown, Editor, Detect, Analyze, Similarity
     expect(tooltips.length).toBe(7);
-    // First tooltip should be the detect button (before language dropdown)
-    expect(tooltips[0]!.getAttribute('data-title')).toContain('Detected');
-    // Second should be adaptation
-    expect(tooltips[1]!.getAttribute('data-title')).toContain('adapt');
-    // Third-Fifth should be edit mode buttons (Text, Markdown, Editor)
-    expect(tooltips[2]!.getAttribute('data-title')).toContain('Text');
-    expect(tooltips[3]!.getAttribute('data-title')).toContain('Mode');
-    expect(tooltips[4]!.getAttribute('data-title')).toContain('Editor');
+    // First should be adaptation
+    expect(tooltips[0]!.getAttribute('data-title')).toContain('adapt');
+    // Second-Fourth should be edit mode buttons (Text, Markdown, Editor)
+    expect(tooltips[1]!.getAttribute('data-title')).toContain('Text');
+    expect(tooltips[2]!.getAttribute('data-title')).toContain('Mode');
+    expect(tooltips[3]!.getAttribute('data-title')).toContain('Editor');
+    // Fifth should be the detect button, immediately before analyze in the insights group
+    expect(tooltips[4]!.getAttribute('data-title')).toContain('Detected');
     // Sixth should be analyze
     expect(tooltips[5]!.getAttribute('data-title')).toContain('Analyze');
     // Seventh should be similarity
