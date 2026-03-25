@@ -121,8 +121,16 @@ export const AppModals = React.memo(function AppModals({
   resetSong,
 }: Props) {
   const { t } = useTranslation();
-  const { uiState: ui, closeModal } = useModalContext();
+  const { uiState: ui, closeModal, openModal } = useModalContext();
   const { importInputRef } = ui;
+  const openLibraryFromImport = () => {
+    closeModal('import');
+    openModal('saveToLibrary');
+  };
+  const openLibraryFromExport = () => {
+    closeModal('export');
+    openModal('saveToLibrary');
+  };
 
   return (
     <>
@@ -138,9 +146,15 @@ export const AppModals = React.memo(function AppModals({
       <ImportModal
         isOpen={ui.isImportModalOpen} hasExistingWork={hasExistingWork}
         onClose={() => closeModal('import')} onChooseFile={handleImportChooseFile}
+        onOpenLibrary={openLibraryFromImport}
         onPasteLyrics={onOpenPasteLyrics}
       />
-      <ExportModal isOpen={ui.isExportModalOpen} onClose={() => closeModal('export')} onExport={exportSong} />
+      <ExportModal
+        isOpen={ui.isExportModalOpen}
+        onClose={() => closeModal('export')}
+        onOpenLibrary={openLibraryFromExport}
+        onExport={exportSong}
+      />
       <SuggestionsPanel
         selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
         suggestions={suggestions} isSuggesting={isSuggesting}

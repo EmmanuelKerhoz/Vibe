@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload, AlertTriangle, X } from '../../ui/icons';
+import { Upload, AlertTriangle, Library, X } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 import { Button } from '../../ui/Button';
 
@@ -7,11 +7,12 @@ interface Props {
   isOpen: boolean;
   hasExistingWork: boolean;
   onClose: () => void;
+  onOpenLibrary: () => void;
   onChooseFile: () => void;
   onPasteLyrics: () => void;
 }
 
-export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, onPasteLyrics }: Props) {
+export function ImportModal({ isOpen, hasExistingWork, onClose, onOpenLibrary, onChooseFile, onPasteLyrics }: Props) {
   const { t } = useTranslation();
 
   if (!isOpen) return null;
@@ -89,16 +90,18 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onChooseFile, on
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-end gap-3 flex-shrink-0 flex-wrap">
-          <Button onClick={onClose} variant="outlined" color="inherit">
-            {t.importDialog.cancel}
+        <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-between gap-3 flex-shrink-0 flex-wrap">
+          <Button onClick={onOpenLibrary} variant="outlined" color="inherit" startIcon={<Library className="w-4 h-4" />}>
+            {t.saveToLibrary.title}
           </Button>
-          <Button onClick={onPasteLyrics} variant="outlined" color="primary">
-            {t.editor.emptyState.pasteLyrics}
-          </Button>
-          <Button onClick={onChooseFile} variant="contained" color="primary">
-            {t.importDialog.chooseFile}
-          </Button>
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <Button onClick={onPasteLyrics} variant="outlined" color="primary">
+              {t.editor.emptyState.pasteLyrics}
+            </Button>
+            <Button onClick={onChooseFile} variant="contained" color="primary">
+              {t.importDialog.chooseFile}
+            </Button>
+          </div>
         </div>
       </div>
       </div>

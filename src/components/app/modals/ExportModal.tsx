@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Download, FileCode2, FileText, X } from '../../ui/icons';
+import { Download, FileCode2, FileText, Library, X } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import type { ExportFormat } from '../../../utils/exportUtils';
@@ -7,6 +7,7 @@ import type { ExportFormat } from '../../../utils/exportUtils';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onOpenLibrary: () => void;
   onExport: (format: ExportFormat) => void;
 }
 
@@ -31,7 +32,7 @@ function FormatBadge({ label, color }: { label: string; color: string }) {
   );
 }
 
-export function ExportModal({ isOpen, onClose, onExport }: Props) {
+export function ExportModal({ isOpen, onClose, onOpenLibrary, onExport }: Props) {
   const { t } = useTranslation();
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('txt');
 
@@ -184,18 +185,29 @@ export function ExportModal({ isOpen, onClose, onExport }: Props) {
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-end gap-3">
-          <Button onClick={onClose} variant="outlined" color="inherit" className="ux-interactive">
-            {t.exportDialog.cancel}
-          </Button>
+        <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-between gap-3 flex-wrap">
           <Button
-            onClick={() => { onExport(selectedFormat); onClose(); }}
-            variant="contained"
-            color="primary"
+            onClick={onOpenLibrary}
+            variant="outlined"
+            color="inherit"
+            startIcon={<Library className="w-4 h-4" />}
             className="ux-interactive"
           >
-            {t.exportDialog.save}
+            {t.saveToLibrary.title}
           </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={onClose} variant="outlined" color="inherit" className="ux-interactive">
+              {t.exportDialog.cancel}
+            </Button>
+            <Button
+              onClick={() => { onExport(selectedFormat); onClose(); }}
+              variant="contained"
+              color="primary"
+              className="ux-interactive"
+            >
+              {t.exportDialog.save}
+            </Button>
+          </div>
         </div>
       </div>
       </div>

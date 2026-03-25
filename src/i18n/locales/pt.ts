@@ -245,9 +245,9 @@ const pt: Translations = {
 
 
   importDialog: {
-    title: 'Importar arquivo de letra',
+    title: 'Carregar letra',
     emptyDescription: 'Escolha um arquivo .txt ou .md para analisar e importar para o editor.',
-    replaceDescription: 'Escolha um arquivo .txt ou .md para importar. A letra importada substituirá a letra, a estrutura e o contexto de análise atuais.',
+    replaceDescription: 'A letra importada substituirá a letra, a estrutura e o contexto de análise atuais.',
     warning: 'Seu trabalho atual será perdido assim que o arquivo importado for analisado.',
     supportedFiles: 'Compatível com TXT, Markup, ODT, DOCX ou letras coladas',
     cancel: 'Cancelar',

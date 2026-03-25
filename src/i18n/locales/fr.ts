@@ -243,9 +243,9 @@ const fr: Translations = {
   },
 
   importDialog: {
-    title: 'Load / Import paroles',
+    title: 'Charger les paroles',
     emptyDescription: 'Choisissez un fichier .txt ou .md à analyser et à importer dans l\'éditeur.',
-    replaceDescription: 'Choisissez un fichier .txt ou .md à importer. Les paroles importées remplaceront les paroles, la structure et le contexte d\'analyse actuels.',
+    replaceDescription: 'Les paroles importées remplaceront les paroles, la structure et le contexte d\'analyse actuels.',
     warning: 'Votre travail actuel sera perdu une fois le fichier importé analysé.',
     supportedFiles: 'Prend en charge TXT, Markup, ODT, DOCX ou des paroles collées',
     cancel: 'Annuler',

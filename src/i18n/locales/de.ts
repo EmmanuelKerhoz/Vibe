@@ -245,9 +245,9 @@ const de: Translations = {
 
 
   importDialog: {
-    title: 'Songtextdatei importieren',
+    title: 'Songtext laden',
     emptyDescription: 'Wähle eine .txt- oder .md-Datei aus, um sie zu analysieren und in den Editor zu importieren.',
-    replaceDescription: 'Wähle eine .txt- oder .md-Datei zum Importieren aus. Die importierten Texte ersetzen die aktuellen Texte, die Struktur und den Analysekontext.',
+    replaceDescription: 'Die importierten Texte ersetzen die aktuellen Texte, die Struktur und den Analysekontext.',
     warning: 'Deine aktuelle Arbeit geht verloren, sobald die importierte Datei analysiert wurde.',
     supportedFiles: 'Unterstützt TXT, Markup, ODT, DOCX oder eingefügte Liedtexte',
     cancel: 'Abbrechen',
