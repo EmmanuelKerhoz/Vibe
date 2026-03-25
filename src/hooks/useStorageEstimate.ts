@@ -7,21 +7,31 @@ import { safeGetItem } from '../utils/safeStorage';
 export type StorageTier = 'green' | 'orange' | 'red';
 const LIBRARY_STORAGE_KEY = 'lyricist_library';
 
+/**
+ * Conservative localStorage hard cap used for saturation.
+ * Browsers enforce 5–10 MB; we use 5 MB as the safe lower bound.
+ */
+export const LOCAL_STORAGE_HARD_CAP = 5 * 1024 * 1024; // 5 MB
+
 export interface StorageEstimate {
-  usage: number;      // total browser storage bytes used
-  quota: number;      // total browser storage bytes available
-  ratio: number;      // 0–1 browser storage saturation
-  tier: StorageTier;
+  usage: number;          // total browser storage bytes (Storage API)
+  quota: number;          // browser storage quota (Storage API)
+  ratio: number;          // libraryUsage / LOCAL_STORAGE_HARD_CAP  ← meaningful saturation
+  tier: StorageTier;      // based on libraryRatio
   usageMB: string;
   quotaMB: string;
   libraryUsage: number;
   libraryUsageMB: string;
+  libraryRatio: number;   // same as ratio, explicit alias
   supported: boolean;
 }
 
 const INITIAL: StorageEstimate = {
   usage: 0, quota: 0, ratio: 0,
-  tier: 'green', usageMB: '0 B', quotaMB: '0 B', libraryUsage: 0, libraryUsageMB: '0 B', supported: false,
+  tier: 'green', usageMB: '0 B', quotaMB: '0 B',
+  libraryUsage: 0, libraryUsageMB: '0 B',
+  libraryRatio: 0,
+  supported: false,
 };
 
 const BYTES_PER_KB = 1024;
@@ -42,12 +52,16 @@ function computeTier(ratio: number): StorageTier {
   return 'green';
 }
 
-function getLibraryStorageUsage(): Pick<StorageEstimate, 'libraryUsage' | 'libraryUsageMB'> {
+function getLibraryStorageUsage(): Pick<StorageEstimate, 'libraryUsage' | 'libraryUsageMB' | 'libraryRatio' | 'ratio' | 'tier'> {
   const raw = safeGetItem(LIBRARY_STORAGE_KEY);
   const libraryUsage = raw ? new Blob([raw]).size : 0;
+  const libraryRatio = Math.min(libraryUsage / LOCAL_STORAGE_HARD_CAP, 1);
   return {
     libraryUsage,
     libraryUsageMB: formatStorageSize(libraryUsage),
+    libraryRatio,
+    ratio: libraryRatio,
+    tier: computeTier(libraryRatio),
   };
 }
 
@@ -66,10 +80,9 @@ export function useStorageEstimate(intervalMs = 30_000): StorageEstimate & { ref
     }
     try {
       const { usage = 0, quota = 0 } = await navigator.storage.estimate();
-      const ratio = quota > 0 ? usage / quota : 0;
       setEstimate({
-        usage, quota, ratio,
-        tier: computeTier(ratio),
+        usage,
+        quota,
         usageMB: formatStorageSize(usage),
         quotaMB: formatStorageSize(quota),
         ...libraryEstimate,
@@ -90,8 +103,6 @@ export function useStorageEstimate(intervalMs = 30_000): StorageEstimate & { ref
     return () => clearInterval(id);
   }, [refresh, intervalMs]);
 
-  // Re-refresh library size whenever lyricist_library is written
-  // (same tab via storage event polyfill, or cross-tab via native storage event)
   useEffect(() => {
     const onStorageChange = (e: StorageEvent) => {
       if (e.key === null || e.key === LIBRARY_STORAGE_KEY) {
