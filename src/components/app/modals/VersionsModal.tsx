@@ -25,10 +25,9 @@ export const VersionsModal = ({ isOpen, versions, onClose, onSaveCurrent, onRoll
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-0 sm:p-4 animate-in fade-in duration-200">
       {/* Gradient border wrapper — isolation prevents gradient from bleeding into interior */}
       <div
-        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[80vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        className="lcars-gradient-outline relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[80vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
         style={{
           padding: '2px',
-          background: 'var(--accent-rail-gradient-h)',
           boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
           isolation: 'isolate',
         }}

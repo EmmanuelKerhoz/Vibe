@@ -45,7 +45,7 @@ export const Button = ({
   const fluentStyle: CSSProperties = { ...style, width: fullWidth ? '100%' : undefined };
   const fluentClass = [
     'fluent-button',
-    appearance === 'outline' || appearance === 'transparent' ? 'lcars-holo' : '',
+    appearance === 'outline' ? 'lcars-holo' : '',
     colorToClass(color),
     className || '',
   ].filter(Boolean).join(' ');
@@ -68,4 +68,3 @@ export const Button = ({
     </FluentButton>
   );
 };
-

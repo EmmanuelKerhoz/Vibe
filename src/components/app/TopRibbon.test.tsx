@@ -60,6 +60,8 @@ describe('TopRibbon burger menu', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expect(screen.getByRole('button', { name: 'Load/Import' }).className).toContain('lcars-holo');
+    expect(screen.getByRole('button', { name: 'Settings' }).className).toContain('lcars-holo');
     fireEvent.click(screen.getByRole('button', { name: 'New generation' }));
     expect(onOpenNewGeneration).toHaveBeenCalledTimes(1);
 

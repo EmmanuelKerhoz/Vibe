@@ -30,6 +30,7 @@ import { MusicalTab } from './components/app/musical/MusicalTab';
 import { InsightsBar } from './components/app/InsightsBar';
 import { LyricsView } from './components/app/LyricsView';
 import { AppModals } from './components/app/AppModals';
+import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
@@ -100,13 +101,23 @@ function AppInnerContent() {
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
+  const isSuggestionsOpen = activeTab === 'lyrics' && Boolean(selectedLineId);
+
+  const setIsStructureOpenAndClearLine = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    setIsStructureOpen(prev => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      if (next) setSelectedLineId(null);
+      return next;
+    });
+  }, [setIsStructureOpen, setSelectedLineId]);
 
   const closeMobilePanels = useCallback(() => {
     setIsLeftPanelOpen(false);
     setIsStructureOpen(false);
-  }, [setIsLeftPanelOpen, setIsStructureOpen]);
+    setSelectedLineId(null);
+  }, [setIsLeftPanelOpen, setIsStructureOpen, setSelectedLineId]);
 
-  const showBackdrop = isMobileOrTablet && (isLeftPanelOpen || isStructureOpen);
+  const showBackdrop = isMobileOrTablet && (isLeftPanelOpen || isStructureOpen || isSuggestionsOpen);
 
   useSessionPersistence({
     song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
@@ -154,6 +165,12 @@ function AppInnerContent() {
   useEffect(() => {
     if (activeTab !== 'lyrics' && editMode !== 'section') setEditMode('section');
   }, [activeTab, editMode, setEditMode]);
+
+  useEffect(() => {
+    if (isSuggestionsOpen && isStructureOpen) {
+      setIsStructureOpen(false);
+    }
+  }, [isSuggestionsOpen, isStructureOpen, setIsStructureOpen]);
 
   const {
     removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
@@ -332,7 +349,7 @@ function AppInnerContent() {
                 setIsResetModalOpen={setIsResetModalOpen}
                 isLeftPanelOpen={isLeftPanelOpen}
                 setIsLeftPanelOpen={setIsLeftPanelOpen}
-                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
+                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
                 hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
                 onOpenNewGeneration={handleOpenNewGeneration}
                 onOpenNewEmpty={handleCreateEmptySong}
@@ -396,19 +413,32 @@ function AppInnerContent() {
               </div>
             </div>
 
-            <StructureSidebar
-              isMobileOverlay={isMobileOrTablet}
-              className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
-              newSectionName={newSectionName} setNewSectionName={setNewSectionName}
-              isSectionDropdownOpen={isSectionDropdownOpen}
-              setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-              addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-              normalizeStructure={normalizeStructure} handleDrop={handleDrop}
-              onScrollToSection={handleScrollToSection}
-              onRegenerateSong={handleGlobalRegenerate}
-              onGenerateSong={generateSong}
-            />
+            {isSuggestionsOpen ? (
+              <SuggestionsPanel
+                isMobileOverlay={isMobileOrTablet}
+                className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+                selectedLineId={selectedLineId}
+                setSelectedLineId={setSelectedLineId}
+                suggestions={suggestions}
+                isSuggesting={isSuggesting}
+                applySuggestion={applySuggestion}
+                generateSuggestions={generateSuggestions}
+              />
+            ) : (
+              <StructureSidebar
+                isMobileOverlay={isMobileOrTablet}
+                className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+                newSectionName={newSectionName} setNewSectionName={setNewSectionName}
+                isSectionDropdownOpen={isSectionDropdownOpen}
+                setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+                addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+                normalizeStructure={normalizeStructure} handleDrop={handleDrop}
+                onScrollToSection={handleScrollToSection}
+                onRegenerateSong={handleGlobalRegenerate}
+                onGenerateSong={generateSong}
+              />
+            )}
           </div>
 
           <StatusBar
@@ -424,7 +454,7 @@ function AppInnerContent() {
             <MobileBottomNav
               isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
               activeTab={activeTab}
-              setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpen}
+              setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
               setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
               onOpenSettings={handleOpenSettings}
             />
@@ -441,9 +471,6 @@ function AppInnerContent() {
             onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
             handleImportInputChange={handleImportInputChange}
             exportSong={exportSong}
-            selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
-            suggestions={suggestions} isSuggesting={isSuggesting}
-            applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
             pastedText={pastedText} setPastedText={setPastedText}
             isAnalyzing={isAnalyzing} analyzePastedLyrics={analyzePastedLyrics}
             analysisReport={analysisReport} analysisSteps={analysisSteps}
