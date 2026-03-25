@@ -172,8 +172,11 @@ function AppInnerContent() {
 
   const handleSurpriseClick = useCallback(async () => {
     const suggestion = await handleSurprise();
-    if (suggestion) { setTopic(suggestion.topic); setMood(suggestion.mood); }
-  }, [handleSurprise, setTopic, setMood]);
+    if (suggestion) {
+      setTopic(suggestion.topic);
+      setMood(suggestion.mood);
+    }
+  }, [handleSurprise, setMood, setTopic]);
 
   const {
     index: webSimilarityIndex,

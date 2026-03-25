@@ -21,6 +21,14 @@ vi.mock('../../contexts/ComposerContext', () => ({
   useComposerContext: () => mockComposerContext,
 }));
 
+vi.mock('../ui/Tooltip', () => ({
+  Tooltip: ({ title, children }: { title: React.ReactNode; children: React.ReactElement }) => (
+    <div data-testid="tooltip" data-title={typeof title === 'string' ? title : '[react-element]'}>
+      {children}
+    </div>
+  ),
+}));
+
 function renderPanel(setIsLeftPanelOpen = vi.fn()) {
   return render(
     <LanguageProvider>
@@ -200,5 +208,56 @@ describe('LeftSettingsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close lyrics generation panel' }));
 
     expect(setIsLeftPanelOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('uses the standard styled Suggest button tooltip without AI wording', () => {
+    renderPanel();
+
+    const suggestButton = screen.getByRole('button', { name: 'Suggest' });
+    const suggestTooltip = screen.getAllByTestId('tooltip').find(tooltip =>
+      tooltip.getAttribute('data-title') === 'Suggest a random topic, mood & title');
+
+    expect(suggestButton.className).toContain('ux-interactive');
+    expect(suggestTooltip).toBeTruthy();
+  });
+
+  it('hides the generate title button until lyrics exist', () => {
+    const { rerender } = renderPanel();
+
+    expect(screen.queryByRole('button', { name: 'Generate title from lyrics' })).toBeNull();
+
+    mockSongContext.song = [{
+      id: 'verse-1',
+      name: 'Verse',
+      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
+    }];
+
+    rerender(
+      <LanguageProvider>
+        <LeftSettingsPanel
+          title="Test"
+          setTitle={vi.fn()}
+          titleOrigin="user"
+          onGenerateTitle={vi.fn()}
+          isGeneratingTitle={false}
+          topic=""
+          setTopic={vi.fn()}
+          mood=""
+          setMood={vi.fn()}
+          rhymeScheme="AABB"
+          setRhymeScheme={vi.fn()}
+          targetSyllables={8}
+          setTargetSyllables={vi.fn()}
+          isLeftPanelOpen
+          setIsLeftPanelOpen={vi.fn()}
+          onSurprise={vi.fn()}
+          isSurprising={false}
+          onGenerateSong={vi.fn()}
+          isSessionHydrated
+        />
+      </LanguageProvider>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Generate title from lyrics' })).toBeTruthy();
   });
 });
