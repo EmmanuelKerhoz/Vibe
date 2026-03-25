@@ -32,7 +32,7 @@ describe('useSessionState', () => {
       expect(result.current.hasSavedSession).toBe(false);
       expect(result.current.audioFeedback).toBe(true);
       expect(result.current.uiScale).toBe('large');
-      expect(result.current.defaultEditMode).toBe('section');
+      expect(result.current.defaultEditMode).toBe('markdown');
       expect(result.current.similarityMatches).toEqual([]);
       expect(result.current.libraryCount).toBe(0);
       expect(result.current.libraryAssets).toEqual([]);
@@ -224,7 +224,7 @@ describe('useSessionState', () => {
 
       const { result } = renderHook(() => useSessionState());
 
-      expect(result.current.defaultEditMode).toBe('section');
+      expect(result.current.defaultEditMode).toBe('markdown');
     });
 
     it('retries API status checks on network failure before succeeding', async () => {

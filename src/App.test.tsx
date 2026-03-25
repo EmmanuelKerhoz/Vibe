@@ -234,7 +234,7 @@ vi.mock('./hooks/useAppState', async () => {
         setAudioFeedback: mockAppState.noop,
         uiScale: 100,
         setUiScale: mockAppState.noop,
-        defaultEditMode: 'section',
+        defaultEditMode: 'markdown',
         setDefaultEditMode: mockAppState.noop,
         newSectionName: '',
         setNewSectionName: mockAppState.noop,

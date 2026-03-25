@@ -147,7 +147,7 @@ function AppInnerContent() {
   useEffect(() => {
     if (isSessionHydrated && !hasAppliedDefaultEditModeRef.current) {
       hasAppliedDefaultEditModeRef.current = true;
-      if (defaultEditMode !== 'section') setEditMode(defaultEditMode);
+      if (defaultEditMode !== 'markdown') setEditMode(defaultEditMode);
     }
   }, [isSessionHydrated, defaultEditMode, setEditMode]);
 
