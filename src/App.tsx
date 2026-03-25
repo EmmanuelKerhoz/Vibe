@@ -60,7 +60,7 @@ function AppInnerContent() {
     title, setTitle, titleOrigin, setTitleOrigin, topic, setTopic, mood, setMood,
     rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables, genre, setGenre, tempo, setTempo,
     instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative,
-    musicalPrompt, setMusicalPrompt, newSectionName, setNewSectionName,
+    musicalPrompt, setMusicalPrompt,
     shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     songLanguage, setSongLanguage,
   } = useSongContext();
@@ -429,7 +429,6 @@ function AppInnerContent() {
                 isMobileOverlay={isMobileOrTablet}
                 className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
                 isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-                newSectionName={newSectionName} setNewSectionName={setNewSectionName}
                 isSectionDropdownOpen={isSectionDropdownOpen}
                 setIsSectionDropdownOpen={setIsSectionDropdownOpen}
                 addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
