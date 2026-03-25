@@ -61,10 +61,9 @@ export function SaveToLibraryModal({
 
       {/* Gradient border wrapper — isolation prevents gradient from bleeding into interior */}
       <div
-        className="relative w-full sm:max-w-lg h-full sm:h-auto rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        className="lcars-gradient-outline relative w-full sm:max-w-lg h-full sm:h-auto rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
         style={{
           padding: '2px',
-          background: 'var(--accent-rail-gradient-h)',
           boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
           isolation: 'isolate',
         }}

@@ -46,10 +46,9 @@ export function AboutModal({ isOpen, onClose }: Props) {
 
       {/* Gradient border wrapper */}
       <div
-        className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
+        className="lcars-gradient-outline relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
         style={{
           padding: '2px',
-          background: 'var(--accent-rail-gradient-h)',
           boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
           isolation: 'isolate',
         }}
