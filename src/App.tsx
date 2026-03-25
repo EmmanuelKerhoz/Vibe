@@ -103,7 +103,7 @@ function AppInnerContent() {
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
   const isSuggestionsOpen = activeTab === 'lyrics' && Boolean(selectedLineId);
 
-  const handleSetIsStructureOpen = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+  const setIsStructureOpenAndClearLine = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
     setIsStructureOpen(prev => {
       const next = typeof value === 'function' ? value(prev) : value;
       if (next) setSelectedLineId(null);
@@ -349,7 +349,7 @@ function AppInnerContent() {
                 setIsResetModalOpen={setIsResetModalOpen}
                 isLeftPanelOpen={isLeftPanelOpen}
                 setIsLeftPanelOpen={setIsLeftPanelOpen}
-                isStructureOpen={isStructureOpen} setIsStructureOpen={handleSetIsStructureOpen}
+                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
                 hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
                 onOpenNewGeneration={handleOpenNewGeneration}
                 onOpenNewEmpty={handleCreateEmptySong}
@@ -428,7 +428,7 @@ function AppInnerContent() {
               <StructureSidebar
                 isMobileOverlay={isMobileOrTablet}
                 className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-                isStructureOpen={isStructureOpen} setIsStructureOpen={handleSetIsStructureOpen}
+                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
                 newSectionName={newSectionName} setNewSectionName={setNewSectionName}
                 isSectionDropdownOpen={isSectionDropdownOpen}
                 setIsSectionDropdownOpen={setIsSectionDropdownOpen}
@@ -454,7 +454,7 @@ function AppInnerContent() {
             <MobileBottomNav
               isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
               activeTab={activeTab}
-              setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={handleSetIsStructureOpen}
+              setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
               setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
               onOpenSettings={handleOpenSettings}
             />

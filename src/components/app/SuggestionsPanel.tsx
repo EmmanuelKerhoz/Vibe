@@ -21,12 +21,17 @@ export function SuggestionsPanel({
   className,
 }: Props) {
   const { t } = useTranslation();
+  const panelClassName = [
+    'border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl',
+    'lcars-panel fluent-animate-panel !rounded-none !border-t-0 !border-b-0 !border-r-0',
+    className,
+  ].filter(Boolean).join(' ');
 
   if (!selectedLineId) return null;
 
   return (
     <div
-      className={`border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl lcars-panel fluent-animate-panel !rounded-none !border-t-0 !border-b-0 !border-r-0${className ? ` ${className}` : ''}`}
+      className={panelClassName}
       style={{ overflow: 'visible' }}
     >
       <div style={{
