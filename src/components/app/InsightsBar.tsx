@@ -321,7 +321,7 @@ export const InsightsBar = React.memo(function InsightsBar({
             <Tooltip title={t.musical?.metronome ?? 'Metronome'}>
               <button
                 onClick={toggleMetronome}
-                className={`px-2 py-1.5 text-[11px] rounded transition-all flex items-center justify-center gap-1.5 whitespace-nowrap border ${
+                className={`px-2 py-1 text-[11px] rounded transition-all flex items-center justify-center gap-1.5 whitespace-nowrap border ${
                   isMetronomeActive ? 'border-transparent metronome-active' : 'glass-button'
                 }`}
                 style={isMetronomeActive ? { background: '#f59e0b', color: '#000', borderColor: '#f59e0b' } : {}}
@@ -334,7 +334,7 @@ export const InsightsBar = React.memo(function InsightsBar({
             <button
               onClick={handleMarkupToggle}
               disabled={isGenerating || isAnalyzing}
-              className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Layout className="w-3.5 h-3.5" />
               <span className="hidden lg:inline">{isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}</span>
@@ -344,7 +344,7 @@ export const InsightsBar = React.memo(function InsightsBar({
             <button
               onClick={analyzeCurrentSong}
               disabled={isGenerating || isAnalyzing || song.length === 0}
-              className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <BarChart2 className="w-3.5 h-3.5" />
               <span className="hidden lg:inline">{t.editor.analyze}</span>
@@ -354,7 +354,7 @@ export const InsightsBar = React.memo(function InsightsBar({
             <button
               onClick={() => setIsSimilarityModalOpen(true)}
               disabled={isGenerating || isAnalyzing || !hasLyrics}
-              className="px-2 lg:px-3 py-1.5 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
+              className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
             >
               {webSimilarityIndex.status === 'running'
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />

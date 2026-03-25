@@ -196,7 +196,7 @@ export function TopRibbon({
           >
             {t.ribbon.lyrics}
             {activeTab === 'lyrics' && (
-              <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent-color)]" />
+              <motion.div layoutId="activeTab" className="absolute bottom-[6px] left-0 right-0 h-0.5 bg-[var(--accent-color)]" />
             )}
           </button>
         </Tooltip>
@@ -210,7 +210,7 @@ export function TopRibbon({
           >
             {t.ribbon.musical}
             {activeTab === 'musical' && (
-              <motion.div layoutId="activeMusicalTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#f59e0b]" />
+              <motion.div layoutId="activeMusicalTab" className="absolute bottom-[6px] left-0 right-0 h-0.5 bg-[#f59e0b]" />
             )}
           </button>
         </Tooltip>
