@@ -105,4 +105,12 @@ describe('LeftSettingsPanel', () => {
     fireEvent.click(screen.getByText('Quantize Syllables (GLOBAL)').closest('button') as HTMLButtonElement);
     expect(mockComposerContext.quantizeSyllables).toHaveBeenCalledTimes(1);
   });
+
+  it('shows Free Verse first in the default rhyme scheme selector', () => {
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'AABB (Couplets)' }));
+
+    expect(screen.getAllByRole('option')[0]?.textContent).toContain('Free Verse');
+  });
 });

@@ -53,7 +53,10 @@ export const LyricsView = memo(function LyricsView({
   } = useComposerContext();
   const { t } = useTranslation();
 
-  const RHYME_KEYS = Object.keys(t.rhymeSchemes) as Array<keyof typeof t.rhymeSchemes>;
+  const RHYME_KEYS = [
+    'FREE',
+    ...Object.keys(t.rhymeSchemes).filter((key) => key !== 'FREE'),
+  ] as Array<keyof typeof t.rhymeSchemes>;
 
   // ── Handlers locaux — stables via useCallback ────────────────────────────
 
