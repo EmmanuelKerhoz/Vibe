@@ -201,7 +201,7 @@ export function LcarsSelect({
           }}
           onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
           onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
-          onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = accent; } }}
+          onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.borderColor = accent; } }}
           onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
         >
           <div style={{

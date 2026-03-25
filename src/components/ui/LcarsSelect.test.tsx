@@ -18,15 +18,15 @@ describe('LcarsSelect', () => {
     const button = screen.getByRole('button');
 
     fireEvent.mouseEnter(button);
-    expect(button.style.boxShadow).toBe('none');
+    expect(button.style.boxShadow).toBe('');
     expect(button.style.borderColor).toBe('var(--accent-color)');
 
     fireEvent.mouseLeave(button);
-    expect(button.style.boxShadow).toBe('none');
+    expect(button.style.boxShadow).toBe('');
     expect(button.style.borderColor).toBe('var(--border-color)');
 
     fireEvent.focus(button);
-    expect(button.style.boxShadow).toBe('none');
+    expect(button.style.boxShadow).toBe('');
     expect(button.style.borderColor).toBe('var(--accent-color)');
   });
 
