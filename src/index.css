@@ -515,6 +515,7 @@
 .lcars-gradient-container,
 .lcars-gb-panel,
 .lcars-gradient-outline,
+.lcars-holo,
 .glass-panel,
 .dialog-surface,
 .acrylic,
@@ -540,6 +541,7 @@
 .lcars-gradient-container::after,
 .lcars-gb-panel::after,
 .lcars-gradient-outline::after,
+.lcars-holo::after,
 .glass-panel::after,
 .dialog-surface::after,
 .acrylic::after,
@@ -565,6 +567,15 @@
 }
 
 .lcars-gradient-outline {
+  --lcars-gradient-border-thickness: var(--accent-rail-outline-thickness);
+  --lcars-gradient-border-opacity: 0.65;
+  --lcars-gradient-border-hover-opacity: 1;
+  --lcars-gradient-border-shadow: var(--accent-rail-glow);
+}
+
+.lcars-holo {
+  position: relative;
+  border-radius: 8px 2px 8px 2px;
   --lcars-gradient-border-thickness: var(--accent-rail-outline-thickness);
   --lcars-gradient-border-opacity: 0.65;
   --lcars-gradient-border-hover-opacity: 1;
@@ -597,6 +608,7 @@
 .lcars-gradient-container::after,
 .lcars-gb-panel::after,
 .lcars-gradient-outline::after,
+.lcars-holo::after,
 .glass-panel::after,
 .dialog-surface::after,
 .acrylic::after,
@@ -612,6 +624,8 @@
 .lcars-gb-panel:focus-within::after,
 .lcars-gradient-outline:hover::after,
 .lcars-gradient-outline:focus-within::after,
+.lcars-holo:hover::after,
+.lcars-holo:focus-within::after,
 .glass-panel:hover::after,
 .glass-panel:focus-within::after,
 .dialog-surface:hover::after,
@@ -631,6 +645,7 @@
 .lcars-gradient-container:hover::after,
 .lcars-gb-panel:hover::after,
 .lcars-gradient-outline:hover::after,
+.lcars-holo:hover::after,
 .glass-panel:hover::after,
 .dialog-surface:hover::after,
 .acrylic:hover::after,
@@ -651,6 +666,7 @@
 }
 
 .dark .lcars-gradient-container,
+.dark .lcars-holo,
 .dark .glass-panel,
 .dark .dialog-surface,
 .dark .acrylic,

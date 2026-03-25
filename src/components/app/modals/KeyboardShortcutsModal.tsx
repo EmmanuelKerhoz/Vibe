@@ -125,10 +125,9 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: Props) {
         className="w-[calc(100vw-1rem)] border-0 bg-transparent p-0 shadow-none sm:w-[min(880px,calc(100vw-2rem))]"
       >
         <div
-          className="rounded-none sm:rounded-[24px_8px_24px_8px]"
+          className="lcars-gradient-outline rounded-none sm:rounded-[24px_8px_24px_8px]"
           style={{
             padding: '2px',
-            background: 'var(--accent-rail-gradient-h)',
             boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
             isolation: 'isolate',
           }}
