@@ -6,7 +6,7 @@ import { APP_VERSION_LABEL } from '../../../version';
 
 describe('AboutModal', () => {
   it('shows the donation sponsor link and preserves all social links in the about dialog', () => {
-    render(
+    const { container } = render(
       <LanguageProvider>
         <AboutModal isOpen onClose={() => {}} />
       </LanguageProvider>,
@@ -16,6 +16,7 @@ describe('AboutModal', () => {
 
     expect(donationLink?.getAttribute('href')).toBe('https://github.com/sponsors/EmmanuelKerhoz');
     expect(screen.getAllByRole('link')).toHaveLength(7);
+    expect(container.querySelector('.lcars-gradient-outline')).toBeTruthy();
   });
 
   it('shows the beta-prefixed app version in the dialog header', () => {

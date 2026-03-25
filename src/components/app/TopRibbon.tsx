@@ -56,6 +56,7 @@ export function TopRibbon({
   const isBusy = isGenerating || isAnalyzing;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuActionClass = 'lcars-holo ux-interactive mx-2 my-0.5 flex w-[calc(100%-1rem)] items-center gap-3 rounded-[10px_3px_10px_3px] px-4 py-2 text-[12px] text-left transition-colors';
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -121,29 +122,28 @@ export function TopRibbon({
 
           {isMenuOpen && (
             <div
-              className="absolute left-0 top-full mt-2 w-[280px] rounded-2xl shadow-2xl py-1.5 overflow-hidden"
+              className="lcars-gradient-outline absolute left-0 top-full mt-2 w-[280px] rounded-[18px_6px_18px_6px] shadow-2xl py-1.5 overflow-hidden"
               style={{
                 backgroundColor: 'var(--bg-app, #111)',
-                border: '1px solid var(--border-color, rgba(255,255,255,0.10))',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04)',
                 zIndex: 50,
               }}
             >
               {/* Create */}
               <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Create</div>
-              <button onClick={() => runMenuAction(onImportClick)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+              <button onClick={() => runMenuAction(onImportClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Upload className="w-4 h-4 text-[var(--accent-color)]" />
                 Load/Import
               </button>
-              <button onClick={() => runMenuAction(onExportClick)} disabled={song.length === 0} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50">
+              <button onClick={() => runMenuAction(onExportClick)} disabled={song.length === 0} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 disabled:opacity-50`}>
                 <Download className="w-4 h-4 text-[var(--text-secondary)]" />
                 Save/Export
               </button>
-              <button onClick={() => runMenuAction(onOpenNewGeneration)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+              <button onClick={() => runMenuAction(onOpenNewGeneration)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <WandSparkles className="w-4 h-4 text-[var(--text-secondary)]" />
                 New generation
               </button>
-              <button onClick={() => runMenuAction(onOpenNewEmpty)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+              <button onClick={() => runMenuAction(onOpenNewEmpty)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
                 New empty
               </button>
@@ -151,11 +151,11 @@ export function TopRibbon({
               {/* Workspace */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Workspace</div>
-              <button onClick={() => runMenuAction(onOpenLibraryClick)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+              <button onClick={() => runMenuAction(onOpenLibraryClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Library className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.saveToLibrary.title}
               </button>
-              <button onClick={() => runMenuAction(() => setActiveTab('musical'))} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+              <button onClick={() => runMenuAction(() => setActiveTab('musical'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Sparkles className="w-4 h-4 text-[#f59e0b]" />
                 {t.ribbon.musical}
               </button>
@@ -167,11 +167,11 @@ export function TopRibbon({
                 <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.editor.emptyState.pasteLyrics}
               </button>
-              <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+              <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <History className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.ribbon.versions}
               </button>
-              <button onClick={() => runMenuAction(() => setIsResetModalOpen(true))} disabled={song.length === 0} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50">
+              <button onClick={() => runMenuAction(() => setIsResetModalOpen(true))} disabled={song.length === 0} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
                 <Trash2 className="w-4 h-4" />
                 {t.ribbon.reset}
               </button>
@@ -179,17 +179,17 @@ export function TopRibbon({
               {/* App */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">App</div>
-              <button onClick={() => runMenuAction(onOpenSettingsClick)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+              <button onClick={() => runMenuAction(onOpenSettingsClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
                 Settings
               </button>
-              <button onClick={() => runMenuAction(onOpenAboutClick)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors">
+              <button onClick={() => runMenuAction(onOpenAboutClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Info className="w-4 h-4 text-[var(--text-secondary)]" />
                 About
               </button>
               <button
                 onClick={() => runMenuAction(() => window.open('https://github.com/sponsors/EmmanuelKerhoz', '_blank', 'noopener,noreferrer'))}
-                className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-pink-400 hover:bg-pink-500/10 transition-colors"
+                className={`${menuActionClass} text-pink-400 hover:bg-pink-500/10`}
               >
                 <Heart className="w-4 h-4" />
                 Sponsor
