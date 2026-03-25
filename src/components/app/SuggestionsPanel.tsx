@@ -91,6 +91,7 @@ export function SuggestionsPanel({
                   key={idx}
                   type="button"
                   onClick={() => { applySuggestion(suggestion); setSelectedLineId(null); }}
+                  aria-label={`Apply suggestion: ${suggestion}`}
                   className="group w-full p-4 text-left bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-[var(--accent-color)]/30 rounded-xl cursor-pointer transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
                 >
                   <p className="text-sm text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white leading-relaxed">{suggestion}</p>
@@ -103,6 +104,7 @@ export function SuggestionsPanel({
               <button
                 type="button"
                 onClick={() => generateSuggestions(selectedLineId)}
+                aria-label="Generate more suggestions"
                 className="w-full py-3 mt-4 flex items-center justify-center gap-2 text-[10px] text-zinc-500 uppercase tracking-widest hover:text-[var(--accent-color)] transition-colors"
               >
                 <RefreshCw className="w-3 h-3" />
