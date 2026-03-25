@@ -35,7 +35,7 @@ export function useUIState() {
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>('lyrics');
   const [isStructureOpen, setIsStructureOpen] = useState(true);
-  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
 
   // ── Edit mode ────────────────────────────────────────────────────────────
   const [editMode, setEditMode] = useState<EditMode>('markdown');

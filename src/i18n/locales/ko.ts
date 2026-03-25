@@ -103,6 +103,7 @@ const ko: Translations = {
     adaptation: '적응',
     adaptGlobal: '적응 (전체)',
     regenerateGlobal: '다시 생성 (전체)',
+    regenerateLyrics: '가사 다시 생성',
     adaptSection: '적응',
     editorMode: '편집기 모드',
     markupModeLabel: '마크업 모드',

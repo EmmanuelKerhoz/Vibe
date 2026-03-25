@@ -187,6 +187,26 @@ function AppInnerContent() {
     webSimilarityIndex,
   });
 
+  const hasSyncedInitialLeftPanelRef = useRef(false);
+  const previousHasRealLyricContentRef = useRef(hasRealLyricContent);
+
+  useEffect(() => {
+    if (!isSessionHydrated) return;
+
+    const hadRealLyricContent = previousHasRealLyricContentRef.current;
+    previousHasRealLyricContentRef.current = hasRealLyricContent;
+
+    if (!hasSyncedInitialLeftPanelRef.current) {
+      hasSyncedInitialLeftPanelRef.current = true;
+      setIsLeftPanelOpen(!hasRealLyricContent);
+      return;
+    }
+
+    if (hadRealLyricContent && !hasRealLyricContent) {
+      setIsLeftPanelOpen(true);
+    }
+  }, [hasRealLyricContent, isSessionHydrated, setIsLeftPanelOpen]);
+
   // ── Handlers ─────────────────────────────────────────────────────────────────────
   const {
     handleApiKeyHelp, handleTitleChange, handleGenerateTitle,
@@ -307,6 +327,8 @@ function AppInnerContent() {
                 activeTab={activeTab} setActiveTab={setActiveTab}
                 setIsVersionsModalOpen={setIsVersionsModalOpen}
                 setIsResetModalOpen={setIsResetModalOpen}
+                isLeftPanelOpen={isLeftPanelOpen}
+                setIsLeftPanelOpen={setIsLeftPanelOpen}
                 isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpen}
                 hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
                 onOpenNewGeneration={handleOpenNewGeneration}

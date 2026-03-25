@@ -97,6 +97,7 @@ const ar: Translations = {
     adaptation: 'تكييف',
     adaptGlobal: 'تكييف (الكل)',
     regenerateGlobal: 'إعادة توليد (الكل)',
+    regenerateLyrics: 'إعادة توليد الكلمات',
     adaptSection: 'تكييف',
     editorMode: 'وضع التحرير',
     markupModeLabel: 'وضع الترميز',

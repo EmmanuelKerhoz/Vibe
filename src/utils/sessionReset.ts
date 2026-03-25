@@ -58,7 +58,7 @@ export const buildResetPayload = (rhymeScheme = 'AABB'): ResetPayload => ({
   musicalPrompt:    '',
   markupText:       '',
   activeTab:        'lyrics',
-  isLeftPanelOpen:  false,
+  isLeftPanelOpen:  true,
   similarityMatches: [],
   hasSavedSession:  false,
 });

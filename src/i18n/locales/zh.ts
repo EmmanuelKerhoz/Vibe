@@ -97,6 +97,7 @@ const zh: Translations = {
     adaptation: '语言适配',
     adaptGlobal: '语言适配（全局）',
     regenerateGlobal: '重新生成（全局）',
+    regenerateLyrics: '重新生成歌词',
     adaptSection: '语言适配',
     editorMode: '编辑模式',
     markupModeLabel: '标记模式',

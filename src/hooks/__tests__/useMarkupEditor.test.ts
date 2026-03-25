@@ -59,6 +59,73 @@ describe('useMarkupEditor', () => {
     expect(setEditMode).toHaveBeenCalledWith('markdown');
   });
 
+  it('hydrates markdown mode from the current song when the markup buffer starts empty', () => {
+    const song: Section[] = [{
+      id: 'section-1',
+      name: 'Verse',
+      rhymeScheme: 'AABB',
+      preInstructions: [],
+      postInstructions: [],
+      lines: [{
+        id: 'line-1',
+        text: 'City lights glow',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 4,
+        concept: 'scene',
+        isMeta: false,
+      }],
+    }];
+    mockSongContextValues.song = song;
+    mockSongContextValues.songLanguage = 'en';
+
+    const setMarkupText = vi.fn();
+
+    renderHook(() => useMarkupEditor({
+      ...baseParams(),
+      editMode: 'markdown',
+      setMarkupText,
+    }));
+
+    expect(setMarkupText).toHaveBeenCalledWith('[Verse]\nCity lights glow');
+  });
+
+  it('hydrates text mode once the song loads while the markup buffer is still empty', () => {
+    mockSongContextValues.song = [] as Section[];
+    mockSongContextValues.songLanguage = 'en';
+
+    const setMarkupText = vi.fn();
+
+    const { rerender } = renderHook(() => useMarkupEditor({
+      ...baseParams(),
+      editMode: 'text',
+      setMarkupText,
+    }));
+
+    expect(setMarkupText).not.toHaveBeenCalled();
+
+    mockSongContextValues.song = [{
+      id: 'section-1',
+      name: 'Verse',
+      rhymeScheme: 'AABB',
+      preInstructions: [],
+      postInstructions: [],
+      lines: [{
+        id: 'line-1',
+        text: 'Neon dreams rise',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 4,
+        concept: 'scene',
+        isMeta: false,
+      }],
+    }];
+
+    rerender();
+
+    expect(setMarkupText).toHaveBeenCalledWith('[Verse]\nNeon dreams rise');
+  });
+
   it('parses valid markdown back into sections when leaving markup mode', () => {
     mockSongContextValues.song = [] as Section[];
     mockSongContextValues.songLanguage = 'en';

@@ -102,6 +102,7 @@ export interface Translations {
     adaptation: string;
     adaptGlobal: string;
     regenerateGlobal: string;
+    regenerateLyrics: string;
     adaptSection: string;
     editorMode: string;
     markupModeLabel: string;

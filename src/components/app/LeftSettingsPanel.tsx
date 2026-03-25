@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle, RefreshCw } from '../ui/icons';
+import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle, RefreshCw, X } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Label } from '../ui/Label';
@@ -155,10 +155,20 @@ function PanelContent({
   topic, setTopic, mood, setMood,
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   song, isGenerating, quantizeSyllables,
-  isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen: _setIsLeftPanelOpen,
+  isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen,
   onSurprise, isSurprising, onGenerateSong, onRegenerateSong,
   isMobileOverlay,
 }: PanelContentProps) {
+  const hasLyrics = song.some(section => section.lines.some(line => !line.isMeta && line.text.trim().length > 0));
+  const primaryActionLabel = hasLyrics ? t.editor.regenerateLyrics : t.editor.emptyState.generateSong;
+  const primaryActionTooltip = hasLyrics ? t.tooltips.regenerate : t.tooltips.generateSong;
+  const primaryActionHandler = hasLyrics && onRegenerateSong ? onRegenerateSong : onGenerateSong;
+  const primaryActionIcon = isGenerating
+    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+    : hasLyrics
+      ? <RefreshCw className="w-3.5 h-3.5" />
+      : <Sparkles className="w-3.5 h-3.5" />;
+
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
 
@@ -177,7 +187,17 @@ function PanelContent({
           </div>
           <h1 className="text-base text-primary tracking-tight">{t.app.name}</h1>
         </div>
-        <span className="text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">New generation</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">New generation</span>
+          <button
+            type="button"
+            onClick={() => setIsLeftPanelOpen(false)}
+            aria-label="Close lyrics generation panel"
+            className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Scrollable body */}
@@ -304,30 +324,22 @@ function PanelContent({
         </div>
       </div>
 
-      {/* Footer — regenerate + generate buttons */}
-      <div className="p-5 shrink-0 space-y-2">
-        {onRegenerateSong && (
-          <Tooltip title={t.tooltips.regenerate}>
+      {/* Footer — generate / regenerate button */}
+      <div className="p-5 shrink-0">
+        <Tooltip title={primaryActionTooltip}>
+          <div className="lcars-gradient-outline" style={{ borderRadius: '10px 3px 10px 3px', width: '100%' }}>
             <Button
-              onClick={onRegenerateSong}
-              disabled={isGenerating || song.length === 0}
+              onClick={primaryActionHandler}
+              disabled={isGenerating}
               variant="outlined" color="primary" fullWidth
-              startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-              style={{ fontSize: '10px', padding: '6px 0' }}
+              className="ux-interactive"
+              startIcon={primaryActionIcon}
+              style={{ fontSize: '11px', padding: '8px 0', borderRadius: '10px 3px 10px 3px' }}
             >
-              {t.editor.regenerateGlobal}
+              {primaryActionLabel}
             </Button>
-          </Tooltip>
-        )}
-        <Button
-          onClick={onGenerateSong}
-          disabled={isGenerating}
-          variant="contained" color="primary" fullWidth
-          startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-          style={{ fontSize: '11px', padding: '8px 0' }}
-        >
-          {t.editor.emptyState.generateSong}
-        </Button>
+          </div>
+        </Tooltip>
       </div>
     </div>
   );

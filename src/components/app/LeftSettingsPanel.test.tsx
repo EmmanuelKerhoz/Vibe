@@ -21,7 +21,7 @@ vi.mock('../../contexts/ComposerContext', () => ({
   useComposerContext: () => mockComposerContext,
 }));
 
-function renderPanel() {
+function renderPanel(setIsLeftPanelOpen = vi.fn()) {
   return render(
     <LanguageProvider>
       <LeftSettingsPanel
@@ -39,7 +39,7 @@ function renderPanel() {
         targetSyllables={8}
         setTargetSyllables={vi.fn()}
         isLeftPanelOpen
-        setIsLeftPanelOpen={vi.fn()}
+        setIsLeftPanelOpen={setIsLeftPanelOpen}
         onSurprise={vi.fn()}
         isSurprising={false}
         onGenerateSong={vi.fn()}
@@ -72,7 +72,7 @@ describe('LeftSettingsPanel', () => {
 
     const { rerender } = renderPanel();
 
-    expect(screen.getByRole('button', { name: 'Generate Lyrics' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Regenerate Lyrics' })).toHaveProperty('disabled', true);
     expect(screen.getByText('Quantize Syllables (GLOBAL)').closest('button')).toHaveProperty('disabled', true);
 
     mockComposerContext.isGenerating = false;
@@ -106,11 +106,99 @@ describe('LeftSettingsPanel', () => {
     expect(mockComposerContext.quantizeSyllables).toHaveBeenCalledTimes(1);
   });
 
+  it('shows Generate Lyrics when no lyrics exist and calls the generate handler', () => {
+    const onGenerateSong = vi.fn();
+
+    render(
+      <LanguageProvider>
+        <LeftSettingsPanel
+          title="Test"
+          setTitle={vi.fn()}
+          titleOrigin="user"
+          onGenerateTitle={vi.fn()}
+          isGeneratingTitle={false}
+          topic=""
+          setTopic={vi.fn()}
+          mood=""
+          setMood={vi.fn()}
+          rhymeScheme="AABB"
+          setRhymeScheme={vi.fn()}
+          targetSyllables={8}
+          setTargetSyllables={vi.fn()}
+          isLeftPanelOpen
+          setIsLeftPanelOpen={vi.fn()}
+          onSurprise={vi.fn()}
+          isSurprising={false}
+          onGenerateSong={onGenerateSong}
+          onRegenerateSong={vi.fn()}
+          isSessionHydrated
+        />
+      </LanguageProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Generate Lyrics' }));
+
+    expect(onGenerateSong).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows Regenerate Lyrics when lyrics exist and calls the regenerate handler', () => {
+    mockSongContext.song = [{
+      id: 'verse-1',
+      name: 'Verse',
+      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
+    }];
+
+    const onRegenerateSong = vi.fn();
+    const onGenerateSong = vi.fn();
+
+    render(
+      <LanguageProvider>
+        <LeftSettingsPanel
+          title="Test"
+          setTitle={vi.fn()}
+          titleOrigin="user"
+          onGenerateTitle={vi.fn()}
+          isGeneratingTitle={false}
+          topic=""
+          setTopic={vi.fn()}
+          mood=""
+          setMood={vi.fn()}
+          rhymeScheme="AABB"
+          setRhymeScheme={vi.fn()}
+          targetSyllables={8}
+          setTargetSyllables={vi.fn()}
+          isLeftPanelOpen
+          setIsLeftPanelOpen={vi.fn()}
+          onSurprise={vi.fn()}
+          isSurprising={false}
+          onGenerateSong={onGenerateSong}
+          onRegenerateSong={onRegenerateSong}
+          isSessionHydrated
+        />
+      </LanguageProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate Lyrics' }));
+
+    expect(onRegenerateSong).toHaveBeenCalledTimes(1);
+    expect(onGenerateSong).not.toHaveBeenCalled();
+  });
+
   it('shows Free Verse first in the default rhyme scheme selector', () => {
     renderPanel();
 
     fireEvent.click(screen.getByRole('button', { name: 'AABB (Couplets)' }));
 
     expect(screen.getAllByRole('option')[0]?.textContent).toContain('Free Verse');
+  });
+
+  it('closes the panel from the header control', () => {
+    const setIsLeftPanelOpen = vi.fn();
+
+    renderPanel(setIsLeftPanelOpen);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close lyrics generation panel' }));
+
+    expect(setIsLeftPanelOpen).toHaveBeenCalledWith(false);
   });
 });
