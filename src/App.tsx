@@ -183,7 +183,7 @@ function AppInnerContent() {
 
   // ── Derived state ─────────────────────────────────────────────────────────────────
   const { hasRealLyricContent, hasExistingWork, webBadgeLabel } = useDerivedAppState({
-    editMode,    markupText,
+    editMode, markupText,
     webSimilarityIndex,
   });
 
