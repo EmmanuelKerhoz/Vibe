@@ -166,6 +166,52 @@ describe('ipaSyllabification', () => {
     });
   });
 
+  describe('extractRhymeNucleus - ALGO-ROM e-muet regression', () => {
+    it('miette (mjɛtə) and tempête (tɑ̃pɛtə) share RN ɛt — coda preserved after e-muet removal', () => {
+      const rnMiette = extractRhymeNucleus(syllabifyIPA('mjɛtə', 'ALGO-ROM'), 'ALGO-ROM');
+      const rnTempete = extractRhymeNucleus(syllabifyIPA('tɑ̃pɛtə', 'ALGO-ROM'), 'ALGO-ROM');
+      expect(rnMiette).toBe('ɛt');
+      expect(rnTempete).toBe('ɛt');
+      expect(rnMiette).toBe(rnTempete);
+    });
+
+    it('défaite (defɛtə) and miette (mjɛtə) share RN ɛt', () => {
+      const rnDefaite = extractRhymeNucleus(syllabifyIPA('defɛtə', 'ALGO-ROM'), 'ALGO-ROM');
+      const rnMiette = extractRhymeNucleus(syllabifyIPA('mjɛtə', 'ALGO-ROM'), 'ALGO-ROM');
+      expect(rnDefaite).toBe('ɛt');
+      expect(rnMiette).toBe('ɛt');
+    });
+
+    it('idiot and chariot share the same RN (no e-muet, unaffected)', () => {
+      const rnIdiot = extractRhymeNucleus(syllabifyIPA('idjɔ', 'ALGO-ROM'), 'ALGO-ROM');
+      const rnChariot = extractRhymeNucleus(syllabifyIPA('ʃaʁjɔ', 'ALGO-ROM'), 'ALGO-ROM');
+      expect(rnIdiot).toBe(rnChariot);
+    });
+
+    it('chanter (ʃɑ̃təʁ) and danser (dɑ̃səʁ) share RN ɑ̃ — legitimate open syllable canary', () => {
+      const rnChanter = extractRhymeNucleus(syllabifyIPA('ʃɑ̃təʁ', 'ALGO-ROM'), 'ALGO-ROM');
+      const rnDanser = extractRhymeNucleus(syllabifyIPA('dɑ̃səʁ', 'ALGO-ROM'), 'ALGO-ROM');
+      expect(rnChanter).toBe('ɑ̃');
+      expect(rnDanser).toBe('ɑ̃');
+      expect(rnChanter).toBe(rnDanser);
+    });
+
+    it('port (pɔʁ) and mort (mɔʁ) share RN ɔʁ — no e-muet, coda ʁ preserved', () => {
+      const rnPort = extractRhymeNucleus(syllabifyIPA('pɔʁ', 'ALGO-ROM'), 'ALGO-ROM');
+      const rnMort = extractRhymeNucleus(syllabifyIPA('mɔʁ', 'ALGO-ROM'), 'ALGO-ROM');
+      expect(rnPort).toBe('ɔʁ');
+      expect(rnMort).toBe('ɔʁ');
+    });
+
+    it('fête (fɛtə) and été (ete) must NOT share the same RN — coda vs open syllable canary', () => {
+      const rnFete = extractRhymeNucleus(syllabifyIPA('fɛtə', 'ALGO-ROM'), 'ALGO-ROM');
+      const rnEte = extractRhymeNucleus(syllabifyIPA('ete', 'ALGO-ROM'), 'ALGO-ROM');
+      expect(rnFete).toBe('ɛt');
+      expect(rnEte).toBe('e');
+      expect(rnFete).not.toBe(rnEte);
+    });
+  });
+
   describe('extractRhymeNucleus - ALGO-GER regression', () => {
     it('stream (stɹiːm) should yield RN iːm', () => {
       const syllables = syllabifyIPA('stɹiːm', 'ALGO-GER');
