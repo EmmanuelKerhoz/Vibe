@@ -1,7 +1,5 @@
 /**
- * @status dormant — implémentation complète, non exposée dans l'UI.
- * Candidat à intégration dans MusicalParamsPanel (métronome)
- * et StatusBar / SettingsPanel (storage estimate).
+ * @status active — intégré dans StorageGauge (StatusBar) et SaveToLibraryModal.
  */
 import { useState, useEffect, useCallback } from 'react';
 import { safeGetItem } from '../utils/safeStorage';
@@ -59,11 +57,11 @@ export function useStorageEstimate(intervalMs = 30_000): StorageEstimate & { ref
   const refresh = useCallback(async () => {
     const libraryEstimate = getLibraryStorageUsage();
     if (!navigator?.storage?.estimate) {
-      setEstimate({
-        ...INITIAL,
+      setEstimate(prev => ({
+        ...prev,
         ...libraryEstimate,
         supported: false,
-      });
+      }));
       return;
     }
     try {
@@ -78,11 +76,11 @@ export function useStorageEstimate(intervalMs = 30_000): StorageEstimate & { ref
         supported: true,
       });
     } catch {
-      setEstimate({
-        ...INITIAL,
+      setEstimate(prev => ({
+        ...prev,
         ...libraryEstimate,
         supported: false,
-      });
+      }));
     }
   }, []);
 
@@ -91,6 +89,18 @@ export function useStorageEstimate(intervalMs = 30_000): StorageEstimate & { ref
     const id = setInterval(refresh, intervalMs);
     return () => clearInterval(id);
   }, [refresh, intervalMs]);
+
+  // Re-refresh library size whenever lyricist_library is written
+  // (same tab via storage event polyfill, or cross-tab via native storage event)
+  useEffect(() => {
+    const onStorageChange = (e: StorageEvent) => {
+      if (e.key === null || e.key === LIBRARY_STORAGE_KEY) {
+        refresh();
+      }
+    };
+    window.addEventListener('storage', onStorageChange);
+    return () => window.removeEventListener('storage', onStorageChange);
+  }, [refresh]);
 
   return { ...estimate, refresh };
 }
