@@ -97,6 +97,7 @@ const fr: Translations = {
     adaptation: 'ADAPTATION',
     adaptGlobal: 'Adaptation (GLOBAL)',
     regenerateGlobal: 'Régénérer (GLOBAL)',
+    regenerateLyrics: 'Régénérer les paroles',
     adaptSection: 'Adaptation',
     editorMode: 'Mode Éditeur',
     markupModeLabel: 'Mode Markdown',

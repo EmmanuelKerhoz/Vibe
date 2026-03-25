@@ -1,9 +1,8 @@
 import React, { useRef } from 'react';
-import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical, Link2, RefreshCw, Sparkles, Loader2 } from '../ui/icons';
+import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical, Link2 } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';
-import { IconButton } from '../ui/IconButton';
 import { Input } from '../ui/Input';
 import { useTranslation } from '../../i18n';
 import { useDrag } from '../../contexts/DragContext';
@@ -47,6 +46,8 @@ export const StructureSidebar = React.memo(function StructureSidebar({
   isMobileOverlay = false,
   className,
 }: Props) {
+  const actionButtonRadius = '10px 3px 10px 3px';
+  const sectionButtonShapeClass = 'rounded-[12px_4px_12px_4px]';
   const { song, structure } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
@@ -64,6 +65,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
   };
 
   const sectionOptions = SECTION_TYPE_OPTIONS;
+  const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|…)$/, '').trim();
 
   // Build a set of indices to skip (Chorus items already rendered as part of a group)
   const groupedChorusIndices = new Set<number>();
@@ -94,12 +96,12 @@ export const StructureSidebar = React.memo(function StructureSidebar({
             pointerEvents: 'none',
             zIndex: 10,
           }} />
-          <div className="w-[280px] flex flex-col h-full overflow-hidden">
+            <div className="w-[280px] flex flex-col h-full overflow-hidden">
 
-            <div className="h-16 px-5 flex items-center justify-between" style={{ position: 'relative' }}>
+            <div className="h-16 px-5 flex items-center justify-between shrink-0" style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
               {/* Reversed accent rail — touches both panel borders */}
               <div style={{
-                position: 'absolute', bottom: -1, left: 0, right: 0,
+                position: 'absolute', bottom: 0, left: 0, right: 0,
                 height: 'var(--accent-rail-thickness, 2px)',
                 background: 'var(--accent-rail-gradient-h-rev)',
                 opacity: 0.85, pointerEvents: 'none', zIndex: 1,
@@ -157,7 +159,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                           onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
                           onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(sectionIdx); }}
-                          className={`group flex items-center gap-3 rounded-[16px_4px_16px_4px] border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(sectionItem)} ${drag ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === sectionIdx ? 'opacity-30' : ''} ${dragOverIndex === sectionIdx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                          className={`group flex items-center gap-3 ${sectionButtonShapeClass} border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(sectionItem)} ${drag ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === sectionIdx ? 'opacity-30' : ''} ${dragOverIndex === sectionIdx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                         >
                           <span className={`h-7 w-1.5 rounded-full ${getSectionDotColor(sectionItem)}`} aria-hidden="true" />
                           {showDragHandle ? (
@@ -198,7 +200,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                             onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                             onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
                             onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }}
-                            className={`relative flex flex-col gap-1.5 ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[16px_4px_16px_4px]' : ''}`}
+                            className={`relative flex flex-col gap-1.5 ${dragOverIndex === idx ? `ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 ${sectionButtonShapeClass}` : ''}`}
                           >
                             <div className="absolute left-2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
                               <Link2 className="w-2.5 h-2.5 text-[var(--accent-color)] opacity-60" />
@@ -224,7 +226,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                           onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
                           onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverIndex(null); }}
                           onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(idx); }}
-                          className={`group flex items-center gap-3 rounded-[16px_4px_16px_4px] border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(item)} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                          className={`group flex items-center gap-3 ${sectionButtonShapeClass} border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(item)} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === idx ? 'opacity-30' : ''} ${dragOverIndex === idx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                         >
                           <span className={`h-7 w-1.5 rounded-full ${getSectionDotColor(item)}`} aria-hidden="true" />
                           {isDraggable ? (
@@ -252,8 +254,8 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                   </div>
 
                   <div className="relative" ref={dropdownRef}>
-                    <div className="flex gap-1.5 mt-3">
-                      <div className="relative flex-1">
+                    <div className="mt-3 space-y-2">
+                      <div className="relative">
                         <Input
                           value={newSectionName}
                           onChange={e => { setNewSectionName(e.target.value); setIsSectionDropdownOpen(true); }}
@@ -269,9 +271,17 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                         </button>
                       </div>
                       <Tooltip title={t.tooltips.addSection}>
-                        <IconButton onClick={() => addStructureItem()} color="primary" style={{ backgroundColor: 'var(--accent-color)', color: 'var(--on-accent-color)', borderRadius: '8px' }}>
-                          <Plus className="w-4 h-4" />
-                        </IconButton>
+                        <div className="lcars-gradient-outline" style={{ borderRadius: actionButtonRadius, width: '100%' }}>
+                          <Button
+                            onClick={() => addStructureItem()}
+                            disabled={isGenerating}
+                            variant="outlined" fullWidth
+                            className="ux-interactive"
+                            style={{ fontSize: '10px', padding: '4px 0', borderRadius: actionButtonRadius }}
+                          >
+                            {addSectionLabel}
+                          </Button>
+                        </div>
                       </Tooltip>
                     </div>
                     {isSectionDropdownOpen && (
@@ -302,34 +312,21 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                   </div>
 
                   <Tooltip title={t.tooltips.normalizeStructure}>
-                    <Button
-                      onClick={normalizeStructure}
-                      disabled={structure.length === 0 || isGenerating}
-                      variant="outlined" fullWidth
-                      startIcon={<AlignLeft className="w-3.5 h-3.5" />}
-                      style={{ fontSize: '10px', padding: '4px 0', borderRadius: '16px 4px 16px 4px' }}
-                      className="mt-4"
-                    >
-                      {t.structure.normalize}
-                    </Button>
+                    <div className="lcars-gradient-outline mt-4" style={{ borderRadius: actionButtonRadius, width: '100%' }}>
+                      <Button
+                        onClick={normalizeStructure}
+                        disabled={structure.length === 0 || isGenerating}
+                        variant="outlined" fullWidth
+                        startIcon={<AlignLeft className="w-3.5 h-3.5" />}
+                        className="ux-interactive"
+                        style={{ fontSize: '10px', padding: '4px 0', borderRadius: actionButtonRadius }}
+                      >
+                        {t.structure.normalize}
+                      </Button>
+                    </div>
                   </Tooltip>
                 </div>
               </div>
-            </div>
-
-            {/* Footer — Generate Lyrics button */}
-            <div className="p-5 shrink-0 space-y-2">
-              {onGenerateSong && (
-                <Button
-                  onClick={onGenerateSong}
-                  disabled={isGenerating}
-                  variant="contained" color="primary" fullWidth
-                  startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  style={{ fontSize: '11px', padding: '8px 0', borderRadius: '16px 4px 16px 4px' }}
-                >
-                  {t.editor.emptyState.generateSong}
-                </Button>
-              )}
             </div>
           </div>
         </motion.div>

@@ -159,6 +159,16 @@ function PanelContent({
   onSurprise, isSurprising, onGenerateSong, onRegenerateSong,
   isMobileOverlay,
 }: PanelContentProps) {
+  const hasLyrics = song.some(section => section.lines.some(line => !line.isMeta && line.text.trim().length > 0));
+  const primaryActionLabel = hasLyrics ? t.editor.regenerateLyrics : t.editor.emptyState.generateSong;
+  const primaryActionTooltip = hasLyrics ? t.tooltips.regenerate : t.tooltips.generateSong;
+  const primaryActionHandler = hasLyrics && onRegenerateSong ? onRegenerateSong : onGenerateSong;
+  const primaryActionIcon = isGenerating
+    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+    : hasLyrics
+      ? <RefreshCw className="w-3.5 h-3.5" />
+      : <Sparkles className="w-3.5 h-3.5" />;
+
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
 
@@ -314,30 +324,22 @@ function PanelContent({
         </div>
       </div>
 
-      {/* Footer — regenerate + generate buttons */}
-      <div className="p-5 shrink-0 space-y-2">
-        {onRegenerateSong && (
-          <Tooltip title={t.tooltips.regenerate}>
+      {/* Footer — generate / regenerate button */}
+      <div className="p-5 shrink-0">
+        <Tooltip title={primaryActionTooltip}>
+          <div className="lcars-gradient-outline" style={{ borderRadius: '10px 3px 10px 3px', width: '100%' }}>
             <Button
-              onClick={onRegenerateSong}
-              disabled={isGenerating || song.length === 0}
+              onClick={primaryActionHandler}
+              disabled={isGenerating}
               variant="outlined" color="primary" fullWidth
-              startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-              style={{ fontSize: '10px', padding: '6px 0' }}
+              className="ux-interactive"
+              startIcon={primaryActionIcon}
+              style={{ fontSize: '11px', padding: '8px 0', borderRadius: '10px 3px 10px 3px' }}
             >
-              {t.editor.regenerateGlobal}
+              {primaryActionLabel}
             </Button>
-          </Tooltip>
-        )}
-        <Button
-          onClick={onGenerateSong}
-          disabled={isGenerating}
-          variant="contained" color="primary" fullWidth
-          startIcon={isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-          style={{ fontSize: '11px', padding: '8px 0' }}
-        >
-          {t.editor.emptyState.generateSong}
-        </Button>
+          </div>
+        </Tooltip>
       </div>
     </div>
   );
