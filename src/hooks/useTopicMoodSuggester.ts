@@ -50,7 +50,12 @@ export function useTopicMoodSuggester() {
           wasAborted = true;
           return null;
         }
-        return safeJsonParse<TopicMoodSuggestion | null>(response.text?.trim() || '{}', null);
+        const suggestion = safeJsonParse<TopicMoodSuggestion | null>(response.text?.trim() || '{}', null);
+        if (suggestion && (!currentTitle || currentTitle === DEFAULT_TITLE) && suggestion.title) {
+          setTitle(suggestion.title);
+          setTitleOrigin('ai');
+        }
+        return suggestion;
       });
     } catch (error) {
       if (isAbortError(error)) {
@@ -62,7 +67,7 @@ export function useTopicMoodSuggester() {
     } finally {
       if (!wasAborted) setIsGeneratingSuggestion(false);
     }
-  }, [songLanguage]);
+  }, [currentTitle, setTitle, setTitleOrigin, songLanguage]);
 
   const resetSuggestionCycle = useCallback(() => {
     setHasSuggested(false);
@@ -80,10 +85,6 @@ export function useTopicMoodSuggester() {
         if (suggestion) {
           setTopic(suggestion.topic);
           setMood(suggestion.mood);
-          if ((!currentTitle || currentTitle === DEFAULT_TITLE) && suggestion.title) {
-            setTitle(suggestion.title);
-            setTitleOrigin('ai');
-          }
         }
       });
     }

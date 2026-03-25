@@ -175,12 +175,8 @@ function AppInnerContent() {
     if (suggestion) {
       setTopic(suggestion.topic);
       setMood(suggestion.mood);
-      if (suggestion.title) {
-        setTitle(suggestion.title);
-        setTitleOrigin('ai');
-      }
     }
-  }, [handleSurprise, setMood, setTitle, setTitleOrigin, setTopic]);
+  }, [handleSurprise, setMood, setTopic]);
 
   const {
     index: webSimilarityIndex,
