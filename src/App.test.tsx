@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { act } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -12,6 +12,8 @@ const mockAppState = vi.hoisted(() => ({
   initialIsMobile: false,
   initialIsTablet: false,
   initialIsGenerating: false,
+  initialSelectedLineId: null as string | null,
+  initialSuggestions: [] as string[],
   song: [] as Array<{ id: string; name: string; lines: Array<{ id: string; text: string; isMeta: boolean }> }>,
   structure: [] as Array<{ id: string; name: string }>,
   similarityIndex: { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex,
@@ -101,32 +103,40 @@ vi.mock('./hooks/useSongEditor', () => ({
   }),
 }));
 
-vi.mock('./hooks/useSongComposer', () => ({
-  useSongComposer: () => ({
-    isGenerating: mockAppState.initialIsGenerating,
-    isRegeneratingSection: () => false,
-    isGeneratingMusicalPrompt: false,
-    isAnalyzingLyrics: false,
-    selectedLineId: null,
-    setSelectedLineId: mockAppState.noop,
-    suggestions: [],
-    isSuggesting: false,
-    generateSong: mockAppState.asyncNoop,
-    regenerateSection: mockAppState.asyncNoop,
-    quantizeSyllables: mockAppState.noop,
-    generateSuggestions: mockAppState.asyncNoop,
-    updateLineText: mockAppState.noop,
-    handleLineKeyDown: mockAppState.noop,
-    applySuggestion: mockAppState.noop,
-    generateMusicalPrompt: mockAppState.asyncNoop,
-    analyzeLyricsForMusic: mockAppState.asyncNoop,
-    handleLineClick: mockAppState.noop,
-    handleInstructionChange: mockAppState.noop,
-    addInstruction: mockAppState.noop,
-    removeInstruction: mockAppState.noop,
-    clearSelection: mockAppState.noop,
-  }),
-}));
+vi.mock('./hooks/useSongComposer', async () => {
+  const ReactModule = await import('react');
+
+  return {
+    useSongComposer: () => {
+      const [selectedLineId, setSelectedLineId] = ReactModule.useState<string | null>(mockAppState.initialSelectedLineId);
+
+      return {
+        isGenerating: mockAppState.initialIsGenerating,
+        isRegeneratingSection: () => false,
+        isGeneratingMusicalPrompt: false,
+        isAnalyzingLyrics: false,
+        selectedLineId,
+        setSelectedLineId,
+        suggestions: mockAppState.initialSuggestions,
+        isSuggesting: false,
+        generateSong: mockAppState.asyncNoop,
+        regenerateSection: mockAppState.asyncNoop,
+        quantizeSyllables: mockAppState.noop,
+        generateSuggestions: mockAppState.asyncNoop,
+        updateLineText: mockAppState.noop,
+        handleLineKeyDown: mockAppState.noop,
+        applySuggestion: mockAppState.noop,
+        generateMusicalPrompt: mockAppState.asyncNoop,
+        analyzeLyricsForMusic: mockAppState.asyncNoop,
+        handleLineClick: mockAppState.noop,
+        handleInstructionChange: mockAppState.noop,
+        addInstruction: mockAppState.noop,
+        removeInstruction: mockAppState.noop,
+        clearSelection: mockAppState.noop,
+      };
+    },
+  };
+});
 
 vi.mock('./hooks/useSongHistoryState', () => ({
   useSongHistoryState: () => ({
@@ -407,6 +417,10 @@ vi.mock('./components/app/StructureSidebar', () => ({
   StructureSidebar: () => <div data-testid="structure-sidebar" />,
 }));
 
+vi.mock('./components/app/SuggestionsPanel', () => ({
+  SuggestionsPanel: () => <div data-testid="suggestions-panel" />,
+}));
+
 vi.mock('./components/app/StatusBar', () => ({
   StatusBar: (props: unknown) => {
     mockAppState.statusBarPropsSpy(props);
@@ -462,6 +476,8 @@ describe('App markup mode reset', () => {
     mockAppState.initialIsMobile = false;
     mockAppState.initialIsTablet = false;
     mockAppState.initialIsGenerating = false;
+    mockAppState.initialSelectedLineId = null;
+    mockAppState.initialSuggestions = [];
     mockAppState.song = [];
     mockAppState.structure = [];
     mockAppState.similarityIndex = { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex;
@@ -538,6 +554,49 @@ describe('App markup mode reset', () => {
     expect(screen.queryByRole('button', { name: 'Close mobile panels' })).toBeNull();
   });
 
+  it('replaces the structure sidebar with the suggestions sidebar for a selected lyric line', async () => {
+    mockAppState.initialIsStructureOpen = true;
+    mockAppState.initialSelectedLineId = 'line-1';
+    mockAppState.initialSuggestions = ['Option A'];
+    mockAppState.song = [{
+      id: 'section-1',
+      name: 'Verse',
+      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
+    }];
+    mockAppState.structure = [{ id: 'section-1', name: 'Verse' }];
+
+    render(<App />);
+
+    expect(screen.getByTestId('suggestions-panel')).toBeTruthy();
+    expect(screen.queryByTestId('structure-sidebar')).toBeNull();
+    await waitFor(() => expect(mockAppState.setIsStructureOpenSpy).toHaveBeenCalledWith(false));
+  });
+
+  it('clears the selected line when reopening the structure sidebar from the shared right-panel control', async () => {
+    mockAppState.initialSelectedLineId = 'line-1';
+    mockAppState.song = [{
+      id: 'section-1',
+      name: 'Verse',
+      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
+    }];
+    mockAppState.structure = [{ id: 'section-1', name: 'Verse' }];
+
+    render(<App />);
+
+    expect(screen.getByTestId('suggestions-panel')).toBeTruthy();
+
+    const topRibbonProps = mockAppState.topRibbonPropsSpy.mock.calls.at(-1)?.[0] as {
+      setIsStructureOpen: (value: boolean) => void;
+    };
+
+    act(() => {
+      topRibbonProps.setIsStructureOpen(true);
+    });
+
+    await waitFor(() => expect(screen.getByTestId('structure-sidebar')).toBeTruthy());
+    expect(screen.queryByTestId('suggestions-panel')).toBeNull();
+  });
+
   it('does not build an undefined web similarity badge label when the first score is missing at runtime', () => {
     const candidateWithoutScore = {
       title: 'Match',
@@ -611,6 +670,8 @@ describe('App markup mode reset', () => {
     expect(appModalsProps).not.toHaveProperty('setConfirmModal');
     expect(appModalsProps).not.toHaveProperty('apiErrorModal');
     expect(appModalsProps).not.toHaveProperty('setApiErrorModal');
+    expect(appModalsProps).not.toHaveProperty('selectedLineId');
+    expect(appModalsProps).not.toHaveProperty('suggestions');
   });
 
   it('reuses shared stable modal-open handlers across AppInnerContent child props', async () => {

@@ -13,7 +13,6 @@ import { KeyboardShortcutsModal } from './modals/KeyboardShortcutsModal';
 import { ApiErrorModal } from './modals/ApiErrorModal';
 import { ConfirmModal } from './modals/ConfirmModal';
 import { PromptModal } from './modals/PromptModal';
-import { SuggestionsPanel } from './SuggestionsPanel';
 import { useModalContext } from '../../contexts/ModalContext';
 import type { LibraryAsset } from '../../utils/libraryUtils';
 import type { SimilarityMatch } from '../../utils/similarityUtils';
@@ -48,14 +47,6 @@ interface Props {
 
   // Export
   exportSong: (format: ExportFormat) => Promise<void>;
-
-  // Suggestions
-  selectedLineId: string | null;
-  setSelectedLineId: (v: string | null) => void;
-  suggestions: string[];
-  isSuggesting: boolean;
-  applySuggestion: (s: string) => void;
-  generateSuggestions: (lineId: string) => void;
 
   // Paste / analysis (data props only)
   pastedText: string;
@@ -110,7 +101,6 @@ export const AppModals = React.memo(function AppModals({
   showTranslationFeatures, setShowTranslationFeatures,
   hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
-  selectedLineId, setSelectedLineId, suggestions, isSuggesting, applySuggestion, generateSuggestions,
   pastedText, setPastedText, isAnalyzing, analyzePastedLyrics,
   analysisReport, analysisSteps,
   appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
@@ -141,11 +131,6 @@ export const AppModals = React.memo(function AppModals({
         onPasteLyrics={onOpenPasteLyrics}
       />
       <ExportModal isOpen={ui.isExportModalOpen} onClose={() => closeModal('export')} onExport={exportSong} />
-      <SuggestionsPanel
-        selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
-        suggestions={suggestions} isSuggesting={isSuggesting}
-        applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
-      />
       <PasteModal
         isOpen={ui.isPasteModalOpen} onClose={() => closeModal('paste')}
         pastedText={pastedText} setPastedText={setPastedText}
