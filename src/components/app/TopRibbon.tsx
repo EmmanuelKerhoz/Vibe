@@ -15,6 +15,8 @@ interface Props {
   setActiveTab: (v: 'lyrics' | 'musical') => void;
   setIsVersionsModalOpen: (v: boolean) => void;
   setIsResetModalOpen: (v: boolean) => void;
+  isLeftPanelOpen: boolean;
+  setIsLeftPanelOpen: (v: boolean) => void;
   isStructureOpen: boolean;
   setIsStructureOpen: (v: boolean) => void;
   hasApiKey: boolean;
@@ -34,6 +36,7 @@ interface Props {
 export function TopRibbon({
   activeTab, setActiveTab,
   setIsVersionsModalOpen, setIsResetModalOpen,
+  isLeftPanelOpen, setIsLeftPanelOpen,
   isStructureOpen, setIsStructureOpen,
   hasApiKey, handleApiKeyHelp,
   onOpenNewGeneration, onOpenNewEmpty,
@@ -66,6 +69,14 @@ export function TopRibbon({
   const runMenuAction = (action: () => void) => {
     action();
     setIsMenuOpen(false);
+  };
+
+  const toggleLeftPanel = () => {
+    if (!isLeftPanelOpen) {
+      setActiveTab('lyrics');
+      setIsStructureOpen(false);
+    }
+    setIsLeftPanelOpen(!isLeftPanelOpen);
   };
 
   return (
@@ -233,6 +244,19 @@ export function TopRibbon({
           </Tooltip>
         )}
         <div className="w-px h-4 bg-[var(--border-color)] mx-1 hidden lg:block" />
+        <Tooltip title={isLeftPanelOpen ? 'Close lyrics generation panel' : 'Open lyrics generation panel'}>
+          <button
+            onClick={toggleLeftPanel}
+            aria-label={isLeftPanelOpen ? 'Close lyrics generation panel' : 'Open lyrics generation panel'}
+            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
+            style={{
+              color: isLeftPanelOpen ? 'var(--accent-color)' : 'var(--text-secondary)',
+              backgroundColor: isLeftPanelOpen ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)' : undefined,
+            }}
+          >
+            <WandSparkles className="w-4 h-4" />
+          </button>
+        </Tooltip>
         <Tooltip title={t.tooltips.undo}>
           <IconButton onClick={undo} disabled={!canUndo} size="small"
             style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 36, minHeight: 36 }}

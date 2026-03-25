@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle, RefreshCw } from '../ui/icons';
+import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle, RefreshCw, X } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Label } from '../ui/Label';
@@ -155,7 +155,7 @@ function PanelContent({
   topic, setTopic, mood, setMood,
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   song, isGenerating, quantizeSyllables,
-  isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen: _setIsLeftPanelOpen,
+  isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen,
   onSurprise, isSurprising, onGenerateSong, onRegenerateSong,
   isMobileOverlay,
 }: PanelContentProps) {
@@ -177,7 +177,17 @@ function PanelContent({
           </div>
           <h1 className="text-base text-primary tracking-tight">{t.app.name}</h1>
         </div>
-        <span className="text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">New generation</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">New generation</span>
+          <button
+            type="button"
+            onClick={() => setIsLeftPanelOpen(false)}
+            aria-label="Close lyrics generation panel"
+            className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Scrollable body */}
