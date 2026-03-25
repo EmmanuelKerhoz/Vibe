@@ -48,6 +48,9 @@ export function TopRibbon({
   onPasteLyrics,
   isAnalyzing,
 }: Props) {
+  const MENU_WIDTH = 280;
+  const MENU_VIEWPORT_PADDING = 12;
+  const MENU_VERTICAL_OFFSET = 6;
   const { song, past, future, undo, redo } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
@@ -55,7 +58,10 @@ export function TopRibbon({
   const canRedo = future.length > 0;
   const isBusy = isGenerating || isAnalyzing;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ left: 12, top: 6 });
+  const [menuPosition, setMenuPosition] = useState({
+    left: MENU_VIEWPORT_PADDING,
+    top: MENU_VERTICAL_OFFSET,
+  });
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuActionClass = 'flex w-full items-center gap-3 bg-transparent px-4 py-2.5 text-[12px] text-left transition-colors outline-none focus-visible:bg-[var(--accent-color)]/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent';
@@ -65,11 +71,9 @@ export function TopRibbon({
     const updateMenuPosition = () => {
       const rect = menuButtonRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const menuWidth = 280;
-      const viewportPadding = 12;
       setMenuPosition({
-        left: Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - viewportPadding - menuWidth)),
-        top: rect.bottom + 6,
+        left: Math.max(MENU_VIEWPORT_PADDING, Math.min(rect.left, window.innerWidth - MENU_VIEWPORT_PADDING - MENU_WIDTH)),
+        top: rect.bottom + MENU_VERTICAL_OFFSET,
       });
     };
 
@@ -145,10 +149,11 @@ export function TopRibbon({
 
           {isMenuOpen && (
             <div
-              className="lcars-gradient-outline fixed w-[280px] rounded-[18px_6px_18px_6px] shadow-2xl py-1.5 overflow-hidden"
+              className="lcars-gradient-outline fixed rounded-[18px_6px_18px_6px] shadow-2xl py-1.5 overflow-hidden"
               style={{
                 left: `${menuPosition.left}px`,
                 top: `${menuPosition.top}px`,
+                width: `${MENU_WIDTH}px`,
                 backgroundColor: 'var(--bg-app, #111)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04)',
                 zIndex: 70,
