@@ -44,6 +44,10 @@ export const useSongAnalysis = ({
     rhymeScheme,
     songLanguage,
     setSongLanguage,
+    detectedLanguages,
+    setDetectedLanguages,
+    lineLanguages,
+    setLineLanguages,
     setTopic,
     setMood,
   } = useSongContext();
@@ -58,6 +62,10 @@ export const useSongAnalysis = ({
     isGeneratingRef,
     songLanguage,
     setSongLanguage,
+    detectedLanguages,
+    setDetectedLanguages,
+    lineLanguages,
+    setLineLanguages,
   });
 
   const pasteImport = usePasteImport({

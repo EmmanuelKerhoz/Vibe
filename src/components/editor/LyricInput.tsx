@@ -3,7 +3,9 @@ import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2, Bot, User } from '.
 import type { Line } from '../../types';
 import { useDrag } from '../../contexts/DragContext';
 import { Tooltip } from '../ui/Tooltip';
+import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
+import { getLanguageDisplay } from '../../i18n';
 import { getRhymeTextColor } from '../../utils/songUtils';
 import { splitRhymingSuffix } from '../../utils/rhymeDetection';
 
@@ -19,6 +21,7 @@ export interface LyricInputProps {
   isGenerating: boolean;
   isDraggedLine: boolean;
   isDragOverLine: boolean;
+  lineLanguage?: string;
   handleLineClick: (lineId: string) => void;
   updateLineText: (sectionId: string, lineId: string, text: string) => void;
   handleLineKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => void;
@@ -43,6 +46,7 @@ export const LyricInput = React.memo(function LyricInput({
   isGenerating,
   isDraggedLine,
   isDragOverLine,
+  lineLanguage,
   handleLineClick,
   updateLineText,
   handleLineKeyDown,
@@ -59,6 +63,7 @@ export const LyricInput = React.memo(function LyricInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const isSelected = selectedLineId === line.id;
   const rhymeTextColor = getRhymeTextColor(schemeLabel);
+  const lineLanguageDisplay = lineLanguage ? getLanguageDisplay(lineLanguage) : null;
 
   useEffect(() => {
     if (isSelected && inputRef.current && document.activeElement !== inputRef.current) {
@@ -152,6 +157,15 @@ export const LyricInput = React.memo(function LyricInput({
             : <Bot className="h-2.5 w-2.5 text-[var(--accent-color)]" />}
         </span>
       </Tooltip>
+
+      {/* Per-line language flag */}
+      {lineLanguageDisplay && (
+        <Tooltip title={lineLanguageDisplay.label}>
+          <span className="flex-shrink-0 flex items-center justify-center w-3.5">
+            <EmojiSign sign={lineLanguageDisplay.sign} />
+          </span>
+        </Tooltip>
+      )}
 
       {/* Text input with styled overlay */}
       <div className="relative flex-1 min-w-0" onClick={handleClick}>

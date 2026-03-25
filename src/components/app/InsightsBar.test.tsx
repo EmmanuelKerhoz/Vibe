@@ -31,6 +31,8 @@ vi.mock('../../contexts/SongContext', () => ({
       },
     ],
     songLanguage: 'English',
+    detectedLanguages: ['English'],
+    lineLanguages: {},
   }),
 }));
 
