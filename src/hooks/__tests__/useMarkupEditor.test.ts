@@ -126,6 +126,98 @@ describe('useMarkupEditor', () => {
     expect(setMarkupText).toHaveBeenCalledWith('[Verse]\nNeon dreams rise');
   });
 
+  it('rehydrates markdown mode when the loaded song changes after initialization', () => {
+    mockSongContextValues.song = [{
+      id: 'section-1',
+      name: 'Verse',
+      rhymeScheme: 'AABB',
+      preInstructions: [],
+      postInstructions: [],
+      lines: [{
+        id: 'line-1',
+        text: 'City lights glow',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 4,
+        concept: 'scene',
+        isMeta: false,
+      }],
+    }];
+    mockSongContextValues.songLanguage = 'en';
+
+    const setMarkupText = vi.fn();
+    let markupText = '[Verse]\nCity lights glow';
+
+    const { rerender } = renderHook(() => useMarkupEditor({
+      ...baseParams(),
+      editMode: 'markdown',
+      markupText,
+      setMarkupText,
+    }));
+
+    expect(setMarkupText).not.toHaveBeenCalled();
+
+    mockSongContextValues.song = [{
+      id: 'section-2',
+      name: 'Verse',
+      rhymeScheme: 'AABB',
+      preInstructions: [],
+      postInstructions: [],
+      lines: [{
+        id: 'line-2',
+        text: 'Neon dreams rise',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 4,
+        concept: 'scene',
+        isMeta: false,
+      }],
+    }];
+    markupText = '';
+
+    rerender();
+
+    expect(setMarkupText).toHaveBeenCalledWith('[Verse]\nNeon dreams rise');
+  });
+
+  it('does not immediately rehydrate the same song after the markup buffer is manually cleared', () => {
+    mockSongContextValues.song = [{
+      id: 'section-1',
+      name: 'Verse',
+      rhymeScheme: 'AABB',
+      preInstructions: [],
+      postInstructions: [],
+      lines: [{
+        id: 'line-1',
+        text: 'City lights glow',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 4,
+        concept: 'scene',
+        isMeta: false,
+      }],
+    }];
+    mockSongContextValues.songLanguage = 'en';
+
+    const setMarkupText = vi.fn();
+    let markupText = '[Verse]\nCity lights glow';
+
+    const { rerender } = renderHook(() => useMarkupEditor({
+      ...baseParams(),
+      editMode: 'markdown',
+      markupText,
+      setMarkupText,
+    }));
+
+    expect(setMarkupText).not.toHaveBeenCalled();
+
+    markupText = '';
+
+    rerender();
+
+    expect(setMarkupText).not.toHaveBeenCalled();
+  });
+
   it('parses valid markdown back into sections when leaving markup mode', () => {
     mockSongContextValues.song = [] as Section[];
     mockSongContextValues.songLanguage = 'en';

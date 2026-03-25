@@ -52,7 +52,8 @@ const tokenizeLine = (rawLine: string): string[] => {
 
 export function useMarkupEditor(params: UseMarkupEditorParams) {
   const { song, songLanguage } = useSongContext();
-  const hasInitializedMarkupRef = useRef(false);
+  const lastHydratedMarkupRef = useRef('');
+  const previousSongRef = useRef(song);
   const {
     editMode, markupText, markupTextareaRef,
     setEditMode, setMarkupText, updateSongAndStructureWithHistory,
@@ -200,19 +201,30 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
   }, [song, markupText]);
 
   useEffect(() => {
-    if (markupText.trim() !== '') {
-      hasInitializedMarkupRef.current = true;
-      return;
-    }
+    const songChanged = previousSongRef.current !== song;
+    previousSongRef.current = song;
 
-    if (hasInitializedMarkupRef.current || (editMode !== 'text' && editMode !== 'markdown')) return;
+    if (editMode !== 'text' && editMode !== 'markdown') return;
 
     const serializedSong = serializeSongToMarkup();
     if (!serializedSong.trim()) return;
 
-    hasInitializedMarkupRef.current = true;
+    if (songChanged) {
+      lastHydratedMarkupRef.current = serializedSong;
+      if (markupText !== serializedSong) setMarkupText(serializedSong);
+      return;
+    }
+
+    if (markupText.trim() !== '') {
+      lastHydratedMarkupRef.current = serializedSong;
+      return;
+    }
+
+    if (lastHydratedMarkupRef.current === serializedSong) return;
+
+    lastHydratedMarkupRef.current = serializedSong;
     setMarkupText(serializedSong);
-  }, [editMode, markupText, serializeSongToMarkup, setMarkupText]);
+  }, [editMode, markupText, serializeSongToMarkup, setMarkupText, song]);
 
   const switchEditMode = useCallback((target: EditMode) => {
     if (target === editMode) return;
