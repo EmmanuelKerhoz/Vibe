@@ -589,49 +589,54 @@
   --lcars-gradient-border-hover-opacity: 0.82;
 }
 
-.dark .lcars-gradient-container::after,
-.dark .lcars-gb-panel::after,
-.dark .lcars-gradient-outline::after,
-.dark .glass-panel::after,
-.dark .dialog-surface::after,
-.dark .acrylic::after,
-.dark .ui-fluent .fluent-card::after,
-.dark .ui-fluent .lcars-panel::after,
-.dark .lcars-band::after {
+/* ===========================================================================
+   Gradient border visible in ALL themes (light + dark)
+   Active opacity set directly — no .dark guard.
+   =========================================================================== */
+
+.lcars-gradient-container::after,
+.lcars-gb-panel::after,
+.lcars-gradient-outline::after,
+.glass-panel::after,
+.dialog-surface::after,
+.acrylic::after,
+.ui-fluent .fluent-card::after,
+.ui-fluent .lcars-panel::after,
+.lcars-band::after {
   --lcars-gradient-border-render-opacity: var(--lcars-gradient-border-opacity);
 }
 
-.dark .lcars-gradient-container:hover::after,
-.dark .lcars-gradient-container:focus-within::after,
-.dark .lcars-gb-panel:hover::after,
-.dark .lcars-gb-panel:focus-within::after,
-.dark .lcars-gradient-outline:hover::after,
-.dark .lcars-gradient-outline:focus-within::after,
-.dark .glass-panel:hover::after,
-.dark .glass-panel:focus-within::after,
-.dark .dialog-surface:hover::after,
-.dark .dialog-surface:focus-within::after,
-.dark .acrylic:hover::after,
-.dark .acrylic:focus-within::after,
-.dark .ui-fluent .fluent-card:hover::after,
-.dark .ui-fluent .fluent-card:focus-within::after,
-.dark .ui-fluent .lcars-panel:hover::after,
-.dark .ui-fluent .lcars-panel:focus-within::after,
-.dark .lcars-band:hover::after,
-.dark .lcars-band:focus-within::after {
+.lcars-gradient-container:hover::after,
+.lcars-gradient-container:focus-within::after,
+.lcars-gb-panel:hover::after,
+.lcars-gb-panel:focus-within::after,
+.lcars-gradient-outline:hover::after,
+.lcars-gradient-outline:focus-within::after,
+.glass-panel:hover::after,
+.glass-panel:focus-within::after,
+.dialog-surface:hover::after,
+.dialog-surface:focus-within::after,
+.acrylic:hover::after,
+.acrylic:focus-within::after,
+.ui-fluent .fluent-card:hover::after,
+.ui-fluent .fluent-card:focus-within::after,
+.ui-fluent .lcars-panel:hover::after,
+.ui-fluent .lcars-panel:focus-within::after,
+.lcars-band:hover::after,
+.lcars-band:focus-within::after {
   --lcars-gradient-border-render-opacity: var(--lcars-gradient-border-hover-opacity);
 }
 
-/* Animated conic-gradient contour on hover (dark mode) */
-.dark .lcars-gradient-container:hover::after,
-.dark .lcars-gb-panel:hover::after,
-.dark .lcars-gradient-outline:hover::after,
-.dark .glass-panel:hover::after,
-.dark .dialog-surface:hover::after,
-.dark .acrylic:hover::after,
-.dark .ui-fluent .fluent-card:hover::after,
-.dark .ui-fluent .lcars-panel:hover::after,
-.dark .lcars-band:hover::after {
+/* Animated conic-gradient contour on hover (all themes) */
+.lcars-gradient-container:hover::after,
+.lcars-gb-panel:hover::after,
+.lcars-gradient-outline:hover::after,
+.glass-panel:hover::after,
+.dialog-surface:hover::after,
+.acrylic:hover::after,
+.ui-fluent .fluent-card:hover::after,
+.ui-fluent .lcars-panel:hover::after,
+.lcars-band:hover::after {
   background: conic-gradient(
     from var(--lcars-gradient-angle),
     var(--lcars-amber),
