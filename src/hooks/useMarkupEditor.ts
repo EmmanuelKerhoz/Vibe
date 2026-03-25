@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { cleanSectionName } from '../utils/songUtils';
 import { BRACKET_TOKEN_REGEX, isPureMetaLine, isSectionHeader, isEmptyBracketLine, unwrapBracketToken } from '../utils/metaUtils';
 import { generateId } from '../utils/idUtils';
@@ -52,6 +52,7 @@ const tokenizeLine = (rawLine: string): string[] => {
 
 export function useMarkupEditor(params: UseMarkupEditorParams) {
   const { song, songLanguage } = useSongContext();
+  const hasInitializedMarkupRef = useRef(false);
   const {
     editMode, markupText, markupTextareaRef,
     setEditMode, setMarkupText, updateSongAndStructureWithHistory,
@@ -197,6 +198,21 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       };
     }).filter((s): s is NonNullable<typeof s> => s !== null);
   }, [song, markupText]);
+
+  useEffect(() => {
+    if (markupText.trim() !== '') {
+      hasInitializedMarkupRef.current = true;
+      return;
+    }
+
+    if (hasInitializedMarkupRef.current || (editMode !== 'text' && editMode !== 'markdown')) return;
+
+    const serializedSong = serializeSongToMarkup();
+    if (!serializedSong.trim()) return;
+
+    hasInitializedMarkupRef.current = true;
+    setMarkupText(serializedSong);
+  }, [editMode, markupText, serializeSongToMarkup, setMarkupText]);
 
   const switchEditMode = useCallback((target: EditMode) => {
     if (target === editMode) return;
