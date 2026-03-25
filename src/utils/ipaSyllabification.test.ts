@@ -166,6 +166,55 @@ describe('ipaSyllabification', () => {
     });
   });
 
+  describe('extractRhymeNucleus - ALGO-GER regression', () => {
+    it('stream (stɹiːm) should yield RN iːm', () => {
+      const syllables = syllabifyIPA('stɹiːm', 'ALGO-GER');
+      const rn = extractRhymeNucleus(syllables, 'ALGO-GER');
+      expect(rn).toContain('iː');
+      expect(rn).toContain('m');
+    });
+
+    it('theme (θiːm) should yield RN iːm', () => {
+      const syllables = syllabifyIPA('θiːm', 'ALGO-GER');
+      const rn = extractRhymeNucleus(syllables, 'ALGO-GER');
+      expect(rn).toContain('iː');
+      expect(rn).toContain('m');
+    });
+
+    it('stream and theme should produce the same RN (rhyme pair)', () => {
+      const rnStream = extractRhymeNucleus(syllabifyIPA('stɹiːm', 'ALGO-GER'), 'ALGO-GER');
+      const rnTheme = extractRhymeNucleus(syllabifyIPA('θiːm', 'ALGO-GER'), 'ALGO-GER');
+      expect(rnStream).toBe(rnTheme);
+    });
+
+    it('time (taɪm) and crime (kɹaɪm) should produce the same RN', () => {
+      const rnTime = extractRhymeNucleus(syllabifyIPA('taɪm', 'ALGO-GER'), 'ALGO-GER');
+      const rnCrime = extractRhymeNucleus(syllabifyIPA('kɹaɪm', 'ALGO-GER'), 'ALGO-GER');
+      expect(rnTime).toContain('aɪm');
+      expect(rnTime).toBe(rnCrime);
+    });
+
+    it('stone (stoʊn) and bone (boʊn) should produce the same RN', () => {
+      const rnStone = extractRhymeNucleus(syllabifyIPA('stoʊn', 'ALGO-GER'), 'ALGO-GER');
+      const rnBone = extractRhymeNucleus(syllabifyIPA('boʊn', 'ALGO-GER'), 'ALGO-GER');
+      expect(rnStone).toContain('oʊn');
+      expect(rnStone).toBe(rnBone);
+    });
+
+    it('love (lʌv) and move (muːv) should NOT produce the same RN (eye-rhyme canary)', () => {
+      const rnLove = extractRhymeNucleus(syllabifyIPA('lʌv', 'ALGO-GER'), 'ALGO-GER');
+      const rnMove = extractRhymeNucleus(syllabifyIPA('muːv', 'ALGO-GER'), 'ALGO-GER');
+      expect(rnLove).not.toBe(rnMove);
+    });
+
+    it('nation (ˈneɪʃən) and station (ˈsteɪʃən) should produce the same RN', () => {
+      const rnNation = extractRhymeNucleus(syllabifyIPA('ˈneɪʃən', 'ALGO-GER'), 'ALGO-GER');
+      const rnStation = extractRhymeNucleus(syllabifyIPA('ˈsteɪʃən', 'ALGO-GER'), 'ALGO-GER');
+      expect(rnNation).toContain('eɪ');
+      expect(rnNation).toBe(rnStation);
+    });
+  });
+
   describe('syllabifyIPA - edge cases', () => {
     it('should handle empty string', () => {
       const syllables = syllabifyIPA('', 'ALGO-ROM');

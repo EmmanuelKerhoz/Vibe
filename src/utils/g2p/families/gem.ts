@@ -190,6 +190,40 @@ export const ENGLISH_LYRICAL_HOMOPHONES: Record<string, string> = {
   'desire': 'dɪzaɪəɹ',
   'higher': 'haɪəɹ',
   'wire': 'waɪəɹ',
+
+  // Magic-e words (silent final 'e' — G2P coda guard)
+  // EN, -e words where generic rules would incorrectly add a second syllable
+  'theme': 'θiːm',
+  'stream': 'stɹiːm',
+  'scheme': 'skiːm',
+  'extreme': 'ɪkstɹiːm',
+  'stone': 'stoʊn',
+  'bone': 'boʊn',
+  'tone': 'toʊn',
+  'phone': 'foʊn',
+  'zone': 'zoʊn',
+  'lone': 'loʊn',
+  'cone': 'koʊn',
+  'home': 'hoʊm',
+  'dome': 'doʊm',
+  'move': 'muːv',
+  'prove': 'pɹuːv',
+  'groove': 'gɹuːv',
+  'improve': 'ɪmpɹuːv',
+  'remove': 'ɹɪmuːv',
+  'nation': 'neɪʃən',
+  'station': 'steɪʃən',
+  'motion': 'moʊʃən',
+  'ocean': 'oʊʃən',
+  'emotion': 'ɪmoʊʃən',
+  'devotion': 'dɪvoʊʃən',
+  'potion': 'poʊʃən',
+  'notion': 'noʊʃən',
+  'relation': 'ɹɪleɪʃən',
+  'creation': 'kɹɪeɪʃən',
+  'location': 'loʊkeɪʃən',
+  'vacation': 'veɪkeɪʃən',
+  'situation': 'sɪtʃueɪʃən',
 };
 
 /**
@@ -198,6 +232,26 @@ export const ENGLISH_LYRICAL_HOMOPHONES: Record<string, string> = {
 export const lookupEnglishHomophone = (word: string): string | null => {
   const normalized = word.toLowerCase().trim();
   return ENGLISH_LYRICAL_HOMOPHONES[normalized] || null;
+};
+
+/**
+ * Detect if a word is expected to be an open syllable (magic-e / silent-e pattern).
+ * Magic-e words end in a single consonant followed by 'e', with a vowel earlier
+ * in the same syllable: e.g. "theme" /θiːm/, "stone" /stoʊn/, "time" /taɪm/.
+ * Returns true when the trailing 'e' is orthographically silent, so a G2P
+ * engine that strips it before phonemising is behaving correctly and the
+ * resulting empty final coda should NOT trigger a coda-retry.
+ *
+ * Implementation note: the pattern `[aeiou][^aeiou]+e$` requires at least one
+ * vowel, then one or more non-vowel consonants, then a terminal 'e'. Words that
+ * end in a vowel+e digraph (e.g. "blue", "true" → vowel immediately before 'e',
+ * no consonant in between) do NOT match and correctly return false.
+ */
+export const isOpenSyllableExpected = (word: string): boolean => {
+  const normalized = word.toLowerCase().trim();
+  // Pattern: at least one vowel, then one or more non-vowel consonants, then 'e'
+  // Excludes words that end in 'ee', 'ie', 'oe', 'ue' (those are true vowel endings)
+  return /[aeiou][^aeiou]+e$/.test(normalized) && !/[aeiou]e$/.test(normalized.slice(0, -1));
 };
 
 /**

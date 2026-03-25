@@ -7,7 +7,7 @@ import type { AlgoFamily } from '../../constants/langFamilyMap';
 
 // Import family-specific implementations
 import { romG2P, removeFrenchSilentE, applyFrenchLiaison, FRENCH_OBLIGATORY_LIAISONS } from './families/rom';
-import { gemG2P, lookupEnglishHomophone, ENGLISH_LYRICAL_HOMOPHONES } from './families/gem';
+import { gemG2P, lookupEnglishHomophone, ENGLISH_LYRICAL_HOMOPHONES, isOpenSyllableExpected } from './families/gem';
 import { kwaG2P, applyEwePostVoicedDepression, normalizeToneTo2Classes, applyEweVowelHarmony } from './families/kwa';
 import { crvG2P, detectCRVLongVowels, shouldHaveHLContour } from './families/crv';
 import { semG2P } from './families/sem';
@@ -161,6 +161,7 @@ export {
   // English (GEM)
   lookupEnglishHomophone,
   ENGLISH_LYRICAL_HOMOPHONES,
+  isOpenSyllableExpected,
 
   // Ewe/KWA
   applyEwePostVoicedDepression,

@@ -347,6 +347,19 @@ export const extractRhymeNucleus = (
       // CRV: nucleus + coda + tone, weight matters
       return stressedSyllable.nucleus + stressedSyllable.coda + (stressedSyllable.tone || '');
 
+    case 'ALGO-GER': {
+      // GER (EN, DE, NL, SV, DA, NO): nucleus + full coda + all following syllables.
+      // Explicit case (rather than relying on default) so that future Germanic-specific
+      // adjustments (e.g. schwa suppression, umlaut weighting) stay isolated from
+      // other families handled by the default branch.
+      let rn = stressedSyllable.nucleus + stressedSyllable.coda;
+      for (let i = stressedIndex + 1; i < syllables.length; i++) {
+        const syl = syllables[i]!;
+        rn += syl.onset + syl.nucleus + syl.coda;
+      }
+      return rn;
+    }
+
     default:
       // Standard: nucleus + coda + all following syllables
       let rn = stressedSyllable.nucleus + stressedSyllable.coda;

@@ -26,6 +26,7 @@ export {
   // English (GEM) specific
   lookupEnglishHomophone,
   ENGLISH_LYRICAL_HOMOPHONES,
+  isOpenSyllableExpected,
   // Ewe/KWA specific
   applyEwePostVoicedDepression,
   normalizeToneTo2Classes,
