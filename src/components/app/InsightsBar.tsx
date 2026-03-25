@@ -273,8 +273,8 @@ export const InsightsBar = React.memo(function InsightsBar({
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 
-        {/* Single row: Language detect | Language dropdown (narrow) | ADAPTATION | Markup | Analyze | Similarity */}
-        <div className="flex items-center gap-2 overflow-hidden min-w-0">
+        {/* Single row: Language detect | Language dropdown | ADAPTATION | LYRICS Editors | LYRICS Insights (right) */}
+        <div className="flex items-center gap-2 min-w-0">
           <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
             <BarChart2 className="w-3.5 h-3.5" />
             {t.insights.title}
@@ -337,56 +337,68 @@ export const InsightsBar = React.memo(function InsightsBar({
               </button>
             </Tooltip>
           )}
-          {([
-            { mode: 'text' as EditMode, icon: <Type className="w-3.5 h-3.5" />, label: t.editor.textModeLabel, tooltip: t.tooltips.textMode },
-            { mode: 'markdown' as EditMode, icon: <FileText className="w-3.5 h-3.5" />, label: t.editor.markupModeLabel, tooltip: t.tooltips.markupMode },
-            { mode: 'section' as EditMode, icon: <Layout className="w-3.5 h-3.5" />, label: t.editor.editorMode, tooltip: t.tooltips.editorMode },
-          ]).map(({ mode, icon, label, tooltip }) => (
-            <Tooltip key={mode} title={tooltip}>
+
+          {/* ── LYRICS Editors group ─────────────────────────── */}
+          <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">LYRICS Editors</span>
+            {([
+              { mode: 'text' as EditMode, icon: <Type className="w-3.5 h-3.5" />, label: t.editor.textModeLabel, tooltip: t.tooltips.textMode },
+              { mode: 'markdown' as EditMode, icon: <FileText className="w-3.5 h-3.5" />, label: t.editor.markupModeLabel, tooltip: t.tooltips.markupMode },
+              { mode: 'section' as EditMode, icon: <Layout className="w-3.5 h-3.5" />, label: t.editor.editorMode, tooltip: t.tooltips.editorMode },
+            ]).map(({ mode, icon, label, tooltip }) => (
+              <Tooltip key={mode} title={tooltip}>
+                <button
+                  onClick={() => switchEditMode(mode)}
+                  disabled={isGenerating || isAnalyzing}
+                  className={`px-2 lg:px-3 py-1 text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
+                    editMode === mode
+                      ? 'bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/40 text-[var(--accent-color)]'
+                      : 'glass-button'
+                  }`}
+                >
+                  {icon}
+                  <span className="hidden lg:inline">{label}</span>
+                </button>
+              </Tooltip>
+            ))}
+          </div>
+
+          {/* ── LYRICS Insights group (right-aligned) ────────── */}
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">LYRICS Insights</span>
+            <Tooltip title={t.tooltips.analyzeTheme}>
               <button
-                onClick={() => switchEditMode(mode)}
-                disabled={isGenerating || isAnalyzing}
-                className={`px-2 lg:px-3 py-1 text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
-                  editMode === mode
-                    ? 'bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/40 text-[var(--accent-color)]'
-                    : 'glass-button'
-                }`}
+                onClick={analyzeCurrentSong}
+                disabled={isGenerating || isAnalyzing || song.length === 0}
+                className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {icon}
-                <span className="hidden lg:inline">{label}</span>
+                <BarChart2 className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline">{t.editor.analyze}</span>
               </button>
             </Tooltip>
-          ))}
-          <Tooltip title={t.tooltips.analyzeTheme}>
-            <button
-              onClick={analyzeCurrentSong}
-              disabled={isGenerating || isAnalyzing || song.length === 0}
-              className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <BarChart2 className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">{t.editor.analyze}</span>
-            </button>
-          </Tooltip>
-          <Tooltip title={t.tooltips.checkSimilarity}>
-            <button
-              onClick={() => setIsSimilarityModalOpen(true)}
-              disabled={isGenerating || isAnalyzing || !hasLyrics}
-              className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
-            >
-              {webSimilarityIndex.status === 'running'
-                ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
-                : <Search className="w-3.5 h-3.5" />}
-              <span className="hidden lg:inline">{t.ribbon?.similarity || 'Similarity'}</span>
-              {webBadgeLabel && (
-                <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">{webBadgeLabel}</span>
-              )}
-              {!webBadgeLabel && libraryCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>
-              )}
-            </button>
-          </Tooltip>
+            <Tooltip title={t.tooltips.checkSimilarity}>
+              <button
+                onClick={() => setIsSimilarityModalOpen(true)}
+                disabled={isGenerating || isAnalyzing || !hasLyrics}
+                className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
+              >
+                {webSimilarityIndex.status === 'running'
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
+                  : <Search className="w-3.5 h-3.5" />}
+                <span className="hidden lg:inline">{t.ribbon?.similarity || 'Similarity'}</span>
+                {webBadgeLabel && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">{webBadgeLabel}</span>
+                )}
+                {!webBadgeLabel && libraryCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>
+                )}
+              </button>
+            </Tooltip>
+          </div>
 
-          <div className="flex lg:hidden items-center gap-3 shrink-0 ml-auto">
+          {/* ── Mobile KPIs ─────────────────────────────────── */}
+          <div className="flex lg:hidden items-center gap-3 shrink-0">
             <div className="flex flex-col items-end">
               <span className="micro-label text-zinc-500">{t.insights.sections}</span>
               <span className="text-sm telemetry-text text-zinc-900 dark:text-zinc-200">{sectionCount}</span>

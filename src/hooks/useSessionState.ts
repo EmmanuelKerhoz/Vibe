@@ -95,8 +95,8 @@ export function useSessionState() {
   // ── Default Edit Mode ─────────────────────────────────────────────────────
   const [defaultEditMode, setDefaultEditModeRaw] = useState<'text' | 'section' | 'markdown'>(() => {
     const stored = safeGetItem(DEFAULT_EDIT_MODE_KEY);
-    if (stored === 'markdown' || stored === 'text') return stored;
-    return 'section';
+    if (stored === 'section' || stored === 'text') return stored;
+    return 'markdown';
   });
 
   const setDefaultEditMode = (v: 'text' | 'section' | 'markdown') => {

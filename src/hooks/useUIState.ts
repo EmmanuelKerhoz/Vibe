@@ -38,7 +38,7 @@ export function useUIState() {
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
 
   // ── Edit mode ────────────────────────────────────────────────────────────
-  const [editMode, setEditMode] = useState<EditMode>('section');
+  const [editMode, setEditMode] = useState<EditMode>('markdown');
   const [markupText, setMarkupText] = useState('');
   const markupTextareaRef = useRef<HTMLTextAreaElement>(null);
 
