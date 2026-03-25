@@ -273,33 +273,13 @@ export const InsightsBar = React.memo(function InsightsBar({
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 
-        {/* Single row: Language detect | Language dropdown | ADAPTATION | LYRICS Editors | LYRICS Insights (right) */}
+        {/* Single row: Language dropdown | ADAPTATION | LYRICS Editors | LYRICS Insights (right) */}
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
             <BarChart2 className="w-3.5 h-3.5" />
             {t.insights.title}
           </h3>
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
-
-          <Tooltip title={detectedDisplays.length > 0 ? `Detected: ${detectedDisplays.map(d => `${d.sign} ${d.label}`).join(', ')} — click to re-detect` : '🌐 Detect song language'}>
-            <button
-              onClick={() => void detectLanguage()}
-              disabled={isDetectingLanguage || song.length === 0}
-              className="ux-interactive px-2.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap shrink-0"
-            >
-              {isDetectingLanguage
-                ? <Loader2 className="w-3 h-3 animate-spin" />
-                : <ScanText className="w-3 h-3" />}
-              {detectedDisplays.length > 0
-                ? detectedDisplays.map((d, i) => (
-                    <span key={d.label} className="inline-flex items-center gap-0.5">
-                      {i > 0 && <span className="text-zinc-600 mx-0.5">,</span>}
-                      <EmojiSign sign={d.sign} /><span className="hidden sm:inline">{d.label}</span>
-                    </span>
-                  ))
-                : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">Detect</span></>}
-            </button>
-          </Tooltip>
 
           {showTranslationFeatures && (
             <>
@@ -367,6 +347,25 @@ export const InsightsBar = React.memo(function InsightsBar({
           {/* ── LYRICS Insights group (right-aligned) ────────── */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">LYRICS Insights</span>
+            <Tooltip title={detectedDisplays.length > 0 ? `Detected: ${detectedDisplays.map(d => `${d.sign} ${d.label}`).join(', ')} — click to re-detect` : '🌐 Detect song language'}>
+              <button
+                onClick={() => void detectLanguage()}
+                disabled={isDetectingLanguage || song.length === 0}
+                className="ux-interactive px-2.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap shrink-0"
+              >
+                {isDetectingLanguage
+                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                  : <ScanText className="w-3 h-3" />}
+                {detectedDisplays.length > 0
+                  ? detectedDisplays.map((d, i) => (
+                      <span key={d.label} className="inline-flex items-center gap-0.5">
+                        {i > 0 && <span className="text-zinc-600 mx-0.5">,</span>}
+                        <EmojiSign sign={d.sign} /><span className="hidden sm:inline">{d.label}</span>
+                      </span>
+                    ))
+                  : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">Detect</span></>}
+              </button>
+            </Tooltip>
             <Tooltip title={t.tooltips.analyzeTheme}>
               <button
                 onClick={analyzeCurrentSong}
