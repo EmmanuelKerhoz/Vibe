@@ -6,7 +6,7 @@ import type { WebSimilarityCandidate, WebSimilarityIndex } from './types/webSimi
 
 const mockAppState = vi.hoisted(() => ({
   initialActiveTab: 'lyrics' as 'lyrics' | 'musical',
-  initialIsMarkupMode: true,
+  initialEditMode: 'markdown' as 'text' | 'markdown' | 'section',
   initialIsLeftPanelOpen: false,
   initialIsStructureOpen: false,
   initialIsMobile: false,
@@ -16,7 +16,7 @@ const mockAppState = vi.hoisted(() => ({
   structure: [] as Array<{ id: string; name: string }>,
   similarityIndex: { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex,
   setActiveTabSpy: vi.fn(),
-  setIsMarkupModeSpy: vi.fn(),
+  setEditModeSpy: vi.fn(),
   setIsLeftPanelOpenSpy: vi.fn(),
   setIsStructureOpenSpy: vi.fn(),
   useKeyboardShortcutsSpy: vi.fn(),
@@ -182,7 +182,7 @@ vi.mock('./hooks/useAppState', async () => {
   return {
     useAppState: () => {
       const [activeTab, setActiveTabState] = ReactModule.useState<'lyrics' | 'musical'>(mockAppState.initialActiveTab);
-      const [isMarkupMode, setIsMarkupModeState] = ReactModule.useState(mockAppState.initialIsMarkupMode);
+      const [editMode, setEditModeState] = ReactModule.useState(mockAppState.initialEditMode);
       const [isStructureOpen, setIsStructureOpenState] = ReactModule.useState(mockAppState.initialIsStructureOpen);
       const [isLeftPanelOpen, setIsLeftPanelOpenState] = ReactModule.useState(mockAppState.initialIsLeftPanelOpen);
       const markupTextareaRef = ReactModule.useRef<HTMLTextAreaElement>(null);
@@ -234,7 +234,7 @@ vi.mock('./hooks/useAppState', async () => {
         setAudioFeedback: mockAppState.noop,
         uiScale: 100,
         setUiScale: mockAppState.noop,
-        defaultEditMode: 'classic',
+        defaultEditMode: 'section',
         setDefaultEditMode: mockAppState.noop,
         newSectionName: '',
         setNewSectionName: mockAppState.noop,
@@ -246,10 +246,10 @@ vi.mock('./hooks/useAppState', async () => {
         setLibraryAssets: mockAppState.noop,
         isSavingToLibrary: false,
         setIsSavingToLibrary: mockAppState.noop,
-        isMarkupMode,
-        setIsMarkupMode: (value: boolean) => {
-          mockAppState.setIsMarkupModeSpy(value);
-          setIsMarkupModeState(value);
+        editMode,
+        setEditMode: (value: 'text' | 'markdown' | 'section') => {
+          mockAppState.setEditModeSpy(value);
+          setEditModeState(value);
         },
         markupText: '[Verse]\nHello',
         setMarkupText: mockAppState.noop,
@@ -454,7 +454,7 @@ vi.mock('./i18n', () => ({
 describe('App markup mode reset', () => {
   beforeEach(() => {
     mockAppState.initialActiveTab = 'lyrics';
-    mockAppState.initialIsMarkupMode = true;
+    mockAppState.initialEditMode = 'markdown';
     mockAppState.initialIsLeftPanelOpen = false;
     mockAppState.initialIsStructureOpen = false;
     mockAppState.initialIsMobile = false;
@@ -464,7 +464,7 @@ describe('App markup mode reset', () => {
     mockAppState.structure = [];
     mockAppState.similarityIndex = { status: 'idle', candidates: [], lastUpdated: null, error: null } as WebSimilarityIndex;
     mockAppState.setActiveTabSpy.mockClear();
-    mockAppState.setIsMarkupModeSpy.mockClear();
+    mockAppState.setEditModeSpy.mockClear();
     mockAppState.setIsLeftPanelOpenSpy.mockClear();
     mockAppState.setIsStructureOpenSpy.mockClear();
     mockAppState.useKeyboardShortcutsSpy.mockClear();
@@ -481,22 +481,22 @@ describe('App markup mode reset', () => {
   it('keeps markup mode while the lyrics tab remains active and resets it after switching tabs', async () => {
     render(<App />);
 
-    expect(mockAppState.setIsMarkupModeSpy).not.toHaveBeenCalled();
+    expect(mockAppState.setEditModeSpy).not.toHaveBeenCalled();
     expect(screen.getByTestId('lyrics-view')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Switch to musical' }));
 
-    await waitFor(() => expect(mockAppState.setIsMarkupModeSpy).toHaveBeenCalledWith(false));
+    await waitFor(() => expect(mockAppState.setEditModeSpy).toHaveBeenCalledWith('section'));
     expect(screen.getByTestId('musical-tab')).toBeTruthy();
   });
 
   it('does not reset markup mode when it is already disabled on a non-lyrics tab', () => {
     mockAppState.initialActiveTab = 'musical';
-    mockAppState.initialIsMarkupMode = false;
+    mockAppState.initialEditMode = 'section';
 
     render(<App />);
 
-    expect(mockAppState.setIsMarkupModeSpy).not.toHaveBeenCalled();
+    expect(mockAppState.setEditModeSpy).not.toHaveBeenCalled();
     expect(screen.getByTestId('musical-tab')).toBeTruthy();
   });
 

@@ -13,10 +13,10 @@ vi.mock('../../contexts/SongContext', () => ({
 }));
 
 const baseParams = () => ({
-  isMarkupMode: false,
+  editMode: 'section' as const,
   markupText: '',
   markupTextareaRef: { current: null } as React.RefObject<HTMLTextAreaElement | null>,
-  setIsMarkupMode: vi.fn(),
+  setEditMode: vi.fn(),
   setMarkupText: vi.fn(),
   updateSongAndStructureWithHistory: vi.fn(),
 });
@@ -43,12 +43,12 @@ describe('useMarkupEditor', () => {
     mockSongContextValues.songLanguage = 'en';
 
     const setMarkupText = vi.fn();
-    const setIsMarkupMode = vi.fn();
+    const setEditMode = vi.fn();
 
     const { result } = renderHook(() => useMarkupEditor({
       ...baseParams(),
       setMarkupText,
-      setIsMarkupMode,
+      setEditMode,
     }));
 
     act(() => {
@@ -56,7 +56,7 @@ describe('useMarkupEditor', () => {
     });
 
     expect(setMarkupText).toHaveBeenCalledWith('[Verse]\n[Whispered]\nCity lights glow\n[Ad-lib]');
-    expect(setIsMarkupMode).toHaveBeenCalledWith(true);
+    expect(setEditMode).toHaveBeenCalledWith('markdown');
   });
 
   it('parses valid markdown back into sections when leaving markup mode', () => {
@@ -64,13 +64,13 @@ describe('useMarkupEditor', () => {
     mockSongContextValues.songLanguage = 'en';
 
     const updateSongAndStructureWithHistory = vi.fn();
-    const setIsMarkupMode = vi.fn();
+    const setEditMode = vi.fn();
 
     const { result } = renderHook(() => useMarkupEditor({
       ...baseParams(),
-      isMarkupMode: true,
+      editMode: 'markdown',
       markupText: '[Verse]\n[Whispered]\nCity lights glow\n[Ad-lib]',
-      setIsMarkupMode,
+      setEditMode,
       updateSongAndStructureWithHistory,
     }));
 
@@ -91,7 +91,7 @@ describe('useMarkupEditor', () => {
       })],
       ['Verse'],
     );
-    expect(setIsMarkupMode).toHaveBeenCalledWith(false);
+    expect(setEditMode).toHaveBeenCalledWith('section');
   });
 
   it('parses non-ASCII bracketed section headers when leaving markup mode', () => {
@@ -102,7 +102,7 @@ describe('useMarkupEditor', () => {
 
     const { result } = renderHook(() => useMarkupEditor({
       ...baseParams(),
-      isMarkupMode: true,
+      editMode: 'markdown',
       markupText: '\u3010Verse\u3011\nNeon lights',
       updateSongAndStructureWithHistory,
     }));
@@ -136,13 +136,13 @@ describe('useMarkupEditor', () => {
     mockSongContextValues.songLanguage = 'en';
 
     const updateSongAndStructureWithHistory = vi.fn();
-    const setIsMarkupMode = vi.fn();
+    const setEditMode = vi.fn();
 
     const { result } = renderHook(() => useMarkupEditor({
       ...baseParams(),
-      isMarkupMode: true,
+      editMode: 'markdown',
       markupText: '   \n\n   ',
-      setIsMarkupMode,
+      setEditMode,
       updateSongAndStructureWithHistory,
     }));
 
@@ -153,7 +153,7 @@ describe('useMarkupEditor', () => {
     }).not.toThrow();
 
     expect(updateSongAndStructureWithHistory).not.toHaveBeenCalled();
-    expect(setIsMarkupMode).toHaveBeenCalledWith(false);
+    expect(setEditMode).toHaveBeenCalledWith('section');
   });
 
   it('returns rtl direction for rtl song languages', () => {

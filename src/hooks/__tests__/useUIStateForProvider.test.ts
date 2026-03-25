@@ -20,7 +20,7 @@ const createParams = (): UIStateBag => ({
   setPromptModal: vi.fn(),
   setIsPasteModalOpen: vi.fn(),
   setIsAnalysisModalOpen: vi.fn(),
-  setIsMarkupMode: vi.fn(),
+  setEditMode: vi.fn(),
   isAboutOpen: false,
   isSettingsOpen: true,
   apiErrorModal: { open: false, message: '' },
@@ -42,7 +42,7 @@ const createParams = (): UIStateBag => ({
   setIsStructureOpen: vi.fn(),
   isLeftPanelOpen: false,
   setIsLeftPanelOpen: vi.fn(),
-  isMarkupMode: false,
+  editMode: 'section' as const,
   markupText: 'markup',
   setMarkupText: vi.fn(),
   markupTextareaRef: createRef<HTMLTextAreaElement>(),
@@ -163,7 +163,7 @@ describe('useUIStateForProvider', () => {
         activeTab: result.current.activeTab,
         isStructureOpen: result.current.isStructureOpen,
         isLeftPanelOpen: result.current.isLeftPanelOpen,
-        isMarkupMode: result.current.isMarkupMode,
+        editMode: result.current.editMode,
       };
 
       // Change modal state - layoutState should NOT recompute
@@ -175,7 +175,7 @@ describe('useUIStateForProvider', () => {
       expect(result.current.activeTab).toBe(initialLayoutFlags.activeTab);
       expect(result.current.isStructureOpen).toBe(initialLayoutFlags.isStructureOpen);
       expect(result.current.isLeftPanelOpen).toBe(initialLayoutFlags.isLeftPanelOpen);
-      expect(result.current.isMarkupMode).toBe(initialLayoutFlags.isMarkupMode);
+      expect(result.current.editMode).toBe(initialLayoutFlags.editMode);
 
       // Change layout state - layoutState SHOULD recompute
       rerender({
