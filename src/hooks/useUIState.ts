@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import type { EditMode } from '../types';
 
 /** Splash guard — runs synchronously once to avoid double render. */
 const SPLASH_SHOWN_KEY = 'vibe_splash_shown';
@@ -36,8 +37,8 @@ export function useUIState() {
   const [isStructureOpen, setIsStructureOpen] = useState(true);
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
 
-  // ── Markup editor ─────────────────────────────────────────────────────────
-  const [isMarkupMode, setIsMarkupMode] = useState(false);
+  // ── Edit mode ────────────────────────────────────────────────────────────
+  const [editMode, setEditMode] = useState<EditMode>('section');
   const [markupText, setMarkupText] = useState('');
   const markupTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -73,7 +74,7 @@ export function useUIState() {
     activeTab, setActiveTab,
     isStructureOpen, setIsStructureOpen,
     isLeftPanelOpen, setIsLeftPanelOpen,
-    isMarkupMode, setIsMarkupMode,
+    editMode, setEditMode,
     markupText, setMarkupText,
     markupTextareaRef,
     importInputRef,

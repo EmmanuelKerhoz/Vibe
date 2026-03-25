@@ -5,12 +5,13 @@ import { generateId } from '../utils/idUtils';
 import { countSyllables } from '../utils/syllableUtils';
 import { languageNameToCode } from '../constants/langFamilyMap';
 import { useSongContext } from '../contexts/SongContext';
+import type { EditMode } from '../types';
 
 interface UseMarkupEditorParams {
-  isMarkupMode: boolean;
+  editMode: EditMode;
   markupText: string;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
-  setIsMarkupMode: (v: boolean) => void;
+  setEditMode: (v: EditMode) => void;
   setMarkupText: (v: string) => void;
   updateSongAndStructureWithHistory: (song: import('../types').Section[], structure: string[]) => void;
 }
@@ -52,14 +53,14 @@ const tokenizeLine = (rawLine: string): string[] => {
 export function useMarkupEditor(params: UseMarkupEditorParams) {
   const { song, songLanguage } = useSongContext();
   const {
-    isMarkupMode, markupText, markupTextareaRef,
-    setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory,
+    editMode, markupText, markupTextareaRef,
+    setEditMode, setMarkupText, updateSongAndStructureWithHistory,
   } = params;
   const normalizedSongLanguage = (languageNameToCode(songLanguage) ?? songLanguage).trim().toLowerCase();
   const markupDirection: 'ltr' | 'rtl' = ['ar', 'he', 'fa', 'ur'].includes(normalizedSongLanguage) ? 'rtl' : 'ltr';
 
   const scrollToSection = useCallback((section: import('../types').Section) => {
-    if (isMarkupMode) {
+    if (editMode !== 'section') {
       if (!markupTextareaRef.current) return;
       let searchStr = `**[${section.name}]**`;
       let index = markupText.indexOf(searchStr);
@@ -87,122 +88,142 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
         }
       }
     }
-  }, [isMarkupMode, markupText, markupTextareaRef]);
+  }, [editMode, markupText, markupTextareaRef]);
 
-  const handleMarkupToggle = useCallback(() => {
-    if (isMarkupMode) {
-      // MARKUP → STRUCTURED
-      const rawBlocks = markupText.split(/\n\s*\n/);
-      const usedSectionIds = new Set<string>();
-      const usedLineIds = new Set<string>();
+  /** Serialize structured song sections into markup text. */
+  const serializeSongToMarkup = useCallback(() => {
+    const fmt = (i: string) => { const tr = i.trim(); return unwrapBracketToken(tr) ? tr : `[${tr}]`; };
+    return song.map(sec => {
+      const pre = (sec.preInstructions || []).map(fmt).join('\n');
+      const post = (sec.postInstructions || []).map(fmt).join('\n');
+      const lyricText = sec.lines
+        .filter(l => {
+          if (isArtifact(l.text)) return false;
+          const trimmedText = l.text.trim();
+          const inner = unwrapBracketToken(trimmedText);
+          if (inner && isSectionHeader(inner)) return false;
+          return true;
+        })
+        .map(l => l.text)
+        .join('\n');
+      return `[${sec.name}]\n${pre ? pre + '\n' : ''}${lyricText}${post ? '\n' + post : ''}`;
+    }).join('\n\n');
+  }, [song]);
 
-      const newSections = rawBlocks.map((block, blockIndex) => {
-        const expandedLines = block
-          .trim()
-          .split('\n')
-          .flatMap(tokenizeLine)
-          .filter(tok => tok.trim().length > 0);
+  /** Parse markup text back into structured song sections. */
+  const parseMarkupToSections = useCallback(() => {
+    const rawBlocks = markupText.split(/\n\s*\n/);
+    const usedSectionIds = new Set<string>();
+    const usedLineIds = new Set<string>();
 
-        if (expandedLines.length === 0) return null;
+    return rawBlocks.map((block, blockIndex) => {
+      const expandedLines = block
+        .trim()
+        .split('\n')
+        .flatMap(tokenizeLine)
+        .filter(tok => tok.trim().length > 0);
 
-        let name = 'Verse';
-        let remainingLines = expandedLines;
-        const firstToken = (expandedLines[0] ?? '').trim();
-        const firstTokenInner = unwrapBracketToken(firstToken);
+      if (expandedLines.length === 0) return null;
 
-        if (firstTokenInner && isSectionHeader(firstTokenInner)) {
-          name = cleanSectionName(firstTokenInner);
-          remainingLines = expandedLines.slice(1);
-        }
+      let name = 'Verse';
+      let remainingLines = expandedLines;
+      const firstToken = (expandedLines[0] ?? '').trim();
+      const firstTokenInner = unwrapBracketToken(firstToken);
 
-        const preInstructions: string[] = [];
-        const postInstructions: string[] = [];
-        const lyricLines: string[] = [];
-        let foundLyrics = false;
+      if (firstTokenInner && isSectionHeader(firstTokenInner)) {
+        name = cleanSectionName(firstTokenInner);
+        remainingLines = expandedLines.slice(1);
+      }
 
-        remainingLines.forEach(tok => {
-          if (isArtifact(tok)) return;
-          const trimmed = tok.trim();
-          if (unwrapBracketToken(trimmed)) {
-            if (isPureMetaLine(trimmed)) {
-              foundLyrics = true;
-              lyricLines.push(trimmed);
-            } else {
-              if (foundLyrics) postInstructions.push(trimmed);
-              else preInstructions.push(trimmed);
-            }
-          } else {
+      const preInstructions: string[] = [];
+      const postInstructions: string[] = [];
+      const lyricLines: string[] = [];
+      let foundLyrics = false;
+
+      remainingLines.forEach(tok => {
+        if (isArtifact(tok)) return;
+        const trimmed = tok.trim();
+        if (unwrapBracketToken(trimmed)) {
+          if (isPureMetaLine(trimmed)) {
             foundLyrics = true;
-            lyricLines.push(tok);
+            lyricLines.push(trimmed);
+          } else {
+            if (foundLyrics) postInstructions.push(trimmed);
+            else preInstructions.push(trimmed);
           }
-        });
+        } else {
+          foundLyrics = true;
+          lyricLines.push(tok);
+        }
+      });
 
-        const existingSection = (song[blockIndex] && song[blockIndex]!.name === name)
-          ? song[blockIndex]!
-          : song.find(s => s.name === name && !usedSectionIds.has(s.id));
-        let sectionId = existingSection?.id || generateId();
-        if (usedSectionIds.has(sectionId)) sectionId = generateId();
-        usedSectionIds.add(sectionId);
+      const existingSection = (song[blockIndex] && song[blockIndex]!.name === name)
+        ? song[blockIndex]!
+        : song.find(s => s.name === name && !usedSectionIds.has(s.id));
+      let sectionId = existingSection?.id || generateId();
+      if (usedSectionIds.has(sectionId)) sectionId = generateId();
+      usedSectionIds.add(sectionId);
 
-        return {
-          id: sectionId,
-          name,
-          rhymeScheme: existingSection?.rhymeScheme ?? 'AABB',
-          targetSyllables: existingSection?.targetSyllables ?? 8,
-          mood: existingSection?.mood ?? '',
-          preInstructions: preInstructions.length > 0 ? preInstructions : (existingSection?.preInstructions || []),
-          postInstructions: postInstructions.length > 0 ? postInstructions : (existingSection?.postInstructions || []),
-          lines: lyricLines.map((text, lIdx) => {
-            const isMeta = isPureMetaLine(text.trim());
-            const existingLine = existingSection?.lines.find(l => l.text === text && !usedLineIds.has(l.id))
-              || (existingSection?.lines[lIdx] && !usedLineIds.has(existingSection.lines[lIdx]!.id)
-                ? existingSection.lines[lIdx]
-                : null);
-            let lineId = existingLine?.id || generateId();
-            if (usedLineIds.has(lineId)) lineId = generateId();
-            usedLineIds.add(lineId);
-            return {
-              id: lineId,
-              text,
-              rhymingSyllables: existingLine?.rhymingSyllables || '',
-              rhyme: existingLine?.rhyme || '',
-              syllables: isMeta
-                ? 0
-                : text.split(/\s+/).reduce((acc, word) => acc + (word ? countSyllables(word) : 0), 0),
-              concept: existingLine?.concept || (isMeta ? 'Meta' : 'New line'),
-              isManual: true,
-              isMeta,
-            };
-          }),
-        };
-      }).filter((s): s is NonNullable<typeof s> => s !== null);
+      return {
+        id: sectionId,
+        name,
+        rhymeScheme: existingSection?.rhymeScheme ?? 'AABB',
+        targetSyllables: existingSection?.targetSyllables ?? 8,
+        mood: existingSection?.mood ?? '',
+        preInstructions: preInstructions.length > 0 ? preInstructions : (existingSection?.preInstructions || []),
+        postInstructions: postInstructions.length > 0 ? postInstructions : (existingSection?.postInstructions || []),
+        lines: lyricLines.map((text, lIdx) => {
+          const isMeta = isPureMetaLine(text.trim());
+          const existingLine = existingSection?.lines.find(l => l.text === text && !usedLineIds.has(l.id))
+            || (existingSection?.lines[lIdx] && !usedLineIds.has(existingSection.lines[lIdx]!.id)
+              ? existingSection.lines[lIdx]
+              : null);
+          let lineId = existingLine?.id || generateId();
+          if (usedLineIds.has(lineId)) lineId = generateId();
+          usedLineIds.add(lineId);
+          return {
+            id: lineId,
+            text,
+            rhymingSyllables: existingLine?.rhymingSyllables || '',
+            rhyme: existingLine?.rhyme || '',
+            syllables: isMeta
+              ? 0
+              : text.split(/\s+/).reduce((acc, word) => acc + (word ? countSyllables(word) : 0), 0),
+            concept: existingLine?.concept || (isMeta ? 'Meta' : 'New line'),
+            isManual: true,
+            isMeta,
+          };
+        }),
+      };
+    }).filter((s): s is NonNullable<typeof s> => s !== null);
+  }, [song, markupText]);
 
-      if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
-      setIsMarkupMode(false);
-    } else {
-      // STRUCTURED → MARKUP
-      const fmt = (i: string) => { const tr = i.trim(); return unwrapBracketToken(tr) ? tr : `[${tr}]`; };
-      const text = song.map(sec => {
-        const pre = (sec.preInstructions || []).map(fmt).join('\n');
-        const post = (sec.postInstructions || []).map(fmt).join('\n');
-        const lyricText = sec.lines
-          .filter(l => {
-            if (isArtifact(l.text)) return false;
-            const trimmedText = l.text.trim();
-            const inner = unwrapBracketToken(trimmedText);
-            if (inner && isSectionHeader(inner)) {
-              return false;
-            }
-            return true;
-          })
-          .map(l => l.text)
-          .join('\n');
-        return `[${sec.name}]\n${pre ? pre + '\n' : ''}${lyricText}${post ? '\n' + post : ''}`;
-      }).join('\n\n');
-      setMarkupText(text);
-      setIsMarkupMode(true);
+  const switchEditMode = useCallback((target: EditMode) => {
+    if (target === editMode) return;
+
+    // Switching away from section mode → serialize song to text
+    if (editMode === 'section' && (target === 'text' || target === 'markdown')) {
+      setMarkupText(serializeSongToMarkup());
+      setEditMode(target);
+      return;
     }
-  }, [song, isMarkupMode, markupText, setIsMarkupMode, setMarkupText, updateSongAndStructureWithHistory]);
 
-  return { scrollToSection, handleMarkupToggle, markupDirection };
+    // Switching to section mode from text or markdown → parse text to structured
+    if (target === 'section' && (editMode === 'text' || editMode === 'markdown')) {
+      const newSections = parseMarkupToSections();
+      if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
+      setEditMode('section');
+      return;
+    }
+
+    // Switching between text ↔ markdown: no data conversion needed, same text buffer
+    setEditMode(target);
+  }, [editMode, serializeSongToMarkup, parseMarkupToSections, setEditMode, setMarkupText, updateSongAndStructureWithHistory]);
+
+  // Keep legacy handleMarkupToggle as a convenience (toggles between markdown and section)
+  const handleMarkupToggle = useCallback(() => {
+    switchEditMode(editMode === 'markdown' ? 'section' : 'markdown');
+  }, [editMode, switchEditMode]);
+
+  return { scrollToSection, handleMarkupToggle, switchEditMode, markupDirection };
 }

@@ -14,8 +14,8 @@ interface Props {
   setAudioFeedback: (value: boolean) => void;
   uiScale: 'small' | 'medium' | 'large';
   setUiScale: (v: 'small' | 'medium' | 'large') => void;
-  defaultEditMode: 'section' | 'markdown';
-  setDefaultEditMode: (v: 'section' | 'markdown') => void;
+  defaultEditMode: 'text' | 'section' | 'markdown';
+  setDefaultEditMode: (v: 'text' | 'section' | 'markdown') => void;
   showTranslationFeatures: boolean;
   setShowTranslationFeatures: (v: boolean) => void;
 }
@@ -274,8 +274,8 @@ export function SettingsModal({
                     <FileCode className="w-3.5 h-3.5" />
                     {t.settings.editMode?.label ?? 'Default Editor'}
                   </h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(['section', 'markdown'] as const).map((opt) => (
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['text', 'markdown', 'section'] as const).map((opt) => (
                       <button
                         key={opt}
                         onClick={() => setDraftDefaultEditMode(opt)}
@@ -286,9 +286,11 @@ export function SettingsModal({
                         }`}
                       >
                         <span>
-                          {opt === 'section'
-                            ? (t.settings.editMode?.section ?? 'Section Editor')
-                            : (t.settings.editMode?.markdown ?? 'Markdown Editor')}
+                          {opt === 'text'
+                            ? (t.settings.editMode?.text ?? 'Text')
+                            : opt === 'section'
+                              ? (t.settings.editMode?.section ?? 'Section Editor')
+                              : (t.settings.editMode?.markdown ?? 'Markdown Editor')}
                         </span>
                       </button>
                     ))}

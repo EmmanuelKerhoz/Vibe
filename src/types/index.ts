@@ -24,6 +24,9 @@ export interface Section {
 
 export type LineDragInfo = { sectionId: string; lineId: string } | null;
 
+/** The three edit modes available in the editor ribbon. */
+export type EditMode = 'text' | 'markdown' | 'section';
+
 export interface SongVersion {
   id: string;
   timestamp: number;

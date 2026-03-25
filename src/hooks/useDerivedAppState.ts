@@ -1,16 +1,17 @@
 import { useMemo } from 'react';
 import type { WebSimilarityIndex } from '../types/webSimilarity';
+import type { EditMode } from '../types';
 import { isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from '../utils/songDefaults';
 import { useSongContext } from '../contexts/SongContext';
 
 interface UseDerivedAppStateParams {
-  isMarkupMode: boolean;
+  editMode: EditMode;
   markupText: string;
   webSimilarityIndex: WebSimilarityIndex;
 }
 
 export function useDerivedAppState({
-  isMarkupMode,
+  editMode,
   markupText,
   webSimilarityIndex,
 }: UseDerivedAppStateParams) {
@@ -26,8 +27,8 @@ export function useDerivedAppState({
       (hasRealLyricContent && !isPristineDraft(song, structure, rhymeScheme)) ||
       topic !== DEFAULT_TOPIC ||
       mood !== DEFAULT_MOOD ||
-      (isMarkupMode && markupText.trim().length > 0),
-    [hasRealLyricContent, song, structure, rhymeScheme, topic, mood, isMarkupMode, markupText]
+      (editMode !== 'section' && markupText.trim().length > 0),
+    [hasRealLyricContent, song, structure, rhymeScheme, topic, mood, editMode, markupText]
   );
 
   const webBadgeLabel = useMemo(
