@@ -156,6 +156,43 @@ describe('useMarkupEditor', () => {
     expect(setEditMode).toHaveBeenCalledWith('section');
   });
 
+  it('serializes song into markup when switchEditMode is called from section to text', () => {
+    const song: Section[] = [{
+      id: 'section-1',
+      name: 'Verse',
+      rhymeScheme: 'AABB',
+      preInstructions: [],
+      postInstructions: [],
+      lines: [{
+        id: 'line-1',
+        text: 'Hello world',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 4,
+        concept: 'greeting',
+        isMeta: false,
+      }],
+    }];
+    mockSongContextValues.song = song;
+    mockSongContextValues.songLanguage = 'en';
+
+    const setMarkupText = vi.fn();
+    const setEditMode = vi.fn();
+
+    const { result } = renderHook(() => useMarkupEditor({
+      ...baseParams(),
+      setMarkupText,
+      setEditMode,
+    }));
+
+    act(() => {
+      result.current.switchEditMode('text');
+    });
+
+    expect(setMarkupText).toHaveBeenCalledWith('[Verse]\nHello world');
+    expect(setEditMode).toHaveBeenCalledWith('text');
+  });
+
   it('returns rtl direction for rtl song languages', () => {
     mockSongContextValues.song = [] as Section[];
     mockSongContextValues.songLanguage = 'Arabic';
