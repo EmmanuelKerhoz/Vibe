@@ -23,13 +23,19 @@ export interface StorageEstimate {
 
 const INITIAL: StorageEstimate = {
   usage: 0, quota: 0, ratio: 0,
-  tier: 'green', usageMB: '0', quotaMB: '0', libraryUsage: 0, libraryUsageMB: '0', supported: false,
+  tier: 'green', usageMB: '0 B', quotaMB: '0 B', libraryUsage: 0, libraryUsageMB: '0 B', supported: false,
 };
 
-function formatStorageSize(bytes: number): string {
-  if (bytes === 0) return '0';
-  if (bytes >= 1024 * 1024 * 1024) return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+const BYTES_PER_KB = 1024;
+const BYTES_PER_MB = 1024 * 1024;
+const BYTES_PER_GB = 1024 * 1024 * 1024;
+
+export function formatStorageSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  if (bytes < BYTES_PER_KB) return bytes + ' B';
+  if (bytes < BYTES_PER_MB) return (bytes / BYTES_PER_KB).toFixed(1) + ' KB';
+  if (bytes >= BYTES_PER_GB) return (bytes / BYTES_PER_GB).toFixed(1) + ' GB';
+  return (bytes / BYTES_PER_MB).toFixed(1) + ' MB';
 }
 
 function computeTier(ratio: number): StorageTier {
