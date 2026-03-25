@@ -37,8 +37,6 @@ function renderStructureSidebar({
           <StructureSidebar
             isStructureOpen
             setIsStructureOpen={() => {}}
-            newSectionName=""
-            setNewSectionName={() => {}}
             isSectionDropdownOpen={isSectionDropdownOpen}
             setIsSectionDropdownOpen={setIsSectionDropdownOpen}
             addStructureItem={addStructureItem}
@@ -77,6 +75,7 @@ describe('StructureSidebar section tooltips', () => {
     fireEvent.mouseDown(screen.getByRole('option', { name: 'Verse' }));
 
     expect(screen.queryAllByRole('button', { name: /^Add section$/ })).toHaveLength(1);
+    expect(screen.queryByRole('option', { name: 'Verse' })).toBeNull();
     expect(addStructureItem).toHaveBeenCalledTimes(1);
     expect(addStructureItem).toHaveBeenCalledWith('Verse');
 

@@ -44,11 +44,12 @@ export function LcarsSelect({
   const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
 
   const setOpen = useCallback((nextOpen: boolean) => {
+    if (nextOpen === isOpen) return;
     if (controlledIsOpen === undefined) {
       setUncontrolledIsOpen(nextOpen);
     }
     onOpenChange?.(nextOpen);
-  }, [controlledIsOpen, onOpenChange]);
+  }, [controlledIsOpen, isOpen, onOpenChange, setUncontrolledIsOpen]);
 
   const selectedLabel: React.ReactNode =
     options.find((o) => o.value === value)?.label ??

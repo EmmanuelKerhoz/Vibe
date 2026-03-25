@@ -21,8 +21,6 @@ import { useComposerContext } from '../../contexts/ComposerContext';
 interface Props {
   isStructureOpen: boolean;
   setIsStructureOpen: (v: boolean) => void;
-  newSectionName: string;
-  setNewSectionName: (v: string) => void;
   isSectionDropdownOpen: boolean;
   setIsSectionDropdownOpen: (v: boolean) => void;
   addStructureItem: (name?: string) => void;
@@ -38,7 +36,6 @@ interface Props {
 
 export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
-  newSectionName: _newSectionName, setNewSectionName: _setNewSectionName,
   isSectionDropdownOpen, setIsSectionDropdownOpen,
   addStructureItem, removeStructureItem,
   normalizeStructure, handleDrop, onScrollToSection,
