@@ -21,7 +21,7 @@ vi.mock('../../contexts/ComposerContext', () => ({
   useComposerContext: () => mockComposerContext,
 }));
 
-function renderPanel() {
+function renderPanel(setIsLeftPanelOpen = vi.fn()) {
   return render(
     <LanguageProvider>
       <LeftSettingsPanel
@@ -39,7 +39,7 @@ function renderPanel() {
         targetSyllables={8}
         setTargetSyllables={vi.fn()}
         isLeftPanelOpen
-        setIsLeftPanelOpen={vi.fn()}
+        setIsLeftPanelOpen={setIsLeftPanelOpen}
         onSurprise={vi.fn()}
         isSurprising={false}
         onGenerateSong={vi.fn()}
@@ -112,5 +112,15 @@ describe('LeftSettingsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'AABB (Couplets)' }));
 
     expect(screen.getAllByRole('option')[0]?.textContent).toContain('Free Verse');
+  });
+
+  it('closes the panel from the header control', () => {
+    const setIsLeftPanelOpen = vi.fn();
+
+    renderPanel(setIsLeftPanelOpen);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close lyrics generation panel' }));
+
+    expect(setIsLeftPanelOpen).toHaveBeenCalledWith(false);
   });
 });
