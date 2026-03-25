@@ -561,7 +561,7 @@
   z-index: 1;
   opacity: var(--lcars-gradient-border-render-opacity);
   box-shadow: var(--lcars-gradient-border-shadow);
-  transition: opacity 0.3s ease, background 0.3s ease;
+  transition: opacity 0.3s ease;
 }
 
 .lcars-gradient-outline {
@@ -642,6 +642,7 @@
     var(--lcars-amber)
   );
   animation: lcars-border-spin 2.5s linear infinite;
+  will-change: background;
 }
 
 .dark .lcars-gradient-container,
