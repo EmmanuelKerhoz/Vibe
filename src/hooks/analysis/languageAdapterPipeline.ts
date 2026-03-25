@@ -115,7 +115,8 @@ export const detectSongLanguage = async (song: Section[], signal?: AbortSignal):
     const lineLanguageMap: Record<string, string> = {};
     for (let i = 0; i < Math.min(lineRefs.length, lineLanguages.length); i++) {
       const lang = lineLanguages[i]?.trim();
-      if (lang) lineLanguageMap[lineRefs[i]!.lineId] = lang;
+      const lineId = lineRefs[i]?.lineId;
+      if (lang && lineId) lineLanguageMap[lineId] = lang;
     }
 
     return {

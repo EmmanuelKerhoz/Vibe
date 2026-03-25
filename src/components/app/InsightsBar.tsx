@@ -291,7 +291,7 @@ export const InsightsBar = React.memo(function InsightsBar({
                 : <ScanText className="w-3 h-3" />}
               {detectedDisplays.length > 0
                 ? detectedDisplays.map((d, i) => (
-                    <span key={i} className="inline-flex items-center gap-0.5">
+                    <span key={d.label} className="inline-flex items-center gap-0.5">
                       {i > 0 && <span className="text-zinc-600 mx-0.5">,</span>}
                       <EmojiSign sign={d.sign} /><span className="hidden sm:inline">{d.label}</span>
                     </span>
