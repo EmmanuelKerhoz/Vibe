@@ -49,8 +49,8 @@ describe('LyricsView empty state', () => {
             handleDrop={() => {}}
             handleLineDragStart={() => {}}
             handleLineDrop={() => {}}
-            isMarkupMode={false}
-            setIsMarkupMode={() => {}}
+            editMode="section"
+            setEditMode={() => {}}
             markupText=""
             setMarkupText={() => {}}
             markupTextareaRef={{ current: null }}
@@ -81,8 +81,8 @@ describe('LyricsView empty state', () => {
             handleDrop={() => {}}
             handleLineDragStart={() => {}}
             handleLineDrop={() => {}}
-            isMarkupMode
-            setIsMarkupMode={() => {}}
+            editMode="markdown"
+            setEditMode={() => {}}
             markupText="[Verse]\nHello"
             setMarkupText={() => {}}
             markupTextareaRef={{ current: null }}
@@ -127,8 +127,8 @@ describe('LyricsView empty state', () => {
             handleDrop={() => {}}
             handleLineDragStart={() => {}}
             handleLineDrop={() => {}}
-            isMarkupMode={false}
-            setIsMarkupMode={() => {}}
+            editMode="section"
+            setEditMode={() => {}}
             markupText=""
             setMarkupText={() => {}}
             markupTextareaRef={{ current: null }}
@@ -191,8 +191,8 @@ describe('LyricsView empty state', () => {
             handleDrop={() => {}}
             handleLineDragStart={() => {}}
             handleLineDrop={() => {}}
-            isMarkupMode={false}
-            setIsMarkupMode={() => {}}
+            editMode="section"
+            setEditMode={() => {}}
             markupText=""
             setMarkupText={() => {}}
             markupTextareaRef={{ current: null }}

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, memo } from 'react';
-import { ClipboardPaste, Layout, Library, Music, Sparkles } from '../ui/icons';
+import { ClipboardPaste, FileText, Layout, Library, Music, Sparkles, Type } from '../ui/icons';
 import { Section } from '../../types';
+import type { EditMode } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
 import { MarkupInput } from '../editor/MarkupInput';
 import { Button } from '../ui/Button';
@@ -24,8 +25,8 @@ interface LyricsViewProps {
   handleDrop: (targetIndex: number) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
   handleLineDrop: (sectionId: string, lineId: string) => void;
-  isMarkupMode: boolean;
-  setIsMarkupMode: (v: boolean) => void;
+  editMode: EditMode;
+  setEditMode: (v: EditMode) => void;
   markupText: string;
   setMarkupText: (v: string) => void;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -43,7 +44,7 @@ export const LyricsView = memo(function LyricsView({
   onSectionTargetLanguageChange,
   adaptSectionLanguage,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
-  isMarkupMode, setIsMarkupMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
+  editMode, setEditMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
   onOpenLibrary, onPasteLyrics, onGenerateSong,
   showTranslationFeatures = true,
 }: LyricsViewProps) {
@@ -191,7 +192,38 @@ export const LyricsView = memo(function LyricsView({
   return (
     <>
       <div className="w-full min-w-0 flex flex-col gap-1 pb-32">
-        {isMarkupMode ? (
+        {editMode === 'text' ? (
+          <div className="lcars-gradient-container flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
+            <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
+                <Type className="w-4 h-4 text-[var(--accent-color)]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
+                  {t.editor.textMode.title}
+                </h3>
+                <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
+                  {t.editor.textMode.description}
+                </p>
+              </div>
+            </div>
+            <div className="relative flex-1 min-h-0 overflow-hidden">
+              <textarea
+                ref={markupTextareaRef as React.RefObject<HTMLTextAreaElement>}
+                value={markupText}
+                onChange={(e) => setMarkupText(e.target.value)}
+                spellCheck={false}
+                dir={markupDirection}
+                placeholder={t.editor.textMode.placeholder}
+                className="absolute inset-0 w-full h-full resize-none bg-[var(--bg-app)] caret-[var(--text-primary)] outline-none font-mono text-sm leading-7 text-[var(--text-primary)]"
+                style={{ padding: '1.5rem' }}
+              />
+            </div>
+            <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
+              <p className="text-xs text-[var(--text-secondary)]">{t.editor.textMode.hint}</p>
+            </div>
+          </div>
+        ) : editMode === 'markdown' ? (
           <div className="lcars-gradient-container flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
             <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">

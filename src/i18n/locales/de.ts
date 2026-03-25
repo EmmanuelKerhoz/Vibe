@@ -80,6 +80,12 @@ const de: Translations = {
       hint: 'Format: [Abschnittsname] gefolgt von den Liedtexten. Trenne Abschnitte durch doppelte Zeilenumbrüche.',
       placeholder: '[Strophe 1]\nLiedtext hier...\n\n[Refrain]\nRefrainzeilen...',
     },
+    textMode: {
+      title: 'Textmodus',
+      description: 'Einfacher Notizblock-Editor',
+      hint: 'Schreiben Sie frei ohne Formatierung. Ihr Text bleibt beim Moduswechsel erhalten.',
+      placeholder: 'Beginnen Sie hier Ihre Texte zu schreiben...',
+    },
     sectionTooltip: {
       lines: 'Zeilen',
       words: 'Wörter',
@@ -94,6 +100,7 @@ const de: Translations = {
     adaptSection: 'Anpassung',
     editorMode: 'Editor-Modus',
     markupModeLabel: 'Markdown-Modus',
+    textModeLabel: 'Text',
     regenerateSection: 'Neu generieren',
     quantize: 'Quantisieren',
     lyricLine: 'Liedtextzeile',
@@ -316,6 +323,7 @@ const de: Translations = {
     },
     editMode: {
       label: 'Standard-Editor',
+      text: 'Text',
       section: 'Abschnittseditor',
       markdown: 'Markdown-Editor',
     },
@@ -365,6 +373,7 @@ const de: Translations = {
     quantizeSection: 'Zeilen in diesem Abschnitt an das Silbenziel anpassen',
     sectionAdapt: 'Diesen Abschnitt an die gewählte Sprache anpassen',
     markupMode: 'In den reinen Textmodus wechseln',
+    textMode: 'In den Textmodus wechseln',
     editorMode: 'In den strukturierten Editor wechseln',
     applyAnalysis: 'Ausgewählte Verbesserungen auf den Song anwenden',
     revertAnalysis: 'Alle angewendeten Analyseänderungen rückgängig machen',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, Languages, ScanText, Layout, Search, Timer, CheckCircle2, AlertTriangle, XCircle } from '../ui/icons';
+import { Loader2, BarChart2, Languages, ScanText, Layout, Search, Timer, CheckCircle2, AlertTriangle, XCircle, FileText, Type } from '../ui/icons';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
@@ -7,6 +7,7 @@ import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES, getLanguageDisplay } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
+import type { EditMode } from '../../types';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
@@ -17,14 +18,14 @@ interface InsightsBarProps {
   isAdaptingLanguage: boolean;
   isDetectingLanguage: boolean;
   isAnalyzing: boolean;
-  isMarkupMode: boolean;
+  editMode: EditMode;
+  switchEditMode: (target: EditMode) => void;
   webSimilarityIndex: ReturnType<typeof useSimilarityEngine>['index'];
   webBadgeLabel: string | null;
   libraryCount: number;
   adaptSongLanguage: (lang: string) => void;
   detectLanguage: () => void;
   analyzeCurrentSong: () => void;
-  handleMarkupToggle: () => void;
   setIsSimilarityModalOpen: (open: boolean) => void;
   isMetronomeActive?: boolean;
   toggleMetronome?: () => void;
@@ -220,14 +221,14 @@ export const InsightsBar = React.memo(function InsightsBar({
   isAdaptingLanguage,
   isDetectingLanguage,
   isAnalyzing,
-  isMarkupMode,
+  editMode,
+  switchEditMode,
   webSimilarityIndex,
   webBadgeLabel,
   libraryCount,
   adaptSongLanguage,
   detectLanguage,
   analyzeCurrentSong,
-  handleMarkupToggle,
   setIsSimilarityModalOpen,
   isMetronomeActive,
   toggleMetronome,
@@ -336,16 +337,26 @@ export const InsightsBar = React.memo(function InsightsBar({
               </button>
             </Tooltip>
           )}
-          <Tooltip title={isMarkupMode ? t.tooltips.editorMode : t.tooltips.markupMode}>
-            <button
-              onClick={handleMarkupToggle}
-              disabled={isGenerating || isAnalyzing}
-              className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Layout className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">{isMarkupMode ? t.editor.editorMode : t.editor.markupModeLabel}</span>
-            </button>
-          </Tooltip>
+          {([
+            { mode: 'text' as EditMode, icon: <Type className="w-3.5 h-3.5" />, label: t.editor.textModeLabel, tooltip: t.tooltips.textMode },
+            { mode: 'markdown' as EditMode, icon: <FileText className="w-3.5 h-3.5" />, label: t.editor.markupModeLabel, tooltip: t.tooltips.markupMode },
+            { mode: 'section' as EditMode, icon: <Layout className="w-3.5 h-3.5" />, label: t.editor.editorMode, tooltip: t.tooltips.editorMode },
+          ]).map(({ mode, icon, label, tooltip }) => (
+            <Tooltip key={mode} title={tooltip}>
+              <button
+                onClick={() => switchEditMode(mode)}
+                disabled={isGenerating || isAnalyzing}
+                className={`px-2 lg:px-3 py-1 text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
+                  editMode === mode
+                    ? 'bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/40 text-[var(--accent-color)]'
+                    : 'glass-button'
+                }`}
+              >
+                {icon}
+                <span className="hidden lg:inline">{label}</span>
+              </button>
+            </Tooltip>
+          ))}
           <Tooltip title={t.tooltips.analyzeTheme}>
             <button
               onClick={analyzeCurrentSong}

@@ -79,7 +79,7 @@ function AppInnerContent() {
     showTranslationFeatures, setShowTranslationFeatures,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount,
     libraryAssets, setLibraryAssets, isSavingToLibrary, setIsSavingToLibrary,
-    isMarkupMode, setIsMarkupMode, markupText, setMarkupText,
+    editMode, setEditMode, markupText, setMarkupText,
     isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
     apiErrorModal, setApiErrorModal,
     isImportModalOpen, setIsImportModalOpen, isExportModalOpen, setIsExportModalOpen,
@@ -119,8 +119,8 @@ function AppInnerContent() {
     updateSongAndStructureWithHistory, setIsVersionsModalOpen, setPromptModal,
   });
   const { playAudioFeedback } = useAudioFeedback(audioFeedback);
-  const { scrollToSection, handleMarkupToggle, markupDirection } = useMarkupEditor({
-    isMarkupMode, markupText, markupTextareaRef, setIsMarkupMode, setMarkupText,
+  const { scrollToSection, handleMarkupToggle, switchEditMode, markupDirection } = useMarkupEditor({
+    editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
     updateSongAndStructureWithHistory,
   });
 
@@ -147,13 +147,13 @@ function AppInnerContent() {
   useEffect(() => {
     if (isSessionHydrated && !hasAppliedDefaultEditModeRef.current) {
       hasAppliedDefaultEditModeRef.current = true;
-      if (defaultEditMode === 'markdown') setIsMarkupMode(true);
+      if (defaultEditMode !== 'section') setEditMode(defaultEditMode);
     }
-  }, [isSessionHydrated, defaultEditMode, setIsMarkupMode]);
+  }, [isSessionHydrated, defaultEditMode, setEditMode]);
 
   useEffect(() => {
-    if (activeTab !== 'lyrics' && isMarkupMode) setIsMarkupMode(false);
-  }, [activeTab, isMarkupMode, setIsMarkupMode]);
+    if (activeTab !== 'lyrics' && editMode !== 'section') setEditMode('section');
+  }, [activeTab, editMode, setEditMode]);
 
   const {
     removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
@@ -183,8 +183,7 @@ function AppInnerContent() {
 
   // ── Derived state ─────────────────────────────────────────────────────────────────
   const { hasRealLyricContent, hasExistingWork, webBadgeLabel } = useDerivedAppState({
-    isMarkupMode,
-    markupText,
+    editMode, markupText,
     webSimilarityIndex,
   });
 
@@ -246,7 +245,7 @@ function AppInnerContent() {
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
     setIsResetModalOpen, setIsKeyboardShortcutsModalOpen, setConfirmModal, setPromptModal,
-    setIsPasteModalOpen, setIsAnalysisModalOpen, setIsMarkupMode,
+    setIsPasteModalOpen, setIsAnalysisModalOpen, setEditMode,
     isAboutOpen, isSettingsOpen, apiErrorModal,
     isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
     isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
@@ -254,7 +253,7 @@ function AppInnerContent() {
     isPasteModalOpen, isAnalysisModalOpen,
     activeTab, setActiveTab, isStructureOpen, setIsStructureOpen,
     isLeftPanelOpen, setIsLeftPanelOpen,
-    isMarkupMode, markupText, setMarkupText,
+    editMode, markupText, setMarkupText,
     markupTextareaRef, importInputRef,
     shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
   });
@@ -327,11 +326,11 @@ function AppInnerContent() {
                   targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
                   isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
                   isAnalyzing={isAnalyzing}
-                  isMarkupMode={isMarkupMode} webSimilarityIndex={webSimilarityIndex}
+                  editMode={editMode} switchEditMode={switchEditMode}
+                  webSimilarityIndex={webSimilarityIndex}
                   webBadgeLabel={webBadgeLabel}
                   libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
                   detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong}
-                  handleMarkupToggle={handleMarkupToggle}
                   setIsSimilarityModalOpen={setIsSimilarityModalOpen}
                   adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
                   showTranslationFeatures={showTranslationFeatures}
@@ -355,7 +354,7 @@ function AppInnerContent() {
                         handleDrop={handleDrop}
                         handleLineDragStart={handleLineDragStart}
                         handleLineDrop={handleLineDrop}
-                        isMarkupMode={isMarkupMode} setIsMarkupMode={setIsMarkupMode}
+                        editMode={editMode} setEditMode={setEditMode}
                         markupText={markupText} setMarkupText={setMarkupText}
                         markupTextareaRef={markupTextareaRef}
                         markupDirection={markupDirection}

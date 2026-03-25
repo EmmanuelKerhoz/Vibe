@@ -85,6 +85,12 @@ const ko: Translations = {
       hint: '형식: [섹션 이름] 다음에 가사를 입력하세요. 섹션은 빈 줄 두 줄로 구분합니다.',
       placeholder: '[Verse 1]\n여기에 가사를 입력하세요...\n\n[Chorus]\n후렴 가사...',
     },
+    textMode: {
+      title: '텍스트 모드',
+      description: '기본 메모장 편집기',
+      hint: '서식 없이 자유롭게 작성하세요. 모드를 전환해도 텍스트가 유지됩니다.',
+      placeholder: '여기에 가사를 작성하세요...',
+    },
     sectionTooltip: {
       ...en.editor.sectionTooltip,
       lines: '줄',
@@ -100,6 +106,7 @@ const ko: Translations = {
     adaptSection: '적응',
     editorMode: '편집기 모드',
     markupModeLabel: '마크업 모드',
+    textModeLabel: '텍스트',
     regenerateSection: '다시 생성',
     quantize: '보정',
     lyricLine: '가사 줄',
@@ -318,6 +325,12 @@ const ko: Translations = {
       ...en.settings.language,
       label: 'UI 언어',
     },
+    editMode: {
+      label: '기본 편집기',
+      text: '텍스트',
+      section: '섹션 편집기',
+      markdown: '마크다운 편집기',
+    },
     actions: {
       ...en.settings.actions,
       default: '기본값',
@@ -364,6 +377,7 @@ const ko: Translations = {
     adaptSong: '{lang}로 곡 전체를 번역하고 적응합니다 (직역이 아닌 창의적 적응)',
     sectionAdapt: '이 섹션을 선택한 언어에 맞게 적응',
     markupMode: '순수 텍스트 모드로 전환',
+    textMode: '텍스트 모드로 전환',
     editorMode: '구조화 편집기로 전환',
     applyAnalysis: '선택한 개선사항을 곡에 적용',
     revertAnalysis: '적용한 분석 변경 모두 되돌리기',

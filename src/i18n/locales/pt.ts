@@ -80,6 +80,12 @@ const pt: Translations = {
       hint: 'Formato: [Nome da seção] seguido das letras. Separe as seções com dupla quebra de linha.',
       placeholder: '[Verso 1]\nLetras aqui...\n\n[Refrão]\nLinhas do refrão...',
     },
+    textMode: {
+      title: 'Modo Texto',
+      description: 'Editor de bloco de notas básico',
+      hint: 'Escreva livremente sem formatação. Seu texto será preservado ao trocar de modo.',
+      placeholder: 'Comece a escrever suas letras aqui...',
+    },
     sectionTooltip: {
       lines: 'Linhas',
       words: 'Palavras',
@@ -94,6 +100,7 @@ const pt: Translations = {
     adaptSection: 'Adaptação',
     editorMode: 'Modo Editor',
     markupModeLabel: 'Modo Marcação',
+    textModeLabel: 'Texto',
     regenerateSection: 'Regenerar',
     quantize: 'Quantizar',
     lyricLine: 'Linha de letra',
@@ -316,6 +323,7 @@ const pt: Translations = {
     },
     editMode: {
       label: 'Editor padrão',
+      text: 'Texto',
       section: 'Editor de secções',
       markdown: 'Editor Markdown',
     },
@@ -365,6 +373,7 @@ const pt: Translations = {
     quantizeSection: 'Ajustar as linhas desta seção para corresponder ao alvo silábico',
     sectionAdapt: 'Adaptar esta seção para o idioma selecionado',
     markupMode: 'Mudar para modo de texto puro',
+    textMode: 'Mudar para modo texto',
     editorMode: 'Mudar para editor estruturado',
     applyAnalysis: 'Aplicar as melhorias selecionadas à música',
     revertAnalysis: 'Reverter todas as alterações de análise aplicadas',

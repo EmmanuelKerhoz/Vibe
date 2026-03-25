@@ -80,6 +80,12 @@ const zh: Translations = {
       hint: '格式：[段落名称] 后跟歌词。用双换行符分隔各段落。',
       placeholder: '[第一段]\n歌词内容...\n\n[副歌]\n副歌内容...',
     },
+    textMode: {
+      title: '文本模式',
+      description: '基础记事本编辑器',
+      hint: '自由书写，无需格式化。切换模式时您的文本将被保留。',
+      placeholder: '在这里开始写歌词...',
+    },
     sectionTooltip: {
       lines: '行数',
       words: '字数',
@@ -94,6 +100,7 @@ const zh: Translations = {
     adaptSection: '语言适配',
     editorMode: '编辑模式',
     markupModeLabel: '标记模式',
+    textModeLabel: '文本',
     regenerateSection: '重新生成',
     quantize: '量化',
     lyricLine: '歌词行',
@@ -316,6 +323,7 @@ const zh: Translations = {
     },
     editMode: {
       label: '默认编辑器',
+      text: '文本',
       section: '节编辑器',
       markdown: 'Markdown 编辑器',
     },
@@ -365,6 +373,7 @@ const zh: Translations = {
     quantizeSection: '调整此段落的行以匹配音节目标',
     sectionAdapt: '将此段落适配到所选语言',
     markupMode: '切换到纯文本模式',
+    textMode: '切换到文本模式',
     editorMode: '切换到结构化编辑器',
     applyAnalysis: '将所选改进应用到歌曲',
     revertAnalysis: '撤销所有已应用的分析更改',

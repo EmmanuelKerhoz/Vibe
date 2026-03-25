@@ -19,7 +19,7 @@ export const useUIStateForProvider = ({
   setPromptModal,
   setIsPasteModalOpen,
   setIsAnalysisModalOpen,
-  setIsMarkupMode,
+  setEditMode,
   isAboutOpen,
   isSettingsOpen,
   apiErrorModal,
@@ -41,7 +41,7 @@ export const useUIStateForProvider = ({
   setIsStructureOpen,
   isLeftPanelOpen,
   setIsLeftPanelOpen,
-  isMarkupMode,
+  editMode,
   markupText,
   setMarkupText,
   markupTextareaRef,
@@ -122,8 +122,8 @@ export const useUIStateForProvider = ({
     setIsStructureOpen,
     isLeftPanelOpen,
     setIsLeftPanelOpen,
-    isMarkupMode,
-    setIsMarkupMode,
+    editMode,
+    setEditMode,
   }), [
     activeTab,
     setActiveTab,
@@ -131,8 +131,8 @@ export const useUIStateForProvider = ({
     setIsStructureOpen,
     isLeftPanelOpen,
     setIsLeftPanelOpen,
-    isMarkupMode,
-    setIsMarkupMode,
+    editMode,
+    setEditMode,
   ]);
 
   // Text and content state

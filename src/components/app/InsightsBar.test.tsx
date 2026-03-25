@@ -69,31 +69,33 @@ describe('InsightsBar', () => {
           isAdaptingLanguage={false}
           isDetectingLanguage={false}
           isAnalyzing={false}
-          isMarkupMode={false}
+          editMode="section"
+          switchEditMode={vi.fn()}
           webSimilarityIndex={webSimilarityIndex}
           webBadgeLabel={null}
           libraryCount={0}
           adaptSongLanguage={vi.fn()}
           detectLanguage={vi.fn()}
           analyzeCurrentSong={vi.fn()}
-          handleMarkupToggle={vi.fn()}
           setIsSimilarityModalOpen={vi.fn()}
         />
       </LanguageProvider>,
     );
 
     const tooltips = screen.getAllByTestId('tooltip');
-    // Verify all expected tooltips: Detect, Adaptation, Markup, Analyze, Similarity
-    expect(tooltips.length).toBe(5);
+    // Verify all expected tooltips: Detect, Adaptation, Text, Markdown, Editor, Analyze, Similarity
+    expect(tooltips.length).toBe(7);
     // First tooltip should be the detect button (before language dropdown)
     expect(tooltips[0]!.getAttribute('data-title')).toContain('Detected');
     // Second should be adaptation
     expect(tooltips[1]!.getAttribute('data-title')).toContain('adapt');
-    // Third should be markup toggle
-    expect(tooltips[2]!.getAttribute('data-title')).toContain('Mode');
-    // Fourth should be analyze
-    expect(tooltips[3]!.getAttribute('data-title')).toContain('Analyze');
-    // Fifth should be similarity
-    expect(tooltips[4]!.getAttribute('data-title')).toContain('Compare');
+    // Third-Fifth should be edit mode buttons (Text, Markdown, Editor)
+    expect(tooltips[2]!.getAttribute('data-title')).toContain('Text');
+    expect(tooltips[3]!.getAttribute('data-title')).toContain('Mode');
+    expect(tooltips[4]!.getAttribute('data-title')).toContain('Editor');
+    // Sixth should be analyze
+    expect(tooltips[5]!.getAttribute('data-title')).toContain('Analyze');
+    // Seventh should be similarity
+    expect(tooltips[6]!.getAttribute('data-title')).toContain('Compare');
   });
 });

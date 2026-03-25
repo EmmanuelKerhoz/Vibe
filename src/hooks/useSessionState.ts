@@ -93,12 +93,13 @@ export function useSessionState() {
   };
 
   // ── Default Edit Mode ─────────────────────────────────────────────────────
-  const [defaultEditMode, setDefaultEditModeRaw] = useState<'section' | 'markdown'>(() => {
+  const [defaultEditMode, setDefaultEditModeRaw] = useState<'text' | 'section' | 'markdown'>(() => {
     const stored = safeGetItem(DEFAULT_EDIT_MODE_KEY);
-    return stored === 'markdown' ? 'markdown' : 'section';
+    if (stored === 'markdown' || stored === 'text') return stored;
+    return 'section';
   });
 
-  const setDefaultEditMode = (v: 'section' | 'markdown') => {
+  const setDefaultEditMode = (v: 'text' | 'section' | 'markdown') => {
     setDefaultEditModeRaw(v);
     safeSetItem(DEFAULT_EDIT_MODE_KEY, v);
   };

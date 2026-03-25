@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useCallback, type ReactNode } from 'react';
+import type { EditMode } from '../types';
 
 // ── Minimal UIState interface ─────────────────────────────────────────────────
 // Avoids the circular import of useUIState while remaining fully type-safe.
@@ -18,7 +19,7 @@ export interface UIStateBag {
   setPromptModal: (v: { open: boolean; onConfirm: (value: string) => void } | null) => void;
   setIsPasteModalOpen: (v: boolean) => void;
   setIsAnalysisModalOpen: (v: boolean) => void;
-  setIsMarkupMode: (v: boolean) => void;
+  setEditMode: (v: EditMode) => void;
   isAboutOpen: boolean;
   isSettingsOpen: boolean;
   apiErrorModal: { open: boolean; message: string };
@@ -40,7 +41,7 @@ export interface UIStateBag {
   setIsStructureOpen: (v: boolean) => void;
   isLeftPanelOpen: boolean;
   setIsLeftPanelOpen: (v: boolean) => void;
-  isMarkupMode: boolean;
+  editMode: EditMode;
   markupText: string;
   setMarkupText: (v: string) => void;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;

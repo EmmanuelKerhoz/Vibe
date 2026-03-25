@@ -80,6 +80,12 @@ const fr: Translations = {
       hint: 'Format : [Nom de la section] suivi des paroles. Séparez les sections par des doubles sauts de ligne.',
       placeholder: '[Couplet 1]\nParoles ici...\n\n[Refrain]\nLignes du refrain...',
     },
+    textMode: {
+      title: 'Mode Texte',
+      description: 'Éditeur bloc-notes basique',
+      hint: 'Écrivez librement sans formatage. Votre texte sera préservé lors du changement de mode.',
+      placeholder: 'Commencez à écrire vos paroles ici...',
+    },
     sectionTooltip: {
       lines: 'Lignes',
       words: 'Mots',
@@ -94,6 +100,7 @@ const fr: Translations = {
     adaptSection: 'Adaptation',
     editorMode: 'Mode Éditeur',
     markupModeLabel: 'Mode Markdown',
+    textModeLabel: 'Texte',
     regenerateSection: 'Régénérer',
     quantize: 'Quantifier',
     lyricLine: 'Ligne de paroles',
@@ -315,6 +322,7 @@ const fr: Translations = {
     },
     editMode: {
       label: 'Éditeur par défaut',
+      text: 'Texte',
       section: 'Éditeur de sections',
       markdown: 'Éditeur Markdown',
     },
@@ -362,6 +370,7 @@ const fr: Translations = {
     adaptSong: 'Traduire et adapter toute la chanson en {lang} (adaptation créative, pas traduction littérale)',
     sectionAdapt: 'Adapter cette section à la langue sélectionnée',
     markupMode: 'Passer en mode texte brut',
+    textMode: 'Passer en mode texte',
     editorMode: 'Passer en éditeur structuré',
     applyAnalysis: 'Appliquer les améliorations sélectionnées à la chanson',
     revertAnalysis: 'Annuler toutes les modifications d\'analyse appliquées',

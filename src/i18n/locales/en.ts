@@ -80,6 +80,12 @@ const en: Translations = {
       hint: 'Format: [Section Name] followed by lyrics. Separate sections with double newlines.',
       placeholder: '[Verse 1]\nLyrics go here...\n\n[Chorus]\nChorus lines...',
     },
+    textMode: {
+      title: 'Text Mode',
+      description: 'Basic notepad editor',
+      hint: 'Write freely without formatting. Your text will be preserved when switching modes.',
+      placeholder: 'Start writing your lyrics here...',
+    },
     sectionTooltip: {
       lines: 'Lines',
       words: 'Words',
@@ -94,6 +100,7 @@ const en: Translations = {
     adaptSection: 'Adaptation',
     editorMode: 'Editor Mode',
     markupModeLabel: 'Markdown Mode',
+    textModeLabel: 'Text',
     regenerateSection: 'Regenerate Section',
     quantize: 'Quantize',
     lyricLine: 'Lyric Line',
@@ -320,6 +327,7 @@ const en: Translations = {
     },
     editMode: {
       label: 'Default Editor',
+      text: 'Text',
       section: 'Section Editor',
       markdown: 'Markdown Editor',
     },
@@ -372,6 +380,7 @@ const en: Translations = {
     adaptSong: 'Translate and adapt the entire song to {lang} (creative adaptation, not literal translation)',
     sectionAdapt: 'Adapt this section to the selected language',
     markupMode: 'Switch to Pure Text Mode',
+    textMode: 'Switch to Text Mode',
     editorMode: 'Switch to Structured Editor',
     applyAnalysis: 'Apply selected improvements to song',
     revertAnalysis: 'Revert all applied analysis changes',

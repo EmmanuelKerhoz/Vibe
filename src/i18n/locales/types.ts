@@ -85,6 +85,12 @@ export interface Translations {
       hint: string;
       placeholder: string;
     };
+    textMode: {
+      title: string;
+      description: string;
+      hint: string;
+      placeholder: string;
+    };
     sectionTooltip: {
       lines: string;
       words: string;
@@ -99,6 +105,7 @@ export interface Translations {
     adaptSection: string;
     editorMode: string;
     markupModeLabel: string;
+    textModeLabel: string;
     regenerateSection: string;
     quantize: string;
     lyricLine: string;
@@ -334,6 +341,7 @@ export interface Translations {
     };
     editMode?: {
       label: string;
+      text: string;
       section: string;
       markdown: string;
     };
@@ -388,6 +396,7 @@ export interface Translations {
     sectionAdapt: string;
     markupMode: string;
     editorMode: string;
+    textMode: string;
     applyAnalysis: string;
     revertAnalysis: string;
     closeAnalysis: string;
