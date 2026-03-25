@@ -13,6 +13,8 @@ interface LcarsSelectProps {
   className?: string;
   style?: CSSProperties;
   disabled?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
   /** Override the glow/border accent colour (CSS colour string or var()). Defaults to var(--accent-color). */
   accentColor?: string;
   buttonTitle?: string;
@@ -26,17 +28,27 @@ export function LcarsSelect({
   className,
   style,
   disabled = false,
+  isOpen: controlledIsOpen,
+  onOpenChange,
   accentColor,
   buttonTitle,
 }: LcarsSelectProps) {
   const accent = accentColor ?? 'var(--accent-color)';
-  const [isOpen, setIsOpen] = useState(false);
+  const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>();
   const listboxId = useId();
+  const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
+
+  const setOpen = useCallback((nextOpen: boolean) => {
+    if (controlledIsOpen === undefined) {
+      setUncontrolledIsOpen(nextOpen);
+    }
+    onOpenChange?.(nextOpen);
+  }, [controlledIsOpen, onOpenChange]);
 
   const selectedLabel: React.ReactNode =
     options.find((o) => o.value === value)?.label ??
@@ -44,9 +56,13 @@ export function LcarsSelect({
     options[0]?.label ?? '';
 
   const close = useCallback(() => {
-    setIsOpen(false);
+    setOpen(false);
     setFocusedIndex(-1);
-  }, []);
+  }, [setOpen]);
+
+  useEffect(() => {
+    if (!isOpen) setFocusedIndex(-1);
+  }, [isOpen]);
 
   const updateDropdownPosition = useCallback(() => {
     if (!triggerRef.current) return;
@@ -105,7 +121,7 @@ export function LcarsSelect({
   const handleTriggerClick = () => {
     if (disabled) return;
     const nextOpen = !isOpen;
-    setIsOpen(nextOpen);
+    setOpen(nextOpen);
     if (nextOpen) {
       const idx = options.findIndex((o) => o.value === value);
       setFocusedIndex(idx >= 0 ? idx : 0);
@@ -127,7 +143,7 @@ export function LcarsSelect({
           const opt = options[focusedIndex];
           if (opt) handleSelect(opt.value);
         } else {
-          setIsOpen(true);
+          setOpen(true);
           const idx = options.findIndex((o) => o.value === value);
           setFocusedIndex(idx >= 0 ? idx : 0);
         }
@@ -138,12 +154,12 @@ export function LcarsSelect({
         break;
       case 'ArrowDown':
         e.preventDefault();
-        if (!isOpen) { setIsOpen(true); setFocusedIndex(0); }
+        if (!isOpen) { setOpen(true); setFocusedIndex(0); }
         else setFocusedIndex((i) => Math.min(i + 1, options.length - 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        if (!isOpen) { setIsOpen(true); setFocusedIndex(options.length - 1); }
+        if (!isOpen) { setOpen(true); setFocusedIndex(options.length - 1); }
         else setFocusedIndex((i) => Math.max(i - 1, 0));
         break;
       default:
