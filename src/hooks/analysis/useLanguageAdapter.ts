@@ -27,6 +27,10 @@ type UseLanguageAdapterParams = {
   isGeneratingRef: RefObject<boolean>;
   songLanguage: string;
   setSongLanguage: (lang: string) => void;
+  detectedLanguages: string[];
+  setDetectedLanguages: (langs: string[]) => void;
+  lineLanguages: Record<string, string>;
+  setLineLanguages: (map: Record<string, string>) => void;
 };
 type AdaptationScope = { kind: 'song'; sourceSong: Section[] } | { kind: 'section'; section: Section };
 export const useLanguageAdapter = ({
@@ -38,6 +42,10 @@ export const useLanguageAdapter = ({
   isGeneratingRef,
   songLanguage,
   setSongLanguage,
+  detectedLanguages,
+  setDetectedLanguages,
+  lineLanguages,
+  setLineLanguages,
 }: UseLanguageAdapterParams) => {
   const [targetLanguage, setTargetLanguage] = useState<string>('English');
   const [sectionTargetLanguages, setSectionTargetLanguages] = useState<Record<string, string>>({});
@@ -66,9 +74,11 @@ export const useLanguageAdapter = ({
     if (firstSectionIdRef.current !== null && firstSectionIdRef.current !== currentFirstId) {
       autoDetectFiredRef.current = false;
       setSongLanguage('');
+      setDetectedLanguages([]);
+      setLineLanguages({});
     }
     firstSectionIdRef.current = currentFirstId;
-  }, [song, setSongLanguage]);
+  }, [song, setSongLanguage, setDetectedLanguages, setLineLanguages]);
 
   useEffect(() => {
     if (song.length > 0 && !songLanguage && !isGeneratingRef.current && !isAdaptingLanguage && !autoDetectFiredRef.current) {
@@ -83,8 +93,10 @@ export const useLanguageAdapter = ({
       autoDetectFiredRef.current = false;
       firstSectionIdRef.current = null;
       setSongLanguage('');
+      setDetectedLanguages([]);
+      setLineLanguages({});
     }
-  }, [song.length, setSongLanguage]);
+  }, [song.length, setSongLanguage, setDetectedLanguages, setLineLanguages]);
 
   const setStep = (id: AdaptationStepId, label: string) =>
     setAdaptationProgress(prev => ({ ...prev, active: id, label }));
@@ -96,13 +108,15 @@ export const useLanguageAdapter = ({
     setIsDetectingLanguage(true);
     try {
       await withAbort(abortRef, async (nextSignal) => {
-        const response = await detectSongLanguage(song, nextSignal);
+        const result = await detectSongLanguage(song, nextSignal);
         if (nextSignal.aborted) {
           return;
         }
-        if (response) {
-          setSongLanguage(response);
+        if (result.languages.length > 0) {
+          setSongLanguage(result.languages[0]!);
+          setDetectedLanguages(result.languages);
         }
+        setLineLanguages(result.lineLanguageMap);
       });
     } catch (error) {
       if (isAbortError(error)) return;
@@ -260,6 +274,7 @@ export const useLanguageAdapter = ({
 
   return {
     songLanguage, setSongLanguage,
+    detectedLanguages, lineLanguages,
     targetLanguage, setTargetLanguage,
     sectionTargetLanguages, setSectionTargetLanguages,
     isDetectingLanguage, isAdaptingLanguage,

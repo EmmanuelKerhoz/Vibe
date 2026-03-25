@@ -15,6 +15,7 @@ vi.mock('../../contexts/SongContext', () => ({
     rhymeScheme: 'AABB',
     updateState: mockUpdateState,
     updateSongAndStructureWithHistory: vi.fn(),
+    lineLanguages: {},
   }),
 }));
 

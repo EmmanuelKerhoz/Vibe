@@ -457,9 +457,10 @@ Current Song Data:`;
     };
 
     it('buildDetectLanguagePrompt truncates long lyrics samples', () => {
-      const prompt = buildDetectLanguagePrompt('a'.repeat(1105));
-      expect(prompt).toContain('Detect the language of these lyrics');
-      expect(prompt.endsWith('a'.repeat(1000))).toBe(true);
+      const prompt = buildDetectLanguagePrompt('a'.repeat(2105));
+      expect(prompt).toContain('Analyze the languages used in these lyrics');
+      expect(prompt).toContain('a'.repeat(2000));
+      expect(prompt).not.toContain('a'.repeat(2001));
     });
 
     it('buildAdaptSongPrompt includes adaptation instructions and optional IPA constraints', () => {

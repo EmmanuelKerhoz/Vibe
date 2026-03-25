@@ -82,6 +82,10 @@ const createParams = (song: Section[]) => ({
   isGeneratingRef: { current: false },
   songLanguage: 'English',
   setSongLanguage: vi.fn(),
+  detectedLanguages: ['English'],
+  setDetectedLanguages: vi.fn(),
+  lineLanguages: {} as Record<string, string>,
+  setLineLanguages: vi.fn(),
 });
 
 describe('useLanguageAdapter', () => {

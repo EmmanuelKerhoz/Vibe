@@ -235,7 +235,7 @@ export const InsightsBar = React.memo(function InsightsBar({
   adaptationResult,
   showTranslationFeatures = true,
 }: InsightsBarProps) {
-  const { song, songLanguage } = useSongContext();
+  const { song, songLanguage, detectedLanguages } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { sectionCount, wordCount, charCount } = useAppKpis();
   const { t } = useTranslation();
@@ -248,7 +248,8 @@ export const InsightsBar = React.memo(function InsightsBar({
   }, [adaptationProgress?.active]);
 
   const targetDisplay = getLanguageDisplay(targetLanguage);
-  const detectedDisplay = songLanguage ? getLanguageDisplay(songLanguage) : null;
+  const detectedDisplays = (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : []))
+    .map(lang => getLanguageDisplay(lang));
   const targetLanguageDisplayText = targetDisplay ? `${targetDisplay.sign} ${targetDisplay.label}` : targetLanguage;
 
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
@@ -279,7 +280,7 @@ export const InsightsBar = React.memo(function InsightsBar({
           </h3>
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
 
-          <Tooltip title={detectedDisplay ? `Detected: ${detectedDisplay.sign} ${detectedDisplay.label} — click to re-detect` : '🌐 Detect song language'}>
+          <Tooltip title={detectedDisplays.length > 0 ? `Detected: ${detectedDisplays.map(d => `${d.sign} ${d.label}`).join(', ')} — click to re-detect` : '🌐 Detect song language'}>
             <button
               onClick={() => void detectLanguage()}
               disabled={isDetectingLanguage || song.length === 0}
@@ -288,8 +289,13 @@ export const InsightsBar = React.memo(function InsightsBar({
               {isDetectingLanguage
                 ? <Loader2 className="w-3 h-3 animate-spin" />
                 : <ScanText className="w-3 h-3" />}
-              {detectedDisplay
-                ? <><EmojiSign sign={detectedDisplay.sign} /><span className="hidden sm:inline">{detectedDisplay.label}</span></>
+              {detectedDisplays.length > 0
+                ? detectedDisplays.map((d, i) => (
+                    <span key={i} className="inline-flex items-center gap-0.5">
+                      {i > 0 && <span className="text-zinc-600 mx-0.5">,</span>}
+                      <EmojiSign sign={d.sign} /><span className="hidden sm:inline">{d.label}</span>
+                    </span>
+                  ))
                 : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">Detect</span></>}
             </button>
           </Tooltip>

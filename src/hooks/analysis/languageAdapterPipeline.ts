@@ -65,16 +65,70 @@ export const getSourceLines = (sections: Section[]) =>
       .map(line => line.text)
   );
 
-export const detectSongLanguage = async (song: Section[], signal?: AbortSignal) => {
-  const songText = getSourceLines(song).join('\n');
-  if (!songText.trim()) return '';
+export interface SourceLineRef {
+  sectionIndex: number;
+  lineIndex: number;
+  lineId: string;
+  text: string;
+}
+
+/** Returns non-meta lyric lines with their section/line coordinates and IDs. */
+export const getSourceLineRefs = (sections: Section[]): SourceLineRef[] =>
+  sections.flatMap((section, si) =>
+    section.lines
+      .map((line, li) => ({ sectionIndex: si, lineIndex: li, lineId: line.id, text: line.text, isMeta: line.isMeta, raw: line.text.replace(/^\[|\]$/g, '').trim() }))
+      .filter(entry => !entry.isMeta && !isSectionHeader(entry.raw))
+      .map(({ sectionIndex, lineIndex, lineId, text }) => ({ sectionIndex, lineIndex, lineId, text }))
+  );
+
+export interface DetectionResult {
+  /** All distinct languages found, sorted by frequency (most used first). */
+  languages: string[];
+  /** Per-line language names keyed by line ID. */
+  lineLanguageMap: Record<string, string>;
+}
+
+export const detectSongLanguage = async (song: Section[], signal?: AbortSignal): Promise<DetectionResult> => {
+  const lineRefs = getSourceLineRefs(song);
+  const songText = lineRefs.map(r => r.text).join('\n');
+  if (!songText.trim()) return { languages: [], lineLanguageMap: {} };
 
   const response = await generateContentWithRetry({
     model: AI_MODEL_NAME,
     contents: buildDetectLanguagePrompt(songText),
     signal,
   });
-  return response.text?.trim() || 'English';
+
+  const text = response.text?.trim() || '';
+
+  // Try parsing as JSON (new multi-language format)
+  try {
+    const parsed = JSON.parse(text) as { languages?: unknown; lineLanguages?: unknown };
+    const languages = Array.isArray(parsed.languages)
+      ? (parsed.languages as string[]).filter(l => typeof l === 'string' && l.trim())
+      : [];
+    const lineLanguages = Array.isArray(parsed.lineLanguages)
+      ? (parsed.lineLanguages as string[]).filter(l => typeof l === 'string')
+      : [];
+
+    // Build lineId → language map
+    const lineLanguageMap: Record<string, string> = {};
+    for (let i = 0; i < Math.min(lineRefs.length, lineLanguages.length); i++) {
+      const lang = lineLanguages[i]?.trim();
+      if (lang) lineLanguageMap[lineRefs[i]!.lineId] = lang;
+    }
+
+    return {
+      languages: languages.length > 0 ? languages : ['English'],
+      lineLanguageMap,
+    };
+  } catch {
+    // Fallback: old-style plain text response (single language name)
+    return {
+      languages: [text || 'English'],
+      lineLanguageMap: {},
+    };
+  }
 };
 
 export const getIpaEnhancedPrompt = async (

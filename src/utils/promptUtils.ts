@@ -157,7 +157,15 @@ export const buildRhymeConstrainedPrompt = async (
 };
 
 export const buildDetectLanguagePrompt = (songText: string): string =>
-  `Detect the language of these lyrics. Return ONLY the name of the language in English (e.g., "English", "French", "Spanish").\n\nLyrics:\n${songText.substring(0, 1000)}`;
+  `Analyze the languages used in these lyrics.
+Return a JSON object with:
+- "languages": an array of ALL distinct language names found, sorted by usage frequency (most used first). Use English names (e.g., "English", "French", "Spanish").
+- "lineLanguages": an array of language names, one per non-empty lyric line, in the same order as the lyrics below.
+
+Return ONLY valid JSON, no markdown fences.
+
+Lyrics:
+${songText.substring(0, 2000)}`;
 
 export const buildThemeAnalysisPrompt = ({
   song,
