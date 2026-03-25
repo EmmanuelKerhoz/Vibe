@@ -165,8 +165,9 @@ const findBestSharedRhymeSuffix = (a: string, b: string, langCode?: string): str
 
 /**
  * Known French vowel digraphs — two-vowel sequences representing a single
- * phoneme. "ie" is intentionally excluded because it is typically a hiatus
- * (two syllable nuclei), e.g. "miette" = /mi.ɛt/.
+ * phoneme. "ie" is intentionally excluded because it is graphemically a
+ * hiatus in most contexts (e.g. "miette" where i and e belong to separate
+ * syllable nuclei).
  */
 const FRENCH_DIGRAPHS = new Set(['ai', 'ei', 'oi', 'ou', 'au', 'eu']);
 
@@ -184,7 +185,6 @@ const extendToVowelOnset = (normalizedWord: string, suffixStart: number): number
   // When the suffix starts on a consonant, walk backwards to find the
   // nearest vowel — this becomes the vowel nucleus of the rime.
   if (!isVowel(normalizedWord[pos]!)) {
-    pos--;
     while (pos >= 0 && !isVowel(normalizedWord[pos]!)) pos--;
     if (pos < 0) return suffixStart; // no preceding vowel found
   }
