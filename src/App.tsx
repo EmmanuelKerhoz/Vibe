@@ -139,7 +139,7 @@ function AppInnerContent() {
   isGeneratingRef.current = isGenerating;
 
   const {
-    pastedText, setPastedText, isAnalyzing, analysisReport, analysisSteps,
+    canPasteLyrics, pastedText, setPastedText, isAnalyzing, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
     targetLanguage, setTargetLanguage, isAdaptingLanguage, isDetectingLanguage,
     adaptationProgress, adaptationResult, sectionTargetLanguages, setSectionTargetLanguages,
@@ -359,6 +359,7 @@ function AppInnerContent() {
                 onOpenSettingsClick={handleOpenSettings}
                 onOpenAboutClick={handleOpenAbout}
                 onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
+                canPasteLyrics={canPasteLyrics}
                 onPasteLyrics={handleOpenPasteModal}
                 isAnalyzing={isAnalyzing}
               />
@@ -400,6 +401,7 @@ function AppInnerContent() {
                         markupText={markupText} setMarkupText={setMarkupText}
                         markupTextareaRef={markupTextareaRef}
                         markupDirection={markupDirection}
+                        canPasteLyrics={canPasteLyrics}
                         onOpenLibrary={handleOpenSaveToLibraryModal}
                         onPasteLyrics={handleOpenPasteModal}
                         onGenerateSong={handleGlobalRegenerate}
@@ -467,6 +469,7 @@ function AppInnerContent() {
             defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
             showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
             hasExistingWork={hasExistingWork}
+            canPasteLyrics={canPasteLyrics}
             handleImportChooseFile={handleImportChooseFile}
             onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
             handleImportInputChange={handleImportInputChange}

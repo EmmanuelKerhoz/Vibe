@@ -41,6 +41,7 @@ interface Props {
 
   // Import
   hasExistingWork: boolean;
+  canPasteLyrics: boolean;
   handleImportChooseFile: () => void;
   onOpenPasteLyrics: () => void;
   handleImportInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -99,7 +100,7 @@ interface Props {
 export const AppModals = React.memo(function AppModals({
   theme, setTheme, audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
   showTranslationFeatures, setShowTranslationFeatures,
-  hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
+  hasExistingWork, canPasteLyrics, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
   pastedText, setPastedText, isAnalyzing, analyzePastedLyrics,
   analysisReport, analysisSteps,
@@ -127,6 +128,7 @@ export const AppModals = React.memo(function AppModals({
       />
       <ImportModal
         isOpen={ui.isImportModalOpen} hasExistingWork={hasExistingWork}
+        canPasteLyrics={canPasteLyrics}
         onClose={() => closeModal('import')} onChooseFile={handleImportChooseFile}
         onPasteLyrics={onOpenPasteLyrics}
       />
