@@ -40,8 +40,8 @@ describe('splitRhymingSuffix', () => {
         ['Tu prends son cœur… pour une acquisition.'],
       ),
     ).toEqual({
-      before: 'Si ton amour est comme une transac',
-      rhyme: 'tion,',
+      before: 'Si ton amour est comme une trans',
+      rhyme: 'action,',
     });
   });
 

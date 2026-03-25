@@ -105,15 +105,69 @@ describe('detectRhymeSchemeLocally', () => {
 });
 
 describe('splitRhymingSuffix', () => {
-  it('extracts the shared transaction/acquisition ending instead of over-highlighting the word', () => {
+  it('extracts the shared transaction/acquisition ending with vowel onset', () => {
     expect(
       splitRhymingSuffix(
         'Tu prends son cœur… pour une acquisition.',
         ['Si ton amour est comme une transaction.'],
       ),
     ).toEqual({
-      before: 'Tu prends son cœur… pour une acquisi',
-      rhyme: 'tion.',
+      before: 'Tu prends son cœur… pour une acquis',
+      rhyme: 'ition.',
     });
+  });
+
+  it('highlights complete rime "ette" for miette (Verse 2 regression)', () => {
+    const result = splitRhymingSuffix(
+      'La chance n\'est qu\'une sale miette',
+      ['Je marche dans cette tempête', 'Chaque plan est une défaite'],
+    );
+    expect(result).not.toBeNull();
+    expect(result!.rhyme).toBe('ette');
+  });
+
+  it('highlights complete rime "ête" for tempête (Verse 2 regression)', () => {
+    const result = splitRhymingSuffix(
+      'Je marche dans cette tempête',
+      ['La chance n\'est qu\'une sale miette', 'Chaque plan est une défaite'],
+    );
+    expect(result).not.toBeNull();
+    expect(result!.rhyme).toBe('ête');
+  });
+
+  it('highlights complete rime "aite" for défaite via ai-diphthong (Verse 2 regression)', () => {
+    const result = splitRhymingSuffix(
+      'Chaque plan est une défaite',
+      ['La chance n\'est qu\'une sale miette', 'Je marche dans cette tempête'],
+    );
+    expect(result).not.toBeNull();
+    expect(result!.rhyme).toBe('aite');
+  });
+
+  it('highlights "er" vowel onset for enfer (Verse 3 regression)', () => {
+    const result = splitRhymingSuffix(
+      'Mais je me ris de cet enfer',
+      ['Je me moque de tout ce fer', 'Je reste droit, j\'ai le cuir fier'],
+    );
+    expect(result).not.toBeNull();
+    expect(result!.rhyme).toBe('er');
+  });
+
+  it('highlights "er" vowel onset for fer (Verse 3 regression)', () => {
+    const result = splitRhymingSuffix(
+      'Je me moque de tout ce fer',
+      ['Mais je me ris de cet enfer', 'Je reste droit, j\'ai le cuir fier'],
+    );
+    expect(result).not.toBeNull();
+    expect(result!.rhyme).toBe('er');
+  });
+
+  it('highlights "er" vowel onset for fier (Verse 3 regression)', () => {
+    const result = splitRhymingSuffix(
+      'Je reste droit, j\'ai le cuir fier',
+      ['Mais je me ris de cet enfer', 'Je me moque de tout ce fer'],
+    );
+    expect(result).not.toBeNull();
+    expect(result!.rhyme).toBe('er');
   });
 });
