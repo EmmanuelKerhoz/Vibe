@@ -147,9 +147,9 @@ function AppInnerContent() {
   useEffect(() => {
     if (isSessionHydrated && !hasAppliedDefaultEditModeRef.current) {
       hasAppliedDefaultEditModeRef.current = true;
-      if (defaultEditMode !== 'markdown') setEditMode(defaultEditMode);
+      if (defaultEditMode !== 'section') switchEditMode(defaultEditMode);
     }
-  }, [isSessionHydrated, defaultEditMode, setEditMode]);
+  }, [isSessionHydrated, defaultEditMode, switchEditMode]);
 
   useEffect(() => {
     if (activeTab !== 'lyrics' && editMode !== 'section') setEditMode('section');
