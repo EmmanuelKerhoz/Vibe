@@ -44,6 +44,8 @@ type PanelContentProps = Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & 
   quantizeSyllables: ReturnType<typeof useComposerContext>['quantizeSyllables'];
 };
 
+const RHYME_SCHEME_ORDER = ['FREE', 'AABB', 'ABAB', 'AAAA', 'ABCB', 'AAABBB', 'AABBCC', 'ABABAB', 'ABCABC'] as const;
+
 export function LeftSettingsPanel({
   title, setTitle, titleOrigin, onGenerateTitle, isGeneratingTitle,
   topic, setTopic, mood, setMood,
@@ -271,17 +273,10 @@ function PanelContent({
               value={rhymeScheme}
               onChange={setRhymeScheme}
               accentColor="var(--lcars-cyan)"
-              options={[
-                { value: 'AABB', label: t.rhymeSchemes.AABB },
-                { value: 'ABAB', label: t.rhymeSchemes.ABAB },
-                { value: 'AAAA', label: t.rhymeSchemes.AAAA },
-                { value: 'ABCB', label: t.rhymeSchemes.ABCB },
-                { value: 'AAABBB', label: t.rhymeSchemes.AAABBB },
-                { value: 'AABBCC', label: t.rhymeSchemes.AABBCC },
-                { value: 'ABABAB', label: t.rhymeSchemes.ABABAB },
-                { value: 'ABCABC', label: t.rhymeSchemes.ABCABC },
-                { value: 'FREE', label: t.rhymeSchemes.FREE },
-              ]}
+              options={RHYME_SCHEME_ORDER.map(value => ({
+                value,
+                label: t.rhymeSchemes[value],
+              }))}
             />
           </div>
           <div>

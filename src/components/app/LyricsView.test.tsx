@@ -162,4 +162,51 @@ describe('LyricsView empty state', () => {
     // Reset for other tests
     mockSong.length = 0;
   });
+
+  it('shows Free Verse first in the section rhyme scheme selector', () => {
+    mockSong.length = 0;
+    mockSong.push({
+      id: 'section-1',
+      name: 'Verse',
+      lines: [{
+        id: 'line-1',
+        text: 'Hello world',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 2,
+        concept: '',
+      }],
+      preInstructions: [],
+      postInstructions: [],
+      rhymeScheme: 'AABB',
+    });
+
+    render(
+      <DragProvider>
+        <LanguageProvider>
+          <LyricsView
+            isAnalyzing={false}
+            playAudioFeedback={() => {}}
+            handleDrop={() => {}}
+            handleLineDragStart={() => {}}
+            handleLineDrop={() => {}}
+            isMarkupMode={false}
+            setIsMarkupMode={() => {}}
+            markupText=""
+            setMarkupText={() => {}}
+            markupTextareaRef={{ current: null }}
+            onOpenLibrary={() => {}}
+            onPasteLyrics={() => {}}
+            onGenerateSong={() => {}}
+          />
+        </LanguageProvider>
+      </DragProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'AABB (Couplets)' }));
+
+    expect(screen.getAllByRole('option')[0]?.textContent).toContain('Free Verse');
+
+    mockSong.length = 0;
+  });
 });
