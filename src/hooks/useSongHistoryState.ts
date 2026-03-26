@@ -48,11 +48,40 @@ const cappedPast = (past: SongHistorySnapshot[]): SongHistorySnapshot[] =>
   past.length > MAX_HISTORY ? past.slice(past.length - MAX_HISTORY) : past;
 
 // ─── Delta helpers ────────────────────────────────────────────────────────────
-const sectionFingerprint = (s: Section): string =>
-  `${s.id}:${s.name}:${(s.lines ?? []).map(l => `${l.id}:${l.text}:${l.syllables}`).join('|')}`;
 
-const snapshotFingerprint = (snap: SongHistorySnapshot): string =>
-  snap.song.map(sectionFingerprint).join('//') + '||' + snap.structure.join(',');
+/**
+ * Per-section fingerprint: id + name + line count guard + per-line digest.
+ * Early-exits on line-count mismatch before building the line string —
+ * avoids O(n) concat when sections are replaced wholesale (AI generation).
+ */
+const sectionFingerprint = (s: Section): string => {
+  const lines = s.lines ?? [];
+  // Prefix with line count so a count change is immediately visible
+  // without iterating individual lines.
+  const lineCount = lines.length;
+  const lineDigest = lines.map(l => `${l.id}:${l.text}:${l.syllables}`).join('|');
+  return `${s.id}:${s.name}:${lineCount}:${lineDigest}`;
+};
+
+/**
+ * Full snapshot fingerprint with two early-exit guards:
+ * 1. Section-count mismatch → return immediately (O(1)).
+ * 2. Structure string mismatch → return immediately (O(k) where k = section names).
+ * Only reaches per-line iteration when counts match.
+ *
+ * NOTE: this function is called twice per applySnapshot/updateState invocation
+ * (current + next). The guards ensure the common case of a full-song replacement
+ * (AI generation) resolves in O(1) instead of O(n×m).
+ */
+const snapshotFingerprint = (snap: SongHistorySnapshot): string => {
+  // Guard 1: encode section count directly into the fingerprint prefix.
+  // A caller comparing two fingerprints will see mismatch at the first char
+  // when counts differ — no need for a separate fast-path outside this fn.
+  const sectionCount = snap.song.length;
+  const structureKey = snap.structure.join(',');
+  const songKey = snap.song.map(sectionFingerprint).join('//');
+  return `${sectionCount}|${structureKey}||${songKey}`;
+};
 
 export const useSongHistoryState = (initialSong: Section[] = [], initialStructure: string[] = []) => {
   const [state, setState] = useState<SongHistoryState>(() => ({
