@@ -52,6 +52,7 @@ export function TopRibbon({
   const MENU_WIDTH = 280;
   const MENU_VIEWPORT_PADDING = 12;
   const MENU_VERTICAL_OFFSET = 6;
+  const MENU_BOTTOM_PADDING = 16;
   const { song, past, future, undo, redo } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
@@ -150,11 +151,13 @@ export function TopRibbon({
 
           {isMenuOpen && (
             <div
-              className="lcars-gradient-outline fixed rounded-[18px_6px_18px_6px] shadow-2xl py-1.5 overflow-hidden"
+              className="lcars-gradient-outline rounded-[18px_6px_18px_6px] shadow-2xl py-1.5 overflow-x-hidden overflow-y-auto"
               style={{
+                position: 'fixed',
                 left: `${menuPosition.left}px`,
                 top: `${menuPosition.top}px`,
                 width: `${MENU_WIDTH}px`,
+                maxHeight: `calc(100dvh - ${menuPosition.top}px - var(--mobile-nav-h, 56px) - var(--sab, 0px) - ${MENU_BOTTOM_PADDING}px)`,
                 backgroundColor: 'var(--bg-app, #111)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04)',
                 zIndex: 70,

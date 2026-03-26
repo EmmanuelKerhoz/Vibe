@@ -65,9 +65,10 @@ describe('TopRibbon burger menu', () => {
     expect(screen.getByRole('button', { name: 'Load/Import' }).className).not.toContain('lcars-holo');
     expect(screen.getByRole('button', { name: 'Settings' }).className).not.toContain('lcars-holo');
     const menu = screen.getByText('Create').parentElement as HTMLDivElement;
-    expect(menu.className).toContain('fixed');
+    expect(menu.style.position).toBe('fixed');
     expect(menu.style.left).toBe('12px');
     expect(menu.style.top).toBe('6px');
+    expect(menu.style.maxHeight).toContain('100dvh');
     fireEvent.click(screen.getByRole('button', { name: 'New generation' }));
     expect(onOpenNewGeneration).toHaveBeenCalledTimes(1);
 
