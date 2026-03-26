@@ -265,7 +265,7 @@ ${pastedText}`;
         setIsPasteModalOpen(false);
         setPastedText('');
       });
-    } catch (error) {
+    } catch (error: unknown) {
       if (isAbortError(error)) {
         wasAborted = true;
         return;

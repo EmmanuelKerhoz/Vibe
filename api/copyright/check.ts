@@ -1,5 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+const MAX_LYRICS_LENGTH = 50_000;
+const MAX_KEYWORDS = 20;
+const FETCH_TIMEOUT_MS = 10_000;
+
 type RiskLevel = 'high' | 'medium' | 'low';
 
 type RequestSection = {
@@ -105,6 +109,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing lyrics or keywords' });
   }
 
+  if (lyrics.length > MAX_LYRICS_LENGTH) {
+    return res.status(400).json({ error: `Lyrics exceed maximum length of ${MAX_LYRICS_LENGTH} characters` });
+  }
+
+  if (keywords.length > MAX_KEYWORDS) {
+    return res.status(400).json({ error: `Too many keywords (max ${MAX_KEYWORDS})` });
+  }
+
   try {
     const matches: CopyrightMatch[] = [];
 
@@ -154,9 +166,17 @@ async function searchGenius(
   for (const keyword of keywords.slice(0, 5)) {
     try {
       const searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(keyword)}`;
-      const searchRes = await fetch(searchUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const searchController = new AbortController();
+      const searchTimer = setTimeout(() => searchController.abort(), FETCH_TIMEOUT_MS);
+      let searchRes: Response;
+      try {
+        searchRes = await fetch(searchUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: searchController.signal,
+        });
+      } finally {
+        clearTimeout(searchTimer);
+      }
 
       if (!searchRes.ok) continue;
 
@@ -172,7 +192,14 @@ async function searchGenius(
         try {
           // Fetch full lyrics via web scraping
           const lyricsUrl = song.url;
-          const lyricsRes = await fetch(lyricsUrl);
+          const lyricsController = new AbortController();
+          const lyricsTimer = setTimeout(() => lyricsController.abort(), FETCH_TIMEOUT_MS);
+          let lyricsRes: Response;
+          try {
+            lyricsRes = await fetch(lyricsUrl, { signal: lyricsController.signal });
+          } finally {
+            clearTimeout(lyricsTimer);
+          }
           const html = await lyricsRes.text();
 
           // Extract lyrics from HTML

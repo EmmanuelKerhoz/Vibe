@@ -86,7 +86,7 @@ export function useTopicMoodSuggester() {
           setTopic(suggestion.topic);
           setMood(suggestion.mood);
         }
-      });
+      }).catch(() => { /* abort or network error — silently ignore */ });
     }
   }, [currentMood, currentTitle, currentTopic, generateSuggestion, hasSuggested, setMood, setTitle, setTitleOrigin, setTopic]);
 

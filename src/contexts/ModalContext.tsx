@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
 import type { EditMode } from '../types';
 
 // ── Minimal UIState interface ─────────────────────────────────────────────────
@@ -131,8 +131,13 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
     }
   }, [uiState]);
 
+  const value = useMemo(
+    () => ({ openModal, closeModal, uiState }),
+    [openModal, closeModal, uiState],
+  );
+
   return (
-    <ModalContext.Provider value={{ openModal, closeModal, uiState }}>
+    <ModalContext.Provider value={value}>
       {children}
     </ModalContext.Provider>
   );
