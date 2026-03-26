@@ -4,17 +4,35 @@ import { Button } from '../../ui/Button';
 import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
 
+type ImportProgress = {
+  current: number;
+  total: number;
+  currentLabel: string;
+};
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   pastedText: string;
   setPastedText: (v: string) => void;
   isAnalyzing: boolean;
+  importProgress?: ImportProgress;
   onAnalyze: () => void;
 }
 
-export function PasteModal({ isOpen, onClose, pastedText, setPastedText, isAnalyzing, onAnalyze }: Props) {
+export function PasteModal({
+  isOpen,
+  onClose,
+  pastedText,
+  setPastedText,
+  isAnalyzing,
+  importProgress,
+  onAnalyze,
+}: Props) {
   const { t } = useTranslation();
+  const progressValue = importProgress?.total
+    ? Math.round((importProgress.current / importProgress.total) * 100)
+    : 0;
 
   if (!isOpen) return null;
 
@@ -57,6 +75,30 @@ export function PasteModal({ isOpen, onClose, pastedText, setPastedText, isAnaly
             placeholder={t.paste.placeholder}
             className="w-full h-80 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl p-5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-color)]/50 focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all resize-none placeholder:text-[var(--text-secondary)] font-mono leading-relaxed"
           />
+          {isAnalyzing && importProgress && importProgress.total > 0 && (
+            <div className="mt-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-sidebar)]/80 p-4">
+              <div className="mb-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                <span>{t.paste.analyzing}</span>
+                <span>{importProgress.current}/{importProgress.total}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-[var(--input-bg)]">
+                <div
+                  role="progressbar"
+                  aria-label={t.paste.analyzing}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progressValue}
+                  className="h-full rounded-full bg-[var(--accent-color)] transition-[width] duration-300 ease-out"
+                  style={{ width: `${progressValue}%` }}
+                />
+              </div>
+              {importProgress.currentLabel && (
+                <p className="mt-2 text-xs font-medium uppercase tracking-wide text-[var(--accent-color)]">
+                  {importProgress.currentLabel}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="p-6 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-end gap-3">
