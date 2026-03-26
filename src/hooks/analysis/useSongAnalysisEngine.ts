@@ -168,7 +168,7 @@ export const useSongAnalysisEngine = ({
           setSelectedAnalysisItems(new Set());
         }
       });
-    } catch (error) {
+    } catch (error: unknown) {
       if (isAbortError(error)) {
         wasAborted = true;
         return;
@@ -219,7 +219,7 @@ export const useSongAnalysisEngine = ({
           setAppliedAnalysisItems(prev => new Set(prev).add(itemText));
         }
       });
-    } catch (error) {
+    } catch (error: unknown) {
       if (isAbortError(error)) {
         wasAborted = true;
         return;

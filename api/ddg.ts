@@ -20,6 +20,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  if (q.length > 500) {
+    res.status(400).json({ error: 'Query parameter q exceeds maximum length of 500 characters' });
+    return;
+  }
+
   const params = new URLSearchParams({
     q,
     format: 'json',
@@ -57,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).json(data);
-  } catch (err) {
+  } catch (err: unknown) {
     clearTimeout(timer);
     const message = err instanceof Error ? err.message : 'Unknown upstream error';
     res.status(502).json({ error: message });
