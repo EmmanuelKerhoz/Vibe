@@ -5,6 +5,7 @@ import { detectRhymeSchemeLocally } from '../../utils/rhymeSchemeUtils';
 import { generateId } from '../../utils/idUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { countSyllables } from '../../utils/syllableUtils';
+import { useRefs } from '../../contexts/RefsContext';
 
 const computeSyllables = (text: string) =>
   text
@@ -54,6 +55,7 @@ export const useLineEditor = ({
   generateSuggestions,
   setSuggestions,
 }: UseLineEditorParams) => {
+  const { getRef } = useRefs();
   const updateSong = useCallback(
     (transform: (currentSong: Section[]) => Section[]) => {
       updateState(current => ({
@@ -122,7 +124,7 @@ export const useLineEditor = ({
           }),
         );
         setTimeout(() => {
-          const currentInput = document.querySelector(`input[data-line-id="${lineId}"]`) as HTMLInputElement;
+          const currentInput = getRef(lineId);
           if (currentInput) {
             currentInput.focus();
             currentInput.setSelectionRange(value.length, value.length);
@@ -156,7 +158,7 @@ export const useLineEditor = ({
         );
         setSelectedLineId(prevLineId);
         setTimeout(() => {
-          const prevInput = document.querySelector(`input[data-line-id="${prevLineId}"]`) as HTMLInputElement;
+          const prevInput = getRef(prevLineId);
           if (prevInput) {
             prevInput.focus();
             prevInput.setSelectionRange(prevLine.text.length, prevLine.text.length);
@@ -198,7 +200,7 @@ export const useLineEditor = ({
         );
         setSelectedLineId(newLineId);
         setTimeout(() => {
-          const nextInput = document.querySelector(`input[data-line-id="${newLineId}"]`) as HTMLInputElement;
+          const nextInput = getRef(newLineId);
           if (nextInput) {
             nextInput.focus();
             nextInput.setSelectionRange(0, 0);
@@ -220,7 +222,7 @@ export const useLineEditor = ({
           e.preventDefault();
           setSelectedLineId(targetLineId);
           setTimeout(() => {
-            const input = document.querySelector(`input[data-line-id="${targetLineId}"]`) as HTMLInputElement;
+            const input = getRef(targetLineId);
             if (input) {
               input.focus();
               const pos = Math.min(selectionStart || 0, input.value.length);
@@ -244,7 +246,7 @@ export const useLineEditor = ({
           e.preventDefault();
           setSelectedLineId(targetLineId);
           setTimeout(() => {
-            const input = document.querySelector(`input[data-line-id="${targetLineId}"]`) as HTMLInputElement;
+            const input = getRef(targetLineId);
             if (input) {
               input.focus();
               const pos = Math.min(selectionStart || 0, input.value.length);

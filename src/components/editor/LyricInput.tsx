@@ -8,6 +8,7 @@ import { useTranslation } from '../../i18n';
 import { getLanguageDisplay } from '../../i18n';
 import { getRhymeTextColor } from '../../utils/songUtils';
 import { splitRhymingSuffix } from '../../utils/rhymeDetection';
+import { useRefs } from '../../contexts/RefsContext';
 
 export interface LyricInputProps {
   line: Line;
@@ -60,6 +61,7 @@ export const LyricInput = React.memo(function LyricInput({
 }: LyricInputProps) {
   const { t } = useTranslation();
   const { setDraggedLineInfo, setDragOverLineInfo } = useDrag();
+  const { registerRef } = useRefs();
   const inputRef = useRef<HTMLInputElement>(null);
   const isSelected = selectedLineId === line.id;
   const rhymeTextColor = getRhymeTextColor(schemeLabel);
@@ -70,6 +72,11 @@ export const LyricInput = React.memo(function LyricInput({
       inputRef.current.focus();
     }
   }, [isSelected]);
+
+  useEffect(() => {
+    registerRef(line.id, inputRef.current);
+    return () => registerRef(line.id, null);
+  }, [line.id, registerRef]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => updateLineText(sectionId, line.id, e.target.value);
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => handleLineKeyDown(e, sectionId, line.id);
