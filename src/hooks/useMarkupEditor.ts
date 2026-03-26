@@ -4,7 +4,8 @@ import { BRACKET_TOKEN_REGEX, isPureMetaLine, isSectionHeader, isEmptyBracketLin
 import { generateId } from '../utils/idUtils';
 import { countSyllables } from '../utils/syllableUtils';
 import { languageNameToCode } from '../constants/langFamilyMap';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongHistoryContext } from '../contexts/SongHistoryContext';
+import { useSongMetaContext } from '../contexts/SongMetaContext';
 import type { EditMode } from '../types';
 
 interface UseMarkupEditorParams {
@@ -51,7 +52,8 @@ const tokenizeLine = (rawLine: string): string[] => {
 };
 
 export function useMarkupEditor(params: UseMarkupEditorParams) {
-  const { song, songLanguage } = useSongContext();
+  const { song } = useSongHistoryContext();
+  const { songLanguage } = useSongMetaContext();
   const lastHydratedMarkupRef = useRef('');
   const previousSongRef = useRef(song);
   const {

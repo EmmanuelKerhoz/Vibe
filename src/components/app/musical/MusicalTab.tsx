@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { LyricsMusicAnalysis } from './LyricsMusicAnalysis';
 import { MusicalParamsPanel } from './MusicalParamsPanel';
 import { MusicalPromptBuilder } from './MusicalPromptBuilder';
-import { useSongContext } from '../../../contexts/SongContext';
+import { useSongHistoryContext } from '../../../contexts/SongHistoryContext';
+import { useSongMetaContext } from '../../../contexts/SongMetaContext';
 import { useComposerContext } from '../../../contexts/ComposerContext';
 
 interface Props {
@@ -13,13 +14,14 @@ export function MusicalTab({
   hasApiKey,
 }: Props) {
   const {
-    song, title, topic, mood,
+    title, topic, mood,
     genre, setGenre, tempo, setTempo,
     instrumentation, setInstrumentation,
     rhythm, setRhythm,
     narrative, setNarrative,
     musicalPrompt, setMusicalPrompt,
-  } = useSongContext();
+  } = useSongMetaContext();
+  const { song } = useSongHistoryContext();
   const {
     isGeneratingMusicalPrompt,
     isAnalyzingLyrics,

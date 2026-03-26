@@ -7,7 +7,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
 import { motion } from 'motion/react';
 import { useTranslation } from '../../i18n';
-import { useSongContext } from '../../contexts/SongContext';
+import { useSongHistoryContext } from '../../contexts/SongHistoryContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface Props {
@@ -52,11 +52,9 @@ export function TopRibbon({
   const MENU_WIDTH = 280;
   const MENU_VIEWPORT_PADDING = 12;
   const MENU_VERTICAL_OFFSET = 6;
-  const { song, past, future, undo, redo } = useSongContext();
+  const { song, undo, redo, canUndo, canRedo } = useSongHistoryContext();
   const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
-  const canUndo = past.length > 0;
-  const canRedo = future.length > 0;
   const isBusy = isGenerating || isAnalyzing;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({

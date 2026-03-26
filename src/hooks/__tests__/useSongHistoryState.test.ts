@@ -22,6 +22,10 @@ describe('useSongHistoryState', () => {
     expect(result.current.structure).toEqual(['Verse 1', 'Chorus']);
     expect(result.current.past).toHaveLength(0);
     expect(result.current.future).toHaveLength(0);
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.canRedo).toBe(false);
+    expect(result.current.historyIndex).toBe(0);
+    expect(result.current.history).toHaveLength(1);
   });
 
   it('updateSongWithHistory pushes to past and clears future', () => {
@@ -43,6 +47,10 @@ describe('useSongHistoryState', () => {
     expect(result.current.song).toHaveLength(1);
     expect(result.current.past).toHaveLength(0);
     expect(result.current.future).toHaveLength(1);
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.canRedo).toBe(true);
+    expect(result.current.historyIndex).toBe(0);
+    expect(result.current.history).toHaveLength(2);
   });
 
   it('redo re-applies undone state', () => {

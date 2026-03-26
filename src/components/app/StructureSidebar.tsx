@@ -15,7 +15,7 @@ import {
   isLinkedPreChorusPair,
   SECTION_TYPE_OPTIONS,
 } from '../../constants/sections';
-import { useSongContext } from '../../contexts/SongContext';
+import { useSongHistoryContext } from '../../contexts/SongHistoryContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface Props {
@@ -45,7 +45,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
 }: Props) {
   const actionButtonRadius = '10px 3px 10px 3px';
   const sectionButtonShapeClass = 'rounded-[12px_4px_12px_4px]';
-  const { song, structure } = useSongContext();
+  const { song, structure } = useSongHistoryContext();
   const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
   const {

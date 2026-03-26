@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../utils/aiUtils';
 import { withAbort, isAbortError } from '../utils/withAbort';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongMetaContext } from '../contexts/SongMetaContext';
 import { DEFAULT_TITLE } from '../constants/editor';
 
 interface TopicMoodSuggestion {
@@ -20,7 +20,7 @@ export function useTopicMoodSuggester() {
     setTitleOrigin,
     setTopic,
     setMood,
-  } = useSongContext();
+  } = useSongMetaContext();
   const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
   const [hasSuggested, setHasSuggested] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);

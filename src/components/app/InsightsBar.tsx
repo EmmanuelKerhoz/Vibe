@@ -8,7 +8,8 @@ import { SUPPORTED_ADAPTATION_LANGUAGES, getLanguageDisplay } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 import type { EditMode } from '../../types';
-import { useSongContext } from '../../contexts/SongContext';
+import { useSongHistoryContext } from '../../contexts/SongHistoryContext';
+import { useSongMetaContext } from '../../contexts/SongMetaContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 
@@ -236,7 +237,8 @@ export const InsightsBar = React.memo(function InsightsBar({
   adaptationResult,
   showTranslationFeatures = true,
 }: InsightsBarProps) {
-  const { song, songLanguage, detectedLanguages } = useSongContext();
+  const { song } = useSongHistoryContext();
+  const { songLanguage, detectedLanguages } = useSongMetaContext();
   const { isGenerating } = useComposerContext();
   const { sectionCount, wordCount, charCount } = useAppKpis();
   const { t } = useTranslation();

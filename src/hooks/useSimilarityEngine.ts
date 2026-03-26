@@ -8,7 +8,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { WebSimilarityIndex } from '../types/webSimilarity';
 import { DEFAULT_TITLE } from '../constants/editor';
 import { runSearchTree } from '../utils/webSimilaritySearch';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongHistoryContext } from '../contexts/SongHistoryContext';
+import { useSongMetaContext } from '../contexts/SongMetaContext';
 
 const DEBOUNCE_MS = 30_000;        // 30s after last keystroke
 const DELTA_THRESHOLD = 0.20;     // retrigger if text changed by >20%
@@ -45,7 +46,8 @@ const INITIAL_INDEX: WebSimilarityIndex = {
 };
 
 export const useSimilarityEngine = () => {
-  const { song: sections, title, songLanguage } = useSongContext();
+  const { song: sections } = useSongHistoryContext();
+  const { title, songLanguage } = useSongMetaContext();
   const [index, setIndex] = useState<WebSimilarityIndex>(INITIAL_INDEX);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DEFAULT_TITLE, DEFAULT_TOPIC, DEFAULT_MOOD } from '../utils/songDefaults';
 
 export function useSongMeta() {
@@ -21,7 +21,7 @@ export function useSongMeta() {
   const [narrative, setNarrative] = useState('');
   const [musicalPrompt, setMusicalPrompt] = useState('');
 
-  return {
+  return useMemo(() => ({
     title, setTitle,
     titleOrigin, setTitleOrigin,
     topic, setTopic,
@@ -39,5 +39,23 @@ export function useSongMeta() {
     rhythm, setRhythm,
     narrative, setNarrative,
     musicalPrompt, setMusicalPrompt,
-  };
+  }), [
+    detectedLanguages,
+    genre,
+    instrumentation,
+    lineLanguages,
+    mood,
+    musicalPrompt,
+    narrative,
+    newSectionName,
+    rhymeScheme,
+    rhythm,
+    shouldAutoGenerateTitle,
+    songLanguage,
+    targetSyllables,
+    tempo,
+    title,
+    titleOrigin,
+    topic,
+  ]);
 }

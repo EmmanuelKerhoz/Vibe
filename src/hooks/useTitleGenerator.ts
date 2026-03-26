@@ -2,11 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { AI_MODEL_NAME, generateContentWithRetry, handleApiError } from '../utils/aiUtils';
 import { getSongText } from '../utils/songUtils';
 import { withAbort, isAbortError } from '../utils/withAbort';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongHistoryContext } from '../contexts/SongHistoryContext';
+import { useSongMetaContext } from '../contexts/SongMetaContext';
 
 export function useTitleGenerator() {
   const {
-    song,
     topic,
     mood,
     songLanguage,
@@ -14,7 +14,8 @@ export function useTitleGenerator() {
     setShouldAutoGenerateTitle,
     setTitle,
     setTitleOrigin,
-  } = useSongContext();
+  } = useSongMetaContext();
+  const { song } = useSongHistoryContext();
   const songLength = song.length;
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongHistoryContext } from '../contexts/SongHistoryContext';
 import type { Section } from '../types';
 
 export interface LyricsKpis {
@@ -17,7 +17,7 @@ const lyricLines = (sec: Section) => (sec.lines ?? []).filter(l => !l.isMeta);
  * Aucun paramètre externe nécessaire.
  */
 export const useAppKpis = () => {
-  const { song } = useSongContext();
+  const { song } = useSongHistoryContext();
 
   const sectionCount = song.length;
 

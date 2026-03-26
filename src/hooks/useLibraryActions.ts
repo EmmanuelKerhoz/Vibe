@@ -12,7 +12,7 @@ import {
   type LibraryAsset,
 } from '../utils/libraryUtils';
 import { safeJsonGet } from '../utils/safeStorage';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongMetaContext } from '../contexts/SongMetaContext';
 
 const lyricalKey = (song: Section[]): string => {
   return song
@@ -65,7 +65,7 @@ export const useLibraryActions = ({
     setRhythm,
     setNarrative,
     setMusicalPrompt,
-  } = useSongContext();
+  } = useSongMetaContext();
   const currentLyricalKey = useMemo(() => lyricalKey(song), [song]);
   const similarityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSimilarityKeyRef = useRef('');

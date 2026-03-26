@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import type { WebSimilarityIndex } from '../types/webSimilarity';
 import type { EditMode } from '../types';
 import { isPristineDraft, DEFAULT_TOPIC, DEFAULT_MOOD } from '../utils/songDefaults';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongHistoryContext } from '../contexts/SongHistoryContext';
+import { useSongMetaContext } from '../contexts/SongMetaContext';
 
 interface UseDerivedAppStateParams {
   editMode: EditMode;
@@ -15,7 +16,8 @@ export function useDerivedAppState({
   markupText,
   webSimilarityIndex,
 }: UseDerivedAppStateParams) {
-  const { song, structure, rhymeScheme, topic, mood } = useSongContext();
+  const { song, structure } = useSongHistoryContext();
+  const { rhymeScheme, topic, mood } = useSongMetaContext();
 
   const hasRealLyricContent = useMemo(
     () => song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0)),

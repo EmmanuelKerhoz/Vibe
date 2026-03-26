@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { Section } from '../types';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongHistoryContext } from '../contexts/SongHistoryContext';
+import { useSongMetaContext } from '../contexts/SongMetaContext';
 
 interface UseAppHandlersParams {
   t: {
@@ -33,7 +34,8 @@ export function useAppHandlers({
   generateSong,
   scrollToSection,
 }: UseAppHandlersParams) {
-  const { song, setTitle, setTitleOrigin } = useSongContext();
+  const { song } = useSongHistoryContext();
+  const { setTitle, setTitleOrigin } = useSongMetaContext();
   const handleApiKeyHelp = useCallback(() => {
     setApiErrorModal({ open: true, message: t.tooltips.aiUnavailableHelp });
   }, [setApiErrorModal, t.tooltips.aiUnavailableHelp]);

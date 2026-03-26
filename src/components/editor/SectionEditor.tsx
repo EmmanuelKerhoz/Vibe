@@ -12,7 +12,7 @@ import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import { useDrag } from '../../contexts/DragContext';
-import { useSongContext } from '../../contexts/SongContext';
+import { useSongMetaContext } from '../../contexts/SongMetaContext';
 import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection } from '../../constants/sections';
 
 interface SectionEditorProps {
@@ -121,7 +121,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   setSectionName, setSectionRhymeScheme,
 }: SectionEditorProps) {
   const { t } = useTranslation();
-  const { lineLanguages } = useSongContext();
+  const { lineLanguages } = useSongMetaContext();
   const {
     draggedItemIndex,
     dragOverIndex,

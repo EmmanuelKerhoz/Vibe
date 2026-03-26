@@ -7,7 +7,7 @@ import { Label } from '../ui/Label';
 import { Input } from '../ui/Input';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
-import { useSongContext } from '../../contexts/SongContext';
+import { useSongHistoryContext } from '../../contexts/SongHistoryContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface Props {
@@ -58,7 +58,7 @@ export function LeftSettingsPanel({
   isMobileOverlay,
 }: Props) {
   const { t } = useTranslation();
-  const { song } = useSongContext();
+  const { song } = useSongHistoryContext();
   const { isGenerating, quantizeSyllables } = useComposerContext();
 
   // ── Mobile/tablet: fixed overlay ────────────────────────────────────────────────────────

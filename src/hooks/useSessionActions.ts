@@ -3,7 +3,7 @@ import type { Section } from '../types';
 import type { SimilarityMatch } from '../utils/similarityUtils';
 import { buildResetPayload, buildPartialResetPayload, clearPersistedSession } from '../utils/sessionReset';
 import { createEmptySong } from '../utils/songDefaults';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongMetaContext } from '../contexts/SongMetaContext';
 
 type StateBag = {
   setHasSavedSession: (v: boolean) => void;
@@ -90,7 +90,7 @@ export const useSessionActions = (params: UseSessionActionsParams) => {
     setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme,
     setTargetSyllables, setGenre, setTempo, setInstrumentation,
     setRhythm, setNarrative, setMusicalPrompt,
-  } = useSongContext();
+  } = useSongMetaContext();
 
   const songMetaSetters = {
     setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme,

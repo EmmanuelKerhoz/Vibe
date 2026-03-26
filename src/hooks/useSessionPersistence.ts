@@ -4,7 +4,7 @@ import { cleanSectionName, normalizeLoadedSection } from '../utils/songUtils';
 import { DEFAULT_STRUCTURE } from '../constants/editor';
 import { safeSetItem, safeGetItem } from '../utils/safeStorage';
 import { isPristineDraft } from '../utils/songDefaults';
-import { useSongContext } from '../contexts/SongContext';
+import { useSongMetaContext } from '../contexts/SongMetaContext';
 
 interface UseSessionPersistenceParams {
   song: Section[];
@@ -43,7 +43,7 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
     setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme, setTargetSyllables,
     setGenre, setTempo, setInstrumentation, setRhythm, setNarrative, setMusicalPrompt,
     setSongLanguage,
-  } = useSongContext();
+  } = useSongMetaContext();
 
   // Mount-only: hydrate state from localStorage.
   useEffect(() => {

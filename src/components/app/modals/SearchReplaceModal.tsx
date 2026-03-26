@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, ChevronUp, ChevronDown } from '../../ui/icons';
-import { useSongContext } from '../../../contexts/SongContext';
+import { useSongHistoryContext } from '../../../contexts/SongHistoryContext';
 import { useTranslation } from '../../../i18n';
 import type { Section } from '../../../types';
 
@@ -40,7 +40,7 @@ function computeMatches(song: Section[], query: string, caseSensitive: boolean):
 }
 
 export function SearchReplaceModal({ isOpen, onClose }: Props) {
-  const { song, updateState } = useSongContext();
+  const { song, updateState } = useSongHistoryContext();
   const { t } = useTranslation();
   const sr = t.searchReplace;
 
