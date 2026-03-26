@@ -42,7 +42,6 @@ interface Props {
 
   // Import
   hasExistingWork: boolean;
-  canPasteLyrics: boolean;
   handleImportChooseFile: () => void;
   onOpenPasteLyrics: () => void;
   handleImportInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;

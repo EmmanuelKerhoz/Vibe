@@ -49,6 +49,9 @@ export function TopRibbon({
   onPasteLyrics,
   isAnalyzing,
 }: Props) {
+  const MENU_WIDTH = 280;
+  const MENU_VIEWPORT_PADDING = 12;
+  const MENU_VERTICAL_OFFSET = 6;
   const { song, past, future, undo, redo } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
@@ -56,18 +59,41 @@ export function TopRibbon({
   const canRedo = future.length > 0;
   const isBusy = isGenerating || isAnalyzing;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({
+    left: MENU_VIEWPORT_PADDING,
+    top: MENU_VERTICAL_OFFSET,
+  });
   const menuRef = useRef<HTMLDivElement>(null);
-  const menuActionClass = 'lcars-holo ux-interactive mx-2 my-0.5 flex w-[calc(100%-1rem)] items-center gap-3 rounded-[10px_3px_10px_3px] px-4 py-2 text-[12px] text-left transition-colors';
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuActionClass = 'flex w-full items-center gap-3 bg-transparent px-4 py-2.5 text-[12px] text-left transition-colors outline-none focus-visible:bg-[var(--accent-color)]/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent';
 
   useEffect(() => {
     if (!isMenuOpen) return;
+    const updateMenuPosition = () => {
+      const rect = menuButtonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setMenuPosition({
+        left: Math.max(MENU_VIEWPORT_PADDING, Math.min(rect.left, window.innerWidth - MENU_VIEWPORT_PADDING - MENU_WIDTH)),
+        top: rect.bottom + MENU_VERTICAL_OFFSET,
+      });
+    };
+
+    updateMenuPosition();
+
     const handleOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsMenuOpen(false);
       }
     };
+
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
     document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+      document.removeEventListener('mousedown', handleOutside);
+    };
   }, [isMenuOpen]);
 
   const runMenuAction = (action: () => void) => {
@@ -108,6 +134,7 @@ export function TopRibbon({
         <div className="relative" style={{ zIndex: 60 }} ref={menuRef}>
           <Tooltip title="Menu">
             <button
+              ref={menuButtonRef}
               onClick={() => setIsMenuOpen(v => !v)}
               className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md transition-all duration-200"
               style={{
@@ -123,11 +150,14 @@ export function TopRibbon({
 
           {isMenuOpen && (
             <div
-              className="lcars-gradient-outline absolute left-0 top-full mt-2 w-[280px] rounded-[18px_6px_18px_6px] shadow-2xl py-1.5 overflow-hidden"
+              className="lcars-gradient-outline fixed rounded-[18px_6px_18px_6px] shadow-2xl py-1.5 overflow-hidden"
               style={{
+                left: `${menuPosition.left}px`,
+                top: `${menuPosition.top}px`,
+                width: `${MENU_WIDTH}px`,
                 backgroundColor: 'var(--bg-app, #111)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04)',
-                zIndex: 50,
+                zIndex: 70,
               }}
             >
               {/* Create */}
@@ -164,7 +194,7 @@ export function TopRibbon({
               {/* Tools */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
-              <button disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+              <button disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.editor.emptyState.pasteLyrics}
               </button>

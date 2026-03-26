@@ -15,17 +15,21 @@ jobs:
     steps:
       - name: Delete all dead branches
         uses: actions/github-script@v7
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
-            const defaultBranch = context.payload.repository.default_branch;
+            const defaultBranch =
+              context.payload.repository?.default_branch ??
+              (await github.rest.repos.get({ owner, repo })).data.default_branch;
             const openPrRefs = new Set();
-            const latestClosedPrByRef = new Map();
             let deleted = 0;
             let skipped = 0;
             let ignored = 0;
 
+            // Collect open PR head branches — always keep these
             for await (const response of github.paginate.iterator(github.rest.pulls.list, {
               owner,
               repo,
@@ -39,27 +43,15 @@ jobs:
               }
             }
 
-            for await (const response of github.paginate.iterator(github.rest.pulls.list, {
+            // Get the default branch HEAD SHA
+            const { data: defaultBranchData } = await github.rest.repos.getBranch({
               owner,
               repo,
-              state: 'closed',
-              sort: 'updated',
-              direction: 'desc',
-              per_page: 100,
-            })) {
-              for (const pr of response.data) {
-                if (pr.head.repo?.full_name !== `${owner}/${repo}`) continue;
-                if (pr.head.ref === defaultBranch) continue;
-                if (!latestClosedPrByRef.has(pr.head.ref)) {
-                  latestClosedPrByRef.set(pr.head.ref, {
-                    sha: pr.head.sha,
-                    number: pr.number,
-                    merged: Boolean(pr.merged_at),
-                  });
-                }
-              }
-            }
+              branch: defaultBranch,
+            });
+            const defaultSha = defaultBranchData.commit.sha;
 
+            // Get all branches
             const branches = await github.paginate(github.rest.repos.listBranches, {
               owner,
               repo,
@@ -79,15 +71,26 @@ jobs:
                 continue;
               }
 
-              const latestClosedPr = latestClosedPrByRef.get(branch.name);
-              if (!latestClosedPr) {
-                console.log(`⊘ Keeping ${branch.name} (no closed pull request found)`);
+              // A branch is fully merged when its tip is an ancestor of the default branch.
+              // compareCommits(base=default, head=branch): ahead_by === 0 means branch has
+              // no commits that aren't already in the default branch.
+              let isMerged = false;
+              try {
+                const { data: comparison } = await github.rest.repos.compareCommits({
+                  owner,
+                  repo,
+                  base: defaultSha,
+                  head: branch.commit.sha,
+                });
+                isMerged = comparison.ahead_by === 0;
+              } catch (error) {
+                console.error(`✗ Could not compare ${branch.name}: ${error.message}`);
                 ignored++;
                 continue;
               }
 
-              if (branch.commit?.sha !== latestClosedPr.sha) {
-                console.log(`⊘ Keeping ${branch.name} (branch advanced since PR #${latestClosedPr.number} closed)`);
+              if (!isMerged) {
+                console.log(`⊘ Keeping ${branch.name} (has unmerged commits)`);
                 ignored++;
                 continue;
               }
@@ -98,7 +101,7 @@ jobs:
                   repo,
                   ref: `heads/${branch.name}`,
                 });
-                console.log(`✓ Deleted ${branch.name} (${latestClosedPr.merged ? 'merged' : 'closed'} PR #${latestClosedPr.number})`);
+                console.log(`✓ Deleted ${branch.name} (fully merged into ${defaultBranch})`);
                 deleted++;
               } catch (error) {
                 if (error.status === 404 || error.status === 422) {
