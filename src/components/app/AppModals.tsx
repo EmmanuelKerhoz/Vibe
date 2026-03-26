@@ -101,7 +101,7 @@ interface Props {
 export const AppModals = React.memo(function AppModals({
   theme, setTheme, audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
   showTranslationFeatures, setShowTranslationFeatures,
-  hasExistingWork, canPasteLyrics, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
+  hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
   pastedText, setPastedText, isAnalyzing, analyzePastedLyrics,
   analysisReport, analysisSteps,
@@ -137,7 +137,6 @@ export const AppModals = React.memo(function AppModals({
       />
       <ImportModal
         isOpen={ui.isImportModalOpen} hasExistingWork={hasExistingWork}
-        canPasteLyrics={canPasteLyrics}
         onClose={() => closeModal('import')} onChooseFile={handleImportChooseFile}
         onOpenLibrary={openLibraryFromImport}
         onPasteLyrics={onOpenPasteLyrics}
