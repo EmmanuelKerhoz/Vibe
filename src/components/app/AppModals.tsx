@@ -13,6 +13,7 @@ import { KeyboardShortcutsModal } from './modals/KeyboardShortcutsModal';
 import { ApiErrorModal } from './modals/ApiErrorModal';
 import { ConfirmModal } from './modals/ConfirmModal';
 import { PromptModal } from './modals/PromptModal';
+import { SearchReplaceModal } from './modals/SearchReplaceModal';
 import { useModalContext } from '../../contexts/ModalContext';
 import type { LibraryAsset } from '../../utils/libraryUtils';
 import type { SimilarityMatch } from '../../utils/similarityUtils';
@@ -179,6 +180,10 @@ export const AppModals = React.memo(function AppModals({
       <KeyboardShortcutsModal
         isOpen={ui.isKeyboardShortcutsModalOpen}
         onClose={() => closeModal('keyboardShortcuts')}
+      />
+      <SearchReplaceModal
+        isOpen={ui.isSearchReplaceOpen}
+        onClose={() => closeModal('searchReplace')}
       />
       <ApiErrorModal
         isOpen={ui.apiErrorModal.open} onClose={() => closeModal('apiError')}

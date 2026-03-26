@@ -19,6 +19,7 @@ export const useUIStateForProvider = ({
   setPromptModal,
   setIsPasteModalOpen,
   setIsAnalysisModalOpen,
+  setIsSearchReplaceOpen,
   setEditMode,
   isAboutOpen,
   isSettingsOpen,
@@ -35,6 +36,7 @@ export const useUIStateForProvider = ({
   promptModal,
   isPasteModalOpen,
   isAnalysisModalOpen,
+  isSearchReplaceOpen,
   activeTab,
   setActiveTab,
   isStructureOpen,
@@ -66,6 +68,7 @@ export const useUIStateForProvider = ({
     setPromptModal,
     setIsPasteModalOpen,
     setIsAnalysisModalOpen,
+    setIsSearchReplaceOpen,
     isAboutOpen,
     isSettingsOpen,
     apiErrorModal,
@@ -81,6 +84,7 @@ export const useUIStateForProvider = ({
     promptModal,
     isPasteModalOpen,
     isAnalysisModalOpen,
+    isSearchReplaceOpen,
   }), [
     setIsAboutOpen,
     setIsSettingsOpen,
@@ -97,6 +101,7 @@ export const useUIStateForProvider = ({
     setPromptModal,
     setIsPasteModalOpen,
     setIsAnalysisModalOpen,
+    setIsSearchReplaceOpen,
     isAboutOpen,
     isSettingsOpen,
     apiErrorModal,
@@ -112,6 +117,7 @@ export const useUIStateForProvider = ({
     promptModal,
     isPasteModalOpen,
     isAnalysisModalOpen,
+    isSearchReplaceOpen,
   ]);
 
   // Panel and layout state (tabs, panels, markup mode)

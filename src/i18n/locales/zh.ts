@@ -286,8 +286,25 @@ const zh: Translations = {
       dismissNavigation: '关闭设置、关于、相似度或移动侧边面板。',
       dismissFileDialogs: '关闭导入、导出、版本或资料库对话框。',
       dismissAiDialogs: '关闭 AI 提示、API 警报、分析或粘贴歌词导入对话框。',
+      openSearch: '打开搜索与替换面板。',
     },
   },
+
+  searchReplace: {
+    title: '搜索 & 替换',
+    searchPlaceholder: '搜索…',
+    replacePlaceholder: '替换为…',
+    matchCount: '{total} 中第 {current}',
+    matchCountNone: '无匹配项',
+    previous: '上一个',
+    next: '下一个',
+    replace: '替换',
+    replaceAll: '全部替换',
+    caseSensitive: '区分大小写',
+    close: '关闭',
+    replacedCount: '已替换 {count} 处',
+  },
+
   about: {
     description: '专为词曲作者和诗人打造的专业AI歌词编辑器。借助实时建议、结构管理和智能量化，创作您的传世之作。',
     engine: 'Google Gemini',
@@ -387,6 +404,7 @@ const zh: Translations = {
     generateTitle: '从歌词生成标题',
     aiGeneratedTitle: 'AI生成的标题',
     userEnteredTitle: '用户输入的标题',
+    openSearch: '在歌词中搜索和替换 (Ctrl+F)',
   },
 
   sections: {
