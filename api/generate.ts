@@ -5,6 +5,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 // AbortController abort is now checked synchronously before accessing response.
 const GEMINI_TIMEOUT_MS = 55_000;
 
+/** Maximum allowed characters for the prompt contents field. */
+const MAX_CONTENTS_LENGTH = 100_000;
+
+/** Models the proxy is allowed to forward to. */
+const ALLOWED_MODEL_PREFIXES = ['gemini-'];
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
@@ -29,8 +35,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       config?: Record<string, unknown>;
     };
 
-    if (!model || !contents) {
-      res.status(400).json({ error: 'Missing required fields: model, contents' });
+    if (!model || typeof model !== 'string' || !contents || typeof contents !== 'string') {
+      res.status(400).json({ error: 'Missing required fields: model (string), contents (string)' });
+      return;
+    }
+
+    if (!ALLOWED_MODEL_PREFIXES.some(prefix => model.startsWith(prefix))) {
+      res.status(400).json({ error: `Model "${model}" is not allowed` });
+      return;
+    }
+
+    if (contents.length > MAX_CONTENTS_LENGTH) {
+      res.status(400).json({ error: `Contents exceeds maximum length of ${MAX_CONTENTS_LENGTH} characters` });
       return;
     }
 

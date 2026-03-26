@@ -184,7 +184,16 @@ ${pastedText}`;
           return;
         }
 
-        const data = safeJsonParse<any>(response.text || '{}', {});
+        const data = safeJsonParse<{
+          topic?: string;
+          mood?: string;
+          language?: string;
+          sections?: Array<{
+            name: string;
+            rhymeScheme?: string;
+            lines: Array<{ text?: string; rhymingSyllables?: string; rhyme?: string; syllables?: number; concept?: string }>;
+          }>;
+        }>(response.text || '{}', {});
 
         if (data.topic) setTopic(data.topic);
         if (data.mood) setMood(data.mood);
@@ -218,13 +227,16 @@ ${pastedText}`;
           throw new Error('No sections could be extracted. Please check the lyrics format.');
         }
 
-        const songWithIds: Section[] = sections.map((section: any) => {
-          const lines: Section['lines'] = section.lines.map((line: any) => ({
-            ...line,
+        const songWithIds: Section[] = sections.map((section) => {
+          const lines: Section['lines'] = (section.lines ?? []).map((line) => ({
             id: generateId(),
+            text: (line.text ?? '') as string,
+            rhymingSyllables: line.rhymingSyllables ?? '',
+            rhyme: line.rhyme ?? '',
+            syllables: line.syllables ?? 0,
+            concept: line.concept ?? '',
             isManual: true,
             isMeta: isPureMetaLine(line.text ?? ''),
-            text: (line.text ?? '') as string,
           }));
 
           let finalScheme: string = section.rhymeScheme || rhymeScheme;
@@ -245,7 +257,7 @@ ${pastedText}`;
           };
         });
 
-        const newStructure = sections.map((s: any) => cleanSectionName(s.name));
+        const newStructure = sections.map((s) => cleanSectionName(s.name));
         updateSongAndStructureWithHistory(songWithIds, newStructure);
 
         requestAutoTitleGeneration();
