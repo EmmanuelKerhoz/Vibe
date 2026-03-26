@@ -161,7 +161,7 @@ function AppInnerContent() {
   isGeneratingRef.current = isGenerating;
 
   const {
-    canPasteLyrics, pastedText, setPastedText, isAnalyzing, analysisReport, analysisSteps,
+    canPasteLyrics, pastedText, setPastedText, isAnalyzing, importProgress, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
     targetLanguage, setTargetLanguage, isAdaptingLanguage, isDetectingLanguage,
     adaptationProgress, adaptationResult, sectionTargetLanguages, setSectionTargetLanguages,
@@ -501,7 +501,7 @@ function AppInnerContent() {
               handleImportInputChange={handleImportInputChange}
               exportSong={exportSong}
               pastedText={pastedText} setPastedText={setPastedText}
-              isAnalyzing={isAnalyzing} analyzePastedLyrics={analyzePastedLyrics}
+              isAnalyzing={isAnalyzing} importProgress={importProgress} analyzePastedLyrics={analyzePastedLyrics}
               analysisReport={analysisReport} analysisSteps={analysisSteps}
               appliedAnalysisItems={appliedAnalysisItems}
               selectedAnalysisItems={selectedAnalysisItems}

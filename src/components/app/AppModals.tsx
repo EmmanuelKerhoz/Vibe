@@ -53,6 +53,11 @@ interface Props {
   pastedText: string;
   setPastedText: (v: string) => void;
   isAnalyzing: boolean;
+  importProgress: {
+    current: number;
+    total: number;
+    currentLabel: string;
+  };
   analyzePastedLyrics: () => void;
   analysisReport: {
     theme: string;
@@ -102,7 +107,7 @@ export const AppModals = React.memo(function AppModals({
   showTranslationFeatures, setShowTranslationFeatures,
   hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
-  pastedText, setPastedText, isAnalyzing, analyzePastedLyrics,
+  pastedText, setPastedText, isAnalyzing, importProgress, analyzePastedLyrics,
   analysisReport, analysisSteps,
   appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
   toggleAnalysisItemSelection, applySelectedAnalysisItems, clearAppliedAnalysisItems,
@@ -149,7 +154,7 @@ export const AppModals = React.memo(function AppModals({
       <PasteModal
         isOpen={ui.isPasteModalOpen} onClose={() => closeModal('paste')}
         pastedText={pastedText} setPastedText={setPastedText}
-        isAnalyzing={isAnalyzing} onAnalyze={analyzePastedLyrics}
+        isAnalyzing={isAnalyzing} importProgress={importProgress} onAnalyze={analyzePastedLyrics}
       />
       <AnalysisModal
         isOpen={ui.isAnalysisModalOpen} onClose={() => closeModal('analysis')}

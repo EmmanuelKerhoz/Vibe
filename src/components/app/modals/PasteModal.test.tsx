@@ -35,6 +35,7 @@ describe('PasteModal', () => {
     pastedText: 'First line',
     setPastedText: vi.fn(),
     isAnalyzing: false,
+    importProgress: undefined,
     onAnalyze: vi.fn(),
   });
 
@@ -77,5 +78,21 @@ describe('PasteModal', () => {
 
     expect(screen.getByRole('button', { name: 'Analyze the pasted lyrics' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByText('Analyzing paste')).toBeTruthy();
+  });
+
+  it('shows section-by-section progress while analysis is running', () => {
+    const props = createProps();
+
+    render(
+      <PasteModal
+        {...props}
+        isAnalyzing
+        importProgress={{ current: 2, total: 5, currentLabel: 'Chorus 1' }}
+      />,
+    );
+
+    expect(screen.getByText('2/5')).toBeTruthy();
+    expect(screen.getByText('Chorus 1')).toBeTruthy();
+    expect(screen.getByRole('progressbar', { name: 'Analyzing paste' }).getAttribute('aria-valuenow')).toBe('40');
   });
 });

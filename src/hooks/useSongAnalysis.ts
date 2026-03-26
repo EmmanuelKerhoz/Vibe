@@ -100,6 +100,7 @@ export const useSongAnalysis = ({
     canPasteLyrics: pasteImport.canPasteLyrics,
     pastedText: pasteImport.pastedText,
     setPastedText: pasteImport.setPastedText,
+    importProgress: pasteImport.importProgress,
     analyzePastedLyrics: pasteImport.analyzePastedLyrics,
     // ── Analysis state ──────────────────────────────────────────────────────
     isAnalyzing,

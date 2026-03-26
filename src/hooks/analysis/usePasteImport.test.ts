@@ -17,33 +17,25 @@ vi.mock('../../utils/aiUtils', () => ({
   handleApiError: vi.fn(),
 }));
 
-const makeResponse = (overrides?: Record<string, unknown>) => ({
+const makeSectionResponse = (overrides?: Record<string, unknown>) => ({
+  text: JSON.stringify({
+    name: 'Verse 1',
+    rhymeScheme: 'AABB',
+    lines: [
+      { text: 'Première ligne', rhymingSyllables: 'gne', rhyme: 'A', syllables: 4, concept: 'première' },
+      { text: 'Deuxième ligne', rhymingSyllables: 'gne', rhyme: 'A', syllables: 4, concept: 'deuxième' },
+      { text: 'Troisième ligne', rhymingSyllables: 'gne', rhyme: 'B', syllables: 4, concept: 'troisième' },
+      { text: 'Quatrième ligne', rhymingSyllables: 'gne', rhyme: 'B', syllables: 4, concept: 'quatrième' },
+    ],
+    ...overrides,
+  }),
+});
+
+const makeMetadataResponse = (overrides?: Record<string, unknown>) => ({
   text: JSON.stringify({
     topic: 'amour',
     mood: 'nostalgie',
-    language: 'fr',
-    sections: [
-      {
-        name: 'Verse 1',
-        rhymeScheme: 'AABB',
-        lines: [
-          { text: 'Première ligne', rhymingSyllables: 'gne', rhyme: 'A', syllables: 4, concept: 'première' },
-          { text: 'Deuxième ligne', rhymingSyllables: 'gne', rhyme: 'A', syllables: 4, concept: 'deuxième' },
-          { text: 'Troisième ligne', rhymingSyllables: 'gne', rhyme: 'B', syllables: 4, concept: 'troisième' },
-          { text: 'Quatrième ligne', rhymingSyllables: 'gne', rhyme: 'B', syllables: 4, concept: 'quatrième' },
-        ],
-      },
-      {
-        name: 'Chorus',
-        rhymeScheme: 'AABB',
-        lines: [
-          { text: 'Refrain un', rhymingSyllables: 'un', rhyme: 'A', syllables: 3, concept: 'refrain' },
-          { text: 'Refrain deux', rhymingSyllables: 'eux', rhyme: 'A', syllables: 3, concept: 'refrain' },
-          { text: 'Refrain trois', rhymingSyllables: 'ois', rhyme: 'B', syllables: 3, concept: 'refrain' },
-          { text: 'Refrain quatre', rhymingSyllables: 'atre', rhyme: 'B', syllables: 3, concept: 'refrain' },
-        ],
-      },
-    ],
+    language: 'French',
     ...overrides,
   }),
 });
@@ -79,7 +71,18 @@ describe('usePasteImport', () => {
 
   it('imports standard multiline lyrics into two sections with the expected line distribution', async () => {
     const params = createParams();
-    vi.mocked(generateContentWithRetry).mockResolvedValue(makeResponse());
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeSectionResponse())
+      .mockResolvedValueOnce(makeSectionResponse({
+        name: 'Chorus',
+        lines: [
+          { text: 'Refrain un', rhymingSyllables: 'un', rhyme: 'A', syllables: 3, concept: 'refrain' },
+          { text: 'Refrain deux', rhymingSyllables: 'eux', rhyme: 'A', syllables: 3, concept: 'refrain' },
+          { text: 'Refrain trois', rhymingSyllables: 'ois', rhyme: 'B', syllables: 3, concept: 'refrain' },
+          { text: 'Refrain quatre', rhymingSyllables: 'atre', rhyme: 'B', syllables: 3, concept: 'refrain' },
+        ],
+      }))
+      .mockResolvedValueOnce(makeMetadataResponse());
 
     const { result } = renderHook(() => usePasteImport(params));
 
@@ -99,6 +102,11 @@ describe('usePasteImport', () => {
     expect(song[0]?.lines).toHaveLength(4);
     expect(song[1]?.lines).toHaveLength(4);
     expect(structure).toEqual(['Verse 1', 'Chorus']);
+    expect(generateContentWithRetry).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(generateContentWithRetry).mock.calls[0]?.[0].contents).toContain('Première ligne');
+    expect(vi.mocked(generateContentWithRetry).mock.calls[0]?.[0].contents).not.toContain('Refrain un');
+    expect(vi.mocked(generateContentWithRetry).mock.calls[1]?.[0].contents).toContain('Refrain un');
+    expect(result.current.importProgress).toEqual({ current: 0, total: 0, currentLabel: '' });
   });
 
   it('surfaces a language mismatch without auto-updating the current song language', async () => {
@@ -107,8 +115,11 @@ describe('usePasteImport', () => {
       currentSongLanguage: 'English',
     };
     vi.mocked(generateContentWithRetry)
-      .mockResolvedValueOnce(makeResponse({ language: 'French' }))
-      .mockResolvedValueOnce({ text: 'French' });
+      .mockResolvedValueOnce(makeSectionResponse({ lines: [
+        { text: 'Je marche encore', rhymingSyllables: 'ore', rhyme: 'A', syllables: 4, concept: 'marche' },
+        { text: 'Sous la pluie', rhymingSyllables: 'uie', rhyme: 'A', syllables: 3, concept: 'pluie' },
+      ] }))
+      .mockResolvedValueOnce(makeMetadataResponse({ language: 'French' }));
 
     const { result } = renderHook(() => usePasteImport(params));
 
@@ -121,6 +132,7 @@ describe('usePasteImport', () => {
     });
 
     expect(params.onLanguageMismatch).toHaveBeenCalledWith('French');
+    expect(generateContentWithRetry).toHaveBeenCalledTimes(2);
   });
 
   it('ignores an empty import without throwing or changing state', async () => {
@@ -169,26 +181,22 @@ describe('usePasteImport', () => {
 
   it('preserves existing markup-based sections without duplicating their tags as lyric lines', async () => {
     const params = createParams();
-    vi.mocked(generateContentWithRetry).mockResolvedValue(makeResponse({
-      sections: [
-        {
-          name: 'Verse',
-          rhymeScheme: 'AABB',
-          lines: [
-            { text: 'Sous les néons on avance', rhymingSyllables: 'ance', rhyme: 'A', syllables: 6, concept: 'marche' },
-            { text: 'La ville entière est immense', rhymingSyllables: 'ense', rhyme: 'A', syllables: 6, concept: 'ville' },
-          ],
-        },
-        {
-          name: 'Chorus',
-          rhymeScheme: 'AABB',
-          lines: [
-            { text: 'Nos voix se répondent', rhymingSyllables: 'onde', rhyme: 'B', syllables: 5, concept: 'voix' },
-            { text: 'Les ombres nous inondent', rhymingSyllables: 'onde', rhyme: 'B', syllables: 5, concept: 'ombre' },
-          ],
-        },
-      ],
-    }));
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeSectionResponse({
+        name: 'Verse',
+        lines: [
+          { text: 'Sous les néons on avance', rhymingSyllables: 'ance', rhyme: 'A', syllables: 6, concept: 'marche' },
+          { text: 'La ville entière est immense', rhymingSyllables: 'ense', rhyme: 'A', syllables: 6, concept: 'ville' },
+        ],
+      }))
+      .mockResolvedValueOnce(makeSectionResponse({
+        name: 'Chorus',
+        lines: [
+          { text: 'Nos voix se répondent', rhymingSyllables: 'onde', rhyme: 'B', syllables: 5, concept: 'voix' },
+          { text: 'Les ombres nous inondent', rhymingSyllables: 'onde', rhyme: 'B', syllables: 5, concept: 'ombre' },
+        ],
+      }))
+      .mockResolvedValueOnce(makeMetadataResponse());
 
     const { result } = renderHook(() => usePasteImport(params));
 
@@ -205,5 +213,7 @@ describe('usePasteImport', () => {
     expect(importedTexts).not.toContain('[Couplet]');
     expect(importedTexts).not.toContain('[Refrain]');
     expect(song.map((section: Section) => section.name)).toEqual(['Verse', 'Chorus']);
+    expect(vi.mocked(generateContentWithRetry).mock.calls[0]?.[0].contents).toContain('Source section label: Couplet');
+    expect(vi.mocked(generateContentWithRetry).mock.calls[1]?.[0].contents).toContain('Source section label: Refrain');
   });
 });
