@@ -286,8 +286,25 @@ const pt: Translations = {
       dismissNavigation: 'Fecha definições, sobre, similaridade ou os painéis móveis.',
       dismissFileDialogs: 'Fecha as janelas de importação, exportação, versões ou biblioteca.',
       dismissAiDialogs: 'Fecha prompts de IA, alertas da API, análises ou a janela de importação por colagem.',
+      openSearch: 'Abrir o painel de busca e substituição.',
     },
   },
+
+  searchReplace: {
+    title: 'Buscar & Substituir',
+    searchPlaceholder: 'Buscar…',
+    replacePlaceholder: 'Substituir por…',
+    matchCount: '{current} de {total}',
+    matchCountNone: 'Sem correspondências',
+    previous: 'Anterior',
+    next: 'Próximo',
+    replace: 'Substituir',
+    replaceAll: 'Substituir tudo',
+    caseSensitive: 'Diferenciar maiúsculas',
+    close: 'Fechar',
+    replacedCount: '{count} substituição(es) realizada(s)',
+  },
+
   about: {
     description: 'Um editor de letras com IA de nível profissional para compositores e poetas. Crie sua obra-prima com sugestões em tempo real, gerenciamento de estrutura e quantização inteligente.',
     engine: 'Google Gemini',
@@ -387,6 +404,7 @@ const pt: Translations = {
     generateTitle: 'Gerar título a partir da letra',
     aiGeneratedTitle: 'Título gerado por IA',
     userEnteredTitle: 'Título inserido pelo utilizador',
+    openSearch: 'Buscar e substituir nas letras (Ctrl+F)',
   },
 
   sections: {

@@ -292,8 +292,25 @@ const ko: Translations = {
       dismissNavigation: '설정, 정보, 유사도 또는 모바일 측면 패널을 닫습니다.',
       dismissFileDialogs: '가져오기, 내보내기, 버전 또는 라이브러리 대화상자를 닫습니다.',
       dismissAiDialogs: 'AI 프롬프트, API 알림, 분석 또는 붙여넣은 가사 가져오기 대화상자를 닫습니다.',
+      openSearch: '검색 및 교체 패널 열기.',
     },
   },
+
+  searchReplace: {
+    title: '검색 & 교체',
+    searchPlaceholder: '검색…',
+    replacePlaceholder: '교체할 텍스트…',
+    matchCount: '{total} 중 {current}',
+    matchCountNone: '일치 없음',
+    previous: '이전',
+    next: '다음',
+    replace: '교체',
+    replaceAll: '모두 교체',
+    caseSensitive: '대소문자 구분',
+    close: '닫기',
+    replacedCount: '{count}개 교체됨',
+  },
+
   about: {
     ...en.about,
     description: '송라이터와 시인을 위한 전문가급 AI 가사 편집기입니다. 실시간 제안, 구조 관리, 지능형 음절 보정으로 작품을 완성하세요.',
@@ -393,6 +410,7 @@ const ko: Translations = {
     generateTitle: '가사에서 제목 생성',
     aiGeneratedTitle: 'AI 생성 제목',
     userEnteredTitle: '사용자 입력 제목',
+    openSearch: '가사 내 검색 및 교체 (Ctrl+F)',
   },
   sections: {
     ...en.sections,

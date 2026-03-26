@@ -301,7 +301,23 @@ export interface Translations {
       dismissNavigation: string;
       dismissFileDialogs: string;
       dismissAiDialogs: string;
+      openSearch: string;
     };
+  };
+
+  searchReplace: {
+    title: string;
+    searchPlaceholder: string;
+    replacePlaceholder: string;
+    matchCount: string;
+    matchCountNone: string;
+    previous: string;
+    next: string;
+    replace: string;
+    replaceAll: string;
+    caseSensitive: string;
+    close: string;
+    replacedCount: string;
   };
 
   about: {
@@ -411,6 +427,7 @@ export interface Translations {
     generateTitle: string;
     aiGeneratedTitle: string;
     userEnteredTitle: string;
+    openSearch: string;
   };
 
   sections: {

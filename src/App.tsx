@@ -93,6 +93,7 @@ function AppInnerContent() {
     confirmModal, setConfirmModal, promptModal, setPromptModal,
     isPasteModalOpen, setIsPasteModalOpen,
     isAnalysisModalOpen, setIsAnalysisModalOpen,
+    isSearchReplaceOpen, setIsSearchReplaceOpen,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated,
     hasApiKey, importInputRef, markupTextareaRef,
   } = appState;
@@ -247,6 +248,7 @@ function AppInnerContent() {
     handleOpenSettings,
     handleOpenAbout,
     handleOpenKeyboardShortcuts,
+    handleOpenSearch,
     handleSectionTargetLanguageChange,
   } = useModalHandlers({
     setIsPasteModalOpen,
@@ -255,6 +257,7 @@ function AppInnerContent() {
     setIsSettingsOpen,
     setIsAboutOpen,
     setIsKeyboardShortcutsModalOpen,
+    setIsSearchReplaceOpen,
     setSectionTargetLanguages,
   });
 
@@ -285,12 +288,12 @@ function AppInnerContent() {
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
     setIsResetModalOpen, setIsKeyboardShortcutsModalOpen, setConfirmModal, setPromptModal,
-    setIsPasteModalOpen, setIsAnalysisModalOpen, setEditMode,
+    setIsPasteModalOpen, setIsAnalysisModalOpen, setIsSearchReplaceOpen, setEditMode,
     isAboutOpen, isSettingsOpen, apiErrorModal,
     isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
     isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
     isResetModalOpen, isKeyboardShortcutsModalOpen, confirmModal, promptModal,
-    isPasteModalOpen, isAnalysisModalOpen,
+    isPasteModalOpen, isAnalysisModalOpen, isSearchReplaceOpen,
     activeTab, setActiveTab, isStructureOpen, setIsStructureOpen,
     isLeftPanelOpen, setIsLeftPanelOpen,
     editMode, markupText, setMarkupText,
@@ -359,6 +362,7 @@ function AppInnerContent() {
                 onOpenSettingsClick={handleOpenSettings}
                 onOpenAboutClick={handleOpenAbout}
                 onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
+                onOpenSearchClick={handleOpenSearch}
                 canPasteLyrics={canPasteLyrics}
                 onPasteLyrics={handleOpenPasteModal}
                 isAnalyzing={isAnalyzing}

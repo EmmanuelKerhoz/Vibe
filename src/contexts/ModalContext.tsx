@@ -19,6 +19,7 @@ export interface UIStateBag {
   setPromptModal: (v: { open: boolean; onConfirm: (value: string) => void } | null) => void;
   setIsPasteModalOpen: (v: boolean) => void;
   setIsAnalysisModalOpen: (v: boolean) => void;
+  setIsSearchReplaceOpen: (v: boolean) => void;
   setEditMode: (v: EditMode) => void;
   isAboutOpen: boolean;
   isSettingsOpen: boolean;
@@ -35,6 +36,7 @@ export interface UIStateBag {
   promptModal: { open: boolean; onConfirm: (value: string) => void } | null;
   isPasteModalOpen: boolean;
   isAnalysisModalOpen: boolean;
+  isSearchReplaceOpen: boolean;
   activeTab: 'lyrics' | 'musical';
   setActiveTab: (v: 'lyrics' | 'musical') => void;
   isStructureOpen: boolean;
@@ -54,7 +56,8 @@ export interface UIStateBag {
 export type ModalName =
   | 'about' | 'settings' | 'apiError' | 'import' | 'export'
   | 'sectionDropdown' | 'similarity' | 'saveToLibrary'
-  | 'versions' | 'reset' | 'keyboardShortcuts' | 'confirm' | 'prompt' | 'paste' | 'analysis';
+  | 'versions' | 'reset' | 'keyboardShortcuts' | 'confirm' | 'prompt' | 'paste' | 'analysis'
+  | 'searchReplace';
 
 // ── Context value type ────────────────────────────────────────────────────────
 export interface ModalContextValue {
@@ -88,6 +91,7 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
       case 'keyboardShortcuts': uiState.setIsKeyboardShortcutsModalOpen(true); break;
       case 'paste':           uiState.setIsPasteModalOpen(true); break;
       case 'analysis':        uiState.setIsAnalysisModalOpen(true); break;
+      case 'searchReplace':   uiState.setIsSearchReplaceOpen(true); break;
       case 'apiError': {
         const msg = typeof payload === 'string' ? payload : '';
         uiState.setApiErrorModal({ open: true, message: msg });
@@ -120,6 +124,7 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
       case 'keyboardShortcuts': uiState.setIsKeyboardShortcutsModalOpen(false); break;
       case 'paste':           uiState.setIsPasteModalOpen(false); break;
       case 'analysis':        uiState.setIsAnalysisModalOpen(false); break;
+      case 'searchReplace':   uiState.setIsSearchReplaceOpen(false); break;
       case 'apiError':        uiState.setApiErrorModal({ open: false, message: '' }); break;
       case 'confirm':         uiState.setConfirmModal(null); break;
       case 'prompt':          uiState.setPromptModal(null); break;

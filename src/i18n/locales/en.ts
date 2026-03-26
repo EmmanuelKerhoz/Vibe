@@ -289,7 +289,23 @@ const en: Translations = {
       dismissNavigation: 'Close the settings, about, similarity, or mobile side panels.',
       dismissFileDialogs: 'Close the import, export, versions, or library dialogs.',
       dismissAiDialogs: 'Close AI prompts, API alerts, analysis, or pasted-lyrics import dialogs.',
+      openSearch: 'Open the search & replace panel.',
     },
+  },
+
+  searchReplace: {
+    title: 'Search & Replace',
+    searchPlaceholder: 'Search…',
+    replacePlaceholder: 'Replace with…',
+    matchCount: '{current} of {total}',
+    matchCountNone: 'No matches',
+    previous: 'Previous',
+    next: 'Next',
+    replace: 'Replace',
+    replaceAll: 'Replace All',
+    caseSensitive: 'Case sensitive',
+    close: 'Close',
+    replacedCount: '{count} replacement(s) made',
   },
 
   about: {
@@ -396,6 +412,7 @@ const en: Translations = {
     generateTitle: 'Generate title from lyrics',
     aiGeneratedTitle: 'AI-generated title',
     userEnteredTitle: 'User-entered title',
+    openSearch: 'Search & replace in lyrics (Ctrl+F)',
   },
 
   sections: {

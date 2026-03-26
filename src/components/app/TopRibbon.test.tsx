@@ -55,6 +55,7 @@ describe('TopRibbon burger menu', () => {
           onOpenSettingsClick={onOpenSettingsClick}
           onOpenAboutClick={onOpenAboutClick}
           onOpenKeyboardShortcutsClick={onOpenKeyboardShortcutsClick}
+          onOpenSearchClick={() => {}}
           isAnalyzing={false}
         />
       </LanguageProvider>,
@@ -122,6 +123,7 @@ describe('TopRibbon burger menu', () => {
           onOpenSettingsClick={() => {}}
           onOpenAboutClick={() => {}}
           onOpenKeyboardShortcutsClick={() => {}}
+          onOpenSearchClick={() => {}}
           isAnalyzing={false}
         />
       </LanguageProvider>,
@@ -158,6 +160,7 @@ describe('TopRibbon burger menu', () => {
           onOpenSettingsClick={() => {}}
           onOpenAboutClick={() => {}}
           onOpenKeyboardShortcutsClick={() => {}}
+          onOpenSearchClick={() => {}}
           isAnalyzing={false}
         />
       </LanguageProvider>,

@@ -286,8 +286,25 @@ const de: Translations = {
       dismissNavigation: 'Schließt Einstellungen, Info, Ähnlichkeit oder mobile Seitenleisten.',
       dismissFileDialogs: 'Schließt Import-, Export-, Versions- oder Bibliotheksdialoge.',
       dismissAiDialogs: 'Schließt KI-Prompts, API-Warnungen, Analysen oder Dialoge zum Einfügen von Texten.',
+      openSearch: 'Suchen-&-Ersetzen-Bereich öffnen.',
     },
   },
+
+  searchReplace: {
+    title: 'Suchen & Ersetzen',
+    searchPlaceholder: 'Suchen…',
+    replacePlaceholder: 'Ersetzen durch…',
+    matchCount: '{current} von {total}',
+    matchCountNone: 'Keine Treffer',
+    previous: 'Vorheriger',
+    next: 'Nächster',
+    replace: 'Ersetzen',
+    replaceAll: 'Alle ersetzen',
+    caseSensitive: 'Groß-/Kleinschreibung',
+    close: 'Schließen',
+    replacedCount: '{count} Ersetzung(en) durchgeführt',
+  },
+
   about: {
     description: 'Ein professioneller KI-Liedtexteditor für Songwriter und Dichter. Erschaffe dein Meisterwerk mit Echtzeit-Vorschlägen, Strukturverwaltung und intelligenter Quantisierung.',
     engine: 'Google Gemini',
@@ -387,6 +404,7 @@ const de: Translations = {
     generateTitle: 'Titel aus Liedtext generieren',
     aiGeneratedTitle: 'KI-generierter Titel',
     userEnteredTitle: 'Vom Benutzer eingegebener Titel',
+    openSearch: 'Suche & Ersetzen in Liedtexten (Ctrl+F)',
   },
 
   sections: {
