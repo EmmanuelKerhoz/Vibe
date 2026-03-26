@@ -46,6 +46,7 @@ const EMPTY_PROGRESS: PasteImportProgress = {
   total: 0,
   currentLabel: '',
 };
+const MAX_METADATA_PROMPT_LENGTH = 6000;
 
 const SECTION_RESPONSE_SCHEMA = {
   type: Type.OBJECT,
@@ -207,7 +208,7 @@ const buildMetadataPrompt = (text: string, uiLang: string): string => `Analyze t
 Use only the provided lyrics. Do not generate new content.
 
 Lyrics:
-${text.substring(0, 6000)}`;
+${text.substring(0, MAX_METADATA_PROMPT_LENGTH)}`;
 
 export const usePasteImport = ({
   rhymeScheme,
