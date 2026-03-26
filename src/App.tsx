@@ -472,7 +472,6 @@ function AppInnerContent() {
             defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
             showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
             hasExistingWork={hasExistingWork}
-            canPasteLyrics={canPasteLyrics}
             handleImportChooseFile={handleImportChooseFile}
             onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
             handleImportInputChange={handleImportInputChange}

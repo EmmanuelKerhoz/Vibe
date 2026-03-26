@@ -6,14 +6,13 @@ import { Button } from '../../ui/Button';
 interface Props {
   isOpen: boolean;
   hasExistingWork: boolean;
-  canPasteLyrics: boolean;
   onClose: () => void;
   onOpenLibrary: () => void;
   onChooseFile: () => void;
   onPasteLyrics: () => void;
 }
 
-export function ImportModal({ isOpen, hasExistingWork, canPasteLyrics, onClose, onOpenLibrary, onChooseFile, onPasteLyrics }: Props) {
+export function ImportModal({ isOpen, hasExistingWork, onClose, onOpenLibrary, onChooseFile, onPasteLyrics }: Props) {
   const { t } = useTranslation();
 
   if (!isOpen) return null;
@@ -95,7 +94,7 @@ export function ImportModal({ isOpen, hasExistingWork, canPasteLyrics, onClose, 
             {t.saveToLibrary.title}
           </Button>
           <div className="flex items-center gap-3 flex-wrap justify-end">
-            <Button onClick={onPasteLyrics} disabled={!canPasteLyrics} variant="outlined" color="primary">
+            <Button onClick={onPasteLyrics} variant="outlined" color="primary">
               {t.editor.emptyState.pasteLyrics}
             </Button>
             <Button onClick={onChooseFile} variant="contained" color="primary">

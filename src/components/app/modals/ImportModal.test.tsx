@@ -15,7 +15,6 @@ describe('ImportModal', () => {
         <ImportModal
           isOpen
           hasExistingWork={false}
-          canPasteLyrics={true}
           onClose={() => {}}
           onOpenLibrary={onOpenLibrary}
           onChooseFile={onChooseFile}
@@ -33,13 +32,12 @@ describe('ImportModal', () => {
     expect(onChooseFile).toHaveBeenCalledTimes(1);
   });
 
-  it('disables the paste action when there is no text available to paste', () => {
+  it('always enables the paste action', () => {
     render(
       <LanguageProvider>
         <ImportModal
           isOpen
           hasExistingWork={false}
-          canPasteLyrics={false}
           onClose={() => {}}
           onOpenLibrary={() => {}}
           onChooseFile={() => {}}
@@ -48,6 +46,6 @@ describe('ImportModal', () => {
       </LanguageProvider>,
     );
 
-    expect((screen.getByRole('button', { name: 'Paste Lyrics' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Paste Lyrics' }) as HTMLButtonElement).disabled).toBe(false);
   });
 });

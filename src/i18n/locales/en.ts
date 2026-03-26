@@ -247,9 +247,9 @@ const en: Translations = {
   },
 
   importDialog: {
-    title: 'Load / Import lyrics',
+    title: 'Load lyrics',
     emptyDescription: 'Choose a .txt or .md file to analyze and import into the editor.',
-    replaceDescription: 'Choose a .txt or .md file to import. The imported lyrics will replace the current lyrics, structure, and analysis context.',
+    replaceDescription: 'The imported lyrics will replace the current lyrics, structure, and analysis context.',
     warning: 'Your current work will be lost once the imported file is analyzed.',
     supportedFiles: 'Supports TXT, Markup, ODT, DOCX, or pasted lyrics',
     cancel: 'Cancel',

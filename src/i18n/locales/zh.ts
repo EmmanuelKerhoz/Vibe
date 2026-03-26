@@ -245,9 +245,9 @@ const zh: Translations = {
 
 
   importDialog: {
-    title: '导入歌词文件',
+    title: '加载歌词',
     emptyDescription: '选择一个 .txt 或 .md 文件进行分析并导入编辑器。',
-    replaceDescription: '选择一个 .txt 或 .md 文件进行导入。导入的歌词将替换当前的歌词、结构和分析上下文。',
+    replaceDescription: '导入的歌词将替换当前的歌词、结构和分析上下文。',
     warning: '导入文件一旦分析，您当前的工作将会丢失。',
     supportedFiles: '支持 TXT、Markup、ODT、DOCX 或粘贴歌词',
     cancel: '取消',
