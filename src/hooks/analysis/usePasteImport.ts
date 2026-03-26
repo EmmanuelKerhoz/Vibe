@@ -332,7 +332,10 @@ export const usePasteImport = ({
               lines: section.lines ?? [],
             });
           } catch (sectionError) {
-            if (isAbortError(sectionError)) { wasAborted = true; return; }
+            if (isAbortError(sectionError)) {
+              wasAborted = true;
+              return;
+            }
             console.warn(`Paste import: section "${chunk.displayLabel}" failed after retries, skipping.`, sectionError);
           }
         }
