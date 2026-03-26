@@ -6,7 +6,6 @@ import { Button } from '../../ui/Button';
 interface Props {
   isOpen: boolean;
   hasExistingWork: boolean;
-  canPasteLyrics: boolean;
   onClose: () => void;
   onOpenLibrary: () => void;
   onChooseFile: () => void;
