@@ -52,8 +52,11 @@ const alignGeneratedSongToStructure = (
   });
 };
 
+/** Raw line shape returned by the AI generator (before ID assignment). */
+type RawLine = Omit<Section['lines'][number], 'id'> & { id?: string };
+
 /** Flags isMeta on lines returned by the AI generator */
-const flagMetaLines = (lines: any[]): any[] =>
+const flagMetaLines = <T extends { text?: string }>(lines: T[]): (T & { isMeta: boolean })[] =>
   lines.map(line => ({
     ...line,
     isMeta: isPureMetaLine(line.text ?? ''),
@@ -171,7 +174,8 @@ export const useAiGeneration = ({
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    return () => { abortControllerRef.current?.abort(); };
+    const ref = abortControllerRef;
+    return () => { ref.current?.abort(); };
   }, []);
 
   const isRegeneratingSection = useCallback(
@@ -221,20 +225,20 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           })
         );
 
-        const data = safeJsonParse(response.text || '[]', []);
-        const songWithIds = data.map((section: any) => ({
+        const data = safeJsonParse<Section[]>(response.text || '[]', []);
+        const songWithIds = data.map((section) => ({
           ...section,
           name: cleanSectionName(section.name),
           id: generateId(),
           rhymeScheme: section.rhymeScheme || rhymeScheme,
-          lines: flagMetaLines(section.lines).map((line: any) => ({ ...line, id: generateId() })),
+          lines: flagMetaLines(section.lines).map((line) => ({ ...line, id: generateId() })),
         }));
         const orderedSong = alignGeneratedSongToStructure(songWithIds, structure, rhymeScheme);
         updateSongAndStructureWithHistory(orderedSong, structure);
         requestAutoTitleGeneration();
         setSelectedLineId(null);
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isAbortError(error)) return;
       handleApiError(error, 'Failed to generate song. Please try again.');
     } finally {
@@ -353,7 +357,7 @@ Return the updated section in the exact same JSON structure (as an array with on
           );
         }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isAbortError(error)) return;
       handleApiError(error, 'Failed to regenerate section. Please try again.');
     } finally {
@@ -439,7 +443,7 @@ Return the updated song in the exact same JSON structure.`;
           updateSongWithHistory(reflagged);
         }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isAbortError(error)) return;
       handleApiError(error, 'Failed to quantize syllables. Please try again.');
     } finally {

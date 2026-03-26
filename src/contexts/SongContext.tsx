@@ -1,4 +1,4 @@
-import React, { createContext, useContext, type ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { DEFAULT_RHYME_SCHEME, DEFAULT_STRUCTURE } from '../constants/editor';
 import { useSongHistoryState } from '../hooks/useSongHistoryState';
 import { useSongMeta } from '../hooks/useSongMeta';
@@ -15,8 +15,13 @@ export function SongProvider({ children }: { children: ReactNode }) {
   );
   const meta = useSongMeta();
 
+  const value = useMemo<SongContextValue>(
+    () => ({ ...history, ...meta }),
+    [history, meta],
+  );
+
   return (
-    <SongContext.Provider value={{ ...history, ...meta }}>
+    <SongContext.Provider value={value}>
       {children}
     </SongContext.Provider>
   );

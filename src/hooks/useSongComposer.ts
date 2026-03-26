@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Section } from '../types';
 import { useAiGeneration } from './composer/useAiGeneration';
 import { useSuggestions } from './composer/useSuggestions';
@@ -127,7 +127,7 @@ export const useSongComposer = ({
       setNarrative,
     });
 
-  return {
+  return useMemo(() => ({
     isGenerating,
     isRegeneratingSection,
     isGeneratingMusicalPrompt,
@@ -150,5 +150,12 @@ export const useSongComposer = ({
     addInstruction,
     removeInstruction,
     clearSelection,
-  };
+  }), [
+    isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
+    selectedLineId, setSelectedLineId, suggestions, isSuggesting,
+    generateSong, regenerateSection, quantizeSyllables, generateSuggestions,
+    updateLineText, handleLineKeyDown, applySuggestion,
+    generateMusicalPrompt, analyzeLyricsForMusic,
+    handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
+  ]);
 };

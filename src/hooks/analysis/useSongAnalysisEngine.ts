@@ -156,7 +156,7 @@ export const useSongAnalysisEngine = ({
           return;
         }
 
-        const newSongData = safeJsonParse<any[]>(response.text || '[]', []);
+        const newSongData = safeJsonParse<Section[]>(response.text || '[]', []);
         if (newSongData.length > 0) {
           const updatedSong = mapSongWithPreservedIds(newSongData, song);
           updateSongAndStructureWithHistory(updatedSong, updatedSong.map(s => s.name));
@@ -212,7 +212,7 @@ export const useSongAnalysisEngine = ({
           return;
         }
 
-        const newSongData = safeJsonParse<any[]>(response.text || '[]', []);
+        const newSongData = safeJsonParse<Section[]>(response.text || '[]', []);
         if (newSongData.length > 0) {
           const updatedSong = mapSongWithPreservedIds(newSongData, song);
           updateSongAndStructureWithHistory(updatedSong, updatedSong.map(s => s.name));

@@ -37,7 +37,7 @@ export function MusicalPromptBuilder({
     navigator.clipboard.writeText(musicalPrompt).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    }).catch(() => { /* clipboard write failed — silently ignore */ });
   }, [musicalPrompt]);
 
   return (
