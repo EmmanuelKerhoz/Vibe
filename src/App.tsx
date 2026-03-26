@@ -31,7 +31,7 @@ import { LyricsView } from './components/app/LyricsView';
 import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
-import { SongProvider, useSongContext } from './contexts/SongContext';
+import { SongHistoryProvider, SongMetaProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
 // Heavy leaf components: lazy-loaded to reduce initial bundle.
@@ -531,11 +531,13 @@ function AppInnerContent() {
 function AppInner() {
   return (
     <DragProvider>
-      <SongProvider>
-        <ComposerProvider>
-          <AppInnerContent />
-        </ComposerProvider>
-      </SongProvider>
+      <SongHistoryProvider>
+        <SongMetaProvider>
+          <ComposerProvider>
+            <AppInnerContent />
+          </ComposerProvider>
+        </SongMetaProvider>
+      </SongHistoryProvider>
     </DragProvider>
   );
 }
