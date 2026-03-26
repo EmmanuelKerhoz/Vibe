@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Section } from '../types';
 import { generateId } from '../utils/idUtils';
 import { isPureMetaLine } from '../utils/metaUtils';
@@ -176,11 +176,20 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     });
   }, []);
 
-  return {
+  const history = useMemo(
+    () => [...state.past, { song: state.song, structure: state.structure }, ...state.future],
+    [state.future, state.past, state.song, state.structure],
+  );
+
+  return useMemo(() => ({
     song: state.song,
     structure: state.structure,
     past: state.past,
     future: state.future,
+    canUndo: state.past.length > 0,
+    canRedo: state.future.length > 0,
+    historyIndex: state.past.length,
+    history,
     updateState,
     updateSongWithHistory,
     updateStructureWithHistory,
@@ -189,5 +198,19 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     clearHistory,
     undo,
     redo,
-  };
+  }), [
+    clearHistory,
+    history,
+    redo,
+    replaceStateWithoutHistory,
+    state.future,
+    state.past,
+    state.song,
+    state.structure,
+    undo,
+    updateSongAndStructureWithHistory,
+    updateSongWithHistory,
+    updateState,
+    updateStructureWithHistory,
+  ]);
 };
