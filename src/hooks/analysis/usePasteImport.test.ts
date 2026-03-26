@@ -48,6 +48,7 @@ const createParams = () => ({
   setMood: vi.fn(),
   currentSongLanguage: '',
   onLanguageMismatch: vi.fn(),
+  onDetectedLanguage: vi.fn(),
   requestAutoTitleGeneration: vi.fn(),
   clearLineSelection: vi.fn(),
   setIsAnalyzing: vi.fn(),
@@ -215,5 +216,77 @@ describe('usePasteImport', () => {
     expect(song.map((section: Section) => section.name)).toEqual(['Verse', 'Chorus']);
     expect(vi.mocked(generateContentWithRetry).mock.calls[0]?.[0].contents).toContain('Source section label: Couplet');
     expect(vi.mocked(generateContentWithRetry).mock.calls[1]?.[0].contents).toContain('Source section label: Refrain');
+  });
+
+  it('calls onDetectedLanguage with detected language and section IDs after import', async () => {
+    const params = createParams();
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeSectionResponse())
+      .mockResolvedValueOnce(makeMetadataResponse({ language: 'French' }));
+
+    const { result } = renderHook(() => usePasteImport(params));
+
+    act(() => {
+      result.current.setPastedText('Première ligne\nDeuxième ligne\nTroisième ligne\nQuatrième ligne');
+    });
+
+    await act(async () => {
+      await result.current.analyzePastedLyrics();
+    });
+
+    expect(params.onDetectedLanguage).toHaveBeenCalledTimes(1);
+    const [language, sectionIds] = vi.mocked(params.onDetectedLanguage).mock.calls[0]!;
+    expect(language).toBe('French');
+    expect(sectionIds).toHaveLength(1);
+    expect(typeof sectionIds[0]).toBe('string');
+  });
+
+  it('sets section.language on imported sections when language is detected', async () => {
+    const params = createParams();
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeSectionResponse())
+      .mockResolvedValueOnce(makeMetadataResponse({ language: 'French' }));
+
+    const { result } = renderHook(() => usePasteImport(params));
+
+    act(() => {
+      result.current.setPastedText('Première ligne\nDeuxième ligne\nTroisième ligne\nQuatrième ligne');
+    });
+
+    await act(async () => {
+      await result.current.analyzePastedLyrics();
+    });
+
+    const [song] = vi.mocked(params.updateSongAndStructureWithHistory).mock.calls[0]!;
+    expect(song[0]?.language).toBe('French');
+  });
+
+  it('derives rhyme scheme from per-line AI labels when section scheme is FREE', async () => {
+    const params = createParams();
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeSectionResponse({
+        name: 'Chorus',
+        rhymeScheme: 'FREE',
+        lines: [
+          { text: 'Tu veux un amour vrai ?', rhymingSyllables: 'ai', rhyme: 'A', syllables: 6, concept: 'amour' },
+          { text: 'Sans cadenas ni piège', rhymingSyllables: 'ège', rhyme: 'B', syllables: 5, concept: 'liberté' },
+          { text: 'Aime sans facture ni deal', rhymingSyllables: 'al', rhyme: 'A', syllables: 6, concept: 'gratuité' },
+          { text: 'Sans mur ni sans siège', rhymingSyllables: 'ège', rhyme: 'B', syllables: 5, concept: 'espace' },
+        ],
+      }))
+      .mockResolvedValueOnce(makeMetadataResponse({ language: 'French' }));
+
+    const { result } = renderHook(() => usePasteImport(params));
+
+    act(() => {
+      result.current.setPastedText('Tu veux un amour vrai ?\nSans cadenas ni piège\nAime sans facture ni deal\nSans mur ni sans siège');
+    });
+
+    await act(async () => {
+      await result.current.analyzePastedLyrics();
+    });
+
+    const [song] = vi.mocked(params.updateSongAndStructureWithHistory).mock.calls[0]!;
+    expect(song[0]?.rhymeScheme).toBe('ABAB');
   });
 });

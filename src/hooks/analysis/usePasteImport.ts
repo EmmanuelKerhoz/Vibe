@@ -20,6 +20,7 @@ type UsePasteImportParams = {
   setMood: (value: string) => void;
   currentSongLanguage?: string;
   onLanguageMismatch?: (lang: string) => void;
+  onDetectedLanguage?: (language: string, sectionIds: string[]) => void;
   requestAutoTitleGeneration: () => void;
   clearLineSelection: () => void;
   setIsAnalyzing: (value: boolean) => void;
@@ -218,6 +219,7 @@ export const usePasteImport = ({
   setMood,
   currentSongLanguage = '',
   onLanguageMismatch,
+  onDetectedLanguage,
   requestAutoTitleGeneration,
   clearLineSelection,
   setIsAnalyzing,
@@ -408,10 +410,23 @@ export const usePasteImport = ({
 
           let finalScheme: string = section.rhymeScheme || rhymeScheme;
           if (finalScheme.toUpperCase() === 'FREE') {
-            const lyricTexts = lines.filter(l => !l.isMeta).map(l => l.text);
-            const detected = detectRhymeSchemeLocally(lyricTexts);
-            if (detected && detected.toUpperCase() !== 'FREE') {
-              finalScheme = detected;
+            // Derive scheme from per-line AI rhyme labels when available
+            const lyricLines = lines.filter(l => !l.isMeta);
+            const aiLabels = lyricLines.map(l => (l.rhyme || '').toUpperCase());
+            const labelCounts: Record<string, number> = {};
+            for (const label of aiLabels) {
+              if (label && label !== 'X') labelCounts[label] = (labelCounts[label] ?? 0) + 1;
+            }
+            const hasAiRhymes = Object.values(labelCounts).some(count => count >= 2);
+            if (hasAiRhymes) {
+              finalScheme = aiLabels.map(l => (l && l !== 'X') ? l : 'X').join('');
+            } else {
+              // Fall back to local graphemic detection
+              const lyricTexts = lyricLines.map(l => l.text);
+              const detected = detectRhymeSchemeLocally(lyricTexts);
+              if (detected && detected.toUpperCase() !== 'FREE') {
+                finalScheme = detected;
+              }
             }
           }
 
@@ -421,11 +436,16 @@ export const usePasteImport = ({
             id: generateId(),
             rhymeScheme: finalScheme,
             lines,
+            ...(detectedLanguage ? { language: detectedLanguage } : {}),
           };
         });
 
         const newStructure = sections.map((s) => cleanSectionName(s.name));
         updateSongAndStructureWithHistory(songWithIds, newStructure);
+
+        if (detectedLanguage) {
+          onDetectedLanguage?.(detectedLanguage, songWithIds.map(s => s.id));
+        }
 
         requestAutoTitleGeneration();
         clearLineSelection();

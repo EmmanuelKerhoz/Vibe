@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { RefObject } from 'react';
 import type { Section } from '../types';
 import { usePasteImport } from './analysis/usePasteImport';
@@ -68,6 +68,15 @@ export const useSongAnalysis = ({
     setLineLanguages,
   });
 
+  const handleDetectedLanguage = useCallback((language: string, sectionIds: string[]) => {
+    languageAdapter.setSongLanguage(language);
+    const mapping: Record<string, string> = {};
+    for (const id of sectionIds) {
+      mapping[id] = language;
+    }
+    languageAdapter.setSectionTargetLanguages(prev => ({ ...prev, ...mapping }));
+  }, [languageAdapter]);
+
   const pasteImport = usePasteImport({
     rhymeScheme,
     uiLanguage,
@@ -76,6 +85,7 @@ export const useSongAnalysis = ({
     setMood,
     currentSongLanguage: languageAdapter.songLanguage,
     onLanguageMismatch: languageAdapter.setTargetLanguage,
+    onDetectedLanguage: handleDetectedLanguage,
     requestAutoTitleGeneration,
     clearLineSelection,
     setIsAnalyzing,
