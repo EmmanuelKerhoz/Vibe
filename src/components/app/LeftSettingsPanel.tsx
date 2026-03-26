@@ -340,7 +340,7 @@ function PanelContent({
               variant="outlined" color="primary" fullWidth
               className="ux-interactive"
               startIcon={primaryActionIcon}
-              style={{ fontSize: '11px', padding: '8px 0', borderRadius: '10px 3px 10px 3px' }}
+              style={{ fontSize: '10px', padding: '4px 0', borderRadius: '10px 3px 10px 3px' }}
             >
               {primaryActionLabel}
             </Button>

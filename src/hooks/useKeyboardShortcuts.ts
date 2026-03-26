@@ -9,7 +9,8 @@ export type KeyboardShortcutId =
   | 'dismissReset'
   | 'dismissNavigation'
   | 'dismissFileDialogs'
-  | 'dismissAiDialogs';
+  | 'dismissAiDialogs'
+  | 'openSearch';
 
 export type KeyboardShortcutModifier = 'ctrlOrMeta' | 'shift' | 'alt';
 
@@ -55,6 +56,11 @@ export const KEYBOARD_SHORTCUTS_METADATA: readonly KeyboardShortcutMetadata[] = 
     category: 'ai',
     combos: [{ key: 'Escape', modifiers: [] }],
   },
+  {
+    id: 'openSearch',
+    category: 'edit',
+    combos: [{ key: 'f', modifiers: ['ctrlOrMeta'] }],
+  },
 ] as const;
 
 type UseKeyboardShortcutsParams = {
@@ -85,6 +91,7 @@ export const useKeyboardShortcuts = ({
     isImportModalOpen,
     isSettingsOpen,
     isAboutOpen,
+    isSearchReplaceOpen,
     setPromptModal,
     setConfirmModal,
     setApiErrorModal,
@@ -98,12 +105,14 @@ export const useKeyboardShortcuts = ({
     setIsImportModalOpen,
     setIsSettingsOpen,
     setIsAboutOpen,
+    setIsSearchReplaceOpen,
   } = uiState;
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
       if (e.key === 'Escape') {
+        if (isSearchReplaceOpen) { setIsSearchReplaceOpen(false); return; }
         if (promptModal?.open) { setPromptModal(null); return; }
         if (confirmModal?.open) { setConfirmModal(null); return; }
         if (apiErrorModal.open) { setApiErrorModal({ open: false, message: '' }); return; }
@@ -120,6 +129,11 @@ export const useKeyboardShortcuts = ({
         if (isMobileOrTablet) { closeMobilePanels(); return; }
         return;
       }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setIsSearchReplaceOpen(true);
+        return;
+      }
       if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
@@ -132,9 +146,11 @@ export const useKeyboardShortcuts = ({
     apiErrorModal.open, confirmModal, isAboutOpen, isAnalysisModalOpen, isExportModalOpen,
     isImportModalOpen, isMobileOrTablet, isPasteModalOpen, isResetModalOpen,
     isSaveToLibraryModalOpen, isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen,
+    isSearchReplaceOpen,
     promptModal, closeMobilePanels, redo, setApiErrorModal, setConfirmModal,
     setIsAboutOpen, setIsAnalysisModalOpen, setIsExportModalOpen, setIsImportModalOpen,
     setIsPasteModalOpen, setIsResetModalOpen, setIsSaveToLibraryModalOpen, setIsSettingsOpen,
     setIsSimilarityModalOpen, setIsVersionsModalOpen, setPromptModal, undo,
+    setIsSearchReplaceOpen,
   ]);
 };

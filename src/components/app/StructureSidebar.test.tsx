@@ -21,50 +21,24 @@ vi.mock('../../contexts/ComposerContext', () => ({
   }),
 }));
 
-describe('StructureSidebar section tooltips', () => {
-  it('shows explanations for supported section buttons in the right panel', () => {
-    render(
+function renderStructureSidebar({
+  addStructureItem = vi.fn(),
+  initialDropdownOpen = false,
+}: {
+  addStructureItem?: ReturnType<typeof vi.fn>;
+  initialDropdownOpen?: boolean;
+} = {}) {
+  function Wrapper() {
+    const [isSectionDropdownOpen, setIsSectionDropdownOpen] = React.useState(initialDropdownOpen);
+
+    return (
       <DragProvider>
         <LanguageProvider>
           <StructureSidebar
             isStructureOpen
             setIsStructureOpen={() => {}}
-            newSectionName=""
-            setNewSectionName={() => {}}
-            isSectionDropdownOpen
-            setIsSectionDropdownOpen={() => {}}
-            addStructureItem={vi.fn()}
-            removeStructureItem={vi.fn()}
-            normalizeStructure={vi.fn()}
-            handleDrop={vi.fn()}
-            onScrollToSection={vi.fn()}
-          />
-        </LanguageProvider>
-      </DragProvider>,
-    );
-
-    // Check that the section buttons have tooltip content as their accessible label
-    const turnaroundButtons = screen.getAllByRole('button', { name: /Courte transition/ });
-    expect(turnaroundButtons.length).toBeGreaterThan(0);
-    expect(turnaroundButtons.some(button => button.textContent === 'Turnaround')).toBe(true);
-
-    const interludeButtons = screen.getAllByRole('button', { name: /souvent instrumental/ });
-    expect(interludeButtons.length).toBeGreaterThan(0);
-  });
-
-  it('uses the updated right-panel controls and removes the extra generate button', () => {
-    const addStructureItem = vi.fn();
-
-    render(
-      <DragProvider>
-        <LanguageProvider>
-          <StructureSidebar
-            isStructureOpen
-            setIsStructureOpen={() => {}}
-            newSectionName=""
-            setNewSectionName={() => {}}
-            isSectionDropdownOpen={false}
-            setIsSectionDropdownOpen={() => {}}
+            isSectionDropdownOpen={isSectionDropdownOpen}
+            setIsSectionDropdownOpen={setIsSectionDropdownOpen}
             addStructureItem={addStructureItem}
             removeStructureItem={vi.fn()}
             normalizeStructure={vi.fn()}
@@ -72,14 +46,38 @@ describe('StructureSidebar section tooltips', () => {
             onScrollToSection={vi.fn()}
           />
         </LanguageProvider>
-      </DragProvider>,
+      </DragProvider>
     );
+  }
+
+  return render(<Wrapper />);
+}
+
+describe('StructureSidebar section tooltips', () => {
+  it('shows explanations for supported section buttons in the right panel', () => {
+    renderStructureSidebar({ initialDropdownOpen: true });
+
+    const turnaroundButton = screen.getByRole('button', { name: /Courte transition/ });
+    expect(turnaroundButton.textContent).toContain('Turnaround');
+
+    const interludeOption = screen.getByRole('option', { name: 'Interlude' });
+    expect(interludeOption.getAttribute('title')).toMatch(/souvent instrumental/);
+  });
+
+  it('uses the updated right-panel controls and removes the extra generate button', () => {
+    const addStructureItem = vi.fn();
+
+    renderStructureSidebar({ addStructureItem });
 
     expect(screen.queryByRole('button', { name: 'Generate Lyrics' })).toBeNull();
 
-    const addSectionButton = screen.getByRole('button', { name: 'Add section' });
-    fireEvent.click(addSectionButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Add section' }));
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'Verse' }));
+
+    expect(screen.queryAllByRole('button', { name: /^Add section$/ })).toHaveLength(1);
+    expect(screen.queryByRole('option', { name: 'Verse' })).toBeNull();
     expect(addStructureItem).toHaveBeenCalledTimes(1);
+    expect(addStructureItem).toHaveBeenCalledWith('Verse');
 
     const turnaroundButton = screen.getAllByRole('button', { name: /Courte transition/ })[0]!;
     expect(turnaroundButton.closest('div.group')?.className).toContain('rounded-[12px_4px_12px_4px]');

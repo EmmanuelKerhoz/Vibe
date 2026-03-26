@@ -286,8 +286,25 @@ const ar: Translations = {
       dismissNavigation: 'يغلق الإعدادات أو نافذة حول التطبيق أو نافذة التشابه أو الألواح الجانبية على الجوال.',
       dismissFileDialogs: 'يغلق نوافذ الاستيراد أو التصدير أو الإصدارات أو المكتبة.',
       dismissAiDialogs: 'يغلق مطالبات الذكاء الاصطناعي وتنبيهات API والتحليل أو نافذة استيراد الكلمات الملصقة.',
+      openSearch: 'فتح لوحة البحث والاستبدال.',
     },
   },
+
+  searchReplace: {
+    title: 'بحث واستبدال',
+    searchPlaceholder: 'بحث…',
+    replacePlaceholder: 'استبدال ب…',
+    matchCount: '{current} من {total}',
+    matchCountNone: 'لا توجد نتائج',
+    previous: 'السابق',
+    next: 'التالي',
+    replace: 'استبدال',
+    replaceAll: 'استبدال الكل',
+    caseSensitive: 'حساسية لحالة الأحرف',
+    close: 'إغلاق',
+    replacedCount: 'تم {count} استبدال(ات)',
+  },
+
   about: {
     description: 'محرر كلمات احترافي مدعوم بالذكاء الاصطناعي للملحنين والشعراء. اصنع تحفتك الفنية مع اقتراحات فورية وإدارة الهيكل وضبط ذكي للمقاطع.',
     engine: 'Google Gemini',
@@ -387,6 +404,7 @@ const ar: Translations = {
     generateTitle: 'توليد عنوان من كلمات الأغنية',
     aiGeneratedTitle: 'عنوان مُولَّد بالذكاء الاصطناعي',
     userEnteredTitle: 'عنوان أدخله المستخدم',
+    openSearch: 'بحث واستبدال في الكلمات (Ctrl+F)',
   },
 
   sections: {

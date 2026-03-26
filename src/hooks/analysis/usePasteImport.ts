@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Type } from '@google/genai';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { cleanSectionName } from '../../utils/songUtils';
@@ -42,11 +42,53 @@ export const usePasteImport = ({
   setIsPasteModalOpen,
 }: UsePasteImportParams) => {
   const [pastedText, setPastedText] = useState('');
+  const [hasClipboardText, setHasClipboardText] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   useEffect(() => { return () => { abortCurrent(abortControllerRef); }; }, []);
 
   const uiLang = resolveUiLanguageName(uiLanguage);
+  const refreshClipboardText = useCallback(async () => {
+    if (
+      typeof window === 'undefined'
+      || !window.isSecureContext
+      || typeof navigator === 'undefined'
+      || !navigator.clipboard?.readText
+    ) {
+      setHasClipboardText(false);
+      return;
+    }
+
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      setHasClipboardText(Boolean(clipboardText.trim()));
+    } catch {
+      setHasClipboardText(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshClipboardText();
+
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const handleFocus = () => { void refreshClipboardText(); };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshClipboardText();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshClipboardText]);
+
+  const canPasteLyrics = Boolean(pastedText.trim()) || hasClipboardText;
 
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
@@ -223,6 +265,7 @@ ${pastedText}`;
   };
 
   return {
+    canPasteLyrics,
     pastedText,
     setPastedText,
     analyzePastedLyrics,

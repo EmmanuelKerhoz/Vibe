@@ -1,9 +1,9 @@
-import React, { useRef } from 'react';
-import { Plus, ChevronDown, AlignLeft, X, BarChart2, GripVertical, Link2 } from '../ui/icons';
+import React from 'react';
+import { AlignLeft, X, BarChart2, GripVertical, Link2 } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';
-import { Input } from '../ui/Input';
+import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 import { useDrag } from '../../contexts/DragContext';
 import { getSectionColor, getSectionDotColor, getSectionTextColor } from '../../utils/songUtils';
@@ -21,8 +21,6 @@ import { useComposerContext } from '../../contexts/ComposerContext';
 interface Props {
   isStructureOpen: boolean;
   setIsStructureOpen: (v: boolean) => void;
-  newSectionName: string;
-  setNewSectionName: (v: string) => void;
   isSectionDropdownOpen: boolean;
   setIsSectionDropdownOpen: (v: boolean) => void;
   addStructureItem: (name?: string) => void;
@@ -38,7 +36,6 @@ interface Props {
 
 export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
-  newSectionName, setNewSectionName,
   isSectionDropdownOpen, setIsSectionDropdownOpen,
   addStructureItem, removeStructureItem,
   normalizeStructure, handleDrop, onScrollToSection,
@@ -57,15 +54,28 @@ export const StructureSidebar = React.memo(function StructureSidebar({
     dragOverIndex,
     setDragOverIndex,
   } = useDrag();
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsStructureOpen(false);
   };
 
-  const sectionOptions = SECTION_TYPE_OPTIONS;
   const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|…)$/, '').trim();
+  const sectionOptions = SECTION_TYPE_OPTIONS
+    .filter(name => {
+      if (isAnchoredStartSection(name)) {
+        return !structure.some(isAnchoredStartSection);
+      }
+      if (isAnchoredEndSection(name)) {
+        return !structure.some(isAnchoredEndSection);
+      }
+      return true;
+    })
+    .map(name => ({
+      value: name,
+      label: name,
+      title: getSectionTooltipText(name),
+    }));
 
   // Build a set of indices to skip (Chorus items already rendered as part of a group)
   const groupedChorusIndices = new Set<number>();
@@ -253,62 +263,17 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     })}
                   </div>
 
-                  <div className="relative" ref={dropdownRef}>
-                    <div className="mt-3 space-y-2">
-                      <div className="relative">
-                        <Input
-                          value={newSectionName}
-                          onChange={e => { setNewSectionName(e.target.value); setIsSectionDropdownOpen(true); }}
-                          onFocus={() => setIsSectionDropdownOpen(true)}
-                          placeholder={t.structure.addSection}
-                          onKeyDown={e => e.key === 'Enter' && addStructureItem()}
-                        />
-                        <button
-                          onClick={() => setIsSectionDropdownOpen(!isSectionDropdownOpen)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors"
-                        >
-                          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isSectionDropdownOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                      </div>
-                      <Tooltip title={t.tooltips.addSection}>
-                        <div className="lcars-gradient-outline" style={{ borderRadius: actionButtonRadius, width: '100%' }}>
-                          <Button
-                            onClick={() => addStructureItem()}
-                            disabled={isGenerating}
-                            variant="outlined" fullWidth
-                            className="ux-interactive"
-                            style={{ fontSize: '10px', padding: '4px 0', borderRadius: actionButtonRadius }}
-                          >
-                            {addSectionLabel}
-                          </Button>
-                        </div>
-                      </Tooltip>
-                    </div>
-                    {isSectionDropdownOpen && (
-                      <div className="absolute left-0 right-0 mt-1 py-1 bg-fluent-card border border-fluent-border rounded-md shadow-xl z-50 backdrop-blur-[1px] animate-in fade-in zoom-in-95 duration-100 lcars-panel">
-                        {sectionOptions
-                          .filter(name => {
-                            if (isAnchoredStartSection(name)) {
-                              return !structure.some(isAnchoredStartSection);
-                            }
-                            if (isAnchoredEndSection(name)) {
-                              return !structure.some(isAnchoredEndSection);
-                            }
-                            return true;
-                          })
-                          .map(name => (
-                            <Tooltip key={name} title={getSectionTooltipText(name)}>
-                              <button
-                                onClick={() => { addStructureItem(name); setIsSectionDropdownOpen(false); }}
-                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 transition-colors flex items-center gap-2"
-                              >
-                                <Plus className="w-3 h-3 text-[var(--accent-color)]" />
-                                {name}
-                              </button>
-                            </Tooltip>
-                          ))}
-                      </div>
-                    )}
+                  <div className="mt-3">
+                    <LcarsSelect
+                      value=""
+                      onChange={addStructureItem}
+                      options={sectionOptions}
+                      placeholder={addSectionLabel}
+                      isOpen={isSectionDropdownOpen}
+                      onOpenChange={setIsSectionDropdownOpen}
+                      accentColor="var(--lcars-cyan)"
+                      buttonTitle={t.tooltips.addSection}
+                    />
                   </div>
 
                   <Tooltip title={t.tooltips.normalizeStructure}>

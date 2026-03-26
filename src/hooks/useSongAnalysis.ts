@@ -97,6 +97,7 @@ export const useSongAnalysis = ({
 
   return {
     // ── Paste import ────────────────────────────────────────────────────────
+    canPasteLyrics: pasteImport.canPasteLyrics,
     pastedText: pasteImport.pastedText,
     setPastedText: pasteImport.setPastedText,
     analyzePastedLyrics: pasteImport.analyzePastedLyrics,

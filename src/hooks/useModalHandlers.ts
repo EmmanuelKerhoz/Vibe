@@ -7,6 +7,7 @@ interface UseModalHandlersParams {
   setIsSettingsOpen: (v: boolean) => void;
   setIsAboutOpen: (v: boolean) => void;
   setIsKeyboardShortcutsModalOpen: (v: boolean) => void;
+  setIsSearchReplaceOpen: (v: boolean) => void;
   setSectionTargetLanguages: (fn: (prev: Record<string, string>) => Record<string, string>) => void;
 }
 
@@ -17,6 +18,7 @@ export function useModalHandlers({
   setIsSettingsOpen,
   setIsAboutOpen,
   setIsKeyboardShortcutsModalOpen,
+  setIsSearchReplaceOpen,
   setSectionTargetLanguages,
 }: UseModalHandlersParams) {
   const handleOpenPasteModal = useCallback(
@@ -54,6 +56,11 @@ export function useModalHandlers({
     [setIsKeyboardShortcutsModalOpen]
   );
 
+  const handleOpenSearch = useCallback(
+    () => setIsSearchReplaceOpen(true),
+    [setIsSearchReplaceOpen]
+  );
+
   const handleSectionTargetLanguageChange = useCallback(
     (sectionId: string, lang: string) =>
       setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang })),
@@ -68,6 +75,7 @@ export function useModalHandlers({
     handleOpenSettings,
     handleOpenAbout,
     handleOpenKeyboardShortcuts,
+    handleOpenSearch,
     handleSectionTargetLanguageChange,
   };
 }

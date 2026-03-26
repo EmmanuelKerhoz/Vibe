@@ -31,6 +31,7 @@ interface LyricsViewProps {
   setMarkupText: (v: string) => void;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
   markupDirection?: 'ltr' | 'rtl';
+  canPasteLyrics: boolean;
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
   onGenerateSong: () => void;
@@ -45,6 +46,7 @@ export const LyricsView = memo(function LyricsView({
   adaptSectionLanguage,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
   editMode, setEditMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
+  canPasteLyrics,
   onOpenLibrary, onPasteLyrics, onGenerateSong,
   showTranslationFeatures = true,
 }: LyricsViewProps) {
@@ -265,7 +267,7 @@ export const LyricsView = memo(function LyricsView({
               <Button onClick={onOpenLibrary} aria-label={t.saveToLibrary.browseDescription} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
                 {t.saveToLibrary.title}
               </Button>
-              <Button onClick={onPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+              <Button onClick={onPasteLyrics} disabled={!canPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
                 {t.editor.emptyState.pasteLyrics}
               </Button>
               <Button onClick={onGenerateSong} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">

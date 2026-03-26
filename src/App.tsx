@@ -60,7 +60,7 @@ function AppInnerContent() {
     title, setTitle, titleOrigin, setTitleOrigin, topic, setTopic, mood, setMood,
     rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables, genre, setGenre, tempo, setTempo,
     instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative,
-    musicalPrompt, setMusicalPrompt, newSectionName, setNewSectionName,
+    musicalPrompt, setMusicalPrompt,
     shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
     songLanguage, setSongLanguage,
   } = useSongContext();
@@ -93,6 +93,7 @@ function AppInnerContent() {
     confirmModal, setConfirmModal, promptModal, setPromptModal,
     isPasteModalOpen, setIsPasteModalOpen,
     isAnalysisModalOpen, setIsAnalysisModalOpen,
+    isSearchReplaceOpen, setIsSearchReplaceOpen,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated,
     hasApiKey, importInputRef, markupTextareaRef,
   } = appState;
@@ -139,7 +140,7 @@ function AppInnerContent() {
   isGeneratingRef.current = isGenerating;
 
   const {
-    pastedText, setPastedText, isAnalyzing, analysisReport, analysisSteps,
+    canPasteLyrics, pastedText, setPastedText, isAnalyzing, analysisReport, analysisSteps,
     appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
     targetLanguage, setTargetLanguage, isAdaptingLanguage, isDetectingLanguage,
     adaptationProgress, adaptationResult, sectionTargetLanguages, setSectionTargetLanguages,
@@ -247,6 +248,7 @@ function AppInnerContent() {
     handleOpenSettings,
     handleOpenAbout,
     handleOpenKeyboardShortcuts,
+    handleOpenSearch,
     handleSectionTargetLanguageChange,
   } = useModalHandlers({
     setIsPasteModalOpen,
@@ -255,6 +257,7 @@ function AppInnerContent() {
     setIsSettingsOpen,
     setIsAboutOpen,
     setIsKeyboardShortcutsModalOpen,
+    setIsSearchReplaceOpen,
     setSectionTargetLanguages,
   });
 
@@ -285,12 +288,12 @@ function AppInnerContent() {
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
     setIsResetModalOpen, setIsKeyboardShortcutsModalOpen, setConfirmModal, setPromptModal,
-    setIsPasteModalOpen, setIsAnalysisModalOpen, setEditMode,
+    setIsPasteModalOpen, setIsAnalysisModalOpen, setIsSearchReplaceOpen, setEditMode,
     isAboutOpen, isSettingsOpen, apiErrorModal,
     isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
     isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
     isResetModalOpen, isKeyboardShortcutsModalOpen, confirmModal, promptModal,
-    isPasteModalOpen, isAnalysisModalOpen,
+    isPasteModalOpen, isAnalysisModalOpen, isSearchReplaceOpen,
     activeTab, setActiveTab, isStructureOpen, setIsStructureOpen,
     isLeftPanelOpen, setIsLeftPanelOpen,
     editMode, markupText, setMarkupText,
@@ -359,6 +362,8 @@ function AppInnerContent() {
                 onOpenSettingsClick={handleOpenSettings}
                 onOpenAboutClick={handleOpenAbout}
                 onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
+                onOpenSearchClick={handleOpenSearch}
+                canPasteLyrics={canPasteLyrics}
                 onPasteLyrics={handleOpenPasteModal}
                 isAnalyzing={isAnalyzing}
               />
@@ -400,6 +405,7 @@ function AppInnerContent() {
                         markupText={markupText} setMarkupText={setMarkupText}
                         markupTextareaRef={markupTextareaRef}
                         markupDirection={markupDirection}
+                        canPasteLyrics={canPasteLyrics}
                         onOpenLibrary={handleOpenSaveToLibraryModal}
                         onPasteLyrics={handleOpenPasteModal}
                         onGenerateSong={handleGlobalRegenerate}
@@ -429,7 +435,6 @@ function AppInnerContent() {
                 isMobileOverlay={isMobileOrTablet}
                 className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
                 isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-                newSectionName={newSectionName} setNewSectionName={setNewSectionName}
                 isSectionDropdownOpen={isSectionDropdownOpen}
                 setIsSectionDropdownOpen={setIsSectionDropdownOpen}
                 addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
@@ -467,6 +472,7 @@ function AppInnerContent() {
             defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
             showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
             hasExistingWork={hasExistingWork}
+            canPasteLyrics={canPasteLyrics}
             handleImportChooseFile={handleImportChooseFile}
             onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
             handleImportInputChange={handleImportInputChange}

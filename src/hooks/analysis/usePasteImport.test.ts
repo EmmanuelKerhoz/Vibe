@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Section } from '../../types';
 import { usePasteImport } from './usePasteImport';
@@ -65,6 +65,16 @@ const createParams = () => ({
 describe('usePasteImport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, 'isSecureContext', {
+      configurable: true,
+      value: true,
+    });
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        readText: vi.fn().mockResolvedValue(''),
+      },
+    });
   });
 
   it('imports standard multiline lyrics into two sections with the expected line distribution', async () => {
@@ -124,6 +134,37 @@ describe('usePasteImport', () => {
     expect(generateContentWithRetry).not.toHaveBeenCalled();
     expect(params.updateSongAndStructureWithHistory).not.toHaveBeenCalled();
     expect(handleApiError).not.toHaveBeenCalled();
+  });
+
+  it('reports paste availability when the clipboard contains text', async () => {
+    const params = createParams();
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        readText: vi.fn().mockResolvedValue('Already copied lyrics'),
+      },
+    });
+
+    const { result } = renderHook(() => usePasteImport(params));
+
+    await waitFor(() => {
+      expect(result.current.canPasteLyrics).toBe(true);
+    });
+  });
+
+  it('keeps paste available when draft pasted text exists even if the clipboard is empty', async () => {
+    const params = createParams();
+    const { result } = renderHook(() => usePasteImport(params));
+
+    await waitFor(() => {
+      expect(result.current.canPasteLyrics).toBe(false);
+    });
+
+    act(() => {
+      result.current.setPastedText('Saved draft lyrics');
+    });
+
+    expect(result.current.canPasteLyrics).toBe(true);
   });
 
   it('preserves existing markup-based sections without duplicating their tags as lyric lines', async () => {

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles, Download, Upload, Undo2, Redo2, Trash2, History,
-  PanelRight, Library, Menu, FilePlus, Settings, Info, KeyboardRegular, WandSparkles, ClipboardPaste, Heart
+  PanelRight, Library, Menu, FilePlus, Settings, Info, KeyboardRegular, WandSparkles, ClipboardPaste, Heart, Search
 } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
@@ -29,6 +29,8 @@ interface Props {
   onOpenSettingsClick: () => void;
   onOpenAboutClick: () => void;
   onOpenKeyboardShortcutsClick: () => void;
+  onOpenSearchClick: () => void;
+  canPasteLyrics: boolean;
   onPasteLyrics: () => void;
   isAnalyzing: boolean;
 }
@@ -42,7 +44,8 @@ export function TopRibbon({
   onOpenNewGeneration, onOpenNewEmpty,
   onImportClick, onExportClick,
   onOpenLibraryClick,
-  onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick,
+  onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick, onOpenSearchClick,
+  canPasteLyrics,
   onPasteLyrics,
   isAnalyzing,
 }: Props) {
@@ -161,9 +164,9 @@ export function TopRibbon({
               {/* Tools */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
-              <button onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className="w-full flex items-center gap-3 px-4 py-2 text-[12px] text-left text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                 <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
-                Coller des paroles
+                {t.editor.emptyState.pasteLyrics}
               </button>
               <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <History className="w-4 h-4 text-[var(--text-secondary)]" />
@@ -285,6 +288,16 @@ export function TopRibbon({
             }}
           >
             <PanelRight className="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip title={t.tooltips.openSearch}>
+          <button
+            onClick={onOpenSearchClick}
+            aria-label={t.tooltips.openSearch}
+            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <Search className="w-4 h-4" />
           </button>
         </Tooltip>
         <Tooltip title={t.tooltips.keyboardShortcuts}>

@@ -285,7 +285,23 @@ const fr: Translations = {
       dismissNavigation: 'Ferme les panneaux paramètres, à propos, similarité ou les volets mobiles.',
       dismissFileDialogs: 'Ferme les fenêtres d’import, d’export, de versions ou de bibliothèque.',
       dismissAiDialogs: 'Ferme les prompts IA, alertes API, analyses ou fenêtres d’import par collage.',
+      openSearch: 'Ouvre le panneau de recherche et remplacement.',
     },
+  },
+
+  searchReplace: {
+    title: 'Rechercher & Remplacer',
+    searchPlaceholder: 'Rechercher…',
+    replacePlaceholder: 'Remplacer par…',
+    matchCount: '{current} sur {total}',
+    matchCountNone: 'Aucun résultat',
+    previous: 'Précédent',
+    next: 'Suivant',
+    replace: 'Remplacer',
+    replaceAll: 'Tout remplacer',
+    caseSensitive: 'Respecter la casse',
+    close: 'Fermer',
+    replacedCount: '{count} remplacement(s) effectué(s)',
   },
 
   about: {
@@ -386,6 +402,7 @@ const fr: Translations = {
     generateTitle: 'Générer un titre basé sur les paroles',
     aiGeneratedTitle: 'Titre généré par IA',
     userEnteredTitle: 'Titre saisi par l\'utilisateur',
+    openSearch: 'Recherche & remplacement dans les paroles (Ctrl+F)',
   },
 
   sections: {

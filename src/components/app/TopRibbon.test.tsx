@@ -47,13 +47,15 @@ describe('TopRibbon burger menu', () => {
           handleApiKeyHelp={() => {}}
           onOpenNewGeneration={onOpenNewGeneration}
           onOpenNewEmpty={onOpenNewEmpty}
-                    onPasteLyrics={onOpenNewEmpty}
+          canPasteLyrics={true}
+          onPasteLyrics={onOpenNewEmpty}
           onImportClick={onImportClick}
           onExportClick={() => {}}
           onOpenLibraryClick={onOpenLibraryClick}
           onOpenSettingsClick={onOpenSettingsClick}
           onOpenAboutClick={onOpenAboutClick}
           onOpenKeyboardShortcutsClick={onOpenKeyboardShortcutsClick}
+          onOpenSearchClick={() => {}}
           isAnalyzing={false}
         />
       </LanguageProvider>,
@@ -113,6 +115,7 @@ describe('TopRibbon burger menu', () => {
           handleApiKeyHelp={() => {}}
           onOpenNewGeneration={() => {}}
           onOpenNewEmpty={() => {}}
+          canPasteLyrics={true}
           onPasteLyrics={() => {}}
           onImportClick={() => {}}
           onExportClick={() => {}}
@@ -120,6 +123,7 @@ describe('TopRibbon burger menu', () => {
           onOpenSettingsClick={() => {}}
           onOpenAboutClick={() => {}}
           onOpenKeyboardShortcutsClick={() => {}}
+          onOpenSearchClick={() => {}}
           isAnalyzing={false}
         />
       </LanguageProvider>,
@@ -130,5 +134,40 @@ describe('TopRibbon burger menu', () => {
     expect(setActiveTab).toHaveBeenCalledWith('lyrics');
     expect(setIsStructureOpen).toHaveBeenCalledWith(false);
     expect(setIsLeftPanelOpen).toHaveBeenCalledWith(true);
+  });
+
+  it('disables the menu paste action when there is no text available to paste', () => {
+    render(
+      <LanguageProvider>
+        <TopRibbon
+          activeTab="lyrics"
+          setActiveTab={() => {}}
+          setIsVersionsModalOpen={() => {}}
+          setIsResetModalOpen={() => {}}
+          isLeftPanelOpen={false}
+          setIsLeftPanelOpen={() => {}}
+          isStructureOpen={false}
+          setIsStructureOpen={() => {}}
+          hasApiKey
+          handleApiKeyHelp={() => {}}
+          onOpenNewGeneration={() => {}}
+          onOpenNewEmpty={() => {}}
+          canPasteLyrics={false}
+          onPasteLyrics={() => {}}
+          onImportClick={() => {}}
+          onExportClick={() => {}}
+          onOpenLibraryClick={() => {}}
+          onOpenSettingsClick={() => {}}
+          onOpenAboutClick={() => {}}
+          onOpenKeyboardShortcutsClick={() => {}}
+          onOpenSearchClick={() => {}}
+          isAnalyzing={false}
+        />
+      </LanguageProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    expect((screen.getByRole('button', { name: 'Paste Lyrics' }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

@@ -13,6 +13,7 @@ import { KeyboardShortcutsModal } from './modals/KeyboardShortcutsModal';
 import { ApiErrorModal } from './modals/ApiErrorModal';
 import { ConfirmModal } from './modals/ConfirmModal';
 import { PromptModal } from './modals/PromptModal';
+import { SearchReplaceModal } from './modals/SearchReplaceModal';
 import { useModalContext } from '../../contexts/ModalContext';
 import type { LibraryAsset } from '../../utils/libraryUtils';
 import type { SimilarityMatch } from '../../utils/similarityUtils';
@@ -41,6 +42,7 @@ interface Props {
 
   // Import
   hasExistingWork: boolean;
+  canPasteLyrics: boolean;
   handleImportChooseFile: () => void;
   onOpenPasteLyrics: () => void;
   handleImportInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -99,7 +101,7 @@ interface Props {
 export const AppModals = React.memo(function AppModals({
   theme, setTheme, audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
   showTranslationFeatures, setShowTranslationFeatures,
-  hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
+  hasExistingWork, canPasteLyrics, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
   pastedText, setPastedText, isAnalyzing, analyzePastedLyrics,
   analysisReport, analysisSteps,
@@ -135,6 +137,7 @@ export const AppModals = React.memo(function AppModals({
       />
       <ImportModal
         isOpen={ui.isImportModalOpen} hasExistingWork={hasExistingWork}
+        canPasteLyrics={canPasteLyrics}
         onClose={() => closeModal('import')} onChooseFile={handleImportChooseFile}
         onOpenLibrary={openLibraryFromImport}
         onPasteLyrics={onOpenPasteLyrics}
@@ -188,6 +191,10 @@ export const AppModals = React.memo(function AppModals({
       <KeyboardShortcutsModal
         isOpen={ui.isKeyboardShortcutsModalOpen}
         onClose={() => closeModal('keyboardShortcuts')}
+      />
+      <SearchReplaceModal
+        isOpen={ui.isSearchReplaceOpen}
+        onClose={() => closeModal('searchReplace')}
       />
       <ApiErrorModal
         isOpen={ui.apiErrorModal.open} onClose={() => closeModal('apiError')}
