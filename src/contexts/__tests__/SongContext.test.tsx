@@ -11,6 +11,13 @@ const makeSection = (id: string, name: string) => ({
   lines: [],
 });
 
+const readProbe = (testId: string) => JSON.parse(screen.getByTestId(testId).textContent ?? '{}') as {
+  renders: number;
+  title?: string;
+  songLength?: number;
+  canUndo?: boolean;
+};
+
 function HistoryProbe() {
   const renders = useRef(0);
   renders.current += 1;
@@ -68,14 +75,14 @@ describe('SongProvider context split', () => {
       </SongProvider>,
     );
 
-    expect(screen.getByTestId('history-probe')).toHaveTextContent('"renders":1');
-    expect(screen.getByTestId('meta-probe')).toHaveTextContent('"renders":1');
+    expect(readProbe('history-probe').renders).toBe(1);
+    expect(readProbe('meta-probe').renders).toBe(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Update meta' }));
 
-    expect(screen.getByTestId('history-probe')).toHaveTextContent('"renders":1');
-    expect(screen.getByTestId('meta-probe')).toHaveTextContent('"renders":2');
-    expect(screen.getByTestId('meta-probe')).toHaveTextContent('"title":"Updated title"');
+    expect(readProbe('history-probe').renders).toBe(1);
+    expect(readProbe('meta-probe').renders).toBe(2);
+    expect(readProbe('meta-probe').title).toBe('Updated title');
   });
 
   it('does not re-render meta consumers when only history changes', () => {
@@ -87,14 +94,14 @@ describe('SongProvider context split', () => {
       </SongProvider>,
     );
 
-    expect(screen.getByTestId('history-probe')).toHaveTextContent('"renders":1');
-    expect(screen.getByTestId('meta-probe')).toHaveTextContent('"renders":1');
+    expect(readProbe('history-probe').renders).toBe(1);
+    expect(readProbe('meta-probe').renders).toBe(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Update history' }));
 
-    expect(screen.getByTestId('history-probe')).toHaveTextContent('"renders":2');
-    expect(screen.getByTestId('history-probe')).toHaveTextContent('"songLength":2');
-    expect(screen.getByTestId('history-probe')).toHaveTextContent('"canUndo":true');
-    expect(screen.getByTestId('meta-probe')).toHaveTextContent('"renders":1');
+    expect(readProbe('history-probe').renders).toBe(2);
+    expect(readProbe('history-probe').songLength).toBe(2);
+    expect(readProbe('history-probe').canUndo).toBe(true);
+    expect(readProbe('meta-probe').renders).toBe(1);
   });
 });

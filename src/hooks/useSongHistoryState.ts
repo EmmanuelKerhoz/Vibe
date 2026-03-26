@@ -180,15 +180,18 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     () => [...state.past, { song: state.song, structure: state.structure }, ...state.future],
     [state.future, state.past, state.song, state.structure],
   );
+  const canUndo = state.past.length > 0;
+  const canRedo = state.future.length > 0;
+  const historyIndex = state.past.length;
 
   return useMemo(() => ({
     song: state.song,
     structure: state.structure,
     past: state.past,
     future: state.future,
-    canUndo: state.past.length > 0,
-    canRedo: state.future.length > 0,
-    historyIndex: state.past.length,
+    canUndo,
+    canRedo,
+    historyIndex,
     history,
     updateState,
     updateSongWithHistory,
@@ -201,6 +204,9 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
   }), [
     clearHistory,
     history,
+    historyIndex,
+    canRedo,
+    canUndo,
     redo,
     replaceStateWithoutHistory,
     state.future,

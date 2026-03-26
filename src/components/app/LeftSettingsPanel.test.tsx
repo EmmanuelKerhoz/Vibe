@@ -13,8 +13,8 @@ const mockComposerContext = vi.hoisted(() => ({
   quantizeSyllables: vi.fn(),
 }));
 
-vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => mockSongContext,
+vi.mock('../../contexts/SongHistoryContext', () => ({
+  useSongHistoryContext: () => mockSongContext,
 }));
 
 vi.mock('../../contexts/ComposerContext', () => ({

@@ -8,8 +8,16 @@ const mockSongContextValues = vi.hoisted(() => ({
   songLanguage: 'en',
 }));
 
-vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => mockSongContextValues,
+vi.mock('../../contexts/SongHistoryContext', () => ({
+  useSongHistoryContext: () => ({
+    song: mockSongContextValues.song,
+  }),
+}));
+
+vi.mock('../../contexts/SongMetaContext', () => ({
+  useSongMetaContext: () => ({
+    songLanguage: mockSongContextValues.songLanguage,
+  }),
 }));
 
 const baseParams = () => ({

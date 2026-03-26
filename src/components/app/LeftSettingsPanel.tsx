@@ -9,6 +9,7 @@ import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 import { useSongHistoryContext } from '../../contexts/SongHistoryContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import type { Section } from '../../types';
 
 interface Props {
   title: string;
@@ -39,7 +40,7 @@ const SOLID_BG_DARK = 'var(--bg-app, #0c0c0c)';
 type PanelContentProps = Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & {
   t: ReturnType<typeof useTranslation>['t'];
   isMobileOverlay: boolean;
-  song: ReturnType<typeof useSongContext>['song'];
+  song: Section[];
   isGenerating: ReturnType<typeof useComposerContext>['isGenerating'];
   quantizeSyllables: ReturnType<typeof useComposerContext>['quantizeSyllables'];
 };

@@ -4,13 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../i18n';
 import { TopRibbon } from './TopRibbon';
 
-vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => ({
+vi.mock('../../contexts/SongHistoryContext', () => ({
+  useSongHistoryContext: () => ({
     song: [],
-    past: [],
-    future: [],
     undo: vi.fn(),
     redo: vi.fn(),
+    canUndo: false,
+    canRedo: false,
   }),
 }));
 

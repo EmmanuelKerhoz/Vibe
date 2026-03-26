@@ -20,8 +20,8 @@ const songContextSetters = vi.hoisted(() => ({
   setSongLanguage: vi.fn(),
 }));
 
-vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => songContextSetters,
+vi.mock('../../contexts/SongMetaContext', () => ({
+  useSongMetaContext: () => songContextSetters,
 }));
 
 const createMemoryStorage = (): Storage => {

@@ -5,8 +5,8 @@ import { LanguageProvider } from '../../i18n';
 import { DragProvider } from '../../contexts/DragContext';
 import { StructureSidebar } from './StructureSidebar';
 
-vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => ({
+vi.mock('../../contexts/SongHistoryContext', () => ({
+  useSongHistoryContext: () => ({
     song: [
       { id: 's1', name: 'Intro', lines: [] },
       { id: 's2', name: 'Turnaround', lines: [] },

@@ -29,8 +29,30 @@ const mockComposerContext = vi.hoisted(() => ({
   analyzeLyricsForMusic: vi.fn(),
 }));
 
-vi.mock('../../../contexts/SongContext', () => ({
-  useSongContext: () => mockSongContext,
+vi.mock('../../../contexts/SongHistoryContext', () => ({
+  useSongHistoryContext: () => ({
+    song: mockSongContext.song,
+  }),
+}));
+
+vi.mock('../../../contexts/SongMetaContext', () => ({
+  useSongMetaContext: () => ({
+    title: mockSongContext.title,
+    topic: mockSongContext.topic,
+    mood: mockSongContext.mood,
+    genre: mockSongContext.genre,
+    setGenre: mockSongContext.setGenre,
+    tempo: mockSongContext.tempo,
+    setTempo: mockSongContext.setTempo,
+    instrumentation: mockSongContext.instrumentation,
+    setInstrumentation: mockSongContext.setInstrumentation,
+    rhythm: mockSongContext.rhythm,
+    setRhythm: mockSongContext.setRhythm,
+    narrative: mockSongContext.narrative,
+    setNarrative: mockSongContext.setNarrative,
+    musicalPrompt: mockSongContext.musicalPrompt,
+    setMusicalPrompt: mockSongContext.setMusicalPrompt,
+  }),
 }));
 
 vi.mock('../../../contexts/ComposerContext', () => ({

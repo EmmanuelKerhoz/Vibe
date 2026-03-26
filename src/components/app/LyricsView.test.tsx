@@ -9,12 +9,17 @@ import { LyricsView } from './LyricsView';
 const mockUpdateState = vi.fn();
 const mockSong: Section[] = [];
 
-vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => ({
+vi.mock('../../contexts/SongHistoryContext', () => ({
+  useSongHistoryContext: () => ({
     song: mockSong,
-    rhymeScheme: 'AABB',
     updateState: mockUpdateState,
     updateSongAndStructureWithHistory: vi.fn(),
+  }),
+}));
+
+vi.mock('../../contexts/SongMetaContext', () => ({
+  useSongMetaContext: () => ({
+    rhymeScheme: 'AABB',
     lineLanguages: {},
   }),
 }));

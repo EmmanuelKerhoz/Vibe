@@ -13,8 +13,8 @@ vi.mock('../ui/Tooltip', () => ({
   ),
 }));
 
-vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => ({
+vi.mock('../../contexts/SongHistoryContext', () => ({
+  useSongHistoryContext: () => ({
     song: [
       {
         id: 'section-1',
@@ -30,6 +30,11 @@ vi.mock('../../contexts/SongContext', () => ({
         }],
       },
     ],
+  }),
+}));
+
+vi.mock('../../contexts/SongMetaContext', () => ({
+  useSongMetaContext: () => ({
     songLanguage: 'English',
     detectedLanguages: ['English'],
     lineLanguages: {},

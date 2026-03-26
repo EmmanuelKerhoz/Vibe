@@ -99,7 +99,6 @@ describe('changeDelta — pure logic', () => {
 import { renderHook, act } from '@testing-library/react';
 import { useSimilarityEngine } from '../useSimilarityEngine';
 import * as webSimilaritySearch from '../../utils/webSimilaritySearch';
-import * as SongContextModule from '../../contexts/SongContext';
 import type { Section } from '../../types';
 
 const DEBOUNCE_MS = 30_000;
@@ -110,12 +109,29 @@ const makeSection = (text: string): Section => ({
   lines: [{ id: 'l-1', text, syllables: 4, rhyme: '', rhymingSyllables: '', concept: 'New line', isMeta: false }],
 });
 
+const mockSimilarityContext = {
+  song: [makeSection('Hello world')] as Section[],
+  title: 'My Song',
+  songLanguage: 'en',
+};
+
+vi.mock('../../contexts/SongHistoryContext', () => ({
+  useSongHistoryContext: () => ({
+    song: mockSimilarityContext.song,
+  }),
+}));
+
+vi.mock('../../contexts/SongMetaContext', () => ({
+  useSongMetaContext: () => ({
+    title: mockSimilarityContext.title,
+    songLanguage: mockSimilarityContext.songLanguage,
+  }),
+}));
+
 const mockSongContext = (overrides: Partial<{ song: Section[]; title: string; songLanguage: string }> = {}) => {
-  vi.spyOn(SongContextModule, 'useSongContext').mockReturnValue({
-    song: overrides.song ?? [makeSection('Hello world')],
-    title: overrides.title ?? 'My Song',
-    songLanguage: overrides.songLanguage ?? 'en',
-  } as ReturnType<typeof SongContextModule.useSongContext>);
+  mockSimilarityContext.song = overrides.song ?? [makeSection('Hello world')];
+  mockSimilarityContext.title = overrides.title ?? 'My Song';
+  mockSimilarityContext.songLanguage = overrides.songLanguage ?? 'en';
 };
 
 describe('useSimilarityEngine — hook behaviour', () => {
