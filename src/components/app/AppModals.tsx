@@ -148,12 +148,6 @@ export const AppModals = React.memo(function AppModals({
         onOpenLibrary={openLibraryFromExport}
         onExport={exportSong}
       />
-      <SuggestionsPanel
-        selectedLineId={selectedLineId} setSelectedLineId={setSelectedLineId}
-        suggestions={suggestions} isSuggesting={isSuggesting}
-        applySuggestion={applySuggestion} generateSuggestions={generateSuggestions}
-      />
-      <ExportModal isOpen={ui.isExportModalOpen} onClose={() => closeModal('export')} onExport={exportSong} />
       <PasteModal
         isOpen={ui.isPasteModalOpen} onClose={() => closeModal('paste')}
         pastedText={pastedText} setPastedText={setPastedText}
