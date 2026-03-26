@@ -12,6 +12,9 @@ import { buildDetectLanguagePrompt } from '../../utils/promptUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { SECTION_TYPE_DEFINITIONS } from '../../constants/sections';
 
+/** More aggressive retry budget for chunked paste-import calls. */
+const PASTE_IMPORT_RETRY = { maxAttempts: 3, delayMs: 1200 } as const;
+
 type UsePasteImportParams = {
   rhymeScheme: string;
   uiLanguage: string;
@@ -301,32 +304,40 @@ export const usePasteImport = ({
             currentLabel: chunk.displayLabel,
           });
 
-          const response = await generateContentWithRetry({
-            model: AI_MODEL_NAME,
-            contents: buildSectionPrompt(chunk, uiLang),
-            config: {
-              responseMimeType: 'application/json',
-              responseSchema: SECTION_RESPONSE_SCHEMA,
-            },
-            signal: nextSignal,
-          });
+          try {
+            const response = await generateContentWithRetry({
+              model: AI_MODEL_NAME,
+              contents: buildSectionPrompt(chunk, uiLang),
+              config: {
+                responseMimeType: 'application/json',
+                responseSchema: SECTION_RESPONSE_SCHEMA,
+              },
+              signal: nextSignal,
+            }, PASTE_IMPORT_RETRY);
 
-          if (nextSignal.aborted) {
-            wasAborted = true;
-            return;
+            if (nextSignal.aborted) {
+              wasAborted = true;
+              return;
+            }
+
+            const section = safeJsonParse<{
+              name?: string;
+              rhymeScheme?: string;
+              lines?: Array<{ text?: string; rhymingSyllables?: string; rhyme?: string; syllables?: number; concept?: string }>;
+            }>(response.text || '{}', {});
+
+            analyzedSections.push({
+              name: section.name?.trim() || chunk.nameHint || chunk.displayLabel,
+              rhymeScheme: section.rhymeScheme,
+              lines: section.lines ?? [],
+            });
+          } catch (sectionError) {
+            if (isAbortError(sectionError)) {
+              wasAborted = true;
+              return;
+            }
+            console.warn(`Paste import: section "${chunk.displayLabel}" failed after retries, skipping.`, sectionError);
           }
-
-          const section = safeJsonParse<{
-            name?: string;
-            rhymeScheme?: string;
-            lines?: Array<{ text?: string; rhymingSyllables?: string; rhyme?: string; syllables?: number; concept?: string }>;
-          }>(response.text || '{}', {});
-
-          analyzedSections.push({
-            name: section.name?.trim() || chunk.nameHint || chunk.displayLabel,
-            rhymeScheme: section.rhymeScheme,
-            lines: section.lines ?? [],
-          });
         }
 
         let topicFromImport = '';
@@ -342,7 +353,7 @@ export const usePasteImport = ({
               responseSchema: METADATA_RESPONSE_SCHEMA,
             },
             signal: nextSignal,
-          });
+          }, PASTE_IMPORT_RETRY);
           if (nextSignal.aborted) {
             wasAborted = true;
             return;
@@ -370,7 +381,7 @@ export const usePasteImport = ({
               model: AI_MODEL_NAME,
               contents: buildDetectLanguagePrompt(pastedText),
               signal: nextSignal,
-            });
+            }, PASTE_IMPORT_RETRY);
             if (nextSignal.aborted) {
               wasAborted = true;
               return;
