@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
@@ -26,15 +26,23 @@ import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
 import { StatusBar } from './components/app/StatusBar';
-import { MusicalTab } from './components/app/musical/MusicalTab';
 import { InsightsBar } from './components/app/InsightsBar';
 import { LyricsView } from './components/app/LyricsView';
-import { AppModals } from './components/app/AppModals';
 import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
+
+// Heavy leaf components: lazy-loaded to reduce initial bundle.
+// AppModals aggregates ~15 modal dialogs never needed at mount.
+// MusicalTab is only rendered when the user switches to the Musical tab.
+const AppModals = lazy(() =>
+  import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
+);
+const MusicalTab = lazy(() =>
+  import('./components/app/musical/MusicalTab').then(m => ({ default: m.MusicalTab }))
+);
 
 function ModalShortcutBindings({
   isMobileOrTablet,
@@ -412,7 +420,9 @@ function AppInnerContent() {
                         showTranslationFeatures={showTranslationFeatures}
                       />
                     ) : (
-                      <MusicalTab hasApiKey={hasApiKey} />
+                      <Suspense fallback={null}>
+                        <MusicalTab hasApiKey={hasApiKey} />
+                      </Suspense>
                     )}
                   </div>
                 </div>
@@ -465,38 +475,40 @@ function AppInnerContent() {
             />
           )}
 
-          <AppModals
-            theme={theme} setTheme={setTheme}
-            audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-            uiScale={uiScale} setUiScale={setUiScale}
-            defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
-            showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
-            hasExistingWork={hasExistingWork}
-            handleImportChooseFile={handleImportChooseFile}
-            onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
-            handleImportInputChange={handleImportInputChange}
-            exportSong={exportSong}
-            pastedText={pastedText} setPastedText={setPastedText}
-            isAnalyzing={isAnalyzing} analyzePastedLyrics={analyzePastedLyrics}
-            analysisReport={analysisReport} analysisSteps={analysisSteps}
-            appliedAnalysisItems={appliedAnalysisItems}
-            selectedAnalysisItems={selectedAnalysisItems}
-            isApplyingAnalysis={isApplyingAnalysis}
-            toggleAnalysisItemSelection={toggleAnalysisItemSelection}
-            applySelectedAnalysisItems={applySelectedAnalysisItems}
-            clearAppliedAnalysisItems={clearAppliedAnalysisItems}
-            versions={versions} rollbackToVersion={rollbackToVersion}
-            similarityMatches={similarityMatches} libraryCount={libraryCount}
-            webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
-            handleDeleteLibraryAsset={handleDeleteLibraryAsset}
-            handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
-            title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
-            handleLoadLibraryAsset={handleLoadLibraryAsset}
-            handlePurgeLibrary={handlePurgeLibrary}
-            saveVersion={saveVersion}
-            handleRequestVersionName={handleRequestVersionName}
-            resetSong={resetSong}
-          />
+          <Suspense fallback={null}>
+            <AppModals
+              theme={theme} setTheme={setTheme}
+              audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+              uiScale={uiScale} setUiScale={setUiScale}
+              defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
+              showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
+              hasExistingWork={hasExistingWork}
+              handleImportChooseFile={handleImportChooseFile}
+              onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
+              handleImportInputChange={handleImportInputChange}
+              exportSong={exportSong}
+              pastedText={pastedText} setPastedText={setPastedText}
+              isAnalyzing={isAnalyzing} analyzePastedLyrics={analyzePastedLyrics}
+              analysisReport={analysisReport} analysisSteps={analysisSteps}
+              appliedAnalysisItems={appliedAnalysisItems}
+              selectedAnalysisItems={selectedAnalysisItems}
+              isApplyingAnalysis={isApplyingAnalysis}
+              toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+              applySelectedAnalysisItems={applySelectedAnalysisItems}
+              clearAppliedAnalysisItems={clearAppliedAnalysisItems}
+              versions={versions} rollbackToVersion={rollbackToVersion}
+              similarityMatches={similarityMatches} libraryCount={libraryCount}
+              webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
+              handleDeleteLibraryAsset={handleDeleteLibraryAsset}
+              handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
+              title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
+              handleLoadLibraryAsset={handleLoadLibraryAsset}
+              handlePurgeLibrary={handlePurgeLibrary}
+              saveVersion={saveVersion}
+              handleRequestVersionName={handleRequestVersionName}
+              resetSong={resetSong}
+            />
+          </Suspense>
         </div>
       </FluentProvider>
     </ModalProvider>

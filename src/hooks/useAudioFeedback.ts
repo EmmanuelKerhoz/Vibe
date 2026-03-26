@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useRef } from 'react';
 
+// Type-safe detection of the webkit-prefixed AudioContext fallback.
+// Avoids `any` cast while remaining compatible with older mobile browsers.
+type WindowWithWebkitAudio = Window & typeof globalThis & {
+  webkitAudioContext?: typeof AudioContext;
+};
+
 export const useAudioFeedback = (audioFeedback: boolean) => {
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   const getAudioContext = useCallback((): AudioContext | null => {
     if (!audioCtxRef.current) {
       try {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const win = window as WindowWithWebkitAudio;
+        const Ctor = window.AudioContext ?? win.webkitAudioContext;
+        if (!Ctor) return null;
+        audioCtxRef.current = new Ctor();
       } catch {
         return null;
       }
@@ -64,14 +73,24 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
         osc.stop(ctx.currentTime + 0.1);
       }
     } catch {
-      // Ignore audio context errors
+      // Ignore audio context errors silently — non-critical UX feature.
     }
   }, [audioFeedback, getAudioContext]);
 
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest('button') || target.closest('.fluent-button') || target.closest('input') || target.closest('select')) {
+      // Exclude text-entry and form controls — audio feedback on inputs is
+      // disruptive and semantically incorrect (not an action affordance).
+      if (
+        target.closest('input') ||
+        target.closest('textarea') ||
+        target.closest('select')
+      ) return;
+      if (
+        target.closest('button') ||
+        target.closest('.fluent-button')
+      ) {
         playAudioFeedback('click');
       }
     };
