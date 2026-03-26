@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { SimilarityMatch } from '../utils/similarityUtils';
 import { LibraryAsset } from '../utils/libraryUtils';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
@@ -72,7 +72,6 @@ export function useSessionState() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   // ── API / session ─────────────────────────────────────────────────────────
-  // P2-fix: init false — set to true only after server confirmation
   const [hasApiKey, setHasApiKey] = useState(false);
   const [isSessionHydrated, setIsSessionHydrated] = useState(false);
   const [hasSavedSession, setHasSavedSession] = useState(false);
@@ -87,10 +86,11 @@ export function useSessionState() {
     return 'large';
   });
 
-  const setUiScale = (v: 'small' | 'medium' | 'large') => {
+  // Memoized to avoid invalidating useCallback deps in consumers.
+  const setUiScale = useCallback((v: 'small' | 'medium' | 'large') => {
     setUiScaleRaw(v);
     safeSetItem(UI_SCALE_KEY, v);
-  };
+  }, []);
 
   // ── Default Edit Mode ─────────────────────────────────────────────────────
   const [defaultEditMode, setDefaultEditModeRaw] = useState<'text' | 'section' | 'markdown'>(() => {
@@ -99,10 +99,11 @@ export function useSessionState() {
     return 'markdown';
   });
 
-  const setDefaultEditMode = (v: 'text' | 'section' | 'markdown') => {
+  // Memoized to avoid invalidating useCallback deps in consumers.
+  const setDefaultEditMode = useCallback((v: 'text' | 'section' | 'markdown') => {
     setDefaultEditModeRaw(v);
     safeSetItem(DEFAULT_EDIT_MODE_KEY, v);
-  };
+  }, []);
 
   // ── Show Translation Features ─────────────────────────────────────────────
   const [showTranslationFeatures, setShowTranslationFeaturesRaw] = useState<boolean>(() => {
@@ -110,10 +111,11 @@ export function useSessionState() {
     return stored === 'false' ? false : true;
   });
 
-  const setShowTranslationFeatures = (v: boolean) => {
+  // Memoized to avoid invalidating useCallback deps in consumers.
+  const setShowTranslationFeatures = useCallback((v: boolean) => {
     setShowTranslationFeaturesRaw(v);
     safeSetItem(SHOW_TRANSLATION_KEY, String(v));
-  };
+  }, []);
 
   // ── Library / similarity ──────────────────────────────────────────────────
   const [similarityMatches, setSimilarityMatches] = useState<SimilarityMatch[]>([]);

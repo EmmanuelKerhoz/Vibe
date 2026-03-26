@@ -24,15 +24,19 @@ export class ErrorBoundary extends Component<Props, State> {
     const isDev = import.meta.env.DEV;
 
     return (
-      <div style={{
-        fontFamily: 'monospace',
-        padding: '2rem',
-        background: '#0a0a0a',
-        color: '#f87171',
-        minHeight: '100dvh',
-        boxSizing: 'border-box',
-        overflowY: 'auto',
-      }}>
+      <div
+        role="alert"
+        aria-live="assertive"
+        style={{
+          fontFamily: 'monospace',
+          padding: '2rem',
+          background: '#0a0a0a',
+          color: '#f87171',
+          minHeight: '100dvh',
+          boxSizing: 'border-box',
+          overflowY: 'auto',
+        }}
+      >
         <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
           ⚠ Application error
         </div>
@@ -40,24 +44,27 @@ export class ErrorBoundary extends Component<Props, State> {
           {error.message}
         </div>
         {isDev && errorInfo && (
-          <pre style={{
-            fontSize: '0.72rem',
-            color: '#6b7280',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-all',
-            background: '#111',
-            padding: '1rem',
-            borderRadius: '6px',
-            maxHeight: '60dvh',
-            overflowY: 'auto',
-          }}>
+          <pre
+            style={{
+              fontSize: '0.72rem',
+              color: '#6b7280',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+              background: '#111',
+              padding: '1rem',
+              borderRadius: '6px',
+              maxHeight: '60dvh',
+              overflowY: 'auto',
+            }}
+          >
             {error.stack}
             {'\n\nComponent stack:'}
             {errorInfo.componentStack}
           </pre>
         )}
         <button
-          onClick={() => this.setState({ error: null, errorInfo: null })}
+          aria-label="Reload application"
+          onClick={() => window.location.reload()}
           style={{
             marginTop: '1.5rem',
             padding: '0.5rem 1.5rem',
@@ -69,7 +76,7 @@ export class ErrorBoundary extends Component<Props, State> {
             fontSize: '0.9rem',
           }}
         >
-          Retry
+          Reload
         </button>
       </div>
     );

@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import type { EditMode } from '../types';
+import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 
 /** Splash guard — runs synchronously once to avoid double render. */
 const SPLASH_SHOWN_KEY = 'vibe_splash_shown';
 const shouldShowSplash = (): boolean => {
   try {
-    if (localStorage.getItem(SPLASH_SHOWN_KEY)) return false;
-    localStorage.setItem(SPLASH_SHOWN_KEY, '1');
+    if (safeGetItem(SPLASH_SHOWN_KEY)) return false;
+    safeSetItem(SPLASH_SHOWN_KEY, '1');
     return true;
   } catch {
     return false;

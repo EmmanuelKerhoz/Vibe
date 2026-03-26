@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback, Suspense, lazy } from 'react';
-import { FluentProvider, webLightTheme, webDarkTheme } from '@fluentui/react-components';
+import { FluentProvider, webLightTheme, webDarkTheme, Spinner } from '@fluentui/react-components';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
@@ -43,6 +43,19 @@ const AppModals = lazy(() =>
 const MusicalTab = lazy(() =>
   import('./components/app/musical/MusicalTab').then(m => ({ default: m.MusicalTab }))
 );
+
+/** Minimal CSS-only spinner used as Suspense fallback. No external dependency. */
+function LazyFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading"
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', width: '100%' }}
+    >
+      <Spinner size="small" />
+    </div>
+  );
+}
 
 function ModalShortcutBindings({
   isMobileOrTablet,
@@ -420,7 +433,7 @@ function AppInnerContent() {
                         showTranslationFeatures={showTranslationFeatures}
                       />
                     ) : (
-                      <Suspense fallback={null}>
+                      <Suspense fallback={<LazyFallback />}>
                         <MusicalTab hasApiKey={hasApiKey} />
                       </Suspense>
                     )}
@@ -475,7 +488,7 @@ function AppInnerContent() {
             />
           )}
 
-          <Suspense fallback={null}>
+          <Suspense fallback={<LazyFallback />}>
             <AppModals
               theme={theme} setTheme={setTheme}
               audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
