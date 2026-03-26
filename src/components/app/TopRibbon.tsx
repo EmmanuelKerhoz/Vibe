@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles, Download, Upload, Undo2, Redo2, Trash2, History,
-  PanelRight, Library, Menu, FilePlus, Settings, Info, KeyboardRegular, WandSparkles, ClipboardPaste, Heart
+  PanelRight, Library, Menu, FilePlus, Settings, Info, KeyboardRegular, WandSparkles, ClipboardPaste, Heart, Search
 } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
@@ -29,6 +29,7 @@ interface Props {
   onOpenSettingsClick: () => void;
   onOpenAboutClick: () => void;
   onOpenKeyboardShortcutsClick: () => void;
+  onOpenSearchClick: () => void;
   canPasteLyrics: boolean;
   onPasteLyrics: () => void;
   isAnalyzing: boolean;
@@ -43,7 +44,7 @@ export function TopRibbon({
   onOpenNewGeneration, onOpenNewEmpty,
   onImportClick, onExportClick,
   onOpenLibraryClick,
-  onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick,
+  onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick, onOpenSearchClick,
   canPasteLyrics,
   onPasteLyrics,
   isAnalyzing,
@@ -317,6 +318,16 @@ export function TopRibbon({
             }}
           >
             <PanelRight className="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip title={t.tooltips.openSearch}>
+          <button
+            onClick={onOpenSearchClick}
+            aria-label={t.tooltips.openSearch}
+            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <Search className="w-4 h-4" />
           </button>
         </Tooltip>
         <Tooltip title={t.tooltips.keyboardShortcuts}>
