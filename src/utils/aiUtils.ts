@@ -1,4 +1,5 @@
 import { withRetry, type RetryOptions } from './withRetry';
+import { z } from 'zod';
 
 const getErrorMessage = (error: unknown) => {
   if (error && typeof error === 'object' && 'message' in error) {
@@ -69,9 +70,18 @@ export const generateContentWithRetry = (
   retryOptions?: RetryOptions,
 ) => withRetry(() => getAi().models.generateContent(params), retryOptions);
 
-export const safeJsonParse = <T>(text: string, fallback: T): T => {
+export const safeJsonParse = <T>(text: string, fallback: T, schema?: z.ZodType<T>): T => {
   try {
-    return JSON.parse(text) as T;
+    const raw = JSON.parse(text);
+    if (schema) {
+      const result = schema.safeParse(raw);
+      if (!result.success) {
+        console.warn('[safeJsonParse] Zod validation failed:', result.error);
+        return fallback;
+      }
+      return result.data;
+    }
+    return raw as T;
   } catch (e) {
     console.warn('[safeJsonParse] Failed to parse JSON response, using fallback.', e);
     return fallback;

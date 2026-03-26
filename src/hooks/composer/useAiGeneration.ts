@@ -11,6 +11,23 @@ import { withAbort, isAbortError } from '../../utils/withAbort';
 import { withRetry } from '../../utils/withRetry';
 import { getDefaultLineCount } from '../../utils/songDefaults';
 import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
+import { z } from 'zod';
+
+const LineResponseSchema = z.object({
+  text: z.string().default(''),
+  rhymingSyllables: z.string().default(''),
+  rhyme: z.string().default(''),
+  syllables: z.number().default(0),
+  concept: z.string().default(''),
+});
+
+const SectionResponseSchema = z.object({
+  name: z.string().default('Verse'),
+  rhymeScheme: z.string().default('FREE'),
+  lines: z.array(LineResponseSchema).default([]),
+});
+
+const SongResponseSchema = z.array(SectionResponseSchema);
 
 const sectionNamesMatch = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
 
@@ -225,7 +242,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', []);
+        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema);
         const songWithIds = data.map((section) => ({
           ...section,
           name: cleanSectionName(section.name),
@@ -346,7 +363,7 @@ Return the updated section in the exact same JSON structure (as an array with on
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', []);
+        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema);
         const firstSection = data[0];
         if (firstSection) {
           const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
@@ -425,7 +442,7 @@ Return the updated song in the exact same JSON structure.`;
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', []);
+        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema);
 
         if (sectionId) {
           const firstSection = data[0];
