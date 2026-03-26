@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, type ReactNode } from 'react';
+import React, { createContext, useContext, type ReactNode } from 'react';
 import { useSongComposer } from '../hooks/useSongComposer';
 import { useSongContext } from './SongContext';
 import { useLanguage } from '../i18n';
@@ -61,10 +61,8 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
   });
 
-  const value = useMemo(() => composer, [composer]);
-
   return (
-    <ComposerContext.Provider value={value}>
+    <ComposerContext.Provider value={composer}>
       {children}
     </ComposerContext.Provider>
   );
