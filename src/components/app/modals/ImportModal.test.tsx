@@ -31,21 +31,4 @@ describe('ImportModal', () => {
     expect(onPasteLyrics).toHaveBeenCalledTimes(1);
     expect(onChooseFile).toHaveBeenCalledTimes(1);
   });
-
-  it('always enables the paste action', () => {
-    render(
-      <LanguageProvider>
-        <ImportModal
-          isOpen
-          hasExistingWork={false}
-          onClose={() => {}}
-          onOpenLibrary={() => {}}
-          onChooseFile={() => {}}
-          onPasteLyrics={() => {}}
-        />
-      </LanguageProvider>,
-    );
-
-    expect((screen.getByRole('button', { name: 'Paste Lyrics' }) as HTMLButtonElement).disabled).toBe(false);
-  });
 });

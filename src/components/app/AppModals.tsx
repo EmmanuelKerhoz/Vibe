@@ -140,7 +140,12 @@ export const AppModals = React.memo(function AppModals({
         onOpenLibrary={openLibraryFromImport}
         onPasteLyrics={onOpenPasteLyrics}
       />
-      <ExportModal isOpen={ui.isExportModalOpen} onClose={() => closeModal('export')} onOpenLibrary={openLibraryFromExport} onExport={exportSong} />
+      <ExportModal
+        isOpen={ui.isExportModalOpen}
+        onClose={() => closeModal('export')}
+        onOpenLibrary={openLibraryFromExport}
+        onExport={exportSong}
+      />
       <PasteModal
         isOpen={ui.isPasteModalOpen} onClose={() => closeModal('paste')}
         pastedText={pastedText} setPastedText={setPastedText}
