@@ -492,5 +492,23 @@ describe('App markup mode reset', () => {
     mockAppState.mobileBottomNavPropsSpy.mockClear();
   });
 
-  // ... rest of the file remains unchanged ...
+  it('renders the app without crashing (smoke test)', async () => {
+    await act(async () => {
+      render(<App />);
+    });
+    expect(screen.getByTestId('left-settings-panel')).toBeTruthy();
+    expect(screen.getByTestId('status-bar')).toBeTruthy();
+    expect(screen.getByTestId('lyrics-view')).toBeTruthy();
+  });
+
+  it('resets edit mode to section when switching away from the lyrics tab', async () => {
+    render(<App />);
+    // flush mount effects (e.g. isSessionHydrated effect)
+    await act(async () => {});
+    const switchButton = screen.getByText('Switch to musical');
+    await act(async () => {
+      fireEvent.click(switchButton);
+    });
+    expect(mockAppState.setEditModeSpy).toHaveBeenCalledWith('section');
+  });
 });
