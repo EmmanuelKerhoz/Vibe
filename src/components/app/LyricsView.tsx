@@ -50,7 +50,7 @@ export const LyricsView = memo(function LyricsView({
   onOpenLibrary, onPasteLyrics, onGenerateSong,
   showTranslationFeatures = true,
 }: LyricsViewProps) {
-  const { song, rhymeScheme, updateState, updateSongAndStructureWithHistory } = useSongContext();
+  const { song, rhymeScheme, songLanguage, updateState, updateSongAndStructureWithHistory } = useSongContext();
   const { selectedLineId, isGenerating, isRegeneratingSection, handleLineClick, updateLineText,
     handleLineKeyDown, handleInstructionChange, addInstruction, removeInstruction, regenerateSection,
   } = useComposerContext();
@@ -290,7 +290,7 @@ export const LyricsView = memo(function LyricsView({
                 isGenerating={isGenerating}
                 isAnalyzing={isAnalyzing}
                 isAdaptingLanguage={showTranslationFeatures ? isAdaptingLanguage : false}
-                sectionTargetLanguage={sectionTargetLanguages[section.id] ?? 'English'}
+                sectionTargetLanguage={sectionTargetLanguages[section.id] ?? (songLanguage || 'English')}
                 onSectionTargetLanguageChange={showTranslationFeatures ? onSectionTargetLanguageChange : undefined}
                 adaptSectionLanguage={showTranslationFeatures ? adaptSectionLanguage : undefined}
                 isRegeneratingSection={isRegeneratingSection}
