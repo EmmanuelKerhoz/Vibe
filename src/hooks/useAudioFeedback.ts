@@ -23,6 +23,20 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
     return audioCtxRef.current;
   }, []);
 
+  // Close the AudioContext when the hook unmounts to release the OS audio
+  // resource. Safari iOS enforces a hard limit of 6 concurrent AudioContexts;
+  // without cleanup the app exhausts them after a few remounts (e.g. HMR, SSR
+  // hydration, StrictMode double-mount in dev).
+  useEffect(() => {
+    return () => {
+      const ctx = audioCtxRef.current;
+      if (ctx) {
+        ctx.close().catch(() => {});
+        audioCtxRef.current = null;
+      }
+    };
+  }, []);
+
   const playAudioFeedback = useCallback((type: 'click' | 'success' | 'error' | 'drag' | 'drop') => {
     if (!audioFeedback) return;
     try {
