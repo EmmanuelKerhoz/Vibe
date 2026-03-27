@@ -229,8 +229,8 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
   const switchEditMode = useCallback((target: EditMode) => {
     if (target === editMode) return;
 
-    // Switching away from section mode → serialize song to text
-    if (editMode === 'section' && (target === 'text' || target === 'markdown')) {
+    // Switching away from section/phonetic mode → serialize song to text
+    if ((editMode === 'section' || editMode === 'phonetic') && (target === 'text' || target === 'markdown')) {
       setMarkupText(serializeSongToMarkup());
       setEditMode(target);
       return;

@@ -91,6 +91,15 @@ export interface Translations {
       hint: string;
       placeholder: string;
     };
+    phoneticMode: {
+      title: string;
+      description: string;
+      hint: string;
+      placeholder: string;
+      loading?: string;
+      languageLabel?: string;
+      error?: string;
+    };
     sectionTooltip: {
       lines: string;
       words: string;
@@ -106,6 +115,7 @@ export interface Translations {
     adaptSection: string;
     editorMode: string;
     markupModeLabel: string;
+    phoneticModeLabel: string;
     textModeLabel: string;
     regenerateSection: string;
     quantize: string;
@@ -361,6 +371,7 @@ export interface Translations {
       text: string;
       section: string;
       markdown: string;
+      phonetic?: string;
     };
     translation?: {
       label: string;
@@ -413,6 +424,7 @@ export interface Translations {
     sectionAdapt: string;
     markupMode: string;
     editorMode: string;
+    phoneticMode: string;
     textMode: string;
     applyAnalysis: string;
     revertAnalysis: string;

@@ -35,8 +35,8 @@ interface Props {
   setAudioFeedback: (v: boolean) => void;
   uiScale: 'small' | 'medium' | 'large';
   setUiScale: (v: 'small' | 'medium' | 'large') => void;
-  defaultEditMode: 'text' | 'section' | 'markdown';
-  setDefaultEditMode: (v: 'text' | 'section' | 'markdown') => void;
+  defaultEditMode: 'text' | 'section' | 'markdown' | 'phonetic';
+  setDefaultEditMode: (v: 'text' | 'section' | 'markdown' | 'phonetic') => void;
   showTranslationFeatures: boolean;
   setShowTranslationFeatures: (v: boolean) => void;
 

@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, memo } from 'react';
-import { ClipboardPaste, FileText, Layout, Library, Music, Sparkles, Type } from '../ui/icons';
+import React, { useCallback, useMemo, memo, useRef } from 'react';
+import { ClipboardPaste, FileText, Layout, Library, Loader2, Music, Sparkles, Type, Volume2 } from '../ui/icons';
 import { Section } from '../../types';
 import type { EditMode } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
@@ -10,6 +10,7 @@ import { generateId } from '../../utils/idUtils';
 import { isLinkedChorusSectionName, isLinkedPreChorusPair, isPreChorusSectionName, SECTION_TYPE_OPTIONS } from '../../constants/sections';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { usePhoneticTranscription } from '../../hooks/usePhoneticTranscription';
 
 // Module-level helpers for tied section detection
 const isSectionPreChorus = (s: Section) => isPreChorusSectionName(s.name);
@@ -32,6 +33,7 @@ interface LyricsViewProps {
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
   markupDirection?: 'ltr' | 'rtl';
   canPasteLyrics: boolean;
+  targetLanguage?: string;
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
   onGenerateSong: () => void;
@@ -47,6 +49,7 @@ export const LyricsView = memo(function LyricsView({
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
   editMode, setEditMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
   canPasteLyrics,
+  targetLanguage,
   onOpenLibrary, onPasteLyrics, onGenerateSong,
   showTranslationFeatures = true,
 }: LyricsViewProps) {
@@ -60,6 +63,15 @@ export const LyricsView = memo(function LyricsView({
     'FREE',
     ...Object.keys(t.rhymeSchemes).filter((key) => key !== 'FREE'),
   ] as Array<keyof typeof t.rhymeSchemes>;
+
+  const phoneticTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const phoneticState = usePhoneticTranscription({
+    song,
+    sectionTargetLanguages,
+    songLanguage,
+    targetLanguage,
+    isActive: editMode === 'phonetic',
+  });
 
   // ── Handlers locaux — stables via useCallback ────────────────────────────
 
@@ -250,6 +262,55 @@ export const LyricsView = memo(function LyricsView({
             />
             <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
               <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
+            </div>
+          </div>
+        ) : editMode === 'phonetic' ? (
+          <div className="lcars-gradient-container flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
+            <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
+                <Volume2 className="w-4 h-4 text-[var(--accent-color)]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
+                  {t.editor.phoneticMode.title}
+                </h3>
+                <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
+                  {t.editor.phoneticMode.description}
+                </p>
+              </div>
+            </div>
+            <div className="relative flex-1 min-h-0 overflow-hidden">
+              {phoneticState.status === 'loading' && (
+                <div className="absolute inset-0 bg-[var(--bg-app)]/70 backdrop-blur-sm flex items-center justify-center z-10">
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] uppercase tracking-wider">
+                    <Loader2 className="w-4 h-4 animate-spin text-[var(--accent-color)]" />
+                    <span>{t.editor.phoneticMode.loading ?? 'Generating phonetics...'}</span>
+                  </div>
+                </div>
+              )}
+              <MarkupInput
+                value={phoneticState.text || (phoneticState.status === 'ready' ? t.editor.phoneticMode.placeholder : '')}
+                onChange={() => {}}
+                textareaRef={phoneticTextareaRef}
+                direction={markupDirection}
+                className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
+                spellCheck={false}
+                readOnly
+              />
+            </div>
+            <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-between gap-3">
+              <p className="text-xs text-[var(--text-secondary)]">
+                {phoneticState.status === 'error'
+                  ? (t.editor.phoneticMode.error
+                    ? t.editor.phoneticMode.error.replace('{error}', phoneticState.error || 'unavailable')
+                    : phoneticState.error)
+                  : t.editor.phoneticMode.hint.replace('{lang}', phoneticState.languageLabel)}
+              </p>
+              <span className={`text-[10px] uppercase tracking-widest font-semibold ${phoneticState.status === 'error' ? 'text-red-300' : 'text-[var(--accent-color)]'}`}>
+                {phoneticState.status === 'error'
+                  ? (phoneticState.error || 'Error')
+                  : phoneticState.languageLabel}
+              </span>
             </div>
           </div>
         ) : song.length === 0 ? (

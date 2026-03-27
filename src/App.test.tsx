@@ -6,7 +6,7 @@ import type { WebSimilarityCandidate, WebSimilarityIndex } from './types/webSimi
 
 const mockAppState = vi.hoisted(() => ({
   initialActiveTab: 'lyrics' as 'lyrics' | 'musical',
-  initialEditMode: 'markdown' as 'text' | 'markdown' | 'section',
+  initialEditMode: 'markdown' as 'text' | 'markdown' | 'section' | 'phonetic',
   initialIsLeftPanelOpen: false,
   initialIsStructureOpen: false,
   initialIsMobile: false,
@@ -258,7 +258,7 @@ vi.mock('./hooks/useAppState', async () => {
         isSavingToLibrary: false,
         setIsSavingToLibrary: mockAppState.noop,
         editMode,
-        setEditMode: (value: 'text' | 'markdown' | 'section') => {
+        setEditMode: (value: 'text' | 'markdown' | 'section' | 'phonetic') => {
           mockAppState.setEditModeSpy(value);
           setEditModeState(value);
         },
