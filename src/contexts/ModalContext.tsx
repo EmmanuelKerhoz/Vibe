@@ -70,8 +70,6 @@ export interface ModalStateContextValue {
 }
 
 // ── Legacy unified type — kept for backward compat with existing consumers ────
-// Consumers should migrate to useModalDispatch() or useModalState() for
-// fine-grained subscriptions. useModalContext() remains available.
 export interface ModalContextValue extends ModalDispatchContextValue {
   uiState: UIStateBag;
 }
@@ -140,15 +138,11 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
     }
   }, [uiState]);
 
-  // Dispatch value is stable as long as uiState setters are stable (they are:
-  // all setters from useState are referentially stable across renders).
   const dispatchValue = useMemo(
     () => ({ openModal, closeModal }),
     [openModal, closeModal],
   );
 
-  // State value re-creates when uiState changes — only ModalStateContext
-  // consumers re-render, not dispatch-only consumers.
   const stateValue = useMemo(
     () => ({ uiState }),
     [uiState],
@@ -165,22 +159,12 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
-/**
- * Returns only { openModal, closeModal }.
- * Stable reference — never triggers re-renders when modal state changes.
- * Prefer this hook in action-only components (buttons, menu items, shortcuts).
- */
 export function useModalDispatch(): ModalDispatchContextValue {
   const ctx = useContext(ModalDispatchContext);
   if (!ctx) throw new Error('useModalDispatch must be used inside <ModalProvider>');
   return ctx;
 }
 
-/**
- * Returns the full uiState bag.
- * Re-renders on every modal state change — use only in components that
- * actually read modal open/close state (e.g. the modal components themselves).
- */
 export function useModalState(): ModalStateContextValue {
   const ctx = useContext(ModalStateContext);
   if (!ctx) throw new Error('useModalState must be used inside <ModalProvider>');
@@ -189,13 +173,16 @@ export function useModalState(): ModalStateContextValue {
 
 /**
  * Backward-compatible hook — returns { openModal, closeModal, uiState }.
- * Subscribes to both contexts; re-renders on state changes.
- * Existing consumers continue to work without modification.
- * @deprecated Migrate to useModalDispatch() or useModalState() for
- * fine-grained subscriptions.
+ * Combined null-check preserves the legacy error message for existing tests.
+ * @deprecated Migrate to useModalDispatch() or useModalState().
  */
 export function useModalContext(): ModalContextValue {
-  const dispatch = useModalDispatch();
-  const { uiState } = useModalState();
-  return { ...dispatch, uiState };
+  const dispatchCtx = useContext(ModalDispatchContext);
+  const stateCtx = useContext(ModalStateContext);
+
+  if (!dispatchCtx || !stateCtx) {
+    throw new Error('useModalContext must be used inside <ModalProvider>');
+  }
+
+  return { ...dispatchCtx, uiState: stateCtx.uiState };
 }
