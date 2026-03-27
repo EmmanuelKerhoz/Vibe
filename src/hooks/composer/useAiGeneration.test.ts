@@ -106,4 +106,42 @@ describe('useAiGeneration', () => {
       expect(prompt).toContain('Write exclusively in French.');
     });
   });
+
+  it('assigns ids to generated sections and lines when the AI response omits them', async () => {
+    const song = makeSong();
+    const updateSongAndStructureWithHistory = vi.fn();
+    const params = {
+      song,
+      structure: ['Verse'],
+      topic: 'Night drive',
+      mood: 'Moody',
+      rhymeScheme: 'AABB',
+      targetSyllables: 8,
+      title: 'Midnight',
+      songLanguage: 'French',
+      uiLanguage: 'English',
+      updateState: vi.fn((
+        recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] },
+      ) => recipe({ song, structure: ['Verse'] })),
+      updateSongWithHistory: vi.fn(),
+      updateSongAndStructureWithHistory,
+      requestAutoTitleGeneration: vi.fn(),
+      setSelectedLineId: vi.fn(),
+    };
+
+    const { result } = renderHook(() => useAiGeneration(params));
+
+    await act(async () => {
+      await result.current.generateSong();
+    });
+
+    expect(updateSongAndStructureWithHistory).toHaveBeenCalledTimes(1);
+    const generatedSongCall = updateSongAndStructureWithHistory.mock.calls[0];
+    expect(generatedSongCall).toBeDefined();
+    const generatedSong = generatedSongCall?.[0] as Section[];
+    expect(generatedSong).toHaveLength(1);
+    expect(generatedSong[0]?.id).toEqual(expect.any(String));
+    expect(generatedSong[0]?.lines[0]?.id).toEqual(expect.any(String));
+    expect(generatedSong[0]?.lines[0]?.text).toBe('Nouvelle ligne');
+  });
 });

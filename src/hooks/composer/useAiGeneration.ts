@@ -29,6 +29,12 @@ const SectionResponseSchema = z.object({
 
 const SongResponseSchema = z.array(SectionResponseSchema);
 
+/** Raw line shape returned by the AI generator (before ID assignment). */
+type RawLine = Omit<Section['lines'][number], 'id'> & { id?: string };
+
+/** Raw section shape returned by the AI generator (before ID assignment). */
+type RawSection = Omit<Section, 'id' | 'lines'> & { id?: string; lines: RawLine[] };
+
 const sectionNamesMatch = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
 
 const createEmptySection = (name: string, defaultRhymeScheme: string): Section => ({
@@ -68,9 +74,6 @@ const alignGeneratedSongToStructure = (
       : createEmptySection(sectionName, defaultRhymeScheme);
   });
 };
-
-/** Raw line shape returned by the AI generator (before ID assignment). */
-type RawLine = Omit<Section['lines'][number], 'id'> & { id?: string };
 
 /** Flags isMeta on lines returned by the AI generator */
 const flagMetaLines = <T extends { text?: string }>(lines: T[]): (T & { isMeta: boolean })[] =>
@@ -242,7 +245,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema);
+        const data = safeJsonParse<RawSection[]>(response.text || '[]', [], SongResponseSchema);
         const songWithIds = data.map((section) => ({
           ...section,
           name: cleanSectionName(section.name),
@@ -363,7 +366,7 @@ Return the updated section in the exact same JSON structure (as an array with on
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema);
+        const data = safeJsonParse<RawSection[]>(response.text || '[]', [], SongResponseSchema);
         const firstSection = data[0];
         if (firstSection) {
           const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
@@ -442,7 +445,7 @@ Return the updated song in the exact same JSON structure.`;
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema);
+        const data = safeJsonParse<RawSection[]>(response.text || '[]', [], SongResponseSchema);
 
         if (sectionId) {
           const firstSection = data[0];
