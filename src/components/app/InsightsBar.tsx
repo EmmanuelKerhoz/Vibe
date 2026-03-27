@@ -326,6 +326,7 @@ export const InsightsBar = React.memo(function InsightsBar({
               { mode: 'text' as EditMode, icon: <Type className="w-3.5 h-3.5" />, label: t.editor.textModeLabel, tooltip: t.tooltips.textMode },
               { mode: 'markdown' as EditMode, icon: <FileText className="w-3.5 h-3.5" />, label: t.editor.markupModeLabel, tooltip: t.tooltips.markupMode },
               { mode: 'section' as EditMode, icon: <Layout className="w-3.5 h-3.5" />, label: t.editor.editorMode, tooltip: t.tooltips.editorMode },
+              { mode: 'phonetic' as EditMode, icon: <Languages className="w-3.5 h-3.5" />, label: t.editor.phoneticModeLabel, tooltip: t.tooltips.phoneticMode },
             ]).map(({ mode, icon, label, tooltip }) => (
               <Tooltip key={mode} title={tooltip}>
                 <button

@@ -1,9 +1,10 @@
 import React, { useCallback, useMemo, memo } from 'react';
-import { ClipboardPaste, FileText, Layout, Library, Music, Sparkles, Type } from '../ui/icons';
+import { ClipboardPaste, FileText, Languages, Layout, Library, Music, Sparkles, Type } from '../ui/icons';
 import { Section } from '../../types';
 import type { EditMode } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
 import { MarkupInput } from '../editor/MarkupInput';
+import { PhoneticView } from '../editor/PhoneticView';
 import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
@@ -250,6 +251,30 @@ export const LyricsView = memo(function LyricsView({
             />
             <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
               <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
+            </div>
+          </div>
+        ) : editMode === 'phonetic' ? (
+          <div className="lcars-gradient-container flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
+            <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
+                <Languages className="w-4 h-4 text-[var(--accent-color)]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
+                  {t.editor.phoneticMode.title}
+                </h3>
+                <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
+                  {t.editor.phoneticMode.description}
+                </p>
+              </div>
+            </div>
+            <PhoneticView
+              sections={song}
+              songLanguage={songLanguage}
+              className="w-full flex-1 min-h-0 text-sm leading-7 bg-[var(--bg-app)]"
+            />
+            <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
+              <p className="text-xs text-[var(--text-secondary)]">{t.editor.phoneticMode.hint}</p>
             </div>
           </div>
         ) : song.length === 0 ? (

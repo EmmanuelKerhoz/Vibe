@@ -91,6 +91,11 @@ export interface Translations {
       hint: string;
       placeholder: string;
     };
+    phoneticMode: {
+      title: string;
+      description: string;
+      hint: string;
+    };
     sectionTooltip: {
       lines: string;
       words: string;
@@ -107,6 +112,7 @@ export interface Translations {
     editorMode: string;
     markupModeLabel: string;
     textModeLabel: string;
+    phoneticModeLabel: string;
     regenerateSection: string;
     quantize: string;
     lyricLine: string;
@@ -414,6 +420,7 @@ export interface Translations {
     markupMode: string;
     editorMode: string;
     textMode: string;
+    phoneticMode: string;
     applyAnalysis: string;
     revertAnalysis: string;
     closeAnalysis: string;

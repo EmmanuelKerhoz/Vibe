@@ -86,6 +86,11 @@ const fr: Translations = {
       hint: 'Écrivez librement sans formatage. Votre texte sera préservé lors du changement de mode.',
       placeholder: 'Commencez à écrire vos paroles ici...',
     },
+    phoneticMode: {
+      title: 'Mode Phonétique',
+      description: 'Vue de transcription phonétique IPA',
+      hint: 'Visualisez les paroles avec la prononciation IPA, la décomposition syllabique et l\'extraction du noyau de rime. Traitement phonétique adapté à la langue de chaque section.',
+    },
     sectionTooltip: {
       lines: 'Lignes',
       words: 'Mots',
@@ -102,6 +107,7 @@ const fr: Translations = {
     editorMode: 'Mode Éditeur',
     markupModeLabel: 'Mode Markdown',
     textModeLabel: 'Texte',
+    phoneticModeLabel: 'Phonétique',
     regenerateSection: 'Régénérer',
     quantize: 'Quantifier',
     lyricLine: 'Ligne de paroles',
@@ -389,6 +395,7 @@ const fr: Translations = {
     markupMode: 'Passer en mode texte brut',
     textMode: 'Passer en mode texte',
     editorMode: 'Passer en éditeur structuré',
+    phoneticMode: 'Passer en vue phonétique (transcription IPA)',
     applyAnalysis: 'Appliquer les améliorations sélectionnées à la chanson',
     revertAnalysis: 'Annuler toutes les modifications d\'analyse appliquées',
     closeAnalysis: 'Fermer le rapport d\'analyse',

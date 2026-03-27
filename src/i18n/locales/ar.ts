@@ -86,6 +86,11 @@ const ar: Translations = {
       hint: 'اكتب بحرية بدون تنسيق. سيتم الحفاظ على النص عند تبديل الأوضاع.',
       placeholder: 'ابدأ بكتابة كلماتك هنا...',
     },
+    phoneticMode: {
+      title: 'Phonetic Mode',
+      description: 'IPA phonetic transcription view',
+      hint: 'View lyrics with IPA pronunciation, syllable breakdown, and rhyme nucleus extraction. Language-aware phonetic processing based on section language.',
+    },
     sectionTooltip: {
       lines: 'أسطر',
       words: 'كلمات',
@@ -102,6 +107,7 @@ const ar: Translations = {
     editorMode: 'وضع التحرير',
     markupModeLabel: 'وضع الترميز',
     textModeLabel: 'نص',
+    phoneticModeLabel: 'صوتي',
     regenerateSection: 'إعادة توليد',
     quantize: 'ضبط',
     lyricLine: 'سطر الكلمات',
@@ -393,6 +399,7 @@ const ar: Translations = {
     markupMode: 'التبديل إلى وضع النص البسيط',
     textMode: 'التبديل إلى وضع النص',
     editorMode: 'التبديل إلى المحرر المنظم',
+    phoneticMode: 'التبديل إلى العرض الصوتي (نسخ IPA)',
     applyAnalysis: 'تطبيق التحسينات المحددة على الأغنية',
     revertAnalysis: 'التراجع عن كل تغييرات التحليل المطبقة',
     closeAnalysis: 'إغلاق تقرير التحليل',

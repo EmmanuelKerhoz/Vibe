@@ -86,6 +86,11 @@ const en: Translations = {
       hint: 'Write freely without formatting. Your text will be preserved when switching modes.',
       placeholder: 'Start writing your lyrics here...',
     },
+    phoneticMode: {
+      title: 'Phonetic Mode',
+      description: 'IPA phonetic transcription view',
+      hint: 'View lyrics with IPA pronunciation, syllable breakdown, and rhyme nucleus extraction. Language-aware phonetic processing based on section language.',
+    },
     sectionTooltip: {
       lines: 'Lines',
       words: 'Words',
@@ -102,6 +107,7 @@ const en: Translations = {
     editorMode: 'Sections',
     markupModeLabel: 'Markdown',
     textModeLabel: 'Text',
+    phoneticModeLabel: 'Phonetic',
     regenerateSection: 'Regenerate Section',
     quantize: 'Quantize',
     lyricLine: 'Lyric Line',
@@ -399,6 +405,7 @@ const en: Translations = {
     markupMode: 'Switch to Pure Text Mode',
     textMode: 'Switch to Text Mode',
     editorMode: 'Switch to Structured Editor',
+    phoneticMode: 'Switch to Phonetic View (IPA transcription)',
     applyAnalysis: 'Apply selected improvements to song',
     revertAnalysis: 'Revert all applied analysis changes',
     closeAnalysis: 'Close analysis report',

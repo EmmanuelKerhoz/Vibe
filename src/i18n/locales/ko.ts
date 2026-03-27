@@ -91,6 +91,11 @@ const ko: Translations = {
       hint: '서식 없이 자유롭게 작성하세요. 모드를 전환해도 텍스트가 유지됩니다.',
       placeholder: '여기에 가사를 작성하세요...',
     },
+    phoneticMode: {
+      title: 'Phonetic Mode',
+      description: 'IPA phonetic transcription view',
+      hint: 'View lyrics with IPA pronunciation, syllable breakdown, and rhyme nucleus extraction. Language-aware phonetic processing based on section language.',
+    },
     sectionTooltip: {
       ...en.editor.sectionTooltip,
       lines: '줄',
@@ -108,6 +113,7 @@ const ko: Translations = {
     editorMode: '편집기 모드',
     markupModeLabel: '마크업 모드',
     textModeLabel: '텍스트',
+    phoneticModeLabel: '발음 기호',
     regenerateSection: '다시 생성',
     quantize: '보정',
     lyricLine: '가사 줄',
@@ -397,6 +403,7 @@ const ko: Translations = {
     markupMode: '순수 텍스트 모드로 전환',
     textMode: '텍스트 모드로 전환',
     editorMode: '구조화 편집기로 전환',
+    phoneticMode: '발음 기호 보기로 전환 (IPA 전사)',
     applyAnalysis: '선택한 개선사항을 곡에 적용',
     revertAnalysis: '적용한 분석 변경 모두 되돌리기',
     closeAnalysis: '분석 보고서 닫기',
