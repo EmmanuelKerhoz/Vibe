@@ -14,6 +14,7 @@ import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
 import { z } from 'zod';
 
 const LineResponseSchema = z.object({
+  id: z.string().default(() => generateId()),
   text: z.string().default(''),
   rhymingSyllables: z.string().default(''),
   rhyme: z.string().default(''),
@@ -22,6 +23,7 @@ const LineResponseSchema = z.object({
 });
 
 const SectionResponseSchema = z.object({
+  id: z.string().default(() => generateId()),
   name: z.string().default('Verse'),
   rhymeScheme: z.string().default('FREE'),
   lines: z.array(LineResponseSchema).default([]),
