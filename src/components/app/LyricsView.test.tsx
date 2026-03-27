@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../i18n';
 import { DragProvider } from '../../contexts/DragContext';
+import { RefsProvider } from '../../contexts/RefsContext';
 import type { Section } from '../../types';
 import { LyricsView } from './LyricsView';
 
@@ -43,22 +44,24 @@ describe('LyricsView empty state', () => {
     render(
       <DragProvider>
         <LanguageProvider>
-          <LyricsView
-            isAnalyzing={false}
-            playAudioFeedback={() => {}}
-            handleDrop={() => {}}
-            handleLineDragStart={() => {}}
-            handleLineDrop={() => {}}
-            editMode="section"
-            setEditMode={() => {}}
-            markupText=""
-            setMarkupText={() => {}}
-            markupTextareaRef={{ current: null }}
-            canPasteLyrics={true}
-            onOpenLibrary={onOpenLibrary}
-            onPasteLyrics={onPasteLyrics}
-            onGenerateSong={onGenerateSong}
-          />
+          <RefsProvider>
+            <LyricsView
+              isAnalyzing={false}
+              playAudioFeedback={() => {}}
+              handleDrop={() => {}}
+              handleLineDragStart={() => {}}
+              handleLineDrop={() => {}}
+              editMode="section"
+              setEditMode={() => {}}
+              markupText=""
+              setMarkupText={() => {}}
+              markupTextareaRef={{ current: null }}
+              canPasteLyrics={true}
+              onOpenLibrary={onOpenLibrary}
+              onPasteLyrics={onPasteLyrics}
+              onGenerateSong={onGenerateSong}
+            />
+          </RefsProvider>
         </LanguageProvider>
       </DragProvider>,
     );
@@ -76,22 +79,24 @@ describe('LyricsView empty state', () => {
     render(
       <DragProvider>
         <LanguageProvider>
-          <LyricsView
-            isAnalyzing={false}
-            playAudioFeedback={() => {}}
-            handleDrop={() => {}}
-            handleLineDragStart={() => {}}
-            handleLineDrop={() => {}}
-            editMode="section"
-            setEditMode={() => {}}
-            markupText=""
-            setMarkupText={() => {}}
-            markupTextareaRef={{ current: null }}
-            canPasteLyrics={false}
-            onOpenLibrary={() => {}}
-            onPasteLyrics={() => {}}
-            onGenerateSong={() => {}}
-          />
+          <RefsProvider>
+            <LyricsView
+              isAnalyzing={false}
+              playAudioFeedback={() => {}}
+              handleDrop={() => {}}
+              handleLineDragStart={() => {}}
+              handleLineDrop={() => {}}
+              editMode="section"
+              setEditMode={() => {}}
+              markupText=""
+              setMarkupText={() => {}}
+              markupTextareaRef={{ current: null }}
+              canPasteLyrics={false}
+              onOpenLibrary={() => {}}
+              onPasteLyrics={() => {}}
+              onGenerateSong={() => {}}
+            />
+          </RefsProvider>
         </LanguageProvider>
       </DragProvider>,
     );
@@ -103,22 +108,24 @@ describe('LyricsView empty state', () => {
     const { container } = render(
       <DragProvider>
         <LanguageProvider>
-          <LyricsView
-            isAnalyzing={false}
-            playAudioFeedback={() => {}}
-            handleDrop={() => {}}
-            handleLineDragStart={() => {}}
-            handleLineDrop={() => {}}
-            editMode="markdown"
-            setEditMode={() => {}}
-            markupText="[Verse]\nHello"
-            setMarkupText={() => {}}
-            markupTextareaRef={{ current: null }}
-            canPasteLyrics={true}
-            onOpenLibrary={() => {}}
-            onPasteLyrics={() => {}}
-            onGenerateSong={() => {}}
-          />
+          <RefsProvider>
+            <LyricsView
+              isAnalyzing={false}
+              playAudioFeedback={() => {}}
+              handleDrop={() => {}}
+              handleLineDragStart={() => {}}
+              handleLineDrop={() => {}}
+              editMode="markdown"
+              setEditMode={() => {}}
+              markupText="[Verse]\nHello"
+              setMarkupText={() => {}}
+              markupTextareaRef={{ current: null }}
+              canPasteLyrics={true}
+              onOpenLibrary={() => {}}
+              onPasteLyrics={() => {}}
+              onGenerateSong={() => {}}
+            />
+          </RefsProvider>
         </LanguageProvider>
       </DragProvider>,
     );
@@ -150,22 +157,24 @@ describe('LyricsView empty state', () => {
     render(
       <DragProvider>
         <LanguageProvider>
-          <LyricsView
-            isAnalyzing={false}
-            playAudioFeedback={() => {}}
-            handleDrop={() => {}}
-            handleLineDragStart={() => {}}
-            handleLineDrop={() => {}}
-            editMode="section"
-            setEditMode={() => {}}
-            markupText=""
-            setMarkupText={() => {}}
-            markupTextareaRef={{ current: null }}
-            canPasteLyrics={true}
-            onOpenLibrary={() => {}}
-            onPasteLyrics={() => {}}
-            onGenerateSong={() => {}}
-          />
+          <RefsProvider>
+            <LyricsView
+              isAnalyzing={false}
+              playAudioFeedback={() => {}}
+              handleDrop={() => {}}
+              handleLineDragStart={() => {}}
+              handleLineDrop={() => {}}
+              editMode="section"
+              setEditMode={() => {}}
+              markupText=""
+              setMarkupText={() => {}}
+              markupTextareaRef={{ current: null }}
+              canPasteLyrics={true}
+              onOpenLibrary={() => {}}
+              onPasteLyrics={() => {}}
+              onGenerateSong={() => {}}
+            />
+          </RefsProvider>
         </LanguageProvider>
       </DragProvider>,
     );
@@ -215,22 +224,24 @@ describe('LyricsView empty state', () => {
     render(
       <DragProvider>
         <LanguageProvider>
-          <LyricsView
-            isAnalyzing={false}
-            playAudioFeedback={() => {}}
-            handleDrop={() => {}}
-            handleLineDragStart={() => {}}
-            handleLineDrop={() => {}}
-            editMode="section"
-            setEditMode={() => {}}
-            markupText=""
-            setMarkupText={() => {}}
-            markupTextareaRef={{ current: null }}
-            canPasteLyrics={true}
-            onOpenLibrary={() => {}}
-            onPasteLyrics={() => {}}
-            onGenerateSong={() => {}}
-          />
+          <RefsProvider>
+            <LyricsView
+              isAnalyzing={false}
+              playAudioFeedback={() => {}}
+              handleDrop={() => {}}
+              handleLineDragStart={() => {}}
+              handleLineDrop={() => {}}
+              editMode="section"
+              setEditMode={() => {}}
+              markupText=""
+              setMarkupText={() => {}}
+              markupTextareaRef={{ current: null }}
+              canPasteLyrics={true}
+              onOpenLibrary={() => {}}
+              onPasteLyrics={() => {}}
+              onGenerateSong={() => {}}
+            />
+          </RefsProvider>
         </LanguageProvider>
       </DragProvider>,
     );
