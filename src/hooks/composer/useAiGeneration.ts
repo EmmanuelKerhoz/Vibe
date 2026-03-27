@@ -29,6 +29,10 @@ const SectionResponseSchema = z.object({
 
 const SongResponseSchema = z.array(SectionResponseSchema);
 
+/** Parse a raw AI JSON response into a partial Section array (without ids). */
+const parseSongResponse = (text: string): Section[] =>
+  safeJsonParse<Section[]>(text || '[]', [], SongResponseSchema as unknown as z.ZodType<Section[]>);
+
 const sectionNamesMatch = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
 
 const createEmptySection = (name: string, defaultRhymeScheme: string): Section => ({
@@ -242,7 +246,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema as unknown as z.ZodType<Section[]>);
+        const data = parseSongResponse(response.text);
         const songWithIds = data.map((section) => ({
           ...section,
           name: cleanSectionName(section.name),
@@ -363,7 +367,7 @@ Return the updated section in the exact same JSON structure (as an array with on
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema as unknown as z.ZodType<Section[]>);
+        const data = parseSongResponse(response.text);
         const firstSection = data[0];
         if (firstSection) {
           const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
@@ -442,7 +446,7 @@ Return the updated song in the exact same JSON structure.`;
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema as unknown as z.ZodType<Section[]>);
+        const data = parseSongResponse(response.text);
 
         if (sectionId) {
           const firstSection = data[0];
