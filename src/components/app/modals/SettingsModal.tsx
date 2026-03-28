@@ -4,6 +4,7 @@ import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';
 import { FlagEmoji } from '../../ui/FlagEmoji';
+import { AiAssistantPanel } from '../AiAssistantPanel';
 
 interface Props {
   isOpen: boolean;
@@ -51,6 +52,7 @@ export function SettingsModal({
   const [draftUiScale, setDraftUiScale] = useState(uiScale);
   const [draftDefaultEditMode, setDraftDefaultEditMode] = useState(defaultEditMode);
   const [draftShowTranslation, setDraftShowTranslation] = useState(showTranslationFeatures);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const closeActionRef = useRef<'save' | 'close' | null>(null);
 
   useEffect(() => {
@@ -342,17 +344,26 @@ export function SettingsModal({
                       <Github className="w-3.5 h-3.5" />
                       {t.settings.about.github}
                     </a>
-                    <a
-                      href="https://github.com/EmmanuelKerhoz/Vibe/blob/main/README.md"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => setIsAssistantOpen(v => !v)}
                       aria-label={t.settings.about.docs}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-all text-xs"
+                      aria-pressed={isAssistantOpen}
+                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 border rounded-lg transition-all text-xs ${
+                        isAssistantOpen
+                          ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/40 text-[var(--accent-color)]'
+                          : 'bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      }`}
                     >
                       <BookOpen className="w-3.5 h-3.5" />
                       {t.settings.about.docs}
-                    </a>
+                    </button>
                   </div>
+                  {isAssistantOpen && (
+                    <AiAssistantPanel
+                      onClose={() => setIsAssistantOpen(false)}
+                    />
+                  )}
                 </section>
               </div>
 

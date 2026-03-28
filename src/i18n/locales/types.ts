@@ -348,6 +348,17 @@ export interface Translations {
     close: string;
   };
 
+  /** AI assistant panel — optional; non-EN/FR locales fall back via deep-merge */
+  aiAssistant?: {
+    title: string;
+    onboarding: string;
+    placeholder: string;
+    send: string;
+    close: string;
+    thinking: string;
+    error: string;
+  };
+
   settings: {
     title: string;
     theme: {
