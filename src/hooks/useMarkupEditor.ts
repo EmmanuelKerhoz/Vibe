@@ -244,6 +244,14 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       return;
     }
 
+    // Switching from text/markdown to phonetic → parse to sections first
+    if (target === 'phonetic' && (editMode === 'text' || editMode === 'markdown')) {
+      const newSections = parseMarkupToSections();
+      if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
+      setEditMode('phonetic');
+      return;
+    }
+
     // Switching between text ↔ markdown: no data conversion needed, same text buffer
     setEditMode(target);
   }, [editMode, serializeSongToMarkup, parseMarkupToSections, setEditMode, setMarkupText, updateSongAndStructureWithHistory]);
