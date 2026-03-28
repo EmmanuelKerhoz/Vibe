@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { RefObject } from 'react';
 import type { Section } from '../types';
 import { usePasteImport } from './analysis/usePasteImport';
@@ -51,7 +51,35 @@ export const useSongAnalysis = ({
     setTopic,
     setMood,
   } = useSongContext();
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // Counter-based guard: isAnalyzing stays true until ALL concurrent
+  // operations (paste import + song analysis engine) have completed.
+  // Prevents the race condition where the first operation finishing
+  // would reset the flag while the second is still running.
+  const activeAnalysisOpsRef = useRef(0);
+
+  const beginAnalyzing = useCallback(() => {
+    activeAnalysisOpsRef.current += 1;
+    setIsAnalyzing(true);
+  }, []);
+
+  const endAnalyzing = useCallback(() => {
+    activeAnalysisOpsRef.current = Math.max(0, activeAnalysisOpsRef.current - 1);
+    if (activeAnalysisOpsRef.current === 0) {
+      setIsAnalyzing(false);
+    }
+  }, []);
+
+  // Adapter that sub-hooks can call: begin when starting, end when done.
+  // Sub-hooks receive a stable { begin, end } object instead of raw setState.
+  const setIsAnalyzingForSubhook = useCallback((value: boolean) => {
+    if (value) {
+      beginAnalyzing();
+    } else {
+      endAnalyzing();
+    }
+  }, [beginAnalyzing, endAnalyzing]);
 
   const languageAdapter = useLanguageAdapter({
     song,
@@ -88,7 +116,7 @@ export const useSongAnalysis = ({
     onDetectedLanguage: handleDetectedLanguage,
     requestAutoTitleGeneration,
     clearLineSelection,
-    setIsAnalyzing,
+    setIsAnalyzing: setIsAnalyzingForSubhook,
     setIsPasteModalOpen,
   });
 
@@ -101,7 +129,7 @@ export const useSongAnalysis = ({
     updateSongAndStructureWithHistory,
     setTopic,
     setMood,
-    setIsAnalyzing,
+    setIsAnalyzing: setIsAnalyzingForSubhook,
     setIsAnalysisModalOpen,
   });
 

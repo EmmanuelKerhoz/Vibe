@@ -5,6 +5,12 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+// Type-safe detection of the webkit-prefixed AudioContext fallback.
+// Mirrors the pattern used in useAudioFeedback for consistency.
+type WindowWithWebkitAudio = Window & typeof globalThis & {
+  webkitAudioContext?: typeof AudioContext;
+};
+
 /**
  * Schedule a single tick sound at an exact AudioContext time.
  * Using a scheduled start time (not audioCtx.currentTime) eliminates
@@ -21,6 +27,24 @@ function scheduleTick(audioCtx: AudioContext, atTime: number): void {
   gain.gain.exponentialRampToValueAtTime(0.001, atTime + 0.05);
   osc.start(atTime);
   osc.stop(atTime + 0.05);
+}
+
+/**
+ * Creates (or reuses) an AudioContext with webkit fallback and try/catch.
+ * Returns null if AudioContext is unavailable in the current environment.
+ * Aligned with the pattern from useAudioFeedback.
+ */
+function getOrCreateAudioContext(ref: React.MutableRefObject<AudioContext | null>): AudioContext | null {
+  if (ref.current) return ref.current;
+  try {
+    const win = window as WindowWithWebkitAudio;
+    const Ctor = window.AudioContext ?? win.webkitAudioContext;
+    if (!Ctor) return null;
+    ref.current = new Ctor();
+    return ref.current;
+  } catch {
+    return null;
+  }
 }
 
 export interface UseMetronomeReturn {
@@ -65,10 +89,8 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
   const safeBpm = Math.min(300, Math.max(20, bpm || 120));
 
   // ── Lookahead scheduler ──────────────────────────────────────────────────
-  // Runs every SCHEDULER_INTERVAL_MS, schedules any beats that fall within
-  // the next LOOKAHEAD_SEC window into the AudioContext timeline.
-  const LOOKAHEAD_SEC        = 0.1;   // schedule this many seconds ahead
-  const SCHEDULER_INTERVAL_MS = 25;   // how often we check (ms)
+  const LOOKAHEAD_SEC        = 0.1;
+  const SCHEDULER_INTERVAL_MS = 25;
 
   const runScheduler = useCallback(() => {
     const ctx = audioCtxRef.current;
@@ -81,17 +103,13 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
   }, []);
 
   // ── Visual sync via requestAnimationFrame ────────────────────────────────
-  // Fires isBeat at the moment the audio clock crosses the scheduled beat.
   const FLASH_DURATION_MS = 120;
-  // nextVisualBeatRef lags by one beat behind next scheduled audio beat,
-  // so the flash triggers precisely when the sound plays.
   const nextVisualBeatRef = useRef<number>(0);
 
   const rafLoop = useCallback(() => {
     if (!isPlayingRef.current) return;
     const ctx = audioCtxRef.current;
     if (ctx && ctx.currentTime >= nextVisualBeatRef.current) {
-      // Advance visual beat pointer to stay aligned with audio schedule.
       const intervalSec = intervalMsRef.current / 1000;
       while (nextVisualBeatRef.current <= ctx.currentTime) {
         nextVisualBeatRef.current += intervalSec;
@@ -120,10 +138,13 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
     if (isPlaying) {
       stop();
     } else {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioContext();
-      } else if (audioCtxRef.current.state === 'suspended') {
-        void audioCtxRef.current.resume();
+      // Feature-detected AudioContext creation — aligned with useAudioFeedback.
+      // Returns early (isPlaying stays false) if AudioContext is unavailable,
+      // preventing the state/audio desync of the previous implementation.
+      const ctx = getOrCreateAudioContext(audioCtxRef);
+      if (!ctx) return;
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
       }
       setIsPlaying(true);
     }
@@ -138,15 +159,11 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
     const ctx = audioCtxRef.current;
     if (!ctx) return;
 
-    // Seed both pointers at current time so the first beat fires immediately.
     nextBeatTimeRef.current  = ctx.currentTime;
     nextVisualBeatRef.current = ctx.currentTime;
 
-    // Start audio scheduler.
     runScheduler();
     schedulerRef.current = setInterval(runScheduler, SCHEDULER_INTERVAL_MS);
-
-    // Start visual RAF loop.
     rafRef.current = requestAnimationFrame(rafLoop);
 
     return () => stopAll();
@@ -157,7 +174,7 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
     return () => {
       stopAll();
       if (audioCtxRef.current) {
-        void audioCtxRef.current.close();
+        audioCtxRef.current.close().catch(() => {});
         audioCtxRef.current = null;
       }
     };
