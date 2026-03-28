@@ -53,6 +53,8 @@ interface Props {
   pastedText: string;
   setPastedText: (v: string) => void;
   isAnalyzing: boolean;
+  /** Background theme analysis indicator (useBackgroundThemeAnalysis). */
+  isAnalyzingTheme: boolean;
   importProgress: {
     current: number;
     total: number;
@@ -73,6 +75,8 @@ interface Props {
   selectedAnalysisItems: Set<string>;
   isApplyingAnalysis: string | null;
   toggleAnalysisItemSelection: (id: string) => void;
+  /** One-click apply for a single analysis item. */
+  applyAnalysisItem: (item: string) => Promise<void>;
   applySelectedAnalysisItems: () => void;
   clearAppliedAnalysisItems: () => void;
 
@@ -107,30 +111,21 @@ export const AppModals = React.memo(function AppModals({
   showTranslationFeatures, setShowTranslationFeatures,
   hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
-  pastedText, setPastedText, isAnalyzing, importProgress, analyzePastedLyrics,
+  pastedText, setPastedText, isAnalyzing, isAnalyzingTheme, importProgress, analyzePastedLyrics,
   analysisReport, analysisSteps,
   appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
-  toggleAnalysisItemSelection, applySelectedAnalysisItems, clearAppliedAnalysisItems,
+  toggleAnalysisItemSelection, applyAnalysisItem, applySelectedAnalysisItems, clearAppliedAnalysisItems,
   versions, rollbackToVersion, saveVersion, handleRequestVersionName,
   similarityMatches, libraryCount, webSimilarityIndex, triggerWebSimilarity, handleDeleteLibraryAsset,
   handleSaveToLibrary, handleLoadLibraryAsset, handlePurgeLibrary, isSavingToLibrary, title, libraryAssets, hasCurrentSong,
   resetSong,
 }: Props) {
   const { t } = useTranslation();
-  // Split hooks: dispatch (stable) + state (reactive).
-  // React.memo on AppModals is now effective for dispatch-only interactions
-  // because closeModal/openModal refs don’t change on modal state changes.
   const { closeModal, openModal } = useModalDispatch();
   const { uiState: ui } = useModalState();
   const { importInputRef } = ui;
-  const openLibraryFromImport = () => {
-    closeModal('import');
-    openModal('saveToLibrary');
-  };
-  const openLibraryFromExport = () => {
-    closeModal('export');
-    openModal('saveToLibrary');
-  };
+  const openLibraryFromImport = () => { closeModal('import'); openModal('saveToLibrary'); };
+  const openLibraryFromExport = () => { closeModal('export'); openModal('saveToLibrary'); };
 
   return (
     <>
@@ -162,10 +157,12 @@ export const AppModals = React.memo(function AppModals({
       />
       <AnalysisModal
         isOpen={ui.isAnalysisModalOpen} onClose={() => closeModal('analysis')}
-        isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps}
+        isAnalyzing={isAnalyzing} isAnalyzingTheme={isAnalyzingTheme}
+        analysisReport={analysisReport} analysisSteps={analysisSteps}
         appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
         isApplyingAnalysis={isApplyingAnalysis}
         toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+        applyAnalysisItem={applyAnalysisItem}
         applySelectedAnalysisItems={applySelectedAnalysisItems}
         clearAppliedAnalysisItems={clearAppliedAnalysisItems}
         versions={versions} rollbackToVersion={rollbackToVersion}

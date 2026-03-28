@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   X, BarChart2, Sparkles, Loader2, BookOpen, Activity, CheckCircle2, Target,
-  Music, Plus, Check, Undo2
+  Music, Plus, Check, Undo2, Zap
 } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { Tooltip } from '../../ui/Tooltip';
@@ -12,6 +12,8 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   isAnalyzing: boolean;
+  /** Background theme analysis running (useBackgroundThemeAnalysis). */
+  isAnalyzingTheme?: boolean;
   analysisReport: {
     theme: string;
     emotionalArc: string;
@@ -25,6 +27,8 @@ interface Props {
   selectedAnalysisItems: Set<string>;
   isApplyingAnalysis: string | null;
   toggleAnalysisItemSelection: (item: string) => void;
+  /** Apply a single improvement item directly (one-click path). */
+  applyAnalysisItem?: (item: string) => Promise<void>;
   applySelectedAnalysisItems: () => void;
   clearAppliedAnalysisItems: () => void;
   versions: SongVersion[];
@@ -33,9 +37,9 @@ interface Props {
 
 export function AnalysisModal({
   isOpen, onClose,
-  isAnalyzing, analysisReport, analysisSteps,
+  isAnalyzing, isAnalyzingTheme = false, analysisReport, analysisSteps,
   appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
-  toggleAnalysisItemSelection, applySelectedAnalysisItems,
+  toggleAnalysisItemSelection, applyAnalysisItem, applySelectedAnalysisItems,
   clearAppliedAnalysisItems, versions, rollbackToVersion,
 }: Props) {
   const { t } = useTranslation();
@@ -81,9 +85,21 @@ export function AnalysisModal({
               <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
                 {t.analysis.title}
               </h3>
-              <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
-                {isAnalyzing ? t.analysis.deepAnalysis : analysisReport ? t.analysis.summary : ''}
-              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider">
+                  {isAnalyzing ? t.analysis.deepAnalysis : analysisReport ? t.analysis.summary : ''}
+                </p>
+                {/* Background theme analysis indicator — only when no foreground analysis runs */}
+                {!isAnalyzing && isAnalyzingTheme && (
+                  <span
+                    className="flex items-center gap-1 text-[10px] text-[var(--accent-color)]/60 uppercase tracking-wider"
+                    aria-label="Background theme analysis running"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-color)]/60 animate-pulse" />
+                    Theme
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <button
@@ -150,11 +166,38 @@ export function AnalysisModal({
                         <button
                           onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)}
                           disabled={isApplyingAnalysis !== null || appliedAnalysisItems.has(s)}
-                          className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-all ${appliedAnalysisItems.has(s) ? 'bg-emerald-500 border-emerald-500 text-white' : selectedAnalysisItems.has(s) ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white' : 'border-white/20 hover:border-amber-500/50 group-hover:bg-amber-500/10'}`}
+                          aria-label={appliedAnalysisItems.has(s) ? 'Applied' : selectedAnalysisItems.has(s) ? 'Deselect' : 'Select for batch apply'}
+                          className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                            appliedAnalysisItems.has(s)
+                              ? 'bg-emerald-500 border-emerald-500 text-white'
+                              : selectedAnalysisItems.has(s)
+                              ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white'
+                              : 'border-white/20 hover:border-amber-500/50 group-hover:bg-amber-500/10'
+                          }`}
                         >
                           {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-3 h-3" /> : <div className="w-1.5 h-1.5 rounded-full bg-white/20 group-hover:bg-amber-500/50" />}
                         </button>
-                        <span className={`text-sm leading-relaxed transition-colors ${appliedAnalysisItems.has(s) ? 'text-zinc-500 line-through' : selectedAnalysisItems.has(s) ? 'text-zinc-200' : 'text-zinc-400'}`}>{s}</span>
+                        <span className={`flex-1 text-sm leading-relaxed transition-colors ${
+                          appliedAnalysisItems.has(s) ? 'text-zinc-500 line-through' : selectedAnalysisItems.has(s) ? 'text-zinc-200' : 'text-zinc-400'
+                        }`}>{s}</span>
+                        {/* One-click apply button — visible on hover, hidden once applied */}
+                        {applyAnalysisItem && !appliedAnalysisItems.has(s) && (
+                          <Tooltip title="Apply this suggestion directly">
+                            <button
+                              onClick={() => applyAnalysisItem(s)}
+                              disabled={isApplyingAnalysis !== null}
+                              aria-label={`Apply: ${s}`}
+                              className={`flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-amber-500/70 hover:text-amber-400 hover:bg-amber-500/10 disabled:opacity-0 ${
+                                isApplyingAnalysis === s ? 'opacity-100' : ''
+                              }`}
+                            >
+                              {isApplyingAnalysis === s
+                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                : <Zap className="w-3.5 h-3.5" />
+                              }
+                            </button>
+                          </Tooltip>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -167,9 +210,21 @@ export function AnalysisModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {analysisReport.musicalSuggestions.map((s, i) => (
                     <div key={i} onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)}
-                      className={`text-xs p-3 rounded-lg border transition-all cursor-pointer flex items-start gap-3 group ${appliedAnalysisItems.has(s) ? 'bg-emerald-500/10 border-emerald-500/30 text-zinc-500' : selectedAnalysisItems.has(s) ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/30 text-zinc-200' : 'bg-blue-500/5 border-blue-500/10 text-zinc-400 hover:bg-blue-500/10 hover:border-blue-500/30'}`}
+                      className={`text-xs p-3 rounded-lg border transition-all cursor-pointer flex items-start gap-3 group ${
+                        appliedAnalysisItems.has(s)
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-zinc-500'
+                          : selectedAnalysisItems.has(s)
+                          ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/30 text-zinc-200'
+                          : 'bg-blue-500/5 border-blue-500/10 text-zinc-400 hover:bg-blue-500/10 hover:border-blue-500/30'
+                      }`}
                     >
-                      <div className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center ${appliedAnalysisItems.has(s) ? 'bg-emerald-500 border-emerald-500 text-white' : selectedAnalysisItems.has(s) ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white' : 'border-white/20 group-hover:border-blue-500/50'}`}>
+                      <div className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center ${
+                        appliedAnalysisItems.has(s)
+                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                          : selectedAnalysisItems.has(s)
+                          ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white'
+                          : 'border-white/20 group-hover:border-blue-500/50'
+                      }`}>
                         {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-2.5 h-2.5" /> : <Plus className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />}
                       </div>
                       <span className={appliedAnalysisItems.has(s) ? 'line-through' : ''}>{s}</span>
