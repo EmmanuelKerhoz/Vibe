@@ -477,6 +477,17 @@ Current Song Data:`;
       expect(prompt).toContain('IPA BLOCK');
     });
 
+    it('buildAdaptSongPrompt instructs AI to use native script and not romanize', () => {
+      const prompt = buildAdaptSongPrompt({
+        sourceSong: [section],
+        newLanguage: 'Yoruba',
+        uiLanguage: 'English',
+      });
+
+      expect(prompt).toContain('authentic writing system and orthography of Yoruba');
+      expect(prompt).toContain('Do NOT use phonetic transcription, romanization, or IPA notation');
+    });
+
     it('buildAdaptSectionPrompt keeps section-scoped instructions isolated from the hook', () => {
       const prompt = buildAdaptSectionPrompt({
         section,
@@ -487,6 +498,17 @@ Current Song Data:`;
       expect(prompt).toContain('Adapt the following song section to Spanish');
       expect(prompt).toContain('Write the "concept" field for each line in French');
       expect(prompt).toContain(JSON.stringify(section));
+    });
+
+    it('buildAdaptSectionPrompt instructs AI to use native script and not romanize', () => {
+      const prompt = buildAdaptSectionPrompt({
+        section,
+        newLanguage: 'Wolof',
+        uiLanguage: 'French',
+      });
+
+      expect(prompt).toContain('authentic writing system and orthography of Wolof');
+      expect(prompt).toContain('Do NOT use phonetic transcription, romanization, or IPA notation');
     });
   });
 });

@@ -133,7 +133,8 @@
     "moveLineDown": "Déplacer la ligne vers le bas",
     "addLineAfter": "Ajouter une ligne après",
     "deleteLine": "Supprimer la ligne",
-    "linePlaceholder": "Écrivez une ligne de parole…"
+    "linePlaceholder": "Écrivez une ligne de parole…",
+    "adaptLine": "Adapter cette ligne à la langue cible"
   },
   "suggestions": {
     "title": "Suggestions IA",
@@ -472,5 +473,14 @@
     "saveVersionPlaceholder": "Nom de la version",
     "saveVersionConfirm": "Enregistrer",
     "cancel": "Annuler"
+  },
+  "aiAssistant": {
+    "title": "Assistant IA",
+    "onboarding": "Que souhaitez-vous savoir ou faire ?",
+    "placeholder": "Posez toute question sur vos paroles ou votre composition…",
+    "send": "Envoyer",
+    "close": "Fermer l’assistant",
+    "thinking": "Réflexion…",
+    "error": "Impossible d’obtenir une réponse. Veuillez réessayer."
   }
 }

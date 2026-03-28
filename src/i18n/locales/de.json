@@ -127,7 +127,8 @@
     "aiLine": "KI-generierte Zeile",
     "moveLineUp": "Zeile nach oben",
     "moveLineDown": "Zeile nach unten",
-    "deleteLine": "Zeile löschen"
+    "deleteLine": "Zeile löschen",
+    "adaptLine": "Diese Zeile an die Zielsprache anpassen"
   },
   "suggestions": {
     "title": "KI-Vorschläge",
@@ -449,5 +450,14 @@
     "ABABAB": "ABABAB (6-zeiliger Kreuzreim)",
     "ABCABC": "ABCABC (6-zeilige Wiederholung)",
     "FREE": "Freier Vers"
+  },
+  "aiAssistant": {
+    "title": "KI-Assistent",
+    "onboarding": "Was möchten Sie wissen oder tun?",
+    "placeholder": "Stellen Sie eine Frage zu Ihren Texten oder Ihrer Komposition…",
+    "send": "Senden",
+    "close": "Assistent schließen",
+    "thinking": "Denke nach…",
+    "error": "Antwort konnte nicht abgerufen werden. Bitte erneut versuchen."
   }
 }

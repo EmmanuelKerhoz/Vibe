@@ -153,6 +153,8 @@ export interface Translations {
     deleteLine?: string;
     linePlaceholder?: string;
     addLineAfter?: string;
+    /** Tooltip for the per-line language adaptation button */
+    adaptLine?: string;
   };
 
   suggestions: {
@@ -344,6 +346,17 @@ export interface Translations {
     license: string;
     licenseLabel: string;
     close: string;
+  };
+
+  /** AI assistant panel — optional; non-EN/FR locales fall back via deep-merge */
+  aiAssistant?: {
+    title: string;
+    onboarding: string;
+    placeholder: string;
+    send: string;
+    close: string;
+    thinking: string;
+    error: string;
   };
 
   settings: {

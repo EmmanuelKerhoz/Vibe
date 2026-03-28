@@ -14,11 +14,17 @@ const _localeModules = import.meta.glob<Translations>(
 
 const locales: Record<string, Translations> = {};
 for (const [path, locale] of Object.entries(_localeModules)) {
-  const match = path.match(/\/([a-z]+)\.json$/i);
-  if (match?.[1]) locales[match[1]] = locale;
+  const match = path.match(/\/([A-Za-z0-9-]+)\.json$/i);
+  if (match?.[1]) {
+    const code = match[1].toLowerCase();
+    locales[code] = locale;
+  }
 }
 
-const en: Translations = locales['en'] ?? ({} as Translations);
+if (!locales['en']) {
+  throw new Error('[i18n] en.json is missing — cannot render UI without the English base locale.');
+}
+const en: Translations = locales['en'];
 
 // ---------------------------------------------------------------------------
 // Missing-key safety: deep-merge any locale over the English base so that

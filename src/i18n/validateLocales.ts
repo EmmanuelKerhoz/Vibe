@@ -18,13 +18,20 @@ const _localeModules = import.meta.glob<Translations>(
   { eager: true, import: 'default' },
 );
 
-const _en: Translations = _localeModules['./locales/en.json'] ?? ({} as Translations);
+const _enRaw: Translations | undefined = _localeModules['./locales/en.json'];
+if (!_enRaw || Object.keys(_enRaw).length === 0) {
+  throw new Error('[i18n] en.json is missing or empty — validation baseline cannot be built.');
+}
+const _en: Translations = _enRaw;
 
 const ALL_LOCALES: Record<string, Translations> = {};
 for (const [path, locale] of Object.entries(_localeModules)) {
-  const match = path.match(/\/([a-z]+)\.json$/i);
-  if (match?.[1] && match[1] !== 'en') {
-    ALL_LOCALES[match[1]] = locale;
+  const match = path.match(/\/([A-Za-z0-9-]+)\.json$/i);
+  if (match?.[1]) {
+    const localeCode = match[1].toLowerCase();
+    if (localeCode !== 'en') {
+      ALL_LOCALES[localeCode] = locale;
+    }
   }
 }
 

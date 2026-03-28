@@ -133,10 +133,12 @@ export const useSongAnalysis = ({
     setSectionTargetLanguages: languageAdapter.setSectionTargetLanguages,
     isDetectingLanguage: languageAdapter.isDetectingLanguage,
     isAdaptingLanguage: languageAdapter.isAdaptingLanguage,
+    adaptingLineIds: languageAdapter.adaptingLineIds,
     adaptationProgress: languageAdapter.adaptationProgress,
     adaptationResult: languageAdapter.adaptationResult,
     detectLanguage: languageAdapter.detectLanguage,
     adaptSongLanguage: languageAdapter.adaptSongLanguage,
     adaptSectionLanguage: languageAdapter.adaptSectionLanguage,
+    adaptLineLanguage: languageAdapter.adaptLineLanguage,
   };
 };

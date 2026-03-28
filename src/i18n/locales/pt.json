@@ -127,7 +127,8 @@
     "aiLine": "Linha gerada por IA",
     "moveLineUp": "Mover linha para cima",
     "moveLineDown": "Mover linha para baixo",
-    "deleteLine": "Excluir linha"
+    "deleteLine": "Excluir linha",
+    "adaptLine": "Adaptar esta linha ao idioma de destino"
   },
   "suggestions": {
     "title": "Sugestões IA",
@@ -449,5 +450,14 @@
     "ABABAB": "ABABAB (Alternada de 6 linhas)",
     "ABCABC": "ABCABC (Repetição de 6 linhas)",
     "FREE": "Verso Livre"
+  },
+  "aiAssistant": {
+    "title": "Assistente IA",
+    "onboarding": "O que você gostaria de saber ou fazer?",
+    "placeholder": "Pergunte qualquer coisa sobre suas letras ou composição…",
+    "send": "Enviar",
+    "close": "Fechar assistente",
+    "thinking": "Pensando…",
+    "error": "Não foi possível obter uma resposta. Por favor, tente novamente."
   }
 }

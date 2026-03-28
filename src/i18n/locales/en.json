@@ -133,7 +133,8 @@
     "moveLineDown": "Move line down",
     "addLineAfter": "Add line after",
     "deleteLine": "Delete line",
-    "linePlaceholder": "Write a lyric line…"
+    "linePlaceholder": "Write a lyric line…",
+    "adaptLine": "Adapt this line to target language"
   },
   "suggestions": {
     "title": "AI Suggestions",
@@ -472,5 +473,14 @@
     "saveVersionPlaceholder": "Version name",
     "saveVersionConfirm": "Save",
     "cancel": "Cancel"
+  },
+  "aiAssistant": {
+    "title": "AI Assistant",
+    "onboarding": "What would you like to know or do?",
+    "placeholder": "Ask anything about your lyrics or composition…",
+    "send": "Send",
+    "close": "Close assistant",
+    "thinking": "Thinking…",
+    "error": "Unable to get a response. Please try again."
   }
 }

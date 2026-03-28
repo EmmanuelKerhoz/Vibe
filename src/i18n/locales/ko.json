@@ -133,7 +133,8 @@
     "moveLineDown": "줄 아래로 이동",
     "addLineAfter": "Add line after",
     "deleteLine": "줄 삭제",
-    "linePlaceholder": "Write a lyric line…"
+    "linePlaceholder": "Write a lyric line…",
+    "adaptLine": "이 줄을 대상 언어에 맞게 적응"
   },
   "suggestions": {
     "title": "AI 제안",
@@ -472,5 +473,14 @@
     "saveVersionPlaceholder": "Version name",
     "saveVersionConfirm": "Save",
     "cancel": "Cancel"
+  },
+  "aiAssistant": {
+    "title": "AI 어시스턴트",
+    "onboarding": "무엇을 알고 싶거나 하고 싶으신가요?",
+    "placeholder": "가사나 작곡에 관한 무엇이든 질문하세요…",
+    "send": "보내기",
+    "close": "어시스턴트 닫기",
+    "thinking": "생각 중…",
+    "error": "응답을 가져올 수 없습니다. 다시 시도해 주세요."
   }
 }

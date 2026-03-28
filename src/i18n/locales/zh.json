@@ -127,7 +127,8 @@
     "aiLine": "AI生成的行",
     "moveLineUp": "上移行",
     "moveLineDown": "下移行",
-    "deleteLine": "删除行"
+    "deleteLine": "删除行",
+    "adaptLine": "将此行适配到目标语言"
   },
   "suggestions": {
     "title": "AI 建议",
@@ -449,5 +450,14 @@
     "ABABAB": "ABABAB（六行交替）",
     "ABCABC": "ABCABC（六行循环）",
     "FREE": "自由诗"
+  },
+  "aiAssistant": {
+    "title": "AI 助手",
+    "onboarding": "您想了解或做什么？",
+    "placeholder": "询问有关您的歌词或作曲的任何问题…",
+    "send": "发送",
+    "close": "关闭助手",
+    "thinking": "思考中…",
+    "error": "无法获取回复，请重试。"
   }
 }
