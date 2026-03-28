@@ -28,6 +28,7 @@ const SectionResponseSchema = z.object({
 });
 
 const SongResponseSchema = z.array(SectionResponseSchema);
+type SongResponse = z.infer<typeof SongResponseSchema>;
 
 const sectionNamesMatch = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
 
@@ -242,7 +243,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema);
+        const data = safeJsonParse<SongResponse>(response.text || '[]', [], SongResponseSchema);
         const songWithIds = data.map((section) => ({
           ...section,
           name: cleanSectionName(section.name),
@@ -363,7 +364,7 @@ Return the updated section in the exact same JSON structure (as an array with on
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema);
+        const data = safeJsonParse<SongResponse>(response.text || '[]', [], SongResponseSchema);
         const firstSection = data[0];
         if (firstSection) {
           const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
@@ -442,7 +443,7 @@ Return the updated song in the exact same JSON structure.`;
           })
         );
 
-        const data = safeJsonParse<Section[]>(response.text || '[]', [], SongResponseSchema);
+        const data = safeJsonParse<SongResponse>(response.text || '[]', [], SongResponseSchema);
 
         if (sectionId) {
           const firstSection = data[0];
