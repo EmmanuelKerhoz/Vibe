@@ -38,12 +38,11 @@ vi.mock('@fluentui/react-components', () => ({
   FluentProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   webLightTheme: {},
   webDarkTheme: {},
-  Spinner: () => <div data-testid="spinner" />, // Added Spinner mock
+  Spinner: () => <div data-testid="spinner" />,
 }));
 
 vi.mock('./contexts/ModalContext', async () => {
   const actual = await vi.importActual<typeof import('./contexts/ModalContext')>('./contexts/ModalContext');
-
   return actual;
 });
 
@@ -59,18 +58,22 @@ vi.mock('./hooks/useSongAnalysis', () => ({
   useSongAnalysis: (params: unknown) => {
     mockAppState.useSongAnalysisSpy(params);
     return {
+      // PR-4 fix: added missing fields from current contract
+      canPasteLyrics: false,
       isPasteModalOpen: false,
       setIsPasteModalOpen: mockAppState.noop,
       pastedText: '',
       setPastedText: mockAppState.noop,
       isAnalyzing: false,
+      isAnalyzingTheme: false,
       isAnalysisModalOpen: false,
       setIsAnalysisModalOpen: mockAppState.noop,
+      importProgress: { current: 0, total: 0, currentLabel: '' },
       analysisReport: null,
       analysisSteps: [],
-      appliedAnalysisItems: [],
-      selectedAnalysisItems: [],
-      isApplyingAnalysis: false,
+      appliedAnalysisItems: new Set<string>(),
+      selectedAnalysisItems: new Set<string>(),
+      isApplyingAnalysis: null,
       targetLanguage: 'en',
       setTargetLanguage: mockAppState.noop,
       isAdaptingLanguage: false,
@@ -80,6 +83,7 @@ vi.mock('./hooks/useSongAnalysis', () => ({
       sectionTargetLanguages: {},
       setSectionTargetLanguages: mockAppState.noop,
       toggleAnalysisItemSelection: mockAppState.noop,
+      applyAnalysisItem: mockAppState.asyncNoop,
       applySelectedAnalysisItems: mockAppState.noop,
       analyzeCurrentSong: mockAppState.asyncNoop,
       detectLanguage: mockAppState.asyncNoop,
@@ -106,11 +110,9 @@ vi.mock('./hooks/useSongEditor', () => ({
 
 vi.mock('./hooks/useSongComposer', async () => {
   const ReactModule = await import('react');
-
   return {
     useSongComposer: () => {
       const [selectedLineId, setSelectedLineId] = ReactModule.useState<string | null>(mockAppState.initialSelectedLineId);
-
       return {
         isGenerating: mockAppState.initialIsGenerating,
         isRegeneratingSection: () => false,
@@ -189,7 +191,6 @@ vi.mock('./hooks/useAppKpis', () => ({
 
 vi.mock('./hooks/useAppState', async () => {
   const ReactModule = await import('react');
-
   return {
     useAppState: () => {
       const [activeTab, setActiveTabState] = ReactModule.useState<'lyrics' | 'musical'>(mockAppState.initialActiveTab);
@@ -198,7 +199,6 @@ vi.mock('./hooks/useAppState', async () => {
       const [isLeftPanelOpen, setIsLeftPanelOpenState] = ReactModule.useState(mockAppState.initialIsLeftPanelOpen);
       const markupTextareaRef = ReactModule.useRef<HTMLTextAreaElement>(null);
       const importInputRef = ReactModule.useRef<HTMLInputElement>(null);
-
       return {
         theme: 'dark',
         setTheme: mockAppState.noop,
@@ -247,6 +247,8 @@ vi.mock('./hooks/useAppState', async () => {
         setUiScale: mockAppState.noop,
         defaultEditMode: 'markdown',
         setDefaultEditMode: mockAppState.noop,
+        showTranslationFeatures: false,
+        setShowTranslationFeatures: mockAppState.noop,
         newSectionName: '',
         setNewSectionName: mockAppState.noop,
         similarityMatches: [],
@@ -294,6 +296,10 @@ vi.mock('./hooks/useAppState', async () => {
         setIsPasteModalOpen: mockAppState.noop,
         isAnalysisModalOpen: false,
         setIsAnalysisModalOpen: mockAppState.noop,
+        isSearchReplaceOpen: false,
+        setIsSearchReplaceOpen: mockAppState.noop,
+        apiErrorModal: { open: false, message: '' },
+        setApiErrorModal: mockAppState.noop,
         setHasSavedSession: mockAppState.noop,
         isSessionHydrated: true,
         setIsSessionHydrated: mockAppState.noop,
@@ -345,7 +351,6 @@ vi.mock('./hooks/useMobileInitPanels', () => ({
 
 vi.mock('./hooks/useKeyboardShortcuts', async () => {
   const { useModalContext } = await vi.importActual<typeof import('./contexts/ModalContext')>('./contexts/ModalContext');
-
   return {
     useKeyboardShortcuts: (params: unknown) => {
       useModalContext();
@@ -456,13 +461,13 @@ vi.mock('./components/app/musical/MusicalTab', () => ({
 vi.mock('./i18n', () => ({
   useTranslation: () => ({
     t: {
-      tooltips: {
-        aiUnavailableHelp: 'help',
-      },
+      tooltips: { aiUnavailableHelp: 'help' },
+      editor: { regenerateWarning: 'This will regenerate the song. Continue?' },
     },
   }),
   useLanguage: () => ({ language: 'en' }),
 }));
+
 describe('App markup mode reset', () => {
   beforeEach(() => {
     mockAppState.initialActiveTab = 'lyrics';
@@ -493,9 +498,7 @@ describe('App markup mode reset', () => {
   });
 
   it('renders the app without crashing (smoke test)', async () => {
-    await act(async () => {
-      render(<App />);
-    });
+    await act(async () => { render(<App />); });
     expect(screen.getByTestId('left-settings-panel')).toBeTruthy();
     expect(screen.getByTestId('status-bar')).toBeTruthy();
     expect(screen.getByTestId('lyrics-view')).toBeTruthy();
@@ -503,12 +506,21 @@ describe('App markup mode reset', () => {
 
   it('resets edit mode to section when switching away from the lyrics tab', async () => {
     render(<App />);
-    // flush mount effects (e.g. isSessionHydrated effect)
     await act(async () => {});
     const switchButton = screen.getByText('Switch to musical');
-    await act(async () => {
-      fireEvent.click(switchButton);
-    });
+    await act(async () => { fireEvent.click(switchButton); });
     expect(mockAppState.setEditModeSpy).toHaveBeenCalledWith('section');
+  });
+
+  it('forwards isAnalyzingTheme and applyAnalysisItem to AppModals', async () => {
+    await act(async () => { render(<App />); });
+    const calls = mockAppState.appModalsPropsSpy.mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    // noUncheckedIndexedAccess-safe: assert non-nullish before indexing
+    const lastCall = calls[calls.length - 1];
+    const lastProps = (lastCall?.[0] ?? {}) as Record<string, unknown>;
+    expect('isAnalyzingTheme' in lastProps).toBe(true);
+    expect('applyAnalysisItem' in lastProps).toBe(true);
+    expect(typeof lastProps.applyAnalysisItem).toBe('function');
   });
 });

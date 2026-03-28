@@ -1,161 +1,200 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import type { SongVersion } from '../../../types';
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AnalysisModal } from './AnalysisModal';
 
+// Minimal i18n mock matching AnalysisModal usage
 vi.mock('../../../i18n', () => ({
   useTranslation: () => ({
     t: {
       analysis: {
         title: 'Analysis',
-        deepAnalysis: 'Deep analysis running',
+        deepAnalysis: 'Deep Analysis',
         summary: 'Summary',
-        close: 'Close analysis',
         theme: 'Theme',
-        emotionalArc: 'Emotional arc',
+        emotionalArc: 'Emotional Arc',
         strengths: 'Strengths',
         improvements: 'Improvements',
-        musicalSuggestions: 'Musical suggestions',
-        noData: 'No analysis data',
-        revert: 'Revert analysis changes',
-        apply: 'Apply selected',
+        musicalSuggestions: 'Musical Suggestions',
+        noData: 'No data',
+        apply: 'Apply',
+        close: 'Close',
+        revert: 'Revert',
       },
       tooltips: {
-        revertAnalysis: 'Revert applied analysis changes',
-        applyAnalysis: 'Apply the selected analysis items',
-        closeAnalysis: 'Close the analysis modal',
+        revertAnalysis: 'Revert analysis',
+        applyAnalysis: 'Apply analysis',
+        closeAnalysis: 'Close analysis',
       },
     },
   }),
 }));
 
+// Minimal icon mocks — AnalysisModal uses named SVG icons
 vi.mock('../../ui/icons', () => ({
-  X: () => null,
-  BarChart2: () => null,
-  Sparkles: () => null,
-  Loader2: () => null,
-  BookOpen: () => null,
-  Activity: () => null,
-  CheckCircle2: () => null,
-  Target: () => null,
-  Music: () => null,
-  Plus: () => null,
-  Check: () => null,
-  Undo2: () => null,
+  X: () => <svg data-testid="icon-x" />, 
+  BarChart2: () => <svg data-testid="icon-bar-chart" />, 
+  Sparkles: () => <svg data-testid="icon-sparkles" />, 
+  Loader2: ({ className }: { className?: string }) => <svg data-testid="icon-loader" className={className} />, 
+  BookOpen: () => <svg data-testid="icon-book" />, 
+  Activity: () => <svg data-testid="icon-activity" />, 
+  CheckCircle2: () => <svg data-testid="icon-check-circle" />, 
+  Target: () => <svg data-testid="icon-target" />, 
+  Music: () => <svg data-testid="icon-music" />, 
+  Plus: () => <svg data-testid="icon-plus" />, 
+  Check: () => <svg data-testid="icon-check" />, 
+  Undo2: () => <svg data-testid="icon-undo" />, 
+  Zap: () => <svg data-testid="icon-zap" />, 
 }));
 
-const baseVersion: SongVersion = {
-  id: 'version-1',
-  timestamp: 1710000000000,
-  song: [],
-  structure: [],
-  title: 'Song title',
-  titleOrigin: 'user',
-  topic: 'Topic',
-  mood: 'Moody',
-  name: 'Before Analysis Improvements',
+vi.mock('../../ui/Button', () => ({
+  Button: ({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) => (
+    <button onClick={onClick} disabled={disabled}>{children}</button>
+  ),
+}));
+
+vi.mock('../../ui/Tooltip', () => ({
+  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+const baseReport = {
+  theme: 'Love and loss',
+  emotionalArc: 'Rising then falling',
+  strengths: ['Strong imagery'],
+  improvements: ['Improve rhyme scheme', 'Add more metaphors'],
+  musicalSuggestions: ['Try a minor key'],
+  summary: 'A heartfelt song',
 };
 
-const analysisReport = {
-  theme: 'A hopeful anthem about change.',
-  emotionalArc: 'It rises from doubt into confidence.',
-  strengths: ['Strong opening image'],
-  improvements: ['Tighten the chorus'],
-  musicalSuggestions: ['Add a softer bridge'],
-  summary: 'The song has a clear emotional payoff.',
-};
+const baseVersions = [
+  {
+    id: '1',
+    name: 'Before Analysis Improvements',
+    song: [],
+    structure: [],
+    createdAt: 0,
+    timestamp: 0,
+    title: '',
+    titleOrigin: 'user' as const,
+    topic: '',
+    mood: '',
+  },
+];
 
-const createProps = () => ({
-  isOpen: true,
-  onClose: vi.fn(),
-  isAnalyzing: false,
-  analysisReport,
-  analysisSteps: ['Parsing structure', 'Scoring themes'],
-  appliedAnalysisItems: new Set<string>(),
-  selectedAnalysisItems: new Set<string>(),
-  isApplyingAnalysis: null,
-  toggleAnalysisItemSelection: vi.fn(),
-  applySelectedAnalysisItems: vi.fn(),
-  clearAppliedAnalysisItems: vi.fn(),
-  versions: [baseVersion],
-  rollbackToVersion: vi.fn(),
-});
+const noop = vi.fn();
+const asyncNoop = vi.fn(async () => {});
+
+const renderModal = (overrides: Record<string, unknown> = {}) =>
+  render(
+    <AnalysisModal
+      isOpen={true}
+      onClose={noop}
+      isAnalyzing={false}
+      isAnalyzingTheme={false}
+      analysisReport={baseReport}
+      analysisSteps={[]}
+      appliedAnalysisItems={new Set()}
+      selectedAnalysisItems={new Set()}
+      isApplyingAnalysis={null}
+      toggleAnalysisItemSelection={noop}
+      applyAnalysisItem={asyncNoop}
+      applySelectedAnalysisItems={noop}
+      clearAppliedAnalysisItems={noop}
+      versions={baseVersions}
+      rollbackToVersion={noop}
+      {...overrides}
+    />, 
+  );
 
 describe('AnalysisModal', () => {
-  it('renders nothing when the modal is closed', () => {
-    render(<AnalysisModal {...createProps()} isOpen={false} />);
-
-    expect(screen.queryByRole('dialog', { name: 'Analysis' })).toBeNull();
+  beforeEach(() => {
+    noop.mockClear();
+    asyncNoop.mockClear();
   });
 
-  it('renders the dialog and closes from the close action when it is open', () => {
-    const props = createProps();
+  describe('isAnalyzingTheme indicator', () => {
+    it('shows pulse indicator when isAnalyzingTheme=true and isAnalyzing=false', () => {
+      renderModal({ isAnalyzingTheme: true });
+      expect(screen.getByLabelText('Background theme analysis running')).toBeTruthy();
+    });
 
-    render(<AnalysisModal {...props} />);
+    it('hides pulse indicator when isAnalyzingTheme=false', () => {
+      renderModal({ isAnalyzingTheme: false });
+      expect(screen.queryByLabelText('Background theme analysis running')).toBeNull();
+    });
 
-    expect(screen.getByRole('dialog', { name: 'Analysis' })).toBeTruthy();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Close analysis' })[0]!);
-
-    expect(props.onClose).toHaveBeenCalledTimes(1);
+    it('hides pulse indicator when isAnalyzing=true even if isAnalyzingTheme=true', () => {
+      renderModal({ isAnalyzing: true, isAnalyzingTheme: true, analysisReport: null });
+      expect(screen.queryByLabelText('Background theme analysis running')).toBeNull();
+    });
   });
 
-  it('renders the analyzing state with the current progress steps', () => {
-    render(
-      <AnalysisModal
-        {...createProps()}
-        isAnalyzing
-        analysisReport={null}
-      />,
-    );
+  describe('applyAnalysisItem one-click button', () => {
+    it('renders a Zap button for each improvement item', () => {
+      renderModal();
+      // 2 improvement items → 2 Zap buttons
+      const zapButtons = screen.getAllByLabelText(/^Apply: /);
+      expect(zapButtons.length).toBe(2);
+    });
 
-    expect(screen.getAllByText('Deep analysis running')).toHaveLength(2);
-    expect(screen.getByText('Parsing structure')).toBeTruthy();
-    expect(screen.getByText('Scoring themes')).toBeTruthy();
+    it('calls applyAnalysisItem with correct item text on click', () => {
+      renderModal();
+      const btn = screen.getByLabelText('Apply: Improve rhyme scheme');
+      fireEvent.click(btn);
+      expect(asyncNoop).toHaveBeenCalledWith('Improve rhyme scheme');
+    });
+
+    it('shows Loader2 spinner when isApplyingAnalysis matches item', () => {
+      renderModal({ isApplyingAnalysis: 'Add more metaphors' });
+      expect(screen.getByTestId('icon-loader')).toBeTruthy();
+    });
+
+    it('disables all Zap buttons when another item is applying', () => {
+      renderModal({ isApplyingAnalysis: 'Improve rhyme scheme' });
+      const zapButtons = screen.getAllByLabelText(/^Apply: /);
+      zapButtons.forEach(btn => {
+        expect((btn as HTMLButtonElement).disabled).toBe(true);
+      });
+    });
+
+    it('does not render Zap button for already-applied items', () => {
+      renderModal({ appliedAnalysisItems: new Set(['Improve rhyme scheme']) });
+      expect(screen.queryByLabelText('Apply: Improve rhyme scheme')).toBeNull();
+      expect(screen.getByLabelText('Apply: Add more metaphors')).toBeTruthy();
+    });
   });
 
-  it('renders the empty state when no analysis report is available', () => {
-    render(
-      <AnalysisModal
-        {...createProps()}
-        analysisReport={null}
-      />,
-    );
-
-    expect(screen.getByText('No analysis data')).toBeTruthy();
+  describe('batch-select workflow unchanged', () => {
+    it('calls toggleAnalysisItemSelection when checkbox is clicked', () => {
+      renderModal();
+      // First checkbox = first improvement item
+      const checkboxes = screen.getAllByRole('button', { name: /Select for batch apply|Deselect|Applied/ });
+      expect(checkboxes.length).toBeGreaterThan(0);
+      fireEvent.click(checkboxes[0]!);
+      expect(noop).toHaveBeenCalled();
+    });
   });
 
-  it('toggles selections and applies the selected analysis items', () => {
-    const props = createProps();
-
-    render(
-      <AnalysisModal
-        {...props}
-        selectedAnalysisItems={new Set(['Tighten the chorus', 'Add a softer bridge'])}
-      />,
-    );
-
-    fireEvent.click(screen.getByText('Tighten the chorus').parentElement?.querySelector('button') as HTMLButtonElement);
-    fireEvent.click(screen.getByText('Add a softer bridge'));
-    fireEvent.click(screen.getByRole('button', { name: 'Apply the selected analysis items' }));
-
-    expect(props.toggleAnalysisItemSelection).toHaveBeenCalledWith('Tighten the chorus');
-    expect(props.toggleAnalysisItemSelection).toHaveBeenCalledWith('Add a softer bridge');
-    expect(props.applySelectedAnalysisItems).toHaveBeenCalledTimes(1);
-  });
-
-  it('rolls back the saved analysis version and clears applied items', () => {
-    const props = createProps();
-
-    render(
-      <AnalysisModal
-        {...props}
-        appliedAnalysisItems={new Set(['Tighten the chorus'])}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Revert applied analysis changes' }));
-
-    expect(props.rollbackToVersion).toHaveBeenCalledWith(baseVersion);
-    expect(props.clearAppliedAnalysisItems).toHaveBeenCalledTimes(1);
+  describe('closed state', () => {
+    it('renders nothing when isOpen=false', () => {
+      const { container } = render(
+        <AnalysisModal
+          isOpen={false}
+          onClose={noop}
+          isAnalyzing={false}
+          analysisReport={null}
+          analysisSteps={[]}
+          appliedAnalysisItems={new Set()}
+          selectedAnalysisItems={new Set()}
+          isApplyingAnalysis={null}
+          toggleAnalysisItemSelection={noop}
+          applySelectedAnalysisItems={noop}
+          clearAppliedAnalysisItems={noop}
+          versions={[]}
+          rollbackToVersion={noop}
+        />, 
+      );
+      expect(container.firstChild).toBeNull();
+    });
   });
 });

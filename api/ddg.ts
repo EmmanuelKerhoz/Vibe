@@ -1,70 +1,61 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { checkRateLimit, resolveIp } from './_rateLimit';
 
-/**
- * Serverless proxy for DuckDuckGo Instant Answer API.
- * Avoids CORS issues in production (Vercel). No API key required.
- * GET /api/ddg?q=<query>&format=json&no_html=1&skip_disambig=1
- *
- * M5 fix: added retry×1 with 300ms backoff on upstream 5xx to absorb
- * transient DDG rate-limiting (502s observed when many sections fire at once).
- */
+const MAX_QUERY_LENGTH = 500;
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method Not Allowed' });
     return;
   }
 
-  const q = req.query.q as string | undefined;
-  if (!q || q.trim().length === 0) {
-    res.status(400).json({ error: 'Missing query parameter: q' });
+  // --- Rate limiting (shared window with /api/generate) ---
+  const ip = resolveIp(
+    req.headers as Record<string, string | string[] | undefined>,
+    req.socket?.remoteAddress
+  );
+  const rl = checkRateLimit(ip);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(rl.retryAfterSec));
+    res.status(429).json({ error: `Rate limit exceeded. Retry after ${rl.retryAfterSec}s.` });
     return;
   }
 
-  if (q.length > 500) {
-    res.status(400).json({ error: 'Query parameter q exceeds maximum length of 500 characters' });
+  const { q } = req.query;
+
+  if (!q || typeof q !== 'string') {
+    res.status(400).json({ error: 'Missing required query parameter: q (string)' });
     return;
   }
 
-  const params = new URLSearchParams({
-    q,
-    format: 'json',
-    no_html: '1',
-    skip_disambig: '1',
-  });
-
-  const fetchOnce = async (signal: AbortSignal) =>
-    fetch(`https://api.duckduckgo.com/?${params}`, {
-      headers: { 'User-Agent': 'Lyricist/1.0 similarity-check' },
-      signal,
-    });
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  if (q.length > MAX_QUERY_LENGTH) {
+    res.status(400).json({ error: `Query exceeds maximum length of ${MAX_QUERY_LENGTH} characters` });
+    return;
+  }
 
   try {
-    let upstream = await fetchOnce(controller.signal);
+    const encoded = encodeURIComponent(q);
+    const url = `https://api.duckduckgo.com/?q=${encoded}&format=json&no_html=1&skip_disambig=1`;
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'LyricistPro/1.0 (similarity-check)' },
+      signal: AbortSignal.timeout(10_000),
+    });
 
-    // Retry once on 5xx with a short backoff
-    if (!upstream.ok && upstream.status >= 500) {
-      await new Promise(r => setTimeout(r, 300));
-      upstream = await fetchOnce(controller.signal);
-    }
-
-    clearTimeout(timer);
-
-    if (!upstream.ok) {
-      res.status(502).json({ error: `DDG upstream error: ${upstream.status}` });
+    if (!response.ok) {
+      res.status(502).json({ error: `DuckDuckGo upstream error: ${response.status}` });
       return;
     }
 
-    const data = await upstream.json();
-
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const data = await response.json() as unknown;
     res.status(200).json(data);
-  } catch (err: unknown) {
-    clearTimeout(timer);
-    const message = err instanceof Error ? err.message : 'Unknown upstream error';
-    res.status(502).json({ error: message });
+  } catch (error: unknown) {
+    const isTimeout =
+      error instanceof DOMException && error.name === 'TimeoutError';
+    if (isTimeout) {
+      res.status(504).json({ error: 'DuckDuckGo request timed out.' });
+      return;
+    }
+    const message = error instanceof Error ? error.message : 'Unknown server error';
+    res.status(500).json({ error: message });
   }
 }

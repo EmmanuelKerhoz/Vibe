@@ -1,4 +1,9 @@
 export interface Translations {
+  /** Generic shared strings */
+  common?: {
+    loading: string;
+  };
+
   app: {
     name: string;
     tagline: string;
@@ -498,5 +503,27 @@ export interface Translations {
     ABABAB: string;
     ABCABC: string;
     FREE: string;
+  };
+
+  /**
+   * Labels for the regenerate confirmation modal.
+   * Previously hardcoded in AppModals.tsx — now fully i18n-aware.
+   */
+  confirmModal?: {
+    regenerateTitle: string;
+    regenerateConfirm: string;
+    cancel: string;
+  };
+
+  /**
+   * Labels for the save-version prompt modal.
+   * Previously hardcoded in AppModals.tsx — now fully i18n-aware.
+   */
+  promptModal?: {
+    saveVersionTitle: string;
+    saveVersionMessage: string;
+    saveVersionPlaceholder: string;
+    saveVersionConfirm: string;
+    cancel: string;
   };
 }

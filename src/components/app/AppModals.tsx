@@ -53,6 +53,8 @@ interface Props {
   pastedText: string;
   setPastedText: (v: string) => void;
   isAnalyzing: boolean;
+  /** Background theme analysis indicator (useBackgroundThemeAnalysis). */
+  isAnalyzingTheme: boolean;
   importProgress: {
     current: number;
     total: number;
@@ -73,6 +75,8 @@ interface Props {
   selectedAnalysisItems: Set<string>;
   isApplyingAnalysis: string | null;
   toggleAnalysisItemSelection: (id: string) => void;
+  /** One-click apply for a single analysis item. */
+  applyAnalysisItem: (item: string) => Promise<void>;
   applySelectedAnalysisItems: () => void;
   clearAppliedAnalysisItems: () => void;
 
@@ -107,10 +111,10 @@ export const AppModals = React.memo(function AppModals({
   showTranslationFeatures, setShowTranslationFeatures,
   hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
   exportSong,
-  pastedText, setPastedText, isAnalyzing, importProgress, analyzePastedLyrics,
+  pastedText, setPastedText, isAnalyzing, isAnalyzingTheme, importProgress, analyzePastedLyrics,
   analysisReport, analysisSteps,
   appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
-  toggleAnalysisItemSelection, applySelectedAnalysisItems, clearAppliedAnalysisItems,
+  toggleAnalysisItemSelection, applyAnalysisItem, applySelectedAnalysisItems, clearAppliedAnalysisItems,
   versions, rollbackToVersion, saveVersion, handleRequestVersionName,
   similarityMatches, libraryCount, webSimilarityIndex, triggerWebSimilarity, handleDeleteLibraryAsset,
   handleSaveToLibrary, handleLoadLibraryAsset, handlePurgeLibrary, isSavingToLibrary, title, libraryAssets, hasCurrentSong,
@@ -123,14 +127,18 @@ export const AppModals = React.memo(function AppModals({
   const { closeModal, openModal } = useModalDispatch();
   const { uiState: ui } = useModalState();
   const { importInputRef } = ui;
-  const openLibraryFromImport = () => {
-    closeModal('import');
-    openModal('saveToLibrary');
-  };
-  const openLibraryFromExport = () => {
-    closeModal('export');
-    openModal('saveToLibrary');
-  };
+  const openLibraryFromImport = () => { closeModal('import'); openModal('saveToLibrary'); };
+  const openLibraryFromExport = () => { closeModal('export'); openModal('saveToLibrary'); };
+
+  // i18n-resolved labels with English fallback for locales not yet translated.
+  const confirmTitle = t.confirmModal?.regenerateTitle ?? 'Regenerate Song';
+  const confirmLabel = t.confirmModal?.regenerateConfirm ?? 'Regenerate';
+  const confirmCancel = t.confirmModal?.cancel ?? 'Cancel';
+  const promptTitle = t.promptModal?.saveVersionTitle ?? 'Save Version';
+  const promptMessage = t.promptModal?.saveVersionMessage ?? 'Enter a name for this version:';
+  const promptPlaceholder = t.promptModal?.saveVersionPlaceholder ?? 'Version name';
+  const promptConfirm = t.promptModal?.saveVersionConfirm ?? 'Save';
+  const promptCancel = t.promptModal?.cancel ?? 'Cancel';
 
   return (
     <>
@@ -162,10 +170,12 @@ export const AppModals = React.memo(function AppModals({
       />
       <AnalysisModal
         isOpen={ui.isAnalysisModalOpen} onClose={() => closeModal('analysis')}
-        isAnalyzing={isAnalyzing} analysisReport={analysisReport} analysisSteps={analysisSteps}
+        isAnalyzing={isAnalyzing} isAnalyzingTheme={isAnalyzingTheme}
+        analysisReport={analysisReport} analysisSteps={analysisSteps}
         appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
         isApplyingAnalysis={isApplyingAnalysis}
         toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+        applyAnalysisItem={applyAnalysisItem}
         applySelectedAnalysisItems={applySelectedAnalysisItems}
         clearAppliedAnalysisItems={clearAppliedAnalysisItems}
         versions={versions} rollbackToVersion={rollbackToVersion}
@@ -204,17 +214,24 @@ export const AppModals = React.memo(function AppModals({
       {ui.confirmModal && (
         <ConfirmModal
           isOpen={ui.confirmModal.open}
-          title="Regenerate Song" message={t.editor.regenerateWarning}
-          confirmLabel="Regenerate" cancelLabel="Cancel"
-          onConfirm={ui.confirmModal.onConfirm} onCancel={() => closeModal('confirm')}
+          title={confirmTitle}
+          message={t.editor.regenerateWarning}
+          confirmLabel={confirmLabel}
+          cancelLabel={confirmCancel}
+          onConfirm={ui.confirmModal.onConfirm}
+          onCancel={() => closeModal('confirm')}
         />
       )}
       {ui.promptModal && (
         <PromptModal
           isOpen={ui.promptModal.open}
-          title="Save Version" message="Enter a name for this version:"
-          placeholder="Version name" confirmLabel="Save" cancelLabel="Cancel"
-          onConfirm={ui.promptModal.onConfirm} onCancel={() => closeModal('prompt')}
+          title={promptTitle}
+          message={promptMessage}
+          placeholder={promptPlaceholder}
+          confirmLabel={promptConfirm}
+          cancelLabel={promptCancel}
+          onConfirm={ui.promptModal.onConfirm}
+          onCancel={() => closeModal('prompt')}
         />
       )}
       <input

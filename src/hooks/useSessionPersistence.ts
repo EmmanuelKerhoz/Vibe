@@ -51,7 +51,11 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
     if (savedRaw) {
       try {
         const parsed = JSON.parse(savedRaw);
-        if (parsed.song && parsed.song.length > 0) {
+        // Guard: parsed.song must be a non-empty array before mapping.
+        // Without this, a corrupted session where song=null/{} would throw
+        // inside .map(), silently swallowed by the catch block and leaving
+        // isSessionHydrated=false, blocking the entire app.
+        if (Array.isArray(parsed.song) && parsed.song.length > 0) {
           setHasSavedSession(true);
           const cleanedSong: Section[] = (parsed.song as Record<string, unknown>[]).map(normalizeStoredSection);
           const nextStructure = cleanedSong.length > 0

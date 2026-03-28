@@ -1,6 +1,10 @@
 import type { Translations } from './types';
 
 const en: Translations = {
+  common: {
+    loading: 'Loading',
+  },
+
   app: {
     name: 'Lyricist Pro',
     tagline: 'A professional-grade AI lyrics editor designed for songwriters and poets. Craft your masterpiece with real-time suggestions, structure management, and intelligent quantization.',
@@ -91,7 +95,7 @@ const en: Translations = {
       description: 'Pure IPA rendering of your lyrics',
       hint: 'Generated with the selected language or dialect: {lang}',
       placeholder: 'Phonetic transcription appears here once lyrics are available.',
-      loading: 'Generating phonetic view…',
+      loading: 'Generating phonetic view\u2026',
       error: 'Phonetic view unavailable ({error})',
     },
     sectionTooltip: {
@@ -138,7 +142,7 @@ const en: Translations = {
     moveLineDown: 'Move line down',
     addLineAfter: 'Add line after',
     deleteLine: 'Delete line',
-    linePlaceholder: 'Write a lyric line…',
+    linePlaceholder: 'Write a lyric line\u2026',
   },
 
   suggestions: {
@@ -169,7 +173,7 @@ const en: Translations = {
     promptLabel: 'MUSICAL PROMPT',
     promptPlaceholder: 'Your structured musical prompt (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) will appear here...',
     promptStructureLabel: 'Structured prompt',
-    promptStructureHint: 'Keep the musical prompt labeled (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) so AI music tools don’t miss critical context.',
+    promptStructureHint: 'Keep the musical prompt labeled (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) so AI music tools don\'t miss critical context.',
     optimizedFor: 'Optimized for Suno, Udio, and Stable Audio',
     copyPrompt: 'Copy Prompt',
     copied: 'Copied!',
@@ -213,9 +217,9 @@ const en: Translations = {
     thresholdHint: 'Songs are ordered from most to least similar, regardless of score.',
     webTitle: 'Web Similarity',
     webSubtitle: 'Results from DuckDuckGo and Wikipedia',
-    webIdle: 'No search run yet. The engine triggers automatically after 30 s of inactivity (≥ 20 % text change), or click Refresh.',
-    webRunning: 'Searching DuckDuckGo + Wikipedia…',
-    webNoMatches: '✓ No significant external matches found. Your lyrics appear original.',
+    webIdle: 'No search run yet. The engine triggers automatically after 30 s of inactivity (\u2265 20 % text change), or click Refresh.',
+    webRunning: 'Searching DuckDuckGo + Wikipedia\u2026',
+    webNoMatches: '\u2713 No significant external matches found. Your lyrics appear original.',
     webRefresh: 'Refresh',
     nGramScoring: 'Jaccard n-gram scoring',
     libraryTitle: 'Library Similarity',
@@ -224,7 +228,7 @@ const en: Translations = {
   saveToLibrary: {
     title: 'Library',
     save: 'Save Current Song',
-    saving: 'Saving…',
+    saving: 'Saving\u2026',
     saved: 'Saved!',
     saveDescription: 'Add this song to your personal library',
     browseDescription: 'Open your library and manage saved songs',
@@ -304,8 +308,8 @@ const en: Translations = {
 
   searchReplace: {
     title: 'Search & Replace',
-    searchPlaceholder: 'Search…',
-    replacePlaceholder: 'Replace with…',
+    searchPlaceholder: 'Search\u2026',
+    replacePlaceholder: 'Replace with\u2026',
     matchCount: '{current} of {total}',
     matchCountNone: 'No matches',
     previous: 'Previous',
@@ -387,7 +391,7 @@ const en: Translations = {
     redo: 'Redo',
     reset: 'Reset Song',
     aiUnavailable: 'Gemini backend unavailable',
-    aiUnavailableHelp: 'Set GEMINI_API_KEY in your Vercel project environment variables (Settings → Environment Variables) and redeploy.',
+    aiUnavailableHelp: 'Set GEMINI_API_KEY in your Vercel project environment variables (Settings \u2192 Environment Variables) and redeploy.',
     quantize: 'Adjust all lines to match the target syllable count while maintaining meaning',
     analyzeTheme: 'Analyze song structure, rhyme quality, and emotional impact',
     regenerate: 'Rewrite the entire song based on current settings and topic',
@@ -482,6 +486,20 @@ const en: Translations = {
     ABABAB: 'ABABAB (6-line Alternate)',
     ABCABC: 'ABCABC (6-line Repeating)',
     FREE:   'Free Verse',
+  },
+
+  confirmModal: {
+    regenerateTitle: 'Regenerate Song',
+    regenerateConfirm: 'Regenerate',
+    cancel: 'Cancel',
+  },
+
+  promptModal: {
+    saveVersionTitle: 'Save Version',
+    saveVersionMessage: 'Enter a name for this version:',
+    saveVersionPlaceholder: 'Version name',
+    saveVersionConfirm: 'Save',
+    cancel: 'Cancel',
   },
 };
 

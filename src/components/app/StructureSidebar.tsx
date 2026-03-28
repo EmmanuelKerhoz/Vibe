@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId, useRef } from 'react';
 import { AlignLeft, X, BarChart2, GripVertical, Link2 } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
@@ -17,6 +17,7 @@ import {
 } from '../../constants/sections';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Props {
   isStructureOpen: boolean;
@@ -54,11 +55,15 @@ export const StructureSidebar = React.memo(function StructureSidebar({
     dragOverIndex,
     setDragOverIndex,
   } = useDrag();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const headingId = useId();
 
-  const handleClose = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClose = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setIsStructureOpen(false);
   };
+
+  useFocusTrap(panelRef, !!(isMobileOverlay && isStructureOpen), () => setIsStructureOpen(false));
 
   const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|…)$/, '').trim();
   const sectionOptions = SECTION_TYPE_OPTIONS
@@ -89,6 +94,10 @@ export const StructureSidebar = React.memo(function StructureSidebar({
     <AnimatePresence>
       {isStructureOpen && (
         <motion.div
+          ref={panelRef}
+          role={isMobileOverlay ? 'dialog' : undefined}
+          aria-modal={isMobileOverlay ? 'true' : undefined}
+          aria-labelledby={isMobileOverlay ? headingId : undefined}
           initial={{ width: 0, opacity: 0 }}
           animate={{ width: 280, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
@@ -116,7 +125,10 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                 background: 'var(--accent-rail-gradient-h-rev)',
                 opacity: 0.85, pointerEvents: 'none', zIndex: 1,
               }} />
-              <h3 className="micro-label text-zinc-400 flex items-center gap-2">
+              <h3
+                id={headingId}
+                className="micro-label text-zinc-400 flex items-center gap-2"
+              >
                 <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />
                 <span className="text-[10px] uppercase tracking-widest font-semibold">{t.structure.title}</span>
               </h3>
