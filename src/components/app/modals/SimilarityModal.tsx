@@ -225,7 +225,7 @@ export function SimilarityModal({
                           <button
                             type="button"
                             onClick={() => onDeleteLibraryAsset(match.versionId)}
-                            title="Remove from library"
+                            title={t.tooltips?.removeFromLibrary ?? 'Remove from library'}
                             className="mt-1 p-1.5 rounded border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/25 hover:text-red-300 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

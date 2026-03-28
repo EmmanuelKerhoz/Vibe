@@ -32,7 +32,15 @@
     "undo": "Undo",
     "redo": "Redo",
     "reset": "Reset",
-    "aiUnavailable": "AI UNAVAILABLE"
+    "aiUnavailable": "AI UNAVAILABLE",
+    "closeDialog": "Close dialog",
+    "processing": "Processing…",
+    "removeFromLibrary": "Remove from library",
+    "removeFromLibraryItem": "Remove {title} from library",
+    "openLeftPanel": "Open lyrics generation panel",
+    "closeLeftPanel": "Close lyrics generation panel",
+    "detectLanguage": "Detect song language",
+    "redetectLanguage": "Detected: {langs} — click to re-detect"
   },
   "mobileNav": {
     "navigation": "Mobile navigation",
@@ -134,7 +142,14 @@
     "addLineAfter": "Add line after",
     "deleteLine": "Delete line",
     "linePlaceholder": "Write a lyric line…",
-    "adaptLine": "Adapt this line to target language"
+    "adaptLine": "Adapt this line to target language",
+    "adaptingLabel": "Adapting…",
+    "detectingLanguageLabel": "Detecting language…",
+    "analyzingLabel": "Analyzing…",
+    "checkingSimilarityLabel": "Checking similarity…",
+    "lyricsEditors": "LYRICS Editors",
+    "lyricsInsights": "LYRICS Insights",
+    "detect": "Detect"
   },
   "suggestions": {
     "title": "AI Suggestions",
@@ -482,5 +497,19 @@
     "close": "Close assistant",
     "thinking": "Thinking…",
     "error": "Unable to get a response. Please try again."
+  },
+  "apiError": {
+    "title": "API Error",
+    "close": "Close"
+  },
+  "adaptationProgress": {
+    "adapting": "Adapting",
+    "reversing": "Reversing",
+    "reviewing": "Reviewing",
+    "done": "Done",
+    "fidelityScore": "Fidelity score",
+    "reviewRecommended": "review recommended",
+    "pipelineFailed": "Adaptation pipeline failed. Check console for details.",
+    "dismissResult": "Dismiss adaptation result"
   }
 }

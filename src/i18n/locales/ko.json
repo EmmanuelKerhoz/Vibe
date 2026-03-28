@@ -32,7 +32,15 @@
     "undo": "실행 취소",
     "redo": "다시 실행",
     "reset": "초기화",
-    "aiUnavailable": "AI 사용 불가"
+    "aiUnavailable": "AI 사용 불가",
+    "closeDialog": "대화상자 닫기",
+    "processing": "처리 중…",
+    "removeFromLibrary": "라이브러리에서 제거",
+    "removeFromLibraryItem": "라이브러리에서 {title} 제거",
+    "openLeftPanel": "가사 생성 패널 열기",
+    "closeLeftPanel": "가사 생성 패널 닫기",
+    "detectLanguage": "노래 언어 감지",
+    "redetectLanguage": "감지됨: {langs} — 클릭하여 재감지"
   },
   "mobileNav": {
     "navigation": "모바일 탐색",
@@ -134,7 +142,14 @@
     "addLineAfter": "Add line after",
     "deleteLine": "줄 삭제",
     "linePlaceholder": "Write a lyric line…",
-    "adaptLine": "이 줄을 대상 언어에 맞게 적응"
+    "adaptLine": "이 줄을 대상 언어에 맞게 적응",
+    "adaptingLabel": "적응 중…",
+    "detectingLanguageLabel": "언어 감지 중…",
+    "analyzingLabel": "분석 중…",
+    "checkingSimilarityLabel": "유사도 확인 중…",
+    "lyricsEditors": "가사 편집기",
+    "lyricsInsights": "가사 인사이트",
+    "detect": "감지"
   },
   "suggestions": {
     "title": "AI 제안",
@@ -482,5 +497,19 @@
     "close": "어시스턴트 닫기",
     "thinking": "생각 중…",
     "error": "응답을 가져올 수 없습니다. 다시 시도해 주세요."
+  },
+  "apiError": {
+    "title": "API 오류",
+    "close": "닫기"
+  },
+  "adaptationProgress": {
+    "adapting": "적응 중",
+    "reversing": "역변환 중",
+    "reviewing": "검토 중",
+    "done": "완료",
+    "fidelityScore": "충실도 점수",
+    "reviewRecommended": "검토 권장",
+    "pipelineFailed": "적응 파이프라인이 실패했습니다. 콘솔에서 자세한 내용을 확인하세요.",
+    "dismissResult": "적응 결과 닫기"
   }
 }

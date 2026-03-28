@@ -29,7 +29,15 @@
     "undo": "Rückgängig",
     "redo": "Wiederholen",
     "reset": "Zurücksetzen",
-    "aiUnavailable": "KI NICHT VERFÜGBAR"
+    "aiUnavailable": "KI NICHT VERFÜGBAR",
+    "closeDialog": "Dialog schließen",
+    "processing": "Verarbeitung…",
+    "removeFromLibrary": "Aus Bibliothek entfernen",
+    "removeFromLibraryItem": "{title} aus der Bibliothek entfernen",
+    "openLeftPanel": "Liedtext-Generierungsbereich öffnen",
+    "closeLeftPanel": "Liedtext-Generierungsbereich schließen",
+    "detectLanguage": "Liedsprache erkennen",
+    "redetectLanguage": "Erkannt: {langs} — Klicken zum erneuten Erkennen"
   },
   "mobileNav": {
     "navigation": "Mobile Navigation",
@@ -128,7 +136,14 @@
     "moveLineUp": "Zeile nach oben",
     "moveLineDown": "Zeile nach unten",
     "deleteLine": "Zeile löschen",
-    "adaptLine": "Diese Zeile an die Zielsprache anpassen"
+    "adaptLine": "Diese Zeile an die Zielsprache anpassen",
+    "adaptingLabel": "Anpassung…",
+    "detectingLanguageLabel": "Sprache erkennen…",
+    "analyzingLabel": "Analyse…",
+    "checkingSimilarityLabel": "Ähnlichkeit prüfen…",
+    "lyricsEditors": "LIEDTEXT-Editoren",
+    "lyricsInsights": "LIEDTEXT-Einblicke",
+    "detect": "Erkennen"
   },
   "suggestions": {
     "title": "KI-Vorschläge",
@@ -459,5 +474,19 @@
     "close": "Assistent schließen",
     "thinking": "Denke nach…",
     "error": "Antwort konnte nicht abgerufen werden. Bitte erneut versuchen."
+  },
+  "apiError": {
+    "title": "API-Fehler",
+    "close": "Schließen"
+  },
+  "adaptationProgress": {
+    "adapting": "Anpassen",
+    "reversing": "Umkehren",
+    "reviewing": "Prüfen",
+    "done": "Fertig",
+    "fidelityScore": "Treuepunktzahl",
+    "reviewRecommended": "Überprüfung empfohlen",
+    "pipelineFailed": "Anpassungs-Pipeline fehlgeschlagen. Details in der Konsole.",
+    "dismissResult": "Anpassungsergebnis verwerfen"
   }
 }

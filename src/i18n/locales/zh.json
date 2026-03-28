@@ -29,7 +29,15 @@
     "undo": "撤销",
     "redo": "重做",
     "reset": "重置",
-    "aiUnavailable": "AI 不可用"
+    "aiUnavailable": "AI 不可用",
+    "closeDialog": "关闭对话框",
+    "processing": "处理中…",
+    "removeFromLibrary": "从库中删除",
+    "removeFromLibraryItem": "从库中删除 {title}",
+    "openLeftPanel": "打开歌词生成面板",
+    "closeLeftPanel": "关闭歌词生成面板",
+    "detectLanguage": "检测歌曲语言",
+    "redetectLanguage": "已检测到：{langs} — 点击重新检测"
   },
   "mobileNav": {
     "navigation": "移动导航",
@@ -128,7 +136,14 @@
     "moveLineUp": "上移行",
     "moveLineDown": "下移行",
     "deleteLine": "删除行",
-    "adaptLine": "将此行适配到目标语言"
+    "adaptLine": "将此行适配到目标语言",
+    "adaptingLabel": "正在适配…",
+    "detectingLanguageLabel": "正在检测语言…",
+    "analyzingLabel": "正在分析…",
+    "checkingSimilarityLabel": "正在检查相似度…",
+    "lyricsEditors": "歌词编辑器",
+    "lyricsInsights": "歌词洞察",
+    "detect": "检测"
   },
   "suggestions": {
     "title": "AI 建议",
@@ -459,5 +474,19 @@
     "close": "关闭助手",
     "thinking": "思考中…",
     "error": "无法获取回复，请重试。"
+  },
+  "apiError": {
+    "title": "API 错误",
+    "close": "关闭"
+  },
+  "adaptationProgress": {
+    "adapting": "适配中",
+    "reversing": "反转中",
+    "reviewing": "审查中",
+    "done": "完成",
+    "fidelityScore": "保真度分数",
+    "reviewRecommended": "建议审查",
+    "pipelineFailed": "适配流水线失败。请查看控制台获取详情。",
+    "dismissResult": "关闭适配结果"
   }
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, X } from '../../ui/icons';
 import { Button } from '../../ui/Button';
+import { useTranslation } from '../../../i18n';
 
 interface ApiErrorModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ApiErrorModalProps {
 }
 
 export function ApiErrorModal({ isOpen, onClose, message }: ApiErrorModalProps) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -17,7 +19,7 @@ export function ApiErrorModal({ isOpen, onClose, message }: ApiErrorModalProps) 
       <div
         role="button"
         tabIndex={0}
-        aria-label="Close dialog"
+        aria-label={t.tooltips.closeDialog ?? 'Close dialog'}
         className="absolute inset-0 bg-black/40 backdrop-blur-[1px] animate-in fade-in duration-300"
         onClick={onClose}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(); }}
@@ -36,7 +38,7 @@ export function ApiErrorModal({ isOpen, onClose, message }: ApiErrorModalProps) 
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="API Error"
+        aria-label={t.apiError?.title ?? 'API Error'}
         className="relative w-full h-full flex flex-col dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px] shadow-2xl overflow-hidden"
       >
         {/* Header */}
@@ -46,12 +48,12 @@ export function ApiErrorModal({ isOpen, onClose, message }: ApiErrorModalProps) 
               <AlertTriangle className="w-4 h-4 text-[var(--accent-warning)]" />
             </div>
             <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
-              API Error
+              {t.apiError?.title ?? 'API Error'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t.apiError?.close ?? 'Close'}
             className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors"
           >
             <X className="w-4 h-4" />
@@ -66,7 +68,7 @@ export function ApiErrorModal({ isOpen, onClose, message }: ApiErrorModalProps) 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-end flex-shrink-0">
           <Button onClick={onClose} variant="contained" color="primary">
-            Close
+            {t.apiError?.close ?? 'Close'}
           </Button>
         </div>
       </div>

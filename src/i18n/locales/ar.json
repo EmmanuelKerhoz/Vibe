@@ -29,7 +29,15 @@
     "undo": "تراجع",
     "redo": "إعادة",
     "reset": "إعادة تعيين",
-    "aiUnavailable": "الذكاء الاصطناعي غير متاح"
+    "aiUnavailable": "الذكاء الاصطناعي غير متاح",
+    "closeDialog": "إغلاق مربع الحوار",
+    "processing": "معالجة…",
+    "removeFromLibrary": "حذف من المكتبة",
+    "removeFromLibraryItem": "حذف {title} من المكتبة",
+    "openLeftPanel": "فتح لوحة توليد الكلمات",
+    "closeLeftPanel": "إغلاق لوحة توليد الكلمات",
+    "detectLanguage": "اكتشاف لغة الأغنية",
+    "redetectLanguage": "تم الكشف: {langs} — انقر لإعادة الكشف"
   },
   "mobileNav": {
     "navigation": "التنقل على الجوال",
@@ -128,7 +136,14 @@
     "moveLineUp": "تحريك السطر لأعلى",
     "moveLineDown": "تحريك السطر لأسفل",
     "deleteLine": "حذف السطر",
-    "adaptLine": "تكييف هذا السطر مع اللغة المستهدفة"
+    "adaptLine": "تكييف هذا السطر مع اللغة المستهدفة",
+    "adaptingLabel": "جاري التكييف…",
+    "detectingLanguageLabel": "جاري اكتشاف اللغة…",
+    "analyzingLabel": "جاري التحليل…",
+    "checkingSimilarityLabel": "جاري فحص التشابه…",
+    "lyricsEditors": "محررو الكلمات",
+    "lyricsInsights": "تحليلات الكلمات",
+    "detect": "كشف"
   },
   "suggestions": {
     "title": "اقتراحات الذكاء الاصطناعي",
@@ -459,5 +474,19 @@
     "close": "إغلاق المساعد",
     "thinking": "يفكر…",
     "error": "تعذّر الحصول على رد. يرجى المحاولة مجدداً."
+  },
+  "apiError": {
+    "title": "خطأ API",
+    "close": "إغلاق"
+  },
+  "adaptationProgress": {
+    "adapting": "تكييف",
+    "reversing": "عكس",
+    "reviewing": "مراجعة",
+    "done": "تم",
+    "fidelityScore": "درجة الوفاء",
+    "reviewRecommended": "يُنصح بالمراجعة",
+    "pipelineFailed": "فشل خط أنابيب التكييف. راجع الوحدة النمطية.",
+    "dismissResult": "إغلاق نتيجة التكييف"
   }
 }

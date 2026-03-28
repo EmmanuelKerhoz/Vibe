@@ -29,7 +29,15 @@
     "undo": "Deshacer",
     "redo": "Rehacer",
     "reset": "Restablecer",
-    "aiUnavailable": "IA NO DISPONIBLE"
+    "aiUnavailable": "IA NO DISPONIBLE",
+    "closeDialog": "Cerrar diálogo",
+    "processing": "Procesando…",
+    "removeFromLibrary": "Eliminar de la biblioteca",
+    "removeFromLibraryItem": "Eliminar {title} de la biblioteca",
+    "openLeftPanel": "Abrir panel de generación de letras",
+    "closeLeftPanel": "Cerrar panel de generación de letras",
+    "detectLanguage": "Detectar idioma de la canción",
+    "redetectLanguage": "Detectado: {langs} — clic para redetectar"
   },
   "mobileNav": {
     "navigation": "Navegación móvil",
@@ -128,7 +136,14 @@
     "moveLineUp": "Subir línea",
     "moveLineDown": "Bajar línea",
     "deleteLine": "Eliminar línea",
-    "adaptLine": "Adaptar esta línea al idioma de destino"
+    "adaptLine": "Adaptar esta línea al idioma de destino",
+    "adaptingLabel": "Adaptando…",
+    "detectingLanguageLabel": "Detectando idioma…",
+    "analyzingLabel": "Analizando…",
+    "checkingSimilarityLabel": "Comprobando similitud…",
+    "lyricsEditors": "Editores de LETRAS",
+    "lyricsInsights": "Perspectivas de LETRAS",
+    "detect": "Detectar"
   },
   "suggestions": {
     "title": "Sugerencias IA",
@@ -459,5 +474,19 @@
     "close": "Cerrar asistente",
     "thinking": "Pensando…",
     "error": "No se pudo obtener una respuesta. Por favor, inténtalo de nuevo."
+  },
+  "apiError": {
+    "title": "Error de API",
+    "close": "Cerrar"
+  },
+  "adaptationProgress": {
+    "adapting": "Adaptando",
+    "reversing": "Invirtiendo",
+    "reviewing": "Revisando",
+    "done": "Listo",
+    "fidelityScore": "Puntuación de fidelidad",
+    "reviewRecommended": "revisión recomendada",
+    "pipelineFailed": "Error en la tubería de adaptación. Consulta la consola.",
+    "dismissResult": "Descartar resultado de adaptación"
   }
 }

@@ -32,7 +32,15 @@
     "undo": "Annuler",
     "redo": "Rétablir",
     "reset": "Réinitialiser",
-    "aiUnavailable": "IA INDISPONIBLE"
+    "aiUnavailable": "IA INDISPONIBLE",
+    "closeDialog": "Fermer la boîte de dialogue",
+    "processing": "Traitement…",
+    "removeFromLibrary": "Retirer de la bibliothèque",
+    "removeFromLibraryItem": "Retirer {title} de la bibliothèque",
+    "openLeftPanel": "Ouvrir le panneau de génération de paroles",
+    "closeLeftPanel": "Fermer le panneau de génération de paroles",
+    "detectLanguage": "Détecter la langue de la chanson",
+    "redetectLanguage": "Détecté : {langs} — cliquer pour redétecter"
   },
   "mobileNav": {
     "navigation": "Navigation mobile",
@@ -134,7 +142,14 @@
     "addLineAfter": "Ajouter une ligne après",
     "deleteLine": "Supprimer la ligne",
     "linePlaceholder": "Écrivez une ligne de parole…",
-    "adaptLine": "Adapter cette ligne à la langue cible"
+    "adaptLine": "Adapter cette ligne à la langue cible",
+    "adaptingLabel": "Adaptation…",
+    "detectingLanguageLabel": "Détection de la langue…",
+    "analyzingLabel": "Analyse…",
+    "checkingSimilarityLabel": "Vérification de la similarité…",
+    "lyricsEditors": "Éditeurs de PAROLES",
+    "lyricsInsights": "Insights des PAROLES",
+    "detect": "Détecter"
   },
   "suggestions": {
     "title": "Suggestions IA",
@@ -482,5 +497,19 @@
     "close": "Fermer l’assistant",
     "thinking": "Réflexion…",
     "error": "Impossible d’obtenir une réponse. Veuillez réessayer."
+  },
+  "apiError": {
+    "title": "Erreur API",
+    "close": "Fermer"
+  },
+  "adaptationProgress": {
+    "adapting": "Adaptation",
+    "reversing": "Inversion",
+    "reviewing": "Révision",
+    "done": "Terminé",
+    "fidelityScore": "Score de fidélité",
+    "reviewRecommended": "révision recommandée",
+    "pipelineFailed": "Échec du pipeline d’adaptation. Consultez la console pour plus de détails.",
+    "dismissResult": "Ignorer le résultat de l’adaptation"
   }
 }
