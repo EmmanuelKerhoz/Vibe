@@ -153,6 +153,8 @@ export interface Translations {
     deleteLine?: string;
     linePlaceholder?: string;
     addLineAfter?: string;
+    /** Tooltip for the per-line language adaptation button */
+    adaptLine?: string;
   };
 
   suggestions: {

@@ -143,6 +143,7 @@ const fr: Translations = {
     addLineAfter: 'Ajouter une ligne apr\u00e8s',
     deleteLine: 'Supprimer la ligne',
     linePlaceholder: '\u00c9crivez une ligne de parole\u2026',
+    adaptLine: 'Adapter cette ligne \u00e0 la langue cible',
   },
 
   suggestions: {

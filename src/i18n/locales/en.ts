@@ -143,6 +143,7 @@ const en: Translations = {
     addLineAfter: 'Add line after',
     deleteLine: 'Delete line',
     linePlaceholder: 'Write a lyric line\u2026',
+    adaptLine: 'Adapt this line to target language',
   },
 
   suggestions: {
