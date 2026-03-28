@@ -34,9 +34,6 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// Heavy leaf components: lazy-loaded to reduce initial bundle.
-// AppModals aggregates ~15 modal dialogs never needed at mount.
-// MusicalTab is only rendered when the user switches to the Musical tab.
 const AppModals = lazy(() =>
   import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
 );
@@ -44,7 +41,6 @@ const MusicalTab = lazy(() =>
   import('./components/app/musical/MusicalTab').then(m => ({ default: m.MusicalTab }))
 );
 
-/** Minimal CSS-only spinner used as Suspense fallback. No external dependency. */
 function LazyFallback() {
   return (
     <div
@@ -119,7 +115,6 @@ function AppInnerContent() {
     hasApiKey, importInputRef, markupTextareaRef,
   } = appState;
 
-  // ── Mobile layout ─────────────────────────────────────────────────────────────────
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
@@ -161,13 +156,34 @@ function AppInnerContent() {
   isGeneratingRef.current = isGenerating;
 
   const {
-    canPasteLyrics, pastedText, setPastedText, isAnalyzing, importProgress, analysisReport, analysisSteps,
-    appliedAnalysisItems, selectedAnalysisItems, isApplyingAnalysis,
-    targetLanguage, setTargetLanguage, isAdaptingLanguage, isDetectingLanguage,
-    adaptationProgress, adaptationResult, sectionTargetLanguages, setSectionTargetLanguages,
-    toggleAnalysisItemSelection, applySelectedAnalysisItems,
-    analyzeCurrentSong, detectLanguage, adaptSongLanguage, adaptSectionLanguage,
-    analyzePastedLyrics, clearAppliedAnalysisItems,
+    canPasteLyrics,
+    pastedText,
+    setPastedText,
+    isAnalyzing,
+    isAnalyzingTheme,
+    importProgress,
+    analysisReport,
+    analysisSteps,
+    appliedAnalysisItems,
+    selectedAnalysisItems,
+    isApplyingAnalysis,
+    targetLanguage,
+    setTargetLanguage,
+    isAdaptingLanguage,
+    isDetectingLanguage,
+    adaptationProgress,
+    adaptationResult,
+    sectionTargetLanguages,
+    setSectionTargetLanguages,
+    toggleAnalysisItemSelection,
+    applyAnalysisItem,
+    applySelectedAnalysisItems,
+    analyzeCurrentSong,
+    detectLanguage,
+    adaptSongLanguage,
+    adaptSectionLanguage,
+    analyzePastedLyrics,
+    clearAppliedAnalysisItems,
   } = useSongAnalysis({
     uiLanguage: language, isGeneratingRef, saveVersion,
     updateState, updateSongAndStructureWithHistory,
@@ -223,7 +239,6 @@ function AppInnerContent() {
     resetIndex: resetWebSimilarityIndex,
   } = useSimilarityEngine();
 
-  // ── Derived state ─────────────────────────────────────────────────────────────────
   const { hasRealLyricContent, hasExistingWork, webBadgeLabel } = useDerivedAppState({
     editMode, markupText,
     webSimilarityIndex,
@@ -249,7 +264,6 @@ function AppInnerContent() {
     }
   }, [hasRealLyricContent, isSessionHydrated, setIsLeftPanelOpen]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────────
   const {
     handleApiKeyHelp, handleTitleChange, handleGenerateTitle,
     handleGlobalRegenerate, handleScrollToSection, handleOpenNewGeneration,
@@ -260,7 +274,6 @@ function AppInnerContent() {
     generateTitle, generateSong, scrollToSection,
   });
 
-  // ── Modal handlers ────────────────────────────────────────────────────────────────
   const {
     handleOpenPasteModal,
     handleOpenPasteLyricsFromModals,
@@ -303,7 +316,6 @@ function AppInnerContent() {
     setIsImportModalOpen, setIsPasteModalOpen, setPastedText, setSongLanguage,
   });
 
-  // ── ModalProvider injection ───────────────────────────────────────────────────────
   const uiStateForProvider = useUIStateForProvider({
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
@@ -339,7 +351,7 @@ function AppInnerContent() {
         theme={theme === 'dark' ? webDarkTheme : webLightTheme}
         style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}
       >
-        <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
+        <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}> 
 
           {showBackdrop && (
             <button
@@ -403,7 +415,7 @@ function AppInnerContent() {
                   adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
                   showTranslationFeatures={showTranslationFeatures}
                 />
-              )}
+              )} 
 
               <div
                 className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}
@@ -434,7 +446,7 @@ function AppInnerContent() {
                         showTranslationFeatures={showTranslationFeatures}
                       />
                     ) : (
-                      <Suspense fallback={<LazyFallback />}>
+                      <Suspense fallback={<LazyFallback />}>  
                         <MusicalTab hasApiKey={hasApiKey} />
                       </Suspense>
                     )}
@@ -468,7 +480,7 @@ function AppInnerContent() {
                 onGenerateSong={generateSong}
               />
             )}
-          </div>
+          </div> 
 
           <StatusBar
             className="lcars-status-bar-desktop"
@@ -487,9 +499,9 @@ function AppInnerContent() {
               setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
               onOpenSettings={handleOpenSettings}
             />
-          )}
+          )} 
 
-          <Suspense fallback={<LazyFallback />}>
+          <Suspense fallback={<LazyFallback />}>    
             <AppModals
               theme={theme} setTheme={setTheme}
               audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
@@ -502,12 +514,16 @@ function AppInnerContent() {
               handleImportInputChange={handleImportInputChange}
               exportSong={exportSong}
               pastedText={pastedText} setPastedText={setPastedText}
-              isAnalyzing={isAnalyzing} importProgress={importProgress} analyzePastedLyrics={analyzePastedLyrics}
+              isAnalyzing={isAnalyzing}
+              isAnalyzingTheme={isAnalyzingTheme}
+              importProgress={importProgress}
+              analyzePastedLyrics={analyzePastedLyrics}
               analysisReport={analysisReport} analysisSteps={analysisSteps}
               appliedAnalysisItems={appliedAnalysisItems}
               selectedAnalysisItems={selectedAnalysisItems}
               isApplyingAnalysis={isApplyingAnalysis}
               toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+              applyAnalysisItem={applyAnalysisItem}
               applySelectedAnalysisItems={applySelectedAnalysisItems}
               clearAppliedAnalysisItems={clearAppliedAnalysisItems}
               versions={versions} rollbackToVersion={rollbackToVersion}
