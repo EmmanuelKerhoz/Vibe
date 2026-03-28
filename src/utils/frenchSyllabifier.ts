@@ -40,6 +40,9 @@ const VALID_ONSETS_2 = new Set([
   'qu',
 ]);
 
+/** Maximum number of consonants that can form a valid French syllable onset. */
+const MAX_ONSET_LENGTH = 2;
+
 const isValidOnset = (cluster: string): boolean => {
   if (cluster.length <= 1) return true;
   if (cluster.length === 2) return VALID_ONSETS_2.has(cluster);
@@ -141,7 +144,7 @@ const codaLength = (cluster: string): number => {
   if (cluster.length === 1) return 0; // single consonant → onset of next syllable
 
   // Try the longest valid onset from the right end of the cluster
-  for (let onsetLen = Math.min(cluster.length, 3); onsetLen >= 1; onsetLen--) {
+  for (let onsetLen = Math.min(cluster.length, MAX_ONSET_LENGTH); onsetLen >= 1; onsetLen--) {
     const candidate = cluster.slice(cluster.length - onsetLen);
     if (isValidOnset(candidate)) {
       return cluster.length - onsetLen;

@@ -44,7 +44,7 @@ const buildSectionPhonetics = async (
     });
     return {
       header: `[${section.name}]`,
-      body: syllabifiedLines.filter(l => l !== undefined).join('\n'),
+      body: syllabifiedLines.join('\n'),
     };
   }
 
