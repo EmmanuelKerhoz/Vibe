@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { Section } from '../types';
 import type { SimilarityMatch } from '../utils/similarityUtils';
 import { buildResetPayload, buildPartialResetPayload, clearPersistedSession } from '../utils/sessionReset';
@@ -92,11 +92,33 @@ export const useSessionActions = (params: UseSessionActionsParams) => {
     setRhythm, setNarrative, setMusicalPrompt,
   } = useSongContext();
 
-  const songMetaSetters = {
-    setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme,
-    setTargetSyllables, setGenre, setTempo, setInstrumentation,
-    setRhythm, setNarrative, setMusicalPrompt,
-  };
+  const songMetaSetters = useMemo(() => ({
+    setTitle,
+    setTitleOrigin,
+    setTopic,
+    setMood,
+    setRhymeScheme,
+    setTargetSyllables,
+    setGenre,
+    setTempo,
+    setInstrumentation,
+    setRhythm,
+    setNarrative,
+    setMusicalPrompt,
+  }), [
+    setTitle,
+    setTitleOrigin,
+    setTopic,
+    setMood,
+    setRhymeScheme,
+    setTargetSyllables,
+    setGenre,
+    setTempo,
+    setInstrumentation,
+    setRhythm,
+    setNarrative,
+    setMusicalPrompt,
+  ]);
 
   const handleCreateEmptySong = useCallback(() => {
     applyResetPayload(
@@ -110,11 +132,13 @@ export const useSessionActions = (params: UseSessionActionsParams) => {
     );
     resetSuggestionCycle();
   }, [
-    appState, clearHistory, clearSelection, replaceStateWithoutHistory,
-    resetSuggestionCycle, resetWebSimilarityIndex,
-    setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme,
-    setTargetSyllables, setGenre, setTempo, setInstrumentation,
-    setRhythm, setNarrative, setMusicalPrompt,
+    appState,
+    clearHistory,
+    clearSelection,
+    replaceStateWithoutHistory,
+    resetSuggestionCycle,
+    resetWebSimilarityIndex,
+    songMetaSetters,
   ]);
 
   const resetSong = useCallback(() => {
