@@ -63,6 +63,7 @@ function AdaptationProgressBanner({
   onDismiss: () => void;
   isOverlay?: boolean;
 }) {
+  const { t } = useTranslation();
   if (progress.active === 'idle') return null;
 
   const isFailed = progress.active === 'failed';
@@ -96,7 +97,7 @@ function AdaptationProgressBanner({
           <button
             onClick={onDismiss}
             className="text-zinc-500 hover:text-zinc-300 transition-colors leading-none px-1"
-            aria-label="Dismiss adaptation result"
+            aria-label={t.adaptationProgress?.dismissResult ?? 'Dismiss adaptation result'}
           >
             ✕
           </button>
@@ -104,61 +105,65 @@ function AdaptationProgressBanner({
       </div>
 
       <div className="flex items-center gap-1" aria-hidden="true">
-        {ORDERED_STEP_IDS.map((stepId, idx) => {
-          const activeIdx  = ORDERED_STEP_IDS.indexOf(
-            isFailed ? 'reviewing' : (progress.active as typeof ORDERED_STEP_IDS[number]) === 'done'
-              ? 'done'
-              : progress.active as typeof ORDERED_STEP_IDS[number]
-          );
-          const stepDone    = isDone || idx < activeIdx;
-          const stepActive  = !isDone && !isFailed && idx === activeIdx;
+        {(() => {
+          const stepLabels: Record<typeof ORDERED_STEP_IDS[number], string> = {
+            adapting:  t.adaptationProgress?.adapting  ?? 'Adapting',
+            reversing: t.adaptationProgress?.reversing ?? 'Reversing',
+            reviewing: t.adaptationProgress?.reviewing ?? 'Reviewing',
+            done:      t.adaptationProgress?.done      ?? 'Done',
+          };
+          return ORDERED_STEP_IDS.map((stepId, idx) => {
+            const activeIdx  = ORDERED_STEP_IDS.indexOf(
+              isFailed ? 'reviewing' : (progress.active as typeof ORDERED_STEP_IDS[number]) === 'done'
+                ? 'done'
+                : progress.active as typeof ORDERED_STEP_IDS[number]
+            );
+            const stepDone    = isDone || idx < activeIdx;
+            const stepActive  = !isDone && !isFailed && idx === activeIdx;
+            const stepLabel   = stepLabels[stepId];
 
-          const stepLabel = ORDERED_STEP_IDS[idx] === 'adapting'  ? 'Adapting'
-                          : ORDERED_STEP_IDS[idx] === 'reversing' ? 'Reverse'
-                          : ORDERED_STEP_IDS[idx] === 'reviewing' ? 'Review'
-                          : 'Done';
-
-          return (
-            <React.Fragment key={stepId}>
-              <div className="flex items-center gap-1">
-                <span
-                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    stepDone
-                      ? 'bg-emerald-400'
-                      : stepActive
-                      ? 'bg-[var(--accent-color)] animate-pulse'
-                      : 'bg-white/15'
-                  }`}
-                />
-                <span
-                  className={`whitespace-nowrap ${
-                    stepDone
-                      ? 'text-emerald-400'
-                      : stepActive
-                      ? 'text-[var(--accent-color)] font-semibold'
-                      : 'text-zinc-600'
-                  }`}
-                >
-                  {stepLabel}
-                </span>
-              </div>
-              {idx < ORDERED_STEP_IDS.length - 1 && (
-                <span className="text-zinc-700 mx-0.5">›</span>
-              )}
-            </React.Fragment>
-          );
-        })}
+            return (
+              <React.Fragment key={stepId}>
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      stepDone
+                        ? 'bg-emerald-400'
+                        : stepActive
+                        ? 'bg-[var(--accent-color)] animate-pulse'
+                        : 'bg-white/15'
+                    }`}
+                  />
+                  <span
+                    className={`whitespace-nowrap ${
+                      stepDone
+                        ? 'text-emerald-400'
+                        : stepActive
+                        ? 'text-[var(--accent-color)] font-semibold'
+                        : 'text-zinc-600'
+                    }`}
+                  >
+                    {stepLabel}
+                  </span>
+                </div>
+                {idx < ORDERED_STEP_IDS.length - 1 && (
+                  <span className="text-zinc-700 mx-0.5">›</span>
+                )}
+              </React.Fragment>
+            );
+          });
+        })()}
       </div>
 
       {isDone && result && (
         <div className="flex flex-col gap-1 mt-0.5">
           <div className="flex items-center gap-2">
-            <span className="text-zinc-500">Fidelity score</span>
+            <span className="text-zinc-500">{t.adaptationProgress?.fidelityScore ?? 'Fidelity score'}</span>
             <span className={`font-bold tabular-nums ${scoreColor(result.score)}`}>
               {result.score}/100
             </span>
             {!result.accepted && (
-              <span className="text-amber-400 italic">— review recommended</span>
+              <span className="text-amber-400 italic">— {t.adaptationProgress?.reviewRecommended ?? 'review recommended'}</span>
             )}
           </div>
           {result.warnings.length > 0 && (
@@ -175,7 +180,7 @@ function AdaptationProgressBanner({
       )}
 
       {isFailed && (
-        <span className="text-red-400">Adaptation pipeline failed. Check console for details.</span>
+        <span className="text-red-400">{t.adaptationProgress?.pipelineFailed ?? 'Adaptation pipeline failed. Check console for details.'}</span>
       )}
     </div>
   );
@@ -254,6 +259,8 @@ export const InsightsBar = React.memo(function InsightsBar({
 
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
 
+  const detectedLanguageList = detectedDisplays.map(d => `${d.sign} ${d.label}`).join(', ');
+
   const showBanner = !!adaptationProgress &&
     adaptationProgress.active !== 'idle' &&
     !bannerDismissed;
@@ -300,7 +307,7 @@ export const InsightsBar = React.memo(function InsightsBar({
                   {isAdaptingLanguage
                     ? (<>
                         <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
-                        <span className="sr-only">Adapting…</span>
+                        <span className="sr-only">{t.editor.adaptingLabel ?? 'Adapting\u2026'}</span>
                       </>)
                     : <Languages className="w-3 h-3" aria-hidden="true" />}
                   <span className="hidden sm:inline">{t.editor.adaptation}</span>
@@ -326,7 +333,7 @@ export const InsightsBar = React.memo(function InsightsBar({
           {/* ── LYRICS Editors group ────────────────────────────────── */}
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">LYRICS Editors</span>
+            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsEditors ?? 'LYRICS Editors'}</span>
             {([
               { mode: 'text' as EditMode, icon: <Type className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.textModeLabel, tooltip: t.tooltips.textMode },
               { mode: 'markdown' as EditMode, icon: <FileText className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.markupModeLabel, tooltip: t.tooltips.markupMode },
@@ -357,8 +364,10 @@ export const InsightsBar = React.memo(function InsightsBar({
 
           {/* ── LYRICS Insights group (right-aligned) ───────────────────── */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">LYRICS Insights</span>
-            <Tooltip title={detectedDisplays.length > 0 ? `Detected: ${detectedDisplays.map(d => `${d.sign} ${d.label}`).join(', ')} — click to re-detect` : '🌐 Detect song language'}>
+            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsInsights ?? 'LYRICS Insights'}</span>
+            <Tooltip title={detectedDisplays.length > 0
+              ? (t.tooltips.redetectLanguage ?? 'Detected: {langs} \u2014 click to re-detect').replace('{langs}', detectedLanguageList)
+              : (t.tooltips.detectLanguage ?? 'Detect song language')}>
               <button
                 onClick={() => void detectLanguage()}
                 disabled={isDetectingLanguage || song.length === 0}
@@ -369,7 +378,7 @@ export const InsightsBar = React.memo(function InsightsBar({
                 {isDetectingLanguage
                   ? (<>
                       <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
-                      <span className="sr-only">Detecting language…</span>
+                      <span className="sr-only">{t.editor.detectingLanguageLabel ?? 'Detecting language\u2026'}</span>
                     </>)
                   : <ScanText className="w-3 h-3" aria-hidden="true" />}
                 {detectedDisplays.length > 0
@@ -379,7 +388,7 @@ export const InsightsBar = React.memo(function InsightsBar({
                         <EmojiSign sign={d.sign} /><span className="hidden sm:inline">{d.label}</span>
                       </span>
                     ))
-                  : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">Detect</span></>}
+                  : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">{t.editor.detect ?? 'Detect'}</span></>}
               </button>
             </Tooltip>
             <Tooltip title={t.tooltips.analyzeTheme}>
@@ -393,7 +402,7 @@ export const InsightsBar = React.memo(function InsightsBar({
                 {isAnalyzing
                   ? (<>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-                      <span className="sr-only">Analyzing…</span>
+                      <span className="sr-only">{t.editor.analyzingLabel ?? 'Analyzing\u2026'}</span>
                     </>)
                   : <BarChart2 className="w-3.5 h-3.5" aria-hidden="true" />}
                 <span className="hidden lg:inline">{t.editor.analyze}</span>
@@ -409,7 +418,7 @@ export const InsightsBar = React.memo(function InsightsBar({
                 {webSimilarityIndex.status === 'running'
                   ? (<>
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" aria-hidden="true" />
-                      <span className="sr-only">Checking similarity…</span>
+                      <span className="sr-only">{t.editor.checkingSimilarityLabel ?? 'Checking similarity\u2026'}</span>
                     </>)
                   : <Search className="w-3.5 h-3.5" aria-hidden="true" />}
                 <span className="hidden lg:inline">{t.ribbon?.similarity || 'Similarity'}</span>

@@ -143,6 +143,13 @@ const en: Translations = {
     addLineAfter: 'Add line after',
     deleteLine: 'Delete line',
     linePlaceholder: 'Write a lyric line\u2026',
+    adaptingLabel: 'Adapting\u2026',
+    detectingLanguageLabel: 'Detecting language\u2026',
+    analyzingLabel: 'Analyzing\u2026',
+    checkingSimilarityLabel: 'Checking similarity\u2026',
+    lyricsEditors: 'LYRICS Editors',
+    lyricsInsights: 'LYRICS Insights',
+    detect: 'Detect',
   },
 
   suggestions: {
@@ -428,6 +435,13 @@ const en: Translations = {
     aiGeneratedTitle: 'AI-generated title',
     userEnteredTitle: 'User-entered title',
     openSearch: 'Search & replace in lyrics (Ctrl+F)',
+    closeDialog: 'Close dialog',
+    processing: 'Processing\u2026',
+    removeFromLibrary: 'Remove from library',
+    openLeftPanel: 'Open lyrics generation panel',
+    closeLeftPanel: 'Close lyrics generation panel',
+    detectLanguage: 'Detect song language',
+    redetectLanguage: 'Detected: {langs} \u2014 click to re-detect',
   },
 
   sections: {
@@ -486,6 +500,22 @@ const en: Translations = {
     ABABAB: 'ABABAB (6-line Alternate)',
     ABCABC: 'ABCABC (6-line Repeating)',
     FREE:   'Free Verse',
+  },
+
+  apiError: {
+    title: 'API Error',
+    close: 'Close',
+  },
+
+  adaptationProgress: {
+    adapting: 'Adapting',
+    reversing: 'Reversing',
+    reviewing: 'Reviewing',
+    done: 'Done',
+    fidelityScore: 'Fidelity score',
+    reviewRecommended: 'review recommended',
+    pipelineFailed: 'Adaptation pipeline failed. Check console for details.',
+    dismissResult: 'Dismiss adaptation result',
   },
 
   confirmModal: {

@@ -59,6 +59,10 @@ export function TopRibbon({
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
   const isBusy = isGenerating || isAnalyzing;
+  const processingLabel = t.tooltips.processing ?? 'Processing\u2026';
+  const panelToggleLabel = isLeftPanelOpen
+    ? (t.tooltips.closeLeftPanel ?? 'Close lyrics generation panel')
+    : (t.tooltips.openLeftPanel ?? 'Open lyrics generation panel');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({
     left: MENU_VIEWPORT_PADDING,
@@ -266,7 +270,7 @@ export function TopRibbon({
       {/* RIGHT */}
       <div className="flex items-center gap-1 lg:gap-2">
         {isBusy && (
-          <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-label="Processing" title="Processing…" />
+          <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-label={processingLabel} title={processingLabel} />
         )}
         {!hasApiKey && (
           <Tooltip title={t.tooltips.aiUnavailableHelp}>
@@ -280,10 +284,10 @@ export function TopRibbon({
           </Tooltip>
         )}
         <div className="w-px h-4 bg-[var(--border-color)] mx-1 hidden lg:block" />
-        <Tooltip title={isLeftPanelOpen ? 'Close lyrics generation panel' : 'Open lyrics generation panel'}>
+        <Tooltip title={panelToggleLabel}>
           <button
             onClick={toggleLeftPanel}
-            aria-label={isLeftPanelOpen ? 'Close lyrics generation panel' : 'Open lyrics generation panel'}
+            aria-label={panelToggleLabel}
             className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
             style={{
               color: isLeftPanelOpen ? 'var(--accent-color)' : 'var(--text-secondary)',

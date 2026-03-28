@@ -2,6 +2,20 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiErrorModal } from './ApiErrorModal';
 
+vi.mock('../../../i18n', () => ({
+  useTranslation: () => ({
+    t: {
+      tooltips: {
+        closeDialog: 'Close dialog',
+      },
+      apiError: {
+        title: 'API Error',
+        close: 'Close',
+      },
+    },
+  }),
+}));
+
 vi.mock('../../ui/icons', () => ({
   AlertTriangle: () => null,
   X: () => null,

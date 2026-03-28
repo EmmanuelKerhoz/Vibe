@@ -153,6 +153,20 @@ export interface Translations {
     deleteLine?: string;
     linePlaceholder?: string;
     addLineAfter?: string;
+    /** Screen-reader-only label shown while the adaptation button is busy */
+    adaptingLabel?: string;
+    /** Screen-reader-only label shown while the language-detection button is busy */
+    detectingLanguageLabel?: string;
+    /** Screen-reader-only label shown while the analyze button is busy */
+    analyzingLabel?: string;
+    /** Screen-reader-only label shown while the similarity button is busy */
+    checkingSimilarityLabel?: string;
+    /** Section header label for the lyrics-editors group in the insights bar */
+    lyricsEditors?: string;
+    /** Section header label for the lyrics-insights group in the insights bar */
+    lyricsInsights?: string;
+    /** Short label on the detect-language button when no language has been detected yet */
+    detect?: string;
   };
 
   suggestions: {
@@ -445,6 +459,21 @@ export interface Translations {
     aiGeneratedTitle: string;
     userEnteredTitle: string;
     openSearch: string;
+    /** Aria-label for the backdrop that closes a dialog when clicked */
+    closeDialog?: string;
+    /** Aria-label / title for the busy-indicator dot in the ribbon */
+    processing?: string;
+    /** Title attribute on the remove-from-library buttons */
+    removeFromLibrary?: string;
+    /** Tooltip when the left (lyrics generation) panel is closed */
+    openLeftPanel?: string;
+    /** Tooltip when the left (lyrics generation) panel is open */
+    closeLeftPanel?: string;
+    /** Tooltip for the detect-language button when no language is detected */
+    detectLanguage?: string;
+    /** Tooltip for the detect-language button when languages are already detected.
+     *  Use `{langs}` as a placeholder for the comma-separated language list. */
+    redetectLanguage?: string;
   };
 
   sections: {
@@ -503,6 +532,36 @@ export interface Translations {
     ABABAB: string;
     ABCABC: string;
     FREE: string;
+  };
+
+  /**
+   * Labels for the API-error modal.
+   */
+  apiError?: {
+    title: string;
+    close: string;
+  };
+
+  /**
+   * Labels for the adaptation progress banner.
+   */
+  adaptationProgress?: {
+    /** Step label while the "adapting" pipeline step is active */
+    adapting: string;
+    /** Step label while the "reversing" pipeline step is active */
+    reversing: string;
+    /** Step label while the "reviewing" pipeline step is active */
+    reviewing: string;
+    /** Step label when the pipeline is done */
+    done: string;
+    /** Label for the fidelity-score row in the result summary */
+    fidelityScore: string;
+    /** Inline note appended when the score is below the acceptance threshold */
+    reviewRecommended: string;
+    /** Error message displayed when the adaptation pipeline fails */
+    pipelineFailed: string;
+    /** Aria-label for the dismiss button on the adaptation-result banner */
+    dismissResult: string;
   };
 
   /**
