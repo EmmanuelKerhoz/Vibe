@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Section } from '../types';
 import { languageNameToCode } from '../constants/langFamilyMap';
 import { runIPAPipelineBatch, type IPAPipelineResult } from '../utils/ipaPipeline';
+import { syllabifyLineFrench } from '../utils/frenchSyllabifier';
 import { getLanguageDisplay } from '../i18n';
 
 type PhoneticState = {
@@ -33,6 +34,20 @@ const buildSectionPhonetics = async (
   langCode: string,
   signal: AbortSignal
 ): Promise<{ header: string; body: string }> => {
+  // French: apply local graphemic syllabification instead of remote IPA pipeline
+  if (langCode === 'fr') {
+    const syllabifiedLines = section.lines.map(line => {
+      const trimmed = line.text.trim();
+      if (!trimmed) return '';
+      if (line.isMeta) return line.text;
+      return syllabifyLineFrench(line.text);
+    });
+    return {
+      header: `[${section.name}]`,
+      body: syllabifiedLines.filter(l => l !== undefined).join('\n'),
+    };
+  }
+
   const phonemizeTargets = section.lines
     .map((line, index) => ({ line, index, text: line.text.trim() }))
     .filter(item => item.text.length > 0 && !item.line.isMeta);
