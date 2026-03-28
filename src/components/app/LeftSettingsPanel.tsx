@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle, RefreshCw, X } from '../ui/icons';
 import { Button } from '../ui/Button';
@@ -9,6 +9,7 @@ import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Props {
   title: string;
@@ -42,6 +43,7 @@ type PanelContentProps = Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & 
   song: ReturnType<typeof useSongContext>['song'];
   isGenerating: ReturnType<typeof useComposerContext>['isGenerating'];
   quantizeSyllables: ReturnType<typeof useComposerContext>['quantizeSyllables'];
+  headingId?: string;
 };
 
 const RHYME_SCHEME_ORDER = ['FREE', 'AABB', 'ABAB', 'AAAA', 'ABCB', 'AAABBB', 'AABBCC', 'ABABAB', 'ABCABC'] as const;
@@ -60,11 +62,20 @@ export function LeftSettingsPanel({
   const { t } = useTranslation();
   const { song } = useSongContext();
   const { isGenerating, quantizeSyllables } = useComposerContext();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const headingId = useId();
+
+  const handleClose = () => setIsLeftPanelOpen(false);
+  useFocusTrap(panelRef, !!(isMobileOverlay && isLeftPanelOpen), handleClose);
 
   // ── Mobile/tablet: fixed overlay ────────────────────────────────────────────────────────
   if (isMobileOverlay) {
     return (
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
         className={`flex flex-col shadow-2xl lcars-panel
           fixed left-0 top-0 z-[80] w-[min(22rem,85vw)]
           transition-transform duration-300 ease-in-out
@@ -97,6 +108,7 @@ export function LeftSettingsPanel({
           onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
           onRegenerateSong={onRegenerateSong}
           isMobileOverlay={true}
+          headingId={headingId}
         />
       </div>
     );
@@ -158,6 +170,7 @@ function PanelContent({
   isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen,
   onSurprise, isSurprising, onGenerateSong, onRegenerateSong,
   isMobileOverlay,
+  headingId,
 }: PanelContentProps) {
   const hasLyrics = song.some(section => section.lines.some(line => !line.isMeta && line.text.trim().length > 0));
   const primaryActionLabel = hasLyrics ? t.editor.regenerateLyrics : t.editor.emptyState.generateSong;
@@ -185,7 +198,12 @@ function PanelContent({
           <div className="w-9 h-9 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
             <Music className="w-5 h-5 text-[var(--accent-color)]" />
           </div>
-          <h1 className="text-base text-primary tracking-tight">{t.app.name}</h1>
+          <h1
+            id={headingId}
+            className="text-base text-primary tracking-tight"
+          >
+            {t.app.name}
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">New generation</span>
