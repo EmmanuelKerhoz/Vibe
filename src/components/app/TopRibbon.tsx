@@ -284,19 +284,6 @@ export function TopRibbon({
           </Tooltip>
         )}
         <div className="w-px h-4 bg-[var(--border-color)] mx-1 hidden lg:block" />
-        <Tooltip title={panelToggleLabel}>
-          <button
-            onClick={toggleLeftPanel}
-            aria-label={panelToggleLabel}
-            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
-            style={{
-              color: isLeftPanelOpen ? 'var(--accent-color)' : 'var(--text-secondary)',
-              backgroundColor: isLeftPanelOpen ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)' : undefined,
-            }}
-          >
-            <WandSparkles className="w-4 h-4" />
-          </button>
-        </Tooltip>
         <Tooltip title={t.tooltips.undo}>
           <IconButton onClick={undo} disabled={!canUndo} size="small"
             style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 36, minHeight: 36 }}
@@ -314,19 +301,6 @@ export function TopRibbon({
           </IconButton>
         </Tooltip>
         <div className="w-px h-4 bg-[var(--border-color)] mx-1" />
-        <Tooltip title={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}>
-          <button
-            onClick={() => setIsStructureOpen(!isStructureOpen)}
-            aria-label={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}
-            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
-            style={{
-              color: isStructureOpen ? 'var(--accent-color)' : 'var(--text-secondary)',
-              backgroundColor: isStructureOpen ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)' : undefined,
-            }}
-          >
-            <PanelRight className="w-4 h-4" />
-          </button>
-        </Tooltip>
         <Tooltip title={t.tooltips.openSearch}>
           <button
             onClick={onOpenSearchClick}
@@ -345,6 +319,32 @@ export function TopRibbon({
             style={{ color: 'var(--text-secondary)' }}
           >
             <KeyboardRegular className="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip title={panelToggleLabel}>
+          <button
+            onClick={toggleLeftPanel}
+            aria-label={panelToggleLabel}
+            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
+            style={{
+              color: isLeftPanelOpen ? 'var(--accent-color)' : 'var(--text-secondary)',
+              backgroundColor: isLeftPanelOpen ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)' : undefined,
+            }}
+          >
+            <WandSparkles className="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip title={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}>
+          <button
+            onClick={() => setIsStructureOpen(!isStructureOpen)}
+            aria-label={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}
+            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
+            style={{
+              color: isStructureOpen ? 'var(--accent-color)' : 'var(--text-secondary)',
+              backgroundColor: isStructureOpen ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)' : undefined,
+            }}
+          >
+            <PanelRight className="w-4 h-4" />
           </button>
         </Tooltip>
       </div>
