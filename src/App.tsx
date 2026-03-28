@@ -35,6 +35,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
+// v3.21.1
 const AppModals = lazy(() =>
   import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
 );
