@@ -346,6 +346,16 @@ export interface Translations {
     close: string;
   };
 
+  aiAssistant: {
+    title: string;
+    onboarding: string;
+    placeholder: string;
+    send: string;
+    close: string;
+    thinking: string;
+    error: string;
+  };
+
   settings: {
     title: string;
     theme: {

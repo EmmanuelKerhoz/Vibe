@@ -332,6 +332,16 @@ const en: Translations = {
     close: 'Close',
   },
 
+  aiAssistant: {
+    title: 'AI Assistant',
+    onboarding: 'What would you like to know or do?',
+    placeholder: 'Ask anything about your lyrics or composition…',
+    send: 'Send',
+    close: 'Close assistant',
+    thinking: 'Thinking…',
+    error: 'Unable to get a response. Please try again.',
+  },
+
   settings: {
     title: 'Settings',
     theme: {

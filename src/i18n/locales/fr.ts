@@ -322,14 +322,24 @@ const fr: Translations = {
   },
 
   about: {
-    description: 'Un \u00e9diteur de paroles IA de niveau professionnel con\u00e7u pour les auteurs-compositeurs et les po\u00e8tes. Cr\u00e9ez votre chef-d\u2019\u0153uvre avec des suggestions en temps r\u00e9el, la gestion de la structure et une quantification intelligente.',
+    description: 'Un éditeur de paroles IA de niveau professionnel conçu pour les auteurs-compositeurs et les poètes. Créez votre chef-d\u2019œuvre avec des suggestions en temps réel, la gestion de la structure et une quantification intelligente.',
     engine: 'Google Gemini',
     engineLabel: 'Moteur',
-    modelLabel: 'Mod\u00e8le IA',
-    apiKeyLabel: 'Cl\u00e9 IA',
+    modelLabel: 'Modèle IA',
+    apiKeyLabel: 'Clé IA',
     license: 'Commercial Pro',
     licenseLabel: 'Licence',
     close: 'Fermer',
+  },
+
+  aiAssistant: {
+    title: 'Assistant IA',
+    onboarding: 'Que souhaitez-vous savoir ou faire\u00a0?',
+    placeholder: 'Posez toute question sur vos paroles ou votre composition\u2026',
+    send: 'Envoyer',
+    close: 'Fermer l\u2019assistant',
+    thinking: 'R\u00e9flexion\u2026',
+    error: 'Impossible d\u2019obtenir une r\u00e9ponse. Veuillez r\u00e9essayer.',
   },
 
   settings: {
