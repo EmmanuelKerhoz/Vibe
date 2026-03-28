@@ -3,7 +3,7 @@ import { Loader2, BarChart2, Languages, ScanText, Layout, Search, Timer, CheckCi
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
-import { useTranslation, useLanguage } from '../../i18n';
+import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES, getLanguageDisplay } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
@@ -81,7 +81,6 @@ function AdaptationProgressBanner({
           : 'bg-white/3 border-white/10'
       }`}
     >
-      {/* Header: label + dismiss */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 font-semibold tracking-wider uppercase text-zinc-300">
           {isFailed
@@ -104,7 +103,6 @@ function AdaptationProgressBanner({
         )}
       </div>
 
-      {/* Stepper */}
       <div className="flex items-center gap-1" aria-hidden="true">
         {ORDERED_STEP_IDS.map((stepId, idx) => {
           const activeIdx  = ORDERED_STEP_IDS.indexOf(
@@ -152,7 +150,6 @@ function AdaptationProgressBanner({
         })}
       </div>
 
-      {/* Result: score + warnings */}
       {isDone && result && (
         <div className="flex flex-col gap-1 mt-0.5">
           <div className="flex items-center gap-2">
@@ -199,7 +196,8 @@ function AdaptationProgressBanner({
 }
 
 // ---------------------------------------------------------------------------
-// Static language options
+// Static language options — built once at module level so EmojiSign instances
+// are never remounted due to a new options array reference on each render.
 // ---------------------------------------------------------------------------
 
 const LANGUAGE_SELECT_OPTIONS = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
@@ -262,7 +260,6 @@ export const InsightsBar = React.memo(function InsightsBar({
 
   return (
     <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10" style={{ position: 'relative', overflow: 'visible' }}>
-      {/* LCARS gradient separator */}
       <div style={{
         position: 'absolute',
         bottom: -1, left: 0, right: 0,
@@ -274,6 +271,7 @@ export const InsightsBar = React.memo(function InsightsBar({
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 
+        {/* Single row: Language dropdown | ADAPTATION | LYRICS Editors | LYRICS Insights (right) */}
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
             <BarChart2 className="w-3.5 h-3.5" aria-hidden="true" />
@@ -325,6 +323,7 @@ export const InsightsBar = React.memo(function InsightsBar({
             </Tooltip>
           )}
 
+          {/* ── LYRICS Editors group ────────────────────────────────── */}
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">LYRICS Editors</span>
@@ -356,6 +355,7 @@ export const InsightsBar = React.memo(function InsightsBar({
             })}
           </div>
 
+          {/* ── LYRICS Insights group (right-aligned) ───────────────────── */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">LYRICS Insights</span>
             <Tooltip title={detectedDisplays.length > 0 ? `Detected: ${detectedDisplays.map(d => `${d.sign} ${d.label}`).join(', ')} — click to re-detect` : '🌐 Detect song language'}>
@@ -423,7 +423,7 @@ export const InsightsBar = React.memo(function InsightsBar({
             </Tooltip>
           </div>
 
-          {/* Mobile KPIs */}
+          {/* ── Mobile KPIs ───────────────────────────────────────── */}
           <div className="flex lg:hidden items-center gap-3 shrink-0">
             <div className="flex flex-col items-end">
               <span className="micro-label text-zinc-500">{t.insights.sections}</span>
