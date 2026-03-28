@@ -38,6 +38,17 @@ export function AiAssistantPanel({ onClose }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const ai = t.aiAssistant;
+  const labels = {
+    title:       ai?.title       ?? 'AI Assistant',
+    onboarding:  ai?.onboarding  ?? 'What would you like to know or do?',
+    placeholder: ai?.placeholder ?? 'Ask anything about your lyrics or composition\u2026',
+    send:        ai?.send        ?? 'Send',
+    close:       ai?.close       ?? 'Close assistant',
+    thinking:    ai?.thinking    ?? 'Thinking\u2026',
+    error:       ai?.error       ?? 'Unable to get a response. Please try again.',
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -77,7 +88,6 @@ export function AiAssistantPanel({ onClose }: Props) {
 
     try {
       const systemPrompt = buildSystemPrompt();
-      // Build conversation history for context
       const history = [...messages, userMessage];
       const fullContents = [
         `[SYSTEM]\n${systemPrompt}`,
@@ -91,15 +101,15 @@ export function AiAssistantPanel({ onClose }: Props) {
         signal: controller.signal,
       });
 
-      const answer = response.text?.trim() ?? t.aiAssistant.error;
+      const answer = response.text?.trim() ?? labels.error;
       setMessages(prev => [...prev, { role: 'assistant', text: answer }]);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
-      setMessages(prev => [...prev, { role: 'assistant', text: t.aiAssistant.error }]);
+      setMessages(prev => [...prev, { role: 'assistant', text: labels.error }]);
     } finally {
       setIsThinking(false);
     }
-  }, [input, isThinking, messages, buildSystemPrompt, t.aiAssistant.error]);
+  }, [input, isThinking, messages, buildSystemPrompt, labels.error]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -115,12 +125,12 @@ export function AiAssistantPanel({ onClose }: Props) {
         <div className="flex items-center gap-2">
           <Bot className="w-3.5 h-3.5 text-[var(--accent-color)]" />
           <span className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider">
-            {t.aiAssistant.title}
+            {labels.title}
           </span>
         </div>
         <button
           onClick={onClose}
-          aria-label={t.aiAssistant.close}
+          aria-label={labels.close}
           className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded transition-colors"
         >
           <X className="w-3.5 h-3.5" />
@@ -131,7 +141,7 @@ export function AiAssistantPanel({ onClose }: Props) {
       <div className="flex flex-col gap-2 px-3 py-3 max-h-48 overflow-y-auto custom-scrollbar">
         {!hasInteracted && messages.length === 0 && (
           <p className="text-xs text-[var(--text-secondary)] italic">
-            {t.aiAssistant.onboarding}
+            {labels.onboarding}
           </p>
         )}
         {messages.map((msg, i) => (
@@ -149,7 +159,7 @@ export function AiAssistantPanel({ onClose }: Props) {
         {isThinking && (
           <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] self-start">
             <Loader2 className="w-3 h-3 animate-spin" />
-            <span>{t.aiAssistant.thinking}</span>
+            <span>{labels.thinking}</span>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -162,19 +172,19 @@ export function AiAssistantPanel({ onClose }: Props) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={t.aiAssistant.placeholder}
+          placeholder={labels.placeholder}
           rows={1}
-          aria-label={t.aiAssistant.placeholder}
+          aria-label={labels.placeholder}
           className="flex-1 resize-none bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/60 outline-none leading-relaxed py-1"
           style={{ maxHeight: '72px', overflowY: 'auto' }}
         />
         <button
           onClick={() => void handleSend()}
           disabled={!input.trim() || isThinking}
-          aria-label={t.aiAssistant.send}
+          aria-label={labels.send}
           className="px-2.5 py-1 text-xs rounded-lg bg-[var(--accent-color)]/80 hover:bg-[var(--accent-color)] text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
         >
-          {t.aiAssistant.send}
+          {labels.send}
         </button>
       </div>
     </div>
