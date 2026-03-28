@@ -16,6 +16,9 @@ import { analyzeSongRhymes } from '../../utils/songRhymeAnalysis';
 
 export { analyzeSongRhymes } from '../../utils/songRhymeAnalysis';
 
+/** Maximum characters sent to the AI for song analysis. Prevents unbounded payloads on very long songs. */
+const MAX_SONG_TEXT_CHARS = 40_000;
+
 type AnalysisReport = {
   theme: string;
   emotionalArc: string;
@@ -243,7 +246,11 @@ export const useSongAnalysisEngine = ({
     try {
       await withAbort(fgAbortRef, async (nextSignal) => {
         setAnalysisSteps(prev => [...prev, 'Analyzing structure and flow...']);
-        const songText = song.map(s => `[${s.name}]\n${getSectionText(s)}`).join('\n\n');
+        const rawSongText = song.map(s => `[${s.name}]\n${getSectionText(s)}`).join('\n\n');
+        // FIX (PR-3): cap input to prevent unbounded AI payloads on very long songs.
+        const songText = rawSongText.length > MAX_SONG_TEXT_CHARS
+          ? rawSongText.slice(0, MAX_SONG_TEXT_CHARS)
+          : rawSongText;
 
         const prompt = buildSongAnalysisPrompt({
           songText,

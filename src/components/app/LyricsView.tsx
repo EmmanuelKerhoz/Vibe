@@ -59,10 +59,15 @@ export const LyricsView = memo(function LyricsView({
   } = useComposerContext();
   const { t } = useTranslation();
 
-  const RHYME_KEYS = [
-    'FREE',
-    ...Object.keys(t.rhymeSchemes).filter((key) => key !== 'FREE'),
-  ] as Array<keyof typeof t.rhymeSchemes>;
+  /**
+   * FIX (PR-3): RHYME_KEYS was rebuilt on every render as a plain array literal,
+   * passing a new reference to every SectionEditor and invalidating React.memo.
+   * useMemo ensures a stable reference as long as t.rhymeSchemes doesn't change.
+   */
+  const RHYME_KEYS = useMemo(
+    () => ['FREE', ...Object.keys(t.rhymeSchemes).filter((key) => key !== 'FREE')] as Array<keyof typeof t.rhymeSchemes>,
+    [t.rhymeSchemes]
+  );
 
   const phoneticTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const phoneticState = usePhoneticTranscription({
