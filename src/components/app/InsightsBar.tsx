@@ -70,6 +70,9 @@ function AdaptationProgressBanner({
 
   const banner = (
     <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
       className={`w-full rounded border px-3 py-2 ${isOverlay ? 'mt-0' : 'mt-1'} flex flex-col gap-1.5 text-[10px] ${
         isFailed
           ? 'bg-red-400/5 border-red-400/20'
@@ -78,31 +81,29 @@ function AdaptationProgressBanner({
           : 'bg-white/3 border-white/10'
       }`}
     >
-      {/* Header: label + dismiss */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 font-semibold tracking-wider uppercase text-zinc-300">
           {isFailed
-            ? <XCircle className="w-3 h-3 text-red-400" />
+            ? <XCircle className="w-3 h-3 text-red-400" aria-hidden="true" />
             : isDone && result
             ? result.accepted
-              ? <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-              : <AlertTriangle className="w-3 h-3 text-amber-400" />
-            : <Loader2 className="w-3 h-3 animate-spin text-[var(--accent-color)]" />}
+              ? <CheckCircle2 className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+              : <AlertTriangle className="w-3 h-3 text-amber-400" aria-hidden="true" />
+            : <Loader2 className="w-3 h-3 animate-spin text-[var(--accent-color)]" aria-hidden="true" />}
           <span className="text-zinc-400">{progress.label}</span>
         </div>
         {(isDone || isFailed) && (
           <button
             onClick={onDismiss}
             className="text-zinc-500 hover:text-zinc-300 transition-colors leading-none px-1"
-            aria-label="Dismiss"
+            aria-label="Dismiss adaptation result"
           >
             ✕
           </button>
         )}
       </div>
 
-      {/* Stepper */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" aria-hidden="true">
         {ORDERED_STEP_IDS.map((stepId, idx) => {
           const activeIdx  = ORDERED_STEP_IDS.indexOf(
             isFailed ? 'reviewing' : (progress.active as typeof ORDERED_STEP_IDS[number]) === 'done'
@@ -111,7 +112,6 @@ function AdaptationProgressBanner({
           );
           const stepDone    = isDone || idx < activeIdx;
           const stepActive  = !isDone && !isFailed && idx === activeIdx;
-          const stepPending = !stepDone && !stepActive;
 
           const stepLabel = ORDERED_STEP_IDS[idx] === 'adapting'  ? 'Adapting'
                           : ORDERED_STEP_IDS[idx] === 'reversing' ? 'Reverse'
@@ -150,7 +150,6 @@ function AdaptationProgressBanner({
         })}
       </div>
 
-      {/* Result: score + warnings */}
       {isDone && result && (
         <div className="flex flex-col gap-1 mt-0.5">
           <div className="flex items-center gap-2">
@@ -261,7 +260,6 @@ export const InsightsBar = React.memo(function InsightsBar({
 
   return (
     <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10" style={{ position: 'relative', overflow: 'visible' }}>
-      {/* LCARS gradient separator */}
       <div style={{
         position: 'absolute',
         bottom: -1, left: 0, right: 0,
@@ -276,7 +274,7 @@ export const InsightsBar = React.memo(function InsightsBar({
         {/* Single row: Language dropdown | ADAPTATION | LYRICS Editors | LYRICS Insights (right) */}
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
-            <BarChart2 className="w-3.5 h-3.5" />
+            <BarChart2 className="w-3.5 h-3.5" aria-hidden="true" />
             {t.insights.title}
           </h3>
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
@@ -295,9 +293,16 @@ export const InsightsBar = React.memo(function InsightsBar({
                 <button
                   onClick={() => adaptSongLanguage(targetLanguage)}
                   disabled={isAdaptingLanguage || song.length === 0}
+                  aria-disabled={isAdaptingLanguage || song.length === 0}
+                  aria-busy={isAdaptingLanguage}
                   className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap shrink-0"
                 >
-                  {isAdaptingLanguage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
+                  {isAdaptingLanguage
+                    ? (<>
+                        <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                        <span className="sr-only">Adapting…</span>
+                      </>)
+                    : <Languages className="w-3 h-3" aria-hidden="true" />}
                   <span className="hidden sm:inline">{t.editor.adaptation}</span>
                 </button>
               </Tooltip>
@@ -313,50 +318,60 @@ export const InsightsBar = React.memo(function InsightsBar({
                 }`}
                 style={isMetronomeActive ? { background: '#f59e0b', color: '#000', borderColor: '#f59e0b' } : {}}
               >
-                <Timer className="w-3.5 h-3.5" />
+                <Timer className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             </Tooltip>
           )}
 
-          {/* ── LYRICS Editors group ─────────────────────────── */}
+          {/* ── LYRICS Editors group ────────────────────────────────── */}
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">LYRICS Editors</span>
             {([
-              { mode: 'text' as EditMode, icon: <Type className="w-3.5 h-3.5" />, label: t.editor.textModeLabel, tooltip: t.tooltips.textMode },
-              { mode: 'markdown' as EditMode, icon: <FileText className="w-3.5 h-3.5" />, label: t.editor.markupModeLabel, tooltip: t.tooltips.markupMode },
-              { mode: 'phonetic' as EditMode, icon: <PersonVoice className="w-3.5 h-3.5" />, label: t.editor.phoneticModeLabel, tooltip: t.tooltips.phoneticMode },
-              { mode: 'section' as EditMode, icon: <Layout className="w-3.5 h-3.5" />, label: t.editor.editorMode, tooltip: t.tooltips.editorMode },
-            ]).map(({ mode, icon, label, tooltip }) => (
-              <Tooltip key={mode} title={tooltip}>
-                <button
-                  onClick={() => switchEditMode(mode)}
-                  disabled={isGenerating || isAnalyzing}
-                  className={`px-2 lg:px-3 py-1 text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
-                    editMode === mode
-                      ? 'bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/40 text-[var(--accent-color)]'
-                      : 'glass-button'
-                  }`}
-                >
-                  {icon}
-                  <span className="hidden lg:inline">{label}</span>
-                </button>
-              </Tooltip>
-            ))}
+              { mode: 'text' as EditMode, icon: <Type className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.textModeLabel, tooltip: t.tooltips.textMode },
+              { mode: 'markdown' as EditMode, icon: <FileText className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.markupModeLabel, tooltip: t.tooltips.markupMode },
+              { mode: 'phonetic' as EditMode, icon: <PersonVoice className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.phoneticModeLabel, tooltip: t.tooltips.phoneticMode },
+              { mode: 'section' as EditMode, icon: <Layout className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.editorMode, tooltip: t.tooltips.editorMode },
+            ]).map(({ mode, icon, label, tooltip }) => {
+              const isDisabled = isGenerating || isAnalyzing;
+              return (
+                <Tooltip key={mode} title={tooltip}>
+                  <button
+                    onClick={() => switchEditMode(mode)}
+                    disabled={isDisabled}
+                    aria-disabled={isDisabled}
+                    aria-pressed={editMode === mode}
+                    className={`px-2 lg:px-3 py-1 text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
+                      editMode === mode
+                        ? 'bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/40 text-[var(--accent-color)]'
+                        : 'glass-button'
+                    }`}
+                  >
+                    {icon}
+                    <span className="hidden lg:inline">{label}</span>
+                  </button>
+                </Tooltip>
+              );
+            })}
           </div>
 
-          {/* ── LYRICS Insights group (right-aligned) ────────── */}
+          {/* ── LYRICS Insights group (right-aligned) ───────────────────── */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">LYRICS Insights</span>
             <Tooltip title={detectedDisplays.length > 0 ? `Detected: ${detectedDisplays.map(d => `${d.sign} ${d.label}`).join(', ')} — click to re-detect` : '🌐 Detect song language'}>
               <button
                 onClick={() => void detectLanguage()}
                 disabled={isDetectingLanguage || song.length === 0}
+                aria-disabled={isDetectingLanguage || song.length === 0}
+                aria-busy={isDetectingLanguage}
                 className="ux-interactive px-2.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap shrink-0"
               >
                 {isDetectingLanguage
-                  ? <Loader2 className="w-3 h-3 animate-spin" />
-                  : <ScanText className="w-3 h-3" />}
+                  ? (<>
+                      <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                      <span className="sr-only">Detecting language…</span>
+                    </>)
+                  : <ScanText className="w-3 h-3" aria-hidden="true" />}
                 {detectedDisplays.length > 0
                   ? detectedDisplays.map((d, i) => (
                       <span key={d.label} className="inline-flex items-center gap-0.5">
@@ -371,9 +386,16 @@ export const InsightsBar = React.memo(function InsightsBar({
               <button
                 onClick={analyzeCurrentSong}
                 disabled={isGenerating || isAnalyzing || song.length === 0}
+                aria-disabled={isGenerating || isAnalyzing || song.length === 0}
+                aria-busy={isAnalyzing}
                 className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <BarChart2 className="w-3.5 h-3.5" />
+                {isAnalyzing
+                  ? (<>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                      <span className="sr-only">Analyzing…</span>
+                    </>)
+                  : <BarChart2 className="w-3.5 h-3.5" aria-hidden="true" />}
                 <span className="hidden lg:inline">{t.editor.analyze}</span>
               </button>
             </Tooltip>
@@ -381,23 +403,27 @@ export const InsightsBar = React.memo(function InsightsBar({
               <button
                 onClick={() => setIsSimilarityModalOpen(true)}
                 disabled={isGenerating || isAnalyzing || !hasLyrics}
+                aria-disabled={isGenerating || isAnalyzing || !hasLyrics}
                 className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
               >
                 {webSimilarityIndex.status === 'running'
-                  ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" />
-                  : <Search className="w-3.5 h-3.5" />}
+                  ? (<>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" aria-hidden="true" />
+                      <span className="sr-only">Checking similarity…</span>
+                    </>)
+                  : <Search className="w-3.5 h-3.5" aria-hidden="true" />}
                 <span className="hidden lg:inline">{t.ribbon?.similarity || 'Similarity'}</span>
                 {webBadgeLabel && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]">{webBadgeLabel}</span>
+                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]" aria-hidden="true">{webBadgeLabel}</span>
                 )}
                 {!webBadgeLabel && libraryCount > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]">{libraryCount}</span>
+                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]" aria-hidden="true">{libraryCount}</span>
                 )}
               </button>
             </Tooltip>
           </div>
 
-          {/* ── Mobile KPIs ─────────────────────────────────── */}
+          {/* ── Mobile KPIs ───────────────────────────────────────── */}
           <div className="flex lg:hidden items-center gap-3 shrink-0">
             <div className="flex flex-col items-end">
               <span className="micro-label text-zinc-500">{t.insights.sections}</span>
