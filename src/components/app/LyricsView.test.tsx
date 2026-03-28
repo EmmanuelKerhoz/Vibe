@@ -10,6 +10,17 @@ import { LyricsView } from './LyricsView';
 const mockUpdateState = vi.fn();
 const mockSong: Section[] = [];
 
+const mockPhoneticState = {
+  text: '[Verse]\n/ipa/',
+  status: 'ready' as const,
+  languageLabel: 'English',
+  error: null,
+};
+
+vi.mock('../../hooks/usePhoneticTranscription', () => ({
+  usePhoneticTranscription: vi.fn(() => mockPhoneticState),
+}));
+
 vi.mock('../../contexts/SongContext', () => ({
   useSongContext: () => ({
     song: mockSong,
@@ -131,6 +142,50 @@ describe('LyricsView empty state', () => {
     );
 
     expect(container.querySelector('.lcars-gradient-container')).not.toBeNull();
+  });
+
+  it('renders phonetic mode with IPA output and hint', () => {
+    mockSong.length = 0;
+    mockSong.push({
+      id: 'section-1',
+      name: 'Verse',
+      lines: [{
+        id: 'line-1',
+        text: 'Hello world',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 2,
+        concept: '',
+      }],
+      preInstructions: [],
+      postInstructions: [],
+    });
+
+    render(
+      <DragProvider>
+        <LanguageProvider>
+          <LyricsView
+            isAnalyzing={false}
+            playAudioFeedback={() => {}}
+            handleDrop={() => {}}
+            handleLineDragStart={() => {}}
+            handleLineDrop={() => {}}
+            editMode="phonetic"
+            setEditMode={() => {}}
+            markupText=""
+            setMarkupText={() => {}}
+            markupTextareaRef={{ current: null }}
+            canPasteLyrics={true}
+            onOpenLibrary={() => {}}
+            onPasteLyrics={() => {}}
+            onGenerateSong={() => {}}
+          />
+        </LanguageProvider>
+      </DragProvider>,
+    );
+
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toContain('/ipa/');
+    expect(screen.getByText(/selected language/i)).not.toBeNull();
   });
 
   it('passes section editing handlers directly to rendered sections', () => {

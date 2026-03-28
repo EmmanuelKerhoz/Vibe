@@ -70,7 +70,11 @@ export const generateContentWithRetry = (
   retryOptions?: RetryOptions,
 ) => withRetry(() => getAi().models.generateContent(params), retryOptions);
 
-export const safeJsonParse = <T>(text: string, fallback: T, schema?: z.ZodType<T>): T => {
+export const safeJsonParse = <T>(
+  text: string,
+  fallback: T,
+  schema?: z.ZodType<T, z.ZodTypeDef, unknown>,
+): T => {
   try {
     const raw = JSON.parse(text);
     if (schema) {

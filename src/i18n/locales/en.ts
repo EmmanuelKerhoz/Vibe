@@ -86,6 +86,14 @@ const en: Translations = {
       hint: 'Write freely without formatting. Your text will be preserved when switching modes.',
       placeholder: 'Start writing your lyrics here...',
     },
+    phoneticMode: {
+      title: 'Phonetic Mode',
+      description: 'Pure IPA rendering of your lyrics',
+      hint: 'Generated with the selected language or dialect: {lang}',
+      placeholder: 'Phonetic transcription appears here once lyrics are available.',
+      loading: 'Generating phonetic view…',
+      error: 'Phonetic view unavailable ({error})',
+    },
     sectionTooltip: {
       lines: 'Lines',
       words: 'Words',
@@ -101,6 +109,7 @@ const en: Translations = {
     adaptSection: 'Adaptation',
     editorMode: 'Sections',
     markupModeLabel: 'Markdown',
+    phoneticModeLabel: 'Phonetics',
     textModeLabel: 'Text',
     regenerateSection: 'Regenerate Section',
     quantize: 'Quantize',
@@ -347,6 +356,7 @@ const en: Translations = {
       text: 'Text',
       section: 'Section Editor',
       markdown: 'Markdown Editor',
+      phonetic: 'Phonetic View',
     },
     translation: {
       label: 'Translation / Adaptation',
@@ -397,6 +407,7 @@ const en: Translations = {
     adaptSong: 'Translate and adapt the entire song to {lang} (creative adaptation, not literal translation)',
     sectionAdapt: 'Adapt this section to the selected language',
     markupMode: 'Switch to Pure Text Mode',
+    phoneticMode: 'Switch to Phonetic Mode',
     textMode: 'Switch to Text Mode',
     editorMode: 'Switch to Structured Editor',
     applyAnalysis: 'Apply selected improvements to song',

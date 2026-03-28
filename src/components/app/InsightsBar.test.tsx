@@ -53,7 +53,7 @@ vi.mock('../../hooks/useAppKpis', () => ({
 }));
 
 describe('InsightsBar', () => {
-  it('renders single-row layout with adaptation, markup, detect, analyze, and similarity buttons', () => {
+  it('renders single-row layout with adaptation, editor toggles, detect, analyze, and similarity buttons', () => {
     const webSimilarityIndex: WebSimilarityIndex = {
       candidates: [],
       status: 'idle',
@@ -83,19 +83,20 @@ describe('InsightsBar', () => {
     );
 
     const tooltips = screen.getAllByTestId('tooltip');
-    // Verify all expected tooltips: Adaptation, Text, Markdown, Editor, Detect, Analyze, Similarity
-    expect(tooltips.length).toBe(7);
+    // Verify all expected tooltips: Adaptation, Text, Markdown, Phonetic, Editor, Detect, Analyze, Similarity
+    expect(tooltips.length).toBe(8);
     // First should be adaptation
     expect(tooltips[0]!.getAttribute('data-title')).toContain('adapt');
-    // Second-Fourth should be edit mode buttons (Text, Markdown, Editor)
+    // Second-Fifth should be edit mode buttons (Text, Markdown, Phonetic, Editor)
     expect(tooltips[1]!.getAttribute('data-title')).toContain('Text');
     expect(tooltips[2]!.getAttribute('data-title')).toContain('Mode');
-    expect(tooltips[3]!.getAttribute('data-title')).toContain('Editor');
-    // Fifth should be the detect button, immediately before analyze in the insights group
-    expect(tooltips[4]!.getAttribute('data-title')).toContain('Detected');
-    // Sixth should be analyze
-    expect(tooltips[5]!.getAttribute('data-title')).toContain('Analyze');
-    // Seventh should be similarity
-    expect(tooltips[6]!.getAttribute('data-title')).toContain('Compare');
+    expect(tooltips[3]!.getAttribute('data-title')).toContain('Phonetic');
+    expect(tooltips[4]!.getAttribute('data-title')).toContain('Editor');
+    // Sixth should be the detect button, immediately before analyze in the insights group
+    expect(tooltips[5]!.getAttribute('data-title')).toContain('Detected');
+    // Seventh should be analyze
+    expect(tooltips[6]!.getAttribute('data-title')).toContain('Analyze');
+    // Eighth should be similarity
+    expect(tooltips[7]!.getAttribute('data-title')).toContain('Compare');
   });
 });

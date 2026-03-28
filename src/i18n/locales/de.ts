@@ -86,6 +86,14 @@ const de: Translations = {
       hint: 'Schreiben Sie frei ohne Formatierung. Ihr Text bleibt beim Moduswechsel erhalten.',
       placeholder: 'Beginnen Sie hier Ihre Texte zu schreiben...',
     },
+    phoneticMode: {
+      title: 'Phonetischer Modus',
+      description: 'Reine IPA-Ansicht deiner Liedtexte',
+      hint: 'Erzeugt mit der gewählten Sprache oder dem Dialekt: {lang}',
+      placeholder: 'Die phonetische Transkription erscheint hier, sobald Text vorhanden ist.',
+      loading: 'Phonetische Ansicht wird erstellt…',
+      error: 'Phonetische Ansicht nicht verfügbar ({error})',
+    },
     sectionTooltip: {
       lines: 'Zeilen',
       words: 'Wörter',
@@ -101,6 +109,7 @@ const de: Translations = {
     adaptSection: 'Anpassung',
     editorMode: 'Editor-Modus',
     markupModeLabel: 'Markdown-Modus',
+    phoneticModeLabel: 'Phonetik',
     textModeLabel: 'Text',
     regenerateSection: 'Neu generieren',
     quantize: 'Quantisieren',
@@ -344,6 +353,7 @@ const de: Translations = {
       text: 'Text',
       section: 'Abschnittseditor',
       markdown: 'Markdown-Editor',
+      phonetic: 'Phonetische Ansicht',
     },
     actions: {
       default: 'Standard',
@@ -391,6 +401,7 @@ const de: Translations = {
     quantizeSection: 'Zeilen in diesem Abschnitt an das Silbenziel anpassen',
     sectionAdapt: 'Diesen Abschnitt an die gewählte Sprache anpassen',
     markupMode: 'In den reinen Textmodus wechseln',
+    phoneticMode: 'In den phonetischen Modus wechseln',
     textMode: 'In den Textmodus wechseln',
     editorMode: 'In den strukturierten Editor wechseln',
     applyAnalysis: 'Ausgewählte Verbesserungen auf den Song anwenden',

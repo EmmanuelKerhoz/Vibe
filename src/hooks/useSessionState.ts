@@ -93,14 +93,14 @@ export function useSessionState() {
   }, []);
 
   // ── Default Edit Mode ─────────────────────────────────────────────────────
-  const [defaultEditMode, setDefaultEditModeRaw] = useState<'text' | 'section' | 'markdown'>(() => {
+  const [defaultEditMode, setDefaultEditModeRaw] = useState<'text' | 'section' | 'markdown' | 'phonetic'>(() => {
     const stored = safeGetItem(DEFAULT_EDIT_MODE_KEY);
-    if (stored === 'section' || stored === 'text') return stored;
+    if (stored === 'section' || stored === 'text' || stored === 'phonetic') return stored;
     return 'markdown';
   });
 
   // Memoized to avoid invalidating useCallback deps in consumers.
-  const setDefaultEditMode = useCallback((v: 'text' | 'section' | 'markdown') => {
+  const setDefaultEditMode = useCallback((v: 'text' | 'section' | 'markdown' | 'phonetic') => {
     setDefaultEditModeRaw(v);
     safeSetItem(DEFAULT_EDIT_MODE_KEY, v);
   }, []);
