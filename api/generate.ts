@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { checkRateLimit, resolveIp } from './_rateLimit';
 
 // M5 fix: internal timeout 55s (under Vercel's 60s maxDuration).
 // AbortController abort is now checked synchronously before accessing response.
@@ -14,6 +15,18 @@ const ALLOWED_MODEL_PREFIXES = ['gemini-'];
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
+    return;
+  }
+
+  // --- Rate limiting ---
+  const ip = resolveIp(
+    req.headers as Record<string, string | string[] | undefined>,
+    req.socket?.remoteAddress
+  );
+  const rl = checkRateLimit(ip);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(rl.retryAfterSec));
+    res.status(429).json({ error: `Rate limit exceeded. Retry after ${rl.retryAfterSec}s.` });
     return;
   }
 
