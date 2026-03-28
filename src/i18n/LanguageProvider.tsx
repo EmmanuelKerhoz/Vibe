@@ -1,19 +1,24 @@
 import React, { createContext, useState, useMemo, useEffect, useCallback, type ReactNode } from 'react';
 import type { Translations } from './locales/types';
-import en from './locales/en';
-import fr from './locales/fr';
-import es from './locales/es';
-import de from './locales/de';
-import pt from './locales/pt';
-import ar from './locales/ar';
-import zh from './locales/zh';
-import ko from './locales/ko';
 import { SUPPORTED_UI_LOCALES } from './constants';
 
 // Re-export legacy alias so existing consumers don't break
 export { SUPPORTED_UI_LOCALES as SUPPORTED_LANGUAGES } from './constants';
 
-const locales: Record<string, Translations> = { en, fr, es, de, pt, ar, zh, ko };
+// Load all locale JSON glossary files at runtime via Vite glob import.
+// Adding a new src/i18n/locales/{code}.json file is sufficient — no TS changes needed.
+const _localeModules = import.meta.glob<Translations>(
+  './locales/*.json',
+  { eager: true, import: 'default' },
+);
+
+const locales: Record<string, Translations> = {};
+for (const [path, locale] of Object.entries(_localeModules)) {
+  const match = path.match(/\/([a-z]+)\.json$/i);
+  if (match?.[1]) locales[match[1]] = locale;
+}
+
+const en: Translations = locales['en'] ?? ({} as Translations);
 
 // ---------------------------------------------------------------------------
 // Missing-key safety: deep-merge any locale over the English base so that

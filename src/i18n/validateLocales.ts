@@ -10,15 +10,23 @@
  * // { fr: { missing: ['about.engineLabel'], extra: [] }, ... }
  */
 
-import en from './locales/en';
-import fr from './locales/fr';
-import es from './locales/es';
-import de from './locales/de';
-import pt from './locales/pt';
-import ar from './locales/ar';
-import zh from './locales/zh';
-import ko from './locales/ko';
 import type { Translations } from './locales/types';
+
+// Load all locale JSON glossary files via Vite glob import (same mechanism as LanguageProvider).
+const _localeModules = import.meta.glob<Translations>(
+  './locales/*.json',
+  { eager: true, import: 'default' },
+);
+
+const _en: Translations = _localeModules['./locales/en.json'] ?? ({} as Translations);
+
+const ALL_LOCALES: Record<string, Translations> = {};
+for (const [path, locale] of Object.entries(_localeModules)) {
+  const match = path.match(/\/([a-z]+)\.json$/i);
+  if (match?.[1] && match[1] !== 'en') {
+    ALL_LOCALES[match[1]] = locale;
+  }
+}
 
 /** Recursively collect all dot-separated keys from an object. */
 function collectKeys(obj: unknown, prefix = ''): string[] {
@@ -30,8 +38,7 @@ function collectKeys(obj: unknown, prefix = ''): string[] {
   );
 }
 
-const ALL_LOCALES: Record<string, Translations> = { fr, es, de, pt, ar, zh, ko };
-const BASE_KEYS = new Set(collectKeys(en));
+const BASE_KEYS = new Set(collectKeys(_en));
 
 export interface LocaleValidationResult {
   /** Keys present in English but absent in this locale */
