@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useModalContext } from '../contexts/ModalContext';
+import { useModalDispatch, useModalState } from '../contexts/ModalContext';
 
 export type KeyboardShortcutCategory = 'edit' | 'navigation' | 'file' | 'ai';
 
@@ -76,7 +76,10 @@ export const useKeyboardShortcuts = ({
   undo,
   redo,
 }: UseKeyboardShortcutsParams) => {
-  const { uiState } = useModalContext();
+  // Split hooks: dispatch refs are stable (never trigger re-renders on modal
+  // state changes); state is read separately only where needed.
+  const { closeModal, openModal } = useModalDispatch();
+  const { uiState } = useModalState();
   const {
     promptModal,
     confirmModal,
@@ -112,26 +115,26 @@ export const useKeyboardShortcuts = ({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
       if (e.key === 'Escape') {
-        if (isSearchReplaceOpen) { setIsSearchReplaceOpen(false); return; }
+        if (isSearchReplaceOpen) { closeModal('searchReplace'); return; }
         if (promptModal?.open) { setPromptModal(null); return; }
         if (confirmModal?.open) { setConfirmModal(null); return; }
-        if (apiErrorModal.open) { setApiErrorModal({ open: false, message: '' }); return; }
-        if (isResetModalOpen) { setIsResetModalOpen(false); return; }
-        if (isVersionsModalOpen) { setIsVersionsModalOpen(false); return; }
-        if (isSaveToLibraryModalOpen) { setIsSaveToLibraryModalOpen(false); return; }
-        if (isSimilarityModalOpen) { setIsSimilarityModalOpen(false); return; }
-        if (isAnalysisModalOpen) { setIsAnalysisModalOpen(false); return; }
-        if (isPasteModalOpen) { setIsPasteModalOpen(false); return; }
-        if (isExportModalOpen) { setIsExportModalOpen(false); return; }
-        if (isImportModalOpen) { setIsImportModalOpen(false); return; }
-        if (isSettingsOpen) { setIsSettingsOpen(false); return; }
-        if (isAboutOpen) { setIsAboutOpen(false); return; }
+        if (apiErrorModal.open) { closeModal('apiError'); return; }
+        if (isResetModalOpen) { closeModal('reset'); return; }
+        if (isVersionsModalOpen) { closeModal('versions'); return; }
+        if (isSaveToLibraryModalOpen) { closeModal('saveToLibrary'); return; }
+        if (isSimilarityModalOpen) { closeModal('similarity'); return; }
+        if (isAnalysisModalOpen) { closeModal('analysis'); return; }
+        if (isPasteModalOpen) { closeModal('paste'); return; }
+        if (isExportModalOpen) { closeModal('export'); return; }
+        if (isImportModalOpen) { closeModal('import'); return; }
+        if (isSettingsOpen) { closeModal('settings'); return; }
+        if (isAboutOpen) { closeModal('about'); return; }
         if (isMobileOrTablet) { closeMobilePanels(); return; }
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        setIsSearchReplaceOpen(true);
+        openModal('searchReplace');
         return;
       }
       if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
@@ -147,10 +150,14 @@ export const useKeyboardShortcuts = ({
     isImportModalOpen, isMobileOrTablet, isPasteModalOpen, isResetModalOpen,
     isSaveToLibraryModalOpen, isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen,
     isSearchReplaceOpen,
-    promptModal, closeMobilePanels, redo, setApiErrorModal, setConfirmModal,
+    promptModal, closeMobilePanels, redo,
+    // dispatch refs from useModalDispatch are stable — no re-registration cost
+    closeModal, openModal,
+    setPromptModal, setConfirmModal,
     setIsAboutOpen, setIsAnalysisModalOpen, setIsExportModalOpen, setIsImportModalOpen,
     setIsPasteModalOpen, setIsResetModalOpen, setIsSaveToLibraryModalOpen, setIsSettingsOpen,
-    setIsSimilarityModalOpen, setIsVersionsModalOpen, setPromptModal, undo,
+    setIsSimilarityModalOpen, setIsVersionsModalOpen,
+    setApiErrorModal, undo,
     setIsSearchReplaceOpen,
   ]);
 };
