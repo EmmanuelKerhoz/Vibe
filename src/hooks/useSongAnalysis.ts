@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import type { RefObject } from 'react';
 import type { Section } from '../types';
 import { usePasteImport } from './analysis/usePasteImport';
 import { useLanguageAdapter } from './analysis/useLanguageAdapter';
 import { useSongAnalysisEngine } from './analysis/useSongAnalysisEngine';
 import { useSongContext } from '../contexts/SongContext';
+import { useAnalysisCounter } from './useAnalysisCounter';
 
 type UseSongAnalysisParams = {
   uiLanguage: string;
@@ -52,26 +53,7 @@ export const useSongAnalysis = ({
     setMood,
   } = useSongContext();
 
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  // Counter-based guard: isAnalyzing stays true until ALL concurrent
-  // operations (paste import + song analysis engine) have completed.
-  const activeAnalysisOpsRef = useRef(0);
-
-  const beginAnalyzing = useCallback(() => {
-    activeAnalysisOpsRef.current += 1;
-    setIsAnalyzing(true);
-  }, []);
-
-  const endAnalyzing = useCallback(() => {
-    activeAnalysisOpsRef.current = Math.max(0, activeAnalysisOpsRef.current - 1);
-    if (activeAnalysisOpsRef.current === 0) {
-      setIsAnalyzing(false);
-    }
-  }, []);
-
-  const setIsAnalyzingForSubhook = useCallback((value: boolean) => {
-    if (value) { beginAnalyzing(); } else { endAnalyzing(); }
-  }, [beginAnalyzing, endAnalyzing]);
+  const { isAnalyzing, setIsAnalyzingForSubhook } = useAnalysisCounter();
 
   const languageAdapter = useLanguageAdapter({
     song,
