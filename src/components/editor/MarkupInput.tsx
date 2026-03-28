@@ -9,9 +9,10 @@ interface MarkupInputProps {
   className?: string;
   spellCheck?: boolean;
   direction?: 'ltr' | 'rtl';
+  readOnly?: boolean;
 }
 
-export function MarkupInput({ value, onChange, textareaRef, className = '', spellCheck = false, direction = 'ltr' }: MarkupInputProps) {
+export function MarkupInput({ value, onChange, textareaRef, className = '', spellCheck = false, direction = 'ltr', readOnly = false }: MarkupInputProps) {
   const mirrorRef = useRef<HTMLDivElement>(null);
 
   const syncScroll = () => {
@@ -88,6 +89,7 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
         onChange={onChange}
         spellCheck={spellCheck}
         dir={direction}
+        readOnly={readOnly}
         className={`absolute inset-0 w-full h-full resize-none bg-transparent caret-[var(--text-primary)] outline-none ${className}`}
         style={{ padding: '1.5rem', color: 'transparent' }}
       />

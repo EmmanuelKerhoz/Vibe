@@ -86,6 +86,14 @@ const pt: Translations = {
       hint: 'Escreva livremente sem formatação. Seu texto será preservado ao trocar de modo.',
       placeholder: 'Comece a escrever suas letras aqui...',
     },
+    phoneticMode: {
+      title: 'Modo fonético',
+      description: 'Renderização IPA pura das letras',
+      hint: 'Gerado com o idioma ou dialeto selecionado: {lang}',
+      placeholder: 'A transcrição fonética aparecerá aqui quando houver letras.',
+      loading: 'Gerando visualização fonética…',
+      error: 'Visualização fonética indisponível ({error})',
+    },
     sectionTooltip: {
       lines: 'Linhas',
       words: 'Palavras',
@@ -101,6 +109,7 @@ const pt: Translations = {
     adaptSection: 'Adaptação',
     editorMode: 'Modo Editor',
     markupModeLabel: 'Modo Marcação',
+    phoneticModeLabel: 'Fonética',
     textModeLabel: 'Texto',
     regenerateSection: 'Regenerar',
     quantize: 'Quantizar',
@@ -344,6 +353,7 @@ const pt: Translations = {
       text: 'Texto',
       section: 'Editor de secções',
       markdown: 'Editor Markdown',
+      phonetic: 'Visualização fonética',
     },
     actions: {
       default: 'Padrão',
@@ -391,6 +401,7 @@ const pt: Translations = {
     quantizeSection: 'Ajustar as linhas desta seção para corresponder ao alvo silábico',
     sectionAdapt: 'Adaptar esta seção para o idioma selecionado',
     markupMode: 'Mudar para modo de texto puro',
+    phoneticMode: 'Mudar para modo fonético',
     textMode: 'Mudar para modo texto',
     editorMode: 'Mudar para editor estruturado',
     applyAnalysis: 'Aplicar as melhorias selecionadas à música',

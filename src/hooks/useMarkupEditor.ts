@@ -229,8 +229,8 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
   const switchEditMode = useCallback((target: EditMode) => {
     if (target === editMode) return;
 
-    // Switching away from section mode → serialize song to text
-    if (editMode === 'section' && (target === 'text' || target === 'markdown')) {
+    // Switching away from section/phonetic mode → serialize song to text
+    if ((editMode === 'section' || editMode === 'phonetic') && (target === 'text' || target === 'markdown')) {
       setMarkupText(serializeSongToMarkup());
       setEditMode(target);
       return;
@@ -241,6 +241,14 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       const newSections = parseMarkupToSections();
       if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
       setEditMode('section');
+      return;
+    }
+
+    // Switching from text/markdown to phonetic → parse to sections first
+    if (target === 'phonetic' && (editMode === 'text' || editMode === 'markdown')) {
+      const newSections = parseMarkupToSections();
+      if (newSections.length > 0) updateSongAndStructureWithHistory(newSections, newSections.map(s => s.name));
+      setEditMode('phonetic');
       return;
     }
 

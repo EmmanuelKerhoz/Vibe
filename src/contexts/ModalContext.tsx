@@ -2,7 +2,6 @@ import React, { createContext, useContext, useCallback, useMemo, type ReactNode 
 import type { EditMode } from '../types';
 
 // ── Minimal UIState interface ─────────────────────────────────────────────────
-// Avoids the circular import of useUIState while remaining fully type-safe.
 export interface UIStateBag {
   setIsAboutOpen: (v: boolean) => void;
   setIsSettingsOpen: (v: boolean) => void;
@@ -59,18 +58,26 @@ export type ModalName =
   | 'versions' | 'reset' | 'keyboardShortcuts' | 'confirm' | 'prompt' | 'paste' | 'analysis'
   | 'searchReplace';
 
-// ── Context value type ────────────────────────────────────────────────────────
-export interface ModalContextValue {
+// ── Dispatch context (stable — never triggers re-renders on state changes) ────
+export interface ModalDispatchContextValue {
   openModal: (name: ModalName, payload?: unknown) => void;
   closeModal: (name: ModalName) => void;
+}
+
+// ── State context (full UIStateBag — subscribe only when state is needed) ─────
+export interface ModalStateContextValue {
   uiState: UIStateBag;
 }
 
-const ModalContext = createContext<ModalContextValue | null>(null);
+// ── Legacy unified type — kept for backward compat with existing consumers ────
+export interface ModalContextValue extends ModalDispatchContextValue {
+  uiState: UIStateBag;
+}
+
+const ModalDispatchContext = createContext<ModalDispatchContextValue | null>(null);
+const ModalStateContext = createContext<ModalStateContextValue | null>(null);
 
 // ── Provider ──────────────────────────────────────────────────────────────────
-// uiState is injected by AppInner (the single instance from useAppState).
-// No internal useUIState() — pure relay, zero split-brain.
 export interface ModalProviderProps {
   children: ReactNode;
   uiState: UIStateBag;
@@ -131,21 +138,51 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
     }
   }, [uiState]);
 
-  const value = useMemo(
-    () => ({ openModal, closeModal, uiState }),
-    [openModal, closeModal, uiState],
+  const dispatchValue = useMemo(
+    () => ({ openModal, closeModal }),
+    [openModal, closeModal],
+  );
+
+  const stateValue = useMemo(
+    () => ({ uiState }),
+    [uiState],
   );
 
   return (
-    <ModalContext.Provider value={value}>
-      {children}
-    </ModalContext.Provider>
+    <ModalDispatchContext.Provider value={dispatchValue}>
+      <ModalStateContext.Provider value={stateValue}>
+        {children}
+      </ModalStateContext.Provider>
+    </ModalDispatchContext.Provider>
   );
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
-export function useModalContext(): ModalContextValue {
-  const ctx = useContext(ModalContext);
-  if (!ctx) throw new Error('useModalContext must be used inside <ModalProvider>');
+// ── Hooks ─────────────────────────────────────────────────────────────────────
+
+export function useModalDispatch(): ModalDispatchContextValue {
+  const ctx = useContext(ModalDispatchContext);
+  if (!ctx) throw new Error('useModalDispatch must be used inside <ModalProvider>');
   return ctx;
+}
+
+export function useModalState(): ModalStateContextValue {
+  const ctx = useContext(ModalStateContext);
+  if (!ctx) throw new Error('useModalState must be used inside <ModalProvider>');
+  return ctx;
+}
+
+/**
+ * Backward-compatible hook — returns { openModal, closeModal, uiState }.
+ * Combined null-check preserves the legacy error message for existing tests.
+ * @deprecated Migrate to useModalDispatch() or useModalState().
+ */
+export function useModalContext(): ModalContextValue {
+  const dispatchCtx = useContext(ModalDispatchContext);
+  const stateCtx = useContext(ModalStateContext);
+
+  if (!dispatchCtx || !stateCtx) {
+    throw new Error('useModalContext must be used inside <ModalProvider>');
+  }
+
+  return { ...dispatchCtx, uiState: stateCtx.uiState };
 }

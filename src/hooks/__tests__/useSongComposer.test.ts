@@ -1,7 +1,12 @@
+import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Section } from '../../types';
+import { RefsProvider } from '../../contexts/RefsContext';
 import { useSongComposer } from '../useSongComposer';
+
+const RefsWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
+  React.createElement(RefsProvider, null, children);
 
 const generateContent = vi.hoisted(() => vi.fn());
 
@@ -161,7 +166,7 @@ describe('useSongComposer', () => {
     }));
 
     const params = createParams();
-    const { result } = renderHook(() => useSongComposer(params));
+    const { result } = renderHook(() => useSongComposer(params), { wrapper: RefsWrapper });
 
     act(() => {
       void result.current.generateSong();
@@ -184,7 +189,7 @@ describe('useSongComposer', () => {
     const eventListener = vi.fn();
     window.addEventListener('vibe:apierror', eventListener as EventListener);
 
-    const { result } = renderHook(() => useSongComposer(params));
+    const { result } = renderHook(() => useSongComposer(params), { wrapper: RefsWrapper });
 
     act(() => {
       void result.current.generateSong();
@@ -210,7 +215,7 @@ describe('useSongComposer', () => {
       }),
     });
 
-    const { result } = renderHook(() => useSongComposer(params));
+    const { result } = renderHook(() => useSongComposer(params), { wrapper: RefsWrapper });
 
     act(() => {
       result.current.updateLineText('section-1', 'line-1', 'Updated target line only');

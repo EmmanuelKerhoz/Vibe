@@ -427,6 +427,7 @@ function AppInnerContent() {
                         markupTextareaRef={markupTextareaRef}
                         markupDirection={markupDirection}
                         canPasteLyrics={canPasteLyrics}
+                        targetLanguage={targetLanguage}
                         onOpenLibrary={handleOpenSaveToLibraryModal}
                         onPasteLyrics={handleOpenPasteModal}
                         onGenerateSong={handleGlobalRegenerate}

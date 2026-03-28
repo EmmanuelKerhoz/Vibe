@@ -86,6 +86,14 @@ const zh: Translations = {
       hint: '自由书写，无需格式化。切换模式时您的文本将被保留。',
       placeholder: '在这里开始写歌词...',
     },
+    phoneticMode: {
+      title: '音标模式',
+      description: '以 IPA 方式展示歌词',
+      hint: '基于所选语言或方言生成：{lang}',
+      placeholder: '有歌词后，音标转写会显示在这里。',
+      loading: '正在生成音标视图…',
+      error: '音标视图不可用（{error}）',
+    },
     sectionTooltip: {
       lines: '行数',
       words: '字数',
@@ -101,6 +109,7 @@ const zh: Translations = {
     adaptSection: '语言适配',
     editorMode: '编辑模式',
     markupModeLabel: '标记模式',
+    phoneticModeLabel: '音标',
     textModeLabel: '文本',
     regenerateSection: '重新生成',
     quantize: '量化',
@@ -344,6 +353,7 @@ const zh: Translations = {
       text: '文本',
       section: '节编辑器',
       markdown: 'Markdown 编辑器',
+      phonetic: '音标视图',
     },
     actions: {
       default: '默认',
@@ -391,6 +401,7 @@ const zh: Translations = {
     quantizeSection: '调整此段落的行以匹配音节目标',
     sectionAdapt: '将此段落适配到所选语言',
     markupMode: '切换到纯文本模式',
+    phoneticMode: '切换到音标模式',
     textMode: '切换到文本模式',
     editorMode: '切换到结构化编辑器',
     applyAnalysis: '将所选改进应用到歌曲',

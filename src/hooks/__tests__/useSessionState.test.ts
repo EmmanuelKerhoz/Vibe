@@ -61,6 +61,17 @@ describe('useSessionState', () => {
       expect(result.current.defaultEditMode).toBe('markdown');
     });
 
+    it('loads default edit mode from localStorage when set to phonetic', () => {
+      localStorage.setItem('vibe_default_edit_mode', 'phonetic');
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        json: async () => ({ available: false }),
+      });
+
+      const { result } = renderHook(() => useSessionState());
+
+      expect(result.current.defaultEditMode).toBe('phonetic');
+    });
+
     it('updates theme state and applies dark class to document', async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         json: async () => ({ available: false }),

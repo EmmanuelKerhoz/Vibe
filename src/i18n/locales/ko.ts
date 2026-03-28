@@ -91,6 +91,14 @@ const ko: Translations = {
       hint: '서식 없이 자유롭게 작성하세요. 모드를 전환해도 텍스트가 유지됩니다.',
       placeholder: '여기에 가사를 작성하세요...',
     },
+    phoneticMode: {
+      title: '음성(IPA) 모드',
+      description: '현재 가사를 IPA로 표시',
+      hint: '선택한 언어/방언 기준: {lang}',
+      placeholder: '가사가 준비되면 여기에서 음성 전사가 표시됩니다.',
+      loading: '음성 보기를 생성하는 중…',
+      error: '음성 보기를 사용할 수 없습니다 ({error})',
+    },
     sectionTooltip: {
       ...en.editor.sectionTooltip,
       lines: '줄',
@@ -107,6 +115,7 @@ const ko: Translations = {
     adaptSection: '적응',
     editorMode: '편집기 모드',
     markupModeLabel: '마크업 모드',
+    phoneticModeLabel: '음성',
     textModeLabel: '텍스트',
     regenerateSection: '다시 생성',
     quantize: '보정',
@@ -348,6 +357,7 @@ const ko: Translations = {
       text: '텍스트',
       section: '섹션 편집기',
       markdown: '마크다운 편집기',
+      phonetic: '음성 보기',
     },
     actions: {
       ...en.settings.actions,

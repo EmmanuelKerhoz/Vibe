@@ -86,6 +86,14 @@ const fr: Translations = {
       hint: 'Écrivez librement sans formatage. Votre texte sera préservé lors du changement de mode.',
       placeholder: 'Commencez à écrire vos paroles ici...',
     },
+    phoneticMode: {
+      title: 'Mode phonétique',
+      description: 'Transcription IPA pure des paroles',
+      hint: 'Généré selon la langue ou le dialecte sélectionné : {lang}',
+      placeholder: 'La transcription phonétique apparaîtra ici quand des paroles seront disponibles.',
+      loading: 'Génération de la vue phonétique…',
+      error: 'Vue phonétique indisponible ({error})',
+    },
     sectionTooltip: {
       lines: 'Lignes',
       words: 'Mots',
@@ -101,6 +109,7 @@ const fr: Translations = {
     adaptSection: 'Adaptation',
     editorMode: 'Mode Éditeur',
     markupModeLabel: 'Mode Markdown',
+    phoneticModeLabel: 'Phonétique',
     textModeLabel: 'Texte',
     regenerateSection: 'Régénérer',
     quantize: 'Quantifier',
@@ -342,6 +351,7 @@ const fr: Translations = {
       text: 'Texte',
       section: 'Éditeur de sections',
       markdown: 'Éditeur Markdown',
+      phonetic: 'Vue phonétique',
     },
     actions: {
       default: 'Par défaut',
@@ -387,6 +397,7 @@ const fr: Translations = {
     adaptSong: 'Traduire et adapter toute la chanson en {lang} (adaptation créative, pas traduction littérale)',
     sectionAdapt: 'Adapter cette section à la langue sélectionnée',
     markupMode: 'Passer en mode texte brut',
+    phoneticMode: 'Basculer vers la vue phonétique',
     textMode: 'Passer en mode texte',
     editorMode: 'Passer en éditeur structuré',
     applyAnalysis: 'Appliquer les améliorations sélectionnées à la chanson',

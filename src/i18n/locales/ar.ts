@@ -86,6 +86,14 @@ const ar: Translations = {
       hint: 'اكتب بحرية بدون تنسيق. سيتم الحفاظ على النص عند تبديل الأوضاع.',
       placeholder: 'ابدأ بكتابة كلماتك هنا...',
     },
+    phoneticMode: {
+      title: 'الوضع الصوتي',
+      description: 'عرض IPA نقي للكلمات',
+      hint: 'يتم توليده وفق اللغة أو اللهجة المختارة: {lang}',
+      placeholder: 'ستظهر النسخة الصوتية هنا عند توفر كلمات.',
+      loading: 'يتم إنشاء العرض الصوتي…',
+      error: 'العرض الصوتي غير متاح ({error})',
+    },
     sectionTooltip: {
       lines: 'أسطر',
       words: 'كلمات',
@@ -101,6 +109,7 @@ const ar: Translations = {
     adaptSection: 'تكييف',
     editorMode: 'وضع التحرير',
     markupModeLabel: 'وضع الترميز',
+    phoneticModeLabel: 'الصوتيات',
     textModeLabel: 'نص',
     regenerateSection: 'إعادة توليد',
     quantize: 'ضبط',
@@ -344,6 +353,7 @@ const ar: Translations = {
       text: 'نص',
       section: 'محرر الأقسام',
       markdown: 'محرر Markdown',
+      phonetic: 'عرض صوتي',
     },
     actions: {
       default: 'افتراضي',
@@ -391,6 +401,7 @@ const ar: Translations = {
     quantizeSection: 'ضبط أسطر هذا القسم لتطابق الهدف المقطعي',
     sectionAdapt: 'تكييف هذا القسم مع اللغة المحددة',
     markupMode: 'التبديل إلى وضع النص البسيط',
+    phoneticMode: 'التبديل إلى الوضع الصوتي',
     textMode: 'التبديل إلى وضع النص',
     editorMode: 'التبديل إلى المحرر المنظم',
     applyAnalysis: 'تطبيق التحسينات المحددة على الأغنية',
