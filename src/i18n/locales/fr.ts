@@ -487,6 +487,20 @@ const fr: Translations = {
     ABCABC: 'ABCABC (R\u00e9p\u00e9titif 6 lignes)',
     FREE:   'Vers libre',
   },
+
+  confirmModal: {
+    regenerateTitle: 'R\u00e9g\u00e9n\u00e9rer la chanson',
+    regenerateConfirm: 'R\u00e9g\u00e9n\u00e9rer',
+    cancel: 'Annuler',
+  },
+
+  promptModal: {
+    saveVersionTitle: 'Enregistrer une version',
+    saveVersionMessage: 'Entrez un nom pour cette version\u00a0:',
+    saveVersionPlaceholder: 'Nom de la version',
+    saveVersionConfirm: 'Enregistrer',
+    cancel: 'Annuler',
+  },
 };
 
 export default fr;

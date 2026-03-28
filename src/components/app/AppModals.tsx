@@ -127,6 +127,16 @@ export const AppModals = React.memo(function AppModals({
   const openLibraryFromImport = () => { closeModal('import'); openModal('saveToLibrary'); };
   const openLibraryFromExport = () => { closeModal('export'); openModal('saveToLibrary'); };
 
+  // i18n-resolved labels with English fallback for locales not yet translated.
+  const confirmTitle = t.confirmModal?.regenerateTitle ?? 'Regenerate Song';
+  const confirmLabel = t.confirmModal?.regenerateConfirm ?? 'Regenerate';
+  const confirmCancel = t.confirmModal?.cancel ?? 'Cancel';
+  const promptTitle = t.promptModal?.saveVersionTitle ?? 'Save Version';
+  const promptMessage = t.promptModal?.saveVersionMessage ?? 'Enter a name for this version:';
+  const promptPlaceholder = t.promptModal?.saveVersionPlaceholder ?? 'Version name';
+  const promptConfirm = t.promptModal?.saveVersionConfirm ?? 'Save';
+  const promptCancel = t.promptModal?.cancel ?? 'Cancel';
+
   return (
     <>
       <AboutModal isOpen={ui.isAboutOpen} onClose={() => closeModal('about')} />
@@ -201,17 +211,24 @@ export const AppModals = React.memo(function AppModals({
       {ui.confirmModal && (
         <ConfirmModal
           isOpen={ui.confirmModal.open}
-          title="Regenerate Song" message={t.editor.regenerateWarning}
-          confirmLabel="Regenerate" cancelLabel="Cancel"
-          onConfirm={ui.confirmModal.onConfirm} onCancel={() => closeModal('confirm')}
+          title={confirmTitle}
+          message={t.editor.regenerateWarning}
+          confirmLabel={confirmLabel}
+          cancelLabel={confirmCancel}
+          onConfirm={ui.confirmModal.onConfirm}
+          onCancel={() => closeModal('confirm')}
         />
       )}
       {ui.promptModal && (
         <PromptModal
           isOpen={ui.promptModal.open}
-          title="Save Version" message="Enter a name for this version:"
-          placeholder="Version name" confirmLabel="Save" cancelLabel="Cancel"
-          onConfirm={ui.promptModal.onConfirm} onCancel={() => closeModal('prompt')}
+          title={promptTitle}
+          message={promptMessage}
+          placeholder={promptPlaceholder}
+          confirmLabel={promptConfirm}
+          cancelLabel={promptCancel}
+          onConfirm={ui.promptModal.onConfirm}
+          onCancel={() => closeModal('prompt')}
         />
       )}
       <input

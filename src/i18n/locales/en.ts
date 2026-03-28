@@ -487,6 +487,20 @@ const en: Translations = {
     ABCABC: 'ABCABC (6-line Repeating)',
     FREE:   'Free Verse',
   },
+
+  confirmModal: {
+    regenerateTitle: 'Regenerate Song',
+    regenerateConfirm: 'Regenerate',
+    cancel: 'Cancel',
+  },
+
+  promptModal: {
+    saveVersionTitle: 'Save Version',
+    saveVersionMessage: 'Enter a name for this version:',
+    saveVersionPlaceholder: 'Version name',
+    saveVersionConfirm: 'Save',
+    cancel: 'Cancel',
+  },
 };
 
 export default en;
