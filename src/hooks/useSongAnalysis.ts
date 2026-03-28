@@ -55,8 +55,6 @@ export const useSongAnalysis = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   // Counter-based guard: isAnalyzing stays true until ALL concurrent
   // operations (paste import + song analysis engine) have completed.
-  // Prevents the race condition where the first operation finishing
-  // would reset the flag while the second is still running.
   const activeAnalysisOpsRef = useRef(0);
 
   const beginAnalyzing = useCallback(() => {
@@ -71,14 +69,8 @@ export const useSongAnalysis = ({
     }
   }, []);
 
-  // Adapter that sub-hooks can call: begin when starting, end when done.
-  // Sub-hooks receive a stable { begin, end } object instead of raw setState.
   const setIsAnalyzingForSubhook = useCallback((value: boolean) => {
-    if (value) {
-      beginAnalyzing();
-    } else {
-      endAnalyzing();
-    }
+    if (value) { beginAnalyzing(); } else { endAnalyzing(); }
   }, [beginAnalyzing, endAnalyzing]);
 
   const languageAdapter = useLanguageAdapter({
@@ -99,9 +91,7 @@ export const useSongAnalysis = ({
   const handleDetectedLanguage = useCallback((language: string, sectionIds: string[]) => {
     languageAdapter.setSongLanguage(language);
     const mapping: Record<string, string> = {};
-    for (const id of sectionIds) {
-      mapping[id] = language;
-    }
+    for (const id of sectionIds) { mapping[id] = language; }
     languageAdapter.setSectionTargetLanguages(prev => ({ ...prev, ...mapping }));
   }, [languageAdapter]);
 
@@ -142,12 +132,14 @@ export const useSongAnalysis = ({
     analyzePastedLyrics: pasteImport.analyzePastedLyrics,
     // ── Analysis state ──────────────────────────────────────────────────────
     isAnalyzing,
+    isAnalyzingTheme: analysisEngine.isAnalyzingTheme,
     analysisReport: analysisEngine.analysisReport,
     analysisSteps: analysisEngine.analysisSteps,
     appliedAnalysisItems: analysisEngine.appliedAnalysisItems,
     selectedAnalysisItems: analysisEngine.selectedAnalysisItems,
     isApplyingAnalysis: analysisEngine.isApplyingAnalysis,
     toggleAnalysisItemSelection: analysisEngine.toggleAnalysisItemSelection,
+    applyAnalysisItem: analysisEngine.applyAnalysisItem,
     applySelectedAnalysisItems: analysisEngine.applySelectedAnalysisItems,
     analyzeCurrentSong: analysisEngine.analyzeCurrentSong,
     clearAppliedAnalysisItems: analysisEngine.clearAppliedAnalysisItems,
@@ -164,10 +156,5 @@ export const useSongAnalysis = ({
     detectLanguage: languageAdapter.detectLanguage,
     adaptSongLanguage: languageAdapter.adaptSongLanguage,
     adaptSectionLanguage: languageAdapter.adaptSectionLanguage,
-    // ── @internal: non consommés par App.tsx — conserver pour les tests ────
-    // TODO: brancher isAnalyzingTheme sur InsightsBar ou supprimer
-    // TODO: brancher applyAnalysisItem sur un futur point d'usage ou supprimer
-    isAnalyzingTheme: analysisEngine.isAnalyzingTheme,
-    applyAnalysisItem: analysisEngine.applyAnalysisItem,
   };
 };
