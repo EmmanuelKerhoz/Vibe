@@ -58,6 +58,8 @@ export const getAdaptationResponseSchema = (kind: 'song' | 'section') =>
       }
     : adaptationSectionSchema;
 
+export const getLineAdaptationResponseSchema = () => adaptationLineSchema;
+
 export const getSourceLines = (sections: Section[]) =>
   sections.flatMap(section =>
     section.lines

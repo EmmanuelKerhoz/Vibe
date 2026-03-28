@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
-import { AI_MODEL_NAME, generateContentWithRetry } from '../../utils/aiUtils';
+import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../../utils/aiUtils';
 import { mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
 import { isSectionHeader } from '../../utils/metaUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
-import type { Section } from '../../types';
+import type { Line, Section } from '../../types';
 import { makeSongUpdater } from '../hookUtils';
 import {
   type AdaptationProgress,
@@ -13,9 +13,9 @@ import {
   PIPELINE_STEPS,
   IDLE_PROGRESS,
 } from './languageAdapterTypes';
-import { detectSongLanguage, getAdaptationResponseSchema, getIpaEnhancedPrompt, parseAdaptationResponse, reverseTranslate, reviewFidelity } from './languageAdapterPipeline';
+import { detectSongLanguage, getAdaptationResponseSchema, getIpaEnhancedPrompt, getLineAdaptationResponseSchema, parseAdaptationResponse, reverseTranslate, reviewFidelity } from './languageAdapterPipeline';
 import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
-import { buildAdaptSectionPrompt, buildAdaptSongPrompt } from '../../utils/promptUtils';
+import { buildAdaptLinePrompt, buildAdaptSectionPrompt, buildAdaptSongPrompt } from '../../utils/promptUtils';
 export type { AdaptationStepId, AdaptationStep, AdaptationProgress, AdaptationResult } from './languageAdapterTypes';
 type SaveVersionFn = (name: string, snapshot?: { song: Section[]; structure: string[]; title: string; titleOrigin: 'user' | 'ai'; topic: string; mood: string }) => void;
 type UseLanguageAdapterParams = {
@@ -51,12 +51,14 @@ export const useLanguageAdapter = ({
   const [sectionTargetLanguages, setSectionTargetLanguages] = useState<Record<string, string>>({});
   const [isDetectingLanguage, setIsDetectingLanguage] = useState(false);
   const [isAdaptingLanguage, setIsAdaptingLanguage] = useState(false);
+  const [adaptingLineIds, setAdaptingLineIds] = useState<Set<string>>(new Set());
   const [adaptationProgress, setAdaptationProgress] = useState<AdaptationProgress>(IDLE_PROGRESS);
   const [adaptationResult, setAdaptationResult] = useState<AdaptationResult | null>(null);
 
   const autoDetectFiredRef = useRef(false);
   const firstSectionIdRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const lineAbortControllersRef = useRef<Map<string, AbortController>>(new Map());
   const detectRunIdRef = useRef(0);
   const adaptRunIdRef = useRef(0);
   const adaptationLabelRef = useRef('');
@@ -65,7 +67,14 @@ export const useLanguageAdapter = ({
   const isGenerating = isGeneratingRef.current ?? false;
 
   useEffect(() => {
-    return () => abortCurrent(abortRef);
+    const lineControllers = lineAbortControllersRef.current;
+    return () => {
+      abortCurrent(abortRef);
+      for (const controller of lineControllers.values()) {
+        controller.abort();
+      }
+      lineControllers.clear();
+    };
   }, []);
 
   useEffect(() => {
@@ -272,13 +281,72 @@ export const useLanguageAdapter = ({
     });
   };
 
+  const adaptLineLanguage = async (sectionId: string, lineId: string, newLanguage: string) => {
+    const section = song.find(s => s.id === sectionId);
+    if (!section) return;
+    const line = section.lines.find(l => l.id === lineId);
+    if (!line) return;
+
+    setAdaptingLineIds(prev => new Set(prev).add(lineId));
+    try {
+      const controller = new AbortController();
+      // Abort any in-flight adaptation for this same line
+      lineAbortControllersRef.current.get(lineId)?.abort();
+      lineAbortControllersRef.current.set(lineId, controller);
+
+      const adaptResponse = await generateContentWithRetry({
+        model: AI_MODEL_NAME,
+        contents: buildAdaptLinePrompt({ line, newLanguage, uiLanguage: uiLang }),
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: getLineAdaptationResponseSchema(),
+        },
+        signal: controller.signal,
+      });
+
+      if (controller.signal.aborted) return;
+
+      const linePayload = safeJsonParse<Partial<Line>>(adaptResponse.text || '{}', {});
+      if (linePayload.text) {
+        updateSong(currentSong => currentSong.map(currentSection => {
+          if (currentSection.id !== sectionId) return currentSection;
+          return {
+            ...currentSection,
+            lines: currentSection.lines.map(currentLine => {
+              if (currentLine.id !== lineId) return currentLine;
+              return {
+                ...currentLine,
+                text: linePayload.text!,
+                rhymingSyllables: linePayload.rhymingSyllables ?? currentLine.rhymingSyllables,
+                rhyme: linePayload.rhyme ?? currentLine.rhyme,
+                syllables: linePayload.syllables ?? currentLine.syllables,
+                concept: linePayload.concept ?? currentLine.concept,
+              };
+            }),
+          };
+        }));
+      }
+    } catch (error) {
+      if (isAbortError(error)) return;
+      console.error('Line adaptation error:', error);
+    } finally {
+      lineAbortControllersRef.current.delete(lineId);
+      setAdaptingLineIds(prev => {
+        const next = new Set(prev);
+        next.delete(lineId);
+        return next;
+      });
+    }
+  };
+
   return {
     songLanguage, setSongLanguage,
     detectedLanguages, lineLanguages,
     targetLanguage, setTargetLanguage,
     sectionTargetLanguages, setSectionTargetLanguages,
     isDetectingLanguage, isAdaptingLanguage,
+    adaptingLineIds,
     adaptationProgress, adaptationResult,
-    detectLanguage, adaptSongLanguage, adaptSectionLanguage,
+    detectLanguage, adaptSongLanguage, adaptSectionLanguage, adaptLineLanguage,
   };
 };

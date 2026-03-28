@@ -22,6 +22,8 @@ interface LyricsViewProps {
   sectionTargetLanguages?: Record<string, string>;
   onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
   adaptSectionLanguage?: (sectionId: string, lang: string) => void;
+  adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
+  adaptingLineIds?: Set<string>;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
@@ -46,6 +48,8 @@ export const LyricsView = memo(function LyricsView({
   sectionTargetLanguages = {},
   onSectionTargetLanguageChange,
   adaptSectionLanguage,
+  adaptLineLanguage,
+  adaptingLineIds,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
   editMode, setEditMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
   canPasteLyrics,
@@ -359,6 +363,8 @@ export const LyricsView = memo(function LyricsView({
                 sectionTargetLanguage={sectionTargetLanguages[section.id] ?? (songLanguage || 'English')}
                 onSectionTargetLanguageChange={showTranslationFeatures ? onSectionTargetLanguageChange : undefined}
                 adaptSectionLanguage={showTranslationFeatures ? adaptSectionLanguage : undefined}
+                adaptLineLanguage={showTranslationFeatures ? adaptLineLanguage : undefined}
+                adaptingLineIds={showTranslationFeatures ? adaptingLineIds : undefined}
                 isRegeneratingSection={isRegeneratingSection}
                 handleLineClick={handleLineClick}
                 updateLineText={updateLineText}

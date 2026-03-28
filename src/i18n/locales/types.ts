@@ -153,6 +153,8 @@ export interface Translations {
     deleteLine?: string;
     linePlaceholder?: string;
     addLineAfter?: string;
+    /** Tooltip for the per-line language adaptation button */
+    adaptLine?: string;
     /** Screen-reader-only label shown while the adaptation button is busy */
     adaptingLabel?: string;
     /** Screen-reader-only label shown while the language-detection button is busy */
@@ -360,6 +362,17 @@ export interface Translations {
     close: string;
   };
 
+  /** AI assistant panel — optional; non-EN/FR locales fall back via deep-merge */
+  aiAssistant?: {
+    title: string;
+    onboarding: string;
+    placeholder: string;
+    send: string;
+    close: string;
+    thinking: string;
+    error: string;
+  };
+
   settings: {
     title: string;
     theme: {
@@ -465,6 +478,8 @@ export interface Translations {
     processing?: string;
     /** Title attribute on the remove-from-library buttons */
     removeFromLibrary?: string;
+    /** Aria-label for the remove-from-library button; use `{title}` as placeholder for the song title */
+    removeFromLibraryItem?: string;
     /** Tooltip when the left (lyrics generation) panel is closed */
     openLeftPanel?: string;
     /** Tooltip when the left (lyrics generation) panel is open */

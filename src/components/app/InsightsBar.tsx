@@ -112,15 +112,17 @@ function AdaptationProgressBanner({
             reviewing: t.adaptationProgress?.reviewing ?? 'Reviewing',
             done:      t.adaptationProgress?.done      ?? 'Done',
           };
+          const effectiveActiveStepId =
+            isFailed
+              ? 'reviewing'
+              : (progress.active as typeof ORDERED_STEP_IDS[number]) === 'done'
+              ? 'done'
+              : (progress.active as typeof ORDERED_STEP_IDS[number]);
+          const activeIdx = ORDERED_STEP_IDS.indexOf(effectiveActiveStepId);
           return ORDERED_STEP_IDS.map((stepId, idx) => {
-            const activeIdx  = ORDERED_STEP_IDS.indexOf(
-              isFailed ? 'reviewing' : (progress.active as typeof ORDERED_STEP_IDS[number]) === 'done'
-                ? 'done'
-                : progress.active as typeof ORDERED_STEP_IDS[number]
-            );
-            const stepDone    = isDone || idx < activeIdx;
-            const stepActive  = !isDone && !isFailed && idx === activeIdx;
-            const stepLabel   = stepLabels[stepId];
+            const stepDone   = isDone || idx < activeIdx;
+            const stepActive = !isDone && !isFailed && idx === activeIdx;
+            const stepLabel  = stepLabels[stepId];
 
             return (
               <React.Fragment key={stepId}>

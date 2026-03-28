@@ -143,6 +143,7 @@ const en: Translations = {
     addLineAfter: 'Add line after',
     deleteLine: 'Delete line',
     linePlaceholder: 'Write a lyric line\u2026',
+    adaptLine: 'Adapt this line to target language',
     adaptingLabel: 'Adapting\u2026',
     detectingLanguageLabel: 'Detecting language\u2026',
     analyzingLabel: 'Analyzing\u2026',
@@ -150,6 +151,7 @@ const en: Translations = {
     lyricsEditors: 'LYRICS Editors',
     lyricsInsights: 'LYRICS Insights',
     detect: 'Detect',
+
   },
 
   suggestions: {
@@ -339,6 +341,16 @@ const en: Translations = {
     close: 'Close',
   },
 
+  aiAssistant: {
+    title: 'AI Assistant',
+    onboarding: 'What would you like to know or do?',
+    placeholder: 'Ask anything about your lyrics or composition…',
+    send: 'Send',
+    close: 'Close assistant',
+    thinking: 'Thinking…',
+    error: 'Unable to get a response. Please try again.',
+  },
+
   settings: {
     title: 'Settings',
     theme: {
@@ -438,6 +450,7 @@ const en: Translations = {
     closeDialog: 'Close dialog',
     processing: 'Processing\u2026',
     removeFromLibrary: 'Remove from library',
+    removeFromLibraryItem: 'Remove {title} from library',
     openLeftPanel: 'Open lyrics generation panel',
     closeLeftPanel: 'Close lyrics generation panel',
     detectLanguage: 'Detect song language',

@@ -270,7 +270,7 @@ export function TopRibbon({
       {/* RIGHT */}
       <div className="flex items-center gap-1 lg:gap-2">
         {isBusy && (
-          <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-label={processingLabel} title={processingLabel} />
+          <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-label={processingLabel.replace(/\u2026|\.{3}$/, '')} title={processingLabel} />
         )}
         {!hasApiKey && (
           <Tooltip title={t.tooltips.aiUnavailableHelp}>
