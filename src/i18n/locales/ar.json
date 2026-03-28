@@ -155,7 +155,7 @@
     "generatePrompt": "توليد الموجّه الرئيسي",
     "promptLabel": "الموجّه الرئيسي المُولَّد",
     "promptPlaceholder": "سيظهر موجّهك الموسيقي المُنظم (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) هنا...",
-    "promptStructureLabel": "Prompt structuré",
+    "promptStructureLabel": "موجه منظم",
     "promptStructureHint": "حافظ على الموجّه الموسيقي مُعلّمًا (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) حتى لا تفوت أدوات الموسيقى بالذكاء الاصطناعي السياق.",
     "optimizedFor": "محسّن لـ Suno و Udio و Stable Audio",
     "copyPrompt": "نسخ الموجّه",

@@ -10,15 +10,22 @@
  * // { fr: { missing: ['about.engineLabel'], extra: [] }, ... }
  */
 
-import en from './locales/en';
-import fr from './locales/fr';
-import es from './locales/es';
-import de from './locales/de';
-import pt from './locales/pt';
-import ar from './locales/ar';
-import zh from './locales/zh';
-import ko from './locales/ko';
 import type { Translations } from './locales/types';
+
+const _localeModules = import.meta.glob<Translations>(
+  './locales/*.json',
+  { eager: true, import: 'default' },
+);
+const _allLocales: Record<string, Translations> = {};
+for (const [path, locale] of Object.entries(_localeModules)) {
+  const match = path.match(/\/([A-Za-z0-9-]+)\.json$/);
+  if (match?.[1]) _allLocales[match[1].toLowerCase()] = locale;
+}
+
+const en = _allLocales['en'];
+if (!en || Object.keys(en).length === 0) {
+  throw new Error('[i18n] en.json is missing or empty – cannot validate locales.');
+}
 
 /** Recursively collect all dot-separated keys from an object. */
 function collectKeys(obj: unknown, prefix = ''): string[] {
@@ -30,7 +37,9 @@ function collectKeys(obj: unknown, prefix = ''): string[] {
   );
 }
 
-const ALL_LOCALES: Record<string, Translations> = { fr, es, de, pt, ar, zh, ko };
+const ALL_LOCALES: Record<string, Translations> = Object.fromEntries(
+  Object.entries(_allLocales).filter(([code]) => code !== 'en'),
+);
 const BASE_KEYS = new Set(collectKeys(en));
 
 export interface LocaleValidationResult {
