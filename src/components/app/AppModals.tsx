@@ -14,7 +14,7 @@ import { ApiErrorModal } from './modals/ApiErrorModal';
 import { ConfirmModal } from './modals/ConfirmModal';
 import { PromptModal } from './modals/PromptModal';
 import { SearchReplaceModal } from './modals/SearchReplaceModal';
-import { useModalContext } from '../../contexts/ModalContext';
+import { useModalDispatch, useModalState } from '../../contexts/ModalContext';
 import type { LibraryAsset } from '../../utils/libraryUtils';
 import type { SimilarityMatch } from '../../utils/similarityUtils';
 import type { SongVersion } from '../../types';
@@ -117,7 +117,11 @@ export const AppModals = React.memo(function AppModals({
   resetSong,
 }: Props) {
   const { t } = useTranslation();
-  const { uiState: ui, closeModal, openModal } = useModalContext();
+  // Split hooks: dispatch (stable) + state (reactive).
+  // React.memo on AppModals is now effective for dispatch-only interactions
+  // because closeModal/openModal refs don’t change on modal state changes.
+  const { closeModal, openModal } = useModalDispatch();
+  const { uiState: ui } = useModalState();
   const { importInputRef } = ui;
   const openLibraryFromImport = () => {
     closeModal('import');
