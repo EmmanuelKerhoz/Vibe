@@ -185,6 +185,8 @@ function AppInnerContent() {
     detectLanguage,
     adaptSongLanguage,
     adaptSectionLanguage,
+    adaptLineLanguage,
+    adaptingLineIds,
     analyzePastedLyrics,
     clearAppliedAnalysisItems,
   } = useSongAnalysis({
@@ -450,6 +452,8 @@ function AppInnerContent() {
                         sectionTargetLanguages={sectionTargetLanguages}
                         onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
                         adaptSectionLanguage={adaptSectionLanguage}
+                        adaptLineLanguage={adaptLineLanguage}
+                        adaptingLineIds={adaptingLineIds}
                         playAudioFeedback={playAudioFeedback}
                         handleDrop={handleDrop}
                         handleLineDragStart={handleLineDragStart}

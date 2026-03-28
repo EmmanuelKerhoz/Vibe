@@ -29,6 +29,8 @@ interface SectionEditorProps {
   sectionTargetLanguage?: string;
   onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
   adaptSectionLanguage?: (sectionId: string, lang: string) => void;
+  adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
+  adaptingLineIds?: Set<string>;
   isRegeneratingSection: (sectionId: string) => boolean;
   handleLineClick: (lineId: string) => void;
   updateLineText: (sectionId: string, lineId: string, text: string) => void;
@@ -109,6 +111,8 @@ export const SectionEditor = React.memo(function SectionEditor({
   sectionTargetLanguage = 'English',
   onSectionTargetLanguageChange,
   adaptSectionLanguage,
+  adaptLineLanguage,
+  adaptingLineIds,
   isRegeneratingSection,
   handleLineClick, updateLineText, handleLineKeyDown,
   handleInstructionChange, addInstruction, removeInstruction,
@@ -306,6 +310,9 @@ export const SectionEditor = React.memo(function SectionEditor({
                 addLineToSection={addLineToSection}
                 deleteLineFromSection={deleteLineFromSection}
                 playAudioFeedback={playAudioFeedback}
+                adaptLineLanguage={adaptLineLanguage}
+                sectionTargetLanguage={sectionTargetLanguage}
+                isAdaptingLine={adaptingLineIds?.has(line.id)}
               />
             );
           })}
