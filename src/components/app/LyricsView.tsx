@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, memo, useRef } from 'react';
-import { ClipboardPaste, FileText, Layout, Library, Loader2, Music, Sparkles, Type, Volume2 } from '../ui/icons';
+import { ClipboardPaste, FileText, Layout, Library, Loader2, Music, PersonVoice, Sparkles, Type } from '../ui/icons';
 import { Section } from '../../types';
 import type { EditMode } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
@@ -268,7 +268,7 @@ export const LyricsView = memo(function LyricsView({
           <div className="lcars-gradient-container flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
             <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
-                <Volume2 className="w-4 h-4 text-[var(--accent-color)]" />
+                <PersonVoice className="w-4 h-4 text-[var(--accent-color)]" />
               </div>
               <div>
                 <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
@@ -279,7 +279,7 @@ export const LyricsView = memo(function LyricsView({
                 </p>
               </div>
             </div>
-            <div className="relative flex-1 min-h-0 overflow-hidden">
+            <div className="relative flex-1 min-h-0 overflow-hidden flex flex-col">
               {phoneticState.status === 'loading' && (
                 <div className="absolute inset-0 bg-[var(--bg-app)]/70 backdrop-blur-sm flex items-center justify-center z-10">
                   <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] uppercase tracking-wider">
