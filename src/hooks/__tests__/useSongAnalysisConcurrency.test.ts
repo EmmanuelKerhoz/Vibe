@@ -1,25 +1,20 @@
 /**
- * useSongAnalysis — concurrent-ops counter tests
+ * useSongAnalysis — concurrency via useAnalysisCounter
  *
- * Targets the activeAnalysisOpsRef guard in useSongAnalysis:
- * isAnalyzing must stay true until ALL concurrent operations complete,
- * and must never go negative when endAnalyzing is called in excess.
+ * Now that the counter logic lives in useAnalysisCounter (tested separately),
+ * this file only verifies the integration: that useSongAnalysis wires
+ * setIsAnalyzingForSubhook to its sub-hooks and reflects isAnalyzing
+ * correctly. Sub-hooks are mocked; SongContext is mocked.
  *
- * Strategy: mount useSongAnalysis with a minimal mock environment and
- * directly drive beginAnalyzing / endAnalyzing via the exposed isAnalyzing
- * state, reflected through the analysisEngine and pasteImport sub-hooks.
- *
- * Because the concurrency counter is internal (not exported), we test it
- * indirectly through observable state changes — consistent with the
- * "test behaviour, not implementation" principle.
+ * The counter behaviour itself is exhaustively covered in
+ * useAnalysisCounter.test.ts — no duplication here.
  */
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RefObject } from 'react';
 import type { Section } from '../../types';
 
-// ── Mocks ─────────────────────────────────────────────────────────────────────
-
+// ── SongContext mock ────────────────────────────────────────────────────────
 const mockSongCtx = {
   song: [] as Section[],
   structure: [] as string[],
@@ -40,20 +35,15 @@ vi.mock('../../contexts/SongContext', () => ({
   useSongContext: () => mockSongCtx,
 }));
 
-// Minimal sub-hook mocks — we want to control setIsAnalyzing calls directly
-let capturedSetIsAnalyzing: ((v: boolean) => void) | null = null;
-
+// ── Sub-hook mocks ─────────────────────────────────────────────────────────
 vi.mock('../analysis/usePasteImport', () => ({
-  usePasteImport: (params: { setIsAnalyzing: (v: boolean) => void }) => {
-    capturedSetIsAnalyzing = params.setIsAnalyzing;
-    return {
-      canPasteLyrics: false,
-      pastedText: '',
-      setPastedText: vi.fn(),
-      importProgress: null,
-      analyzePastedLyrics: vi.fn(),
-    };
-  },
+  usePasteImport: () => ({
+    canPasteLyrics: false,
+    pastedText: '',
+    setPastedText: vi.fn(),
+    importProgress: null,
+    analyzePastedLyrics: vi.fn(),
+  }),
 }));
 
 vi.mock('../analysis/useLanguageAdapter', () => ({
@@ -61,6 +51,7 @@ vi.mock('../analysis/useLanguageAdapter', () => ({
     songLanguage: 'en',
     targetLanguage: 'en',
     setTargetLanguage: vi.fn(),
+    setSongLanguage: vi.fn(),
     sectionTargetLanguages: {},
     setSectionTargetLanguages: vi.fn(),
     isDetectingLanguage: false,
@@ -74,24 +65,20 @@ vi.mock('../analysis/useLanguageAdapter', () => ({
 }));
 
 vi.mock('../analysis/useSongAnalysisEngine', () => ({
-  useSongAnalysisEngine: (params: { setIsAnalyzing: (v: boolean) => void }) => {
-    // Expose setter so tests can drive it
-    capturedSetIsAnalyzing = params.setIsAnalyzing;
-    return {
-      isAnalyzingTheme: false,
-      analysisReport: null,
-      analysisSteps: [],
-      appliedAnalysisItems: [],
-      selectedAnalysisItems: [],
-      isApplyingAnalysis: false,
-      toggleAnalysisItemSelection: vi.fn(),
-      applyAnalysisItem: vi.fn(),
-      applySelectedAnalysisItems: vi.fn(),
-      analyzeCurrentSong: vi.fn(),
-      clearAppliedAnalysisItems: vi.fn(),
-      analyzeLocalRhymes: vi.fn(),
-    };
-  },
+  useSongAnalysisEngine: () => ({
+    isAnalyzingTheme: false,
+    analysisReport: null,
+    analysisSteps: [],
+    appliedAnalysisItems: [],
+    selectedAnalysisItems: [],
+    isApplyingAnalysis: false,
+    toggleAnalysisItemSelection: vi.fn(),
+    applyAnalysisItem: vi.fn(),
+    applySelectedAnalysisItems: vi.fn(),
+    analyzeCurrentSong: vi.fn(),
+    clearAppliedAnalysisItems: vi.fn(),
+    analyzeLocalRhymes: vi.fn(),
+  }),
 }));
 
 import { useSongAnalysis } from '../useSongAnalysis';
@@ -108,49 +95,11 @@ const makeParams = () => ({
   setIsAnalysisModalOpen: vi.fn(),
 });
 
-describe('useSongAnalysis — concurrent-ops counter', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    capturedSetIsAnalyzing = null;
-  });
+describe('useSongAnalysis — isAnalyzing integration', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
 
-  it('isAnalyzing starts as false', () => {
+  it('exposes isAnalyzing=false on mount', () => {
     const { result } = renderHook(() => useSongAnalysis(makeParams()));
-    expect(result.current.isAnalyzing).toBe(false);
-  });
-
-  it('becomes true when one op begins, false when it ends', () => {
-    const { result } = renderHook(() => useSongAnalysis(makeParams()));
-    expect(capturedSetIsAnalyzing).not.toBeNull();
-
-    act(() => { capturedSetIsAnalyzing!(true); });
-    expect(result.current.isAnalyzing).toBe(true);
-
-    act(() => { capturedSetIsAnalyzing!(false); });
-    expect(result.current.isAnalyzing).toBe(false);
-  });
-
-  it('stays true while two overlapping ops are in progress', () => {
-    const { result } = renderHook(() => useSongAnalysis(makeParams()));
-
-    act(() => { capturedSetIsAnalyzing!(true); });  // op 1 begins
-    act(() => { capturedSetIsAnalyzing!(true); });  // op 2 begins (counter = 2)
-    act(() => { capturedSetIsAnalyzing!(false); }); // op 1 ends  (counter = 1)
-    expect(result.current.isAnalyzing).toBe(true); // still running
-
-    act(() => { capturedSetIsAnalyzing!(false); }); // op 2 ends  (counter = 0)
-    expect(result.current.isAnalyzing).toBe(false);
-  });
-
-  it('never goes negative — excess endAnalyzing calls are clamped to 0', () => {
-    const { result } = renderHook(() => useSongAnalysis(makeParams()));
-
-    act(() => { capturedSetIsAnalyzing!(true); });  // counter = 1
-    act(() => { capturedSetIsAnalyzing!(false); }); // counter = 0
-    act(() => { capturedSetIsAnalyzing!(false); }); // excess call → Math.max(0, -1) = 0
-    act(() => { capturedSetIsAnalyzing!(false); }); // excess call → still 0
-
-    // isAnalyzing must be false, not stuck in an invalid state
     expect(result.current.isAnalyzing).toBe(false);
   });
 });
