@@ -47,7 +47,7 @@ function LazyFallback() {
   return (
     <div
       role="status"
-      aria-label={t('common.loading') ?? 'Loading'}
+      aria-label={t.common?.loading ?? 'Loading'}
       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', width: '100%' }}
     >
       <Spinner size="small" />
