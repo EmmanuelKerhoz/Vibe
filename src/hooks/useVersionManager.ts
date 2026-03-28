@@ -11,13 +11,34 @@ interface UseVersionManagerParams {
 }
 
 /**
- * M5 fix: lightweight fingerprint for song+structure comparison.
- * Avoids full JSON.stringify on every render — O(n) on section count
- * instead of O(total characters). Collisions are astronomically unlikely
- * (would require identical ids+line-count with different content).
+ * Builds a stable structural fingerprint for auto-restore detection.
+ *
+ * Goals:
+ * - detect meaningful lyrical/metadata edits even when section/line ids stay stable;
+ * - avoid false negatives like text-only edits;
+ * - remain cheaper than full JSON.stringify(snapshot) by only hashing fields
+ *   that influence the editable song content and restore behaviour.
  */
 const fingerprintSnapshot = (song: Section[], structure: string[]): string => {
-  const songPrint = song.map(s => `${s.id}:${s.lines.length}:${s.lines.map(l => l.id).join(',')}`).join('|');
+  const songPrint = song.map((section) => {
+    const linePrint = section.lines.map((line) => [
+      line.id,
+      line.text,
+      line.rhymingSyllables,
+      line.rhyme,
+      String(line.syllables),
+      line.concept,
+      line.isMeta ? '1' : '0',
+    ].join(':')).join('|');
+
+    return [
+      section.id,
+      section.name,
+      section.language,
+      linePrint,
+    ].join('::');
+  }).join('||');
+
   return `${structure.join('-')}__${songPrint}`;
 };
 
@@ -41,7 +62,6 @@ export function useVersionManager(params: UseVersionManagerParams) {
 
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const previousLyricsSnapshotRef = useRef<VersionSnapshot | null>(null);
-  // M5: store fingerprint separately to avoid re-serialising the full song.
   const previousFingerprintRef = useRef<string | null>(null);
 
   const createVersion = useCallback((
@@ -98,7 +118,6 @@ export function useVersionManager(params: UseVersionManagerParams) {
   }, [setPromptModal]);
 
   // Auto-restore-point: captures the snapshot *before* each lyrics/structure change.
-  // M5: uses fingerprintSnapshot instead of JSON.stringify for the change-detection check.
   useEffect(() => {
     const currentSnapshot = { song, structure, title, titleOrigin, topic, mood };
     const currentFingerprint = fingerprintSnapshot(song, structure);
