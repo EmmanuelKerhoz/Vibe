@@ -121,6 +121,9 @@ export const AppModals = React.memo(function AppModals({
   resetSong,
 }: Props) {
   const { t } = useTranslation();
+  // Split hooks: dispatch (stable) + state (reactive).
+  // React.memo on AppModals is now effective for dispatch-only interactions
+  // because closeModal/openModal refs don’t change on modal state changes.
   const { closeModal, openModal } = useModalDispatch();
   const { uiState: ui } = useModalState();
   const { importInputRef } = ui;
