@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2, Bot, User } from '../ui/icons';
+import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2, Bot, User, Languages, Loader2 } from '../ui/icons';
 import type { Line } from '../../types';
 import { useDrag } from '../../contexts/DragContext';
 import { Tooltip } from '../ui/Tooltip';
@@ -33,6 +33,9 @@ export interface LyricInputProps {
   addLineToSection: (sectionId: string, afterLineId?: string) => void;
   deleteLineFromSection: (sectionId: string, lineId: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
+  adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
+  sectionTargetLanguage?: string;
+  isAdaptingLine?: boolean;
 }
 
 export const LyricInput = React.memo(function LyricInput({
@@ -58,6 +61,9 @@ export const LyricInput = React.memo(function LyricInput({
   addLineToSection,
   deleteLineFromSection,
   playAudioFeedback,
+  adaptLineLanguage,
+  sectionTargetLanguage,
+  isAdaptingLine = false,
 }: LyricInputProps) {
   const { t } = useTranslation();
   const { setDraggedLineInfo, setDragOverLineInfo } = useDrag();
@@ -200,7 +206,21 @@ export const LyricInput = React.memo(function LyricInput({
       </div>
 
       {/* Line controls — visible on hover */}
-      <div className="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity w-16">
+      <div className={`flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${adaptLineLanguage ? 'w-20' : 'w-16'}`}>
+        {adaptLineLanguage && (
+          <Tooltip title={t.editor?.adaptLine ?? `Adapt line to ${sectionTargetLanguage ?? 'target language'}`}>
+            <button
+              type="button"
+              onClick={() => { adaptLineLanguage(sectionId, line.id, sectionTargetLanguage ?? 'English'); playAudioFeedback('click'); }}
+              disabled={isAdaptingLine || isGenerating}
+              className="flex h-4 w-4 items-center justify-center text-cyan-600 hover:text-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              {isAdaptingLine
+                ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                : <Languages className="h-2.5 w-2.5" />}
+            </button>
+          </Tooltip>
+        )}
         <Tooltip title={t.editor?.moveLineUp ?? 'Move line up'}>
           <button type="button" onClick={() => { moveLineUp(sectionId, line.id); playAudioFeedback('click'); }} disabled={lineIndex === 0}
             className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">

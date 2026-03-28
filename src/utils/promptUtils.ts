@@ -31,6 +31,12 @@ type BuildAdaptSectionPromptParams = {
   ipaEnhancedPrompt?: string;
 };
 
+type BuildAdaptLinePromptParams = {
+  line: Line;
+  newLanguage: string;
+  uiLanguage: string;
+};
+
 type BuildThemeAnalysisPromptParams = {
   song: Section[];
   topic: string;
@@ -190,6 +196,13 @@ export const buildAdaptSectionPrompt = ({
   ipaEnhancedPrompt = '',
 }: BuildAdaptSectionPromptParams): string =>
   `You are an expert lyricist specializing in creative song adaptation across languages.\n\nAdapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\nKeep section name unchanged. Update rhymingSyllables. Adjust syllable counts.\nWrite the "concept" field for each line in ${uiLanguage}.\n\nCurrent Section Data:\n${JSON.stringify(section)}${ipaEnhancedPrompt}`;
+
+export const buildAdaptLinePrompt = ({
+  line,
+  newLanguage,
+  uiLanguage,
+}: BuildAdaptLinePromptParams): string =>
+  `You are an expert lyricist specializing in creative song adaptation across languages.\n\nAdapt the following single lyric line to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\nPreserve the emotional impact and singability. Update rhymingSyllables, rhyme, and syllables to reflect the adapted text.\nWrite the "concept" field in ${uiLanguage}.\n\nLine Data:\n${JSON.stringify(line)}`;
 
 export const buildApplyAnalysisBatchPrompt = ({
   song,
