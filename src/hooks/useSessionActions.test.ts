@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Section } from '../types';
 import { useSessionActions } from './useSessionActions';
 
 // --- Mocks ---
@@ -95,7 +96,7 @@ const makeAppState = () => ({
 });
 
 const makeParams = (overrides = {}) => ({
-  song: [] as ReturnType<typeof import('../utils/songDefaults').createEmptySong>,
+  song: [] as Section[],
   structure: [] as string[],
   rhymeScheme: 'AABB',
   appState: makeAppState(),
