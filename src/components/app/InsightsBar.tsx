@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, Languages, ScanText, Layout, Search, Timer, CheckCircle2, AlertTriangle, XCircle, FileText, Type, Volume2 } from '../ui/icons';
+import { Loader2, BarChart2, Languages, ScanText, Layout, Search, Timer, CheckCircle2, AlertTriangle, XCircle, FileText, Type, PersonVoice } from '../ui/icons';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
@@ -325,7 +325,7 @@ export const InsightsBar = React.memo(function InsightsBar({
             {([
               { mode: 'text' as EditMode, icon: <Type className="w-3.5 h-3.5" />, label: t.editor.textModeLabel, tooltip: t.tooltips.textMode },
               { mode: 'markdown' as EditMode, icon: <FileText className="w-3.5 h-3.5" />, label: t.editor.markupModeLabel, tooltip: t.tooltips.markupMode },
-              { mode: 'phonetic' as EditMode, icon: <Volume2 className="w-3.5 h-3.5" />, label: t.editor.phoneticModeLabel, tooltip: t.tooltips.phoneticMode },
+              { mode: 'phonetic' as EditMode, icon: <PersonVoice className="w-3.5 h-3.5" />, label: t.editor.phoneticModeLabel, tooltip: t.tooltips.phoneticMode },
               { mode: 'section' as EditMode, icon: <Layout className="w-3.5 h-3.5" />, label: t.editor.editorMode, tooltip: t.tooltips.editorMode },
             ]).map(({ mode, icon, label, tooltip }) => (
               <Tooltip key={mode} title={tooltip}>

@@ -114,7 +114,7 @@ export const LANGUAGE_NAME_TO_CODE: Record<string, string> = {
   'english': 'en', 'german': 'de', 'dutch': 'nl', 'swedish': 'sv', 'danish': 'da', 'norwegian': 'no', 'icelandic': 'is',
   'french': 'fr', 'spanish': 'es', 'italian': 'it', 'portuguese': 'pt', 'romanian': 'ro', 'catalan': 'ca',
   'russian': 'ru', 'polish': 'pl', 'czech': 'cs', 'slovak': 'sk', 'uk': 'uk', 'bulgarian': 'bg', 'serbian': 'sr', 'croatian': 'hr',
-  'yoruba': 'yo', 'swahili': 'sw', 'zulu': 'zu', 'xhosa': 'xh', 'hausa': 'ha', 'baoulé': 'bci', 'baoule': 'bci', 'dioula': 'dyu', 'ewe': 'ee', 'mina': 'gej',
+  'yoruba': 'yo', 'swahili': 'sw', 'zulu': 'zu', 'xhosa': 'xh', 'hausa': 'ha', 'baoulé': 'bci', 'baoule': 'bci', 'baule': 'bci', 'dioula': 'dyu', 'ewe': 'ee', 'mina': 'gej',
   'chinese': 'zh', 'mandarin': 'zh', 'cantonese': 'yue', 'japanese': 'ja', 'korean': 'ko', 'hindi': 'hi', 'urdu': 'ur', 'bengali': 'bn', 'punjabi': 'pa', 'persian': 'fa', 'tamil': 'ta', 'telugu': 'te', 'kannada': 'kn', 'malayalam': 'ml', 'thai': 'th', 'vietnamese': 'vi', 'indonesian': 'id', 'malay': 'ms', 'tagalog': 'tl',
   'arabic': 'ar', 'hebrew': 'he', 'amharic': 'am', 'turkish': 'tr', 'finnish': 'fi', 'hungarian': 'hu',
 };

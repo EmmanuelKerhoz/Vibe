@@ -48,6 +48,7 @@ import {
   PauseRegular,
   PeopleRegular,
   PersonRegular,
+  PersonVoiceRegular,
   PlayRegular,
   PulseRegular,
   RadioButtonRegular,
@@ -159,6 +160,7 @@ export const KeyboardRegular = createIcon(FluentKeyboardRegular, 'KeyboardRegula
 export const Ruler = createIcon(RulerRegular, 'Ruler');
 export const Bot = createIcon(BotRegular, 'Bot');
 export const User = createIcon(PersonRegular, 'User');
+export const PersonVoice = createIcon(PersonVoiceRegular, 'PersonVoice');
 export const Shuffle = createIcon(ArrowShuffleRegular, 'Shuffle');
 export const Lightbulb = createIcon(LightbulbRegular, 'Lightbulb');
 export const Hash = createIcon(NumberSymbolRegular, 'Hash');
