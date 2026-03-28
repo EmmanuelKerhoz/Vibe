@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { FluentProvider, webLightTheme, webDarkTheme, Spinner } from '@fluentui/react-components';
+import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
@@ -34,6 +35,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
+// v3.21.1
 const AppModals = lazy(() =>
   import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
 );
@@ -42,10 +44,11 @@ const MusicalTab = lazy(() =>
 );
 
 function LazyFallback() {
+  const { t } = useTranslation();
   return (
     <div
       role="status"
-      aria-label="Loading"
+      aria-label={t.common?.loading ?? 'Loading'}
       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', width: '100%' }}
     >
       <Spinner size="small" />
@@ -192,6 +195,7 @@ function AppInnerContent() {
     setIsPasteModalOpen, setIsAnalysisModalOpen,
   });
 
+  // Apply defaultEditMode once after session hydration.
   const hasAppliedDefaultEditModeRef = useRef(false);
   useEffect(() => {
     if (isSessionHydrated && !hasAppliedDefaultEditModeRef.current) {
@@ -200,9 +204,25 @@ function AppInnerContent() {
     }
   }, [isSessionHydrated, defaultEditMode, switchEditMode]);
 
+  // When leaving the lyrics tab, reset editMode to 'section' so the musical
+  // tab renders cleanly. When returning to the lyrics tab, restore the user's
+  // preferred defaultEditMode (unless they have already picked a different mode
+  // in this session — tracked via hasAppliedDefaultEditModeRef).
+  const previousActiveTabRef = useRef(activeTab);
   useEffect(() => {
-    if (activeTab !== 'lyrics' && editMode !== 'section') setEditMode('section');
-  }, [activeTab, editMode, setEditMode]);
+    const prev = previousActiveTabRef.current;
+    previousActiveTabRef.current = activeTab;
+
+    if (activeTab !== 'lyrics' && editMode !== 'section') {
+      // Leaving lyrics tab — normalise to section mode.
+      setEditMode('section');
+    } else if (activeTab === 'lyrics' && prev !== 'lyrics' && hasAppliedDefaultEditModeRef.current) {
+      // Returning to lyrics tab — restore the configured default if it differs.
+      if (defaultEditMode !== 'section' && editMode === 'section') {
+        switchEditMode(defaultEditMode);
+      }
+    }
+  }, [activeTab, editMode, defaultEditMode, setEditMode, switchEditMode]);
 
   useEffect(() => {
     if (isSuggestionsOpen && isStructureOpen) {
@@ -351,7 +371,7 @@ function AppInnerContent() {
         theme={theme === 'dark' ? webDarkTheme : webLightTheme}
         style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}
       >
-        <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}> 
+        <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
 
           {showBackdrop && (
             <button
@@ -415,7 +435,7 @@ function AppInnerContent() {
                   adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
                   showTranslationFeatures={showTranslationFeatures}
                 />
-              )} 
+              )}
 
               <div
                 className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}
@@ -446,9 +466,11 @@ function AppInnerContent() {
                         showTranslationFeatures={showTranslationFeatures}
                       />
                     ) : (
-                      <Suspense fallback={<LazyFallback />}>  
-                        <MusicalTab hasApiKey={hasApiKey} />
-                      </Suspense>
+                      <ErrorBoundary>
+                        <Suspense fallback={<LazyFallback />}>
+                          <MusicalTab hasApiKey={hasApiKey} />
+                        </Suspense>
+                      </ErrorBoundary>
                     )}
                   </div>
                 </div>
@@ -480,7 +502,7 @@ function AppInnerContent() {
                 onGenerateSong={generateSong}
               />
             )}
-          </div> 
+          </div>
 
           <StatusBar
             className="lcars-status-bar-desktop"
@@ -499,46 +521,48 @@ function AppInnerContent() {
               setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
               onOpenSettings={handleOpenSettings}
             />
-          )} 
+          )}
 
-          <Suspense fallback={<LazyFallback />}>    
-            <AppModals
-              theme={theme} setTheme={setTheme}
-              audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-              uiScale={uiScale} setUiScale={setUiScale}
-              defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
-              showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
-              hasExistingWork={hasExistingWork}
-              handleImportChooseFile={handleImportChooseFile}
-              onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
-              handleImportInputChange={handleImportInputChange}
-              exportSong={exportSong}
-              pastedText={pastedText} setPastedText={setPastedText}
-              isAnalyzing={isAnalyzing}
-              isAnalyzingTheme={isAnalyzingTheme}
-              importProgress={importProgress}
-              analyzePastedLyrics={analyzePastedLyrics}
-              analysisReport={analysisReport} analysisSteps={analysisSteps}
-              appliedAnalysisItems={appliedAnalysisItems}
-              selectedAnalysisItems={selectedAnalysisItems}
-              isApplyingAnalysis={isApplyingAnalysis}
-              toggleAnalysisItemSelection={toggleAnalysisItemSelection}
-              applyAnalysisItem={applyAnalysisItem}
-              applySelectedAnalysisItems={applySelectedAnalysisItems}
-              clearAppliedAnalysisItems={clearAppliedAnalysisItems}
-              versions={versions} rollbackToVersion={rollbackToVersion}
-              similarityMatches={similarityMatches} libraryCount={libraryCount}
-              webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
-              handleDeleteLibraryAsset={handleDeleteLibraryAsset}
-              handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
-              title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
-              handleLoadLibraryAsset={handleLoadLibraryAsset}
-              handlePurgeLibrary={handlePurgeLibrary}
-              saveVersion={saveVersion}
-              handleRequestVersionName={handleRequestVersionName}
-              resetSong={resetSong}
-            />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<LazyFallback />}>
+              <AppModals
+                theme={theme} setTheme={setTheme}
+                audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+                uiScale={uiScale} setUiScale={setUiScale}
+                defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
+                showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
+                hasExistingWork={hasExistingWork}
+                handleImportChooseFile={handleImportChooseFile}
+                onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
+                handleImportInputChange={handleImportInputChange}
+                exportSong={exportSong}
+                pastedText={pastedText} setPastedText={setPastedText}
+                isAnalyzing={isAnalyzing}
+                isAnalyzingTheme={isAnalyzingTheme}
+                importProgress={importProgress}
+                analyzePastedLyrics={analyzePastedLyrics}
+                analysisReport={analysisReport} analysisSteps={analysisSteps}
+                appliedAnalysisItems={appliedAnalysisItems}
+                selectedAnalysisItems={selectedAnalysisItems}
+                isApplyingAnalysis={isApplyingAnalysis}
+                toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+                applyAnalysisItem={applyAnalysisItem}
+                applySelectedAnalysisItems={applySelectedAnalysisItems}
+                clearAppliedAnalysisItems={clearAppliedAnalysisItems}
+                versions={versions} rollbackToVersion={rollbackToVersion}
+                similarityMatches={similarityMatches} libraryCount={libraryCount}
+                webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
+                handleDeleteLibraryAsset={handleDeleteLibraryAsset}
+                handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
+                title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
+                handleLoadLibraryAsset={handleLoadLibraryAsset}
+                handlePurgeLibrary={handlePurgeLibrary}
+                saveVersion={saveVersion}
+                handleRequestVersionName={handleRequestVersionName}
+                resetSong={resetSong}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </FluentProvider>
     </ModalProvider>

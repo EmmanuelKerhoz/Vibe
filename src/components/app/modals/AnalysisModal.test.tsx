@@ -32,19 +32,19 @@ vi.mock('../../../i18n', () => ({
 
 // Minimal icon mocks — AnalysisModal uses named SVG icons
 vi.mock('../../ui/icons', () => ({
-  X: () => <svg data-testid="icon-x" />,
-  BarChart2: () => <svg data-testid="icon-bar-chart" />,
-  Sparkles: () => <svg data-testid="icon-sparkles" />,
-  Loader2: ({ className }: { className?: string }) => <svg data-testid="icon-loader" className={className} />,
-  BookOpen: () => <svg data-testid="icon-book" />,
-  Activity: () => <svg data-testid="icon-activity" />,
-  CheckCircle2: () => <svg data-testid="icon-check-circle" />,
-  Target: () => <svg data-testid="icon-target" />,
-  Music: () => <svg data-testid="icon-music" />,
-  Plus: () => <svg data-testid="icon-plus" />,
-  Check: () => <svg data-testid="icon-check" />,
-  Undo2: () => <svg data-testid="icon-undo" />,
-  Zap: () => <svg data-testid="icon-zap" />,
+  X: () => <svg data-testid="icon-x" />, 
+  BarChart2: () => <svg data-testid="icon-bar-chart" />, 
+  Sparkles: () => <svg data-testid="icon-sparkles" />, 
+  Loader2: ({ className }: { className?: string }) => <svg data-testid="icon-loader" className={className} />, 
+  BookOpen: () => <svg data-testid="icon-book" />, 
+  Activity: () => <svg data-testid="icon-activity" />, 
+  CheckCircle2: () => <svg data-testid="icon-check-circle" />, 
+  Target: () => <svg data-testid="icon-target" />, 
+  Music: () => <svg data-testid="icon-music" />, 
+  Plus: () => <svg data-testid="icon-plus" />, 
+  Check: () => <svg data-testid="icon-check" />, 
+  Undo2: () => <svg data-testid="icon-undo" />, 
+  Zap: () => <svg data-testid="icon-zap" />, 
 }));
 
 vi.mock('../../ui/Button', () => ({
@@ -67,8 +67,18 @@ const baseReport = {
 };
 
 const baseVersions = [
-  { id: '1', name: 'Before Analysis Improvements', song: [], structure: [], createdAt: 0,
-    title: '', titleOrigin: 'user' as const, topic: '', mood: '' },
+  {
+    id: '1',
+    name: 'Before Analysis Improvements',
+    song: [],
+    structure: [],
+    createdAt: 0,
+    timestamp: 0,
+    title: '',
+    titleOrigin: 'user' as const,
+    topic: '',
+    mood: '',
+  },
 ];
 
 const noop = vi.fn();
@@ -93,7 +103,7 @@ const renderModal = (overrides: Record<string, unknown> = {}) =>
       versions={baseVersions}
       rollbackToVersion={noop}
       {...overrides}
-    />,
+    />, 
   );
 
 describe('AnalysisModal', () => {
@@ -159,7 +169,8 @@ describe('AnalysisModal', () => {
       renderModal();
       // First checkbox = first improvement item
       const checkboxes = screen.getAllByRole('button', { name: /Select for batch apply|Deselect|Applied/ });
-      fireEvent.click(checkboxes[0]);
+      expect(checkboxes.length).toBeGreaterThan(0);
+      fireEvent.click(checkboxes[0]!);
       expect(noop).toHaveBeenCalled();
     });
   });
@@ -181,7 +192,7 @@ describe('AnalysisModal', () => {
           clearAppliedAnalysisItems={noop}
           versions={[]}
           rollbackToVersion={noop}
-        />,
+        />, 
       );
       expect(container.firstChild).toBeNull();
     });

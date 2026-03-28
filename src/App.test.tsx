@@ -516,7 +516,9 @@ describe('App markup mode reset', () => {
     await act(async () => { render(<App />); });
     const calls = mockAppState.appModalsPropsSpy.mock.calls;
     expect(calls.length).toBeGreaterThan(0);
-    const lastProps = calls[calls.length - 1][0] as Record<string, unknown>;
+    // noUncheckedIndexedAccess-safe: assert non-nullish before indexing
+    const lastCall = calls[calls.length - 1];
+    const lastProps = (lastCall?.[0] ?? {}) as Record<string, unknown>;
     expect('isAnalyzingTheme' in lastProps).toBe(true);
     expect('applyAnalysisItem' in lastProps).toBe(true);
     expect(typeof lastProps.applyAnalysisItem).toBe('function');
