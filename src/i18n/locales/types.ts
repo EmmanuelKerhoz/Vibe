@@ -1,4 +1,9 @@
 export interface Translations {
+  /** Generic shared strings */
+  common?: {
+    loading: string;
+  };
+
   app: {
     name: string;
     tagline: string;
