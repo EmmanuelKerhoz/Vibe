@@ -12,6 +12,84 @@ const MAX_CONTENTS_LENGTH = 100_000;
 /** Models the proxy is allowed to forward to. */
 const ALLOWED_MODEL_PREFIXES = ['gemini-'];
 
+/**
+ * Exhaustive allowlist of SDK GenerateContentConfig keys the client is
+ * permitted to set. Any key not in this list is silently dropped before
+ * the config object is forwarded to the Gemini SDK.
+ *
+ * Rationale: the `config` field is an open Record<string, unknown> on the
+ * wire. Without filtering, a caller could inject SDK-level overrides such as
+ * `systemInstruction`, `safetySettings`, `tools`, `toolConfig`, or
+ * `cachedContent` — bypassing the prompt-level constraints enforced by the
+ * server and potentially altering model behaviour in unintended ways.
+ */
+const ALLOWED_CONFIG_KEYS = new Set([
+  'temperature',
+  'topP',
+  'topK',
+  'maxOutputTokens',
+  'stopSequences',
+  'candidateCount',
+  'presencePenalty',
+  'frequencyPenalty',
+  'seed',
+  'responseMimeType',
+] as const);
+
+type SanitizedConfig = {
+  temperature?: number;
+  topP?: number;
+  topK?: number;
+  maxOutputTokens?: number;
+  stopSequences?: string[];
+  candidateCount?: number;
+  presencePenalty?: number;
+  frequencyPenalty?: number;
+  seed?: number;
+  responseMimeType?: string;
+};
+
+/**
+ * Strips any key not in ALLOWED_CONFIG_KEYS and validates primitive types.
+ * Non-conforming values are dropped silently — we never reflect raw
+ * client-supplied error details back in the response.
+ */
+function sanitizeConfig(raw: Record<string, unknown>): SanitizedConfig {
+  const out: SanitizedConfig = {};
+  for (const key of ALLOWED_CONFIG_KEYS) {
+    if (!(key in raw)) continue;
+    const val = raw[key];
+    switch (key) {
+      case 'temperature':
+      case 'topP':
+      case 'topK':
+      case 'maxOutputTokens':
+      case 'candidateCount':
+      case 'presencePenalty':
+      case 'frequencyPenalty':
+      case 'seed':
+        if (typeof val === 'number' && isFinite(val)) {
+          (out as Record<string, unknown>)[key] = val;
+        }
+        break;
+      case 'stopSequences':
+        if (
+          Array.isArray(val) &&
+          val.every((s): s is string => typeof s === 'string')
+        ) {
+          out.stopSequences = val;
+        }
+        break;
+      case 'responseMimeType':
+        if (typeof val === 'string') {
+          out.responseMimeType = val;
+        }
+        break;
+    }
+  }
+  return out;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
@@ -63,6 +141,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    // Sanitize the config object: only allowed keys with validated types pass
+    // through. abortSignal is injected server-side and must never come from
+    // the client.
+    const sanitizedConfig = config != null && typeof config === 'object'
+      ? sanitizeConfig(config)
+      : {};
+
     const ai = new GoogleGenAI({ apiKey });
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
@@ -72,7 +157,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       response = await ai.models.generateContent({
         model,
         contents,
-        config: { ...config, abortSignal: controller.signal },
+        config: { ...sanitizedConfig, abortSignal: controller.signal },
       });
     } finally {
       clearTimeout(timer);
