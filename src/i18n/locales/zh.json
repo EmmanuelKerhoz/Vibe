@@ -372,7 +372,7 @@
     "appInfo": "查看应用信息和版本",
     "addSection": "向结构中添加段落",
     "removeSection": "从结构中删除段落",
-    "normalizeStructure": "标准化段落名称和顺序",
+    "normalizeStructure": "重组段落为标准歌曲结构：前奏 → 主歌/预副歌/副歌 → 桥段 → 尾奏",
     "loadSession": "恢复上次编辑会话",
     "pasteLyrics": "导入和分析现有歌词",
     "generateSong": "用 AI 生成新歌曲",

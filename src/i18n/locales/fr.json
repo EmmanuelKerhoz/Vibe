@@ -390,7 +390,7 @@
     "appInfo": "Voir les informations et la version de l’application",
     "addSection": "Ajouter une section à la structure",
     "removeSection": "Supprimer une section de la structure",
-    "normalizeStructure": "Standardiser les noms et l’ordre des sections",
+    "normalizeStructure": "Réorganiser les sections selon la structure standard : Intro → Couplet/Pré-refrain/Refrain → Pont → Outro",
     "loadSession": "Restaurer votre session d’édition précédente",
     "pasteLyrics": "Importer et analyser des paroles existantes",
     "generateSong": "Générer une nouvelle chanson avec l’IA",

@@ -372,7 +372,7 @@
     "appInfo": "App-Informationen und Version anzeigen",
     "addSection": "Abschnitt zur Struktur hinzufügen",
     "removeSection": "Abschnitt aus der Struktur entfernen",
-    "normalizeStructure": "Abschnittsnamen und -reihenfolge standardisieren",
+    "normalizeStructure": "Abschnitte in Standardstruktur reorganisieren: Intro → Strophe/Pre-Chorus/Refrain → Bridge → Outro",
     "loadSession": "Vorherige Bearbeitungssitzung wiederherstellen",
     "pasteLyrics": "Vorhandene Liedtexte importieren und analysieren",
     "generateSong": "Neuen Song mit KI generieren",

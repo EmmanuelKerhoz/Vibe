@@ -397,7 +397,7 @@
     "appInfo": "앱 정보와 버전 보기",
     "addSection": "구성에 섹션 추가",
     "removeSection": "구성에서 섹션 제거",
-    "normalizeStructure": "섹션 이름과 순서를 표준화",
+    "normalizeStructure": "표준 곡 구조로 재정렬: Intro → Verse/Pre-Chorus/Chorus → Bridge → Outro",
     "loadSession": "이전 편집 세션 복원",
     "pasteLyrics": "기존 가사를 가져와 분석",
     "generateSong": "AI로 새 곡 생성",

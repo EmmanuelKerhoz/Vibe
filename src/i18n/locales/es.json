@@ -372,7 +372,7 @@
     "appInfo": "Ver información y versión de la aplicación",
     "addSection": "Añadir sección a la estructura",
     "removeSection": "Eliminar sección de la estructura",
-    "normalizeStructure": "Estandarizar nombres y orden de secciones",
+    "normalizeStructure": "Reorganizar secciones en estructura estándar: Intro → Verso/Pre-estribillo/Estribillo → Puente → Outro",
     "loadSession": "Restaurar tu sesión de edición anterior",
     "pasteLyrics": "Importar y analizar letras existentes",
     "generateSong": "Generar una nueva canción con IA",
