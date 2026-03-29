@@ -397,7 +397,7 @@
     "appInfo": "View app info and version",
     "addSection": "Add section to structure",
     "removeSection": "Remove section from structure",
-    "normalizeStructure": "Standardize section names and order",
+    "normalizeStructure": "Reorganize sections into standard song structure: Intro → Verse/Pre-Chorus/Chorus → Bridge → Outro",
     "loadSession": "Restore your previous editing session",
     "pasteLyrics": "Import and analyze existing lyrics",
     "generateSong": "Generate a new song with AI",

@@ -146,6 +146,21 @@ export const StructureSidebar = React.memo(function StructureSidebar({
             <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
               <div>
                 <div className="space-y-2">
+                  <Tooltip title={t.tooltips.normalizeStructure}>
+                    <div className="lcars-gradient-outline" style={{ borderRadius: actionButtonRadius, width: '100%' }}>
+                      <Button
+                        onClick={normalizeStructure}
+                        disabled={structure.length === 0 || isGenerating}
+                        variant="outlined" fullWidth
+                        startIcon={<AlignLeft className="w-3.5 h-3.5" />}
+                        className="ux-interactive"
+                        style={{ fontSize: '10px', padding: '4px 0', borderRadius: actionButtonRadius }}
+                      >
+                        {t.structure.normalize}
+                      </Button>
+                    </div>
+                  </Tooltip>
+
                   <div className="flex flex-col gap-1.5">
                     {structure.map((item, idx) => {
                       // Skip chorus items already rendered inside a Pre-Chorus group
@@ -287,21 +302,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                       buttonTitle={t.tooltips.addSection}
                     />
                   </div>
-
-                  <Tooltip title={t.tooltips.normalizeStructure}>
-                    <div className="lcars-gradient-outline mt-4" style={{ borderRadius: actionButtonRadius, width: '100%' }}>
-                      <Button
-                        onClick={normalizeStructure}
-                        disabled={structure.length === 0 || isGenerating}
-                        variant="outlined" fullWidth
-                        startIcon={<AlignLeft className="w-3.5 h-3.5" />}
-                        className="ux-interactive"
-                        style={{ fontSize: '10px', padding: '4px 0', borderRadius: actionButtonRadius }}
-                      >
-                        {t.structure.normalize}
-                      </Button>
-                    </div>
-                  </Tooltip>
                 </div>
               </div>
             </div>

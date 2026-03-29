@@ -372,7 +372,7 @@
     "appInfo": "Ver informações e versão do aplicativo",
     "addSection": "Adicionar seção à estrutura",
     "removeSection": "Remover seção da estrutura",
-    "normalizeStructure": "Padronizar nomes e ordem das seções",
+    "normalizeStructure": "Reorganizar seções na estrutura padrão: Intro → Verso/Pré-refrão/Refrão → Ponte → Outro",
     "loadSession": "Restaurar sua sessão de edição anterior",
     "pasteLyrics": "Importar e analisar letras existentes",
     "generateSong": "Gerar uma nova música com IA",
