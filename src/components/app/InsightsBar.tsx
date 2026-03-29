@@ -261,7 +261,7 @@ export const InsightsBar = React.memo(function InsightsBar({
 
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
 
-  const detectedLanguageList = detectedDisplays.map(d => `${d.sign} ${d.label}`).join(', ');
+  const detectedLanguageList = detectedDisplays.slice(0, 3).map(d => `${d.sign} ${d.label}`).join(', ');
 
   const showBanner = !!adaptationProgress &&
     adaptationProgress.active !== 'idle' &&
@@ -384,12 +384,7 @@ export const InsightsBar = React.memo(function InsightsBar({
                     </>)
                   : <ScanText className="w-3 h-3" aria-hidden="true" />}
                 {detectedDisplays.length > 0
-                  ? detectedDisplays.map((d, i) => (
-                      <span key={d.label} className="inline-flex items-center gap-0.5">
-                        {i > 0 && <span className="text-zinc-600 mx-0.5">,</span>}
-                        <EmojiSign sign={d.sign} /><span className="hidden sm:inline">{d.label}</span>
-                      </span>
-                    ))
+                  ? <><EmojiSign sign={detectedDisplays[0]!.sign} /><span className="hidden sm:inline">{detectedDisplays[0]!.label}</span></>
                   : <><EmojiSign sign="🌐" /><span className="hidden sm:inline">{t.editor.detect ?? 'Detect'}</span></>}
               </button>
             </Tooltip>

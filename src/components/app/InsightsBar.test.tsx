@@ -13,6 +13,11 @@ vi.mock('../ui/Tooltip', () => ({
   ),
 }));
 
+const songContextConfig = {
+  detectedLanguages: ['English'] as string[],
+  songLanguage: 'English',
+};
+
 vi.mock('../../contexts/SongContext', () => ({
   useSongContext: () => ({
     song: [
@@ -30,8 +35,8 @@ vi.mock('../../contexts/SongContext', () => ({
         }],
       },
     ],
-    songLanguage: 'English',
-    detectedLanguages: ['English'],
+    songLanguage: songContextConfig.songLanguage,
+    detectedLanguages: songContextConfig.detectedLanguages,
     lineLanguages: {},
   }),
 }));
@@ -98,5 +103,90 @@ describe('InsightsBar', () => {
     expect(tooltips[6]!.getAttribute('data-title')).toContain('Analyze');
     // Eighth should be similarity
     expect(tooltips[7]!.getAttribute('data-title')).toContain('Compare');
+  });
+
+  it('detect button shows only the primary (first) detected language', () => {
+    songContextConfig.detectedLanguages = ['French', 'English', 'Spanish', 'Portuguese'];
+    songContextConfig.songLanguage = 'French';
+
+    const webSimilarityIndex: WebSimilarityIndex = {
+      candidates: [],
+      status: 'idle',
+      lastUpdated: null,
+      error: null,
+    };
+
+    render(
+      <LanguageProvider>
+        <InsightsBar
+          targetLanguage="English"
+          setTargetLanguage={vi.fn()}
+          isAdaptingLanguage={false}
+          isDetectingLanguage={false}
+          isAnalyzing={false}
+          editMode="section"
+          switchEditMode={vi.fn()}
+          webSimilarityIndex={webSimilarityIndex}
+          webBadgeLabel={null}
+          libraryCount={0}
+          adaptSongLanguage={vi.fn()}
+          detectLanguage={vi.fn()}
+          analyzeCurrentSong={vi.fn()}
+          setIsSimilarityModalOpen={vi.fn()}
+        />
+      </LanguageProvider>,
+    );
+
+    const detectTooltip = screen.getAllByTestId('tooltip')[5]!;
+    const tooltipTitle = detectTooltip.getAttribute('data-title') ?? '';
+
+    // Tooltip should list at most 3 detected languages
+    const langMatches = tooltipTitle.match(/French|English|Spanish|Portuguese/g) ?? [];
+    expect(langMatches.length).toBeLessThanOrEqual(3);
+    expect(langMatches).toContain('French');
+
+    // Button content: only the primary language label should appear (not all 4)
+    const detectButton = detectTooltip.querySelector('button')!;
+    expect(detectButton.textContent).toContain('French');
+    expect(detectButton.textContent).not.toContain('Portuguese');
+  });
+
+  it('detect tooltip shows at most 3 detected languages', () => {
+    songContextConfig.detectedLanguages = ['French', 'English', 'Spanish'];
+    songContextConfig.songLanguage = 'French';
+
+    const webSimilarityIndex: WebSimilarityIndex = {
+      candidates: [],
+      status: 'idle',
+      lastUpdated: null,
+      error: null,
+    };
+
+    render(
+      <LanguageProvider>
+        <InsightsBar
+          targetLanguage="English"
+          setTargetLanguage={vi.fn()}
+          isAdaptingLanguage={false}
+          isDetectingLanguage={false}
+          isAnalyzing={false}
+          editMode="section"
+          switchEditMode={vi.fn()}
+          webSimilarityIndex={webSimilarityIndex}
+          webBadgeLabel={null}
+          libraryCount={0}
+          adaptSongLanguage={vi.fn()}
+          detectLanguage={vi.fn()}
+          analyzeCurrentSong={vi.fn()}
+          setIsSimilarityModalOpen={vi.fn()}
+        />
+      </LanguageProvider>,
+    );
+
+    const detectTooltip = screen.getAllByTestId('tooltip')[5]!;
+    const tooltipTitle = detectTooltip.getAttribute('data-title') ?? '';
+    expect(tooltipTitle).toContain('French');
+    expect(tooltipTitle).toContain('English');
+    expect(tooltipTitle).toContain('Spanish');
   });
 });
