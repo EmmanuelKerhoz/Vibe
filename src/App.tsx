@@ -7,7 +7,6 @@ import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
 import { useSimilarityEngine } from './hooks/useSimilarityEngine';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
-import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
 import { useMobileLayout } from './hooks/useMobileLayout';
 import { useMobileInitPanels } from './hooks/useMobileInitPanels';
@@ -23,6 +22,7 @@ import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
 import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
+import { VersionProvider, useVersionContext } from './contexts/VersionContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -35,7 +35,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.23.0
+// v3.23.1
 const AppModals = lazy(() =>
   import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
 );
@@ -117,6 +117,8 @@ function AppInnerContent() {
     hasApiKey, importInputRef, markupTextareaRef,
   } = appState;
 
+  const { versions, rollbackToVersion, handleRequestVersionName } = useVersionContext();
+
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
@@ -145,9 +147,6 @@ function AppInnerContent() {
     replaceStateWithoutHistory, clearHistory,
   });
 
-  const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionManager({
-    updateSongAndStructureWithHistory, setIsVersionsModalOpen, setPromptModal,
-  });
   const { playAudioFeedback } = useAudioFeedback(audioFeedback);
   const { scrollToSection, handleMarkupToggle, switchEditMode, markupDirection } = useMarkupEditor({
     editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
@@ -432,7 +431,7 @@ function AppInnerContent() {
                     />
                   ) : (
                     <ErrorBoundary>
-                      <Suspense fallback={<LazyFallback />}> 
+                      <Suspense fallback={<LazyFallback />}>
                         <MusicalTab hasApiKey={hasApiKey} />
                       </Suspense>
                     </ErrorBoundary>
@@ -489,7 +488,7 @@ function AppInnerContent() {
         )}
 
         <ErrorBoundary>
-          <Suspense fallback={<LazyFallback />}> 
+          <Suspense fallback={<LazyFallback />}>
             <AppModals
               theme={theme} setTheme={setTheme}
               audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
@@ -542,16 +541,11 @@ function AppProviders() {
   } = useSongContext();
   const { isGenerating, clearSelection } = useComposerContext();
   const { appState, uiStateForProvider } = useAppStateContext();
-  const { setIsVersionsModalOpen, setPromptModal } = appState;
+
+  const { saveVersion } = useVersionContext();
 
   const isGeneratingRef = useRef(isGenerating);
   isGeneratingRef.current = isGenerating;
-
-  const { saveVersion } = useVersionManager({
-    updateSongAndStructureWithHistory,
-    setIsVersionsModalOpen,
-    setPromptModal,
-  });
 
   return (
     <ModalProvider uiState={uiStateForProvider}>
@@ -576,7 +570,9 @@ function AppInner() {
       <DragProvider>
         <SongProvider>
           <ComposerProvider>
-            <AppProviders />
+            <VersionProvider>
+              <AppProviders />
+            </VersionProvider>
           </ComposerProvider>
         </SongProvider>
       </DragProvider>
