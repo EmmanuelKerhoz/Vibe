@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
+import { AppEditorZone } from './components/app/AppEditorZone';
+import { AppModalLayer } from './components/app/AppModalLayer';
 import { useSongEditor } from './hooks/useSongEditor';
 import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
@@ -12,7 +14,6 @@ import { useMobileLayout } from './hooks/useMobileLayout';
 import { useMobileInitPanels } from './hooks/useMobileInitPanels';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSessionActions } from './hooks/useSessionActions';
-import { useImportHandlers } from './hooks/useImportHandlers';
 import { useLibraryActions } from './hooks/useLibraryActions';
 import { useDerivedAppState } from './hooks/useDerivedAppState';
 import { useAppHandlers } from './hooks/useAppHandlers';
@@ -27,21 +28,13 @@ import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
 import { StatusBar } from './components/app/StatusBar';
-import { InsightsBar } from './components/app/InsightsBar';
-import { LyricsView } from './components/app/LyricsView';
 import { SuggestionsPanel } from './components/app/SuggestionsPanel';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.23.2
-const AppModals = lazy(() =>
-  import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
-);
-const MusicalTab = lazy(() =>
-  import('./components/app/musical/MusicalTab').then(m => ({ default: m.MusicalTab }))
-);
+// v3.25.1
 
 function LazyFallback() {
   const { t } = useTranslation();
@@ -153,8 +146,8 @@ function AppInnerContent() {
     updateSongAndStructureWithHistory,
   });
 
-  const isGeneratingRef = useRef(isGenerating);
-  isGeneratingRef.current = isGenerating;
+  // NOTE: isGeneratingRef lives authoritatively in AppProviders (wired to AnalysisProvider).
+  // No local ref needed here — removed orphan copy that was never consumed.
 
   const {
     canPasteLyrics,
@@ -381,64 +374,47 @@ function AppInnerContent() {
               isAnalyzing={isAnalyzing}
             />
 
-            {activeTab === 'lyrics' && song.length > 0 && (
-              <InsightsBar
-                targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
-                isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
-                isAnalyzing={isAnalyzing}
-                editMode={editMode} switchEditMode={switchEditMode}
-                webSimilarityIndex={webSimilarityIndex}
-                webBadgeLabel={webBadgeLabel}
-                libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
-                detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong}
-                setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-                adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
-                showTranslationFeatures={showTranslationFeatures}
-              />
-            )}
-
-            <div
-              className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${
-                isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'
-              }`}
-              style={isMobileOrTablet ? { paddingBottom: 'calc(60px + var(--sab))' } : undefined}
-            >
-              <div className="lyrics-editor-zoom-wrapper">
-                <div className="lyrics-editor-zoom">
-                  {activeTab === 'lyrics' ? (
-                    <LyricsView
-                      isAnalyzing={isAnalyzing}
-                      isAdaptingLanguage={isAdaptingLanguage}
-                      sectionTargetLanguages={sectionTargetLanguages}
-                      onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
-                      adaptSectionLanguage={adaptSectionLanguage}
-                      adaptLineLanguage={adaptLineLanguage}
-                      adaptingLineIds={adaptingLineIds}
-                      playAudioFeedback={playAudioFeedback}
-                      handleDrop={handleDrop}
-                      handleLineDragStart={handleLineDragStart}
-                      handleLineDrop={handleLineDrop}
-                      editMode={editMode} setEditMode={setEditMode}
-                      markupText={markupText} setMarkupText={setMarkupText}
-                      markupTextareaRef={markupTextareaRef}
-                      markupDirection={markupDirection}
-                      canPasteLyrics={canPasteLyrics}
-                      targetLanguage={targetLanguage}
-                      onOpenLibrary={handleOpenSaveToLibraryModal}
-                      onPasteLyrics={handleOpenPasteModal}
-                      onGenerateSong={handleGlobalRegenerate}
-                      showTranslationFeatures={showTranslationFeatures}
-                    />
-                  ) : (
-                    <ErrorBoundary>
-                      <Suspense fallback={<LazyFallback />}>
-                        <MusicalTab hasApiKey={hasApiKey} />
-                      </Suspense>
-                    </ErrorBoundary>
-                  )}
-                </div>
-              </div>
-            </div>
+            <AppEditorZone
+              activeTab={activeTab}
+              isMobileOrTablet={isMobileOrTablet}
+              hasApiKey={hasApiKey}
+              songHasContent={song.length > 0}
+              targetLanguage={targetLanguage}
+              setTargetLanguage={setTargetLanguage}
+              isAdaptingLanguage={isAdaptingLanguage}
+              isDetectingLanguage={isDetectingLanguage}
+              isAnalyzing={isAnalyzing}
+              editMode={editMode}
+              switchEditMode={switchEditMode}
+              webSimilarityIndex={webSimilarityIndex}
+              webBadgeLabel={webBadgeLabel}
+              libraryCount={libraryCount}
+              adaptSongLanguage={adaptSongLanguage}
+              detectLanguage={detectLanguage}
+              analyzeCurrentSong={analyzeCurrentSong}
+              setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+              adaptationProgress={adaptationProgress}
+              adaptationResult={adaptationResult}
+              showTranslationFeatures={showTranslationFeatures}
+              playAudioFeedback={playAudioFeedback}
+              handleDrop={handleDrop}
+              handleLineDragStart={handleLineDragStart}
+              handleLineDrop={handleLineDrop}
+              setEditMode={setEditMode}
+              markupText={markupText}
+              setMarkupText={setMarkupText}
+              markupTextareaRef={markupTextareaRef}
+              markupDirection={markupDirection}
+              canPasteLyrics={canPasteLyrics}
+              onOpenLibrary={handleOpenSaveToLibraryModal}
+              onPasteLyrics={handleOpenPasteModal}
+              onGenerateSong={handleGlobalRegenerate}
+              sectionTargetLanguages={sectionTargetLanguages}
+              onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
+              adaptSectionLanguage={adaptSectionLanguage}
+              adaptLineLanguage={adaptLineLanguage}
+              adaptingLineIds={adaptingLineIds}
+            />
           </div>
 
           {isSuggestionsOpen ? (
@@ -487,46 +463,7 @@ function AppInnerContent() {
           />
         )}
 
-        <ErrorBoundary>
-          <Suspense fallback={<LazyFallback />}>
-            <AppModals
-              theme={theme} setTheme={setTheme}
-              audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-              uiScale={uiScale} setUiScale={setUiScale}
-              defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
-              showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
-              hasExistingWork={hasExistingWork}
-              handleImportChooseFile={handleImportChooseFile}
-              onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
-              handleImportInputChange={handleImportInputChange}
-              exportSong={exportSong}
-              pastedText={pastedText} setPastedText={setPastedText}
-              isAnalyzing={isAnalyzing}
-              isAnalyzingTheme={isAnalyzingTheme}
-              importProgress={importProgress}
-              analyzePastedLyrics={analyzePastedLyrics}
-              analysisReport={analysisReport} analysisSteps={analysisSteps}
-              appliedAnalysisItems={appliedAnalysisItems}
-              selectedAnalysisItems={selectedAnalysisItems}
-              isApplyingAnalysis={isApplyingAnalysis}
-              toggleAnalysisItemSelection={toggleAnalysisItemSelection}
-              applyAnalysisItem={applyAnalysisItem}
-              applySelectedAnalysisItems={applySelectedAnalysisItems}
-              clearAppliedAnalysisItems={clearAppliedAnalysisItems}
-              versions={versions} rollbackToVersion={rollbackToVersion}
-              similarityMatches={similarityMatches} libraryCount={libraryCount}
-              webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
-              handleDeleteLibraryAsset={handleDeleteLibraryAsset}
-              handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
-              title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
-              handleLoadLibraryAsset={handleLoadLibraryAsset}
-              handlePurgeLibrary={handlePurgeLibrary}
-              saveVersion={saveVersion}
-              handleRequestVersionName={handleRequestVersionName}
-              resetSong={resetSong}
-            />
-          </Suspense>
-        </ErrorBoundary>
+        <AppModalLayer />
       </AppShell>
     </>
   );
@@ -544,6 +481,8 @@ function AppProviders() {
 
   const { saveVersion } = useVersionContext();
 
+  // Authoritative isGeneratingRef — wired to AnalysisProvider.
+  // Single source of truth; no copy in AppInnerContent.
   const isGeneratingRef = useRef(isGenerating);
   isGeneratingRef.current = isGenerating;
 
