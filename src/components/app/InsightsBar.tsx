@@ -8,6 +8,7 @@ import { SUPPORTED_ADAPTATION_LANGUAGES, getLanguageDisplay } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 import type { EditMode } from '../../types';
+import { useEditorContext } from '../../contexts/EditorContext';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
@@ -18,8 +19,6 @@ interface InsightsBarProps {
   isAdaptingLanguage: boolean;
   isDetectingLanguage: boolean;
   isAnalyzing: boolean;
-  editMode: EditMode;
-  switchEditMode: (target: EditMode) => void;
   webSimilarityIndex: ReturnType<typeof useSimilarityEngine>['index'];
   webBadgeLabel: string | null;
   libraryCount: number;
@@ -227,8 +226,6 @@ export const InsightsBar = React.memo(function InsightsBar({
   isAdaptingLanguage,
   isDetectingLanguage,
   isAnalyzing,
-  editMode,
-  switchEditMode,
   webSimilarityIndex,
   webBadgeLabel,
   libraryCount,
@@ -242,6 +239,7 @@ export const InsightsBar = React.memo(function InsightsBar({
   adaptationResult,
   showTranslationFeatures = true,
 }: InsightsBarProps) {
+  const { editMode, switchEditMode } = useEditorContext();
   const { song, songLanguage, detectedLanguages } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { sectionCount, wordCount, charCount } = useAppKpis();

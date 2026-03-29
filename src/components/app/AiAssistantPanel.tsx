@@ -3,6 +3,7 @@ import { Bot, X, Loader2 } from '../ui/icons';
 import { useTranslation } from '../../i18n';
 import { generateContentWithRetry } from '../../utils/aiUtils';
 import { AI_MODEL_NAME } from '../../utils/aiUtils';
+import { useEditorContext } from '../../contexts/EditorContext';
 import { useModalState } from '../../contexts/ModalContext';
 import knowledgeEn from '../../knowledge/en.md?raw';
 import knowledgeFr from '../../knowledge/fr.md?raw';
@@ -29,7 +30,7 @@ export function AiAssistantPanel({ onClose }: Props) {
   const { t, language } = useTranslation();
   const { uiState } = useModalState();
   const currentPage = uiState.activeTab;
-  const editMode = uiState.editMode;
+  const { editMode } = useEditorContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);

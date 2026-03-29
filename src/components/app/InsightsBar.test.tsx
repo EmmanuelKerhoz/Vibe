@@ -5,6 +5,11 @@ import { LanguageProvider } from '../../i18n';
 import type { WebSimilarityIndex } from '../../types/webSimilarity';
 import { InsightsBar } from './InsightsBar';
 
+const editorContextState = vi.hoisted(() => ({
+  editMode: 'section' as 'text' | 'markdown' | 'section' | 'phonetic',
+  switchEditMode: vi.fn(),
+}));
+
 vi.mock('../ui/Tooltip', () => ({
   Tooltip: ({ title, children }: { title: string | React.ReactElement; children: React.ReactElement }) => (
     <div data-testid="tooltip" data-title={typeof title === 'string' ? title : '[react-element]'}>
@@ -47,6 +52,10 @@ vi.mock('../../contexts/ComposerContext', () => ({
   }),
 }));
 
+vi.mock('../../contexts/EditorContext', () => ({
+  useEditorContext: () => editorContextState,
+}));
+
 vi.mock('../../hooks/useAppKpis', () => ({
   useAppKpis: () => ({
     sectionCount: 1,
@@ -74,8 +83,6 @@ describe('InsightsBar', () => {
           isAdaptingLanguage={false}
           isDetectingLanguage={false}
           isAnalyzing={false}
-          editMode="section"
-          switchEditMode={vi.fn()}
           webSimilarityIndex={webSimilarityIndex}
           webBadgeLabel={null}
           libraryCount={0}
@@ -124,8 +131,6 @@ describe('InsightsBar', () => {
           isAdaptingLanguage={false}
           isDetectingLanguage={false}
           isAnalyzing={false}
-          editMode="section"
-          switchEditMode={vi.fn()}
           webSimilarityIndex={webSimilarityIndex}
           webBadgeLabel={null}
           libraryCount={0}
@@ -170,8 +175,6 @@ describe('InsightsBar', () => {
           isAdaptingLanguage={false}
           isDetectingLanguage={false}
           isAnalyzing={false}
-          editMode="section"
-          switchEditMode={vi.fn()}
           webSimilarityIndex={webSimilarityIndex}
           webBadgeLabel={null}
           libraryCount={0}

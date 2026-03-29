@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
-import type { EditMode } from '../types';
-
 // ── Minimal UIState interface ─────────────────────────────────────────────────
 export interface UIStateBag {
   setIsAboutOpen: (v: boolean) => void;
@@ -19,7 +17,6 @@ export interface UIStateBag {
   setIsPasteModalOpen: (v: boolean) => void;
   setIsAnalysisModalOpen: (v: boolean) => void;
   setIsSearchReplaceOpen: (v: boolean) => void;
-  setEditMode: (v: EditMode) => void;
   isAboutOpen: boolean;
   isSettingsOpen: boolean;
   apiErrorModal: { open: boolean; message: string };
@@ -42,10 +39,6 @@ export interface UIStateBag {
   setIsStructureOpen: (v: boolean) => void;
   isLeftPanelOpen: boolean;
   setIsLeftPanelOpen: (v: boolean) => void;
-  editMode: EditMode;
-  markupText: string;
-  setMarkupText: (v: string) => void;
-  markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
   importInputRef: React.RefObject<HTMLInputElement | null>;
 }
 

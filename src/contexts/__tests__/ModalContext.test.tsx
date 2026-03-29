@@ -20,7 +20,6 @@ const createMockUIState = (): UIStateBag => ({
   setIsPasteModalOpen: vi.fn(),
   setIsAnalysisModalOpen: vi.fn(),
   setIsSearchReplaceOpen: vi.fn(),
-  setEditMode: vi.fn(),
   isAboutOpen: false,
   isSettingsOpen: false,
   apiErrorModal: { open: false, message: '' },
@@ -43,10 +42,6 @@ const createMockUIState = (): UIStateBag => ({
   setIsStructureOpen: vi.fn(),
   isLeftPanelOpen: false,
   setIsLeftPanelOpen: vi.fn(),
-  editMode: 'section' as const,
-  markupText: '',
-  setMarkupText: vi.fn(),
-  markupTextareaRef: createRef<HTMLTextAreaElement>(),
   importInputRef: createRef<HTMLInputElement>(),
 });
 

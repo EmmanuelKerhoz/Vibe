@@ -7,6 +7,16 @@ import { RefsProvider } from '../../contexts/RefsContext';
 import type { Section } from '../../types';
 import { LyricsView } from './LyricsView';
 
+const editorContextState = vi.hoisted(() => ({
+  editMode: 'section' as 'text' | 'markdown' | 'section' | 'phonetic',
+  setEditMode: vi.fn(),
+  markupText: '',
+  setMarkupText: vi.fn(),
+  markupTextareaRef: { current: null } as React.RefObject<HTMLTextAreaElement | null>,
+  markupDirection: 'ltr' as const,
+  playAudioFeedback: vi.fn(),
+}));
+
 const mockUpdateState = vi.fn();
 const mockSong: Section[] = [];
 
@@ -46,8 +56,14 @@ vi.mock('../../contexts/ComposerContext', () => ({
   }),
 }));
 
+vi.mock('../../contexts/EditorContext', () => ({
+  useEditorContext: () => editorContextState,
+}));
+
 describe('LyricsView empty state', () => {
   it('offers quick actions for library, paste, and generation', () => {
+    editorContextState.editMode = 'section';
+    editorContextState.markupText = '';
     const onOpenLibrary = vi.fn();
     const onPasteLyrics = vi.fn();
     const onGenerateSong = vi.fn();
@@ -58,15 +74,9 @@ describe('LyricsView empty state', () => {
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
-              playAudioFeedback={() => {}}
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="section"
-              setEditMode={() => {}}
-              markupText=""
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={true}
               onOpenLibrary={onOpenLibrary}
               onPasteLyrics={onPasteLyrics}
@@ -87,21 +97,17 @@ describe('LyricsView empty state', () => {
   });
 
   it('disables the paste action when there is no text available to paste', () => {
+    editorContextState.editMode = 'section';
+    editorContextState.markupText = '';
     render(
       <DragProvider>
         <LanguageProvider>
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
-              playAudioFeedback={() => {}}
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="section"
-              setEditMode={() => {}}
-              markupText=""
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={false}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
@@ -116,21 +122,17 @@ describe('LyricsView empty state', () => {
   });
 
   it('uses the shared gradient container surface in markup mode', () => {
+    editorContextState.editMode = 'markdown';
+    editorContextState.markupText = '[Verse]\nHello';
     const { container } = render(
       <DragProvider>
         <LanguageProvider>
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
-              playAudioFeedback={() => {}}
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="markdown"
-              setEditMode={() => {}}
-              markupText="[Verse]\nHello"
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
@@ -145,6 +147,8 @@ describe('LyricsView empty state', () => {
   });
 
   it('renders phonetic mode with IPA output and hint', () => {
+    editorContextState.editMode = 'phonetic';
+    editorContextState.markupText = '';
     mockSong.length = 0;
     mockSong.push({
       id: 'section-1',
@@ -166,15 +170,9 @@ describe('LyricsView empty state', () => {
         <LanguageProvider>
           <LyricsView
             isAnalyzing={false}
-            playAudioFeedback={() => {}}
             handleDrop={() => {}}
             handleLineDragStart={() => {}}
             handleLineDrop={() => {}}
-            editMode="phonetic"
-            setEditMode={() => {}}
-            markupText=""
-            setMarkupText={() => {}}
-            markupTextareaRef={{ current: null }}
             canPasteLyrics={true}
             onOpenLibrary={() => {}}
             onPasteLyrics={() => {}}
@@ -189,6 +187,8 @@ describe('LyricsView empty state', () => {
   });
 
   it('passes section editing handlers directly to rendered sections', () => {
+    editorContextState.editMode = 'section';
+    editorContextState.markupText = '';
     const song: Section[] = [{
       id: 'section-1',
       name: 'Verse',
@@ -215,15 +215,9 @@ describe('LyricsView empty state', () => {
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
-              playAudioFeedback={() => {}}
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="section"
-              setEditMode={() => {}}
-              markupText=""
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
@@ -259,6 +253,8 @@ describe('LyricsView empty state', () => {
   });
 
   it('shows Free Verse first in the section rhyme scheme selector', () => {
+    editorContextState.editMode = 'section';
+    editorContextState.markupText = '';
     mockSong.length = 0;
     mockSong.push({
       id: 'section-1',
@@ -282,15 +278,9 @@ describe('LyricsView empty state', () => {
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
-              playAudioFeedback={() => {}}
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="section"
-              setEditMode={() => {}}
-              markupText=""
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}

@@ -7,7 +7,6 @@ import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
 import { useSimilarityEngine } from './hooks/useSimilarityEngine';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
-import { useMarkupEditor } from './hooks/useMarkupEditor';
 import { useMobileLayout } from './hooks/useMobileLayout';
 import { useMobileInitPanels } from './hooks/useMobileInitPanels';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -17,11 +16,11 @@ import { useLibraryActions } from './hooks/useLibraryActions';
 import { useDerivedAppState } from './hooks/useDerivedAppState';
 import { useAppHandlers } from './hooks/useAppHandlers';
 import { useModalHandlers } from './hooks/useModalHandlers';
-import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
 import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
+import { EditorProvider, useEditorContext } from './contexts/EditorContext';
 import { VersionProvider, useVersionContext } from './contexts/VersionContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
@@ -35,7 +34,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.23.1
+// v3.23.3
 const AppModals = lazy(() =>
   import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
 );
@@ -99,7 +98,6 @@ function AppInnerContent() {
     showTranslationFeatures, setShowTranslationFeatures,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount,
     libraryAssets, setLibraryAssets, isSavingToLibrary, setIsSavingToLibrary,
-    editMode, setEditMode, markupText, setMarkupText,
     isAboutOpen, setIsAboutOpen, isSettingsOpen, setIsSettingsOpen,
     apiErrorModal, setApiErrorModal,
     isImportModalOpen, setIsImportModalOpen, isExportModalOpen, setIsExportModalOpen,
@@ -114,10 +112,11 @@ function AppInnerContent() {
     isAnalysisModalOpen, setIsAnalysisModalOpen,
     isSearchReplaceOpen, setIsSearchReplaceOpen,
     setHasSavedSession, isSessionHydrated, setIsSessionHydrated,
-    hasApiKey, importInputRef, markupTextareaRef,
+    hasApiKey, importInputRef,
   } = appState;
 
-  const { versions, rollbackToVersion, handleRequestVersionName } = useVersionContext();
+  const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionContext();
+  const { editMode, setEditMode, markupText, scrollToSection, switchEditMode, playAudioFeedback } = useEditorContext();
 
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
@@ -145,12 +144,6 @@ function AppInnerContent() {
     genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
     replaceStateWithoutHistory, clearHistory,
-  });
-
-  const { playAudioFeedback } = useAudioFeedback(audioFeedback);
-  const { scrollToSection, handleMarkupToggle, switchEditMode, markupDirection } = useMarkupEditor({
-    editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
-    updateSongAndStructureWithHistory,
   });
 
   const isGeneratingRef = useRef(isGenerating);
@@ -386,7 +379,6 @@ function AppInnerContent() {
                 targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
                 isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
                 isAnalyzing={isAnalyzing}
-                editMode={editMode} switchEditMode={switchEditMode}
                 webSimilarityIndex={webSimilarityIndex}
                 webBadgeLabel={webBadgeLabel}
                 libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
@@ -414,14 +406,9 @@ function AppInnerContent() {
                       adaptSectionLanguage={adaptSectionLanguage}
                       adaptLineLanguage={adaptLineLanguage}
                       adaptingLineIds={adaptingLineIds}
-                      playAudioFeedback={playAudioFeedback}
                       handleDrop={handleDrop}
                       handleLineDragStart={handleLineDragStart}
                       handleLineDrop={handleLineDrop}
-                      editMode={editMode} setEditMode={setEditMode}
-                      markupText={markupText} setMarkupText={setMarkupText}
-                      markupTextareaRef={markupTextareaRef}
-                      markupDirection={markupDirection}
                       canPasteLyrics={canPasteLyrics}
                       targetLanguage={targetLanguage}
                       onOpenLibrary={handleOpenSaveToLibraryModal}
@@ -569,11 +556,13 @@ function AppInner() {
     <AppStateProvider>
       <DragProvider>
         <SongProvider>
-          <ComposerProvider>
-            <VersionProvider>
-              <AppProviders />
-            </VersionProvider>
-          </ComposerProvider>
+          <EditorProvider>
+            <ComposerProvider>
+              <VersionProvider>
+                <AppProviders />
+              </VersionProvider>
+            </ComposerProvider>
+          </EditorProvider>
         </SongProvider>
       </DragProvider>
     </AppStateProvider>

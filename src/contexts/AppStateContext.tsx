@@ -32,7 +32,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setIsPasteModalOpen: appState.setIsPasteModalOpen,
     setIsAnalysisModalOpen: appState.setIsAnalysisModalOpen,
     setIsSearchReplaceOpen: appState.setIsSearchReplaceOpen,
-    setEditMode: appState.setEditMode,
     isAboutOpen: appState.isAboutOpen,
     isSettingsOpen: appState.isSettingsOpen,
     apiErrorModal: appState.apiErrorModal,
@@ -55,10 +54,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setIsStructureOpen: appState.setIsStructureOpen,
     isLeftPanelOpen: appState.isLeftPanelOpen,
     setIsLeftPanelOpen: appState.setIsLeftPanelOpen,
-    editMode: appState.editMode,
-    markupText: appState.markupText,
-    setMarkupText: appState.setMarkupText,
-    markupTextareaRef: appState.markupTextareaRef,
     importInputRef: appState.importInputRef,
   });
 

@@ -21,7 +21,6 @@ const createParams = (): UIStateBag => ({
   setIsPasteModalOpen: vi.fn(),
   setIsAnalysisModalOpen: vi.fn(),
   setIsSearchReplaceOpen: vi.fn(),
-  setEditMode: vi.fn(),
   isAboutOpen: false,
   isSettingsOpen: true,
   apiErrorModal: { open: false, message: '' },
@@ -44,10 +43,6 @@ const createParams = (): UIStateBag => ({
   setIsStructureOpen: vi.fn(),
   isLeftPanelOpen: false,
   setIsLeftPanelOpen: vi.fn(),
-  editMode: 'section' as const,
-  markupText: 'markup',
-  setMarkupText: vi.fn(),
-  markupTextareaRef: createRef<HTMLTextAreaElement>(),
   importInputRef: createRef<HTMLInputElement>(),
 });
 
@@ -109,29 +104,6 @@ describe('useUIStateForProvider', () => {
       expect(result.current.isAboutOpen).not.toBe(initialModalState.isAboutOpen);
     });
 
-    it('does not recompute when text state changes', () => {
-      const params = createParams();
-      const { result, rerender } = renderHook(currentParams => useUIStateForProvider(currentParams), {
-        initialProps: params,
-      });
-
-      const initialModalFlags = {
-        isAboutOpen: result.current.isAboutOpen,
-        isSettingsOpen: result.current.isSettingsOpen,
-        isImportModalOpen: result.current.isImportModalOpen,
-      };
-
-      // Change text state - modalState should remain stable
-      rerender({
-        ...params,
-        markupText: 'new markup text',
-      });
-
-      expect(result.current.isAboutOpen).toBe(initialModalFlags.isAboutOpen);
-      expect(result.current.isSettingsOpen).toBe(initialModalFlags.isSettingsOpen);
-      expect(result.current.isImportModalOpen).toBe(initialModalFlags.isImportModalOpen);
-    });
-
     it('recomputes when any modal setter changes', () => {
       const params = createParams();
       const { result, rerender } = renderHook(currentParams => useUIStateForProvider(currentParams), {
@@ -163,7 +135,6 @@ describe('useUIStateForProvider', () => {
         activeTab: result.current.activeTab,
         isStructureOpen: result.current.isStructureOpen,
         isLeftPanelOpen: result.current.isLeftPanelOpen,
-        editMode: result.current.editMode,
       };
 
       // Change modal state - layoutState should NOT recompute
@@ -175,7 +146,6 @@ describe('useUIStateForProvider', () => {
       expect(result.current.activeTab).toBe(initialLayoutFlags.activeTab);
       expect(result.current.isStructureOpen).toBe(initialLayoutFlags.isStructureOpen);
       expect(result.current.isLeftPanelOpen).toBe(initialLayoutFlags.isLeftPanelOpen);
-      expect(result.current.editMode).toBe(initialLayoutFlags.editMode);
 
       // Change layout state - layoutState SHOULD recompute
       rerender({
@@ -238,55 +208,6 @@ describe('useUIStateForProvider', () => {
     });
   });
 
-  describe('textState memoization', () => {
-    it('recomputes only when text-related dependencies change', () => {
-      const params = createParams();
-      const { result, rerender } = renderHook(currentParams => useUIStateForProvider(currentParams), {
-        initialProps: params,
-      });
-
-      const initialTextState = {
-        markupText: result.current.markupText,
-      };
-
-      // Change layout state - textState should NOT recompute
-      rerender({
-        ...params,
-        activeTab: 'musical',
-      });
-
-      expect(result.current.markupText).toBe(initialTextState.markupText);
-
-      // Change text state - textState SHOULD recompute
-      rerender({
-        ...params,
-        activeTab: 'musical',
-        markupText: 'new text',
-      });
-
-      expect(result.current.markupText).toBe('new text');
-      expect(result.current.markupText).not.toBe(initialTextState.markupText);
-    });
-
-    it('does not recompute when modal state changes', () => {
-      const params = createParams();
-      const { result, rerender } = renderHook(currentParams => useUIStateForProvider(currentParams), {
-        initialProps: params,
-      });
-
-      const initialMarkupText = result.current.markupText;
-
-      // Change modal state
-      rerender({
-        ...params,
-        isAboutOpen: true,
-        isSettingsOpen: false,
-      });
-
-      expect(result.current.markupText).toBe(initialMarkupText);
-    });
-  });
-
   describe('refs memoization', () => {
     it('recomputes only when ref dependencies change', () => {
       const params = createParams();
@@ -295,7 +216,6 @@ describe('useUIStateForProvider', () => {
       });
 
       const initialRefs = {
-        markupTextareaRef: result.current.markupTextareaRef,
         importInputRef: result.current.importInputRef,
       };
 
@@ -305,16 +225,6 @@ describe('useUIStateForProvider', () => {
         isAboutOpen: true,
       });
 
-      expect(result.current.markupTextareaRef).toBe(initialRefs.markupTextareaRef);
-      expect(result.current.importInputRef).toBe(initialRefs.importInputRef);
-
-      // Change text state - refs should NOT recompute
-      rerender({
-        ...params,
-        markupText: 'new text',
-      });
-
-      expect(result.current.markupTextareaRef).toBe(initialRefs.markupTextareaRef);
       expect(result.current.importInputRef).toBe(initialRefs.importInputRef);
     });
 
@@ -324,21 +234,20 @@ describe('useUIStateForProvider', () => {
         initialProps: params,
       });
 
-      const initialMarkupTextareaRef = result.current.markupTextareaRef;
-
-      const newRef = createRef<HTMLTextAreaElement>();
+      const initialImportInputRef = result.current.importInputRef;
+      const newRef = createRef<HTMLInputElement>();
       rerender({
         ...params,
-        markupTextareaRef: newRef,
+        importInputRef: newRef,
       });
 
-      expect(result.current.markupTextareaRef).toBe(newRef);
-      expect(result.current.markupTextareaRef).not.toBe(initialMarkupTextareaRef);
+      expect(result.current.importInputRef).toBe(newRef);
+      expect(result.current.importInputRef).not.toBe(initialImportInputRef);
     });
   });
 
   describe('memoization independence verification', () => {
-    it('verifies that changing modal state does not affect layout, text, or ref groups', () => {
+    it('verifies that changing modal state does not affect layout or ref groups', () => {
       const params = createParams();
       const { result, rerender } = renderHook(currentParams => useUIStateForProvider(currentParams), {
         initialProps: params,
@@ -349,11 +258,7 @@ describe('useUIStateForProvider', () => {
           activeTab: result.current.activeTab,
           isStructureOpen: result.current.isStructureOpen,
         },
-        text: {
-          markupText: result.current.markupText,
-        },
         refs: {
-          markupTextareaRef: result.current.markupTextareaRef,
           importInputRef: result.current.importInputRef,
         },
       };
@@ -369,12 +274,10 @@ describe('useUIStateForProvider', () => {
       // Verify layout, text, and refs remain unchanged
       expect(result.current.activeTab).toBe(snapshot.layout.activeTab);
       expect(result.current.isStructureOpen).toBe(snapshot.layout.isStructureOpen);
-      expect(result.current.markupText).toBe(snapshot.text.markupText);
-      expect(result.current.markupTextareaRef).toBe(snapshot.refs.markupTextareaRef);
       expect(result.current.importInputRef).toBe(snapshot.refs.importInputRef);
     });
 
-    it('verifies that changing layout state does not affect modal, text, or ref groups', () => {
+    it('verifies that changing layout state does not affect modal or ref groups', () => {
       const params = createParams();
       const { result, rerender } = renderHook(currentParams => useUIStateForProvider(currentParams), {
         initialProps: params,
@@ -385,11 +288,8 @@ describe('useUIStateForProvider', () => {
           isAboutOpen: result.current.isAboutOpen,
           isSettingsOpen: result.current.isSettingsOpen,
         },
-        text: {
-          markupText: result.current.markupText,
-        },
         refs: {
-          markupTextareaRef: result.current.markupTextareaRef,
+          importInputRef: result.current.importInputRef,
         },
       };
 
@@ -403,37 +303,6 @@ describe('useUIStateForProvider', () => {
       // Verify modal, text, and refs remain unchanged
       expect(result.current.isAboutOpen).toBe(snapshot.modal.isAboutOpen);
       expect(result.current.isSettingsOpen).toBe(snapshot.modal.isSettingsOpen);
-      expect(result.current.markupText).toBe(snapshot.text.markupText);
-      expect(result.current.markupTextareaRef).toBe(snapshot.refs.markupTextareaRef);
-    });
-
-    it('verifies that changing text state does not affect modal, layout, or ref groups', () => {
-      const params = createParams();
-      const { result, rerender } = renderHook(currentParams => useUIStateForProvider(currentParams), {
-        initialProps: params,
-      });
-
-      const snapshot = {
-        modal: {
-          isAboutOpen: result.current.isAboutOpen,
-        },
-        layout: {
-          activeTab: result.current.activeTab,
-        },
-        refs: {
-          importInputRef: result.current.importInputRef,
-        },
-      };
-
-      // Change text state
-      rerender({
-        ...params,
-        markupText: 'updated markup',
-      });
-
-      // Verify modal, layout, and refs remain unchanged
-      expect(result.current.isAboutOpen).toBe(snapshot.modal.isAboutOpen);
-      expect(result.current.activeTab).toBe(snapshot.layout.activeTab);
       expect(result.current.importInputRef).toBe(snapshot.refs.importInputRef);
     });
   });

@@ -1,13 +1,13 @@
 import React, { useCallback, useMemo, memo, useRef } from 'react';
 import { ClipboardPaste, FileText, Layout, Library, Loader2, Music, PersonVoice, Sparkles, Type } from '../ui/icons';
 import { Section } from '../../types';
-import type { EditMode } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
 import { MarkupInput } from '../editor/MarkupInput';
 import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
 import { isLinkedChorusSectionName, isLinkedPreChorusPair, isPreChorusSectionName, SECTION_TYPE_OPTIONS } from '../../constants/sections';
+import { useEditorContext } from '../../contexts/EditorContext';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { usePhoneticTranscription } from '../../hooks/usePhoneticTranscription';
@@ -24,16 +24,9 @@ interface LyricsViewProps {
   adaptSectionLanguage?: (sectionId: string, lang: string) => void;
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
   adaptingLineIds?: Set<string>;
-  playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   handleDrop: (targetIndex: number) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
   handleLineDrop: (sectionId: string, lineId: string) => void;
-  editMode: EditMode;
-  setEditMode: (v: EditMode) => void;
-  markupText: string;
-  setMarkupText: (v: string) => void;
-  markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
-  markupDirection?: 'ltr' | 'rtl';
   canPasteLyrics: boolean;
   targetLanguage?: string;
   onOpenLibrary: () => void;
@@ -50,13 +43,21 @@ export const LyricsView = memo(function LyricsView({
   adaptSectionLanguage,
   adaptLineLanguage,
   adaptingLineIds,
-  playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
-  editMode, setEditMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
+  handleDrop, handleLineDragStart, handleLineDrop,
   canPasteLyrics,
   targetLanguage,
   onOpenLibrary, onPasteLyrics, onGenerateSong,
   showTranslationFeatures = true,
 }: LyricsViewProps) {
+  const {
+    editMode,
+    setEditMode,
+    markupText,
+    setMarkupText,
+    markupTextareaRef,
+    markupDirection,
+    playAudioFeedback,
+  } = useEditorContext();
   const { song, rhymeScheme, songLanguage, updateState, updateSongAndStructureWithHistory } = useSongContext();
   const { selectedLineId, isGenerating, isRegeneratingSection, handleLineClick, updateLineText,
     handleLineKeyDown, handleInstructionChange, addInstruction, removeInstruction, regenerateSection,

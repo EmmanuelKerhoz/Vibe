@@ -20,7 +20,6 @@ export const useUIStateForProvider = ({
   setIsPasteModalOpen,
   setIsAnalysisModalOpen,
   setIsSearchReplaceOpen,
-  setEditMode,
   isAboutOpen,
   isSettingsOpen,
   apiErrorModal,
@@ -43,10 +42,6 @@ export const useUIStateForProvider = ({
   setIsStructureOpen,
   isLeftPanelOpen,
   setIsLeftPanelOpen,
-  editMode,
-  markupText,
-  setMarkupText,
-  markupTextareaRef,
   importInputRef,
 }: UseUIStateForProviderParams): UIStateBag => {
   // Modal-related state (15 modals with their state and setters)
@@ -126,8 +121,6 @@ export const useUIStateForProvider = ({
     setIsStructureOpen,
     isLeftPanelOpen,
     setIsLeftPanelOpen,
-    editMode,
-    setEditMode,
   }), [
     activeTab,
     setActiveTab,
@@ -135,25 +128,12 @@ export const useUIStateForProvider = ({
     setIsStructureOpen,
     isLeftPanelOpen,
     setIsLeftPanelOpen,
-    editMode,
-    setEditMode,
-  ]);
-
-  // Text and content state
-  const textState = useMemo(() => ({
-    markupText,
-    setMarkupText,
-  }), [
-    markupText,
-    setMarkupText,
   ]);
 
   // DOM references (stable, but included for completeness)
   const refs = useMemo(() => ({
-    markupTextareaRef,
     importInputRef,
   }), [
-    markupTextareaRef,
     importInputRef,
   ]);
 
@@ -161,12 +141,10 @@ export const useUIStateForProvider = ({
   return useMemo(() => ({
     ...modalState,
     ...layoutState,
-    ...textState,
     ...refs,
   }), [
     modalState,
     layoutState,
-    textState,
     refs,
   ]);
 };
