@@ -47,8 +47,6 @@ export interface UIStateBag {
   setMarkupText: (v: string) => void;
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
   importInputRef: React.RefObject<HTMLInputElement | null>;
-  shouldAutoGenerateTitle: boolean;
-  setShouldAutoGenerateTitle: (v: boolean) => void;
 }
 
 // ── Modal names union ─────────────────────────────────────────────────────────
