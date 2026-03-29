@@ -5,19 +5,57 @@ import { SUPPORTED_UI_LOCALES } from './constants';
 // Re-export legacy alias so existing consumers don't break
 export { SUPPORTED_UI_LOCALES as SUPPORTED_LANGUAGES } from './constants';
 
-const _localeModules = import.meta.glob<Translations>(
+// ---------------------------------------------------------------------------
+// Optimized glossary architecture: lazy-load locale files on-demand
+// ---------------------------------------------------------------------------
+const _localeLoaders = import.meta.glob<Translations>(
   './locales/*.json',
-  { eager: true, import: 'default' },
+  { import: 'default' },
 );
-const locales: Record<string, Translations> = {};
-for (const [path, locale] of Object.entries(_localeModules)) {
-  const match = path.match(/\/([A-Za-z0-9-]+)\.json$/);
-  if (match?.[1]) locales[match[1].toLowerCase()] = locale;
+
+// Cache for loaded locales to avoid re-fetching
+const localeCache: Record<string, Translations> = {};
+
+// Async loader function that returns a promise for a locale
+async function loadLocale(lang: string): Promise<Translations | null> {
+  // Check cache first
+  if (localeCache[lang]) {
+    return localeCache[lang];
+  }
+
+  // Find matching loader
+  const loaderKey = Object.keys(_localeLoaders).find(path => {
+    const match = path.match(/\/([A-Za-z0-9-]+)\.json$/);
+    return match?.[1]?.toLowerCase() === lang.toLowerCase();
+  });
+
+  if (!loaderKey) {
+    return null;
+  }
+
+  try {
+    const loader = _localeLoaders[loaderKey];
+    if (!loader) {
+      return null;
+    }
+    const locale = await loader();
+    localeCache[lang] = locale;
+    return locale;
+  } catch (error) {
+    console.error(`[i18n] Failed to load locale '${lang}':`, error);
+    return null;
+  }
 }
-const en: Translations = locales['en'] ?? ({} as Translations);
-if (!en || Object.keys(en).length === 0) {
-  throw new Error('[i18n] en.json is missing or empty – cannot initialise LanguageProvider.');
-}
+
+// Preload English as the base/fallback locale
+let en: Translations | null = null;
+const enPromise = loadLocale('en').then(locale => {
+  if (!locale || Object.keys(locale).length === 0) {
+    throw new Error('[i18n] en.json is missing or empty – cannot initialise LanguageProvider.');
+  }
+  en = locale;
+  return locale;
+});
 
 // ---------------------------------------------------------------------------
 // Missing-key safety: deep-merge any locale over the English base so that
@@ -41,10 +79,11 @@ function deepMerge<T extends object>(base: T, override: Partial<T>): T {
   return result;
 }
 
-function buildSafeTranslations(language: string): Translations {
-  if (language === 'en') return en;
-  const locale = locales[language];
-  if (!locale) return en;
+function buildSafeTranslations(language: string, locale: Translations | null): Translations {
+  if (!en) {
+    throw new Error('[i18n] English base locale not loaded yet');
+  }
+  if (language === 'en' || !locale) return en;
   // Deep-merge: any key missing in `locale` falls back to the English value.
   return deepMerge(en, locale as Partial<Translations>);
 }
@@ -54,6 +93,7 @@ export interface LanguageContextValue {
   setLanguage: (lang: string) => void;
   t: Translations;
   dir: 'ltr' | 'rtl';
+  isLoading: boolean;
 }
 
 export const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -67,6 +107,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  const [currentLocale, setCurrentLocale] = useState<Translations | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const setLanguage = useCallback((lang: string) => {
     setLanguageState(lang);
     try {
@@ -76,7 +119,38 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const t = useMemo(() => buildSafeTranslations(language), [language]);
+  // Load the selected locale asynchronously
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLanguage = async () => {
+      setIsLoading(true);
+
+      // Ensure English base is loaded first
+      await enPromise;
+
+      if (cancelled) return;
+
+      if (language === 'en') {
+        setCurrentLocale(en);
+        setIsLoading(false);
+      } else {
+        const locale = await loadLocale(language);
+        if (!cancelled) {
+          setCurrentLocale(locale);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadLanguage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [language]);
+
+  const t = useMemo(() => buildSafeTranslations(language, currentLocale), [language, currentLocale]);
 
   const dir = useMemo(
     () => SUPPORTED_UI_LOCALES.find(l => l.code === language)?.dir ?? 'ltr',
@@ -89,8 +163,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language, dir]);
 
   const value = useMemo<LanguageContextValue>(
-    () => ({ language, setLanguage, t, dir }),
-    [language, setLanguage, t, dir],
+    () => ({ language, setLanguage, t, dir, isLoading }),
+    [language, setLanguage, t, dir, isLoading],
   );
 
   return (
