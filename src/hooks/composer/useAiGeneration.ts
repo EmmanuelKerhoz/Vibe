@@ -5,7 +5,7 @@ import { AI_MODEL_NAME, getAi, safeJsonParse, handleApiError } from '../../utils
 import { cleanSectionName } from '../../utils/songUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
-import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
+import { mapSongWithPreservedIds, mergeAiSectionIntoCurrent, syncLinkedChorusSections } from '../../utils/songMergeUtils';
 import { makeSongUpdater } from '../hookUtils';
 import { withAbort, isAbortError } from '../../utils/withAbort';
 import { withRetry } from '../../utils/withRetry';
@@ -251,7 +251,9 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           rhymeScheme: section.rhymeScheme || rhymeScheme,
           lines: flagMetaLines(section.lines).map((line) => ({ ...line, id: generateId() })),
         }));
-        const orderedSong = alignGeneratedSongToStructure(songWithIds, structure, rhymeScheme);
+        const orderedSong = syncLinkedChorusSections(
+          alignGeneratedSongToStructure(songWithIds, structure, rhymeScheme),
+        );
         updateSongAndStructureWithHistory(orderedSong, structure);
         requestAutoTitleGeneration();
         setSelectedLineId(null);
@@ -369,9 +371,9 @@ Return the updated section in the exact same JSON structure (as an array with on
         if (firstSection) {
           const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
           updateSong(currentSong =>
-            currentSong.map(section =>
+            syncLinkedChorusSections(currentSong.map(section =>
               section.id !== sectionId ? section : mergeAiSectionIntoCurrent(section, patchedSection)
-            )
+            ), sectionId)
           );
         }
       });
@@ -450,15 +452,15 @@ Return the updated song in the exact same JSON structure.`;
           if (firstSection) {
             const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
             updateSong(currentSong =>
-              currentSong.map(section =>
+              syncLinkedChorusSections(currentSong.map(section =>
                 section.id !== sectionId ? section : mergeAiSectionIntoCurrent(section, patchedSection)
-              )
+              ), sectionId)
             );
           }
         } else {
           const updatedSong = mapSongWithPreservedIds(data, song);
           const reflagged = updatedSong.map(sec => ({ ...sec, lines: flagMetaLines(sec.lines) }));
-          updateSongWithHistory(reflagged);
+          updateSongWithHistory(syncLinkedChorusSections(reflagged));
         }
       });
     } catch (error: unknown) {

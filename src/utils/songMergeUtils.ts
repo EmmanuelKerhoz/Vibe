@@ -1,4 +1,5 @@
 import type { Section, Line } from '../types';
+import { isLinkedChorusSectionName } from '../constants/sections';
 import { cleanSectionName } from './songUtils';
 import { generateId } from './idUtils';
 
@@ -59,4 +60,20 @@ export const mergeAiSectionIntoCurrent = (
       concept: line?.concept ?? currentSection.lines[index]?.concept ?? 'New line',
     })),
   };
+};
+
+export const syncLinkedChorusSections = (
+  song: Section[],
+  sourceSectionId?: string,
+): Section[] => {
+  const sourceSection = sourceSectionId
+    ? song.find(section => section.id === sourceSectionId)
+    : song.find(section => isLinkedChorusSectionName(section.name));
+
+  if (!sourceSection || !isLinkedChorusSectionName(sourceSection.name)) return song;
+
+  return song.map(section => {
+    if (!isLinkedChorusSectionName(section.name) || section.id === sourceSection.id) return section;
+    return mergeAiSectionIntoCurrent(section, { ...sourceSection, name: section.name });
+  });
 };

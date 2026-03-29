@@ -106,4 +106,71 @@ describe('useAiGeneration', () => {
       expect(prompt).toContain('Write exclusively in French.');
     });
   });
+
+  it('keeps numbered choruses and final chorus synchronized after full-song generation', async () => {
+    generateContent.mockResolvedValueOnce({
+      text: JSON.stringify([
+        {
+          name: 'Verse 1',
+          rhymeScheme: 'AABB',
+          lines: [{ text: 'Verse line', rhymingSyllables: '', rhyme: 'A', syllables: 3, concept: 'verse' }],
+        },
+        {
+          name: 'Chorus 1',
+          rhymeScheme: 'AABB',
+          lines: [{ text: 'Primary hook', rhymingSyllables: '', rhyme: 'A', syllables: 3, concept: 'hook' }],
+        },
+        {
+          name: 'Verse 2',
+          rhymeScheme: 'AABB',
+          lines: [{ text: 'Second verse', rhymingSyllables: '', rhyme: 'A', syllables: 3, concept: 'verse' }],
+        },
+        {
+          name: 'Chorus 2',
+          rhymeScheme: 'AABB',
+          lines: [{ text: 'Alternate hook', rhymingSyllables: '', rhyme: 'A', syllables: 3, concept: 'hook' }],
+        },
+        {
+          name: 'Final Chorus',
+          rhymeScheme: 'AABB',
+          lines: [{ text: 'Big ending hook', rhymingSyllables: '', rhyme: 'A', syllables: 3, concept: 'hook' }],
+        },
+      ]),
+    });
+
+    const updateSongAndStructureWithHistory = vi.fn();
+    const params = {
+      song: makeSong(),
+      structure: ['Verse 1', 'Chorus 1', 'Verse 2', 'Chorus 2', 'Final Chorus'],
+      topic: 'Night drive',
+      mood: 'Moody',
+      rhymeScheme: 'AABB',
+      targetSyllables: 8,
+      title: 'Midnight',
+      songLanguage: 'English',
+      uiLanguage: 'English',
+      updateState: vi.fn((
+        recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] },
+      ) => recipe({ song: makeSong(), structure: ['Verse 1', 'Chorus 1', 'Verse 2', 'Chorus 2', 'Final Chorus'] })),
+      updateSongWithHistory: vi.fn(),
+      updateSongAndStructureWithHistory,
+      requestAutoTitleGeneration: vi.fn(),
+      setSelectedLineId: vi.fn(),
+    };
+
+    const { result } = renderHook(() => useAiGeneration(params));
+
+    await act(async () => {
+      await result.current.generateSong();
+    });
+
+    const generatedSong = updateSongAndStructureWithHistory.mock.calls[0]?.[0] as Section[] | undefined;
+    expect(generatedSong).toBeDefined();
+    expect(generatedSong?.[1]?.name).toBe('Chorus 1');
+    expect(generatedSong?.[1]?.lines[0]?.text).toBe('Primary hook');
+    expect(generatedSong?.[3]?.name).toBe('Chorus 2');
+    expect(generatedSong?.[3]?.lines[0]?.text).toBe('Primary hook');
+    expect(generatedSong?.[4]?.name).toBe('Final Chorus');
+    expect(generatedSong?.[4]?.lines[0]?.text).toBe('Primary hook');
+  });
 });

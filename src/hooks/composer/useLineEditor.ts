@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { Section } from '../../types';
+import { syncLinkedChorusSections } from '../../utils/songMergeUtils';
 import { detectRhymeSchemeLocally } from '../../utils/rhymeSchemeUtils';
 import { generateId } from '../../utils/idUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
@@ -69,7 +70,7 @@ export const useLineEditor = ({
   const updateLineText = useCallback(
     (sectionId: string, lineId: string, newText: string) => {
       updateSong(currentSong =>
-        currentSong.map(section => {
+        syncLinkedChorusSections(currentSong.map(section => {
           if (section.id !== sectionId) return section;
           const updatedLines = section.lines.map(line => {
             if (line.id !== lineId) return line;
@@ -85,7 +86,7 @@ export const useLineEditor = ({
           return newScheme !== section.rhymeScheme
             ? { ...updatedSection, rhymeScheme: newScheme }
             : updatedSection;
-        }),
+        }), sectionId),
       );
     },
     [updateSong],
@@ -108,7 +109,7 @@ export const useLineEditor = ({
         const nextLine = section.lines[lineIndex + 1]!;
         const mergedText = value + nextLine.text;
         updateSong(currentSong =>
-          currentSong.map(s => {
+          syncLinkedChorusSections(currentSong.map(s => {
             if (s.id !== sectionId) return s;
             const newLines = [...s.lines];
             newLines[lineIndex] = {
@@ -121,7 +122,7 @@ export const useLineEditor = ({
             const updatedSection: Section = { ...s, lines: newLines };
             const newScheme = redetectScheme(updatedSection);
             return newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
-          }),
+          }), sectionId),
         );
         setTimeout(() => {
           const currentInput = getRef(lineId);
@@ -141,7 +142,7 @@ export const useLineEditor = ({
         const mergedText = prevLine.text + value;
         const prevLineId = prevLine.id;
         updateSong(currentSong =>
-          currentSong.map(s => {
+          syncLinkedChorusSections(currentSong.map(s => {
             if (s.id !== sectionId) return s;
             const newLines = [...s.lines];
             newLines[lineIndex - 1] = {
@@ -154,7 +155,7 @@ export const useLineEditor = ({
             const updatedSection: Section = { ...s, lines: newLines };
             const newScheme = redetectScheme(updatedSection);
             return newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
-          }),
+          }), sectionId),
         );
         setSelectedLineId(prevLineId);
         setTimeout(() => {
@@ -175,7 +176,7 @@ export const useLineEditor = ({
         const textAfter = value.substring(selectionEnd || 0);
         const newLineId = generateId();
         updateSong(currentSong =>
-          currentSong.map(s => {
+          syncLinkedChorusSections(currentSong.map(s => {
             if (s.id !== sectionId) return s;
             const newLines = [...s.lines];
             newLines[lineIndex] = {
@@ -196,7 +197,7 @@ export const useLineEditor = ({
             const updatedSection: Section = { ...s, lines: newLines };
             const newScheme = redetectScheme(updatedSection);
             return newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
-          }),
+          }), sectionId),
         );
         setSelectedLineId(newLineId);
         setTimeout(() => {

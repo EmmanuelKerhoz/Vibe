@@ -231,4 +231,93 @@ describe('useSongComposer', () => {
     expect(updatedSong?.[0]?.lines[1]).toBe(song[0]?.lines[1]);
     expect(updatedSong?.[1]).toBe(song[1]);
   });
+
+  it('keeps numbered choruses and final chorus in sync when one chorus line is edited', () => {
+    const song: Section[] = [
+      {
+        id: 'section-1',
+        name: 'Verse 1',
+        rhymeScheme: 'AABB',
+        lines: [{
+          id: 'line-1',
+          text: 'Verse line',
+          rhymingSyllables: '',
+          rhyme: 'A',
+          syllables: 2,
+          concept: 'verse',
+        }],
+      },
+      {
+        id: 'section-2',
+        name: 'Chorus 1',
+        rhymeScheme: 'AABB',
+        lines: [{
+          id: 'line-2',
+          text: 'Original hook',
+          rhymingSyllables: '',
+          rhyme: 'A',
+          syllables: 4,
+          concept: 'hook',
+        }],
+      },
+      {
+        id: 'section-3',
+        name: 'Chorus 2',
+        rhymeScheme: 'AABB',
+        lines: [{
+          id: 'line-3',
+          text: 'Original hook',
+          rhymingSyllables: '',
+          rhyme: 'A',
+          syllables: 4,
+          concept: 'hook',
+        }],
+      },
+      {
+        id: 'section-4',
+        name: 'Final Chorus',
+        rhymeScheme: 'AABB',
+        lines: [{
+          id: 'line-4',
+          text: 'Original hook',
+          rhymingSyllables: '',
+          rhyme: 'A',
+          syllables: 4,
+          concept: 'hook',
+        }],
+      },
+    ];
+    const nextSnapshots: Array<{ song: Section[]; structure: string[] }> = [];
+    const params = createParams({
+      song,
+      structure: song.map(section => section.name),
+      updateState: vi.fn(recipe => {
+        nextSnapshots.push(recipe({ song, structure: song.map(section => section.name) }));
+      }),
+    });
+
+    const { result } = renderHook(() => useSongComposer(params), { wrapper: RefsWrapper });
+
+    act(() => {
+      result.current.updateLineText('section-3', 'line-3', 'Unified hook line');
+    });
+
+    const updatedSong = nextSnapshots[0]?.song;
+    expect(updatedSong?.[0]?.lines[0]?.text).toBe('Verse line');
+    expect(updatedSong?.[1]?.lines[0]).toEqual(expect.objectContaining({
+      id: 'line-2',
+      text: 'Unified hook line',
+      isManual: true,
+    }));
+    expect(updatedSong?.[2]?.lines[0]).toEqual(expect.objectContaining({
+      id: 'line-3',
+      text: 'Unified hook line',
+      isManual: true,
+    }));
+    expect(updatedSong?.[3]?.lines[0]).toEqual(expect.objectContaining({
+      id: 'line-4',
+      text: 'Unified hook line',
+      isManual: true,
+    }));
+  });
 });
