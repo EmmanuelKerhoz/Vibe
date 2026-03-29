@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, memo, useRef } from 'react';
-import { ClipboardPaste, FileText, Layout, Library, Loader2, Music, PersonVoice, Sparkles, Type } from '../ui/icons';
+import { ClipboardPaste, Layout, Library, Loader2, Music, PersonVoice, Sparkles, Type } from '../ui/icons';
 import { Section } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
 import { MarkupInput } from '../editor/MarkupInput';
@@ -58,7 +58,7 @@ export const LyricsView = memo(function LyricsView({
   } = useComposerContext();
   const { t } = useTranslation();
   // Editor state sourced from EditorContext — no longer drilled via props
-  const { editMode, setEditMode, markupText, setMarkupText, markupTextareaRef, markupDirection } = useEditorContext();
+  const { editMode, markupText, setMarkupText, markupTextareaRef, markupDirection } = useEditorContext();
 
   /**
    * FIX (PR-3): RHYME_KEYS was rebuilt on every render as a plain array literal,
