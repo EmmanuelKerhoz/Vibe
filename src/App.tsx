@@ -6,7 +6,6 @@ import { useSongEditor } from './hooks/useSongEditor';
 import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
 import { useSimilarityEngine } from './hooks/useSimilarityEngine';
-import { useAppState } from './hooks/useAppState';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useVersionManager } from './hooks/useVersionManager';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
@@ -16,7 +15,6 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSessionActions } from './hooks/useSessionActions';
 import { useImportHandlers } from './hooks/useImportHandlers';
 import { useLibraryActions } from './hooks/useLibraryActions';
-import { useUIStateForProvider } from './hooks/useUIStateForProvider';
 import { useDerivedAppState } from './hooks/useDerivedAppState';
 import { useAppHandlers } from './hooks/useAppHandlers';
 import { useModalHandlers } from './hooks/useModalHandlers';
@@ -24,6 +22,7 @@ import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
 import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
+import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -36,7 +35,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.22.12
+// v3.22.13
 const AppModals = lazy(() =>
   import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
 );
@@ -92,7 +91,8 @@ function AppInnerContent() {
     handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
   } = useComposerContext();
 
-  const appState = useAppState();
+  // ── AppState — consumed from AppStateContext (Phase 3 refactor) ───────────
+  const { appState, uiStateForProvider } = useAppStateContext();
   const {
     theme, setTheme, activeTab, setActiveTab,
     isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
@@ -202,10 +202,6 @@ function AppInnerContent() {
     }
   }, [isSessionHydrated, defaultEditMode, switchEditMode]);
 
-  // When leaving the lyrics tab, reset editMode to 'section' so the musical
-  // tab renders cleanly. When returning to the lyrics tab, restore the user's
-  // preferred defaultEditMode (unless they have already picked a different mode
-  // in this session — tracked via hasAppliedDefaultEditModeRef).
   const previousActiveTabRef = useRef(activeTab);
   useEffect(() => {
     const prev = previousActiveTabRef.current;
@@ -330,24 +326,6 @@ function AppInnerContent() {
   const { handleImportInputChange, handleImportChooseFile } = useImportHandlers({
     importInputRef, loadFileForAnalysis,
     setIsImportModalOpen, setIsPasteModalOpen, setPastedText, setSongLanguage,
-  });
-
-  const uiStateForProvider = useUIStateForProvider({
-    setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
-    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
-    setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
-    setIsResetModalOpen, setIsKeyboardShortcutsModalOpen, setConfirmModal, setPromptModal,
-    setIsPasteModalOpen, setIsAnalysisModalOpen, setIsSearchReplaceOpen, setEditMode,
-    isAboutOpen, isSettingsOpen, apiErrorModal,
-    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
-    isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
-    isResetModalOpen, isKeyboardShortcutsModalOpen, confirmModal, promptModal,
-    isPasteModalOpen, isAnalysisModalOpen, isSearchReplaceOpen,
-    activeTab, setActiveTab, isStructureOpen, setIsStructureOpen,
-    isLeftPanelOpen, setIsLeftPanelOpen,
-    editMode, markupText, setMarkupText,
-    markupTextareaRef, importInputRef,
-    shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
   });
 
   const handleGenerateSongFromLeftPanel = useCallback(() => {
@@ -560,18 +538,20 @@ function AppInnerContent() {
 }
 
 // ── AppInner: providers stack ─────────────────────────────────────────────────
+// AppStateProvider must be outermost (owns UI state, no React context deps).
 // AnalysisProvider must be inside ModalProvider (needs useModalDispatch).
-// It is therefore mounted inside AppInnerContent's render, after ModalProvider.
-// AppInner wraps the outermost data providers.
+// AppStateProvider is mounted inside AppInner, before SongProvider.
 function AppInner() {
   return (
-    <DragProvider>
-      <SongProvider>
-        <ComposerProvider>
-          <AppInnerContent />
-        </ComposerProvider>
-      </SongProvider>
-    </DragProvider>
+    <AppStateProvider>
+      <DragProvider>
+        <SongProvider>
+          <ComposerProvider>
+            <AppInnerContent />
+          </ComposerProvider>
+        </SongProvider>
+      </DragProvider>
+    </AppStateProvider>
   );
 }
 
