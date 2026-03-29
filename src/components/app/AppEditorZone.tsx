@@ -49,7 +49,7 @@ interface AppEditorZoneProps {
   editMode: EditMode;
   switchEditMode: (mode: EditMode) => void;
   webSimilarityIndex: WebSimilarityIndex;
-  webBadgeLabel: string;
+  webBadgeLabel: string | null;
   libraryCount: number;
   adaptSongLanguage: (newLanguage: string) => void;
   detectLanguage: () => void;
@@ -60,9 +60,9 @@ interface AppEditorZoneProps {
   showTranslationFeatures: boolean;
   // LyricsView
   playAudioFeedback: PlayAudioFeedback;
-  handleDrop: (e: React.DragEvent) => void;
+  handleDrop: (targetIndex: number) => void;
   handleLineDragStart: (lineId: string, sectionId: string) => void;
-  handleLineDrop: (targetSectionId: string, targetLineId: string | null) => void;
+  handleLineDrop: (targetSectionId: string, targetLineId: string) => void;
   setEditMode: (v: EditMode) => void;
   markupText: string;
   setMarkupText: (v: string) => void;
