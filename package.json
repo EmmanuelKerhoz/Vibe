@@ -1,7 +1,7 @@
 {
   "name": "lyricist-pro",
   "private": true,
-  "version": "3.22.6",
+  "version": "3.22.7",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
