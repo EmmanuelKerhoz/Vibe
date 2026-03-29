@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
-import type { EditMode } from '../types';
 
 // ── Minimal UIState interface ─────────────────────────────────────────────────
 // NOTE: editMode / setEditMode / markupText / setMarkupText / markupTextareaRef
