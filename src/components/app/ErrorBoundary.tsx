@@ -2,6 +2,8 @@ import React, { Component, type ReactNode, type ErrorInfo } from 'react';
 
 interface Props {
   children: ReactNode;
+  /** Optional label shown in the fallback header (for scoped boundaries). */
+  label?: string;
 }
 
 interface State {
@@ -12,13 +14,24 @@ interface State {
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null, errorInfo: null };
 
+  /**
+   * getDerivedStateFromError ensures the error state is committed during the
+   * render phase itself, so React never attempts to re-render the crashing
+   * subtree before switching to the fallback UI.
+   */
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { error };
+  }
+
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.setState({ error, errorInfo });
+    // Capture errorInfo (component stack) which is only available here.
+    this.setState({ errorInfo });
     console.error('[ErrorBoundary] Uncaught error:', error, errorInfo);
   }
 
   render() {
     const { error, errorInfo } = this.state;
+    const { label } = this.props;
     if (!error) return this.props.children;
 
     const isDev = import.meta.env.DEV;
@@ -32,13 +45,13 @@ export class ErrorBoundary extends Component<Props, State> {
           padding: '2rem',
           background: '#0a0a0a',
           color: '#f87171',
-          minHeight: '100dvh',
+          minHeight: label ? undefined : '100dvh',
           boxSizing: 'border-box',
           overflowY: 'auto',
         }}
       >
         <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-          ⚠ Application error
+          ⚠ {label ? `${label} error` : 'Application error'}
         </div>
         <div style={{ color: '#fca5a5', marginBottom: '1rem' }}>
           {error.message}
