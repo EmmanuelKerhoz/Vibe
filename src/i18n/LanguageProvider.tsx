@@ -51,7 +51,10 @@ async function loadLocale(lang: string): Promise<Translations | null> {
 let en: Translations | null = null;
 const enPromise = loadLocale('en').then(locale => {
   if (!locale || Object.keys(locale).length === 0) {
-    throw new Error('[i18n] en.json is missing or empty – cannot initialise LanguageProvider.');
+    // Log but do NOT throw — throwing here would cause an unhandled rejection
+    // that surfaces as "English base locale not loaded yet" on first render.
+    console.error('[i18n] en.json is missing or empty.');
+    return null;
   }
   en = locale;
   return locale;
@@ -79,9 +82,15 @@ function deepMerge<T extends object>(base: T, override: Partial<T>): T {
   return result;
 }
 
-function buildSafeTranslations(language: string, locale: Translations | null): Translations {
+/**
+ * Returns merged translations, or null while the English base is not yet
+ * available. Callers must handle the null case (LanguageProvider blocks render).
+ * Never throws — a synchronous throw from useMemo crashes React on first render.
+ */
+function buildSafeTranslations(language: string, locale: Translations | null): Translations | null {
   if (!en) {
-    throw new Error('[i18n] English base locale not loaded yet');
+    // English not loaded yet — caller will wait for enPromise to resolve
+    return null;
   }
   if (language === 'en' || !locale) return en;
   // Deep-merge: any key missing in `locale` falls back to the English value.
@@ -150,6 +159,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     };
   }, [language]);
 
+  // null while English base is still loading — never throws
   const t = useMemo(() => buildSafeTranslations(language, currentLocale), [language, currentLocale]);
 
   const dir = useMemo(
@@ -162,10 +172,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.setAttribute('dir', dir);
   }, [language, dir]);
 
-  const value = useMemo<LanguageContextValue>(
-    () => ({ language, setLanguage, t, dir, isLoading }),
-    [language, setLanguage, t, dir, isLoading],
-  );
+  // Block children until translations are ready — avoids propagating t=null
+  // to consumers and prevents "useTranslation" crashes downstream.
+  if (!t) return null;
+
+  const value: LanguageContextValue = { language, setLanguage, t, dir, isLoading };
 
   return (
     <LanguageContext.Provider value={value}>
