@@ -19,6 +19,7 @@ import { useLibraryActions } from '../../hooks/useLibraryActions';
 import { useModalHandlers } from '../../hooks/useModalHandlers';
 import { useSessionActions } from '../../hooks/useSessionActions';
 import { useSongEditor } from '../../hooks/useSongEditor';
+import { useTopicMoodSuggester } from '../../hooks/useTopicMoodSuggester';
 import { useTranslation } from '../../i18n';
 
 const AppModals = lazy(() =>
@@ -87,7 +88,9 @@ export function AppModalLayer() {
 
   const { hasExistingWork } = useDerivedAppState({ editMode, markupText, webSimilarityIndex });
 
-  const { exportSong, loadFileForAnalysis, resetSuggestionCycle } = useSongEditor({
+  const { resetSuggestionCycle } = useTopicMoodSuggester();
+
+  const { exportSong, loadFileForAnalysis } = useSongEditor({
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); },
     playAudioFeedback: () => {},
   });
