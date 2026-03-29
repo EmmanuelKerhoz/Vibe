@@ -49,8 +49,6 @@ const createParams = (): UIStateBag => ({
   setMarkupText: vi.fn(),
   markupTextareaRef: createRef<HTMLTextAreaElement>(),
   importInputRef: createRef<HTMLInputElement>(),
-  shouldAutoGenerateTitle: false,
-  setShouldAutoGenerateTitle: vi.fn(),
 });
 
 describe('useUIStateForProvider', () => {
@@ -249,7 +247,6 @@ describe('useUIStateForProvider', () => {
 
       const initialTextState = {
         markupText: result.current.markupText,
-        shouldAutoGenerateTitle: result.current.shouldAutoGenerateTitle,
       };
 
       // Change layout state - textState should NOT recompute
@@ -259,7 +256,6 @@ describe('useUIStateForProvider', () => {
       });
 
       expect(result.current.markupText).toBe(initialTextState.markupText);
-      expect(result.current.shouldAutoGenerateTitle).toBe(initialTextState.shouldAutoGenerateTitle);
 
       // Change text state - textState SHOULD recompute
       rerender({
@@ -279,7 +275,6 @@ describe('useUIStateForProvider', () => {
       });
 
       const initialMarkupText = result.current.markupText;
-      const initialShouldAutoGenerateTitle = result.current.shouldAutoGenerateTitle;
 
       // Change modal state
       rerender({
@@ -289,25 +284,6 @@ describe('useUIStateForProvider', () => {
       });
 
       expect(result.current.markupText).toBe(initialMarkupText);
-      expect(result.current.shouldAutoGenerateTitle).toBe(initialShouldAutoGenerateTitle);
-    });
-
-    it('recomputes when shouldAutoGenerateTitle changes', () => {
-      const params = createParams();
-      const { result, rerender } = renderHook(currentParams => useUIStateForProvider(currentParams), {
-        initialProps: params,
-      });
-
-      const initialShouldAutoGenerateTitle = result.current.shouldAutoGenerateTitle;
-
-      // Change shouldAutoGenerateTitle
-      rerender({
-        ...params,
-        shouldAutoGenerateTitle: true,
-      });
-
-      expect(result.current.shouldAutoGenerateTitle).toBe(true);
-      expect(result.current.shouldAutoGenerateTitle).not.toBe(initialShouldAutoGenerateTitle);
     });
   });
 
@@ -375,7 +351,6 @@ describe('useUIStateForProvider', () => {
         },
         text: {
           markupText: result.current.markupText,
-          shouldAutoGenerateTitle: result.current.shouldAutoGenerateTitle,
         },
         refs: {
           markupTextareaRef: result.current.markupTextareaRef,
@@ -395,7 +370,6 @@ describe('useUIStateForProvider', () => {
       expect(result.current.activeTab).toBe(snapshot.layout.activeTab);
       expect(result.current.isStructureOpen).toBe(snapshot.layout.isStructureOpen);
       expect(result.current.markupText).toBe(snapshot.text.markupText);
-      expect(result.current.shouldAutoGenerateTitle).toBe(snapshot.text.shouldAutoGenerateTitle);
       expect(result.current.markupTextareaRef).toBe(snapshot.refs.markupTextareaRef);
       expect(result.current.importInputRef).toBe(snapshot.refs.importInputRef);
     });
@@ -455,7 +429,6 @@ describe('useUIStateForProvider', () => {
       rerender({
         ...params,
         markupText: 'updated markup',
-        shouldAutoGenerateTitle: true,
       });
 
       // Verify modal, layout, and refs remain unchanged

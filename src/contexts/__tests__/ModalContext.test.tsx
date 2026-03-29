@@ -48,8 +48,6 @@ const createMockUIState = (): UIStateBag => ({
   setMarkupText: vi.fn(),
   markupTextareaRef: createRef<HTMLTextAreaElement>(),
   importInputRef: createRef<HTMLInputElement>(),
-  shouldAutoGenerateTitle: false,
-  setShouldAutoGenerateTitle: vi.fn(),
 });
 
 describe('ModalContext', () => {

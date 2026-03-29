@@ -48,8 +48,6 @@ export const useUIStateForProvider = ({
   setMarkupText,
   markupTextareaRef,
   importInputRef,
-  shouldAutoGenerateTitle,
-  setShouldAutoGenerateTitle,
 }: UseUIStateForProviderParams): UIStateBag => {
   // Modal-related state (15 modals with their state and setters)
   const modalState = useMemo(() => ({
@@ -145,13 +143,9 @@ export const useUIStateForProvider = ({
   const textState = useMemo(() => ({
     markupText,
     setMarkupText,
-    shouldAutoGenerateTitle,
-    setShouldAutoGenerateTitle,
   }), [
     markupText,
     setMarkupText,
-    shouldAutoGenerateTitle,
-    setShouldAutoGenerateTitle,
   ]);
 
   // DOM references (stable, but included for completeness)

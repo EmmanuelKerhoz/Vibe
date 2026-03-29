@@ -49,8 +49,6 @@ const createUiState = (overrides: Partial<UIStateBag> = {}): UIStateBag => ({
   setMarkupText: vi.fn(),
   markupTextareaRef: createRef<HTMLTextAreaElement>(),
   importInputRef: createRef<HTMLInputElement>(),
-  shouldAutoGenerateTitle: false,
-  setShouldAutoGenerateTitle: vi.fn(),
   ...overrides,
 });
 

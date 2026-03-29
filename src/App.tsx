@@ -35,7 +35,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.22.13
+// v3.23.0
 const AppModals = lazy(() =>
   import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
 );
@@ -73,7 +73,6 @@ function ModalShortcutBindings({
 
 function AppInnerContent() {
   const { t } = useTranslation();
-  const { language } = useLanguage();
   const {
     song, structure, past, future, updateState, updateSongWithHistory, updateStructureWithHistory,
     updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory, undo, redo,
@@ -81,7 +80,7 @@ function AppInnerContent() {
     rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables, genre, setGenre, tempo, setTempo,
     instrumentation, setInstrumentation, rhythm, setRhythm, narrative, setNarrative,
     musicalPrompt, setMusicalPrompt,
-    shouldAutoGenerateTitle, setShouldAutoGenerateTitle,
+    shouldAutoGenerateTitle,
     songLanguage, setSongLanguage,
   } = useSongContext();
   const {
@@ -91,7 +90,6 @@ function AppInnerContent() {
     handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
   } = useComposerContext();
 
-  // ── AppState — consumed from AppStateContext (Phase 3 refactor) ───────────
   const { appState, uiStateForProvider } = useAppStateContext();
   const {
     theme, setTheme, activeTab, setActiveTab,
@@ -159,7 +157,6 @@ function AppInnerContent() {
   const isGeneratingRef = useRef(isGenerating);
   isGeneratingRef.current = isGenerating;
 
-  // ── Analysis — consumed from AnalysisContext (Phase 2 refactor) ───────────
   const {
     canPasteLyrics,
     pastedText,
@@ -193,7 +190,6 @@ function AppInnerContent() {
     clearAppliedAnalysisItems,
   } = useAnalysisContext();
 
-  // Apply defaultEditMode once after session hydration.
   const hasAppliedDefaultEditModeRef = useRef(false);
   useEffect(() => {
     if (isSessionHydrated && !hasAppliedDefaultEditModeRef.current) {
@@ -334,7 +330,7 @@ function AppInnerContent() {
   }, [setIsLeftPanelOpen, handleGlobalRegenerate]);
 
   return (
-    <ModalProvider uiState={uiStateForProvider}>
+    <>
       <ModalShortcutBindings
         isMobileOrTablet={isMobileOrTablet}
         closeMobilePanels={closeMobilePanels}
@@ -436,7 +432,7 @@ function AppInnerContent() {
                     />
                   ) : (
                     <ErrorBoundary>
-                      <Suspense fallback={<LazyFallback />}>
+                      <Suspense fallback={<LazyFallback />}> 
                         <MusicalTab hasApiKey={hasApiKey} />
                       </Suspense>
                     </ErrorBoundary>
@@ -493,7 +489,7 @@ function AppInnerContent() {
         )}
 
         <ErrorBoundary>
-          <Suspense fallback={<LazyFallback />}>
+          <Suspense fallback={<LazyFallback />}> 
             <AppModals
               theme={theme} setTheme={setTheme}
               audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
@@ -533,21 +529,54 @@ function AppInnerContent() {
           </Suspense>
         </ErrorBoundary>
       </AppShell>
+    </>
+  );
+}
+
+function AppProviders() {
+  const { language } = useLanguage();
+  const {
+    updateState,
+    updateSongAndStructureWithHistory,
+    setShouldAutoGenerateTitle,
+  } = useSongContext();
+  const { isGenerating, clearSelection } = useComposerContext();
+  const { appState, uiStateForProvider } = useAppStateContext();
+  const { setIsVersionsModalOpen, setPromptModal } = appState;
+
+  const isGeneratingRef = useRef(isGenerating);
+  isGeneratingRef.current = isGenerating;
+
+  const { saveVersion } = useVersionManager({
+    updateSongAndStructureWithHistory,
+    setIsVersionsModalOpen,
+    setPromptModal,
+  });
+
+  return (
+    <ModalProvider uiState={uiStateForProvider}>
+      <AnalysisProvider
+        uiLanguage={language}
+        isGeneratingRef={isGeneratingRef}
+        saveVersion={saveVersion}
+        updateState={updateState}
+        updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
+        clearLineSelection={clearSelection}
+        requestAutoTitleGeneration={() => setShouldAutoGenerateTitle(true)}
+      >
+        <AppInnerContent />
+      </AnalysisProvider>
     </ModalProvider>
   );
 }
 
-// ── AppInner: providers stack ─────────────────────────────────────────────────
-// AppStateProvider must be outermost (owns UI state, no React context deps).
-// AnalysisProvider must be inside ModalProvider (needs useModalDispatch).
-// AppStateProvider is mounted inside AppInner, before SongProvider.
 function AppInner() {
   return (
     <AppStateProvider>
       <DragProvider>
         <SongProvider>
           <ComposerProvider>
-            <AppInnerContent />
+            <AppProviders />
           </ComposerProvider>
         </SongProvider>
       </DragProvider>
