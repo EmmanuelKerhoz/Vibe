@@ -1,3 +1,30 @@
+/**
+ * useUIState — ephemeral UI state
+ *
+ * Owns all transient UI state that does NOT need to survive a page reload:
+ *   - Modal open/close flags (16 modals)
+ *   - Navigation state (activeTab, isStructureOpen, isLeftPanelOpen)
+ *   - Edit mode and markup text
+ *   - DOM refs (markupTextareaRef, importInputRef)
+ *
+ * Architecture note — separation of concerns:
+ *
+ *   useUIState        (this file)  — ephemeral, in-memory only
+ *   useSessionState   (./useSessionState.ts) — persisted to localStorage
+ *                                    (theme, uiScale, defaultEditMode,
+ *                                     showTranslationFeatures, library,
+ *                                     similarityMatches, API key status)
+ *
+ * Consumption chain:
+ *   useUIState → useAppState → AppStateContext → (consumers via
+ *   useAppStateContext / useAppNavigationContext)
+ *
+ * Do NOT consume useUIState directly in components. Always go through
+ * useAppStateContext() or the more granular selector hooks.
+ *
+ * Internal note: do not merge or delete without auditing the full
+ * dependency chain (useAppState → AppStateContext → all consumers).
+ */
 import { useState, useRef, useEffect } from 'react';
 import type { EditMode } from '../types';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
