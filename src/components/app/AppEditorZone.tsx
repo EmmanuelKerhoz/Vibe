@@ -3,6 +3,9 @@
  * Renders the central content area: InsightsBar (conditional) + the scrollable
  * lyrics/musical zone. Receives only the props it cannot source from contexts
  * to avoid re-wiring everything that is already context-available downstream.
+ *
+ * Each major zone (InsightsBar, LyricsView, MusicalTab) is wrapped in its own
+ * <ErrorBoundary> so a crash in one zone never takes down the others.
  */
 import React, { Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
@@ -96,19 +99,21 @@ export function AppEditorZone({
   return (
     <>
       {activeTab === 'lyrics' && songHasContent && (
-        <InsightsBar
-          targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
-          isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
-          isAnalyzing={isAnalyzing}
-          editMode={editMode} switchEditMode={switchEditMode}
-          webSimilarityIndex={webSimilarityIndex}
-          webBadgeLabel={webBadgeLabel}
-          libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
-          detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong}
-          setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-          adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
-          showTranslationFeatures={showTranslationFeatures}
-        />
+        <ErrorBoundary label="Insights">
+          <InsightsBar
+            targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
+            isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
+            isAnalyzing={isAnalyzing}
+            editMode={editMode} switchEditMode={switchEditMode}
+            webSimilarityIndex={webSimilarityIndex}
+            webBadgeLabel={webBadgeLabel}
+            libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
+            detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong}
+            setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+            adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
+            showTranslationFeatures={showTranslationFeatures}
+          />
+        </ErrorBoundary>
       )}
 
       <div
@@ -120,31 +125,33 @@ export function AppEditorZone({
         <div className="lyrics-editor-zoom-wrapper">
           <div className="lyrics-editor-zoom">
             {activeTab === 'lyrics' ? (
-              <LyricsView
-                isAnalyzing={isAnalyzing}
-                isAdaptingLanguage={isAdaptingLanguage}
-                sectionTargetLanguages={sectionTargetLanguages}
-                onSectionTargetLanguageChange={onSectionTargetLanguageChange}
-                adaptSectionLanguage={adaptSectionLanguage}
-                adaptLineLanguage={adaptLineLanguage}
-                adaptingLineIds={adaptingLineIds}
-                playAudioFeedback={playAudioFeedback}
-                handleDrop={handleDrop}
-                handleLineDragStart={handleLineDragStart}
-                handleLineDrop={handleLineDrop}
-                editMode={editMode} setEditMode={setEditMode}
-                markupText={markupText} setMarkupText={setMarkupText}
-                markupTextareaRef={markupTextareaRef}
-                markupDirection={markupDirection}
-                canPasteLyrics={canPasteLyrics}
-                targetLanguage={targetLanguage}
-                onOpenLibrary={onOpenLibrary}
-                onPasteLyrics={onPasteLyrics}
-                onGenerateSong={onGenerateSong}
-                showTranslationFeatures={showTranslationFeatures}
-              />
+              <ErrorBoundary label="Lyrics editor">
+                <LyricsView
+                  isAnalyzing={isAnalyzing}
+                  isAdaptingLanguage={isAdaptingLanguage}
+                  sectionTargetLanguages={sectionTargetLanguages}
+                  onSectionTargetLanguageChange={onSectionTargetLanguageChange}
+                  adaptSectionLanguage={adaptSectionLanguage}
+                  adaptLineLanguage={adaptLineLanguage}
+                  adaptingLineIds={adaptingLineIds}
+                  playAudioFeedback={playAudioFeedback}
+                  handleDrop={handleDrop}
+                  handleLineDragStart={handleLineDragStart}
+                  handleLineDrop={handleLineDrop}
+                  editMode={editMode} setEditMode={setEditMode}
+                  markupText={markupText} setMarkupText={setMarkupText}
+                  markupTextareaRef={markupTextareaRef}
+                  markupDirection={markupDirection}
+                  canPasteLyrics={canPasteLyrics}
+                  targetLanguage={targetLanguage}
+                  onOpenLibrary={onOpenLibrary}
+                  onPasteLyrics={onPasteLyrics}
+                  onGenerateSong={onGenerateSong}
+                  showTranslationFeatures={showTranslationFeatures}
+                />
+              </ErrorBoundary>
             ) : (
-              <ErrorBoundary>
+              <ErrorBoundary label="Musical tab">
                 <Suspense fallback={<LazyFallback />}>
                   <MusicalTab hasApiKey={hasApiKey} />
                 </Suspense>
