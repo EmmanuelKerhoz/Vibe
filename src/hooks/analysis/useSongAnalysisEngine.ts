@@ -323,7 +323,7 @@ export const useSongAnalysisEngine = ({
     } finally {
       if (!wasAborted) setIsAnalyzing(false);
     }
-  }, [song, uiLang, setIsAnalyzing]);
+  }, [song, uiLang, setIsAnalyzing, setIsAnalysisModalOpen]);
 
   return {
     analysisReport,
