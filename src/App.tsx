@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback, Suspense, lazy } from 'react';
-import { FluentProvider, webLightTheme, webDarkTheme, Spinner } from '@fluentui/react-components';
+import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
+import { AppShell } from './components/app/AppShell';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
@@ -35,7 +36,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.21.1
+// v3.22.11
 const AppModals = lazy(() =>
   import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
 );
@@ -369,206 +370,198 @@ function AppInnerContent() {
         undo={undo}
         redo={redo}
       />
-      <FluentProvider
-        theme={theme === 'dark' ? webDarkTheme : webLightTheme}
-        style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}
+      <AppShell
+        theme={theme}
+        isMobileOrTablet={isMobileOrTablet}
+        showBackdrop={showBackdrop}
+        onBackdropClick={closeMobilePanels}
       >
-        <div className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${theme === 'dark' ? 'dark' : ''}`}>
+        <div className="flex-1 flex overflow-hidden">
+          <LeftSettingsPanel
+            isMobileOverlay={isMobileOrTablet}
+            title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
+            onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+            onSurprise={handleSurpriseClick} isSurprising={isSurprising}
+            isSessionHydrated={isSessionHydrated}
+            onGenerateSong={handleGenerateSongFromLeftPanel}
+            onRegenerateSong={handleGlobalRegenerate}
+          />
 
-          {showBackdrop && (
-            <button
-              type="button"
-              className="mobile-panel-backdrop"
-              onClick={closeMobilePanels}
-              aria-label="Close mobile panels"
+          <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
+            <TopRibbon
+              activeTab={activeTab} setActiveTab={setActiveTab}
+              setIsVersionsModalOpen={setIsVersionsModalOpen}
+              setIsResetModalOpen={setIsResetModalOpen}
+              isLeftPanelOpen={isLeftPanelOpen}
+              setIsLeftPanelOpen={setIsLeftPanelOpen}
+              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+              hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+              onOpenNewGeneration={handleOpenNewGeneration}
+              onOpenNewEmpty={handleCreateEmptySong}
+              onImportClick={handleOpenImport}
+              onExportClick={handleOpenExport}
+              onOpenLibraryClick={handleOpenSaveToLibraryModal}
+              onOpenSettingsClick={handleOpenSettings}
+              onOpenAboutClick={handleOpenAbout}
+              onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
+              onOpenSearchClick={handleOpenSearch}
+              canPasteLyrics={canPasteLyrics}
+              onPasteLyrics={handleOpenPasteModal}
+              isAnalyzing={isAnalyzing}
             />
-          )}
 
-          <div className="flex-1 flex overflow-hidden">
-            <LeftSettingsPanel
-              isMobileOverlay={isMobileOrTablet}
-              title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
-              onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-              topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-              rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-              targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-              isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-              onSurprise={handleSurpriseClick} isSurprising={isSurprising}
-              isSessionHydrated={isSessionHydrated}
-              onGenerateSong={handleGenerateSongFromLeftPanel}
-              onRegenerateSong={handleGlobalRegenerate}
-            />
-
-            <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
-              <TopRibbon
-                activeTab={activeTab} setActiveTab={setActiveTab}
-                setIsVersionsModalOpen={setIsVersionsModalOpen}
-                setIsResetModalOpen={setIsResetModalOpen}
-                isLeftPanelOpen={isLeftPanelOpen}
-                setIsLeftPanelOpen={setIsLeftPanelOpen}
-                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-                hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-                onOpenNewGeneration={handleOpenNewGeneration}
-                onOpenNewEmpty={handleCreateEmptySong}
-                onImportClick={handleOpenImport}
-                onExportClick={handleOpenExport}
-                onOpenLibraryClick={handleOpenSaveToLibraryModal}
-                onOpenSettingsClick={handleOpenSettings}
-                onOpenAboutClick={handleOpenAbout}
-                onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
-                onOpenSearchClick={handleOpenSearch}
-                canPasteLyrics={canPasteLyrics}
-                onPasteLyrics={handleOpenPasteModal}
+            {activeTab === 'lyrics' && song.length > 0 && (
+              <InsightsBar
+                targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
+                isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
                 isAnalyzing={isAnalyzing}
+                editMode={editMode} switchEditMode={switchEditMode}
+                webSimilarityIndex={webSimilarityIndex}
+                webBadgeLabel={webBadgeLabel}
+                libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
+                detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong}
+                setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+                adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
+                showTranslationFeatures={showTranslationFeatures}
               />
+            )}
 
-              {activeTab === 'lyrics' && song.length > 0 && (
-                <InsightsBar
-                  targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
-                  isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
-                  isAnalyzing={isAnalyzing}
-                  editMode={editMode} switchEditMode={switchEditMode}
-                  webSimilarityIndex={webSimilarityIndex}
-                  webBadgeLabel={webBadgeLabel}
-                  libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
-                  detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong}
-                  setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-                  adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
-                  showTranslationFeatures={showTranslationFeatures}
-                />
-              )}
-
-              <div
-                className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'}`}
-                style={isMobileOrTablet ? { paddingBottom: 'calc(60px + var(--sab))' } : undefined}
-              >
-                <div className="lyrics-editor-zoom-wrapper">
-                  <div className="lyrics-editor-zoom">
-                    {activeTab === 'lyrics' ? (
-                      <LyricsView
-                        isAnalyzing={isAnalyzing}
-                        isAdaptingLanguage={isAdaptingLanguage}
-                        sectionTargetLanguages={sectionTargetLanguages}
-                        onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
-                        adaptSectionLanguage={adaptSectionLanguage}
-                        adaptLineLanguage={adaptLineLanguage}
-                        adaptingLineIds={adaptingLineIds}
-                        playAudioFeedback={playAudioFeedback}
-                        handleDrop={handleDrop}
-                        handleLineDragStart={handleLineDragStart}
-                        handleLineDrop={handleLineDrop}
-                        editMode={editMode} setEditMode={setEditMode}
-                        markupText={markupText} setMarkupText={setMarkupText}
-                        markupTextareaRef={markupTextareaRef}
-                        markupDirection={markupDirection}
-                        canPasteLyrics={canPasteLyrics}
-                        targetLanguage={targetLanguage}
-                        onOpenLibrary={handleOpenSaveToLibraryModal}
-                        onPasteLyrics={handleOpenPasteModal}
-                        onGenerateSong={handleGlobalRegenerate}
-                        showTranslationFeatures={showTranslationFeatures}
-                      />
-                    ) : (
-                      <ErrorBoundary>
-                        <Suspense fallback={<LazyFallback />}>
-                          <MusicalTab hasApiKey={hasApiKey} />
-                        </Suspense>
-                      </ErrorBoundary>
-                    )}
-                  </div>
+            <div
+              className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative lcars-lyrics-area ${
+                isMobileOrTablet ? 'p-2' : 'p-4 lg:p-8'
+              }`}
+              style={isMobileOrTablet ? { paddingBottom: 'calc(60px + var(--sab))' } : undefined}
+            >
+              <div className="lyrics-editor-zoom-wrapper">
+                <div className="lyrics-editor-zoom">
+                  {activeTab === 'lyrics' ? (
+                    <LyricsView
+                      isAnalyzing={isAnalyzing}
+                      isAdaptingLanguage={isAdaptingLanguage}
+                      sectionTargetLanguages={sectionTargetLanguages}
+                      onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
+                      adaptSectionLanguage={adaptSectionLanguage}
+                      adaptLineLanguage={adaptLineLanguage}
+                      adaptingLineIds={adaptingLineIds}
+                      playAudioFeedback={playAudioFeedback}
+                      handleDrop={handleDrop}
+                      handleLineDragStart={handleLineDragStart}
+                      handleLineDrop={handleLineDrop}
+                      editMode={editMode} setEditMode={setEditMode}
+                      markupText={markupText} setMarkupText={setMarkupText}
+                      markupTextareaRef={markupTextareaRef}
+                      markupDirection={markupDirection}
+                      canPasteLyrics={canPasteLyrics}
+                      targetLanguage={targetLanguage}
+                      onOpenLibrary={handleOpenSaveToLibraryModal}
+                      onPasteLyrics={handleOpenPasteModal}
+                      onGenerateSong={handleGlobalRegenerate}
+                      showTranslationFeatures={showTranslationFeatures}
+                    />
+                  ) : (
+                    <ErrorBoundary>
+                      <Suspense fallback={<LazyFallback />}>
+                        <MusicalTab hasApiKey={hasApiKey} />
+                      </Suspense>
+                    </ErrorBoundary>
+                  )}
                 </div>
               </div>
             </div>
-
-            {isSuggestionsOpen ? (
-              <SuggestionsPanel
-                isMobileOverlay={isMobileOrTablet}
-                className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-                selectedLineId={selectedLineId}
-                setSelectedLineId={setSelectedLineId}
-                suggestions={suggestions}
-                isSuggesting={isSuggesting}
-                applySuggestion={applySuggestion}
-                generateSuggestions={generateSuggestions}
-              />
-            ) : (
-              <StructureSidebar
-                isMobileOverlay={isMobileOrTablet}
-                className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-                isSectionDropdownOpen={isSectionDropdownOpen}
-                setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-                addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-                normalizeStructure={normalizeStructure} handleDrop={handleDrop}
-                onScrollToSection={handleScrollToSection}
-                onRegenerateSong={handleGlobalRegenerate}
-                onGenerateSong={generateSong}
-              />
-            )}
           </div>
 
-          <StatusBar
-            className="lcars-status-bar-desktop"
-            isAnalyzing={isAnalyzing}
-            theme={theme} setTheme={setTheme}
-            audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-            onOpenAbout={handleOpenAbout}
-            onOpenSettings={handleOpenSettings}
-          />
-
-          {isMobileOrTablet && (
-            <MobileBottomNav
-              isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
-              activeTab={activeTab}
-              setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-              setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
-              onOpenSettings={handleOpenSettings}
+          {isSuggestionsOpen ? (
+            <SuggestionsPanel
+              isMobileOverlay={isMobileOrTablet}
+              className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+              selectedLineId={selectedLineId}
+              setSelectedLineId={setSelectedLineId}
+              suggestions={suggestions}
+              isSuggesting={isSuggesting}
+              applySuggestion={applySuggestion}
+              generateSuggestions={generateSuggestions}
+            />
+          ) : (
+            <StructureSidebar
+              isMobileOverlay={isMobileOrTablet}
+              className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+              isSectionDropdownOpen={isSectionDropdownOpen}
+              setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+              addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+              normalizeStructure={normalizeStructure} handleDrop={handleDrop}
+              onScrollToSection={handleScrollToSection}
+              onRegenerateSong={handleGlobalRegenerate}
+              onGenerateSong={generateSong}
             />
           )}
-
-          <ErrorBoundary>
-            <Suspense fallback={<LazyFallback />}>
-              <AppModals
-                theme={theme} setTheme={setTheme}
-                audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-                uiScale={uiScale} setUiScale={setUiScale}
-                defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
-                showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
-                hasExistingWork={hasExistingWork}
-                handleImportChooseFile={handleImportChooseFile}
-                onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
-                handleImportInputChange={handleImportInputChange}
-                exportSong={exportSong}
-                pastedText={pastedText} setPastedText={setPastedText}
-                isAnalyzing={isAnalyzing}
-                isAnalyzingTheme={isAnalyzingTheme}
-                importProgress={importProgress}
-                analyzePastedLyrics={analyzePastedLyrics}
-                analysisReport={analysisReport} analysisSteps={analysisSteps}
-                appliedAnalysisItems={appliedAnalysisItems}
-                selectedAnalysisItems={selectedAnalysisItems}
-                isApplyingAnalysis={isApplyingAnalysis}
-                toggleAnalysisItemSelection={toggleAnalysisItemSelection}
-                applyAnalysisItem={applyAnalysisItem}
-                applySelectedAnalysisItems={applySelectedAnalysisItems}
-                clearAppliedAnalysisItems={clearAppliedAnalysisItems}
-                versions={versions} rollbackToVersion={rollbackToVersion}
-                similarityMatches={similarityMatches} libraryCount={libraryCount}
-                webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
-                handleDeleteLibraryAsset={handleDeleteLibraryAsset}
-                handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
-                title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
-                handleLoadLibraryAsset={handleLoadLibraryAsset}
-                handlePurgeLibrary={handlePurgeLibrary}
-                saveVersion={saveVersion}
-                handleRequestVersionName={handleRequestVersionName}
-                resetSong={resetSong}
-              />
-            </Suspense>
-          </ErrorBoundary>
         </div>
-      </FluentProvider>
+
+        <StatusBar
+          className="lcars-status-bar-desktop"
+          isAnalyzing={isAnalyzing}
+          theme={theme} setTheme={setTheme}
+          audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+          onOpenAbout={handleOpenAbout}
+          onOpenSettings={handleOpenSettings}
+        />
+
+        {isMobileOrTablet && (
+          <MobileBottomNav
+            isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
+            activeTab={activeTab}
+            setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+            setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
+            onOpenSettings={handleOpenSettings}
+          />
+        )}
+
+        <ErrorBoundary>
+          <Suspense fallback={<LazyFallback />}>
+            <AppModals
+              theme={theme} setTheme={setTheme}
+              audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+              uiScale={uiScale} setUiScale={setUiScale}
+              defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
+              showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
+              hasExistingWork={hasExistingWork}
+              handleImportChooseFile={handleImportChooseFile}
+              onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
+              handleImportInputChange={handleImportInputChange}
+              exportSong={exportSong}
+              pastedText={pastedText} setPastedText={setPastedText}
+              isAnalyzing={isAnalyzing}
+              isAnalyzingTheme={isAnalyzingTheme}
+              importProgress={importProgress}
+              analyzePastedLyrics={analyzePastedLyrics}
+              analysisReport={analysisReport} analysisSteps={analysisSteps}
+              appliedAnalysisItems={appliedAnalysisItems}
+              selectedAnalysisItems={selectedAnalysisItems}
+              isApplyingAnalysis={isApplyingAnalysis}
+              toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+              applyAnalysisItem={applyAnalysisItem}
+              applySelectedAnalysisItems={applySelectedAnalysisItems}
+              clearAppliedAnalysisItems={clearAppliedAnalysisItems}
+              versions={versions} rollbackToVersion={rollbackToVersion}
+              similarityMatches={similarityMatches} libraryCount={libraryCount}
+              webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
+              handleDeleteLibraryAsset={handleDeleteLibraryAsset}
+              handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
+              title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
+              handleLoadLibraryAsset={handleLoadLibraryAsset}
+              handlePurgeLibrary={handlePurgeLibrary}
+              saveVersion={saveVersion}
+              handleRequestVersionName={handleRequestVersionName}
+              resetSong={resetSong}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </AppShell>
     </ModalProvider>
   );
 }
