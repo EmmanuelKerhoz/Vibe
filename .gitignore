@@ -8,3 +8,4 @@ coverage/
 !.env.example
 sauvegardes/
 node_modules/
+tsconfig.tsbuildinfo

@@ -252,6 +252,7 @@ export const InsightsBar = React.memo(function InsightsBar({
     if (adaptationProgress && adaptationProgress.active !== 'idle') {
       setBannerDismissed(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adaptationProgress?.active]);
 
   const targetDisplay = getLanguageDisplay(targetLanguage);

@@ -27,6 +27,7 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
     if (!ta) return;
     ta.addEventListener('scroll', syncScroll);
     return () => ta.removeEventListener('scroll', syncScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [textareaRef]);
 
   const buildHighlightedHtml = (text: string): string => {

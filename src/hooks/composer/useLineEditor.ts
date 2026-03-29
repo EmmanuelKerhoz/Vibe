@@ -257,6 +257,7 @@ export const useLineEditor = ({
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [song, updateSong, setSelectedLineId],
   );
 
