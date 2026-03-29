@@ -19,6 +19,7 @@ import { useDerivedAppState } from './hooks/useDerivedAppState';
 import { useAppHandlers } from './hooks/useAppHandlers';
 import { useModalHandlers } from './hooks/useModalHandlers';
 import { useAudioFeedback } from './hooks/useAudioFeedback';
+import { useImportHandlers } from './hooks/useImportHandlers';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
 import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
@@ -34,7 +35,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.25.1
+// v3.25.2
 
 function LazyFallback() {
   const { t } = useTranslation();

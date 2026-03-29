@@ -9,9 +9,11 @@ import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './ErrorBoundary';
 import { InsightsBar } from './InsightsBar';
 import { LyricsView } from './LyricsView';
+import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { useTranslation } from '../../i18n';
 import type { EditMode } from '../../types';
-import type { PlayAudioFeedback } from '../../hooks/useAudioFeedback';
+import type { WebSimilarityIndex } from '../../types/webSimilarity';
+import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 
 const MusicalTab = lazy(() =>
   import('./musical/MusicalTab').then(m => ({ default: m.MusicalTab }))
@@ -30,6 +32,8 @@ function LazyFallback() {
   );
 }
 
+type PlayAudioFeedback = ReturnType<typeof useAudioFeedback>['playAudioFeedback'];
+
 interface AppEditorZoneProps {
   // Layout
   activeTab: 'lyrics' | 'musical';
@@ -44,15 +48,15 @@ interface AppEditorZoneProps {
   isAnalyzing: boolean;
   editMode: EditMode;
   switchEditMode: (mode: EditMode) => void;
-  webSimilarityIndex: number;
+  webSimilarityIndex: WebSimilarityIndex;
   webBadgeLabel: string;
   libraryCount: number;
-  adaptSongLanguage: () => void;
+  adaptSongLanguage: (newLanguage: string) => void;
   detectLanguage: () => void;
   analyzeCurrentSong: () => void;
   setIsSimilarityModalOpen: (v: boolean) => void;
-  adaptationProgress: number;
-  adaptationResult: string | null;
+  adaptationProgress: AdaptationProgress;
+  adaptationResult: AdaptationResult | null;
   showTranslationFeatures: boolean;
   // LyricsView
   playAudioFeedback: PlayAudioFeedback;
@@ -70,8 +74,8 @@ interface AppEditorZoneProps {
   onGenerateSong: () => void;
   sectionTargetLanguages: Record<string, string>;
   onSectionTargetLanguageChange: (sectionId: string, lang: string) => void;
-  adaptSectionLanguage: (sectionId: string) => void;
-  adaptLineLanguage: (lineId: string, sectionId: string) => void;
+  adaptSectionLanguage: (sectionId: string, newLanguage: string) => void;
+  adaptLineLanguage: (sectionId: string, lineId: string, newLanguage: string) => void;
   adaptingLineIds: Set<string>;
 }
 

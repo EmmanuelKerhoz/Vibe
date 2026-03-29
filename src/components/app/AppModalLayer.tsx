@@ -39,8 +39,19 @@ function LazyFallback() {
 }
 
 export function AppModalLayer() {
-  const { song } = useSongContext();
-  const { selectedLineId } = useComposerContext();
+  const {
+    song,
+    structure,
+    title,
+    rhymeScheme,
+    replaceStateWithoutHistory,
+    clearHistory,
+    updateSongAndStructureWithHistory,
+    setSongLanguage,
+  } = useSongContext();
+
+  const { clearSelection } = useComposerContext();
+
   const { appState } = useAppStateContext();
   const {
     theme, setTheme, audioFeedback, setAudioFeedback,
@@ -54,17 +65,11 @@ export function AppModalLayer() {
     setIsSettingsOpen, setIsAboutOpen,
     setIsKeyboardShortcutsModalOpen, setIsSearchReplaceOpen,
     setIsPasteModalOpen,
-    setSectionTargetLanguages: _setSectionTargetLanguages,
     importInputRef,
-    replaceStateWithoutHistory,
-    clearHistory,
-    rhymeScheme,
     setIsResetModalOpen,
-    title,
+    editMode, markupText,
   } = appState;
 
-  // setSectionTargetLanguages comes from appState but is typed on the analysis side
-  // Re-derive it from analysis context to avoid type mismatch
   const {
     pastedText, setPastedText,
     isAnalyzing, isAnalyzingTheme, importProgress,
@@ -78,12 +83,11 @@ export function AppModalLayer() {
 
   const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionContext();
 
-  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity } = useSimilarityEngine();
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine();
 
-  const { editMode, markupText } = appState;
   const { hasExistingWork } = useDerivedAppState({ editMode, markupText, webSimilarityIndex });
 
-  const { exportSong, loadFileForAnalysis } = useSongEditor({
+  const { exportSong, loadFileForAnalysis, resetSuggestionCycle } = useSongEditor({
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); },
     playAudioFeedback: () => {},
   });
@@ -94,7 +98,7 @@ export function AppModalLayer() {
     setIsImportModalOpen,
     setIsPasteModalOpen,
     setPastedText,
-    setSongLanguage: appState.setSongLanguage,
+    setSongLanguage,
   });
 
   const {
@@ -124,15 +128,15 @@ export function AppModalLayer() {
 
   const { resetSong } = useSessionActions({
     song,
-    structure: appState.structure,
+    structure,
     rhymeScheme,
     appState,
     replaceStateWithoutHistory,
     clearHistory,
-    clearSelection: appState.clearSelection,
-    resetWebSimilarityIndex: appState.resetWebSimilarityIndex,
-    resetSuggestionCycle: appState.resetSuggestionCycle,
-    updateSongAndStructureWithHistory: appState.updateSongAndStructureWithHistory,
+    clearSelection,
+    resetWebSimilarityIndex,
+    resetSuggestionCycle,
+    updateSongAndStructureWithHistory,
     setIsResetModalOpen,
   });
 
