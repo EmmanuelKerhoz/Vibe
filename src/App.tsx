@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
-import { useAudioFeedback } from './hooks/useAudioFeedback';
-import { useSongAnalysis } from './hooks/useSongAnalysis';
 import { useSongEditor } from './hooks/useSongEditor';
 import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
@@ -22,8 +20,10 @@ import { useUIStateForProvider } from './hooks/useUIStateForProvider';
 import { useDerivedAppState } from './hooks/useDerivedAppState';
 import { useAppHandlers } from './hooks/useAppHandlers';
 import { useModalHandlers } from './hooks/useModalHandlers';
+import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
+import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -36,7 +36,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.22.11
+// v3.22.12
 const AppModals = lazy(() =>
   import('./components/app/AppModals').then(m => ({ default: m.AppModals }))
 );
@@ -159,6 +159,7 @@ function AppInnerContent() {
   const isGeneratingRef = useRef(isGenerating);
   isGeneratingRef.current = isGenerating;
 
+  // ── Analysis — consumed from AnalysisContext (Phase 2 refactor) ───────────
   const {
     canPasteLyrics,
     pastedText,
@@ -190,13 +191,7 @@ function AppInnerContent() {
     adaptingLineIds,
     analyzePastedLyrics,
     clearAppliedAnalysisItems,
-  } = useSongAnalysis({
-    uiLanguage: language, isGeneratingRef, saveVersion,
-    updateState, updateSongAndStructureWithHistory,
-    clearLineSelection: () => clearSelection(),
-    requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
-    setIsPasteModalOpen, setIsAnalysisModalOpen,
-  });
+  } = useAnalysisContext();
 
   // Apply defaultEditMode once after session hydration.
   const hasAppliedDefaultEditModeRef = useRef(false);
@@ -217,10 +212,8 @@ function AppInnerContent() {
     previousActiveTabRef.current = activeTab;
 
     if (activeTab !== 'lyrics' && editMode !== 'section') {
-      // Leaving lyrics tab — normalise to section mode.
       setEditMode('section');
     } else if (activeTab === 'lyrics' && prev !== 'lyrics' && hasAppliedDefaultEditModeRef.current) {
-      // Returning to lyrics tab — restore the configured default if it differs.
       if (defaultEditMode !== 'section' && editMode === 'section') {
         switchEditMode(defaultEditMode);
       }
@@ -566,6 +559,10 @@ function AppInnerContent() {
   );
 }
 
+// ── AppInner: providers stack ─────────────────────────────────────────────────
+// AnalysisProvider must be inside ModalProvider (needs useModalDispatch).
+// It is therefore mounted inside AppInnerContent's render, after ModalProvider.
+// AppInner wraps the outermost data providers.
 function AppInner() {
   return (
     <DragProvider>
