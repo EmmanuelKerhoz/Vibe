@@ -1,172 +1,79 @@
+/**
+ * useUIStateForProvider
+ *
+ * Produces a stable UIStateBag reference for ModalProvider.
+ *
+ * Previous implementation used 5 nested useMemo calls (4 sub-groups + 1
+ * fusion). The fusion useMemo([modalState, layoutState, textState, refs])
+ * invalidated the entire bag whenever any sub-group changed, making the
+ * grouping cosmetic and providing no real memoisation benefit.
+ *
+ * This version uses a single flat useMemo with precise individual
+ * dependencies. React can perform a shallow comparison on each dependency
+ * and bail out correctly — one invalidation surface, no layered overhead.
+ *
+ * Note: useState setters (setIsAboutOpen, etc.) have referential stability
+ * across renders, so they do not contribute to invalidation in practice.
+ */
 import { useMemo } from 'react';
 import type { UIStateBag } from '../contexts/ModalContext';
 
-type UseUIStateForProviderParams = UIStateBag;
+export const useUIStateForProvider = (bag: UIStateBag): UIStateBag => {
+  const {
+    setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
+    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
+    setIsResetModalOpen, setIsKeyboardShortcutsModalOpen,
+    setConfirmModal, setPromptModal, setIsPasteModalOpen,
+    setIsAnalysisModalOpen, setIsSearchReplaceOpen, setEditMode,
+    isAboutOpen, isSettingsOpen, apiErrorModal,
+    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
+    isResetModalOpen, isKeyboardShortcutsModalOpen,
+    confirmModal, promptModal, isPasteModalOpen,
+    isAnalysisModalOpen, isSearchReplaceOpen,
+    activeTab, setActiveTab,
+    isStructureOpen, setIsStructureOpen,
+    isLeftPanelOpen, setIsLeftPanelOpen,
+    editMode, markupText, setMarkupText,
+    markupTextareaRef, importInputRef,
+  } = bag;
 
-export const useUIStateForProvider = ({
-  setIsAboutOpen,
-  setIsSettingsOpen,
-  setApiErrorModal,
-  setIsImportModalOpen,
-  setIsExportModalOpen,
-  setIsSectionDropdownOpen,
-  setIsSimilarityModalOpen,
-  setIsSaveToLibraryModalOpen,
-  setIsVersionsModalOpen,
-  setIsResetModalOpen,
-  setIsKeyboardShortcutsModalOpen,
-  setConfirmModal,
-  setPromptModal,
-  setIsPasteModalOpen,
-  setIsAnalysisModalOpen,
-  setIsSearchReplaceOpen,
-  setEditMode,
-  isAboutOpen,
-  isSettingsOpen,
-  apiErrorModal,
-  isImportModalOpen,
-  isExportModalOpen,
-  isSectionDropdownOpen,
-  isSimilarityModalOpen,
-  isSaveToLibraryModalOpen,
-  isVersionsModalOpen,
-  isResetModalOpen,
-  isKeyboardShortcutsModalOpen,
-  confirmModal,
-  promptModal,
-  isPasteModalOpen,
-  isAnalysisModalOpen,
-  isSearchReplaceOpen,
-  activeTab,
-  setActiveTab,
-  isStructureOpen,
-  setIsStructureOpen,
-  isLeftPanelOpen,
-  setIsLeftPanelOpen,
-  editMode,
-  markupText,
-  setMarkupText,
-  markupTextareaRef,
-  importInputRef,
-}: UseUIStateForProviderParams): UIStateBag => {
-  // Modal-related state (15 modals with their state and setters)
-  const modalState = useMemo(() => ({
-    setIsAboutOpen,
-    setIsSettingsOpen,
-    setApiErrorModal,
-    setIsImportModalOpen,
-    setIsExportModalOpen,
-    setIsSectionDropdownOpen,
-    setIsSimilarityModalOpen,
-    setIsSaveToLibraryModalOpen,
-    setIsVersionsModalOpen,
-    setIsResetModalOpen,
-    setIsKeyboardShortcutsModalOpen,
-    setConfirmModal,
-    setPromptModal,
-    setIsPasteModalOpen,
-    setIsAnalysisModalOpen,
-    setIsSearchReplaceOpen,
-    isAboutOpen,
-    isSettingsOpen,
-    apiErrorModal,
-    isImportModalOpen,
-    isExportModalOpen,
-    isSectionDropdownOpen,
-    isSimilarityModalOpen,
-    isSaveToLibraryModalOpen,
-    isVersionsModalOpen,
-    isResetModalOpen,
-    isKeyboardShortcutsModalOpen,
-    confirmModal,
-    promptModal,
-    isPasteModalOpen,
-    isAnalysisModalOpen,
-    isSearchReplaceOpen,
-  }), [
-    setIsAboutOpen,
-    setIsSettingsOpen,
-    setApiErrorModal,
-    setIsImportModalOpen,
-    setIsExportModalOpen,
-    setIsSectionDropdownOpen,
-    setIsSimilarityModalOpen,
-    setIsSaveToLibraryModalOpen,
-    setIsVersionsModalOpen,
-    setIsResetModalOpen,
-    setIsKeyboardShortcutsModalOpen,
-    setConfirmModal,
-    setPromptModal,
-    setIsPasteModalOpen,
-    setIsAnalysisModalOpen,
-    setIsSearchReplaceOpen,
-    isAboutOpen,
-    isSettingsOpen,
-    apiErrorModal,
-    isImportModalOpen,
-    isExportModalOpen,
-    isSectionDropdownOpen,
-    isSimilarityModalOpen,
-    isSaveToLibraryModalOpen,
-    isVersionsModalOpen,
-    isResetModalOpen,
-    isKeyboardShortcutsModalOpen,
-    confirmModal,
-    promptModal,
-    isPasteModalOpen,
-    isAnalysisModalOpen,
-    isSearchReplaceOpen,
-  ]);
-
-  // Panel and layout state (tabs, panels, markup mode)
-  const layoutState = useMemo(() => ({
-    activeTab,
-    setActiveTab,
-    isStructureOpen,
-    setIsStructureOpen,
-    isLeftPanelOpen,
-    setIsLeftPanelOpen,
-    editMode,
-    setEditMode,
-  }), [
-    activeTab,
-    setActiveTab,
-    isStructureOpen,
-    setIsStructureOpen,
-    isLeftPanelOpen,
-    setIsLeftPanelOpen,
-    editMode,
-    setEditMode,
-  ]);
-
-  // Text and content state
-  const textState = useMemo(() => ({
-    markupText,
-    setMarkupText,
-  }), [
-    markupText,
-    setMarkupText,
-  ]);
-
-  // DOM references (stable, but included for completeness)
-  const refs = useMemo(() => ({
-    markupTextareaRef,
-    importInputRef,
-  }), [
-    markupTextareaRef,
-    importInputRef,
-  ]);
-
-  // Compose the final context value from semantic sub-groups
   return useMemo(() => ({
-    ...modalState,
-    ...layoutState,
-    ...textState,
-    ...refs,
+    setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
+    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
+    setIsResetModalOpen, setIsKeyboardShortcutsModalOpen,
+    setConfirmModal, setPromptModal, setIsPasteModalOpen,
+    setIsAnalysisModalOpen, setIsSearchReplaceOpen, setEditMode,
+    isAboutOpen, isSettingsOpen, apiErrorModal,
+    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
+    isResetModalOpen, isKeyboardShortcutsModalOpen,
+    confirmModal, promptModal, isPasteModalOpen,
+    isAnalysisModalOpen, isSearchReplaceOpen,
+    activeTab, setActiveTab,
+    isStructureOpen, setIsStructureOpen,
+    isLeftPanelOpen, setIsLeftPanelOpen,
+    editMode, markupText, setMarkupText,
+    markupTextareaRef, importInputRef,
   }), [
-    modalState,
-    layoutState,
-    textState,
-    refs,
+    setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
+    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
+    setIsResetModalOpen, setIsKeyboardShortcutsModalOpen,
+    setConfirmModal, setPromptModal, setIsPasteModalOpen,
+    setIsAnalysisModalOpen, setIsSearchReplaceOpen, setEditMode,
+    isAboutOpen, isSettingsOpen, apiErrorModal,
+    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
+    isResetModalOpen, isKeyboardShortcutsModalOpen,
+    confirmModal, promptModal, isPasteModalOpen,
+    isAnalysisModalOpen, isSearchReplaceOpen,
+    activeTab, setActiveTab,
+    isStructureOpen, setIsStructureOpen,
+    isLeftPanelOpen, setIsLeftPanelOpen,
+    editMode, markupText, setMarkupText,
+    markupTextareaRef, importInputRef,
   ]);
 };
