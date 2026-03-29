@@ -46,8 +46,25 @@ vi.mock('../../contexts/ComposerContext', () => ({
   }),
 }));
 
+// EditorContext: LyricsView now sources editor state from this context.
+// Each test that needs a specific editMode can override via this mock.
+let mockEditMode: 'section' | 'markdown' | 'text' | 'phonetic' = 'section';
+let mockMarkupText = '';
+vi.mock('../../contexts/EditorContext', () => ({
+  useEditorContext: () => ({
+    editMode: mockEditMode,
+    setEditMode: vi.fn(),
+    markupText: mockMarkupText,
+    setMarkupText: vi.fn(),
+    markupTextareaRef: { current: null },
+    markupDirection: 'ltr' as const,
+  }),
+}));
+
 describe('LyricsView empty state', () => {
   it('offers quick actions for library, paste, and generation', () => {
+    mockEditMode = 'section';
+    mockMarkupText = '';
     const onOpenLibrary = vi.fn();
     const onPasteLyrics = vi.fn();
     const onGenerateSong = vi.fn();
@@ -62,11 +79,6 @@ describe('LyricsView empty state', () => {
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="section"
-              setEditMode={() => {}}
-              markupText=""
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={true}
               onOpenLibrary={onOpenLibrary}
               onPasteLyrics={onPasteLyrics}
@@ -87,6 +99,8 @@ describe('LyricsView empty state', () => {
   });
 
   it('disables the paste action when there is no text available to paste', () => {
+    mockEditMode = 'section';
+    mockMarkupText = '';
     render(
       <DragProvider>
         <LanguageProvider>
@@ -97,11 +111,6 @@ describe('LyricsView empty state', () => {
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="section"
-              setEditMode={() => {}}
-              markupText=""
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={false}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
@@ -116,6 +125,8 @@ describe('LyricsView empty state', () => {
   });
 
   it('uses the shared gradient container surface in markup mode', () => {
+    mockEditMode = 'markdown';
+    mockMarkupText = '[Verse]\nHello';
     const { container } = render(
       <DragProvider>
         <LanguageProvider>
@@ -126,11 +137,6 @@ describe('LyricsView empty state', () => {
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="markdown"
-              setEditMode={() => {}}
-              markupText="[Verse]\nHello"
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
@@ -145,6 +151,8 @@ describe('LyricsView empty state', () => {
   });
 
   it('renders phonetic mode with IPA output and hint', () => {
+    mockEditMode = 'phonetic';
+    mockMarkupText = '';
     mockSong.length = 0;
     mockSong.push({
       id: 'section-1',
@@ -170,11 +178,6 @@ describe('LyricsView empty state', () => {
             handleDrop={() => {}}
             handleLineDragStart={() => {}}
             handleLineDrop={() => {}}
-            editMode="phonetic"
-            setEditMode={() => {}}
-            markupText=""
-            setMarkupText={() => {}}
-            markupTextareaRef={{ current: null }}
             canPasteLyrics={true}
             onOpenLibrary={() => {}}
             onPasteLyrics={() => {}}
@@ -189,6 +192,8 @@ describe('LyricsView empty state', () => {
   });
 
   it('passes section editing handlers directly to rendered sections', () => {
+    mockEditMode = 'section';
+    mockMarkupText = '';
     const song: Section[] = [{
       id: 'section-1',
       name: 'Verse',
@@ -204,7 +209,6 @@ describe('LyricsView empty state', () => {
       postInstructions: [],
     }];
 
-    // Update the mock to return the song with content
     mockSong.length = 0;
     mockSong.push(...song);
     mockUpdateState.mockClear();
@@ -219,11 +223,6 @@ describe('LyricsView empty state', () => {
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="section"
-              setEditMode={() => {}}
-              markupText=""
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
@@ -254,11 +253,12 @@ describe('LyricsView empty state', () => {
       }],
     });
 
-    // Reset for other tests
     mockSong.length = 0;
   });
 
   it('shows Free Verse first in the section rhyme scheme selector', () => {
+    mockEditMode = 'section';
+    mockMarkupText = '';
     mockSong.length = 0;
     mockSong.push({
       id: 'section-1',
@@ -286,11 +286,6 @@ describe('LyricsView empty state', () => {
               handleDrop={() => {}}
               handleLineDragStart={() => {}}
               handleLineDrop={() => {}}
-              editMode="section"
-              setEditMode={() => {}}
-              markupText=""
-              setMarkupText={() => {}}
-              markupTextareaRef={{ current: null }}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
