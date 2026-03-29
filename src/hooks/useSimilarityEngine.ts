@@ -18,23 +18,29 @@ const textFingerprint = (title: string, sections: import('../types').Section[]):
 
 /**
  * Unicode-safe character delta: iterates over code points, not UTF-16 units.
- * FIX: early-exit when the length ratio alone exceeds DELTA_THRESHOLD —
- * avoids O(n) scan for large mutations (AI generation replacing full song).
+ * FIX: length-ratio guard runs on raw string .length BEFORE spreading into char arrays.
+ * This avoids O(n) allocation on every keystroke for large songs — spread only happens
+ * when lengths are close enough that a character-level diff is actually needed.
  */
 const changeDelta = (prev: string, next: string): number => {
   if (!prev) return 1;
+  const prevLen = prev.length;
+  const nextLen = next.length;
+  const maxLen = Math.max(prevLen, nextLen);
+  if (maxLen === 0) return 0;
+  // Early-exit on length ratio BEFORE any spread allocation.
+  const lengthRatioDelta = Math.abs(prevLen - nextLen) / maxLen;
+  if (lengthRatioDelta > DELTA_THRESHOLD) return lengthRatioDelta;
+  // Only spread into code-point arrays when lengths are similar enough
+  // that a character-level comparison is warranted.
   const prevChars = [...prev];
   const nextChars = [...next];
-  const maxLen = Math.max(prevChars.length, nextChars.length);
-  if (maxLen === 0) return 0;
-  if (Math.abs(prevChars.length - nextChars.length) / maxLen > DELTA_THRESHOLD) {
-    return Math.abs(prevChars.length - nextChars.length) / maxLen;
-  }
+  const charMaxLen = Math.max(prevChars.length, nextChars.length);
   let diff = 0;
-  for (let i = 0; i < maxLen; i++) {
+  for (let i = 0; i < charMaxLen; i++) {
     if (prevChars[i] !== nextChars[i]) diff++;
   }
-  return diff / maxLen;
+  return diff / charMaxLen;
 };
 
 const INITIAL_INDEX: WebSimilarityIndex = {
