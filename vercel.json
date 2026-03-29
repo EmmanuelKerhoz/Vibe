@@ -2,7 +2,6 @@
   "buildCommand": "npm ci && npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "nodeVersion": "20.x",
   "functions": {
     "api/**": {
       "maxDuration": 60
