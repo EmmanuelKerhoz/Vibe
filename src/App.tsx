@@ -22,6 +22,7 @@ import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useImportHandlers } from './hooks/useImportHandlers';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
+import { EditorProvider } from './contexts/EditorContext';
 import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
 import { VersionProvider, useVersionContext } from './contexts/VersionContext';
@@ -35,7 +36,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.25.2
+// v3.25.7
 
 function LazyFallback() {
   const { t } = useTranslation();
@@ -146,9 +147,6 @@ function AppInnerContent() {
     editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
     updateSongAndStructureWithHistory,
   });
-
-  // NOTE: isGeneratingRef lives authoritatively in AppProviders (wired to AnalysisProvider).
-  // No local ref needed here — removed orphan copy that was never consumed.
 
   const {
     canPasteLyrics,
@@ -401,11 +399,6 @@ function AppInnerContent() {
               handleDrop={handleDrop}
               handleLineDragStart={handleLineDragStart}
               handleLineDrop={handleLineDrop}
-              setEditMode={setEditMode}
-              markupText={markupText}
-              setMarkupText={setMarkupText}
-              markupTextareaRef={markupTextareaRef}
-              markupDirection={markupDirection}
               canPasteLyrics={canPasteLyrics}
               onOpenLibrary={handleOpenSaveToLibraryModal}
               onPasteLyrics={handleOpenPasteModal}
@@ -483,24 +476,41 @@ function AppProviders() {
   const { saveVersion } = useVersionContext();
 
   // Authoritative isGeneratingRef — wired to AnalysisProvider.
-  // Single source of truth; no copy in AppInnerContent.
   const isGeneratingRef = useRef(isGenerating);
   isGeneratingRef.current = isGenerating;
 
+  // markupDirection is computed at render time from appState — pass it to
+  // EditorProvider so LyricsView does not need to recompute it.
+  // It is defined here rather than in EditorProvider to avoid pulling
+  // useMarkupEditor into a provider (it owns scrollToSection side-effects).
+  // The value rarely changes so this is a non-issue for re-render frequency.
+  const markupDirection = appState.markupText
+    ? (/[\u0600-\u06FF\u0750-\u077F\u0590-\u05FF]/.test(appState.markupText) ? 'rtl' : 'ltr')
+    : 'ltr';
+
   return (
-    <ModalProvider uiState={uiStateForProvider}>
-      <AnalysisProvider
-        uiLanguage={language}
-        isGeneratingRef={isGeneratingRef}
-        saveVersion={saveVersion}
-        updateState={updateState}
-        updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
-        clearLineSelection={clearSelection}
-        requestAutoTitleGeneration={() => setShouldAutoGenerateTitle(true)}
-      >
-        <AppInnerContent />
-      </AnalysisProvider>
-    </ModalProvider>
+    <EditorProvider
+      editMode={appState.editMode}
+      setEditMode={appState.setEditMode}
+      markupText={appState.markupText}
+      setMarkupText={appState.setMarkupText}
+      markupTextareaRef={appState.markupTextareaRef}
+      markupDirection={markupDirection}
+    >
+      <ModalProvider uiState={uiStateForProvider}>
+        <AnalysisProvider
+          uiLanguage={language}
+          isGeneratingRef={isGeneratingRef}
+          saveVersion={saveVersion}
+          updateState={updateState}
+          updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
+          clearLineSelection={clearSelection}
+          requestAutoTitleGeneration={() => setShouldAutoGenerateTitle(true)}
+        >
+          <AppInnerContent />
+        </AnalysisProvider>
+      </ModalProvider>
+    </EditorProvider>
   );
 }
 

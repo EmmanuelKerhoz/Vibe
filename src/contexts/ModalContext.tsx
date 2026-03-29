@@ -2,6 +2,10 @@ import React, { createContext, useContext, useCallback, useMemo, type ReactNode 
 import type { EditMode } from '../types';
 
 // ── Minimal UIState interface ─────────────────────────────────────────────────
+// NOTE: editMode / setEditMode / markupText / setMarkupText / markupTextareaRef
+// have been moved to EditorContext (src/contexts/EditorContext.tsx).
+// They no longer belong here — they caused ModalStateContext to invalidate on
+// every keystroke.
 export interface UIStateBag {
   setIsAboutOpen: (v: boolean) => void;
   setIsSettingsOpen: (v: boolean) => void;
@@ -19,7 +23,6 @@ export interface UIStateBag {
   setIsPasteModalOpen: (v: boolean) => void;
   setIsAnalysisModalOpen: (v: boolean) => void;
   setIsSearchReplaceOpen: (v: boolean) => void;
-  setEditMode: (v: EditMode) => void;
   isAboutOpen: boolean;
   isSettingsOpen: boolean;
   apiErrorModal: { open: boolean; message: string };
@@ -42,10 +45,7 @@ export interface UIStateBag {
   setIsStructureOpen: (v: boolean) => void;
   isLeftPanelOpen: boolean;
   setIsLeftPanelOpen: (v: boolean) => void;
-  editMode: EditMode;
-  markupText: string;
-  setMarkupText: (v: string) => void;
-  markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  // editMode / markupText / markupTextareaRef → EditorContext
   importInputRef: React.RefObject<HTMLInputElement>;
 }
 
