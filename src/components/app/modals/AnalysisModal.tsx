@@ -46,6 +46,11 @@ export function AnalysisModal({
 
   if (!isOpen) return null;
 
+  // Defensive normalization — guards against AI returning null for array fields
+  const strengths = Array.isArray(analysisReport?.strengths) ? analysisReport!.strengths : [];
+  const improvements = Array.isArray(analysisReport?.improvements) ? analysisReport!.improvements : [];
+  const musicalSuggestions = Array.isArray(analysisReport?.musicalSuggestions) ? analysisReport!.musicalSuggestions : [];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
@@ -151,7 +156,7 @@ export function AnalysisModal({
                     <CheckCircle2 className="w-3.5 h-3.5" />{t.analysis.strengths}
                   </h4>
                   <ul className="space-y-2">
-                    {analysisReport.strengths.map((s, i) => (
+                    {strengths.map((s, i) => (
                       <li key={i} className="text-sm text-zinc-400 flex gap-2"><span className="text-emerald-500 mt-1">•</span>{s}</li>
                     ))}
                   </ul>
@@ -161,7 +166,7 @@ export function AnalysisModal({
                     <Target className="w-3.5 h-3.5" />{t.analysis.improvements}
                   </h4>
                   <ul className="space-y-3">
-                    {analysisReport.improvements.map((s, i) => (
+                    {improvements.map((s, i) => (
                       <li key={i} className="flex items-start gap-3 group">
                         <button
                           onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)}
@@ -208,7 +213,7 @@ export function AnalysisModal({
                   <Music className="w-3.5 h-3.5" />{t.analysis.musicalSuggestions}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {analysisReport.musicalSuggestions.map((s, i) => (
+                  {musicalSuggestions.map((s, i) => (
                     <div key={i} onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)}
                       className={`text-xs p-3 rounded-lg border transition-all cursor-pointer flex items-start gap-3 group ${
                         appliedAnalysisItems.has(s)

@@ -29,6 +29,29 @@ type AnalysisReport = {
   summary: string;
 };
 
+const EMPTY_ANALYSIS_REPORT: AnalysisReport = {
+  theme: '',
+  emotionalArc: '',
+  technicalAnalysis: [],
+  strengths: [],
+  improvements: [],
+  musicalSuggestions: [],
+  summary: '',
+};
+
+/** Ensures all array fields are actual arrays regardless of what the AI returned. */
+function normalizeAnalysisReport(raw: AnalysisReport): AnalysisReport {
+  return {
+    theme: raw.theme ?? '',
+    emotionalArc: raw.emotionalArc ?? '',
+    technicalAnalysis: Array.isArray(raw.technicalAnalysis) ? raw.technicalAnalysis : [],
+    strengths: Array.isArray(raw.strengths) ? raw.strengths : [],
+    improvements: Array.isArray(raw.improvements) ? raw.improvements : [],
+    musicalSuggestions: Array.isArray(raw.musicalSuggestions) ? raw.musicalSuggestions : [],
+    summary: raw.summary ?? '',
+  };
+}
+
 type SaveVersionFn = (name: string, snapshot?: {
   song: Section[];
   structure: string[];
@@ -286,16 +309,8 @@ export const useSongAnalysisEngine = ({
         }
 
         setAnalysisSteps(prev => [...prev, 'Finalizing report...']);
-        const data = safeJsonParse<AnalysisReport>(response.text || '{}', {
-          theme: '',
-          emotionalArc: '',
-          technicalAnalysis: [],
-          strengths: [],
-          improvements: [],
-          musicalSuggestions: [],
-          summary: '',
-        });
-        setAnalysisReport(data);
+        const raw = safeJsonParse<AnalysisReport>(response.text || '{}', EMPTY_ANALYSIS_REPORT);
+        setAnalysisReport(normalizeAnalysisReport(raw));
         setAnalysisSteps(prev => [...prev, 'Analysis complete!']);
       });
     } catch (error) {
