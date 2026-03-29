@@ -1,6 +1,7 @@
 import React, { createContext, useContext, type ReactNode } from 'react';
 import { useVersionManager } from '../hooks/useVersionManager';
 import { useAppStateContext } from './AppStateContext';
+import { useSongContext } from './SongContext';
 import type { SongVersion } from '../types';
 import type { VersionSnapshot } from '../utils/songDefaults';
 
@@ -15,7 +16,8 @@ const VersionContext = createContext<VersionContextValue | null>(null);
 
 export function VersionProvider({ children }: { children: ReactNode }) {
   const { appState } = useAppStateContext();
-  const { setIsVersionsModalOpen, setPromptModal, updateSongAndStructureWithHistory } = appState;
+  const { setIsVersionsModalOpen, setPromptModal } = appState;
+  const { updateSongAndStructureWithHistory } = useSongContext();
 
   const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionManager({
     updateSongAndStructureWithHistory,
