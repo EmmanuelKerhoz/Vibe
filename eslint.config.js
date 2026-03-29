@@ -5,6 +5,9 @@ import reactPlugin from 'eslint-plugin-react';
 
 export default [
   {
+    ignores: ['api/**', 'vite.config.ts', 'tailwind.config.ts', 'dist/**'],
+  },
+  {
     files: ['src/**/*.{ts,tsx}'],
     plugins: {
       '@typescript-eslint': tsPlugin,

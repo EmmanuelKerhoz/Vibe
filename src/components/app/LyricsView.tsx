@@ -70,6 +70,7 @@ export const LyricsView = memo(function LyricsView({
    */
   const RHYME_KEYS = useMemo(
     () => ['FREE', ...Object.keys(t.rhymeSchemes).filter((key) => key !== 'FREE')] as Array<keyof typeof t.rhymeSchemes>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [t.rhymeSchemes]
   );
 
