@@ -1,6 +1,4 @@
 import React from 'react';
-import { BarChart2 } from '../ui/icons';
-import { useTranslation } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 import type { EditMode } from '../../types';
@@ -11,6 +9,7 @@ import { AdaptationProgressBanner } from './AdaptationProgressBanner';
 import {
   AnalyzeSongButton,
   DetectLanguageButton,
+  InsightsBarLayout,
   MetronomeButton,
   MobileKpisDisplay,
   SimilarityButton,
@@ -68,7 +67,6 @@ export const InsightsBar = React.memo(function InsightsBar({
   const { song, songLanguage, detectedLanguages } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { sectionCount, wordCount, charCount } = useAppKpis();
-  const { t } = useTranslation();
   const [bannerDismissed, setBannerDismissed] = React.useState(false);
 
   React.useEffect(() => {
@@ -85,95 +83,30 @@ export const InsightsBar = React.memo(function InsightsBar({
     !bannerDismissed;
 
   return (
-    <div className="insights-bar-mobile border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 lg:px-4 py-2 z-10" style={{ position: 'relative', overflow: 'visible' }}>
-      <div style={{
-        position: 'absolute',
-        bottom: -1, left: 0, right: 0,
-        height: '2px',
-        background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-        opacity: 0.85,
-        pointerEvents: 'none',
-        zIndex: 10,
-      }} />
-      <div className="flex flex-col gap-2 lg:gap-3 w-full">
-
-        {/* Single row: View dropdown | sep | TRANSLATE | ADAPTATION | Language | Metronome | … | INSIGHTS (right) */}
-        <div className="flex items-center gap-2 min-w-0">
-
-          {/* ── View dropdown (replaces LYRICS Editors buttons) ─────── */}
-          <ViewModeSelector
-            editMode={editMode}
-            switchEditMode={switchEditMode}
-            disabled={isGenerating || isAnalyzing}
-          />
-
-          <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
-
-          {/* ── TRANSLATE group (was Structure & Insights) ───────────── */}
-          <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
-            <BarChart2 className="w-3.5 h-3.5" aria-hidden="true" />
-            {t.insights.title}
-          </h3>
-          <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
-
-          <TranslationControls
-            targetLanguage={targetLanguage}
-            setTargetLanguage={setTargetLanguage}
-            isAdaptingLanguage={isAdaptingLanguage}
-            songCount={song.length}
-            adaptSongLanguage={adaptSongLanguage}
-            showTranslationFeatures={showTranslationFeatures}
-          />
-
-          <MetronomeButton
-            isActive={isMetronomeActive}
-            onToggle={toggleMetronome}
-          />
-
-          {/* ── INSIGHTS group (was LYRICS Insights), right-aligned ──── */}
-          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsInsights ?? 'INSIGHTS'}</span>
-            <DetectLanguageButton
-              detectedLanguages={detectedLanguages}
-              songLanguage={songLanguage}
-              songCount={song.length}
-              isDetectingLanguage={isDetectingLanguage}
-              onDetect={detectLanguage}
-            />
-            <AnalyzeSongButton
-              isGenerating={isGenerating}
-              isAnalyzing={isAnalyzing}
-              songCount={song.length}
-              onAnalyze={analyzeCurrentSong}
-            />
-            <SimilarityButton
-              isGenerating={isGenerating}
-              isAnalyzing={isAnalyzing}
-              hasLyrics={hasLyrics}
-              webSimilarityIndex={webSimilarityIndex}
-              webBadgeLabel={webBadgeLabel}
-              libraryCount={libraryCount}
-              setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-            />
-          </div>
-
-          <MobileKpisDisplay
-            sectionCount={sectionCount}
-            wordCount={wordCount}
-            charCount={charCount}
-          />
-        </div>
-
-        {showBanner && adaptationProgress && (
-          <AdaptationProgressBanner
-            progress={adaptationProgress}
-            result={adaptationResult ?? null}
-            onDismiss={() => setBannerDismissed(true)}
-            isOverlay
-          />
-        )}
-
-      </div>
-    </div>
+    <InsightsBarLayout
+      viewSelector={<ViewModeSelector editMode={editMode} switchEditMode={switchEditMode} disabled={isGenerating || isAnalyzing} />}
+      translationControls={
+        <TranslationControls
+          targetLanguage={targetLanguage}
+          setTargetLanguage={setTargetLanguage}
+          isAdaptingLanguage={isAdaptingLanguage}
+          songCount={song.length}
+          adaptSongLanguage={adaptSongLanguage}
+          showTranslationFeatures={showTranslationFeatures}
+        />
+      }
+      metronomeControl={<MetronomeButton isActive={isMetronomeActive} onToggle={toggleMetronome} />}
+      insightsActions={
+        <>
+          <DetectLanguageButton detectedLanguages={detectedLanguages} songLanguage={songLanguage} songCount={song.length} isDetectingLanguage={isDetectingLanguage} onDetect={detectLanguage} />
+          <AnalyzeSongButton isGenerating={isGenerating} isAnalyzing={isAnalyzing} songCount={song.length} onAnalyze={analyzeCurrentSong} />
+          <SimilarityButton isGenerating={isGenerating} isAnalyzing={isAnalyzing} hasLyrics={hasLyrics} webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} setIsSimilarityModalOpen={setIsSimilarityModalOpen} />
+        </>
+      }
+      mobileKpis={<MobileKpisDisplay sectionCount={sectionCount} wordCount={wordCount} charCount={charCount} />}
+      banner={showBanner && adaptationProgress
+        ? <AdaptationProgressBanner progress={adaptationProgress} result={adaptationResult ?? null} onDismiss={() => setBannerDismissed(true)} isOverlay />
+        : null}
+    />
   );
 });
