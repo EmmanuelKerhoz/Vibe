@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../../utils/aiUtils';
 import { mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
@@ -6,6 +6,7 @@ import { isSectionHeader } from '../../utils/metaUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import type { Line, Section } from '../../types';
 import { makeSongUpdater } from '../hookUtils';
+import { useLanguageAdaptationContext } from '../../contexts/LanguageAdaptationContext';
 import {
   type AdaptationProgress,
   type AdaptationResult,
@@ -47,13 +48,22 @@ export const useLanguageAdapter = ({
   lineLanguages,
   setLineLanguages,
 }: UseLanguageAdapterParams) => {
-  const [targetLanguage, setTargetLanguage] = useState<string>('English');
-  const [sectionTargetLanguages, setSectionTargetLanguages] = useState<Record<string, string>>({});
-  const [isDetectingLanguage, setIsDetectingLanguage] = useState(false);
-  const [isAdaptingLanguage, setIsAdaptingLanguage] = useState(false);
-  const [adaptingLineIds, setAdaptingLineIds] = useState<Set<string>>(new Set());
-  const [adaptationProgress, setAdaptationProgress] = useState<AdaptationProgress>(IDLE_PROGRESS);
-  const [adaptationResult, setAdaptationResult] = useState<AdaptationResult | null>(null);
+  const {
+    targetLanguage,
+    setTargetLanguage,
+    sectionTargetLanguages,
+    setSectionTargetLanguages,
+    isDetectingLanguage,
+    setIsDetectingLanguage,
+    isAdaptingLanguage,
+    setIsAdaptingLanguage,
+    adaptingLineIds,
+    setAdaptingLineIds,
+    adaptationProgress,
+    setAdaptationProgress,
+    adaptationResult,
+    setAdaptationResult,
+  } = useLanguageAdaptationContext();
 
   const autoDetectFiredRef = useRef(false);
   const firstSectionIdRef = useRef<string | null>(null);

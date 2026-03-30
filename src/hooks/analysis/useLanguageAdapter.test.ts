@@ -1,6 +1,8 @@
+import React from 'react';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Section } from '../../types';
+import { LanguageAdaptationProvider } from '../../contexts/LanguageAdaptationContext';
 import { useLanguageAdapter } from './useLanguageAdapter';
 import { generateContentWithRetry } from '../../utils/aiUtils';
 import { reverseTranslateLines, reviewTranslationFidelity } from '../../utils/llmPipelineUtils';
@@ -88,6 +90,9 @@ const createParams = (song: Section[]) => ({
   setLineLanguages: vi.fn(),
 });
 
+const wrapper = ({ children }: { children: React.ReactNode }) =>
+  React.createElement(LanguageAdaptationProvider, null, children);
+
 describe('useLanguageAdapter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -115,7 +120,7 @@ describe('useLanguageAdapter', () => {
       );
     }));
 
-    const { result } = renderHook(() => useLanguageAdapter(params));
+    const { result } = renderHook(() => useLanguageAdapter(params), { wrapper });
 
     await act(async () => {
       const adaptationPromise = result.current.adaptSongLanguage('Spanish');
@@ -145,6 +150,7 @@ describe('useLanguageAdapter', () => {
 
     const { result, rerender } = renderHook(currentProps => useLanguageAdapter(currentProps), {
       initialProps: params,
+      wrapper,
     });
 
     let firstPromise: Promise<void> | undefined;
@@ -176,7 +182,7 @@ describe('useLanguageAdapter', () => {
     vi.mocked(generateContentWithRetry).mockResolvedValue({ text: buildAdaptationPayload('fallback') });
     vi.mocked(reviewTranslationFidelity).mockResolvedValueOnce('' as never);
 
-    const { result } = renderHook(() => useLanguageAdapter(params));
+    const { result } = renderHook(() => useLanguageAdapter(params), { wrapper });
 
     await act(async () => {
       await result.current.adaptSongLanguage('Spanish');
@@ -192,7 +198,7 @@ describe('useLanguageAdapter', () => {
     vi.mocked(generateContentWithRetry).mockResolvedValue({ text: buildAdaptationPayload('happy') });
     vi.mocked(reviewTranslationFidelity).mockResolvedValueOnce({ score: 91, warnings: ['minor image shift'] });
 
-    const { result } = renderHook(() => useLanguageAdapter(params));
+    const { result } = renderHook(() => useLanguageAdapter(params), { wrapper });
 
     await act(async () => {
       await result.current.adaptSongLanguage('Spanish');

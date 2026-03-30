@@ -24,6 +24,7 @@ import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
 import { DragHandlersProvider } from './contexts/DragHandlersContext';
 import { EditorProvider } from './contexts/EditorContext';
+import { LanguageAdaptationProvider } from './contexts/LanguageAdaptationContext';
 import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
 import { VersionProvider, useVersionContext } from './contexts/VersionContext';
@@ -37,7 +38,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.25.8
+// v3.25.9
 
 function LazyFallback() {
   const { t } = useTranslation();
@@ -494,17 +495,19 @@ function AppProviders() {
       markupDirection={markupDirection}
     >
       <ModalProvider uiState={uiStateForProvider}>
-        <AnalysisProvider
-          uiLanguage={language}
-          isGeneratingRef={isGeneratingRef}
-          saveVersion={saveVersion}
-          updateState={updateState}
-          updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
-          clearLineSelection={clearSelection}
-          requestAutoTitleGeneration={() => setShouldAutoGenerateTitle(true)}
-        >
-          <AppInnerContent />
-        </AnalysisProvider>
+        <LanguageAdaptationProvider>
+          <AnalysisProvider
+            uiLanguage={language}
+            isGeneratingRef={isGeneratingRef}
+            saveVersion={saveVersion}
+            updateState={updateState}
+            updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
+            clearLineSelection={clearSelection}
+            requestAutoTitleGeneration={() => setShouldAutoGenerateTitle(true)}
+          >
+            <AppInnerContent />
+          </AnalysisProvider>
+        </LanguageAdaptationProvider>
       </ModalProvider>
     </EditorProvider>
   );
