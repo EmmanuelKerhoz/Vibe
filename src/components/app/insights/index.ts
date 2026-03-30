@@ -1,9 +1,10 @@
 export { AnalyzeSongButton } from './AnalyzeSongButton';
 export { DetectLanguageButton } from './DetectLanguageButton';
+export { InsightsActions } from './InsightsActions';
 export { InsightsBarLayout } from './InsightsBarLayout';
 export { MetronomeButton } from './MetronomeButton';
-export { MobileKpisDisplay } from './MobileKpisDisplay';
+export { MobileKpis } from './MobileKpis';
 export { SimilarityButton } from './SimilarityButton';
 export { ViewModeSelector } from './ViewModeSelector';
-export { TranslationControls } from './TranslationControls';
+export { TranslateGroup } from './TranslateGroup';
 export { useAdaptationBannerVisibility } from './useAdaptationBannerVisibility';

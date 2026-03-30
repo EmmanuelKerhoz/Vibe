@@ -1,13 +1,9 @@
 import { useTranslation } from '../../../i18n';
+import { useAppKpis } from '../../../hooks/useAppKpis';
 
-interface MobileKpisDisplayProps {
-  sectionCount: number;
-  wordCount: number;
-  charCount: number;
-}
-
-export function MobileKpisDisplay({ sectionCount, wordCount, charCount }: MobileKpisDisplayProps) {
+export function MobileKpis() {
   const { t } = useTranslation();
+  const { sectionCount, wordCount, charCount } = useAppKpis();
 
   return (
     <div className="flex lg:hidden items-center gap-3 shrink-0">
