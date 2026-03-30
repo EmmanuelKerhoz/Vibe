@@ -10,9 +10,10 @@ interface MarkupInputProps {
   spellCheck?: boolean;
   direction?: 'ltr' | 'rtl';
   readOnly?: boolean;
+  'aria-label'?: string;
 }
 
-export function MarkupInput({ value, onChange, textareaRef, className = '', spellCheck = false, direction = 'ltr', readOnly = false }: MarkupInputProps) {
+export function MarkupInput({ value, onChange, textareaRef, className = '', spellCheck = false, direction = 'ltr', readOnly = false, 'aria-label': ariaLabel }: MarkupInputProps) {
   const mirrorRef = useRef<HTMLDivElement>(null);
 
   const syncScroll = () => {
@@ -91,6 +92,7 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
         spellCheck={spellCheck}
         dir={direction}
         readOnly={readOnly}
+        aria-label={ariaLabel}
         className={`absolute inset-0 w-full h-full resize-none bg-transparent caret-[var(--text-primary)] outline-none ${className}`}
         style={{ padding: '1.5rem', color: 'transparent' }}
       />
