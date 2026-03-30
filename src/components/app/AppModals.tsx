@@ -14,6 +14,7 @@ import { ApiErrorModal } from './modals/ApiErrorModal';
 import { ConfirmModal } from './modals/ConfirmModal';
 import { PromptModal } from './modals/PromptModal';
 import { SearchReplaceModal } from './modals/SearchReplaceModal';
+import { ErrorBoundary } from './ErrorBoundary';
 import { useModalDispatch, useModalState } from '../../contexts/ModalContext';
 import type { LibraryAsset } from '../../utils/libraryUtils';
 import type { SimilarityMatch } from '../../utils/similarityUtils';
@@ -163,23 +164,27 @@ export const AppModals = React.memo(function AppModals({
         onOpenLibrary={openLibraryFromExport}
         onExport={exportSong}
       />
-      <PasteModal
-        isOpen={ui.isPasteModalOpen} onClose={() => closeModal('paste')}
-        pastedText={pastedText} setPastedText={setPastedText}
-        isAnalyzing={isAnalyzing} importProgress={importProgress} onAnalyze={analyzePastedLyrics}
-      />
-      <AnalysisModal
-        isOpen={ui.isAnalysisModalOpen} onClose={() => closeModal('analysis')}
-        isAnalyzing={isAnalyzing} isAnalyzingTheme={isAnalyzingTheme}
-        analysisReport={analysisReport} analysisSteps={analysisSteps}
-        appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
-        isApplyingAnalysis={isApplyingAnalysis}
-        toggleAnalysisItemSelection={toggleAnalysisItemSelection}
-        applyAnalysisItem={applyAnalysisItem}
-        applySelectedAnalysisItems={applySelectedAnalysisItems}
-        clearAppliedAnalysisItems={clearAppliedAnalysisItems}
-        versions={versions} rollbackToVersion={rollbackToVersion}
-      />
+      <ErrorBoundary label="AI analysis">
+        <>
+          <PasteModal
+            isOpen={ui.isPasteModalOpen} onClose={() => closeModal('paste')}
+            pastedText={pastedText} setPastedText={setPastedText}
+            isAnalyzing={isAnalyzing} importProgress={importProgress} onAnalyze={analyzePastedLyrics}
+          />
+          <AnalysisModal
+            isOpen={ui.isAnalysisModalOpen} onClose={() => closeModal('analysis')}
+            isAnalyzing={isAnalyzing} isAnalyzingTheme={isAnalyzingTheme}
+            analysisReport={analysisReport} analysisSteps={analysisSteps}
+            appliedAnalysisItems={appliedAnalysisItems} selectedAnalysisItems={selectedAnalysisItems}
+            isApplyingAnalysis={isApplyingAnalysis}
+            toggleAnalysisItemSelection={toggleAnalysisItemSelection}
+            applyAnalysisItem={applyAnalysisItem}
+            applySelectedAnalysisItems={applySelectedAnalysisItems}
+            clearAppliedAnalysisItems={clearAppliedAnalysisItems}
+            versions={versions} rollbackToVersion={rollbackToVersion}
+          />
+        </>
+      </ErrorBoundary>
       <SimilarityModal
         isOpen={ui.isSimilarityModalOpen} onClose={() => closeModal('similarity')}
         matches={similarityMatches} candidateCount={libraryCount}
