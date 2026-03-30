@@ -21,6 +21,7 @@ export interface LyricInputProps {
   schemeLabel: string | null;
   rhymeColor: string;
   isGenerating: boolean;
+  hasApiKey: boolean;
   isDraggedLine: boolean;
   isDragOverLine: boolean;
   lineLanguage?: string;
@@ -47,6 +48,7 @@ export const LyricInput = React.memo(function LyricInput({
   schemeLabel,
   rhymeColor,
   isGenerating,
+  hasApiKey,
   isDraggedLine,
   isDragOverLine,
   lineLanguage,
@@ -206,11 +208,11 @@ export const LyricInput = React.memo(function LyricInput({
       {/* Line controls — visible on hover */}
       <div className={`flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${adaptLineLanguage ? 'w-20' : 'w-16'}`}>
         {adaptLineLanguage && (
-          <Tooltip title={t.editor?.adaptLine ?? `Adapt line to ${sectionTargetLanguage ?? 'target language'}`}>
+          <Tooltip title={hasApiKey ? (t.editor?.adaptLine ?? `Adapt line to ${sectionTargetLanguage ?? 'target language'}`) : (t.tooltips.aiUnavailable ?? 'AI unavailable')}>
             <button
               type="button"
               onClick={() => { adaptLineLanguage(sectionId, line.id, sectionTargetLanguage ?? 'English'); playAudioFeedback('click'); }}
-              disabled={isAdaptingLine || isGenerating}
+              disabled={!hasApiKey || isAdaptingLine || isGenerating}
               className="flex h-4 w-4 items-center justify-center text-cyan-600 hover:text-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               {isAdaptingLine

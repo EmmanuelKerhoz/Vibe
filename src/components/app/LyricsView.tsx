@@ -22,6 +22,7 @@ const isSectionChorus = (s: Section) => isLinkedChorusSectionName(s.name);
 interface LyricsViewProps {
   isAnalyzing: boolean;
   isAdaptingLanguage?: boolean;
+  hasApiKey: boolean;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   canPasteLyrics: boolean;
   targetLanguage?: string;
@@ -33,6 +34,7 @@ interface LyricsViewProps {
 export const LyricsView = memo(function LyricsView({
   isAnalyzing,
   isAdaptingLanguage = false,
+  hasApiKey,
   playAudioFeedback,
   canPasteLyrics,
   targetLanguage,
@@ -245,7 +247,7 @@ export const LyricsView = memo(function LyricsView({
               <Button onClick={onPasteLyrics} disabled={!canPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
                 {t.editor.emptyState.pasteLyrics}
               </Button>
-              <Button onClick={onGenerateSong} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+              <Button onClick={onGenerateSong} disabled={!hasApiKey} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
                 {t.editor.emptyState.generateSong}
               </Button>
             </div>
@@ -264,6 +266,7 @@ export const LyricsView = memo(function LyricsView({
                 selectedLineId={selectedLineId}
                 isGenerating={isGenerating}
                 isAnalyzing={isAnalyzing}
+                hasApiKey={hasApiKey}
                 isAdaptingLanguage={showTranslationFeatures ? isAdaptingLanguage : false}
                 sectionTargetLanguage={sectionTargetLanguages[section.id] ?? (songLanguage || 'English')}
                 onSectionTargetLanguageChange={showTranslationFeatures ? onSectionTargetLanguageChange : undefined}

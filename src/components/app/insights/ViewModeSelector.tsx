@@ -1,4 +1,4 @@
-import { FileText, Layout, PersonVoice, Type } from '../../ui/icons';
+import { FileText, LayoutRows, PersonVoice, Type } from '../../ui/icons';
 import { LcarsSelect } from '../../ui/LcarsSelect';
 import { useTranslation } from '../../../i18n';
 import type { EditMode } from '../../../types';
@@ -23,7 +23,7 @@ export function ViewModeSelector({ editMode, switchEditMode, disabled }: ViewMod
             { value: 'text', label: <span className="flex items-center gap-1.5"><Type className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.textModeLabel}</span></span> },
             { value: 'markdown', label: <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.markupModeLabel}</span></span> },
             { value: 'phonetic', label: <span className="flex items-center gap-1.5"><PersonVoice className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.phoneticModeLabel}</span></span> },
-            { value: 'section', label: <span className="flex items-center gap-1.5"><Layout className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.editorMode}</span></span> },
+            { value: 'section', label: <span className="flex items-center gap-1.5"><LayoutRows className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.editorMode}</span></span> },
           ]}
           disabled={disabled}
         />

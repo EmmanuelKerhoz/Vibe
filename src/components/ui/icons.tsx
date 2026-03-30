@@ -38,6 +38,7 @@ import {
   InfoRegular,
   KeyboardRegular as FluentKeyboardRegular,
   LayoutColumnTwoRegular,
+  LayoutRowTwoRegular,
   LibraryRegular,
   LightbulbRegular,
   LinkRegular,
@@ -176,6 +177,7 @@ export const FileCode2 = createIcon(CodeRegular, 'FileCode2');
 export const FileText = createIcon(DocumentTextRegular, 'FileText');
 export const History = createIcon(HistoryRegular, 'History');
 export const Layout = createIcon(LayoutColumnTwoRegular, 'Layout');
+export const LayoutRows = createIcon(LayoutRowTwoRegular, 'LayoutRows');
 export const Undo2 = createIcon(ArrowUndoRegular, 'Undo2');
 export const Redo2 = createIcon(ArrowRedoRegular, 'Redo2');
 export const Upload = createIcon(ArrowUploadRegular, 'Upload');

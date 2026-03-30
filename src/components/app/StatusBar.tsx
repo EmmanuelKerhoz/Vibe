@@ -10,6 +10,7 @@ import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 
 interface Props {
+  hasApiKey: boolean;
   isAnalyzing: boolean;
   theme: 'light' | 'dark';
   setTheme: (v: 'light' | 'dark') => void;
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function StatusBar({
+  hasApiKey,
   isAnalyzing,
   theme, setTheme, audioFeedback, setAudioFeedback,
   onOpenAbout, onOpenSettings, className,
@@ -43,7 +45,7 @@ export function StatusBar({
       {/* Left: system status + storage gauge + KPIs (desktop only) */}
       <div className="flex items-center gap-2 lg:gap-4">
         <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isBusy ? 'bg-[var(--accent-warning)] animate-pulse' : 'bg-[var(--accent-color)] lcars-pulse'}`} />
+          <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isBusy || !hasApiKey ? 'bg-[var(--accent-warning)] animate-pulse' : 'bg-[var(--accent-color)] lcars-pulse'}`} />
           <span className="telemetry-text uppercase tracking-wider text-zinc-900 dark:text-zinc-300">
             {statusLabel}
           </span>

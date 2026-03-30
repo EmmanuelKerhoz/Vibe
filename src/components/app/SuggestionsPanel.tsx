@@ -7,6 +7,7 @@ interface Props {
   setSelectedLineId: (id: string | null) => void;
   suggestions: string[];
   isSuggesting: boolean;
+  hasApiKey: boolean;
   applySuggestion: (s: string) => void;
   generateSuggestions: (lineId: string) => void;
   isMobileOverlay?: boolean;
@@ -15,7 +16,7 @@ interface Props {
 
 export function SuggestionsPanel({
   selectedLineId, setSelectedLineId,
-  suggestions, isSuggesting,
+  suggestions, isSuggesting, hasApiKey,
   applySuggestion, generateSuggestions,
   isMobileOverlay = false,
   className,
@@ -101,12 +102,13 @@ export function SuggestionsPanel({
                   </div>
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => generateSuggestions(selectedLineId)}
-                aria-label="Generate more suggestions"
-                className="w-full py-3 mt-4 flex items-center justify-center gap-2 text-[10px] text-zinc-500 uppercase tracking-widest hover:text-[var(--accent-color)] transition-colors"
-              >
+                <button
+                  type="button"
+                  onClick={() => generateSuggestions(selectedLineId)}
+                  disabled={!hasApiKey}
+                  aria-label="Generate more suggestions"
+                  className="w-full py-3 mt-4 flex items-center justify-center gap-2 text-[10px] text-zinc-500 uppercase tracking-widest hover:text-[var(--accent-color)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                 <RefreshCw className="w-3 h-3" />
                 {t.suggestions.moreOptions}
               </button>

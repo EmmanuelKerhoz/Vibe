@@ -202,7 +202,7 @@ function AppInnerContent() {
   }, [isSuggestionsOpen, isStructureOpen, setIsStructureOpen]);
 
   const {
-    removeStructureItem, addStructureItem, normalizeStructure, exportSong, loadFileForAnalysis,
+    removeStructureItem, addStructureItem, exportSong, loadFileForAnalysis,
   } = useSongEditor({
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); },
   });
@@ -342,6 +342,7 @@ function AppInnerContent() {
               targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
               isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
               onSurprise={handleSurpriseClick} isSurprising={isSurprising}
+              hasApiKey={hasApiKey}
               isSessionHydrated={isSessionHydrated}
               onGenerateSong={handleGenerateSongFromLeftPanel}
               onRegenerateSong={handleGlobalRegenerate}
@@ -404,6 +405,7 @@ function AppInnerContent() {
                 setSelectedLineId={setSelectedLineId}
                 suggestions={suggestions}
                 isSuggesting={isSuggesting}
+                hasApiKey={hasApiKey}
                 applySuggestion={applySuggestion}
                 generateSuggestions={generateSuggestions}
               />
@@ -415,7 +417,6 @@ function AppInnerContent() {
                 isSectionDropdownOpen={isSectionDropdownOpen}
                 setIsSectionDropdownOpen={setIsSectionDropdownOpen}
                 addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-                normalizeStructure={normalizeStructure}
                 onScrollToSection={handleScrollToSection}
                 onRegenerateSong={handleGlobalRegenerate}
                 onGenerateSong={generateSong}
@@ -425,6 +426,7 @@ function AppInnerContent() {
 
           <StatusBar
             className="lcars-status-bar-desktop"
+            hasApiKey={hasApiKey}
             isAnalyzing={isAnalyzing}
             theme={theme} setTheme={setTheme}
             audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
@@ -436,6 +438,7 @@ function AppInnerContent() {
             <MobileBottomNav
               isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
               activeTab={activeTab}
+              hasApiKey={hasApiKey}
               setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
               setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
               onOpenSettings={handleOpenSettings}

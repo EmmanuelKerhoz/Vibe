@@ -29,7 +29,7 @@ vi.mock('../ui/Tooltip', () => ({
   ),
 }));
 
-function renderPanel(setIsLeftPanelOpen = vi.fn()) {
+function renderPanel(setIsLeftPanelOpen = vi.fn(), hasApiKey = true) {
   return render(
     <LanguageProvider>
       <LeftSettingsPanel
@@ -50,6 +50,7 @@ function renderPanel(setIsLeftPanelOpen = vi.fn()) {
         setIsLeftPanelOpen={setIsLeftPanelOpen}
         onSurprise={vi.fn()}
         isSurprising={false}
+        hasApiKey={hasApiKey}
         onGenerateSong={vi.fn()}
         isSessionHydrated
       />
@@ -104,6 +105,7 @@ describe('LeftSettingsPanel', () => {
           setIsLeftPanelOpen={vi.fn()}
           onSurprise={vi.fn()}
           isSurprising={false}
+          hasApiKey
           onGenerateSong={vi.fn()}
           isSessionHydrated
         />
@@ -137,6 +139,7 @@ describe('LeftSettingsPanel', () => {
           setIsLeftPanelOpen={vi.fn()}
           onSurprise={vi.fn()}
           isSurprising={false}
+          hasApiKey
           onGenerateSong={onGenerateSong}
           onRegenerateSong={vi.fn()}
           isSessionHydrated
@@ -179,6 +182,7 @@ describe('LeftSettingsPanel', () => {
           setIsLeftPanelOpen={vi.fn()}
           onSurprise={vi.fn()}
           isSurprising={false}
+          hasApiKey
           onGenerateSong={onGenerateSong}
           onRegenerateSong={onRegenerateSong}
           isSessionHydrated
@@ -215,10 +219,24 @@ describe('LeftSettingsPanel', () => {
 
     const suggestButton = screen.getByRole('button', { name: 'Suggest' });
     const suggestTooltip = screen.getAllByTestId('tooltip').find(tooltip =>
-      tooltip.getAttribute('data-title') === 'Suggest a random topic, mood & title');
+      /Suggest a random topic, mood .* title/.test(tooltip.getAttribute('data-title') ?? ''));
 
     expect(suggestButton.className).toContain('ux-interactive');
     expect(suggestTooltip).toBeTruthy();
+  });
+
+  it('disables AI-only actions when AI is unavailable', () => {
+    mockSongContext.song = [{
+      id: 'verse-1',
+      name: 'Verse',
+      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
+    }];
+
+    renderPanel(vi.fn(), false);
+
+    expect(screen.getByRole('button', { name: 'Suggest' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Generate title from lyrics' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Regenerate Lyrics' })).toHaveProperty('disabled', true);
   });
 
   it('hides the generate title button until lyrics exist', () => {
@@ -252,6 +270,7 @@ describe('LeftSettingsPanel', () => {
           setIsLeftPanelOpen={vi.fn()}
           onSurprise={vi.fn()}
           isSurprising={false}
+          hasApiKey
           onGenerateSong={vi.fn()}
           isSessionHydrated
         />

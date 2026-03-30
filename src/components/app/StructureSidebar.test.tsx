@@ -49,7 +49,6 @@ function renderStructureSidebar({
             setIsSectionDropdownOpen={setIsSectionDropdownOpen}
             addStructureItem={addStructureItem}
             removeStructureItem={vi.fn()}
-            normalizeStructure={vi.fn()}
             onScrollToSection={vi.fn()}
           />
         </LanguageProvider>
@@ -77,6 +76,7 @@ describe('StructureSidebar section tooltips', () => {
     renderStructureSidebar({ addStructureItem });
 
     expect(screen.queryByRole('button', { name: 'Generate Lyrics' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Normalize Structure' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Add section' }));
     fireEvent.mouseDown(screen.getByRole('option', { name: 'Verse' }));

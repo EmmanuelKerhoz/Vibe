@@ -1,6 +1,5 @@
 import React, { useId, useRef } from 'react';
-import { AlignLeft, X, BarChart2, GripVertical, Link2 } from '../ui/icons';
-import { Button } from '../ui/Button';
+import { X, BarChart2, GripVertical, Link2 } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';
 import { LcarsSelect } from '../ui/LcarsSelect';
@@ -17,7 +16,6 @@ import {
   SECTION_TYPE_OPTIONS,
 } from '../../constants/sections';
 import { useSongContext } from '../../contexts/SongContext';
-import { useComposerContext } from '../../contexts/ComposerContext';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Props {
@@ -27,7 +25,6 @@ interface Props {
   setIsSectionDropdownOpen: (v: boolean) => void;
   addStructureItem: (name?: string) => void;
   removeStructureItem: (idx: number) => void;
-  normalizeStructure: () => void;
   onScrollToSection: (sectionId: string) => void;
   onRegenerateSong?: () => void;
   onGenerateSong?: () => void;
@@ -39,15 +36,12 @@ export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
   isSectionDropdownOpen, setIsSectionDropdownOpen,
   addStructureItem, removeStructureItem,
-  normalizeStructure, onScrollToSection,
-  onRegenerateSong, onGenerateSong,
+  onScrollToSection,
   isMobileOverlay = false,
   className,
 }: Props) {
-  const actionButtonRadius = '10px 3px 10px 3px';
   const sectionButtonShapeClass = 'rounded-[12px_4px_12px_4px]';
   const { song, structure } = useSongContext();
-  const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
   const { handleDrop } = useDragHandlersContext();
   const {
@@ -147,21 +141,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
             <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
               <div>
                 <div className="space-y-2">
-                  <Tooltip title={t.tooltips.normalizeStructure}>
-                    <div className="lcars-gradient-outline" style={{ borderRadius: actionButtonRadius, width: '100%' }}>
-                      <Button
-                        onClick={normalizeStructure}
-                        disabled={structure.length === 0 || isGenerating}
-                        variant="outlined" fullWidth
-                        startIcon={<AlignLeft className="w-3.5 h-3.5" />}
-                        className="ux-interactive"
-                        style={{ fontSize: '10px', padding: '4px 0', borderRadius: actionButtonRadius }}
-                      >
-                        {t.structure.normalize}
-                      </Button>
-                    </div>
-                  </Tooltip>
-
                   <div className="flex flex-col gap-1.5">
                     {structure.map((item, idx) => {
                       // Skip chorus items already rendered inside a Pre-Chorus group
