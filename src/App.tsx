@@ -27,6 +27,7 @@ import { EditorProvider } from './contexts/EditorContext';
 import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
 import { VersionProvider, useVersionContext } from './contexts/VersionContext';
+import { TranslationAdaptationProvider } from './contexts/TranslationAdaptationContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
 import { StructureSidebar } from './components/app/StructureSidebar';
@@ -37,7 +38,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.25.8
+// v3.25.9.2
 
 function LazyFallback() {
   const { t } = useTranslation();
@@ -92,7 +93,6 @@ function AppInnerContent() {
     isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
     audioFeedback, setAudioFeedback, uiScale, setUiScale,
     defaultEditMode, setDefaultEditMode,
-    showTranslationFeatures, setShowTranslationFeatures,
     similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount,
     libraryAssets, setLibraryAssets, isSavingToLibrary, setIsSavingToLibrary,
     editMode, setEditMode, markupText, setMarkupText,
@@ -173,7 +173,6 @@ function AppInnerContent() {
     isDetectingLanguage,
     adaptationProgress,
     adaptationResult,
-    sectionTargetLanguages,
     setSectionTargetLanguages,
     toggleAnalysisItemSelection,
     applyAnalysisItem,
@@ -181,9 +180,6 @@ function AppInnerContent() {
     analyzeCurrentSong,
     detectLanguage,
     adaptSongLanguage,
-    adaptSectionLanguage,
-    adaptLineLanguage,
-    adaptingLineIds,
     analyzePastedLyrics,
     clearAppliedAnalysisItems,
   } = useAnalysisContext();
@@ -287,7 +283,6 @@ function AppInnerContent() {
     handleOpenAbout,
     handleOpenKeyboardShortcuts,
     handleOpenSearch,
-    handleSectionTargetLanguageChange,
   } = useModalHandlers({
     setIsPasteModalOpen,
     setIsImportModalOpen,
@@ -399,17 +394,11 @@ function AppInnerContent() {
               setIsSimilarityModalOpen={setIsSimilarityModalOpen}
               adaptationProgress={adaptationProgress}
               adaptationResult={adaptationResult}
-              showTranslationFeatures={showTranslationFeatures}
               playAudioFeedback={playAudioFeedback}
               canPasteLyrics={canPasteLyrics}
               onOpenLibrary={handleOpenSaveToLibraryModal}
               onPasteLyrics={handleOpenPasteModal}
               onGenerateSong={handleGlobalRegenerate}
-              sectionTargetLanguages={sectionTargetLanguages}
-              onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
-              adaptSectionLanguage={adaptSectionLanguage}
-              adaptLineLanguage={adaptLineLanguage}
-              adaptingLineIds={adaptingLineIds}
             />
           </div>
 
@@ -503,7 +492,9 @@ function AppProviders() {
           clearLineSelection={clearSelection}
           requestAutoTitleGeneration={() => setShouldAutoGenerateTitle(true)}
         >
-          <AppInnerContent />
+          <TranslationAdaptationProvider>
+            <AppInnerContent />
+          </TranslationAdaptationProvider>
         </AnalysisProvider>
       </ModalProvider>
     </EditorProvider>

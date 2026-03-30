@@ -21,6 +21,7 @@ import { InsightsBar } from './InsightsBar';
 import { LyricsView } from './LyricsView';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { useTranslation } from '../../i18n';
+import { useTranslationAdaptationContext } from '../../contexts/TranslationAdaptationContext';
 import type { EditMode } from '../../types';
 import type { WebSimilarityIndex } from '../../types/webSimilarity';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
@@ -67,18 +68,12 @@ interface AppEditorZoneProps {
   setIsSimilarityModalOpen: (v: boolean) => void;
   adaptationProgress: AdaptationProgress;
   adaptationResult: AdaptationResult | null;
-  showTranslationFeatures: boolean;
   // LyricsView
   playAudioFeedback: PlayAudioFeedback;
   canPasteLyrics: boolean;
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
   onGenerateSong: () => void;
-  sectionTargetLanguages: Record<string, string>;
-  onSectionTargetLanguageChange: (sectionId: string, lang: string) => void;
-  adaptSectionLanguage: (sectionId: string, newLanguage: string) => void;
-  adaptLineLanguage: (sectionId: string, lineId: string, newLanguage: string) => void;
-  adaptingLineIds: Set<string>;
 }
 
 export function AppEditorZone({
@@ -88,12 +83,11 @@ export function AppEditorZone({
   editMode, switchEditMode, webSimilarityIndex, webBadgeLabel,
   libraryCount, adaptSongLanguage, detectLanguage, analyzeCurrentSong,
   setIsSimilarityModalOpen, adaptationProgress, adaptationResult,
-  showTranslationFeatures,
   playAudioFeedback,
   canPasteLyrics, onOpenLibrary, onPasteLyrics, onGenerateSong,
-  sectionTargetLanguages, onSectionTargetLanguageChange,
-  adaptSectionLanguage, adaptLineLanguage, adaptingLineIds,
 }: AppEditorZoneProps) {
+  const { showTranslationFeatures } = useTranslationAdaptationContext();
+
   return (
     <>
       {activeTab === 'lyrics' && songHasContent && (
@@ -127,11 +121,6 @@ export function AppEditorZone({
                 <LyricsView
                   isAnalyzing={isAnalyzing}
                   isAdaptingLanguage={isAdaptingLanguage}
-                  sectionTargetLanguages={sectionTargetLanguages}
-                  onSectionTargetLanguageChange={onSectionTargetLanguageChange}
-                  adaptSectionLanguage={adaptSectionLanguage}
-                  adaptLineLanguage={adaptLineLanguage}
-                  adaptingLineIds={adaptingLineIds}
                   playAudioFeedback={playAudioFeedback}
                   canPasteLyrics={canPasteLyrics}
                   targetLanguage={targetLanguage}

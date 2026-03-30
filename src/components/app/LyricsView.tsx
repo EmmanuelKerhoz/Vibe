@@ -11,6 +11,7 @@ import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { usePhoneticTranscription } from '../../hooks/usePhoneticTranscription';
 import { useEditorContext } from '../../contexts/EditorContext';
+import { useTranslationAdaptationContext } from '../../contexts/TranslationAdaptationContext';
 
 // Module-level helpers for tied section detection
 const isSectionPreChorus = (s: Section) => isPreChorusSectionName(s.name);
@@ -19,33 +20,21 @@ const isSectionChorus = (s: Section) => isLinkedChorusSectionName(s.name);
 interface LyricsViewProps {
   isAnalyzing: boolean;
   isAdaptingLanguage?: boolean;
-  sectionTargetLanguages?: Record<string, string>;
-  onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
-  adaptSectionLanguage?: (sectionId: string, lang: string) => void;
-  adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
-  adaptingLineIds?: Set<string>;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   canPasteLyrics: boolean;
   targetLanguage?: string;
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
   onGenerateSong: () => void;
-  showTranslationFeatures?: boolean;
 }
 
 export const LyricsView = memo(function LyricsView({
   isAnalyzing,
   isAdaptingLanguage = false,
-  sectionTargetLanguages = {},
-  onSectionTargetLanguageChange,
-  adaptSectionLanguage,
-  adaptLineLanguage,
-  adaptingLineIds,
   playAudioFeedback,
   canPasteLyrics,
   targetLanguage,
   onOpenLibrary, onPasteLyrics, onGenerateSong,
-  showTranslationFeatures = true,
 }: LyricsViewProps) {
   const { song, rhymeScheme, songLanguage, updateState, updateSongAndStructureWithHistory } = useSongContext();
   const { selectedLineId, isGenerating, isRegeneratingSection, handleLineClick, updateLineText,
@@ -54,6 +43,14 @@ export const LyricsView = memo(function LyricsView({
   const { t } = useTranslation();
   // Editor state sourced from EditorContext — no longer drilled via props
   const { editMode, markupText, setMarkupText, markupTextareaRef, markupDirection } = useEditorContext();
+  const {
+    sectionTargetLanguages,
+    onSectionTargetLanguageChange,
+    adaptSectionLanguage,
+    adaptLineLanguage,
+    adaptingLineIds,
+    showTranslationFeatures,
+  } = useTranslationAdaptationContext();
 
   /**
    * FIX (PR-3): RHYME_KEYS was rebuilt on every render as a plain array literal,
