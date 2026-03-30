@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2, Bot, User, Languages, Loader2 } from '../ui/icons';
 import type { Line } from '../../types';
 import { useDrag } from '../../contexts/DragContext';
+import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
@@ -26,8 +27,6 @@ export interface LyricInputProps {
   handleLineClick: (lineId: string) => void;
   updateLineText: (sectionId: string, lineId: string, text: string) => void;
   handleLineKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => void;
-  handleLineDragStart: (sectionId: string, lineId: string) => void;
-  handleLineDrop: (sectionId: string, lineId: string) => void;
   moveLineUp: (sectionId: string, lineId: string) => void;
   moveLineDown: (sectionId: string, lineId: string) => void;
   addLineToSection: (sectionId: string, afterLineId?: string) => void;
@@ -54,8 +53,6 @@ export const LyricInput = React.memo(function LyricInput({
   handleLineClick,
   updateLineText,
   handleLineKeyDown,
-  handleLineDragStart,
-  handleLineDrop,
   moveLineUp,
   moveLineDown,
   addLineToSection,
@@ -67,6 +64,7 @@ export const LyricInput = React.memo(function LyricInput({
 }: LyricInputProps) {
   const { t } = useTranslation();
   const { setDraggedLineInfo, setDragOverLineInfo } = useDrag();
+  const { handleLineDragStart, handleLineDrop } = useDragHandlersContext();
   const { registerRef } = useRefs();
   const inputRef = useRef<HTMLInputElement>(null);
   const isSelected = selectedLineId === line.id;

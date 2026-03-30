@@ -13,6 +13,7 @@ import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import { useDrag } from '../../contexts/DragContext';
 import { useSongContext } from '../../contexts/SongContext';
+import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection } from '../../constants/sections';
 
 interface SectionEditorProps {
@@ -38,10 +39,7 @@ interface SectionEditorProps {
   handleInstructionChange: (sectionId: string, type: 'pre' | 'post', index: number, value: string) => void;
   addInstruction: (sectionId: string, type: 'pre' | 'post') => void;
   removeInstruction: (sectionId: string, type: 'pre' | 'post', index: number) => void;
-  handleLineDragStart: (sectionId: string, lineId: string) => void;
-  handleLineDrop: (sectionId: string, lineId: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
-  handleDrop: (targetIndex: number) => void;
   regenerateSection: (sectionId: string) => void;
   moveSectionUp: (sectionId: string) => void;
   moveSectionDown: (sectionId: string) => void;
@@ -117,8 +115,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   handleLineClick, updateLineText, handleLineKeyDown,
   handleInstructionChange, addInstruction, removeInstruction,
   regenerateSection,
-  handleLineDragStart, handleLineDrop,
-  playAudioFeedback, handleDrop,
+  playAudioFeedback,
   moveSectionUp, moveSectionDown,
   moveLineUp, moveLineDown,
   addLineToSection, deleteLineFromSection,
@@ -126,6 +123,7 @@ export const SectionEditor = React.memo(function SectionEditor({
 }: SectionEditorProps) {
   const { t } = useTranslation();
   const { lineLanguages } = useSongContext();
+  const { handleDrop, handleLineDragStart, handleLineDrop } = useDragHandlersContext();
   const {
     draggedItemIndex,
     dragOverIndex,
@@ -303,8 +301,6 @@ export const SectionEditor = React.memo(function SectionEditor({
                 handleLineClick={handleLineClick}
                 updateLineText={updateLineText}
                 handleLineKeyDown={handleLineKeyDown}
-                handleLineDragStart={handleLineDragStart}
-                handleLineDrop={handleLineDrop}
                 moveLineUp={moveLineUp}
                 moveLineDown={moveLineDown}
                 addLineToSection={addLineToSection}

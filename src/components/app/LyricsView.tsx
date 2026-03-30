@@ -25,11 +25,6 @@ interface LyricsViewProps {
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
   adaptingLineIds?: Set<string>;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
-  // TODO(DragHandlersContext): migrate these 3 props to a DragHandlersContext
-  // once useSongEditor handlers are lifted into a provider.
-  handleDrop: (targetIndex: number) => void;
-  handleLineDragStart: (sectionId: string, lineId: string) => void;
-  handleLineDrop: (sectionId: string, lineId: string) => void;
   canPasteLyrics: boolean;
   targetLanguage?: string;
   onOpenLibrary: () => void;
@@ -46,7 +41,7 @@ export const LyricsView = memo(function LyricsView({
   adaptSectionLanguage,
   adaptLineLanguage,
   adaptingLineIds,
-  playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
+  playAudioFeedback,
   canPasteLyrics,
   targetLanguage,
   onOpenLibrary, onPasteLyrics, onGenerateSong,
@@ -371,10 +366,7 @@ export const LyricsView = memo(function LyricsView({
                 addInstruction={addInstruction}
                 removeInstruction={removeInstruction}
                 regenerateSection={regenerateSection}
-                handleLineDragStart={handleLineDragStart}
-                handleLineDrop={handleLineDrop}
                 playAudioFeedback={playAudioFeedback}
-                handleDrop={handleDrop}
               />
             </div>
           ))
