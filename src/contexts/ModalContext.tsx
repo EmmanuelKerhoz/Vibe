@@ -1,52 +1,12 @@
 import React, { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
+import type { UIStateSlice } from './UIStateSlice';
 
 // ── Minimal UIState interface ─────────────────────────────────────────────────
 // NOTE: editMode / setEditMode / markupText / setMarkupText / markupTextareaRef
 // have been moved to EditorContext (src/contexts/EditorContext.tsx).
 // They no longer belong here — they caused ModalStateContext to invalidate on
 // every keystroke.
-export interface UIStateBag {
-  setIsAboutOpen: (v: boolean) => void;
-  setIsSettingsOpen: (v: boolean) => void;
-  setApiErrorModal: (v: { open: boolean; message: string }) => void;
-  setIsImportModalOpen: (v: boolean) => void;
-  setIsExportModalOpen: (v: boolean) => void;
-  setIsSectionDropdownOpen: (v: boolean) => void;
-  setIsSimilarityModalOpen: (v: boolean) => void;
-  setIsSaveToLibraryModalOpen: (v: boolean) => void;
-  setIsVersionsModalOpen: (v: boolean) => void;
-  setIsResetModalOpen: (v: boolean) => void;
-  setIsKeyboardShortcutsModalOpen: (v: boolean) => void;
-  setConfirmModal: (v: { open: boolean; onConfirm: () => void } | null) => void;
-  setPromptModal: (v: { open: boolean; onConfirm: (value: string) => void } | null) => void;
-  setIsPasteModalOpen: (v: boolean) => void;
-  setIsAnalysisModalOpen: (v: boolean) => void;
-  setIsSearchReplaceOpen: (v: boolean) => void;
-  isAboutOpen: boolean;
-  isSettingsOpen: boolean;
-  apiErrorModal: { open: boolean; message: string };
-  isImportModalOpen: boolean;
-  isExportModalOpen: boolean;
-  isSectionDropdownOpen: boolean;
-  isSimilarityModalOpen: boolean;
-  isSaveToLibraryModalOpen: boolean;
-  isVersionsModalOpen: boolean;
-  isResetModalOpen: boolean;
-  isKeyboardShortcutsModalOpen: boolean;
-  confirmModal: { open: boolean; onConfirm: () => void } | null;
-  promptModal: { open: boolean; onConfirm: (value: string) => void } | null;
-  isPasteModalOpen: boolean;
-  isAnalysisModalOpen: boolean;
-  isSearchReplaceOpen: boolean;
-  activeTab: 'lyrics' | 'musical';
-  setActiveTab: (v: 'lyrics' | 'musical') => void;
-  isStructureOpen: boolean;
-  setIsStructureOpen: (v: boolean) => void;
-  isLeftPanelOpen: boolean;
-  setIsLeftPanelOpen: (v: boolean) => void;
-  // editMode / markupText / markupTextareaRef → EditorContext
-  importInputRef: React.RefObject<HTMLInputElement>;
-}
+export type UIStateBag = UIStateSlice;
 
 // ── Modal names union ─────────────────────────────────────────────────────────
 export type ModalName =
