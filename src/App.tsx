@@ -22,6 +22,7 @@ import { useAudioFeedback } from './hooks/useAudioFeedback';
 import { useImportHandlers } from './hooks/useImportHandlers';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
+import { DragHandlersProvider } from './contexts/DragHandlersContext';
 import { EditorProvider } from './contexts/EditorContext';
 import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
@@ -36,7 +37,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.25.7
+// v3.25.8
 
 function LazyFallback() {
   const { t } = useTranslation();
@@ -143,6 +144,12 @@ function AppInnerContent() {
   });
 
   const { playAudioFeedback } = useAudioFeedback(audioFeedback);
+
+  // Stable ref so DragHandlersProvider never re-renders on audio toggle.
+  // Pattern mirrors isGeneratingRef in AppProviders.
+  const playAudioFeedbackRef = useRef(playAudioFeedback);
+  playAudioFeedbackRef.current = playAudioFeedback;
+
   const { scrollToSection, handleMarkupToggle, switchEditMode, markupDirection } = useMarkupEditor({
     editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
     updateSongAndStructureWithHistory,
@@ -210,11 +217,9 @@ function AppInnerContent() {
   }, [isSuggestionsOpen, isStructureOpen, setIsStructureOpen]);
 
   const {
-    removeStructureItem, addStructureItem, normalizeStructure, handleDrop,
-    handleLineDragStart, handleLineDrop, exportSong, loadFileForAnalysis,
+    removeStructureItem, addStructureItem, normalizeStructure, exportSong, loadFileForAnalysis,
   } = useSongEditor({
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); },
-    playAudioFeedback,
   });
 
   const { generateTitle, isGeneratingTitle } = useTitleGenerator();
@@ -321,7 +326,7 @@ function AppInnerContent() {
   }, [setIsLeftPanelOpen, handleGlobalRegenerate]);
 
   return (
-    <>
+    <DragHandlersProvider playAudioFeedbackRef={playAudioFeedbackRef}>
       <ModalShortcutBindings
         isMobileOrTablet={isMobileOrTablet}
         closeMobilePanels={closeMobilePanels}
@@ -396,9 +401,6 @@ function AppInnerContent() {
               adaptationResult={adaptationResult}
               showTranslationFeatures={showTranslationFeatures}
               playAudioFeedback={playAudioFeedback}
-              handleDrop={handleDrop}
-              handleLineDragStart={handleLineDragStart}
-              handleLineDrop={handleLineDrop}
               canPasteLyrics={canPasteLyrics}
               onOpenLibrary={handleOpenSaveToLibraryModal}
               onPasteLyrics={handleOpenPasteModal}
@@ -430,7 +432,7 @@ function AppInnerContent() {
               isSectionDropdownOpen={isSectionDropdownOpen}
               setIsSectionDropdownOpen={setIsSectionDropdownOpen}
               addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-              normalizeStructure={normalizeStructure} handleDrop={handleDrop}
+              normalizeStructure={normalizeStructure}
               onScrollToSection={handleScrollToSection}
               onRegenerateSong={handleGlobalRegenerate}
               onGenerateSong={generateSong}
@@ -459,7 +461,7 @@ function AppInnerContent() {
 
         <AppModalLayer />
       </AppShell>
-    </>
+    </DragHandlersProvider>
   );
 }
 
@@ -475,15 +477,9 @@ function AppProviders() {
 
   const { saveVersion } = useVersionContext();
 
-  // Authoritative isGeneratingRef — wired to AnalysisProvider.
   const isGeneratingRef = useRef(isGenerating);
   isGeneratingRef.current = isGenerating;
 
-  // markupDirection is computed at render time from appState — pass it to
-  // EditorProvider so LyricsView does not need to recompute it.
-  // It is defined here rather than in EditorProvider to avoid pulling
-  // useMarkupEditor into a provider (it owns scrollToSection side-effects).
-  // The value rarely changes so this is a non-issue for re-render frequency.
   const markupDirection = appState.markupText
     ? (/[\u0600-\u06FF\u0750-\u077F\u0590-\u05FF]/.test(appState.markupText) ? 'rtl' : 'ltr')
     : 'ltr';
