@@ -9,7 +9,7 @@ import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 import { AdaptationProgressBanner } from './AdaptationProgressBanner';
-import { DetectLanguageButton, MetronomeButton, TranslationControls, ViewModeSelector } from './insights';
+import { AnalyzeSongButton, DetectLanguageButton, MetronomeButton, TranslationControls, ViewModeSelector } from './insights';
 
 interface InsightsBarProps {
   targetLanguage: string;
@@ -133,23 +133,12 @@ export const InsightsBar = React.memo(function InsightsBar({
               isDetectingLanguage={isDetectingLanguage}
               onDetect={detectLanguage}
             />
-            <Tooltip title={t.tooltips.analyzeTheme}>
-              <button
-                onClick={analyzeCurrentSong}
-                disabled={isGenerating || isAnalyzing || song.length === 0}
-                aria-disabled={isGenerating || isAnalyzing || song.length === 0}
-                aria-busy={isAnalyzing}
-                className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isAnalyzing
-                  ? (<>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-                      <span className="sr-only">{t.editor.analyzingLabel ?? 'Analyzing\u2026'}</span>
-                    </>)
-                  : <BarChart2 className="w-3.5 h-3.5" aria-hidden="true" />}
-                <span className="hidden lg:inline">{t.editor.analyze}</span>
-              </button>
-            </Tooltip>
+            <AnalyzeSongButton
+              isGenerating={isGenerating}
+              isAnalyzing={isAnalyzing}
+              songCount={song.length}
+              onAnalyze={analyzeCurrentSong}
+            />
             <Tooltip title={t.tooltips.checkSimilarity}>
               <button
                 onClick={() => setIsSimilarityModalOpen(true)}
