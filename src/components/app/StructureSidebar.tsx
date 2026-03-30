@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 import { useDrag } from '../../contexts/DragContext';
+import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { getSectionColor, getSectionDotColor, getSectionTextColor } from '../../utils/songUtils';
 import type { Section } from '../../types';
 import {
@@ -27,7 +28,6 @@ interface Props {
   addStructureItem: (name?: string) => void;
   removeStructureItem: (idx: number) => void;
   normalizeStructure: () => void;
-  handleDrop: (idx: number) => void;
   onScrollToSection: (sectionId: string) => void;
   onRegenerateSong?: () => void;
   onGenerateSong?: () => void;
@@ -39,7 +39,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
   isSectionDropdownOpen, setIsSectionDropdownOpen,
   addStructureItem, removeStructureItem,
-  normalizeStructure, handleDrop, onScrollToSection,
+  normalizeStructure, onScrollToSection,
   onRegenerateSong, onGenerateSong,
   isMobileOverlay = false,
   className,
@@ -49,6 +49,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
   const { song, structure } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { t } = useTranslation();
+  const { handleDrop } = useDragHandlersContext();
   const {
     draggedItemIndex,
     setDraggedItemIndex,
