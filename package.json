@@ -1,7 +1,7 @@
 {
   "name": "vibe",
   "private": true,
-  "version": "3.25.9",
+  "version": "3.25.9.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,7 @@
     "@fluentui/react-components": "^9.54.5",
     "@fluentui/react-icons": "^2.0.237",
     "@google/genai": "^1.47.0",
+    "@vercel/node": "^5.1.4",
     "fflate": "^0.8.2",
     "motion": "^12.38.0",
     "openai": "^4.77.0",
