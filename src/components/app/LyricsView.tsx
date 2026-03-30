@@ -230,6 +230,7 @@ export const LyricsView = memo(function LyricsView({
                 onChange={(e) => setMarkupText(e.target.value)}
                 spellCheck={false}
                 dir={markupDirection}
+                aria-label={t.editor.textMode.title}
                 placeholder={t.editor.textMode.placeholder}
                 className="absolute inset-0 w-full h-full resize-none bg-[var(--bg-app)] caret-[var(--text-primary)] outline-none font-mono text-sm leading-7 text-[var(--text-primary)]"
                 style={{ padding: '1.5rem' }}
@@ -259,6 +260,7 @@ export const LyricsView = memo(function LyricsView({
               onChange={(e) => setMarkupText(e.target.value)}
               textareaRef={markupTextareaRef}
               direction={markupDirection}
+              aria-label={t.editor.markupMode.title}
               className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
               spellCheck={false}
             />
@@ -295,6 +297,7 @@ export const LyricsView = memo(function LyricsView({
                 onChange={() => {}}
                 textareaRef={phoneticTextareaRef}
                 direction={markupDirection}
+                aria-label={t.editor.phoneticMode.title}
                 className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
                 spellCheck={false}
                 readOnly
