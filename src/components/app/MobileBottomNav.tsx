@@ -27,6 +27,14 @@ export const MobileBottomNav = React.memo(function MobileBottomNav({
   } = useAppNavigationContext();
   const { t } = useTranslation();
 
+  const openStructurePanel = () => {
+    if (!isStructureOpen) {
+      setSelectedLineId(null);
+      setIsStructureOpen(true);
+    }
+    setIsLeftPanelOpen(false);
+  };
+
   return (
     <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
       {/* Settings — onOpenSettings called first so React batch preserves the modal open state */}
@@ -98,13 +106,7 @@ export const MobileBottomNav = React.memo(function MobileBottomNav({
       */}
       <button
         className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
-        onClick={() => {
-          if (!isStructureOpen) {
-            setSelectedLineId(null);
-            setIsStructureOpen(true);
-          }
-          setIsLeftPanelOpen(false);
-        }}
+        onClick={openStructurePanel}
         aria-label={t.mobileNav.structure}
         aria-pressed={isStructureOpen}
       >

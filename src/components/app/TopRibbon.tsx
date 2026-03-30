@@ -116,6 +116,14 @@ export const TopRibbon = React.memo(function TopRibbon({
     setIsLeftPanelOpen(!isLeftPanelOpen);
   };
 
+  const toggleStructurePanel = () => {
+    setIsStructureOpen(prev => {
+      const next = !prev;
+      if (next) setSelectedLineId(null);
+      return next;
+    });
+  };
+
   return (
     <div
       className="h-16 border-b border-fluent-border flex items-center justify-between px-4 lg:px-8 lcars-ribbon lcars-ribbon-rail rounded-none border-t-0 border-l-0 border-r-0"
@@ -338,13 +346,7 @@ export const TopRibbon = React.memo(function TopRibbon({
         </Tooltip>
         <Tooltip title={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}>
           <button
-            onClick={() => {
-              setIsStructureOpen(prev => {
-                const next = !prev;
-                if (next) setSelectedLineId(null);
-                return next;
-              });
-            }}
+            onClick={toggleStructurePanel}
             aria-label={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}
             className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
             style={{
