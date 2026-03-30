@@ -88,21 +88,17 @@ describe('InsightsBar', () => {
     );
 
     const tooltips = screen.getAllByTestId('tooltip');
-    // Verify all expected tooltips: Adaptation, Text, Markdown, Phonetic, Editor, Detect, Analyze, Similarity
-    expect(tooltips.length).toBe(8);
+    // Verify all expected tooltips: Adaptation, Detect, Analyze, Similarity
+    // (edit mode buttons are now in a single View dropdown, no individual tooltips)
+    expect(tooltips.length).toBe(4);
     // First should be adaptation
     expect(tooltips[0]!.getAttribute('data-title')).toContain('adapt');
-    // Second-Fifth should be edit mode buttons (Text, Markdown, Phonetic, Editor)
-    expect(tooltips[1]!.getAttribute('data-title')).toContain('Text');
-    expect(tooltips[2]!.getAttribute('data-title')).toContain('Mode');
-    expect(tooltips[3]!.getAttribute('data-title')).toContain('Phonetic');
-    expect(tooltips[4]!.getAttribute('data-title')).toContain('Editor');
-    // Sixth should be the detect button, immediately before analyze in the insights group
-    expect(tooltips[5]!.getAttribute('data-title')).toContain('Detected');
-    // Seventh should be analyze
-    expect(tooltips[6]!.getAttribute('data-title')).toContain('Analyze');
-    // Eighth should be similarity
-    expect(tooltips[7]!.getAttribute('data-title')).toContain('Compare');
+    // Second should be the detect button
+    expect(tooltips[1]!.getAttribute('data-title')).toContain('Detected');
+    // Third should be analyze
+    expect(tooltips[2]!.getAttribute('data-title')).toContain('Analyze');
+    // Fourth should be similarity
+    expect(tooltips[3]!.getAttribute('data-title')).toContain('Compare');
   });
 
   it('detect button shows only the primary (first) detected language', () => {
@@ -137,7 +133,7 @@ describe('InsightsBar', () => {
       </LanguageProvider>,
     );
 
-    const detectTooltip = screen.getAllByTestId('tooltip')[5]!;
+    const detectTooltip = screen.getAllByTestId('tooltip')[1]!;
     const tooltipTitle = detectTooltip.getAttribute('data-title') ?? '';
 
     // Tooltip should list at most 3 detected languages
@@ -183,7 +179,7 @@ describe('InsightsBar', () => {
       </LanguageProvider>,
     );
 
-    const detectTooltip = screen.getAllByTestId('tooltip')[5]!;
+    const detectTooltip = screen.getAllByTestId('tooltip')[1]!;
     const tooltipTitle = detectTooltip.getAttribute('data-title') ?? '';
     expect(tooltipTitle).toContain('French');
     expect(tooltipTitle).toContain('English');

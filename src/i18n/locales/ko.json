@@ -139,8 +139,8 @@
     "detectingLanguageLabel": "Detecting language…",
     "analyzingLabel": "Analyzing…",
     "checkingSimilarityLabel": "Checking similarity…",
-    "lyricsEditors": "LYRICS Editors",
-    "lyricsInsights": "LYRICS Insights",
+    "lyricsEditors": "View",
+    "lyricsInsights": "INSIGHTS",
     "detect": "Detect"
   },
   "suggestions": {
@@ -472,7 +472,7 @@
     "zen": "선적인"
   },
   "insights": {
-    "title": "구조 및 인사이트",
+    "title": "번역",
     "sections": "섹션",
     "words": "단어",
     "characters": "문자"

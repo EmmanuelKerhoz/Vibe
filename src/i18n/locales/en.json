@@ -102,9 +102,9 @@
     "regenerateGlobal": "Regenerate (GLOBAL)",
     "regenerateLyrics": "Regenerate Lyrics",
     "adaptSection": "Adaptation",
-    "editorMode": "Sections",
+    "editorMode": "Section",
     "markupModeLabel": "Markdown",
-    "phoneticModeLabel": "Phonetics",
+    "phoneticModeLabel": "Phonetic",
     "textModeLabel": "Text",
     "regenerateSection": "Regenerate Section",
     "quantize": "Quantize",
@@ -139,8 +139,8 @@
     "detectingLanguageLabel": "Detecting language…",
     "analyzingLabel": "Analyzing…",
     "checkingSimilarityLabel": "Checking similarity…",
-    "lyricsEditors": "LYRICS Editors",
-    "lyricsInsights": "LYRICS Insights",
+    "lyricsEditors": "View",
+    "lyricsInsights": "INSIGHTS",
     "detect": "Detect"
   },
   "suggestions": {
@@ -472,7 +472,7 @@
     "zen": "Zen"
   },
   "insights": {
-    "title": "Structure & Insights",
+    "title": "TRANSLATE",
     "sections": "Sections",
     "words": "Words",
     "characters": "Characters"
