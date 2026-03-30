@@ -12,9 +12,10 @@
  * not contribute to invalidation in practice.
  */
 import { useMemo } from 'react';
+import type { UIStateBag } from '../contexts/ModalContext';
 import type { UIStateSlice } from '../contexts/UIStateSlice';
 
-export const useUIStateForProvider = (bag: UIStateSlice): UIStateSlice => {
+export const useUIStateForProvider = (bag: UIStateSlice): UIStateBag => {
   const {
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
     setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,

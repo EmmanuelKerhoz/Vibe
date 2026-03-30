@@ -46,7 +46,7 @@ export function TopRibbon({
   const MENU_VERTICAL_OFFSET = 6;
   const MENU_BOTTOM_PADDING = 16;
   const { song, past, future, undo, redo } = useSongContext();
-  const { isGenerating, setSelectedLineId } = useComposerContext();
+  const { isGenerating, clearSelection } = useComposerContext();
   const {
     activeTab,
     setActiveTab,
@@ -112,6 +112,14 @@ export function TopRibbon({
       setIsStructureOpen(false);
     }
     setIsLeftPanelOpen(!isLeftPanelOpen);
+  };
+
+  const toggleStructurePanel = () => {
+    const next = !isStructureOpen;
+    if (next) {
+      clearSelection();
+    }
+    setIsStructureOpen(next);
   };
 
   return (
@@ -336,13 +344,7 @@ export function TopRibbon({
         </Tooltip>
         <Tooltip title={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}>
           <button
-            onClick={() => {
-              const nextIsStructureOpen = !isStructureOpen;
-              if (nextIsStructureOpen) {
-                setSelectedLineId(null);
-              }
-              setIsStructureOpen(nextIsStructureOpen);
-            }}
+            onClick={toggleStructurePanel}
             aria-label={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}
             className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
             style={{

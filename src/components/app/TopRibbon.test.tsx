@@ -13,6 +13,11 @@ const mockNavigation = vi.hoisted(() => ({
   setIsStructureOpen: vi.fn(),
 }));
 
+const mockComposer = vi.hoisted(() => ({
+  isGenerating: false,
+  clearSelection: vi.fn(),
+}));
+
 vi.mock('../../contexts/SongContext', () => ({
   useSongContext: () => ({
     song: [],
@@ -24,10 +29,7 @@ vi.mock('../../contexts/SongContext', () => ({
 }));
 
 vi.mock('../../contexts/ComposerContext', () => ({
-  useComposerContext: () => ({
-    isGenerating: false,
-    setSelectedLineId: vi.fn(),
-  }),
+  useComposerContext: () => mockComposer,
 }));
 
 vi.mock('../../contexts/AppStateContext', () => ({
@@ -42,6 +44,7 @@ describe('TopRibbon burger menu', () => {
     mockNavigation.setActiveTab.mockClear();
     mockNavigation.setIsLeftPanelOpen.mockClear();
     mockNavigation.setIsStructureOpen.mockClear();
+    mockComposer.clearSelection.mockClear();
   });
 
   it('exposes the redesigned primary navigation actions', () => {
@@ -176,5 +179,35 @@ describe('TopRibbon burger menu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
 
     expect((screen.getByRole('button', { name: 'Paste Lyrics' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('clears selection before opening the structure panel', () => {
+    render(
+      <LanguageProvider>
+        <TopRibbon
+          setIsVersionsModalOpen={() => {}}
+          setIsResetModalOpen={() => {}}
+          hasApiKey
+          handleApiKeyHelp={() => {}}
+          onOpenNewGeneration={() => {}}
+          onOpenNewEmpty={() => {}}
+          canPasteLyrics={true}
+          onPasteLyrics={() => {}}
+          onImportClick={() => {}}
+          onExportClick={() => {}}
+          onOpenLibraryClick={() => {}}
+          onOpenSettingsClick={() => {}}
+          onOpenAboutClick={() => {}}
+          onOpenKeyboardShortcutsClick={() => {}}
+          onOpenSearchClick={() => {}}
+          isAnalyzing={false}
+        />
+      </LanguageProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show Sidebar' }));
+
+    expect(mockComposer.clearSelection).toHaveBeenCalledTimes(1);
+    expect(mockNavigation.setIsStructureOpen).toHaveBeenCalledWith(true);
   });
 });
