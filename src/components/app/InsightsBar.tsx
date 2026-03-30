@@ -56,7 +56,7 @@ export const InsightsBar = React.memo(function InsightsBar({
           showTranslationFeatures={showTranslationFeatures}
         />
       }
-      metronomeControl={<MetronomeButton isActive={isMetronomeActive} onToggle={toggleMetronome} />}
+      metronomeControl={<MetronomeButton isMetronomeActive={isMetronomeActive} toggleMetronome={toggleMetronome} />}
       insightsActions={
         <>
           <DetectLanguageButton detectedLanguages={detectedLanguages} songLanguage={songLanguage} songCount={song.length} isDetectingLanguage={isDetectingLanguage} onDetect={detectLanguage} />
