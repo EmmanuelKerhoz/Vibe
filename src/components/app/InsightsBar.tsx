@@ -1,6 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, Search } from '../ui/icons';
-import { Tooltip } from '../ui/Tooltip';
+import { BarChart2 } from '../ui/icons';
 import { useTranslation } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
@@ -9,7 +8,14 @@ import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 import { AdaptationProgressBanner } from './AdaptationProgressBanner';
-import { AnalyzeSongButton, DetectLanguageButton, MetronomeButton, TranslationControls, ViewModeSelector } from './insights';
+import {
+  AnalyzeSongButton,
+  DetectLanguageButton,
+  MetronomeButton,
+  SimilarityButton,
+  TranslationControls,
+  ViewModeSelector,
+} from './insights';
 
 interface InsightsBarProps {
   targetLanguage: string;
@@ -139,28 +145,15 @@ export const InsightsBar = React.memo(function InsightsBar({
               songCount={song.length}
               onAnalyze={analyzeCurrentSong}
             />
-            <Tooltip title={t.tooltips.checkSimilarity}>
-              <button
-                onClick={() => setIsSimilarityModalOpen(true)}
-                disabled={isGenerating || isAnalyzing || !hasLyrics}
-                aria-disabled={isGenerating || isAnalyzing || !hasLyrics}
-                className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed relative"
-              >
-                {webSimilarityIndex.status === 'running'
-                  ? (<>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-color)]" aria-hidden="true" />
-                      <span className="sr-only">{t.editor.checkingSimilarityLabel ?? 'Checking similarity\u2026'}</span>
-                    </>)
-                  : <Search className="w-3.5 h-3.5" aria-hidden="true" />}
-                <span className="hidden lg:inline">{t.ribbon?.similarity || 'Similarity'}</span>
-                {webBadgeLabel && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px] text-[var(--accent-color)]" aria-hidden="true">{webBadgeLabel}</span>
-                )}
-                {!webBadgeLabel && libraryCount > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--accent-color)]/20 rounded-sm text-[9px]" aria-hidden="true">{libraryCount}</span>
-                )}
-              </button>
-            </Tooltip>
+            <SimilarityButton
+              isGenerating={isGenerating}
+              isAnalyzing={isAnalyzing}
+              hasLyrics={hasLyrics}
+              webSimilarityIndex={webSimilarityIndex}
+              webBadgeLabel={webBadgeLabel}
+              libraryCount={libraryCount}
+              setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+            />
           </div>
 
           {/* ── Mobile KPIs ───────────────────────────────────────── */}
