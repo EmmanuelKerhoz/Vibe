@@ -1,3 +1,4 @@
-export { ViewModeSelector } from './ViewModeSelector';
+export { DetectLanguageButton } from './DetectLanguageButton';
 export { MetronomeButton } from './MetronomeButton';
+export { ViewModeSelector } from './ViewModeSelector';
 export { TranslationControls } from './TranslationControls';
