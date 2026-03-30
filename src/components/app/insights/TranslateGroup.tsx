@@ -10,7 +10,7 @@ interface TranslateGroupProps {
   targetLanguage: string;
   setTargetLanguage: (lang: string) => void;
   isAdaptingLanguage: boolean;
-   song: Section[];
+  song: Section[];
   adaptSongLanguage: (lang: string) => void;
   showTranslationFeatures: boolean;
 }

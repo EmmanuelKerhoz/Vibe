@@ -1,10 +1,12 @@
 import { Loader2, ScanText } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
 import { EmojiSign } from '../../ui/EmojiSign';
-import { useTranslation, type getLanguageDisplay } from '../../../i18n';
+import { getLanguageDisplay, useTranslation } from '../../../i18n';
+
+type LanguageDisplay = ReturnType<typeof getLanguageDisplay>;
 
 interface DetectLanguageButtonProps {
-  detectedDisplays: Array<ReturnType<typeof getLanguageDisplay>>;
+  detectedDisplays: LanguageDisplay[];
   hasLyrics: boolean;
   isDetectingLanguage: boolean;
   onDetect: () => void;

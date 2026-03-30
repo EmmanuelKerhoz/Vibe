@@ -1,8 +1,10 @@
-import { useTranslation, type getLanguageDisplay } from '../../../i18n';
+import { getLanguageDisplay, useTranslation } from '../../../i18n';
 import type { useSimilarityEngine } from '../../../hooks/useSimilarityEngine';
 import { AnalyzeSongButton } from './AnalyzeSongButton';
 import { DetectLanguageButton } from './DetectLanguageButton';
 import { SimilarityButton } from './SimilarityButton';
+
+type LanguageDisplay = ReturnType<typeof getLanguageDisplay>;
 
 interface InsightsActionsProps {
   webSimilarityIndex: ReturnType<typeof useSimilarityEngine>['index'];
@@ -12,7 +14,7 @@ interface InsightsActionsProps {
   isAnalyzing: boolean;
   isGenerating: boolean;
   hasLyrics: boolean;
-  detectedDisplays: Array<ReturnType<typeof getLanguageDisplay>>;
+  detectedDisplays: LanguageDisplay[];
   detectLanguage: () => void;
   analyzeCurrentSong: () => void;
   setIsSimilarityModalOpen: (open: boolean) => void;
