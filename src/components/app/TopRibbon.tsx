@@ -9,16 +9,11 @@ import { motion } from 'motion/react';
 import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useAppNavigationContext } from '../../contexts/AppStateContext';
 
 interface Props {
-  activeTab: 'lyrics' | 'musical';
-  setActiveTab: (v: 'lyrics' | 'musical') => void;
   setIsVersionsModalOpen: (v: boolean) => void;
   setIsResetModalOpen: (v: boolean) => void;
-  isLeftPanelOpen: boolean;
-  setIsLeftPanelOpen: (v: boolean) => void;
-  isStructureOpen: boolean;
-  setIsStructureOpen: (v: boolean) => void;
   hasApiKey: boolean;
   handleApiKeyHelp: () => void;
   onOpenNewGeneration: () => void;
@@ -36,10 +31,7 @@ interface Props {
 }
 
 export function TopRibbon({
-  activeTab, setActiveTab,
   setIsVersionsModalOpen, setIsResetModalOpen,
-  isLeftPanelOpen, setIsLeftPanelOpen,
-  isStructureOpen, setIsStructureOpen,
   hasApiKey, handleApiKeyHelp,
   onOpenNewGeneration, onOpenNewEmpty,
   onImportClick, onExportClick,
@@ -54,7 +46,15 @@ export function TopRibbon({
   const MENU_VERTICAL_OFFSET = 6;
   const MENU_BOTTOM_PADDING = 16;
   const { song, past, future, undo, redo } = useSongContext();
-  const { isGenerating } = useComposerContext();
+  const { isGenerating, clearSelection } = useComposerContext();
+  const {
+    activeTab,
+    setActiveTab,
+    isStructureOpen,
+    setIsStructureOpen,
+    isLeftPanelOpen,
+    setIsLeftPanelOpen,
+  } = useAppNavigationContext();
   const { t } = useTranslation();
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
@@ -112,6 +112,14 @@ export function TopRibbon({
       setIsStructureOpen(false);
     }
     setIsLeftPanelOpen(!isLeftPanelOpen);
+  };
+
+  const toggleStructurePanel = () => {
+    const nextIsStructureOpen = !isStructureOpen;
+    if (nextIsStructureOpen) {
+      clearSelection();
+    }
+    setIsStructureOpen(nextIsStructureOpen);
   };
 
   return (
@@ -336,7 +344,7 @@ export function TopRibbon({
         </Tooltip>
         <Tooltip title={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}>
           <button
-            onClick={() => setIsStructureOpen(!isStructureOpen)}
+            onClick={toggleStructurePanel}
             aria-label={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}
             className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
             style={{
