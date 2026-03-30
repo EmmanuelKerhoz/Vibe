@@ -281,8 +281,30 @@ export const InsightsBar = React.memo(function InsightsBar({
       }} />
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
 
-        {/* Single row: Language dropdown | ADAPTATION | LYRICS Editors | LYRICS Insights (right) */}
+        {/* Single row: View dropdown | sep | TRANSLATE | ADAPTATION | Language | Metronome | … | INSIGHTS (right) */}
         <div className="flex items-center gap-2 min-w-0">
+
+          {/* ── View dropdown (replaces LYRICS Editors buttons) ─────── */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsEditors ?? 'View'}</span>
+            <div style={{ minWidth: '110px', maxWidth: '150px' }}>
+              <LcarsSelect
+                value={editMode}
+                onChange={(v) => switchEditMode(v as EditMode)}
+                options={[
+                  { value: 'text', label: <span className="flex items-center gap-1.5"><Type className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.textModeLabel}</span></span> },
+                  { value: 'markdown', label: <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.markupModeLabel}</span></span> },
+                  { value: 'phonetic', label: <span className="flex items-center gap-1.5"><PersonVoice className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.phoneticModeLabel}</span></span> },
+                  { value: 'section', label: <span className="flex items-center gap-1.5"><Layout className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.editorMode}</span></span> },
+                ]}
+                disabled={isGenerating || isAnalyzing}
+              />
+            </div>
+          </div>
+
+          <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
+
+          {/* ── TRANSLATE group (was Structure & Insights) ───────────── */}
           <h3 className="micro-label text-[var(--text-secondary)] hidden lg:flex items-center gap-2 shrink-0 whitespace-nowrap">
             <BarChart2 className="w-3.5 h-3.5" aria-hidden="true" />
             {t.insights.title}
@@ -291,14 +313,6 @@ export const InsightsBar = React.memo(function InsightsBar({
 
           {showTranslationFeatures && (
             <>
-              <div className="min-w-0 overflow-hidden" style={{ maxWidth: '180px' }}>
-                <LcarsSelect
-                  value={targetLanguage}
-                  onChange={setTargetLanguage}
-                  options={LANGUAGE_SELECT_OPTIONS}
-                />
-              </div>
-
               <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText)}>
                 <button
                   onClick={() => adaptSongLanguage(targetLanguage)}
@@ -316,6 +330,14 @@ export const InsightsBar = React.memo(function InsightsBar({
                   <span className="hidden sm:inline">{t.editor.adaptation}</span>
                 </button>
               </Tooltip>
+
+              <div className="min-w-0 overflow-hidden" style={{ maxWidth: '180px' }}>
+                <LcarsSelect
+                  value={targetLanguage}
+                  onChange={setTargetLanguage}
+                  options={LANGUAGE_SELECT_OPTIONS}
+                />
+              </div>
             </>
           )}
 
@@ -333,41 +355,9 @@ export const InsightsBar = React.memo(function InsightsBar({
             </Tooltip>
           )}
 
-          {/* ── LYRICS Editors group ────────────────────────────────── */}
-          <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsEditors ?? 'LYRICS Editors'}</span>
-            {([
-              { mode: 'text' as EditMode, icon: <Type className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.textModeLabel, tooltip: t.tooltips.textMode },
-              { mode: 'markdown' as EditMode, icon: <FileText className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.markupModeLabel, tooltip: t.tooltips.markupMode },
-              { mode: 'phonetic' as EditMode, icon: <PersonVoice className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.phoneticModeLabel, tooltip: t.tooltips.phoneticMode },
-              { mode: 'section' as EditMode, icon: <Layout className="w-3.5 h-3.5" aria-hidden="true" />, label: t.editor.editorMode, tooltip: t.tooltips.editorMode },
-            ]).map(({ mode, icon, label, tooltip }) => {
-              const isDisabled = isGenerating || isAnalyzing;
-              return (
-                <Tooltip key={mode} title={tooltip}>
-                  <button
-                    onClick={() => switchEditMode(mode)}
-                    disabled={isDisabled}
-                    aria-disabled={isDisabled}
-                    aria-pressed={editMode === mode}
-                    className={`px-2 lg:px-3 py-1 text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
-                      editMode === mode
-                        ? 'bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/40 text-[var(--accent-color)]'
-                        : 'glass-button'
-                    }`}
-                  >
-                    {icon}
-                    <span className="hidden lg:inline">{label}</span>
-                  </button>
-                </Tooltip>
-              );
-            })}
-          </div>
-
-          {/* ── LYRICS Insights group (right-aligned) ───────────────────── */}
+          {/* ── INSIGHTS group (was LYRICS Insights), right-aligned ──── */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsInsights ?? 'LYRICS Insights'}</span>
+            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsInsights ?? 'INSIGHTS'}</span>
             <Tooltip title={detectedDisplays.length > 0
               ? (t.tooltips.redetectLanguage ?? 'Detected: {langs} \u2014 click to re-detect').replace('{langs}', detectedLanguageList)
               : (t.tooltips.detectLanguage ?? 'Detect song language')}>
