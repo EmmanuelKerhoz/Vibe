@@ -23,6 +23,7 @@ import React, { createContext, useContext, useMemo, type ReactNode } from 'react
 import { useAppState } from '../hooks/useAppState';
 import { useUIStateForProvider } from '../hooks/useUIStateForProvider';
 import type { UIStateBag } from './ModalContext';
+import type { UIStateSlice } from './UIStateSlice';
 
 type AppStateBag = ReturnType<typeof useAppState>;
 
@@ -43,12 +44,50 @@ export interface AppNavigationValue {
 const AppStateContext = createContext<AppStateContextValue | null>(null);
 const AppNavigationContext = createContext<AppNavigationValue | null>(null);
 
+function selectUIStateSlice(appState: AppStateBag): UIStateSlice {
+  const {
+    setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
+    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
+    setIsResetModalOpen, setIsKeyboardShortcutsModalOpen,
+    setConfirmModal, setPromptModal, setIsPasteModalOpen,
+    setIsAnalysisModalOpen, setIsSearchReplaceOpen,
+    isAboutOpen, isSettingsOpen, apiErrorModal,
+    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
+    isResetModalOpen, isKeyboardShortcutsModalOpen,
+    confirmModal, promptModal, isPasteModalOpen,
+    isAnalysisModalOpen, isSearchReplaceOpen,
+    activeTab, setActiveTab,
+    isStructureOpen, setIsStructureOpen,
+    isLeftPanelOpen, setIsLeftPanelOpen,
+    importInputRef,
+  } = appState;
+
+  return {
+    setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
+    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
+    setIsResetModalOpen, setIsKeyboardShortcutsModalOpen,
+    setConfirmModal, setPromptModal, setIsPasteModalOpen,
+    setIsAnalysisModalOpen, setIsSearchReplaceOpen,
+    isAboutOpen, isSettingsOpen, apiErrorModal,
+    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
+    isResetModalOpen, isKeyboardShortcutsModalOpen,
+    confirmModal, promptModal, isPasteModalOpen,
+    isAnalysisModalOpen, isSearchReplaceOpen,
+    activeTab, setActiveTab,
+    isStructureOpen, setIsStructureOpen,
+    isLeftPanelOpen, setIsLeftPanelOpen,
+    importInputRef,
+  };
+}
+
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const appState = useAppState();
 
-  // Pass appState spread — UIStateBag type contract enforces correctness.
-  // Eliminates the 35-field manual enumeration that was here before.
-  const uiStateForProvider = useUIStateForProvider(appState as unknown as UIStateBag);
+  const uiStateForProvider = useUIStateForProvider(selectUIStateSlice(appState));
 
   // Memoised context value — re-renders all consumers only when appState
   // or uiStateForProvider reference changes (i.e. on every state mutation
