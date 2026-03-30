@@ -10,6 +10,9 @@
  * Editor state (editMode, markupText, markupTextareaRef, markupDirection,
  * setEditMode, setMarkupText) is no longer passed here — LyricsView sources
  * it directly from EditorContext.
+ *
+ * Drag handlers (handleDrop, handleLineDragStart, handleLineDrop) are no longer
+ * passed here — LyricsView and SectionEditor source them from DragHandlersContext.
  */
 import React, { Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
@@ -67,11 +70,6 @@ interface AppEditorZoneProps {
   showTranslationFeatures: boolean;
   // LyricsView
   playAudioFeedback: PlayAudioFeedback;
-  // TODO(DragHandlersContext): these 3 remain props until useSongEditor handlers
-  // are lifted into a DragHandlersContext provider.
-  handleDrop: (targetIndex: number) => void;
-  handleLineDragStart: (lineId: string, sectionId: string) => void;
-  handleLineDrop: (targetSectionId: string, targetLineId: string) => void;
   canPasteLyrics: boolean;
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
@@ -91,7 +89,7 @@ export function AppEditorZone({
   libraryCount, adaptSongLanguage, detectLanguage, analyzeCurrentSong,
   setIsSimilarityModalOpen, adaptationProgress, adaptationResult,
   showTranslationFeatures,
-  playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
+  playAudioFeedback,
   canPasteLyrics, onOpenLibrary, onPasteLyrics, onGenerateSong,
   sectionTargetLanguages, onSectionTargetLanguageChange,
   adaptSectionLanguage, adaptLineLanguage, adaptingLineIds,
@@ -135,9 +133,6 @@ export function AppEditorZone({
                   adaptLineLanguage={adaptLineLanguage}
                   adaptingLineIds={adaptingLineIds}
                   playAudioFeedback={playAudioFeedback}
-                  handleDrop={handleDrop}
-                  handleLineDragStart={handleLineDragStart}
-                  handleLineDrop={handleLineDrop}
                   canPasteLyrics={canPasteLyrics}
                   targetLanguage={targetLanguage}
                   onOpenLibrary={onOpenLibrary}
