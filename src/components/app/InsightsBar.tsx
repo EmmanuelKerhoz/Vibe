@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, Languages, ScanText, Layout, Search, Timer, FileText, Type, PersonVoice } from '../ui/icons';
+import { Loader2, BarChart2, Languages, ScanText, Search, Timer } from '../ui/icons';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
@@ -12,6 +12,7 @@ import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 import { AdaptationProgressBanner } from './AdaptationProgressBanner';
+import { ViewModeSelector } from './insights';
 
 interface InsightsBarProps {
   targetLanguage: string;
@@ -118,22 +119,11 @@ export const InsightsBar = React.memo(function InsightsBar({
         <div className="flex items-center gap-2 min-w-0">
 
           {/* ── View dropdown (replaces LYRICS Editors buttons) ─────── */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsEditors ?? 'View'}</span>
-            <div style={{ minWidth: '110px', maxWidth: '150px' }}>
-              <LcarsSelect
-                value={editMode}
-                onChange={(v) => switchEditMode(v as EditMode)}
-                options={[
-                  { value: 'text', label: <span className="flex items-center gap-1.5"><Type className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.textModeLabel}</span></span> },
-                  { value: 'markdown', label: <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.markupModeLabel}</span></span> },
-                  { value: 'phonetic', label: <span className="flex items-center gap-1.5"><PersonVoice className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.phoneticModeLabel}</span></span> },
-                  { value: 'section', label: <span className="flex items-center gap-1.5"><Layout className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.editorMode}</span></span> },
-                ]}
-                disabled={isGenerating || isAnalyzing}
-              />
-            </div>
-          </div>
+          <ViewModeSelector
+            editMode={editMode}
+            switchEditMode={switchEditMode}
+            disabled={isGenerating || isAnalyzing}
+          />
 
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
 
