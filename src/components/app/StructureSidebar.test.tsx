@@ -21,6 +21,14 @@ vi.mock('../../contexts/ComposerContext', () => ({
   }),
 }));
 
+vi.mock('../../contexts/DragHandlersContext', () => ({
+  useDragHandlersContext: () => ({
+    handleDrop: vi.fn(),
+    handleLineDragStart: vi.fn(),
+    handleLineDrop: vi.fn(),
+  }),
+}));
+
 function renderStructureSidebar({
   addStructureItem = vi.fn(),
   initialDropdownOpen = false,
@@ -42,7 +50,6 @@ function renderStructureSidebar({
             addStructureItem={addStructureItem}
             removeStructureItem={vi.fn()}
             normalizeStructure={vi.fn()}
-            handleDrop={vi.fn()}
             onScrollToSection={vi.fn()}
           />
         </LanguageProvider>

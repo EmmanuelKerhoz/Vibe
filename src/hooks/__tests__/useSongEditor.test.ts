@@ -99,7 +99,6 @@ const buildHook = (
   options: { draggedItemIndex?: number | null } = {},
 ) => {
   const openPasteModalWithText = vi.fn();
-  const playAudioFeedback = vi.fn();
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     React.createElement(
       SongProvider,
@@ -120,7 +119,6 @@ const buildHook = (
     ({
       editor: useSongEditor({
         openPasteModalWithText,
-        playAudioFeedback,
       }),
       context: useSongContext(),
     }),
@@ -223,48 +221,6 @@ describe('useSongEditor', () => {
     });
   });
 
-  describe('handleDrop', () => {
-    it('moves a pre-chorus and chorus pair together when dragging the chorus', () => {
-      const song = [
-        makeSection('s1', 'Verse 1'),
-        makeSection('s2', 'Pre-Chorus 1'),
-        makeSection('s3', 'Chorus 1'),
-        makeSection('s4', 'Verse 2'),
-      ];
-
-      const { result } = buildHook(
-        song,
-        song.map(section => section.name),
-        { draggedItemIndex: 2 },
-      );
-
-      act(() => result.current.editor.handleDrop(3));
-
-      expect(result.current.context.structure).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
-      expect(result.current.context.song.map(section => section.name)).toEqual(['Verse 1', 'Verse 2', 'Pre-Chorus 1', 'Chorus 1']);
-    });
-
-    it('moves a pre-chorus and final chorus pair together when dragging the final chorus', () => {
-      const song = [
-        makeSection('s1', 'Verse 1'),
-        makeSection('s2', 'Pre-Chorus 3'),
-        makeSection('s3', 'Final Chorus'),
-        makeSection('s4', 'Outro'),
-      ];
-
-      const { result } = buildHook(
-        song,
-        song.map(section => section.name),
-        { draggedItemIndex: 2 },
-      );
-
-      act(() => result.current.editor.handleDrop(3));
-
-      expect(result.current.context.structure).toEqual(['Verse 1', 'Pre-Chorus 3', 'Final Chorus', 'Outro']);
-      expect(result.current.context.song.map(section => section.name)).toEqual(['Verse 1', 'Pre-Chorus 3', 'Final Chorus', 'Outro']);
-    });
-  });
-
   describe('loadFileForAnalysis', () => {
     it('loads a plain text file and opens paste modal', async () => {
       const song = [makeSection('s1', 'Verse 1')];
@@ -273,7 +229,6 @@ describe('useSongEditor', () => {
       const { result } = renderHook(
         () => useSongEditor({
           openPasteModalWithText,
-          playAudioFeedback: vi.fn(),
         }),
         {
           wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
@@ -312,7 +267,6 @@ describe('useSongEditor', () => {
       const { result } = renderHook(
         () => useSongEditor({
           openPasteModalWithText,
-          playAudioFeedback: vi.fn(),
         }),
         {
           wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
@@ -351,7 +305,6 @@ describe('useSongEditor', () => {
       const { result } = renderHook(
         () => useSongEditor({
           openPasteModalWithText,
-          playAudioFeedback: vi.fn(),
         }),
         {
           wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
@@ -388,7 +341,6 @@ describe('useSongEditor', () => {
       const { result } = renderHook(
         () => useSongEditor({
           openPasteModalWithText,
-          playAudioFeedback: vi.fn(),
         }),
         {
           wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
@@ -426,7 +378,6 @@ describe('useSongEditor', () => {
       const { result } = renderHook(
         () => useSongEditor({
           openPasteModalWithText,
-          playAudioFeedback: vi.fn(),
         }),
         {
           wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(
