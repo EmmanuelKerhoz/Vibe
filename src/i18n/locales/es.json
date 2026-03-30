@@ -183,7 +183,9 @@
     "apply": "Aplicar selección",
     "revert": "Revertir todos los cambios del análisis",
     "close": "Cerrar informe",
-    "noData": "No hay datos de análisis disponibles."
+    "noData": "No hay datos de análisis disponibles.",
+    "showMusicalSuggestions": "Mostrar sugerencias musicales",
+    "hideMusicalSuggestions": "Ocultar sugerencias musicales"
   },
   "similarity": {
     "title": "Verificación de similitud",

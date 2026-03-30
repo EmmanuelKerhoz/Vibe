@@ -197,7 +197,9 @@
     "apply": "Apply Selected",
     "revert": "Revert All Analysis Changes",
     "close": "Close Report",
-    "noData": "No analysis data available."
+    "noData": "No analysis data available.",
+    "showMusicalSuggestions": "Show Musical Suggestions",
+    "hideMusicalSuggestions": "Hide Musical Suggestions"
   },
   "similarity": {
     "title": "Similarity Check",

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   X, BarChart2, Sparkles, Loader2, BookOpen, Activity, CheckCircle2, Target,
-  Music, Plus, Check, Undo2, Zap
+  Music, Plus, Check, Undo2, Zap, ChevronDown, ChevronUp
 } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { Tooltip } from '../../ui/Tooltip';
@@ -43,6 +43,7 @@ export function AnalysisModal({
   clearAppliedAnalysisItems, versions, rollbackToVersion,
 }: Props) {
   const { t } = useTranslation();
+  const [showExtra, setShowExtra] = useState(false);
 
   if (!isOpen) return null;
 
@@ -208,7 +209,20 @@ export function AnalysisModal({
                   </ul>
                 </section>
               </div>
-              <section className="space-y-3">
+              <div className="flex justify-center pt-2">
+                <button
+                  onClick={() => setShowExtra(v => !v)}
+                  aria-expanded={showExtra}
+                  aria-label={showExtra ? t.analysis.hideMusicalSuggestions : t.analysis.showMusicalSuggestions}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-color)]/40 hover:bg-[var(--accent-color)]/5 transition-colors"
+                >
+                  {showExtra ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  {showExtra ? t.analysis.hideMusicalSuggestions : t.analysis.showMusicalSuggestions}
+                </button>
+              </div>
+              {showExtra && (
+                <>
+                  <section className="space-y-3">
                 <h4 className="micro-label text-blue-500 flex items-center gap-2">
                   <Music className="w-3.5 h-3.5" />{t.analysis.musicalSuggestions}
                 </h4>
@@ -243,6 +257,8 @@ export function AnalysisModal({
                   <p className="text-sm text-zinc-300 italic leading-relaxed">"{analysisReport.summary}"</p>
                 </div>
               </section>
+                </>
+              )}
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center py-20">

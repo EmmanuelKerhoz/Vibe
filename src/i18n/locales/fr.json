@@ -190,7 +190,9 @@
     "apply": "Appliquer la sélection",
     "revert": "Annuler toutes les modifications d’analyse",
     "close": "Fermer le rapport",
-    "noData": "Aucune donnée d’analyse disponible."
+    "noData": "Aucune donnée d’analyse disponible.",
+    "showMusicalSuggestions": "Afficher les suggestions musicales",
+    "hideMusicalSuggestions": "Masquer les suggestions musicales"
   },
   "similarity": {
     "title": "Vérification de similarité",

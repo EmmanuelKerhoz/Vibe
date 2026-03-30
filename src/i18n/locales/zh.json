@@ -183,7 +183,9 @@
     "apply": "应用所选",
     "revert": "撤销所有分析更改",
     "close": "关闭报告",
-    "noData": "暂无分析数据。"
+    "noData": "暂无分析数据。",
+    "showMusicalSuggestions": "显示音乐建议",
+    "hideMusicalSuggestions": "隐藏音乐建议"
   },
   "similarity": {
     "title": "相似度检查",
