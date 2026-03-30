@@ -17,6 +17,14 @@ const mockPhoneticState = {
   error: null,
 };
 
+vi.mock('../../contexts/DragHandlersContext', () => ({
+  useDragHandlersContext: () => ({
+    handleDrop: vi.fn(),
+    handleLineDragStart: vi.fn(),
+    handleLineDrop: vi.fn(),
+  }),
+}));
+
 vi.mock('../../hooks/usePhoneticTranscription', () => ({
   usePhoneticTranscription: vi.fn(() => mockPhoneticState),
 }));
@@ -76,9 +84,6 @@ describe('LyricsView empty state', () => {
             <LyricsView
               isAnalyzing={false}
               playAudioFeedback={() => {}}
-              handleDrop={() => {}}
-              handleLineDragStart={() => {}}
-              handleLineDrop={() => {}}
               canPasteLyrics={true}
               onOpenLibrary={onOpenLibrary}
               onPasteLyrics={onPasteLyrics}
@@ -108,9 +113,6 @@ describe('LyricsView empty state', () => {
             <LyricsView
               isAnalyzing={false}
               playAudioFeedback={() => {}}
-              handleDrop={() => {}}
-              handleLineDragStart={() => {}}
-              handleLineDrop={() => {}}
               canPasteLyrics={false}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
@@ -134,9 +136,6 @@ describe('LyricsView empty state', () => {
             <LyricsView
               isAnalyzing={false}
               playAudioFeedback={() => {}}
-              handleDrop={() => {}}
-              handleLineDragStart={() => {}}
-              handleLineDrop={() => {}}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
@@ -175,9 +174,6 @@ describe('LyricsView empty state', () => {
           <LyricsView
             isAnalyzing={false}
             playAudioFeedback={() => {}}
-            handleDrop={() => {}}
-            handleLineDragStart={() => {}}
-            handleLineDrop={() => {}}
             canPasteLyrics={true}
             onOpenLibrary={() => {}}
             onPasteLyrics={() => {}}
@@ -220,9 +216,6 @@ describe('LyricsView empty state', () => {
             <LyricsView
               isAnalyzing={false}
               playAudioFeedback={() => {}}
-              handleDrop={() => {}}
-              handleLineDragStart={() => {}}
-              handleLineDrop={() => {}}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
@@ -283,9 +276,6 @@ describe('LyricsView empty state', () => {
             <LyricsView
               isAnalyzing={false}
               playAudioFeedback={() => {}}
-              handleDrop={() => {}}
-              handleLineDragStart={() => {}}
-              handleLineDrop={() => {}}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}

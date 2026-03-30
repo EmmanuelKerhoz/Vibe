@@ -50,6 +50,15 @@ vi.mock('./contexts/DragContext', () => ({
   DragProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+vi.mock('./contexts/DragHandlersContext', () => ({
+  DragHandlersProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useDragHandlersContext: () => ({
+    handleDrop: mockAppState.noop,
+    handleLineDragStart: mockAppState.noop,
+    handleLineDrop: mockAppState.noop,
+  }),
+}));
+
 vi.mock('./hooks/useAudioFeedback', () => ({
   useAudioFeedback: () => ({ playAudioFeedback: mockAppState.noop }),
 }));
@@ -100,9 +109,6 @@ vi.mock('./hooks/useSongEditor', () => ({
     removeStructureItem: mockAppState.noop,
     addStructureItem: mockAppState.noop,
     normalizeStructure: mockAppState.noop,
-    handleDrop: mockAppState.noop,
-    handleLineDragStart: mockAppState.noop,
-    handleLineDrop: mockAppState.noop,
     exportSong: mockAppState.asyncNoop,
     loadFileForAnalysis: mockAppState.asyncNoop,
   }),

@@ -92,7 +92,6 @@ export function AppModalLayer() {
 
   const { exportSong, loadFileForAnalysis } = useSongEditor({
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); },
-    playAudioFeedback: () => {},
   });
 
   const { handleImportInputChange, handleImportChooseFile } = useImportHandlers({
