@@ -1,10 +1,9 @@
 import React from 'react';
-import { Loader2, BarChart2, Languages, ScanText, Search, Timer } from '../ui/icons';
-import { LcarsSelect } from '../ui/LcarsSelect';
+import { Loader2, BarChart2, ScanText, Search, Timer } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
-import { SUPPORTED_ADAPTATION_LANGUAGES, getLanguageDisplay } from '../../i18n';
+import { getLanguageDisplay } from '../../i18n';
 import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 import type { EditMode } from '../../types';
@@ -12,7 +11,7 @@ import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 import { AdaptationProgressBanner } from './AdaptationProgressBanner';
-import { ViewModeSelector } from './insights';
+import { TranslationControls, ViewModeSelector } from './insights';
 
 interface InsightsBarProps {
   targetLanguage: string;
@@ -35,21 +34,6 @@ interface InsightsBarProps {
   adaptationResult?: AdaptationResult | null;
   showTranslationFeatures?: boolean;
 }
-
-// ---------------------------------------------------------------------------
-// Static language options — built once at module level so EmojiSign instances
-// are never remounted due to a new options array reference on each render.
-// ---------------------------------------------------------------------------
-
-const LANGUAGE_SELECT_OPTIONS = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
-  value: lang.aiName,
-  label: (
-    <span className="flex items-center gap-1.5 min-w-0 w-full">
-      <EmojiSign sign={lang.sign} />
-      <span className="truncate">{lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</span>
-    </span>
-  ),
-}));
 
 // ---------------------------------------------------------------------------
 // InsightsBar
@@ -89,10 +73,8 @@ export const InsightsBar = React.memo(function InsightsBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adaptationProgress?.active]);
 
-  const targetDisplay = getLanguageDisplay(targetLanguage);
   const detectedDisplays = (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : []))
     .map(lang => getLanguageDisplay(lang));
-  const targetLanguageDisplayText = targetDisplay ? `${targetDisplay.sign} ${targetDisplay.label}` : targetLanguage;
 
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
 
@@ -134,35 +116,14 @@ export const InsightsBar = React.memo(function InsightsBar({
           </h3>
           <div className="hidden lg:block h-4 w-px bg-[var(--border-color)] shrink-0" />
 
-          {showTranslationFeatures && (
-            <>
-              <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText)}>
-                <button
-                  onClick={() => adaptSongLanguage(targetLanguage)}
-                  disabled={isAdaptingLanguage || song.length === 0}
-                  aria-disabled={isAdaptingLanguage || song.length === 0}
-                  aria-busy={isAdaptingLanguage}
-                  className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap shrink-0"
-                >
-                  {isAdaptingLanguage
-                    ? (<>
-                        <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
-                        <span className="sr-only">{t.editor.adaptingLabel ?? 'Adapting\u2026'}</span>
-                      </>)
-                    : <Languages className="w-3 h-3" aria-hidden="true" />}
-                  <span className="hidden sm:inline">{t.editor.adaptation}</span>
-                </button>
-              </Tooltip>
-
-              <div className="min-w-0 overflow-hidden" style={{ maxWidth: '180px' }}>
-                <LcarsSelect
-                  value={targetLanguage}
-                  onChange={setTargetLanguage}
-                  options={LANGUAGE_SELECT_OPTIONS}
-                />
-              </div>
-            </>
-          )}
+          <TranslationControls
+            targetLanguage={targetLanguage}
+            setTargetLanguage={setTargetLanguage}
+            isAdaptingLanguage={isAdaptingLanguage}
+            songCount={song.length}
+            adaptSongLanguage={adaptSongLanguage}
+            showTranslationFeatures={showTranslationFeatures}
+          />
 
           {toggleMetronome && (
             <Tooltip title={t.musical?.metronome ?? 'Metronome'}>
