@@ -1,12 +1,12 @@
-import type { Dispatch, RefObject, SetStateAction } from 'react';
+import type { RefObject } from 'react';
 import { Type } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 import { EditorModeShell } from './EditorModeShell';
 
 interface TextModePanelProps {
-  markupTextareaRef: RefObject<HTMLTextAreaElement>;
+  markupTextareaRef: RefObject<HTMLTextAreaElement | null>;
   markupText: string;
-  setMarkupText: Dispatch<SetStateAction<string>>;
+  setMarkupText: (value: string) => void;
   markupDirection: 'ltr' | 'rtl';
 }
 
@@ -27,7 +27,7 @@ export function TextModePanel({
     >
       <div className="relative flex-1 min-h-0 overflow-hidden">
         <textarea
-          ref={markupTextareaRef}
+          ref={markupTextareaRef as RefObject<HTMLTextAreaElement>}
           value={markupText}
           onChange={(e) => setMarkupText(e.target.value)}
           spellCheck={false}

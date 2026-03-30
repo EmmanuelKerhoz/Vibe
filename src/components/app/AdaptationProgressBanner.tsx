@@ -151,7 +151,7 @@ export function AdaptationProgressBanner({
           {result.warnings.length > 0 && (
             <ul className="flex flex-col gap-0.5 list-none pl-0 mt-0.5">
               {result.warnings.map((warning, index) => (
-                <li key={index} className="flex items-start gap-1 text-amber-300/80">
+                <li key={`${index}-${warning}`} className="flex items-start gap-1 text-amber-300/80">
                   <span className="mt-0.5 shrink-0">·</span>
                   <span>{warning}</span>
                 </li>

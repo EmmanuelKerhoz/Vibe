@@ -1,4 +1,4 @@
-import type { Dispatch, RefObject, SetStateAction } from 'react';
+import type { RefObject } from 'react';
 import { Layout } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 import { MarkupInput } from '../MarkupInput';
@@ -6,7 +6,7 @@ import { EditorModeShell } from './EditorModeShell';
 
 interface MarkdownModePanelProps {
   markupText: string;
-  setMarkupText: Dispatch<SetStateAction<string>>;
+  setMarkupText: (value: string) => void;
   markupTextareaRef: RefObject<HTMLTextAreaElement | null>;
   markupDirection: 'ltr' | 'rtl';
 }
