@@ -70,6 +70,7 @@ describe('useSuggestions', () => {
       rhymeScheme: 'AABB',
       targetSyllables: 8,
       songLanguage: 'Arabic',
+      hasApiKey: true,
       selectedLineId: 'line-2',
       updateState: vi.fn(),
     }));
@@ -82,5 +83,27 @@ describe('useSuggestions', () => {
     const prompt = String(generateContentWithRetry.mock.calls[0]?.[0]?.contents ?? '');
     expect(prompt).toContain('IMPORTANT: All 3 alternatives MUST be written in Arabic.');
     expect(prompt).toContain('Write exclusively in Arabic.');
+  });
+
+  it('does not generate suggestions when the API key is unavailable', async () => {
+    const { result } = renderHook(() => useSuggestions({
+      song,
+      topic: 'Night drive',
+      mood: 'Electric',
+      rhymeScheme: 'AABB',
+      targetSyllables: 8,
+      songLanguage: 'Arabic',
+      hasApiKey: false,
+      selectedLineId: 'line-2',
+      updateState: vi.fn(),
+    }));
+
+    await act(async () => {
+      await result.current.generateSuggestions('line-2');
+    });
+
+    expect(generateContentWithRetry).not.toHaveBeenCalled();
+    expect(result.current.isSuggesting).toBe(false);
+    expect(result.current.suggestions).toEqual([]);
   });
 });

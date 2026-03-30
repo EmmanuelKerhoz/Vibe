@@ -232,4 +232,10 @@ describe('useSimilarityEngine — hook behaviour', () => {
     unmount();
     expect(abortedOnUnmount).toBe(true);
   });
+
+  it('does not schedule background searches when the API key is unavailable', () => {
+    renderHook(() => useSimilarityEngine({ hasApiKey: false }));
+    vi.advanceTimersByTime(DEBOUNCE_MS);
+    expect(webSimilaritySearch.runSearchTree).not.toHaveBeenCalled();
+  });
 });

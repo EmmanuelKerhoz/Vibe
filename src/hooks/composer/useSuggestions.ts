@@ -19,6 +19,7 @@ type UseSuggestionsParams = {
   rhymeScheme: string;
   targetSyllables: number;
   songLanguage?: string;
+  hasApiKey: boolean;
   selectedLineId: string | null;
   updateState: (
     recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] },
@@ -32,6 +33,7 @@ export const useSuggestions = ({
   rhymeScheme,
   targetSyllables,
   songLanguage = '',
+  hasApiKey,
   selectedLineId,
   updateState,
 }: UseSuggestionsParams) => {
@@ -53,6 +55,8 @@ export const useSuggestions = ({
 
   const generateSuggestions = useCallback(
     async (lineId: string) => {
+      if (!hasApiKey) return;
+
       setIsSuggesting(true);
       setSuggestions([]);
 
@@ -154,7 +158,7 @@ ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Provid
         if (!wasAborted) setIsSuggesting(false);
       }
     },
-    [song, topic, mood, rhymeScheme, targetSyllables, songLanguage],
+    [song, topic, mood, rhymeScheme, targetSyllables, songLanguage, hasApiKey],
   );
 
   const applySuggestion = useCallback(

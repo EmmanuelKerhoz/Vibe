@@ -20,6 +20,7 @@ type UseSongComposerParams = {
   narrative: string;
   songLanguage: string;
   uiLanguage: string;
+  hasApiKey: boolean;
   setMusicalPrompt: (value: string) => void;
   setGenre: (value: string) => void;
   setTempo: (value: number) => void;
@@ -47,6 +48,7 @@ export const useSongComposer = ({
   narrative,
   songLanguage,
   uiLanguage,
+  hasApiKey,
   setMusicalPrompt,
   setGenre,
   setTempo,
@@ -68,6 +70,7 @@ export const useSongComposer = ({
       rhymeScheme,
       targetSyllables,
       songLanguage: songLanguage || '',
+      hasApiKey,
       selectedLineId,
       updateState,
     });

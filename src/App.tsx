@@ -226,7 +226,7 @@ function AppInnerContent() {
     index: webSimilarityIndex,
     triggerNow: triggerWebSimilarity,
     resetIndex: resetWebSimilarityIndex,
-  } = useSimilarityEngine();
+  } = useSimilarityEngine({ hasApiKey });
 
   const { hasRealLyricContent, hasExistingWork, webBadgeLabel } = useDerivedAppState({
     editMode, markupText,

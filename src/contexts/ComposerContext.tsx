@@ -1,6 +1,7 @@
 import React, { createContext, useContext, type ReactNode } from 'react';
 import { useSongComposer } from '../hooks/useSongComposer';
 import { useSongContext } from './SongContext';
+import { useAppStateContext } from './AppStateContext';
 import { useLanguage } from '../i18n';
 
 type ComposerContextValue = ReturnType<typeof useSongComposer>;
@@ -33,6 +34,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
     updateSongAndStructureWithHistory,
     setShouldAutoGenerateTitle,
   } = useSongContext();
+  const { appState } = useAppStateContext();
   const { language } = useLanguage();
   const composer = useSongComposer({
     song,
@@ -55,6 +57,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
     setInstrumentation,
     setRhythm,
     setNarrative,
+    hasApiKey: appState.hasApiKey,
     updateState,
     updateSongWithHistory,
     updateSongAndStructureWithHistory,
