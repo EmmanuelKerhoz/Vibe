@@ -29,6 +29,7 @@ export const InsightsBar = React.memo(function InsightsBar({
   detectLanguage,
   analyzeCurrentSong,
   setIsSimilarityModalOpen,
+  hasApiKey,
   isMetronomeActive,
   toggleMetronome,
   adaptationProgress,
@@ -44,9 +45,9 @@ export const InsightsBar = React.memo(function InsightsBar({
   return (
     <InsightsBarLayout
       viewSelector={<ViewModeSelector editMode={editMode} switchEditMode={switchEditMode} disabled={isGenerating || isAnalyzing} />}
-      translationControls={<TranslateGroup targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage} isAdaptingLanguage={isAdaptingLanguage} song={song} adaptSongLanguage={adaptSongLanguage} showTranslationFeatures={showTranslationFeatures} />}
+      translationControls={<TranslateGroup targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage} isAdaptingLanguage={isAdaptingLanguage} song={song} adaptSongLanguage={adaptSongLanguage} showTranslationFeatures={showTranslationFeatures} hasApiKey={hasApiKey} />}
       metronomeControl={<MetronomeButton isMetronomeActive={isMetronomeActive} toggleMetronome={toggleMetronome} />}
-      insightsActions={<InsightsActions webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isDetectingLanguage={isDetectingLanguage} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} />}
+      insightsActions={<InsightsActions webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isDetectingLanguage={isDetectingLanguage} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} hasApiKey={hasApiKey} />}
       mobileKpis={<MobileKpis />}
       banner={showBanner && adaptationProgress ? <AdaptationProgressBanner progress={adaptationProgress} result={adaptationResult ?? null} onDismiss={dismissBanner} isOverlay /> : null}
     />

@@ -83,6 +83,7 @@ describe('InsightsBar', () => {
           detectLanguage={vi.fn()}
           analyzeCurrentSong={vi.fn()}
           setIsSimilarityModalOpen={vi.fn()}
+          hasApiKey={true}
         />
       </LanguageProvider>,
     );
@@ -129,6 +130,7 @@ describe('InsightsBar', () => {
           detectLanguage={vi.fn()}
           analyzeCurrentSong={vi.fn()}
           setIsSimilarityModalOpen={vi.fn()}
+          hasApiKey={true}
         />
       </LanguageProvider>,
     );
@@ -175,6 +177,7 @@ describe('InsightsBar', () => {
           detectLanguage={vi.fn()}
           analyzeCurrentSong={vi.fn()}
           setIsSimilarityModalOpen={vi.fn()}
+          hasApiKey={true}
         />
       </LanguageProvider>,
     );

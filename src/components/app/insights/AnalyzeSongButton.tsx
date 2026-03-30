@@ -6,6 +6,7 @@ interface AnalyzeSongButtonProps {
   isGenerating: boolean;
   isAnalyzing: boolean;
   hasLyrics: boolean;
+  hasApiKey: boolean;
   onAnalyze: () => void;
 }
 
@@ -13,16 +14,21 @@ export function AnalyzeSongButton({
   isGenerating,
   isAnalyzing,
   hasLyrics,
+  hasApiKey,
   onAnalyze,
 }: AnalyzeSongButtonProps) {
   const { t } = useTranslation();
+  const isDisabled = !hasApiKey || isGenerating || isAnalyzing || !hasLyrics;
+  const tooltipTitle = !hasApiKey
+    ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
+    : t.tooltips.analyzeTheme;
 
   return (
-    <Tooltip title={t.tooltips.analyzeTheme}>
+    <Tooltip title={tooltipTitle}>
       <button
         onClick={onAnalyze}
-        disabled={isGenerating || isAnalyzing || !hasLyrics}
-        aria-disabled={isGenerating || isAnalyzing || !hasLyrics}
+        disabled={isDisabled}
+        aria-disabled={isDisabled}
         aria-busy={isAnalyzing}
         className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
       >

@@ -102,6 +102,7 @@ export function AppEditorZone({
             libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
             detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong}
             setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+            hasApiKey={hasApiKey}
             adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
             showTranslationFeatures={showTranslationFeatures}
           />

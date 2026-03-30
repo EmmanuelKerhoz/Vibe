@@ -9,6 +9,7 @@ interface DetectLanguageButtonProps {
   detectedDisplays: LanguageDisplay[];
   hasLyrics: boolean;
   isDetectingLanguage: boolean;
+  hasApiKey: boolean;
   onDetect: () => void;
 }
 
@@ -16,21 +17,24 @@ export function DetectLanguageButton({
   detectedDisplays,
   hasLyrics,
   isDetectingLanguage,
+  hasApiKey,
   onDetect,
 }: DetectLanguageButtonProps) {
   const { t } = useTranslation();
   const detectedLanguageList = detectedDisplays.slice(0, 3).map(d => `${d.sign} ${d.label}`).join(', ');
+  const isDisabled = !hasApiKey || isDetectingLanguage || !hasLyrics;
+  const tooltipTitle = !hasApiKey
+    ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
+    : detectedDisplays.length > 0
+      ? (t.tooltips.redetectLanguage ?? 'Detected: {langs} — click to re-detect').replace('{langs}', detectedLanguageList)
+      : (t.tooltips.detectLanguage ?? 'Detect song language');
 
   return (
-    <Tooltip
-      title={detectedDisplays.length > 0
-        ? (t.tooltips.redetectLanguage ?? 'Detected: {langs} — click to re-detect').replace('{langs}', detectedLanguageList)
-        : (t.tooltips.detectLanguage ?? 'Detect song language')}
-    >
+    <Tooltip title={tooltipTitle}>
       <button
         onClick={() => void onDetect()}
-        disabled={isDetectingLanguage || !hasLyrics}
-        aria-disabled={isDetectingLanguage || !hasLyrics}
+        disabled={isDisabled}
+        aria-disabled={isDisabled}
         aria-busy={isDetectingLanguage}
         className="ux-interactive px-2.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap shrink-0"
       >

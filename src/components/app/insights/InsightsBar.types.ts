@@ -17,6 +17,7 @@ export interface InsightsBarProps {
   detectLanguage: () => void;
   analyzeCurrentSong: () => void;
   setIsSimilarityModalOpen: (open: boolean) => void;
+  hasApiKey: boolean;
   isMetronomeActive?: boolean;
   toggleMetronome?: () => void;
   adaptationProgress?: AdaptationProgress;
