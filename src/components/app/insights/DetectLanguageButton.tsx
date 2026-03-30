@@ -1,26 +1,22 @@
 import { Loader2, ScanText } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
 import { EmojiSign } from '../../ui/EmojiSign';
-import { useTranslation, getLanguageDisplay } from '../../../i18n';
+import { useTranslation, type getLanguageDisplay } from '../../../i18n';
 
 interface DetectLanguageButtonProps {
-  detectedLanguages: string[];
-  songLanguage?: string;
-  songCount: number;
+  detectedDisplays: Array<ReturnType<typeof getLanguageDisplay>>;
+  hasLyrics: boolean;
   isDetectingLanguage: boolean;
   onDetect: () => void;
 }
 
 export function DetectLanguageButton({
-  detectedLanguages,
-  songLanguage,
-  songCount,
+  detectedDisplays,
+  hasLyrics,
   isDetectingLanguage,
   onDetect,
 }: DetectLanguageButtonProps) {
   const { t } = useTranslation();
-  const detectedDisplays = (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : []))
-    .map(lang => getLanguageDisplay(lang));
   const detectedLanguageList = detectedDisplays.slice(0, 3).map(d => `${d.sign} ${d.label}`).join(', ');
 
   return (
@@ -31,8 +27,8 @@ export function DetectLanguageButton({
     >
       <button
         onClick={() => void onDetect()}
-        disabled={isDetectingLanguage || songCount === 0}
-        aria-disabled={isDetectingLanguage || songCount === 0}
+        disabled={isDetectingLanguage || !hasLyrics}
+        aria-disabled={isDetectingLanguage || !hasLyrics}
         aria-busy={isDetectingLanguage}
         className="ux-interactive px-2.5 py-1 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-white/10 whitespace-nowrap shrink-0"
       >

@@ -1,5 +1,6 @@
 export { AnalyzeSongButton } from './AnalyzeSongButton';
 export { DetectLanguageButton } from './DetectLanguageButton';
+export { InsightsActions } from './InsightsActions';
 export { InsightsBarLayout } from './InsightsBarLayout';
 export { MetronomeButton } from './MetronomeButton';
 export { MobileKpisDisplay } from './MobileKpisDisplay';

@@ -5,14 +5,14 @@ import { useTranslation } from '../../../i18n';
 interface AnalyzeSongButtonProps {
   isGenerating: boolean;
   isAnalyzing: boolean;
-  songCount: number;
+  hasLyrics: boolean;
   onAnalyze: () => void;
 }
 
 export function AnalyzeSongButton({
   isGenerating,
   isAnalyzing,
-  songCount,
+  hasLyrics,
   onAnalyze,
 }: AnalyzeSongButtonProps) {
   const { t } = useTranslation();
@@ -21,8 +21,8 @@ export function AnalyzeSongButton({
     <Tooltip title={t.tooltips.analyzeTheme}>
       <button
         onClick={onAnalyze}
-        disabled={isGenerating || isAnalyzing || songCount === 0}
-        aria-disabled={isGenerating || isAnalyzing || songCount === 0}
+        disabled={isGenerating || isAnalyzing || !hasLyrics}
+        aria-disabled={isGenerating || isAnalyzing || !hasLyrics}
         aria-busy={isAnalyzing}
         className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
       >

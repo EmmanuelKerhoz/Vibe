@@ -1,15 +1,14 @@
 import React from 'react';
+import { getLanguageDisplay } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 import { AdaptationProgressBanner } from './AdaptationProgressBanner';
 import {
-  AnalyzeSongButton,
-  DetectLanguageButton,
   InsightsBarLayout,
+  InsightsActions,
   MetronomeButton,
   MobileKpisDisplay,
-  SimilarityButton,
   TranslateGroup,
   ViewModeSelector,
   useAdaptationBannerVisibility,
@@ -42,6 +41,8 @@ export const InsightsBar = React.memo(function InsightsBar({
   const { sectionCount, wordCount, charCount } = useAppKpis();
   const { showBanner, dismissBanner } = useAdaptationBannerVisibility(adaptationProgress);
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
+  const detectedDisplays = (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : []))
+    .map(getLanguageDisplay);
 
   return (
     <InsightsBarLayout
@@ -57,13 +58,7 @@ export const InsightsBar = React.memo(function InsightsBar({
         />
       }
       metronomeControl={<MetronomeButton isMetronomeActive={isMetronomeActive} toggleMetronome={toggleMetronome} />}
-      insightsActions={
-        <>
-          <DetectLanguageButton detectedLanguages={detectedLanguages} songLanguage={songLanguage} songCount={song.length} isDetectingLanguage={isDetectingLanguage} onDetect={detectLanguage} />
-          <AnalyzeSongButton isGenerating={isGenerating} isAnalyzing={isAnalyzing} songCount={song.length} onAnalyze={analyzeCurrentSong} />
-          <SimilarityButton isGenerating={isGenerating} isAnalyzing={isAnalyzing} hasLyrics={hasLyrics} webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} setIsSimilarityModalOpen={setIsSimilarityModalOpen} />
-        </>
-      }
+      insightsActions={<InsightsActions webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isDetectingLanguage={isDetectingLanguage} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} />}
       mobileKpis={<MobileKpisDisplay sectionCount={sectionCount} wordCount={wordCount} charCount={charCount} />}
       banner={showBanner && adaptationProgress
         ? <AdaptationProgressBanner progress={adaptationProgress} result={adaptationResult ?? null} onDismiss={dismissBanner} isOverlay />
