@@ -44,7 +44,7 @@ export interface AppNavigationValue {
 const AppStateContext = createContext<AppStateContextValue | null>(null);
 const AppNavigationContext = createContext<AppNavigationValue | null>(null);
 
-function selectUIStateSlice(appState: AppStateBag): UIStateSlice {
+export function selectUIStateSlice(appState: AppStateBag): UIStateSlice {
   return {
     setIsAboutOpen: appState.setIsAboutOpen,
     setIsSettingsOpen: appState.setIsSettingsOpen,
@@ -91,7 +91,7 @@ function selectUIStateSlice(appState: AppStateBag): UIStateSlice {
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const appState = useAppState();
 
-  const uiStateForProvider = useUIStateForProvider(selectUIStateSlice(appState)) as UIStateBag;
+  const uiStateForProvider = useUIStateForProvider(selectUIStateSlice(appState));
 
   // Memoised context value — re-renders all consumers only when appState
   // or uiStateForProvider reference changes (i.e. on every state mutation

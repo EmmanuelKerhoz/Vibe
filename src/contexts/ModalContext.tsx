@@ -6,7 +6,7 @@ import type { UIStateSlice } from './UIStateSlice';
 // have been moved to EditorContext (src/contexts/EditorContext.tsx).
 // They no longer belong here — they caused ModalStateContext to invalidate on
 // every keystroke.
-export type UIStateBag = UIStateSlice;
+export interface UIStateBag extends UIStateSlice {}
 
 // ── Modal names union ─────────────────────────────────────────────────────────
 export type ModalName =
