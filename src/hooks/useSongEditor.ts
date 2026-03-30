@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { isAnchoredEndSection, isAnchoredStartSection } from '../constants/sections';
-import { useDragHandlers } from './useDragHandlers';
 import { useSectionManager } from './useSectionManager';
 import { createSongExport, type ExportFormat } from '../utils/exportUtils';
 import { extractImportPayloadFromDocx, extractImportPayloadFromOdt, extractImportPayloadFromText } from '../utils/libraryUtils';
@@ -22,12 +21,10 @@ type WindowWithSaveFilePicker = Window & {
 
 type UseSongEditorParams = {
   openPasteModalWithText: (text: string) => void;
-  playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
 };
 
 export const useSongEditor = ({
   openPasteModalWithText,
-  playAudioFeedback,
 }: UseSongEditorParams) => {
   const {
     song,
@@ -50,13 +47,6 @@ export const useSongEditor = ({
     updateState,
     updateStructureWithHistory,
     updateSongAndStructureWithHistory,
-  });
-  const { handleDrop, handleLineDragStart, handleLineDrop } = useDragHandlers({
-    song,
-    structure,
-    updateState,
-    updateSongAndStructureWithHistory,
-    playAudioFeedback,
   });
 
   // ── File operations ────────────────────────────────────────────────────────
@@ -123,9 +113,6 @@ export const useSongEditor = ({
     removeStructureItem,
     addStructureItem,
     normalizeStructure,
-    handleDrop,
-    handleLineDragStart,
-    handleLineDrop,
     exportSong,
     loadFileForAnalysis,
   };
