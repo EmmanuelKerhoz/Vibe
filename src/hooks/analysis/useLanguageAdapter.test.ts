@@ -86,6 +86,7 @@ const createParams = (song: Section[]) => ({
   setDetectedLanguages: vi.fn(),
   lineLanguages: {} as Record<string, string>,
   setLineLanguages: vi.fn(),
+  hasApiKey: true,
 });
 
 describe('useLanguageAdapter', () => {

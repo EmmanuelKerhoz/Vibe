@@ -12,6 +12,7 @@ type UseBackgroundThemeAnalysisParams = {
   uiLanguage?: string;
   setTopic: (v: string) => void;
   setMood: (v: string) => void;
+  hasApiKey: boolean;
 };
 
 export const useBackgroundThemeAnalysis = ({
@@ -21,6 +22,7 @@ export const useBackgroundThemeAnalysis = ({
   uiLanguage = '',
   setTopic,
   setMood,
+  hasApiKey,
 }: UseBackgroundThemeAnalysisParams): { isAnalyzingTheme: boolean } => {
   const [isAnalyzingTheme, setIsAnalyzingTheme] = useState(false);
   const lastAnalyzedSongRef = useRef('');
@@ -35,6 +37,7 @@ export const useBackgroundThemeAnalysis = ({
   }, []);
 
   useEffect(() => {
+    if (!hasApiKey) return;
     if (song.length === 0) return;
 
     const currentSongStr = JSON.stringify(song);
@@ -102,7 +105,7 @@ export const useBackgroundThemeAnalysis = ({
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [song, topic, mood, uiLanguage, setTopic, setMood]);
+  }, [hasApiKey, song, topic, mood, uiLanguage, setTopic, setMood]);
 
   return { isAnalyzingTheme };
 };

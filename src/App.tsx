@@ -212,7 +212,7 @@ function AppInnerContent() {
     generateSuggestion: handleSurprise,
     isGeneratingSuggestion: isSurprising,
     resetSuggestionCycle,
-  } = useTopicMoodSuggester();
+  } = useTopicMoodSuggester({ hasApiKey });
 
   const handleSurpriseClick = useCallback(async () => {
     const suggestion = await handleSurprise();
@@ -481,6 +481,7 @@ function AppProviders() {
         <AnalysisProvider
           uiLanguage={language}
           isGeneratingRef={isGeneratingRef}
+          hasApiKey={appState.hasApiKey}
           saveVersion={saveVersion}
           updateState={updateState}
           updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}

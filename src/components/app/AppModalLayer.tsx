@@ -69,6 +69,7 @@ export function AppModalLayer() {
     importInputRef,
     setIsResetModalOpen,
     editMode, markupText,
+    hasApiKey,
   } = appState;
 
   const {
@@ -88,7 +89,7 @@ export function AppModalLayer() {
 
   const { hasExistingWork } = useDerivedAppState({ editMode, markupText, webSimilarityIndex });
 
-  const { resetSuggestionCycle } = useTopicMoodSuggester();
+  const { resetSuggestionCycle } = useTopicMoodSuggester({ hasApiKey });
 
   const { exportSong, loadFileForAnalysis } = useSongEditor({
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); },

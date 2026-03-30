@@ -31,6 +31,7 @@ type UseLanguageAdapterParams = {
   setDetectedLanguages: (langs: string[]) => void;
   lineLanguages: Record<string, string>;
   setLineLanguages: (map: Record<string, string>) => void;
+  hasApiKey: boolean;
 };
 type AdaptationScope = { kind: 'song'; sourceSong: Section[] } | { kind: 'section'; section: Section };
 export const useLanguageAdapter = ({
@@ -46,6 +47,7 @@ export const useLanguageAdapter = ({
   setDetectedLanguages,
   lineLanguages,
   setLineLanguages,
+  hasApiKey,
 }: UseLanguageAdapterParams) => {
   const [targetLanguage, setTargetLanguage] = useState<string>('English');
   const [sectionTargetLanguages, setSectionTargetLanguages] = useState<Record<string, string>>({});
@@ -90,12 +92,13 @@ export const useLanguageAdapter = ({
   }, [song, setSongLanguage, setDetectedLanguages, setLineLanguages]);
 
   useEffect(() => {
+    if (!hasApiKey) return;
     if (song.length > 0 && !songLanguage && !isGeneratingRef.current && !isAdaptingLanguage && !autoDetectFiredRef.current) {
       autoDetectFiredRef.current = true;
       void detectLanguage();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [song.length, songLanguage, isGenerating, isAdaptingLanguage]);
+  }, [hasApiKey, song.length, songLanguage, isGenerating, isAdaptingLanguage]);
 
   useEffect(() => {
     if (song.length === 0) {
