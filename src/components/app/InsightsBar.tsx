@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, BarChart2, ScanText, Search, Timer } from '../ui/icons';
+import { Loader2, BarChart2, ScanText, Search } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
@@ -11,7 +11,7 @@ import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 import { AdaptationProgressBanner } from './AdaptationProgressBanner';
-import { TranslationControls, ViewModeSelector } from './insights';
+import { MetronomeButton, TranslationControls, ViewModeSelector } from './insights';
 
 interface InsightsBarProps {
   targetLanguage: string;
@@ -125,19 +125,10 @@ export const InsightsBar = React.memo(function InsightsBar({
             showTranslationFeatures={showTranslationFeatures}
           />
 
-          {toggleMetronome && (
-            <Tooltip title={t.musical?.metronome ?? 'Metronome'}>
-              <button
-                onClick={toggleMetronome}
-                className={`px-2 py-1 text-[11px] rounded transition-all flex items-center justify-center gap-1.5 whitespace-nowrap border ${
-                  isMetronomeActive ? 'border-transparent metronome-active' : 'glass-button'
-                }`}
-                style={isMetronomeActive ? { background: '#f59e0b', color: '#000', borderColor: '#f59e0b' } : {}}
-              >
-                <Timer className="w-3.5 h-3.5" aria-hidden="true" />
-              </button>
-            </Tooltip>
-          )}
+          <MetronomeButton
+            isActive={isMetronomeActive}
+            onToggle={toggleMetronome}
+          />
 
           {/* ── INSIGHTS group (was LYRICS Insights), right-aligned ──── */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
