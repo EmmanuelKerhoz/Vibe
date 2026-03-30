@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Sparkles, Loader2, Copy, Check } from '../../ui/icons';
+import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
 
 const AMBER_PRIMARY = '#f59e0b';
@@ -16,13 +17,14 @@ interface Props {
   isGeneratingMusicalPrompt: boolean;
   isAnalyzingLyrics: boolean;
   canGenerate: boolean;
+  hasApiKey: boolean;
   generateMusicalPrompt: () => void;
 }
 
 export function MusicalPromptBuilder({
   musicalPrompt, setMusicalPrompt,
   isGeneratingMusicalPrompt, isAnalyzingLyrics,
-  canGenerate, generateMusicalPrompt,
+  canGenerate, hasApiKey, generateMusicalPrompt,
 }: Props) {
   const { t } = useTranslation();
   const m = t.musical;
@@ -42,14 +44,16 @@ export function MusicalPromptBuilder({
 
   return (
     <div className="space-y-4">
-      <button onClick={generateMusicalPrompt}
-        disabled={!canGenerate || isGeneratingMusicalPrompt || isAnalyzingLyrics}
-        className="ux-interactive w-full flex items-center justify-center gap-2.5 px-6 py-3.5 font-semibold text-sm tracking-wide disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99]"
-        style={{ borderRadius: '14px 4px 14px 4px', background: AMBER_PRIMARY, color: '#000' }}
-      >
-        {isGeneratingMusicalPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-        {m.generatePrompt}
-      </button>
+      <Tooltip title={!hasApiKey ? (t.tooltips.aiUnavailable ?? 'AI unavailable') : m.generatePrompt}>
+        <button onClick={generateMusicalPrompt}
+          disabled={!canGenerate || !hasApiKey || isGeneratingMusicalPrompt || isAnalyzingLyrics}
+          className="ux-interactive w-full flex items-center justify-center gap-2.5 px-6 py-3.5 font-semibold text-sm tracking-wide disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99]"
+          style={{ borderRadius: '14px 4px 14px 4px', background: AMBER_PRIMARY, color: '#000' }}
+        >
+          {isGeneratingMusicalPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {m.generatePrompt}
+        </button>
+      </Tooltip>
 
       <div className="border px-3 py-2.5 space-y-1.5" style={{ borderRadius: '12px 4px 12px 4px', borderColor: `${AMBER_PRIMARY}55`, background: `${AMBER_PRIMARY}0f` }}>
         <div className="flex items-center gap-2">

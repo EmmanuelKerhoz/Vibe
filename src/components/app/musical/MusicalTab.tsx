@@ -60,6 +60,7 @@ export function MusicalTab({
           isGeneratingMusicalPrompt={isGeneratingMusicalPrompt}
           isAnalyzingLyrics={isAnalyzingLyrics}
           canGenerate={canGenerate}
+          hasApiKey={hasApiKey}
           generateMusicalPrompt={generateMusicalPrompt}
         />
       </div>

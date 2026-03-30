@@ -13,6 +13,7 @@ interface TranslateGroupProps {
   song: Section[];
   adaptSongLanguage: (lang: string) => void;
   showTranslationFeatures: boolean;
+  hasApiKey: boolean;
 }
 
 const LANGUAGE_SELECT_OPTIONS = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
@@ -32,10 +33,15 @@ export function TranslateGroup({
   song,
   adaptSongLanguage,
   showTranslationFeatures,
+  hasApiKey,
 }: TranslateGroupProps) {
   const { t } = useTranslation();
   const targetDisplay = getLanguageDisplay(targetLanguage);
   const targetLanguageDisplayText = targetDisplay ? `${targetDisplay.sign} ${targetDisplay.label}` : targetLanguage;
+  const isDisabled = !hasApiKey || isAdaptingLanguage || song.length === 0;
+  const tooltipTitle = !hasApiKey
+    ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
+    : t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText);
 
   if (!showTranslationFeatures) {
     return null;
@@ -43,11 +49,11 @@ export function TranslateGroup({
 
   return (
     <>
-      <Tooltip title={t.tooltips.adaptSong.replaceAll('{lang}', targetLanguageDisplayText)}>
+      <Tooltip title={tooltipTitle}>
         <button
           onClick={() => adaptSongLanguage(targetLanguage)}
-          disabled={isAdaptingLanguage || song.length === 0}
-          aria-disabled={isAdaptingLanguage || song.length === 0}
+          disabled={isDisabled}
+          aria-disabled={isDisabled}
           aria-busy={isAdaptingLanguage}
           className="ux-interactive px-3 py-1 bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[var(--accent-color)] text-[10px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 whitespace-nowrap shrink-0"
         >

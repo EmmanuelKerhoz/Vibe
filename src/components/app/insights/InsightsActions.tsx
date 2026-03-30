@@ -14,6 +14,7 @@ interface InsightsActionsProps {
   isAnalyzing: boolean;
   isGenerating: boolean;
   hasLyrics: boolean;
+  hasApiKey: boolean;
   detectedDisplays: LanguageDisplay[];
   detectLanguage: () => void;
   analyzeCurrentSong: () => void;
@@ -28,6 +29,7 @@ export function InsightsActions({
   isAnalyzing,
   isGenerating,
   hasLyrics,
+  hasApiKey,
   detectedDisplays,
   detectLanguage,
   analyzeCurrentSong,
@@ -38,8 +40,8 @@ export function InsightsActions({
   return (
     <div className="flex items-center gap-1.5 shrink-0 ml-auto">
       <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsInsights ?? 'INSIGHTS'}</span>
-      <DetectLanguageButton detectedDisplays={detectedDisplays} hasLyrics={hasLyrics} isDetectingLanguage={isDetectingLanguage} onDetect={detectLanguage} />
-      <AnalyzeSongButton isGenerating={isGenerating} isAnalyzing={isAnalyzing} hasLyrics={hasLyrics} onAnalyze={analyzeCurrentSong} />
+      <DetectLanguageButton detectedDisplays={detectedDisplays} hasLyrics={hasLyrics} isDetectingLanguage={isDetectingLanguage} onDetect={detectLanguage} hasApiKey={hasApiKey} />
+      <AnalyzeSongButton isGenerating={isGenerating} isAnalyzing={isAnalyzing} hasLyrics={hasLyrics} onAnalyze={analyzeCurrentSong} hasApiKey={hasApiKey} />
       <SimilarityButton
         isGenerating={isGenerating}
         isAnalyzing={isAnalyzing}
@@ -48,6 +50,7 @@ export function InsightsActions({
         webBadgeLabel={webBadgeLabel}
         libraryCount={libraryCount}
         setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+        hasApiKey={hasApiKey}
       />
     </div>
   );

@@ -14,6 +14,7 @@ describe('MusicalPromptBuilder', () => {
           isGeneratingMusicalPrompt={false}
           isAnalyzingLyrics={false}
           canGenerate
+          hasApiKey={true}
           generateMusicalPrompt={vi.fn()}
         />
       </LanguageProvider>,
