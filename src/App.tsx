@@ -25,6 +25,7 @@ import { DragHandlersProvider } from './contexts/DragHandlersContext';
 import { EditorProvider } from './contexts/EditorContext';
 import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
+import { TranslationAdaptationProvider } from './contexts/TranslationAdaptationContext';
 import { VersionProvider, useVersionContext } from './contexts/VersionContext';
 import { LeftSettingsPanel } from './components/app/LeftSettingsPanel';
 import { TopRibbon } from './components/app/TopRibbon';
@@ -310,142 +311,145 @@ function AppInnerContent() {
   }, [setIsLeftPanelOpen, handleGlobalRegenerate]);
 
   return (
-    <DragHandlersProvider playAudioFeedbackRef={playAudioFeedbackRef}>
-      <ModalShortcutBindings
-        isMobileOrTablet={isMobileOrTablet}
-        closeMobilePanels={closeMobilePanels}
-        undo={undo}
-        redo={redo}
-      />
-      <AppShell
-        theme={theme}
-        isMobileOrTablet={isMobileOrTablet}
-        showBackdrop={showBackdrop}
-        onBackdropClick={closeMobilePanels}
-      >
-        <div className="flex-1 flex overflow-hidden">
-          <LeftSettingsPanel
-            isMobileOverlay={isMobileOrTablet}
-            title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
-            onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-            onSurprise={handleSurpriseClick} isSurprising={isSurprising}
-            isSessionHydrated={isSessionHydrated}
-            onGenerateSong={handleGenerateSongFromLeftPanel}
-            onRegenerateSong={handleGlobalRegenerate}
-          />
-
-          <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
-            <TopRibbon
-              activeTab={activeTab} setActiveTab={setActiveTab}
-              setIsVersionsModalOpen={setIsVersionsModalOpen}
-              setIsResetModalOpen={setIsResetModalOpen}
-              isLeftPanelOpen={isLeftPanelOpen}
-              setIsLeftPanelOpen={setIsLeftPanelOpen}
-              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-              hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-              onOpenNewGeneration={handleOpenNewGeneration}
-              onOpenNewEmpty={handleCreateEmptySong}
-              onImportClick={handleOpenImport}
-              onExportClick={handleOpenExport}
-              onOpenLibraryClick={handleOpenSaveToLibraryModal}
-              onOpenSettingsClick={handleOpenSettings}
-              onOpenAboutClick={handleOpenAbout}
-              onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
-              onOpenSearchClick={handleOpenSearch}
-              canPasteLyrics={canPasteLyrics}
-              onPasteLyrics={handleOpenPasteModal}
-              isAnalyzing={isAnalyzing}
+    <TranslationAdaptationProvider
+      sectionTargetLanguages={sectionTargetLanguages}
+      onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
+      adaptSectionLanguage={adaptSectionLanguage}
+      adaptLineLanguage={adaptLineLanguage}
+      adaptingLineIds={adaptingLineIds}
+      showTranslationFeatures={showTranslationFeatures}
+    >
+      <DragHandlersProvider playAudioFeedbackRef={playAudioFeedbackRef}>
+        <ModalShortcutBindings
+          isMobileOrTablet={isMobileOrTablet}
+          closeMobilePanels={closeMobilePanels}
+          undo={undo}
+          redo={redo}
+        />
+        <AppShell
+          theme={theme}
+          isMobileOrTablet={isMobileOrTablet}
+          showBackdrop={showBackdrop}
+          onBackdropClick={closeMobilePanels}
+        >
+          <div className="flex-1 flex overflow-hidden">
+            <LeftSettingsPanel
+              isMobileOverlay={isMobileOrTablet}
+              title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
+              onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+              topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+              rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+              targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+              isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+              onSurprise={handleSurpriseClick} isSurprising={isSurprising}
+              isSessionHydrated={isSessionHydrated}
+              onGenerateSong={handleGenerateSongFromLeftPanel}
+              onRegenerateSong={handleGlobalRegenerate}
             />
 
-            <AppEditorZone
-              activeTab={activeTab}
-              isMobileOrTablet={isMobileOrTablet}
-              hasApiKey={hasApiKey}
-              songHasContent={song.length > 0}
-              targetLanguage={targetLanguage}
-              setTargetLanguage={setTargetLanguage}
-              isAdaptingLanguage={isAdaptingLanguage}
-              isDetectingLanguage={isDetectingLanguage}
-              isAnalyzing={isAnalyzing}
-              editMode={editMode}
-              switchEditMode={switchEditMode}
-              webSimilarityIndex={webSimilarityIndex}
-              webBadgeLabel={webBadgeLabel}
-              libraryCount={libraryCount}
-              adaptSongLanguage={adaptSongLanguage}
-              detectLanguage={detectLanguage}
-              analyzeCurrentSong={analyzeCurrentSong}
-              setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-              adaptationProgress={adaptationProgress}
-              adaptationResult={adaptationResult}
-              showTranslationFeatures={showTranslationFeatures}
-              playAudioFeedback={playAudioFeedback}
-              canPasteLyrics={canPasteLyrics}
-              onOpenLibrary={handleOpenSaveToLibraryModal}
-              onPasteLyrics={handleOpenPasteModal}
-              onGenerateSong={handleGlobalRegenerate}
-              sectionTargetLanguages={sectionTargetLanguages}
-              onSectionTargetLanguageChange={handleSectionTargetLanguageChange}
-              adaptSectionLanguage={adaptSectionLanguage}
-              adaptLineLanguage={adaptLineLanguage}
-              adaptingLineIds={adaptingLineIds}
-            />
+            <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
+              <TopRibbon
+                activeTab={activeTab} setActiveTab={setActiveTab}
+                setIsVersionsModalOpen={setIsVersionsModalOpen}
+                setIsResetModalOpen={setIsResetModalOpen}
+                isLeftPanelOpen={isLeftPanelOpen}
+                setIsLeftPanelOpen={setIsLeftPanelOpen}
+                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+                hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+                onOpenNewGeneration={handleOpenNewGeneration}
+                onOpenNewEmpty={handleCreateEmptySong}
+                onImportClick={handleOpenImport}
+                onExportClick={handleOpenExport}
+                onOpenLibraryClick={handleOpenSaveToLibraryModal}
+                onOpenSettingsClick={handleOpenSettings}
+                onOpenAboutClick={handleOpenAbout}
+                onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
+                onOpenSearchClick={handleOpenSearch}
+                canPasteLyrics={canPasteLyrics}
+                onPasteLyrics={handleOpenPasteModal}
+                isAnalyzing={isAnalyzing}
+              />
+
+              <AppEditorZone
+                activeTab={activeTab}
+                isMobileOrTablet={isMobileOrTablet}
+                hasApiKey={hasApiKey}
+                songHasContent={song.length > 0}
+                targetLanguage={targetLanguage}
+                setTargetLanguage={setTargetLanguage}
+                isAdaptingLanguage={isAdaptingLanguage}
+                isDetectingLanguage={isDetectingLanguage}
+                isAnalyzing={isAnalyzing}
+                editMode={editMode}
+                switchEditMode={switchEditMode}
+                webSimilarityIndex={webSimilarityIndex}
+                webBadgeLabel={webBadgeLabel}
+                libraryCount={libraryCount}
+                adaptSongLanguage={adaptSongLanguage}
+                detectLanguage={detectLanguage}
+                analyzeCurrentSong={analyzeCurrentSong}
+                setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+                adaptationProgress={adaptationProgress}
+                adaptationResult={adaptationResult}
+                playAudioFeedback={playAudioFeedback}
+                canPasteLyrics={canPasteLyrics}
+                onOpenLibrary={handleOpenSaveToLibraryModal}
+                onPasteLyrics={handleOpenPasteModal}
+                onGenerateSong={handleGlobalRegenerate}
+              />
+            </div>
+
+            {isSuggestionsOpen ? (
+              <SuggestionsPanel
+                isMobileOverlay={isMobileOrTablet}
+                className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+                selectedLineId={selectedLineId}
+                setSelectedLineId={setSelectedLineId}
+                suggestions={suggestions}
+                isSuggesting={isSuggesting}
+                applySuggestion={applySuggestion}
+                generateSuggestions={generateSuggestions}
+              />
+            ) : (
+              <StructureSidebar
+                isMobileOverlay={isMobileOrTablet}
+                className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+                isSectionDropdownOpen={isSectionDropdownOpen}
+                setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+                addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+                normalizeStructure={normalizeStructure}
+                onScrollToSection={handleScrollToSection}
+                onRegenerateSong={handleGlobalRegenerate}
+                onGenerateSong={generateSong}
+              />
+            )}
           </div>
 
-          {isSuggestionsOpen ? (
-            <SuggestionsPanel
-              isMobileOverlay={isMobileOrTablet}
-              className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-              selectedLineId={selectedLineId}
-              setSelectedLineId={setSelectedLineId}
-              suggestions={suggestions}
-              isSuggesting={isSuggesting}
-              applySuggestion={applySuggestion}
-              generateSuggestions={generateSuggestions}
-            />
-          ) : (
-            <StructureSidebar
-              isMobileOverlay={isMobileOrTablet}
-              className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-              isSectionDropdownOpen={isSectionDropdownOpen}
-              setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-              addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-              normalizeStructure={normalizeStructure}
-              onScrollToSection={handleScrollToSection}
-              onRegenerateSong={handleGlobalRegenerate}
-              onGenerateSong={generateSong}
-            />
-          )}
-        </div>
-
-        <StatusBar
-          className="lcars-status-bar-desktop"
-          isAnalyzing={isAnalyzing}
-          theme={theme} setTheme={setTheme}
-          audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
-          onOpenAbout={handleOpenAbout}
-          onOpenSettings={handleOpenSettings}
-        />
-
-        {isMobileOrTablet && (
-          <MobileBottomNav
-            isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
-            activeTab={activeTab}
-            setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-            setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
+          <StatusBar
+            className="lcars-status-bar-desktop"
+            isAnalyzing={isAnalyzing}
+            theme={theme} setTheme={setTheme}
+            audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
+            onOpenAbout={handleOpenAbout}
             onOpenSettings={handleOpenSettings}
           />
-        )}
 
-        <AppModalLayer />
-      </AppShell>
-    </DragHandlersProvider>
+          {isMobileOrTablet && (
+            <MobileBottomNav
+              isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
+              activeTab={activeTab}
+              setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+              setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
+              onOpenSettings={handleOpenSettings}
+            />
+          )}
+
+          <AppModalLayer />
+        </AppShell>
+      </DragHandlersProvider>
+    </TranslationAdaptationProvider>
   );
 }
 
