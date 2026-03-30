@@ -20,6 +20,8 @@ vi.mock('../../../i18n', () => ({
         apply: 'Apply',
         close: 'Close',
         revert: 'Revert',
+        showMusicalSuggestions: 'Show Musical Suggestions',
+        hideMusicalSuggestions: 'Hide Musical Suggestions',
       },
       tooltips: {
         revertAnalysis: 'Revert analysis',
@@ -44,7 +46,9 @@ vi.mock('../../ui/icons', () => ({
   Plus: () => <svg data-testid="icon-plus" />, 
   Check: () => <svg data-testid="icon-check" />, 
   Undo2: () => <svg data-testid="icon-undo" />, 
-  Zap: () => <svg data-testid="icon-zap" />, 
+  Zap: () => <svg data-testid="icon-zap" />,
+  ChevronDown: () => <svg data-testid="icon-chevron-down" />,
+  ChevronUp: () => <svg data-testid="icon-chevron-up" />,
 }));
 
 vi.mock('../../ui/Button', () => ({
@@ -172,6 +176,40 @@ describe('AnalysisModal', () => {
       expect(checkboxes.length).toBeGreaterThan(0);
       fireEvent.click(checkboxes[0]!);
       expect(noop).toHaveBeenCalled();
+    });
+  });
+
+  describe('musical suggestions toggle', () => {
+    it('hides musical suggestions section by default', () => {
+      renderModal();
+      expect(screen.queryByText('Musical Suggestions')).toBeNull();
+    });
+
+    it('shows a toggle button with the show label when collapsed', () => {
+      renderModal();
+      expect(screen.getByLabelText('Show Musical Suggestions')).toBeTruthy();
+    });
+
+    it('reveals musical suggestions and summary when toggle is clicked', () => {
+      renderModal();
+      fireEvent.click(screen.getByLabelText('Show Musical Suggestions'));
+      expect(screen.getByText('Musical Suggestions')).toBeTruthy();
+      // The summary section content should now be visible
+      expect(screen.getByText(/"A heartfelt song"/)).toBeTruthy();
+    });
+
+    it('changes toggle button label to hide after expansion', () => {
+      renderModal();
+      fireEvent.click(screen.getByLabelText('Show Musical Suggestions'));
+      expect(screen.getByLabelText('Hide Musical Suggestions')).toBeTruthy();
+    });
+
+    it('collapses the section again when toggle is clicked a second time', () => {
+      renderModal();
+      const btn = screen.getByLabelText('Show Musical Suggestions');
+      fireEvent.click(btn);
+      fireEvent.click(screen.getByLabelText('Hide Musical Suggestions'));
+      expect(screen.queryByText('Musical Suggestions')).toBeNull();
     });
   });
 

@@ -232,6 +232,8 @@ export interface Translations {
     revert: string;
     close: string;
     noData: string;
+    showMusicalSuggestions: string;
+    hideMusicalSuggestions: string;
   };
 
   similarity: {

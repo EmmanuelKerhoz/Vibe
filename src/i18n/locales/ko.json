@@ -197,7 +197,9 @@
     "apply": "선택 항목 적용",
     "revert": "모든 분석 변경 되돌리기",
     "close": "보고서 닫기",
-    "noData": "분석 데이터가 없습니다."
+    "noData": "분석 데이터가 없습니다.",
+    "showMusicalSuggestions": "음악 제안 보기",
+    "hideMusicalSuggestions": "음악 제안 숨기기"
   },
   "similarity": {
     "title": "유사도 검사",
