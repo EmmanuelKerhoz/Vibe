@@ -7,6 +7,7 @@ interface Props {
   isLeftPanelOpen: boolean;
   isStructureOpen: boolean;
   activeTab: 'lyrics' | 'musical';
+  hasApiKey: boolean;
   setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
@@ -16,7 +17,7 @@ interface Props {
 }
 
 export function MobileBottomNav({
-  isLeftPanelOpen, isStructureOpen, activeTab,
+  isLeftPanelOpen, isStructureOpen, activeTab, hasApiKey,
   setIsLeftPanelOpen, setIsStructureOpen, setActiveTab,
   onGenerateSong,
   onOpenSettings,
@@ -63,7 +64,7 @@ export function MobileBottomNav({
           setIsStructureOpen(false);
           onGenerateSong?.();
         }}
-        disabled={isGenerating}
+        disabled={!hasApiKey || isGenerating}
         aria-label={t.editor.emptyState.generateSong}
       >
         {isGenerating

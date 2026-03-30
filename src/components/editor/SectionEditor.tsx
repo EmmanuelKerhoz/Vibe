@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loader2, Wand2, ChevronUp, ChevronDown, Plus, Languages } from '../ui/icons';
 import { Section } from '../../types';
-import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemeLetterForLine } from '../../utils/songUtils';
+import { getSectionDotColor, getSectionColorHex, getRhymeColor, getSchemaLabelForLine, getSchemeLetterForLine } from '../../utils/songUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { LyricInput } from './LyricInput';
 import { MetaLine } from './MetaLine';
@@ -26,6 +26,7 @@ interface SectionEditorProps {
   selectedLineId: string | null;
   isGenerating: boolean;
   isAnalyzing: boolean;
+  hasApiKey: boolean;
   isAdaptingLanguage?: boolean;
   sectionTargetLanguage?: string;
   onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
@@ -104,7 +105,7 @@ const SECTION_LANGUAGE_OPTIONS = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
 export const SectionEditor = React.memo(function SectionEditor({
   section, sectionIndex, songLength, rhymeScheme,
   RHYME_KEYS, SECTION_TYPE_OPTIONS,
-  selectedLineId, isGenerating, isAnalyzing,
+  selectedLineId, isGenerating, isAnalyzing, hasApiKey,
   isAdaptingLanguage = false,
   sectionTargetLanguage = 'English',
   onSectionTargetLanguageChange,
@@ -138,7 +139,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   const sectionColor = getSectionColorHex(sectionName);
   const renderItems = buildRenderItems(section.lines);
   const isSectionAdapting = isAdaptingLanguage;
-  const canAdaptSection = !!adaptSectionLanguage && !isGenerating && !isAnalyzing && !isSectionAdapting;
+  const canAdaptSection = !!adaptSectionLanguage && hasApiKey && !isGenerating && !isAnalyzing && !isSectionAdapting;
 
   const safeSectionTypeOptions = SECTION_TYPE_OPTIONS.filter((opt): opt is string => typeof opt === 'string');
   const sectionTypeSelectOptions = [
@@ -227,7 +228,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                     accentColor="var(--lcars-cyan)"
                   />
                 </div>
-                <Tooltip title={`Adapt this section to ${sectionTargetLanguage}`}>
+                  <Tooltip title={hasApiKey ? `Adapt this section to ${sectionTargetLanguage}` : (t.tooltips.aiUnavailable ?? 'AI unavailable')}>
                   <button
                     onClick={() => adaptSectionLanguage(section.id, sectionTargetLanguage)}
                     disabled={!canAdaptSection}
@@ -270,14 +271,15 @@ export const SectionEditor = React.memo(function SectionEditor({
               );
             }
             const { line, index: lyricIndex } = item;
-            const schemeLabel = getSchemeLetterForLine(section, lyricIndex, section.rhymeScheme || rhymeScheme);
+            const rhymeFamily = getSchemeLetterForLine(section, lyricIndex, section.rhymeScheme || rhymeScheme);
+            const schemeLabel = getSchemaLabelForLine(section, lyricIndex, section.rhymeScheme || rhymeScheme);
             const rhymeColor = getRhymeColor(schemeLabel);
-            const rhymePeerTexts = schemeLabel
+            const rhymePeerTexts = rhymeFamily
               ? renderItems
                 .filter((candidate): candidate is LyricItem =>
                   candidate.kind === 'lyric'
                   && candidate.line.id !== line.id
-                  && getSchemeLetterForLine(section, candidate.index, section.rhymeScheme || rhymeScheme) === schemeLabel,
+                  && getSchemeLetterForLine(section, candidate.index, section.rhymeScheme || rhymeScheme) === rhymeFamily,
                 )
                 .map(candidate => candidate.line.text)
               : [];
@@ -295,6 +297,7 @@ export const SectionEditor = React.memo(function SectionEditor({
                 schemeLabel={schemeLabel}
                 rhymeColor={rhymeColor}
                 isGenerating={isGenerating}
+                hasApiKey={hasApiKey}
                 isDraggedLine={isDraggedLine}
                 isDragOverLine={isDragOverLine}
                 lineLanguage={lineLanguages[line.id]}

@@ -29,6 +29,7 @@ interface Props {
   setIsLeftPanelOpen: (v: boolean | ((v: boolean) => boolean)) => void;
   onSurprise: () => void;
   isSurprising: boolean;
+  hasApiKey: boolean;
   onGenerateSong: () => void;
   onRegenerateSong?: () => void;
   isSessionHydrated: boolean;
@@ -53,7 +54,7 @@ export function LeftSettingsPanel({
   topic, setTopic, mood, setMood,
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   isLeftPanelOpen, setIsLeftPanelOpen,
-  onSurprise, isSurprising,
+  onSurprise, isSurprising, hasApiKey,
   onGenerateSong,
   onRegenerateSong,
   isSessionHydrated: _isSessionHydrated,
@@ -105,7 +106,7 @@ export function LeftSettingsPanel({
           targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
           song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
           isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-          onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
+          onSurprise={onSurprise} isSurprising={isSurprising} hasApiKey={hasApiKey} onGenerateSong={onGenerateSong}
           onRegenerateSong={onRegenerateSong}
           isMobileOverlay={true}
           headingId={headingId}
@@ -150,7 +151,7 @@ export function LeftSettingsPanel({
               targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
               song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
               isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-              onSurprise={onSurprise} isSurprising={isSurprising} onGenerateSong={onGenerateSong}
+              onSurprise={onSurprise} isSurprising={isSurprising} hasApiKey={hasApiKey} onGenerateSong={onGenerateSong}
               onRegenerateSong={onRegenerateSong}
               isMobileOverlay={false}
             />
@@ -168,13 +169,16 @@ function PanelContent({
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   song, isGenerating, quantizeSyllables,
   isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen,
-  onSurprise, isSurprising, onGenerateSong, onRegenerateSong,
+  onSurprise, isSurprising, hasApiKey, onGenerateSong, onRegenerateSong,
   isMobileOverlay,
   headingId,
 }: PanelContentProps) {
   const hasLyrics = song.some(section => section.lines.some(line => !line.isMeta && line.text.trim().length > 0));
+  const isAiUnavailable = !hasApiKey;
   const primaryActionLabel = hasLyrics ? t.editor.regenerateLyrics : t.editor.emptyState.generateSong;
-  const primaryActionTooltip = hasLyrics ? t.tooltips.regenerate : t.tooltips.generateSong;
+  const primaryActionTooltip = isAiUnavailable
+    ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
+    : (hasLyrics ? t.tooltips.regenerate : t.tooltips.generateSong);
   const primaryActionHandler = hasLyrics && onRegenerateSong ? onRegenerateSong : onGenerateSong;
   const primaryActionIcon = isGenerating
     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -225,11 +229,11 @@ function PanelContent({
           <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-amber,#f59e0b)] opacity-80" />
           <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Song Info</span>
           <div className="flex-1" />
-          <Tooltip title="Suggest a random topic, mood &amp; title">
+          <Tooltip title={isAiUnavailable ? (t.tooltips.aiUnavailable ?? 'AI unavailable') : 'Suggest a random topic, mood &amp; title'}>
             <div className="lcars-gradient-outline" style={{ borderRadius: '8px 2px 8px 2px' }}>
               <Button
                 onClick={onSurprise}
-                disabled={isSurprising || isGenerating}
+                disabled={isAiUnavailable || isSurprising || isGenerating}
                 variant="outlined" color="primary"
                 className="ux-interactive"
                 startIcon={isSurprising ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />}
@@ -260,12 +264,12 @@ function PanelContent({
             <div className="flex items-center gap-2">
               <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t.leftPanel.songTitlePlaceholder} className="flex-1" />
               {hasLyrics && (
-                <Tooltip title={t.tooltips.generateTitle}>
-                  <button
-                    onClick={onGenerateTitle}
-                    disabled={isGeneratingTitle}
-                    aria-label={t.tooltips.generateTitle}
-                    className="ux-interactive px-2 py-1.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] rounded transition-all disabled:opacity-50"
+                  <Tooltip title={isAiUnavailable ? (t.tooltips.aiUnavailable ?? 'AI unavailable') : t.tooltips.generateTitle}>
+                    <button
+                      onClick={onGenerateTitle}
+                      disabled={isAiUnavailable || isGeneratingTitle}
+                      aria-label={t.tooltips.generateTitle}
+                      className="ux-interactive px-2 py-1.5 bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20 text-[var(--accent-color)] rounded transition-all disabled:opacity-50"
                   >
                     {isGeneratingTitle ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                   </button>
@@ -354,7 +358,7 @@ function PanelContent({
           <div className="lcars-gradient-outline" style={{ borderRadius: '10px 3px 10px 3px', width: '100%' }}>
             <Button
               onClick={primaryActionHandler}
-              disabled={isGenerating}
+              disabled={isAiUnavailable || isGenerating}
               variant="outlined" color="primary" fullWidth
               className="ux-interactive"
               startIcon={primaryActionIcon}

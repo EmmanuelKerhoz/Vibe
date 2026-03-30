@@ -122,6 +122,7 @@ export function AppEditorZone({
                 <LyricsView
                   isAnalyzing={isAnalyzing}
                   isAdaptingLanguage={isAdaptingLanguage}
+                  hasApiKey={hasApiKey}
                   playAudioFeedback={playAudioFeedback}
                   canPasteLyrics={canPasteLyrics}
                   targetLanguage={targetLanguage}

@@ -50,9 +50,7 @@ export const getSectionDotColor = (name: string) => {
   return 'bg-zinc-500';
 };
 
-export function getSchemeLetterForLine(section: Section, lineIndex: number, rhymeScheme: string): string | null;
-export function getSchemeLetterForLine(scheme: string | undefined, lineIndex: number): string | null;
-export function getSchemeLetterForLine(
+function getRawSchemeLetter(
   sectionOrScheme: Section | string | undefined,
   lineIndex: number,
   rhymeScheme?: string,
@@ -67,8 +65,28 @@ export function getSchemeLetterForLine(
   if (scheme.toUpperCase() === 'FREE') return null;
   const upper = scheme.toUpperCase();
   if (upper.length === 0) return null;
-  const letter = upper[lineIndex % upper.length] ?? null;
+  return upper[lineIndex % upper.length] ?? null;
+}
+
+export function getSchemeLetterForLine(section: Section, lineIndex: number, rhymeScheme: string): string | null;
+export function getSchemeLetterForLine(scheme: string | undefined, lineIndex: number): string | null;
+export function getSchemeLetterForLine(
+  sectionOrScheme: Section | string | undefined,
+  lineIndex: number,
+  rhymeScheme?: string,
+): string | null {
+  const letter = getRawSchemeLetter(sectionOrScheme, lineIndex, rhymeScheme);
   return letter === 'X' ? null : letter;
+}
+
+export function getSchemaLabelForLine(section: Section, lineIndex: number, rhymeScheme: string): string | null;
+export function getSchemaLabelForLine(scheme: string | undefined, lineIndex: number): string | null;
+export function getSchemaLabelForLine(
+  sectionOrScheme: Section | string | undefined,
+  lineIndex: number,
+  rhymeScheme?: string,
+): string | null {
+  return getRawSchemeLetter(sectionOrScheme, lineIndex, rhymeScheme);
 }
 
 export const getRhymeColor = (rhyme: string | null | undefined): string => {
