@@ -4,6 +4,7 @@ import { useTranslation } from '../../i18n';
 import { generateContentWithRetry } from '../../utils/aiUtils';
 import { AI_MODEL_NAME } from '../../utils/aiUtils';
 import { useModalState } from '../../contexts/ModalContext';
+import { useEditorContext } from '../../contexts/EditorContext';
 import knowledgeEn from '../../knowledge/en.md?raw';
 import knowledgeFr from '../../knowledge/fr.md?raw';
 
@@ -28,8 +29,8 @@ function getKnowledgeBase(language: string): string {
 export function AiAssistantPanel({ onClose }: Props) {
   const { t, language } = useTranslation();
   const { uiState } = useModalState();
+  const { editMode } = useEditorContext();
   const currentPage = uiState.activeTab;
-  const editMode = uiState.editMode;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -42,10 +43,10 @@ export function AiAssistantPanel({ onClose }: Props) {
   const labels = {
     title:       ai?.title       ?? 'AI Assistant',
     onboarding:  ai?.onboarding  ?? 'What would you like to know or do?',
-    placeholder: ai?.placeholder ?? 'Ask anything about your lyrics or composition\u2026',
+    placeholder: ai?.placeholder ?? 'Ask anything about your lyrics or composition…',
     send:        ai?.send        ?? 'Send',
     close:       ai?.close       ?? 'Close assistant',
-    thinking:    ai?.thinking    ?? 'Thinking\u2026',
+    thinking:    ai?.thinking    ?? 'Thinking…',
     error:       ai?.error       ?? 'Unable to get a response. Please try again.',
   };
 
