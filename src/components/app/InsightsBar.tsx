@@ -10,7 +10,7 @@ import {
   MetronomeButton,
   MobileKpisDisplay,
   SimilarityButton,
-  TranslationControls,
+  TranslateGroup,
   ViewModeSelector,
   useAdaptationBannerVisibility,
 } from './insights';
@@ -47,11 +47,11 @@ export const InsightsBar = React.memo(function InsightsBar({
     <InsightsBarLayout
       viewSelector={<ViewModeSelector editMode={editMode} switchEditMode={switchEditMode} disabled={isGenerating || isAnalyzing} />}
       translationControls={
-        <TranslationControls
+        <TranslateGroup
           targetLanguage={targetLanguage}
           setTargetLanguage={setTargetLanguage}
           isAdaptingLanguage={isAdaptingLanguage}
-          songCount={song.length}
+          song={song}
           adaptSongLanguage={adaptSongLanguage}
           showTranslationFeatures={showTranslationFeatures}
         />

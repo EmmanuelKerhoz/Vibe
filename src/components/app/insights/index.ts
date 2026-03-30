@@ -5,5 +5,5 @@ export { MetronomeButton } from './MetronomeButton';
 export { MobileKpisDisplay } from './MobileKpisDisplay';
 export { SimilarityButton } from './SimilarityButton';
 export { ViewModeSelector } from './ViewModeSelector';
-export { TranslationControls } from './TranslationControls';
+export { TranslateGroup } from './TranslateGroup';
 export { useAdaptationBannerVisibility } from './useAdaptationBannerVisibility';
