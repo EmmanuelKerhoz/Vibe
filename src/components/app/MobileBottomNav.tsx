@@ -2,26 +2,29 @@ import React from 'react';
 import { Settings, BookOpen, Music, Menu, Sparkles } from '../ui/icons';
 import { useTranslation } from '../../i18n';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useAppNavigationContext } from '../../contexts/AppStateContext';
 
 interface Props {
-  isLeftPanelOpen: boolean;
-  isStructureOpen: boolean;
-  activeTab: 'lyrics' | 'musical';
-  setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
-  setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
-  setActiveTab: (tab: 'lyrics' | 'musical') => void;
   onGenerateSong?: () => void;
   /** Opens the Settings dialog (not the generation panel) */
   onOpenSettings?: () => void;
 }
 
-export function MobileBottomNav({
-  isLeftPanelOpen, isStructureOpen, activeTab,
-  setIsLeftPanelOpen, setIsStructureOpen, setActiveTab,
+export const MobileBottomNav = React.memo(function MobileBottomNav({
   onGenerateSong,
   onOpenSettings,
 }: Props) {
-  const { isGenerating } = useComposerContext();
+  const { isGenerating, setSelectedLineId } = useComposerContext();
+  // Read only navigation state from the fine-grained context so modal toggles do
+  // not re-render the mobile nav.
+  const {
+    isLeftPanelOpen,
+    isStructureOpen,
+    activeTab,
+    setIsLeftPanelOpen,
+    setIsStructureOpen,
+    setActiveTab,
+  } = useAppNavigationContext();
   const { t } = useTranslation();
 
   return (
@@ -96,7 +99,10 @@ export function MobileBottomNav({
       <button
         className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
         onClick={() => {
-          if (!isStructureOpen) setIsStructureOpen(true);
+          if (!isStructureOpen) {
+            setSelectedLineId(null);
+            setIsStructureOpen(true);
+          }
           setIsLeftPanelOpen(false);
         }}
         aria-label={t.mobileNav.structure}
@@ -107,4 +113,4 @@ export function MobileBottomNav({
       </button>
     </nav>
   );
-}
+});

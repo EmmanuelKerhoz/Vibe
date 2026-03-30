@@ -9,16 +9,11 @@ import { motion } from 'motion/react';
 import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useAppNavigationContext } from '../../contexts/AppStateContext';
 
 interface Props {
-  activeTab: 'lyrics' | 'musical';
-  setActiveTab: (v: 'lyrics' | 'musical') => void;
   setIsVersionsModalOpen: (v: boolean) => void;
   setIsResetModalOpen: (v: boolean) => void;
-  isLeftPanelOpen: boolean;
-  setIsLeftPanelOpen: (v: boolean) => void;
-  isStructureOpen: boolean;
-  setIsStructureOpen: (v: boolean) => void;
   hasApiKey: boolean;
   handleApiKeyHelp: () => void;
   onOpenNewGeneration: () => void;
@@ -35,11 +30,8 @@ interface Props {
   isAnalyzing: boolean;
 }
 
-export function TopRibbon({
-  activeTab, setActiveTab,
+export const TopRibbon = React.memo(function TopRibbon({
   setIsVersionsModalOpen, setIsResetModalOpen,
-  isLeftPanelOpen, setIsLeftPanelOpen,
-  isStructureOpen, setIsStructureOpen,
   hasApiKey, handleApiKeyHelp,
   onOpenNewGeneration, onOpenNewEmpty,
   onImportClick, onExportClick,
@@ -54,7 +46,17 @@ export function TopRibbon({
   const MENU_VERTICAL_OFFSET = 6;
   const MENU_BOTTOM_PADDING = 16;
   const { song, past, future, undo, redo } = useSongContext();
-  const { isGenerating } = useComposerContext();
+  const { isGenerating, setSelectedLineId } = useComposerContext();
+  // Subscribe only to navigation state here so modal-only app-state churn does not
+  // force the ribbon to re-render.
+  const {
+    activeTab,
+    setActiveTab,
+    isLeftPanelOpen,
+    setIsLeftPanelOpen,
+    isStructureOpen,
+    setIsStructureOpen,
+  } = useAppNavigationContext();
   const { t } = useTranslation();
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
@@ -336,7 +338,13 @@ export function TopRibbon({
         </Tooltip>
         <Tooltip title={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}>
           <button
-            onClick={() => setIsStructureOpen(!isStructureOpen)}
+            onClick={() => {
+              setIsStructureOpen(prev => {
+                const next = !prev;
+                if (next) setSelectedLineId(null);
+                return next;
+              });
+            }}
             aria-label={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}
             className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
             style={{
@@ -350,4 +358,4 @@ export function TopRibbon({
       </div>
     </div>
   );
-}
+});

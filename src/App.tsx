@@ -37,7 +37,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.25.8
+// v3.25.9.2
 
 function LazyFallback() {
   const { t } = useTranslation();
@@ -357,12 +357,8 @@ function AppInnerContent() {
           <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
             <TopRibbon
-              activeTab={activeTab} setActiveTab={setActiveTab}
               setIsVersionsModalOpen={setIsVersionsModalOpen}
               setIsResetModalOpen={setIsResetModalOpen}
-              isLeftPanelOpen={isLeftPanelOpen}
-              setIsLeftPanelOpen={setIsLeftPanelOpen}
-              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
               hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
               onOpenNewGeneration={handleOpenNewGeneration}
               onOpenNewEmpty={handleCreateEmptySong}
@@ -451,10 +447,7 @@ function AppInnerContent() {
 
         {isMobileOrTablet && (
           <MobileBottomNav
-            isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
-            activeTab={activeTab}
-            setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-            setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
+            onGenerateSong={handleGlobalRegenerate}
             onOpenSettings={handleOpenSettings}
           />
         )}

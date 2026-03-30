@@ -414,12 +414,17 @@ vi.mock('./components/app/LeftSettingsPanel', () => ({
   LeftSettingsPanel: () => <div data-testid="left-settings-panel" />,
 }));
 
-vi.mock('./components/app/TopRibbon', () => ({
-  TopRibbon: (props: { setActiveTab: (value: 'lyrics' | 'musical') => void }) => (
-    mockAppState.topRibbonPropsSpy(props),
-    <button type="button" onClick={() => props.setActiveTab('musical')}>Switch to musical</button>
-  ),
-}));
+vi.mock('./components/app/TopRibbon', async () => {
+  const { useAppNavigationContext } = await vi.importActual<typeof import('./contexts/AppStateContext')>('./contexts/AppStateContext');
+
+  return {
+    TopRibbon: (props: unknown) => {
+      const { setActiveTab } = useAppNavigationContext();
+      mockAppState.topRibbonPropsSpy(props);
+      return <button type="button" onClick={() => setActiveTab('musical')}>Switch to musical</button>;
+    },
+  };
+});
 
 vi.mock('./components/app/StructureSidebar', () => ({
   StructureSidebar: () => <div data-testid="structure-sidebar" />,
