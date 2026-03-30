@@ -1,7 +1,4 @@
 import React from 'react';
-import type { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
-import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
-import type { EditMode } from '../../types';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
@@ -15,33 +12,9 @@ import {
   SimilarityButton,
   TranslationControls,
   ViewModeSelector,
+  useAdaptationBannerVisibility,
 } from './insights';
-
-interface InsightsBarProps {
-  targetLanguage: string;
-  setTargetLanguage: (lang: string) => void;
-  isAdaptingLanguage: boolean;
-  isDetectingLanguage: boolean;
-  isAnalyzing: boolean;
-  editMode: EditMode;
-  switchEditMode: (target: EditMode) => void;
-  webSimilarityIndex: ReturnType<typeof useSimilarityEngine>['index'];
-  webBadgeLabel: string | null;
-  libraryCount: number;
-  adaptSongLanguage: (lang: string) => void;
-  detectLanguage: () => void;
-  analyzeCurrentSong: () => void;
-  setIsSimilarityModalOpen: (open: boolean) => void;
-  isMetronomeActive?: boolean;
-  toggleMetronome?: () => void;
-  adaptationProgress?: AdaptationProgress;
-  adaptationResult?: AdaptationResult | null;
-  showTranslationFeatures?: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// InsightsBar
-// ---------------------------------------------------------------------------
+import type { InsightsBarProps } from './insights/InsightsBar.types';
 
 export const InsightsBar = React.memo(function InsightsBar({
   targetLanguage,
@@ -67,20 +40,8 @@ export const InsightsBar = React.memo(function InsightsBar({
   const { song, songLanguage, detectedLanguages } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { sectionCount, wordCount, charCount } = useAppKpis();
-  const [bannerDismissed, setBannerDismissed] = React.useState(false);
-
-  React.useEffect(() => {
-    if (adaptationProgress && adaptationProgress.active !== 'idle') {
-      setBannerDismissed(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adaptationProgress?.active]);
-
+  const { showBanner, dismissBanner } = useAdaptationBannerVisibility(adaptationProgress);
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
-
-  const showBanner = !!adaptationProgress &&
-    adaptationProgress.active !== 'idle' &&
-    !bannerDismissed;
 
   return (
     <InsightsBarLayout
@@ -105,7 +66,7 @@ export const InsightsBar = React.memo(function InsightsBar({
       }
       mobileKpis={<MobileKpisDisplay sectionCount={sectionCount} wordCount={wordCount} charCount={charCount} />}
       banner={showBanner && adaptationProgress
-        ? <AdaptationProgressBanner progress={adaptationProgress} result={adaptationResult ?? null} onDismiss={() => setBannerDismissed(true)} isOverlay />
+        ? <AdaptationProgressBanner progress={adaptationProgress} result={adaptationResult ?? null} onDismiss={dismissBanner} isOverlay />
         : null}
     />
   );
