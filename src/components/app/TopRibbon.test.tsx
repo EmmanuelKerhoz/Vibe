@@ -1,8 +1,17 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../i18n';
 import { TopRibbon } from './TopRibbon';
+
+const mockNavigation = vi.hoisted(() => ({
+  activeTab: 'lyrics' as 'lyrics' | 'musical',
+  setActiveTab: vi.fn(),
+  isLeftPanelOpen: false,
+  setIsLeftPanelOpen: vi.fn(),
+  isStructureOpen: false,
+  setIsStructureOpen: vi.fn(),
+}));
 
 vi.mock('../../contexts/SongContext', () => ({
   useSongContext: () => ({
@@ -17,13 +26,25 @@ vi.mock('../../contexts/SongContext', () => ({
 vi.mock('../../contexts/ComposerContext', () => ({
   useComposerContext: () => ({
     isGenerating: false,
+    setSelectedLineId: vi.fn(),
   }),
 }));
 
+vi.mock('../../contexts/AppStateContext', () => ({
+  useAppNavigationContext: () => mockNavigation,
+}));
+
 describe('TopRibbon burger menu', () => {
+  beforeEach(() => {
+    mockNavigation.activeTab = 'lyrics';
+    mockNavigation.isLeftPanelOpen = false;
+    mockNavigation.isStructureOpen = false;
+    mockNavigation.setActiveTab.mockClear();
+    mockNavigation.setIsLeftPanelOpen.mockClear();
+    mockNavigation.setIsStructureOpen.mockClear();
+  });
+
   it('exposes the redesigned primary navigation actions', () => {
-    const setActiveTab = vi.fn();
-    const setIsLeftPanelOpen = vi.fn();
     const onOpenNewGeneration = vi.fn();
     const onOpenNewEmpty = vi.fn();
     const onImportClick = vi.fn();
@@ -35,14 +56,8 @@ describe('TopRibbon burger menu', () => {
     render(
       <LanguageProvider>
         <TopRibbon
-          activeTab="lyrics"
-          setActiveTab={setActiveTab}
           setIsVersionsModalOpen={() => {}}
           setIsResetModalOpen={() => {}}
-          isLeftPanelOpen={false}
-          setIsLeftPanelOpen={setIsLeftPanelOpen}
-          isStructureOpen={false}
-          setIsStructureOpen={() => {}}
           hasApiKey
           handleApiKeyHelp={() => {}}
           onOpenNewGeneration={onOpenNewGeneration}
@@ -86,7 +101,7 @@ describe('TopRibbon burger menu', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'MUSICAL' }));
-    expect(setActiveTab).toHaveBeenCalledWith('musical');
+    expect(mockNavigation.setActiveTab).toHaveBeenCalledWith('musical');
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
@@ -101,21 +116,14 @@ describe('TopRibbon burger menu', () => {
   });
 
   it('toggles the left generation panel from the ribbon', () => {
-    const setActiveTab = vi.fn();
-    const setIsLeftPanelOpen = vi.fn();
-    const setIsStructureOpen = vi.fn();
+    mockNavigation.activeTab = 'musical';
+    mockNavigation.isStructureOpen = true;
 
     render(
       <LanguageProvider>
         <TopRibbon
-          activeTab="musical"
-          setActiveTab={setActiveTab}
           setIsVersionsModalOpen={() => {}}
           setIsResetModalOpen={() => {}}
-          isLeftPanelOpen={false}
-          setIsLeftPanelOpen={setIsLeftPanelOpen}
-          isStructureOpen={true}
-          setIsStructureOpen={setIsStructureOpen}
           hasApiKey
           handleApiKeyHelp={() => {}}
           onOpenNewGeneration={() => {}}
@@ -136,23 +144,17 @@ describe('TopRibbon burger menu', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open lyrics generation panel' }));
 
-    expect(setActiveTab).toHaveBeenCalledWith('lyrics');
-    expect(setIsStructureOpen).toHaveBeenCalledWith(false);
-    expect(setIsLeftPanelOpen).toHaveBeenCalledWith(true);
+    expect(mockNavigation.setActiveTab).toHaveBeenCalledWith('lyrics');
+    expect(mockNavigation.setIsStructureOpen).toHaveBeenCalledWith(false);
+    expect(mockNavigation.setIsLeftPanelOpen).toHaveBeenCalledWith(true);
   });
 
   it('disables the menu paste action when there is no text available to paste', () => {
     render(
       <LanguageProvider>
         <TopRibbon
-          activeTab="lyrics"
-          setActiveTab={() => {}}
           setIsVersionsModalOpen={() => {}}
           setIsResetModalOpen={() => {}}
-          isLeftPanelOpen={false}
-          setIsLeftPanelOpen={() => {}}
-          isStructureOpen={false}
-          setIsStructureOpen={() => {}}
           hasApiKey
           handleApiKeyHelp={() => {}}
           onOpenNewGeneration={() => {}}

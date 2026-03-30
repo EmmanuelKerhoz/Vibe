@@ -350,12 +350,8 @@ function AppInnerContent() {
             <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
               <TopRibbon
-                activeTab={activeTab} setActiveTab={setActiveTab}
                 setIsVersionsModalOpen={setIsVersionsModalOpen}
                 setIsResetModalOpen={setIsResetModalOpen}
-                isLeftPanelOpen={isLeftPanelOpen}
-                setIsLeftPanelOpen={setIsLeftPanelOpen}
-                isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
                 hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
                 onOpenNewGeneration={handleOpenNewGeneration}
                 onOpenNewEmpty={handleCreateEmptySong}
