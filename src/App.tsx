@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useCallback, Suspense, lazy } from 'react';
-import { Spinner } from '@fluentui/react-components';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
 import { AppEditorZone } from './components/app/AppEditorZone';
@@ -37,20 +36,7 @@ import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
-// v3.25.8
-
-function LazyFallback() {
-  const { t } = useTranslation();
-  return (
-    <div
-      role="status"
-      aria-label={t.common?.loading ?? 'Loading'}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', width: '100%' }}
-    >
-      <Spinner size="small" />
-    </div>
-  );
-}
+// v3.25.9
 
 function ModalShortcutBindings({
   isMobileOrTablet,
