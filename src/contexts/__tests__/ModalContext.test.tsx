@@ -20,7 +20,6 @@ const createMockUIState = (): UIStateBag => ({
   setIsPasteModalOpen: vi.fn(),
   setIsAnalysisModalOpen: vi.fn(),
   setIsSearchReplaceOpen: vi.fn(),
-  setEditMode: vi.fn(),
   isAboutOpen: false,
   isSettingsOpen: false,
   apiErrorModal: { open: false, message: '' },
@@ -43,10 +42,6 @@ const createMockUIState = (): UIStateBag => ({
   setIsStructureOpen: vi.fn(),
   isLeftPanelOpen: false,
   setIsLeftPanelOpen: vi.fn(),
-  editMode: 'section' as const,
-  markupText: '',
-  setMarkupText: vi.fn(),
-  markupTextareaRef: createRef<HTMLTextAreaElement>(),
   importInputRef: createRef<HTMLInputElement>(),
 });
 
@@ -94,272 +89,166 @@ describe('ModalContext', () => {
 
       const { result } = renderHook(() => useModalContext(), { wrapper });
 
-      act(() => {
-        result.current.openModal('about');
-      });
+      act(() => { result.current.openModal('about'); });
       expect(mockUIState.setIsAboutOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('settings');
-      });
+      act(() => { result.current.openModal('settings'); });
       expect(mockUIState.setIsSettingsOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('import');
-      });
+      act(() => { result.current.openModal('import'); });
       expect(mockUIState.setIsImportModalOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('export');
-      });
+      act(() => { result.current.openModal('export'); });
       expect(mockUIState.setIsExportModalOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('sectionDropdown');
-      });
+      act(() => { result.current.openModal('sectionDropdown'); });
       expect(mockUIState.setIsSectionDropdownOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('similarity');
-      });
+      act(() => { result.current.openModal('similarity'); });
       expect(mockUIState.setIsSimilarityModalOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('saveToLibrary');
-      });
+      act(() => { result.current.openModal('saveToLibrary'); });
       expect(mockUIState.setIsSaveToLibraryModalOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('versions');
-      });
+      act(() => { result.current.openModal('versions'); });
       expect(mockUIState.setIsVersionsModalOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('reset');
-      });
+      act(() => { result.current.openModal('reset'); });
       expect(mockUIState.setIsResetModalOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('keyboardShortcuts');
-      });
+      act(() => { result.current.openModal('keyboardShortcuts'); });
       expect(mockUIState.setIsKeyboardShortcutsModalOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('paste');
-      });
+      act(() => { result.current.openModal('paste'); });
       expect(mockUIState.setIsPasteModalOpen).toHaveBeenCalledWith(true);
 
-      act(() => {
-        result.current.openModal('analysis');
-      });
+      act(() => { result.current.openModal('analysis'); });
       expect(mockUIState.setIsAnalysisModalOpen).toHaveBeenCalledWith(true);
     });
 
     it('calls the correct setter with payload for apiError modal', () => {
       const mockUIState = createMockUIState();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
-
-      act(() => {
-        result.current.openModal('apiError', 'Network error occurred');
-      });
-
-      expect(mockUIState.setApiErrorModal).toHaveBeenCalledWith({
-        open: true,
-        message: 'Network error occurred',
-      });
+      act(() => { result.current.openModal('apiError', 'Network error occurred'); });
+      expect(mockUIState.setApiErrorModal).toHaveBeenCalledWith({ open: true, message: 'Network error occurred' });
     });
 
     it('calls the correct setter with payload for confirm modal', () => {
       const mockUIState = createMockUIState();
       const onConfirm = vi.fn();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
-
-      act(() => {
-        result.current.openModal('confirm', { onConfirm });
-      });
-
-      expect(mockUIState.setConfirmModal).toHaveBeenCalledWith({
-        open: true,
-        onConfirm,
-      });
+      act(() => { result.current.openModal('confirm', { onConfirm }); });
+      expect(mockUIState.setConfirmModal).toHaveBeenCalledWith({ open: true, onConfirm });
     });
 
     it('calls the correct setter with payload for prompt modal', () => {
       const mockUIState = createMockUIState();
       const onConfirm = vi.fn();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
-
-      act(() => {
-        result.current.openModal('prompt', { onConfirm });
-      });
-
-      expect(mockUIState.setPromptModal).toHaveBeenCalledWith({
-        open: true,
-        onConfirm,
-      });
+      act(() => { result.current.openModal('prompt', { onConfirm }); });
+      expect(mockUIState.setPromptModal).toHaveBeenCalledWith({ open: true, onConfirm });
     });
   });
 
   describe('closeModal', () => {
     it('calls the correct setter with false for simple boolean modals', () => {
       const mockUIState = createMockUIState();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
 
-      act(() => {
-        result.current.closeModal('about');
-      });
+      act(() => { result.current.closeModal('about'); });
       expect(mockUIState.setIsAboutOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('settings');
-      });
+      act(() => { result.current.closeModal('settings'); });
       expect(mockUIState.setIsSettingsOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('import');
-      });
+      act(() => { result.current.closeModal('import'); });
       expect(mockUIState.setIsImportModalOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('export');
-      });
+      act(() => { result.current.closeModal('export'); });
       expect(mockUIState.setIsExportModalOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('sectionDropdown');
-      });
+      act(() => { result.current.closeModal('sectionDropdown'); });
       expect(mockUIState.setIsSectionDropdownOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('similarity');
-      });
+      act(() => { result.current.closeModal('similarity'); });
       expect(mockUIState.setIsSimilarityModalOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('saveToLibrary');
-      });
+      act(() => { result.current.closeModal('saveToLibrary'); });
       expect(mockUIState.setIsSaveToLibraryModalOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('versions');
-      });
+      act(() => { result.current.closeModal('versions'); });
       expect(mockUIState.setIsVersionsModalOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('reset');
-      });
+      act(() => { result.current.closeModal('reset'); });
       expect(mockUIState.setIsResetModalOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('keyboardShortcuts');
-      });
+      act(() => { result.current.closeModal('keyboardShortcuts'); });
       expect(mockUIState.setIsKeyboardShortcutsModalOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('paste');
-      });
+      act(() => { result.current.closeModal('paste'); });
       expect(mockUIState.setIsPasteModalOpen).toHaveBeenCalledWith(false);
 
-      act(() => {
-        result.current.closeModal('analysis');
-      });
+      act(() => { result.current.closeModal('analysis'); });
       expect(mockUIState.setIsAnalysisModalOpen).toHaveBeenCalledWith(false);
     });
 
     it('resets apiError modal correctly', () => {
       const mockUIState = createMockUIState();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
-
-      act(() => {
-        result.current.closeModal('apiError');
-      });
-
-      expect(mockUIState.setApiErrorModal).toHaveBeenCalledWith({
-        open: false,
-        message: '',
-      });
+      act(() => { result.current.closeModal('apiError'); });
+      expect(mockUIState.setApiErrorModal).toHaveBeenCalledWith({ open: false, message: '' });
     });
 
     it('resets confirm modal to null', () => {
       const mockUIState = createMockUIState();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
-
-      act(() => {
-        result.current.closeModal('confirm');
-      });
-
+      act(() => { result.current.closeModal('confirm'); });
       expect(mockUIState.setConfirmModal).toHaveBeenCalledWith(null);
     });
 
     it('resets prompt modal to null', () => {
       const mockUIState = createMockUIState();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
-
-      act(() => {
-        result.current.closeModal('prompt');
-      });
-
+      act(() => { result.current.closeModal('prompt'); });
       expect(mockUIState.setPromptModal).toHaveBeenCalledWith(null);
     });
   });
 
   describe('useModalContext', () => {
     it('throws an error when used outside of ModalProvider', () => {
-      // Suppress console.error for this test
       const originalError = console.error;
       console.error = vi.fn();
-
-      expect(() => {
-        renderHook(() => useModalContext());
-      }).toThrow('useModalContext must be used inside <ModalProvider>');
-
+      expect(() => { renderHook(() => useModalContext()); }).toThrow('useModalContext must be used inside <ModalProvider>');
       console.error = originalError;
     });
 
     it('returns context value when used inside ModalProvider', () => {
       const mockUIState = createMockUIState();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
-
       expect(result.current).toBeDefined();
       expect(result.current.openModal).toBeTypeOf('function');
       expect(result.current.closeModal).toBeTypeOf('function');
@@ -370,41 +259,27 @@ describe('ModalContext', () => {
   describe('open and close flow integration', () => {
     it('supports opening and closing a modal in sequence', () => {
       const mockUIState = createMockUIState();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
-
-      // Open about modal
-      act(() => {
-        result.current.openModal('about');
-      });
+      act(() => { result.current.openModal('about'); });
       expect(mockUIState.setIsAboutOpen).toHaveBeenCalledWith(true);
-
-      // Close about modal
-      act(() => {
-        result.current.closeModal('about');
-      });
+      act(() => { result.current.closeModal('about'); });
       expect(mockUIState.setIsAboutOpen).toHaveBeenCalledWith(false);
     });
 
     it('supports opening multiple modals', () => {
       const mockUIState = createMockUIState();
-
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState}>{children}</ModalProvider>
       );
-
       const { result } = renderHook(() => useModalContext(), { wrapper });
-
       act(() => {
         result.current.openModal('about');
         result.current.openModal('settings');
         result.current.openModal('import');
       });
-
       expect(mockUIState.setIsAboutOpen).toHaveBeenCalledWith(true);
       expect(mockUIState.setIsSettingsOpen).toHaveBeenCalledWith(true);
       expect(mockUIState.setIsImportModalOpen).toHaveBeenCalledWith(true);
@@ -424,20 +299,15 @@ describe('ModalContext', () => {
       const initialOpenModal = result1.current.openModal;
       const initialCloseModal = result1.current.closeModal;
 
-      // With new uiState, callbacks should be different due to dependency on uiState
       const wrapper2 = ({ children }: { children: React.ReactNode }) => (
         <ModalProvider uiState={mockUIState2}>{children}</ModalProvider>
       );
       const { result: result2 } = renderHook(() => useModalContext(), { wrapper: wrapper2 });
 
-      // openModal and closeModal should be new functions because uiState changed
       expect(result2.current.openModal).not.toBe(initialOpenModal);
       expect(result2.current.closeModal).not.toBe(initialCloseModal);
 
-      // But the new callbacks should still work correctly
-      act(() => {
-        result2.current.openModal('about');
-      });
+      act(() => { result2.current.openModal('about'); });
       expect(mockUIState2.setIsAboutOpen).toHaveBeenCalledWith(true);
     });
   });

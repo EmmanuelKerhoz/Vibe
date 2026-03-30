@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, memo, useRef } from 'react';
-import { ClipboardPaste, FileText, Layout, Library, Loader2, Music, PersonVoice, Sparkles, Type } from '../ui/icons';
+import { ClipboardPaste, Layout, Library, Loader2, Music, PersonVoice, Sparkles, Type } from '../ui/icons';
 import { Section } from '../../types';
-import type { EditMode } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
 import { MarkupInput } from '../editor/MarkupInput';
 import { Button } from '../ui/Button';
@@ -11,6 +10,7 @@ import { isLinkedChorusSectionName, isLinkedPreChorusPair, isPreChorusSectionNam
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { usePhoneticTranscription } from '../../hooks/usePhoneticTranscription';
+import { useEditorContext } from '../../contexts/EditorContext';
 
 // Module-level helpers for tied section detection
 const isSectionPreChorus = (s: Section) => isPreChorusSectionName(s.name);
@@ -25,15 +25,11 @@ interface LyricsViewProps {
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
   adaptingLineIds?: Set<string>;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
+  // TODO(DragHandlersContext): migrate these 3 props to a DragHandlersContext
+  // once useSongEditor handlers are lifted into a provider.
   handleDrop: (targetIndex: number) => void;
   handleLineDragStart: (sectionId: string, lineId: string) => void;
   handleLineDrop: (sectionId: string, lineId: string) => void;
-  editMode: EditMode;
-  setEditMode: (v: EditMode) => void;
-  markupText: string;
-  setMarkupText: (v: string) => void;
-  markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
-  markupDirection?: 'ltr' | 'rtl';
   canPasteLyrics: boolean;
   targetLanguage?: string;
   onOpenLibrary: () => void;
@@ -51,7 +47,6 @@ export const LyricsView = memo(function LyricsView({
   adaptLineLanguage,
   adaptingLineIds,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
-  editMode, setEditMode, markupText, setMarkupText, markupTextareaRef, markupDirection = 'ltr',
   canPasteLyrics,
   targetLanguage,
   onOpenLibrary, onPasteLyrics, onGenerateSong,
@@ -62,6 +57,8 @@ export const LyricsView = memo(function LyricsView({
     handleLineKeyDown, handleInstructionChange, addInstruction, removeInstruction, regenerateSection,
   } = useComposerContext();
   const { t } = useTranslation();
+  // Editor state sourced from EditorContext — no longer drilled via props
+  const { editMode, markupText, setMarkupText, markupTextareaRef, markupDirection } = useEditorContext();
 
   /**
    * FIX (PR-3): RHYME_KEYS was rebuilt on every render as a plain array literal,

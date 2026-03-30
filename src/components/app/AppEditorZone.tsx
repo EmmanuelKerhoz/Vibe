@@ -6,6 +6,10 @@
  *
  * Each major zone (InsightsBar, LyricsView, MusicalTab) is wrapped in its own
  * <ErrorBoundary> so a crash in one zone never takes down the others.
+ *
+ * Editor state (editMode, markupText, markupTextareaRef, markupDirection,
+ * setEditMode, setMarkupText) is no longer passed here — LyricsView sources
+ * it directly from EditorContext.
  */
 import React, { Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
@@ -63,14 +67,11 @@ interface AppEditorZoneProps {
   showTranslationFeatures: boolean;
   // LyricsView
   playAudioFeedback: PlayAudioFeedback;
+  // TODO(DragHandlersContext): these 3 remain props until useSongEditor handlers
+  // are lifted into a DragHandlersContext provider.
   handleDrop: (targetIndex: number) => void;
   handleLineDragStart: (lineId: string, sectionId: string) => void;
   handleLineDrop: (targetSectionId: string, targetLineId: string) => void;
-  setEditMode: (v: EditMode) => void;
-  markupText: string;
-  setMarkupText: (v: string) => void;
-  markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
-  markupDirection: 'ltr' | 'rtl';
   canPasteLyrics: boolean;
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
@@ -91,7 +92,6 @@ export function AppEditorZone({
   setIsSimilarityModalOpen, adaptationProgress, adaptationResult,
   showTranslationFeatures,
   playAudioFeedback, handleDrop, handleLineDragStart, handleLineDrop,
-  setEditMode, markupText, setMarkupText, markupTextareaRef, markupDirection,
   canPasteLyrics, onOpenLibrary, onPasteLyrics, onGenerateSong,
   sectionTargetLanguages, onSectionTargetLanguageChange,
   adaptSectionLanguage, adaptLineLanguage, adaptingLineIds,
@@ -138,10 +138,6 @@ export function AppEditorZone({
                   handleDrop={handleDrop}
                   handleLineDragStart={handleLineDragStart}
                   handleLineDrop={handleLineDrop}
-                  editMode={editMode} setEditMode={setEditMode}
-                  markupText={markupText} setMarkupText={setMarkupText}
-                  markupTextareaRef={markupTextareaRef}
-                  markupDirection={markupDirection}
                   canPasteLyrics={canPasteLyrics}
                   targetLanguage={targetLanguage}
                   onOpenLibrary={onOpenLibrary}

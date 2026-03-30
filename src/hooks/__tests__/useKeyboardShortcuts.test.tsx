@@ -21,7 +21,6 @@ const createUiState = (overrides: Partial<UIStateBag> = {}): UIStateBag => ({
   setIsPasteModalOpen: vi.fn(),
   setIsAnalysisModalOpen: vi.fn(),
   setIsSearchReplaceOpen: vi.fn(),
-  setEditMode: vi.fn(),
   isAboutOpen: false,
   isSettingsOpen: false,
   apiErrorModal: { open: false, message: '' },
@@ -44,10 +43,6 @@ const createUiState = (overrides: Partial<UIStateBag> = {}): UIStateBag => ({
   setIsStructureOpen: vi.fn(),
   isLeftPanelOpen: false,
   setIsLeftPanelOpen: vi.fn(),
-  editMode: 'section' as const,
-  markupText: '',
-  setMarkupText: vi.fn(),
-  markupTextareaRef: createRef<HTMLTextAreaElement>(),
   importInputRef: createRef<HTMLInputElement>(),
   ...overrides,
 });
