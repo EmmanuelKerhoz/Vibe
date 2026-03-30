@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getSectionColorHex, getSectionDotColor } from './songUtils';
+import { getSchemaLabelForLine, getSchemeLetterForLine, getSectionColorHex, getSectionDotColor } from './songUtils';
 import { splitRhymingSuffix } from './rhymeDetection';
 import { countSyllables } from './syllableUtils';
 
@@ -64,5 +64,14 @@ describe('section color families', () => {
     expect(getSectionDotColor('Middle 8')).toBe('bg-violet-500');
     expect(getSectionColorHex('Interlude')).toBe('#06b6d4');
     expect(getSectionColorHex('Coda')).toBe('#10b981');
+  });
+});
+
+describe('schema labels', () => {
+  it('keeps X placeholders visible in schema badges while hiding them from rhyme-family logic', () => {
+    expect(getSchemaLabelForLine('AXBA', 1)).toBe('X');
+    expect(getSchemeLetterForLine('AXBA', 1)).toBeNull();
+    expect(getSchemaLabelForLine('AXBA', 2)).toBe('B');
+    expect(getSchemeLetterForLine('AXBA', 2)).toBe('B');
   });
 });

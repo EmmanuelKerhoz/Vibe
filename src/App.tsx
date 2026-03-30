@@ -202,7 +202,7 @@ function AppInnerContent() {
   }, [isSuggestionsOpen, isStructureOpen, setIsStructureOpen]);
 
   const {
-    removeStructureItem, addStructureItem, normalizeStructure, exportSong, loadFileForAnalysis,
+    removeStructureItem, addStructureItem, exportSong, loadFileForAnalysis,
   } = useSongEditor({
     openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); },
   });
@@ -417,7 +417,6 @@ function AppInnerContent() {
                 isSectionDropdownOpen={isSectionDropdownOpen}
                 setIsSectionDropdownOpen={setIsSectionDropdownOpen}
                 addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-                normalizeStructure={normalizeStructure}
                 onScrollToSection={handleScrollToSection}
                 onRegenerateSong={handleGlobalRegenerate}
                 onGenerateSong={generateSong}

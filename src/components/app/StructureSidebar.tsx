@@ -25,7 +25,6 @@ interface Props {
   setIsSectionDropdownOpen: (v: boolean) => void;
   addStructureItem: (name?: string) => void;
   removeStructureItem: (idx: number) => void;
-  normalizeStructure: () => void;
   onScrollToSection: (sectionId: string) => void;
   onRegenerateSong?: () => void;
   onGenerateSong?: () => void;

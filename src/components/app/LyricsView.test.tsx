@@ -83,6 +83,7 @@ describe('LyricsView empty state', () => {
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
+              hasApiKey
               playAudioFeedback={() => {}}
               canPasteLyrics={true}
               onOpenLibrary={onOpenLibrary}
@@ -112,6 +113,7 @@ describe('LyricsView empty state', () => {
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
+              hasApiKey
               playAudioFeedback={() => {}}
               canPasteLyrics={false}
               onOpenLibrary={() => {}}
@@ -126,6 +128,31 @@ describe('LyricsView empty state', () => {
     expect((screen.getByRole('button', { name: 'Import and analyze existing lyrics' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it('disables the generate action when AI is unavailable', () => {
+    mockEditMode = 'section';
+    mockMarkupText = '';
+
+    render(
+      <DragProvider>
+        <LanguageProvider>
+          <RefsProvider>
+            <LyricsView
+              isAnalyzing={false}
+              hasApiKey={false}
+              playAudioFeedback={() => {}}
+              canPasteLyrics={true}
+              onOpenLibrary={() => {}}
+              onPasteLyrics={() => {}}
+              onGenerateSong={() => {}}
+            />
+          </RefsProvider>
+        </LanguageProvider>
+      </DragProvider>,
+    );
+
+    expect((screen.getByRole('button', { name: 'Generate a new song with AI' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('uses the shared gradient container surface in markup mode', () => {
     mockEditMode = 'markdown';
     mockMarkupText = '[Verse]\nHello';
@@ -135,6 +162,7 @@ describe('LyricsView empty state', () => {
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
+              hasApiKey
               playAudioFeedback={() => {}}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
@@ -173,6 +201,7 @@ describe('LyricsView empty state', () => {
         <LanguageProvider>
           <LyricsView
             isAnalyzing={false}
+            hasApiKey
             playAudioFeedback={() => {}}
             canPasteLyrics={true}
             onOpenLibrary={() => {}}
@@ -215,6 +244,7 @@ describe('LyricsView empty state', () => {
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
+              hasApiKey
               playAudioFeedback={() => {}}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
@@ -275,6 +305,7 @@ describe('LyricsView empty state', () => {
           <RefsProvider>
             <LyricsView
               isAnalyzing={false}
+              hasApiKey
               playAudioFeedback={() => {}}
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
