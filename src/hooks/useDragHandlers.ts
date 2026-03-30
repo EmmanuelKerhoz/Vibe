@@ -1,27 +1,23 @@
-import { useCallback } from 'react';
+import { useCallback, type MutableRefObject } from 'react';
 import type { Section } from '../types';
 import { useDrag } from '../contexts/DragContext';
+import { useSongContext } from '../contexts/SongContext';
 import {
   isAnchoredEndSection,
   isAnchoredStartSection,
 } from '../constants/sections';
 import { getTiedSectionRange } from './useSectionManager';
 
+type PlayAudioFeedback = (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
+
 type UseDragHandlersParams = {
-  song: Section[];
-  structure: string[];
-  updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
-  updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
-  playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
+  playAudioFeedbackRef: MutableRefObject<PlayAudioFeedback | null>;
 };
 
 export const useDragHandlers = ({
-  song,
-  structure,
-  updateState,
-  updateSongAndStructureWithHistory,
-  playAudioFeedback,
+  playAudioFeedbackRef,
 }: UseDragHandlersParams) => {
+  const { song, structure, updateState, updateSongAndStructureWithHistory } = useSongContext();
   const {
     draggedItemIndex,
     setDraggedItemIndex,
@@ -96,8 +92,8 @@ export const useDragHandlers = ({
 
   const handleLineDragStart = useCallback((sectionId: string, lineId: string) => {
     setDraggedLineInfo({ sectionId, lineId });
-    playAudioFeedback('drag');
-  }, [setDraggedLineInfo, playAudioFeedback]);
+    playAudioFeedbackRef.current?.('drag');
+  }, [setDraggedLineInfo, playAudioFeedbackRef]);
 
   const handleLineDrop = useCallback((targetSectionId: string, targetLineId: string) => {
     setDragOverLineInfo(null);
@@ -149,8 +145,8 @@ export const useDragHandlers = ({
       });
     });
     setDraggedLineInfo(null);
-    playAudioFeedback('drop');
-  }, [draggedLineInfo, setDragOverLineInfo, setDraggedLineInfo, updateSong, playAudioFeedback]);
+    playAudioFeedbackRef.current?.('drop');
+  }, [draggedLineInfo, setDragOverLineInfo, setDraggedLineInfo, updateSong, playAudioFeedbackRef]);
 
   return {
     handleDrop,
