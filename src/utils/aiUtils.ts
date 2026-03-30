@@ -25,7 +25,7 @@ export type GenerateContentParams = {
 };
 
 export const AI_PROVIDER_NAME = 'Google Gemini';
-export const AI_MODEL_NAME = 'gemini-3-flash-preview';
+export const AI_MODEL_NAME = 'gemini-2.5-flash';
 export const AI_KEY_ENV_VAR = 'GEMINI_API_KEY';
 
 export type GenerateContentResponse = {
