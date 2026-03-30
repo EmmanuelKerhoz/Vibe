@@ -110,6 +110,7 @@ const createParams = (overrides: Partial<Parameters<typeof useSongComposer>[0]> 
     narrative: '',
     songLanguage: 'English',
     uiLanguage: 'English',
+    hasApiKey: true,
     setMusicalPrompt: vi.fn(),
     setGenre: vi.fn(),
     setTempo: vi.fn(),

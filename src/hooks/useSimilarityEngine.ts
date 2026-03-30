@@ -50,7 +50,7 @@ const INITIAL_INDEX: WebSimilarityIndex = {
   error: null,
 };
 
-export const useSimilarityEngine = () => {
+export const useSimilarityEngine = ({ hasApiKey = true }: { hasApiKey?: boolean } = {}) => {
   const { song: sections, title, songLanguage } = useSongContext();
   const [index, setIndex] = useState<WebSimilarityIndex>(INITIAL_INDEX);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -100,6 +100,14 @@ export const useSimilarityEngine = () => {
   );
 
   useEffect(() => {
+    if (!hasApiKey) {
+      abortRef.current?.abort();
+      abortRef.current = null;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+      return;
+    }
+
     const delta = changeDelta(lastFingerprintRef.current, fingerprint);
 
     if (delta < DELTA_THRESHOLD && lastFingerprintRef.current !== '') return;
@@ -117,7 +125,7 @@ export const useSimilarityEngine = () => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [fingerprint, effectiveTitle, sections, runSearch, songLanguage]);
+  }, [fingerprint, effectiveTitle, hasApiKey, sections, runSearch, songLanguage]);
 
   useEffect(() => {
     return () => {

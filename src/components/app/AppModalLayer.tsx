@@ -85,7 +85,7 @@ export function AppModalLayer() {
 
   const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionContext();
 
-  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine();
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine({ hasApiKey });
 
   const { hasExistingWork } = useDerivedAppState({ editMode, markupText, webSimilarityIndex });
 
