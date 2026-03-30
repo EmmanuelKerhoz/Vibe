@@ -72,6 +72,7 @@ type UseSongAnalysisEngineParams = {
   setMood: (value: string) => void;
   setIsAnalyzing: (value: boolean) => void;
   setIsAnalysisModalOpen: (value: boolean) => void;
+  hasApiKey: boolean;
 };
 
 const SONG_SECTIONS_RESPONSE_SCHEMA = {
@@ -111,6 +112,7 @@ export const useSongAnalysisEngine = ({
   setMood,
   setIsAnalyzing,
   setIsAnalysisModalOpen,
+  hasApiKey,
 }: UseSongAnalysisEngineParams) => {
   const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
   const [analysisSteps, setAnalysisSteps] = useState<string[]>([]);
@@ -134,6 +136,7 @@ export const useSongAnalysisEngine = ({
     uiLanguage: uiLang,
     setTopic,
     setMood,
+    hasApiKey,
   });
 
   const toggleAnalysisItemSelection = useCallback((itemText: string) => {

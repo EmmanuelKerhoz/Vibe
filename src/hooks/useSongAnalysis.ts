@@ -10,6 +10,7 @@ import { useAnalysisCounter } from './useAnalysisCounter';
 type UseSongAnalysisParams = {
   uiLanguage: string;
   isGeneratingRef: RefObject<boolean>;
+  hasApiKey: boolean;
   /** Elevated state from useAppState — shared with useSongComposer */
   saveVersion: (name: string, snapshot?: {
     song: Section[];
@@ -30,6 +31,7 @@ type UseSongAnalysisParams = {
 export const useSongAnalysis = ({
   uiLanguage,
   isGeneratingRef,
+  hasApiKey,
   saveVersion,
   updateState,
   updateSongAndStructureWithHistory,
@@ -68,6 +70,7 @@ export const useSongAnalysis = ({
     setDetectedLanguages,
     lineLanguages,
     setLineLanguages,
+    hasApiKey,
   });
 
   const handleDetectedLanguage = useCallback((language: string, sectionIds: string[]) => {
@@ -103,6 +106,7 @@ export const useSongAnalysis = ({
     setMood,
     setIsAnalyzing: setIsAnalyzingForSubhook,
     setIsAnalysisModalOpen,
+    hasApiKey,
   });
 
   return {

@@ -16,6 +16,7 @@ interface AnalysisProviderProps {
   children: ReactNode;
   uiLanguage: string;
   isGeneratingRef: RefObject<boolean>;
+  hasApiKey: boolean;
   saveVersion: (name: string, snapshot?: {
     song: Section[];
     structure: string[];
@@ -40,6 +41,7 @@ export function AnalysisProvider({
   children,
   uiLanguage,
   isGeneratingRef,
+  hasApiKey,
   saveVersion,
   updateState,
   updateSongAndStructureWithHistory,
@@ -66,6 +68,7 @@ export function AnalysisProvider({
   const value = useSongAnalysis({
     uiLanguage,
     isGeneratingRef,
+    hasApiKey,
     saveVersion,
     updateState,
     updateSongAndStructureWithHistory,

@@ -10,7 +10,7 @@ interface TopicMoodSuggestion {
   title: string;
 }
 
-export function useTopicMoodSuggester() {
+export function useTopicMoodSuggester({ hasApiKey }: { hasApiKey: boolean }) {
   const {
     title: currentTitle,
     topic: currentTopic,
@@ -74,6 +74,7 @@ export function useTopicMoodSuggester() {
   }, []);
 
   useEffect(() => {
+    if (!hasApiKey) return;
     const shouldAutoSuggest =
       !hasSuggested &&
       (!currentTopic || currentTopic === 'A neon city in the rain') &&
@@ -88,7 +89,7 @@ export function useTopicMoodSuggester() {
         }
       }).catch(() => { /* abort or network error — silently ignore */ });
     }
-  }, [currentMood, currentTitle, currentTopic, generateSuggestion, hasSuggested, setMood, setTitle, setTitleOrigin, setTopic]);
+  }, [hasApiKey, currentMood, currentTitle, currentTopic, generateSuggestion, hasSuggested, setMood, setTitle, setTitleOrigin, setTopic]);
 
   return { generateSuggestion, isGeneratingSuggestion, resetSuggestionCycle };
 }

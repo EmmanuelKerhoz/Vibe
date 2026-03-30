@@ -67,6 +67,7 @@ const createParams = (overrides: Partial<Parameters<typeof useSongAnalysisEngine
   setMood: vi.fn(),
   setIsAnalyzing: vi.fn(),
   setIsAnalysisModalOpen: vi.fn(),
+  hasApiKey: true,
   ...overrides,
 });
 

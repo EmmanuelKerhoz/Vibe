@@ -86,6 +86,7 @@ import { useSongAnalysis } from '../useSongAnalysis';
 const makeParams = () => ({
   uiLanguage: 'en',
   isGeneratingRef: { current: false } as RefObject<boolean>,
+  hasApiKey: true,
   saveVersion: vi.fn(),
   updateState: vi.fn(),
   updateSongAndStructureWithHistory: vi.fn(),

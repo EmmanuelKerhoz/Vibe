@@ -96,7 +96,7 @@ describe('AI prompt language enforcement', () => {
     const { result, rerender } = renderHook(
       ({ language }) => {
         useSongContextSetup(language);
-        return useTopicMoodSuggester();
+        return useTopicMoodSuggester({ hasApiKey: true });
       },
       {
         initialProps: { language: 'French' },

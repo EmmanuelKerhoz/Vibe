@@ -69,6 +69,7 @@ describe('useBackgroundThemeAnalysis', () => {
       uiLanguage: 'French',
       setTopic,
       setMood,
+      hasApiKey: true,
     }));
 
     expect(result.current.isAnalyzingTheme).toBe(false);
@@ -110,6 +111,7 @@ describe('useBackgroundThemeAnalysis', () => {
       mood: 'Dreamy',
       setTopic: vi.fn(),
       setMood: vi.fn(),
+      hasApiKey: true,
     }));
 
     await act(async () => {
