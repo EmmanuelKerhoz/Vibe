@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, memo, useRef } from 'react';
-import { ClipboardPaste, Layout, Library, Loader2, Music, PersonVoice, Sparkles, Type } from '../ui/icons';
+import { ClipboardPaste, Library, Music, Sparkles } from '../ui/icons';
 import { Section } from '../../types';
 import { SectionEditor } from '../editor/SectionEditor';
-import { MarkupInput } from '../editor/MarkupInput';
 import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { generateId } from '../../utils/idUtils';
@@ -12,6 +11,9 @@ import { useComposerContext } from '../../contexts/ComposerContext';
 import { usePhoneticTranscription } from '../../hooks/usePhoneticTranscription';
 import { useEditorContext } from '../../contexts/EditorContext';
 import { useTranslationAdaptationContext } from '../../contexts/TranslationAdaptationContext';
+import { MarkdownModePanel } from '../editor/modes/MarkdownModePanel';
+import { PhoneticModePanel } from '../editor/modes/PhoneticModePanel';
+import { TextModePanel } from '../editor/modes/TextModePanel';
 
 // Module-level helpers for tied section detection
 const isSectionPreChorus = (s: Section) => isPreChorusSectionName(s.name);
@@ -206,115 +208,25 @@ export const LyricsView = memo(function LyricsView({
     <>
       <div className="w-full min-w-0 flex flex-col gap-1 pb-32">
         {editMode === 'text' ? (
-          <div className="lcars-gradient-container flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
-            <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
-                <Type className="w-4 h-4 text-[var(--accent-color)]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
-                  {t.editor.textMode.title}
-                </h3>
-                <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
-                  {t.editor.textMode.description}
-                </p>
-              </div>
-            </div>
-            <div className="relative flex-1 min-h-0 overflow-hidden">
-              <textarea
-                ref={markupTextareaRef as React.RefObject<HTMLTextAreaElement>}
-                value={markupText}
-                onChange={(e) => setMarkupText(e.target.value)}
-                spellCheck={false}
-                dir={markupDirection}
-                aria-label={t.editor.textMode.title}
-                placeholder={t.editor.textMode.placeholder}
-                className="absolute inset-0 w-full h-full resize-none bg-[var(--bg-app)] caret-[var(--text-primary)] outline-none font-mono text-sm leading-7 text-[var(--text-primary)]"
-                style={{ padding: '1.5rem' }}
-              />
-            </div>
-            <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
-              <p className="text-xs text-[var(--text-secondary)]">{t.editor.textMode.hint}</p>
-            </div>
-          </div>
+          <TextModePanel
+            markupText={markupText}
+            setMarkupText={setMarkupText}
+            markupTextareaRef={markupTextareaRef}
+            markupDirection={markupDirection}
+          />
         ) : editMode === 'markdown' ? (
-          <div className="lcars-gradient-container flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
-            <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
-                <Layout className="w-4 h-4 text-[var(--accent-color)]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
-                  {t.editor.markupMode.title}
-                </h3>
-                <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
-                  {t.editor.markupMode.description}
-                </p>
-              </div>
-            </div>
-            <MarkupInput
-              value={markupText}
-              onChange={(e) => setMarkupText(e.target.value)}
-              textareaRef={markupTextareaRef}
-              direction={markupDirection}
-              aria-label={t.editor.markupMode.title}
-              className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
-              spellCheck={false}
-            />
-            <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)]">
-              <p className="text-xs text-[var(--text-secondary)]">{t.editor.markupMode.hint}</p>
-            </div>
-          </div>
+          <MarkdownModePanel
+            markupText={markupText}
+            setMarkupText={setMarkupText}
+            markupTextareaRef={markupTextareaRef}
+            markupDirection={markupDirection}
+          />
         ) : editMode === 'phonetic' ? (
-          <div className="lcars-gradient-container flex-1 min-h-0 flex flex-col rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-card)] shadow-2xl overflow-hidden fluent-fade-in" style={{ minHeight: 'calc(100vh - 280px)' }}>
-            <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
-                <PersonVoice className="w-4 h-4 text-[var(--accent-color)]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
-                  {t.editor.phoneticMode.title}
-                </h3>
-                <p className="text-xs text-[var(--accent-color)] uppercase tracking-wider mt-0.5">
-                  {t.editor.phoneticMode.description}
-                </p>
-              </div>
-            </div>
-            <div className="relative flex-1 min-h-0 overflow-hidden flex flex-col">
-              {phoneticState.status === 'loading' && (
-                <div className="absolute inset-0 bg-[var(--bg-app)]/70 backdrop-blur-sm flex items-center justify-center z-10">
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] uppercase tracking-wider">
-                    <Loader2 className="w-4 h-4 animate-spin text-[var(--accent-color)]" />
-                    <span>{t.editor.phoneticMode.loading ?? 'Generating phonetics...'}</span>
-                  </div>
-                </div>
-              )}
-              <MarkupInput
-                value={phoneticState.text || (phoneticState.status === 'ready' ? t.editor.phoneticMode.placeholder : '')}
-                onChange={() => {}}
-                textareaRef={phoneticTextareaRef}
-                direction={markupDirection}
-                aria-label={t.editor.phoneticMode.title}
-                className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
-                spellCheck={false}
-                readOnly
-              />
-            </div>
-            <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-between gap-3">
-              <p className="text-xs text-[var(--text-secondary)]">
-                {phoneticState.status === 'error'
-                  ? (t.editor.phoneticMode.error
-                    ? t.editor.phoneticMode.error.replace('{error}', phoneticState.error || 'unavailable')
-                    : phoneticState.error)
-                  : t.editor.phoneticMode.hint.replace('{lang}', phoneticState.languageLabel)}
-              </p>
-              <span className={`text-[10px] uppercase tracking-widest font-semibold ${phoneticState.status === 'error' ? 'text-red-300' : 'text-[var(--accent-color)]'}`}>
-                {phoneticState.status === 'error'
-                  ? (phoneticState.error || 'Error')
-                  : phoneticState.languageLabel}
-              </span>
-            </div>
-          </div>
+          <PhoneticModePanel
+            phoneticState={phoneticState}
+            phoneticTextareaRef={phoneticTextareaRef}
+            markupDirection={markupDirection}
+          />
         ) : song.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-24 text-center select-none fluent-animate-in" role="status" aria-label={t.editor.emptyState.title}>
             <div className="w-16 h-16 rounded-[16px_4px_16px_4px] bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center mb-6" aria-hidden="true">

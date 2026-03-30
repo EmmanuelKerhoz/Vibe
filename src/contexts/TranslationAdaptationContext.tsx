@@ -22,14 +22,18 @@ export function TranslationAdaptationProvider({ children }: { children: ReactNod
     adaptLineLanguage,
     adaptingLineIds,
   } = useAnalysisContext();
+  const adaptingLineIdSet = useMemo(
+    () => adaptingLineIds instanceof Set ? adaptingLineIds : new Set<string>(),
+    [adaptingLineIds],
+  );
 
   const onSectionTargetLanguageChange = useCallback((sectionId: string, lang: string) => {
     setSectionTargetLanguages(prev => ({ ...prev, [sectionId]: lang }));
   }, [setSectionTargetLanguages]);
 
   const adaptingLineIdsKey = useMemo(
-    () => JSON.stringify([...adaptingLineIds].sort()),
-    [adaptingLineIds],
+    () => JSON.stringify([...adaptingLineIdSet].sort()),
+    [adaptingLineIdSet],
   );
   const adaptingLineIdsRef = useRef<Set<string>>(new Set());
   const stableAdaptingLineIds = useMemo(() => {

@@ -127,7 +127,6 @@ export function AppEditorZone({
                   onOpenLibrary={onOpenLibrary}
                   onPasteLyrics={onPasteLyrics}
                   onGenerateSong={onGenerateSong}
-                  showTranslationFeatures={showTranslationFeatures}
                 />
               </ErrorBoundary>
             ) : (

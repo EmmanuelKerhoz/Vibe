@@ -69,6 +69,17 @@ vi.mock('../../contexts/EditorContext', () => ({
   }),
 }));
 
+vi.mock('../../contexts/TranslationAdaptationContext', () => ({
+  useTranslationAdaptationContext: () => ({
+    sectionTargetLanguages: {},
+    onSectionTargetLanguageChange: vi.fn(),
+    adaptSectionLanguage: vi.fn(),
+    adaptLineLanguage: vi.fn(),
+    adaptingLineIds: new Set<string>(),
+    showTranslationFeatures: true,
+  }),
+}));
+
 describe('LyricsView empty state', () => {
   it('offers quick actions for library, paste, and generation', () => {
     mockEditMode = 'section';

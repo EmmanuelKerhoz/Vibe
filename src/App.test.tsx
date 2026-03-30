@@ -98,6 +98,8 @@ vi.mock('./hooks/useSongAnalysis', () => ({
       detectLanguage: mockAppState.asyncNoop,
       adaptSongLanguage: mockAppState.asyncNoop,
       adaptSectionLanguage: mockAppState.asyncNoop,
+      adaptLineLanguage: mockAppState.asyncNoop,
+      adaptingLineIds: new Set<string>(),
       analyzePastedLyrics: mockAppState.asyncNoop,
       clearAppliedAnalysisItems: mockAppState.noop,
     };
@@ -414,12 +416,20 @@ vi.mock('./components/app/LeftSettingsPanel', () => ({
   LeftSettingsPanel: () => <div data-testid="left-settings-panel" />,
 }));
 
-vi.mock('./components/app/TopRibbon', () => ({
-  TopRibbon: (props: { setActiveTab: (value: 'lyrics' | 'musical') => void }) => (
-    mockAppState.topRibbonPropsSpy(props),
-    <button type="button" onClick={() => props.setActiveTab('musical')}>Switch to musical</button>
-  ),
-}));
+vi.mock('./components/app/TopRibbon', async () => {
+  const { useAppNavigationContext } = await vi.importActual<typeof import('./contexts/AppStateContext')>('./contexts/AppStateContext');
+  return {
+    TopRibbon: () => {
+      const navigation = useAppNavigationContext();
+      mockAppState.topRibbonPropsSpy(navigation);
+      return (
+        <button type="button" onClick={() => navigation.setActiveTab('musical')}>
+          Switch to musical
+        </button>
+      );
+    },
+  };
+});
 
 vi.mock('./components/app/StructureSidebar', () => ({
   StructureSidebar: () => <div data-testid="structure-sidebar" />,
