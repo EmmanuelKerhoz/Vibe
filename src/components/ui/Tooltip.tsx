@@ -4,16 +4,17 @@ import { Tooltip as FluentTooltip, TooltipProps } from '@fluentui/react-componen
 interface Props extends Omit<TooltipProps, 'content' | 'positioning' | 'relationship'> {
   title: React.ReactElement | string;
   children: React.ReactElement;
+  relationship?: TooltipProps['relationship'];
 }
 
-export function Tooltip({ title, children, ...props }: Props) {
+export function Tooltip({ title, children, relationship = 'label', ...props }: Props) {
   return (
     <FluentTooltip
       content={typeof title === 'string'
         ? <span style={{ display: 'block', maxWidth: '18rem', whiteSpace: 'pre-line' }}>{title}</span>
         : title}
-      relationship="label"
-      positioning={{ position: 'above', align: 'center' }}
+      relationship={relationship}
+      positioning={{ position: 'above', align: 'end' }}
       {...props}
     >
       {children}
