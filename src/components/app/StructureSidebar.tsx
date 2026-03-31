@@ -225,24 +225,24 @@ export const StructureSidebar = React.memo(function StructureSidebar({
           exit={{ width: 0, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           className={`border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl lcars-panel fluent-animate-panel !rounded-none !border-t-0 !border-b-0 !border-r-0${className ? ` ${className}` : ''}`}
-          style={{ overflow: 'visible' }}
+          style={{ overflow: 'visible', position: 'relative' }}
         >
-            <div className="relative w-[280px] flex flex-col h-full overflow-hidden">
-              {/* LCARS gradient separator — left edge */}
-              <div
-                data-testid="structure-sidebar-rail"
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  top: 0, left: 0, bottom: 0,
-                  width: '2px',
-                  background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-                  opacity: 0.85,
-                  pointerEvents: 'none',
-                  zIndex: 10,
-                }}
-              />
+          {/* LCARS gradient separator — left edge, direct child of motion.div (overflow:visible) */}
+          <div
+            data-testid="structure-sidebar-rail"
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: 0, left: 0, bottom: 0,
+              width: '2px',
+              background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
+              opacity: 0.85,
+              pointerEvents: 'none',
+              zIndex: 20,
+            }}
+          />
 
+          <div className="w-[280px] flex flex-col h-full overflow-hidden">
             <div className="h-16 px-5 flex items-center justify-between shrink-0" style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
               {/* Reversed accent rail — touches both panel borders */}
               <div style={{
@@ -274,7 +274,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                 <div className="space-y-2">
                   <div className="flex flex-col gap-1.5">
                     {structure.map((item, idx) => {
-                      // Skip chorus items already rendered inside a Pre-Chorus group
                       if (groupedChorusIndices.has(idx)) return null;
 
                       const isGroupLeader = isLinkedPreChorusPair(item, structure[idx + 1]);
