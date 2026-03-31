@@ -12,7 +12,7 @@ import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppStateContext } from '../../contexts/AppStateContext';
 import { useVersionContext } from '../../contexts/VersionContext';
 import { useAnalysisContext } from '../../contexts/AnalysisContext';
-import { useSimilarityEngine } from '../../hooks/useSimilarityEngine';
+import { useSimilarityContext } from '../../contexts/SimilarityContext';
 import { useDerivedAppState } from '../../hooks/useDerivedAppState';
 import { useImportHandlers } from '../../hooks/useImportHandlers';
 import { useLibraryActions } from '../../hooks/useLibraryActions';
@@ -85,7 +85,7 @@ export function AppModalLayer() {
 
   const { versions, saveVersion, rollbackToVersion, handleRequestVersionName } = useVersionContext();
 
-  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityEngine({ hasApiKey });
+  const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityContext();
 
   const { hasExistingWork } = useDerivedAppState({ editMode, markupText, webSimilarityIndex });
 

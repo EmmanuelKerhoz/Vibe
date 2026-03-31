@@ -52,7 +52,6 @@ function renderPanel(setIsLeftPanelOpen = vi.fn(), hasApiKey = true) {
         isSurprising={false}
         hasApiKey={hasApiKey}
         onGenerateSong={vi.fn()}
-        isSessionHydrated
       />
     </LanguageProvider>,
   );
@@ -107,7 +106,6 @@ describe('LeftSettingsPanel', () => {
           isSurprising={false}
           hasApiKey
           onGenerateSong={vi.fn()}
-          isSessionHydrated
         />
       </LanguageProvider>,
     );
@@ -142,7 +140,6 @@ describe('LeftSettingsPanel', () => {
           hasApiKey
           onGenerateSong={onGenerateSong}
           onRegenerateSong={vi.fn()}
-          isSessionHydrated
         />
       </LanguageProvider>,
     );
@@ -185,7 +182,6 @@ describe('LeftSettingsPanel', () => {
           hasApiKey
           onGenerateSong={onGenerateSong}
           onRegenerateSong={onRegenerateSong}
-          isSessionHydrated
         />
       </LanguageProvider>,
     );
@@ -272,7 +268,6 @@ describe('LeftSettingsPanel', () => {
           isSurprising={false}
           hasApiKey
           onGenerateSong={vi.fn()}
-          isSessionHydrated
         />
       </LanguageProvider>,
     );
