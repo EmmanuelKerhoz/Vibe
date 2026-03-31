@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useId, type CSSProperties } from 'react';
 import { ChevronDown } from './icons';
 import { createPortal } from 'react-dom';
+import { Tooltip } from './Tooltip';
 
 const EMOJI_FONT_STACK =
   '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif';
@@ -171,11 +172,7 @@ export function LcarsSelect({
     }
   };
 
-  return (
-    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
-      {/* Gradient-outline wrapper — provides the multicolor border via ::before pseudo.
-          The button inside must be position:relative + z-index:1 so it sits above the outline.
-          In light mode .lcars-gradient-outline::before has opacity:0, so no visual change. */}
+  const triggerBlock = (
       <div
         className="lcars-gradient-outline"
         style={{
@@ -191,7 +188,6 @@ export function LcarsSelect({
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-controls={isOpen ? listboxId : undefined}
-          title={buttonTitle}
           onClick={handleTriggerClick}
           onKeyDown={handleKeyDown}
           className={['ux-interactive', className].filter(Boolean).join(' ')}
@@ -246,6 +242,11 @@ export function LcarsSelect({
           <ChevronDown style={{ width: 14, height: 14, flexShrink: 0, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
         </button>
       </div>
+  );
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+      {buttonTitle ? <Tooltip title={buttonTitle}>{triggerBlock}</Tooltip> : triggerBlock}
 
       {isOpen && dropdownStyle && createPortal(
         <div

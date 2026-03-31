@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Loader2, Languages } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
@@ -43,32 +43,44 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
   const { t } = useTranslation();
   const canAdapt = !!adaptSectionLanguage && hasApiKey && !isGenerating && !isAnalyzing && !isAdaptingLanguage;
 
+  const handleLanguageSelect = useCallback((lang: string) => {
+    onSectionTargetLanguageChange?.(sectionId, lang);
+    if (canAdapt) {
+      adaptSectionLanguage!(sectionId, lang);
+    }
+  }, [sectionId, canAdapt, onSectionTargetLanguageChange, adaptSectionLanguage]);
+
   if (!adaptSectionLanguage) return null;
+
+  const tooltipTitle = hasApiKey
+    ? 'Select a target language to adapt this section'
+    : (t.tooltips.aiUnavailable ?? 'AI unavailable');
+
+  const triggerContent = (
+    <span className="flex items-center gap-1.5 min-w-0 w-full">
+      {isAdaptingLanguage
+        ? <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />
+        : <Languages className="h-3 w-3 flex-shrink-0" />}
+      <span className="truncate text-[11px] font-semibold uppercase tracking-[0.15em]">
+        {t.editor.adaptation ?? 'Adaptation'}
+      </span>
+    </span>
+  );
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <div className="flex items-center gap-1.5">
+      <Tooltip title={tooltipTitle}>
         <div className="min-w-[13rem] max-w-[18rem] flex-shrink-0">
           <LcarsSelect
             value={sectionTargetLanguage}
-            onChange={(v) => onSectionTargetLanguageChange?.(sectionId, v)}
+            onChange={handleLanguageSelect}
             options={SECTION_LANGUAGE_OPTIONS}
             accentColor="var(--lcars-cyan)"
+            triggerLabel={triggerContent}
+            disabled={!canAdapt}
           />
         </div>
-        <Tooltip title={hasApiKey ? `Adapt this section to ${sectionTargetLanguage}` : (t.tooltips.aiUnavailable ?? 'AI unavailable')}>
-          <button
-            onClick={() => adaptSectionLanguage(sectionId, sectionTargetLanguage)}
-            disabled={!canAdapt}
-            className="flex items-center gap-1.5 rounded border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-400 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isAdaptingLanguage
-              ? <Loader2 className="h-3 w-3 animate-spin" />
-              : <Languages className="h-3 w-3" />}
-            {t.editor.adapt ?? 'ADAPT'}
-          </button>
-        </Tooltip>
-      </div>
+      </Tooltip>
     </div>
   );
 });

@@ -43,7 +43,8 @@ describe('LcarsSelect', () => {
       />,
     );
 
-    expect(screen.getByRole('button').getAttribute('title')).toBe('Tell the story');
+    // buttonTitle is rendered via a Tooltip component (positioned above) instead of a native title attribute
+    expect(screen.getByText('Tell the story')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button'));
 

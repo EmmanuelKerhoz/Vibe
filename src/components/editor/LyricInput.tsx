@@ -36,6 +36,7 @@ export interface LyricInputProps {
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
   sectionTargetLanguage?: string;
   isAdaptingLine?: boolean;
+  onLineBlur?: () => void;
 }
 
 export const LyricInput = React.memo(function LyricInput({
@@ -63,6 +64,7 @@ export const LyricInput = React.memo(function LyricInput({
   adaptLineLanguage,
   sectionTargetLanguage,
   isAdaptingLine = false,
+  onLineBlur,
 }: LyricInputProps) {
   const { t } = useTranslation();
   const { setDraggedLineInfo, setDragOverLineInfo } = useDrag();
@@ -87,6 +89,19 @@ export const LyricInput = React.memo(function LyricInput({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => updateLineText(sectionId, line.id, e.target.value);
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => handleLineKeyDown(e, sectionId, line.id);
   const handleClick = () => handleLineClick(line.id);
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (!onLineBlur) return;
+    const related = e.relatedTarget as HTMLElement | null;
+    if (related) {
+      // Focus moving to another line input — handleLineClick will set the new selection
+      if (related.dataset?.lineId) return;
+      // Focus moving into the suggestions panel — keep it open
+      if (related.closest?.('[data-suggestions-panel]')) return;
+    }
+    // Defer so that click handlers (e.g. on suggestion items) fire first
+    setTimeout(onLineBlur, 80);
+  };
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -196,6 +211,7 @@ export const LyricInput = React.memo(function LyricInput({
           value={line.text}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
           disabled={isGenerating}
           placeholder={t.editor?.linePlaceholder ?? 'Write a lyric line…'}
           className="w-full bg-transparent text-sm font-mono text-transparent caret-[color:var(--text-primary)] outline-none border-none focus:ring-0 placeholder:text-[var(--text-secondary)] disabled:cursor-not-allowed relative z-10"

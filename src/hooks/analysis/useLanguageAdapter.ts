@@ -257,6 +257,7 @@ export const useLanguageAdapter = ({
       onAdapted: adaptedSong => {
         updateSongAndStructureWithHistory(adaptedSong, adaptedSong.map(section => section.name));
         setSongLanguage(newLanguage);
+        setDetectedLanguages([newLanguage]);
       },
     });
   };
@@ -282,6 +283,9 @@ export const useLanguageAdapter = ({
           : currentSection
       )),
     });
+
+    // Re-detect language after section adaptation to update the Detected Language display
+    void detectLanguage();
   };
 
   const adaptLineLanguage = async (sectionId: string, lineId: string, newLanguage: string) => {

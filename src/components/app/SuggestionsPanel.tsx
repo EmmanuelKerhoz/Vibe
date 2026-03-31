@@ -1,6 +1,14 @@
 import React from 'react';
 import { X, Lightbulb, Sparkles, Hash, RefreshCw, Check } from '../ui/icons';
 import { useTranslation } from '../../i18n';
+import { countSyllables } from '../../utils/syllableUtils';
+
+/** Compute total syllable count for a line of text. */
+const computeSyllables = (text: string): number =>
+  text
+    .split(/\s+/)
+    .filter(Boolean)
+    .reduce((acc, word) => acc + countSyllables(word), 0);
 
 interface Props {
   selectedLineId: string | null;
@@ -32,6 +40,7 @@ export function SuggestionsPanel({
 
   return (
     <div
+      data-suggestions-panel
       className={panelClassName}
       style={{ overflow: 'visible' }}
     >
@@ -87,7 +96,9 @@ export function SuggestionsPanel({
             </div>
           ) : suggestions.length > 0 ? (
             <div className="space-y-3">
-              {suggestions.map((suggestion, idx) => (
+              {suggestions.map((suggestion, idx) => {
+                const syllables = computeSyllables(suggestion);
+                return (
                 <button
                   key={idx}
                   type="button"
@@ -95,13 +106,21 @@ export function SuggestionsPanel({
                   aria-label={`Apply suggestion: ${suggestion}`}
                   className="group w-full p-4 text-left bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-[var(--accent-color)]/30 rounded-xl cursor-pointer transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
                 >
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white leading-relaxed">{suggestion}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white leading-relaxed flex-1">{suggestion}</p>
+                    {syllables > 0 && (
+                      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-500 bg-white/5 rounded px-1.5 py-0.5 mt-0.5">
+                        {syllables} syl.
+                      </span>
+                    )}
+                  </div>
                   <div className="mt-3 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="text-[9px] text-[var(--accent-color)] uppercase tracking-wider">{t.suggestions.clickToApply}</span>
                     <Check className="w-3 h-3 text-[var(--accent-color)]" />
                   </div>
                 </button>
-              ))}
+                );
+              })}
                 <button
                   type="button"
                   onClick={() => generateSuggestions(selectedLineId)}
