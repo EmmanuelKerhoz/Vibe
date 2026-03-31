@@ -4,8 +4,7 @@
   "framework": "vite",
   "functions": {
     "api/**": {
-      "maxDuration": 60,
-      "runtime": "nodejs24.x"
+      "maxDuration": 60
     }
   },
   "headers": [
