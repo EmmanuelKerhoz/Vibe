@@ -89,4 +89,11 @@ describe('StructureSidebar section tooltips', () => {
     const turnaroundButton = screen.getAllByRole('button', { name: /Courte transition/ })[0]!;
     expect(turnaroundButton.closest('div.group')?.className).toContain('rounded-[12px_4px_12px_4px]');
   });
+
+  it('keeps the LCARS rail anchored inside the sidebar edge', () => {
+    renderStructureSidebar();
+
+    const rail = screen.getByTestId('structure-sidebar-rail');
+    expect(rail.getAttribute('style')).toContain('left: 0px');
+  });
 });
