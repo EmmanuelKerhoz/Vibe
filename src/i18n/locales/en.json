@@ -29,7 +29,7 @@
     "similarity": "Similarity",
     "import": "Load/Import",
     "export": "Save/Export",
-    "versions": "Versions",
+    "versions": "Lyrics Versions",
     "undo": "Undo",
     "redo": "Redo",
     "reset": "Reset",

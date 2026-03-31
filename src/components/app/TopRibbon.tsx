@@ -176,23 +176,23 @@ export function TopRibbon({
             >
               {/* Create */}
               <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Create</div>
-              <button onClick={() => runMenuAction(onOpenNewGeneration)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button title="Generate new lyrics using AI" onClick={() => runMenuAction(onOpenNewGeneration)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <WandSparkles className="w-4 h-4 text-[var(--text-secondary)]" />
-                New Generation
+                New Lyrics Generation
               </button>
-              <button onClick={() => runMenuAction(onOpenNewEmpty)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button title="Create a new empty song" onClick={() => runMenuAction(onOpenNewEmpty)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
-                New Empty
+                New Song
               </button>
-              <button onClick={() => runMenuAction(onImportClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button title="Import lyrics from a file" onClick={() => runMenuAction(onImportClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Upload className="w-4 h-4 text-[var(--accent-color)]" />
                 Load/Import
               </button>
-              <button onClick={() => runMenuAction(onExportClick)} disabled={song.length === 0} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 disabled:opacity-50`}>
+              <button title="Export your song to a file" onClick={() => runMenuAction(onExportClick)} disabled={song.length === 0} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 disabled:opacity-50`}>
                 <Download className="w-4 h-4 text-[var(--text-secondary)]" />
                 Save/Export
               </button>
-              <button disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button title="Paste lyrics from clipboard" disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.editor.emptyState.pasteLyrics}
               </button>
@@ -200,11 +200,11 @@ export function TopRibbon({
               {/* Workspace */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Workspace</div>
-              <button onClick={() => runMenuAction(onOpenLibraryClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button title="Save or browse your song library" onClick={() => runMenuAction(onOpenLibraryClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Library className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.saveToLibrary.title}
               </button>
-              <button onClick={() => runMenuAction(() => setActiveTab('musical'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button title="Switch to the musical tab" onClick={() => runMenuAction(() => setActiveTab('musical'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Sparkles className="w-4 h-4 text-[#f59e0b]" />
                 {t.ribbon.musical}
               </button>
@@ -212,27 +212,28 @@ export function TopRibbon({
               {/* Tools */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
-              <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button title="Browse and restore previous lyrics versions" onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <History className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.ribbon.versions}
               </button>
-              <button onClick={() => runMenuAction(() => setIsResetModalOpen(true))} disabled={song.length === 0} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
-                <Trash2 className="w-4 h-4" />
-                {t.ribbon.reset}
-              </button>
-              <button onClick={() => runMenuAction(onOpenSettingsClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button title="Open application settings" onClick={() => runMenuAction(onOpenSettingsClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
                 Settings
+              </button>
+              <button title="Reset and clear the current song" onClick={() => runMenuAction(() => setIsResetModalOpen(true))} disabled={song.length === 0} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
+                <Trash2 className="w-4 h-4" />
+                {t.ribbon.reset}
               </button>
 
               {/* App */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">App</div>
-              <button onClick={() => runMenuAction(onOpenAboutClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+              <button title="About this application" onClick={() => runMenuAction(onOpenAboutClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Info className="w-4 h-4 text-[var(--text-secondary)]" />
                 About
               </button>
               <button
+                title="Support the developer"
                 onClick={() => runMenuAction(() => window.open('https://github.com/sponsors/EmmanuelKerhoz', '_blank', 'noopener,noreferrer'))}
                 className={`${menuActionClass} text-pink-400 hover:bg-pink-500/10`}
               >

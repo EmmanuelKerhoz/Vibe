@@ -78,7 +78,7 @@ describe('TopRibbon burger menu', () => {
       </LanguageProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expect(screen.getByRole('button', { name: 'Load/Import' }).className).not.toContain('lcars-holo');
     expect(screen.getByRole('button', { name: 'Settings' }).className).not.toContain('lcars-holo');
     const menu = screen.getByText('Create').parentElement as HTMLDivElement;
@@ -89,27 +89,27 @@ describe('TopRibbon burger menu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Lyrics Generation' }));
     expect(onOpenNewGeneration).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'New Song' }));
     expect(onOpenNewEmpty).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Load/Import' }));
     expect(onImportClick).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Library' }));
     expect(onOpenLibraryClick).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'MUSICAL' }));
     expect(mockNavigation.setActiveTab).toHaveBeenCalledWith('musical');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     expect(onOpenSettingsClick).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'About' }));
     expect(onOpenAboutClick).toHaveBeenCalledTimes(1);
 
@@ -173,9 +173,9 @@ describe('TopRibbon burger menu', () => {
       </LanguageProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open main menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
 
-    expect(screen.getByRole('button', { name: /paste/i })).toBeDisabled();
+    expect((screen.getByRole('button', { name: /paste/i }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('clears selection before opening the structure panel', () => {
