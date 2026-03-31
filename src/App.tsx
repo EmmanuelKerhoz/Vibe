@@ -5,6 +5,7 @@ import { AppEditorLayout } from './components/app/AppEditorLayout';
 import { AppPanelOrchestrator } from './components/app/AppPanelOrchestrator';
 import { AppModalLayer } from './components/app/AppModalLayer';
 import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
+import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useSimilarityContext, SimilarityProvider } from './contexts/SimilarityContext';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { useMarkupEditor } from './hooks/useMarkupEditor';
@@ -119,13 +120,14 @@ function AppInnerContent() {
 
   const { hasRealLyricContent } = useDerivedAppState({ editMode, markupText, webSimilarityIndex });
 
+  const { generateTitle } = useTitleGenerator();
   const { t } = useTranslation();
 
   const { handleGlobalRegenerate } = useAppHandlers({
     t, hasRealLyricContent, isMobileOrTablet,
     setApiErrorModal: appState.setApiErrorModal, setConfirmModal: appState.setConfirmModal,
     setActiveTab, setIsLeftPanelOpen, setIsStructureOpen,
-    generateTitle: async () => null, generateSong, scrollToSection,
+    generateTitle, generateSong, scrollToSection,
   });
 
   const {

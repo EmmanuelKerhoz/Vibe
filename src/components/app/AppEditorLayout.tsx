@@ -37,7 +37,7 @@ const SuggestionsPanel = lazy(() =>
   import('./SuggestionsPanel').then(m => ({ default: m.SuggestionsPanel }))
 );
 
-function LazyFallback() {
+const LazyFallback = React.memo(function LazyFallback() {
   const { t } = useTranslation();
   return (
     <div
@@ -48,7 +48,7 @@ function LazyFallback() {
       <Spinner size="small" />
     </div>
   );
-}
+});
 
 interface AppEditorLayoutProps {
   isMobileOrTablet: boolean;
