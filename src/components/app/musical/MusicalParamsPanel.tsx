@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Activity, Guitar, Drum, ListMusic, Play, Pause, Music, ChevronDown, Check, Sparkles, Compass, Copy } from '../../ui/icons';
-import { Tooltip as FluentTooltip } from '@fluentui/react-components';
+import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
 import { useMetronome } from '../../../hooks/useMetronome';
 import { RHYTHM_BPM } from '../../../constants/rhythmBpm';
@@ -356,11 +356,10 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                     {category.tiles.map(tile => {
                       const isSelected = selectedVibeTile?.name === tile.name;
                       return (
-                        <FluentTooltip
+                        <Tooltip
                           key={tile.name}
-                          content={<span style={{ display: 'block', maxWidth: '18rem', whiteSpace: 'pre-line' }}>{buildGenreTooltip(category.summary, tile)}</span>}
+                          title={buildGenreTooltip(category.summary, tile)}
                           relationship="description"
-                          positioning={{ position: 'above', align: 'center' }}
                         >
                           <button onClick={() => handleVibeTileSelect(tile)}
                             className="ux-interactive flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-medium tracking-wide border"
@@ -370,7 +369,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                           >
                             <span>{tile.emoji}</span><span>{tile.name}</span>
                           </button>
-                        </FluentTooltip>
+                        </Tooltip>
                       );
                     })}
                   </div>
@@ -391,11 +390,10 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                 {getSubStyleEntries(selectedVibeTile.name).map(entry => {
                   const isSelected = selectedSubStyle === entry.name;
                   return (
-                    <FluentTooltip
+                    <Tooltip
                       key={entry.name}
-                      content={<span style={{ display: 'block', maxWidth: '18rem', whiteSpace: 'pre-line' }}>{`${entry.name}\n${entry.description}\nMood: ${entry.mood} · BPM ${entry.bpmOffset >= 0 ? '+' : ''}${entry.bpmOffset}`}</span>}
+                      title={`${entry.name}\n${entry.description}\nMood: ${entry.mood} · BPM ${entry.bpmOffset >= 0 ? '+' : ''}${entry.bpmOffset}`}
                       relationship="description"
-                      positioning={{ position: 'above', align: 'center' }}
                     >
                       <button
                         onClick={() => handleSubStyleSelect(entry.name)}
@@ -420,7 +418,7 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
                           <span className="truncate" style={{ color: selectedAccent }}>{entry.signature}</span>
                         </div>
                       </button>
-                    </FluentTooltip>
+                    </Tooltip>
                   );
                 })}
               </div>
