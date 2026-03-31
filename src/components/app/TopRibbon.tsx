@@ -176,70 +176,93 @@ export function TopRibbon({
             >
               {/* Create */}
               <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Create</div>
-              <button title="Generate new lyrics using AI" onClick={() => runMenuAction(onOpenNewGeneration)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <WandSparkles className="w-4 h-4 text-[var(--text-secondary)]" />
-                New Lyrics Generation
-              </button>
-              <button title="Create a new empty song" onClick={() => runMenuAction(onOpenNewEmpty)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
-                New Song
-              </button>
-              <button title="Import lyrics from a file" onClick={() => runMenuAction(onImportClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <Upload className="w-4 h-4 text-[var(--accent-color)]" />
-                Load/Import
-              </button>
-              <button title="Export your song to a file" onClick={() => runMenuAction(onExportClick)} disabled={song.length === 0} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 disabled:opacity-50`}>
-                <Download className="w-4 h-4 text-[var(--text-secondary)]" />
-                Save/Export
-              </button>
-              <button title="Paste lyrics from clipboard" disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
-                {t.editor.emptyState.pasteLyrics}
-              </button>
+              <Tooltip title="Generate new lyrics using AI">
+                <button onClick={() => runMenuAction(onOpenNewGeneration)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                  <WandSparkles className="w-4 h-4 text-[var(--text-secondary)]" />
+                  New Lyrics Generation
+                </button>
+              </Tooltip>
+              <Tooltip title="Create a new empty song">
+                <button onClick={() => runMenuAction(onOpenNewEmpty)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                  <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
+                  New Song
+                </button>
+              </Tooltip>
+              <Tooltip title="Import lyrics from a file">
+                <button onClick={() => runMenuAction(onImportClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                  <Upload className="w-4 h-4 text-[var(--accent-color)]" />
+                  Load/Import
+                </button>
+              </Tooltip>
+              <Tooltip title="Export your song to a file">
+                <button onClick={() => runMenuAction(onExportClick)} disabled={song.length === 0} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 disabled:opacity-50`}>
+                  <Download className="w-4 h-4 text-[var(--text-secondary)]" />
+                  Save/Export
+                </button>
+              </Tooltip>
+              <Tooltip title="Paste lyrics from clipboard">
+                <button disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                  <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
+                  {t.editor.emptyState.pasteLyrics}
+                </button>
+              </Tooltip>
 
               {/* Workspace */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Workspace</div>
-              <button title="Save or browse your song library" onClick={() => runMenuAction(onOpenLibraryClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <Library className="w-4 h-4 text-[var(--text-secondary)]" />
-                {t.saveToLibrary.title}
-              </button>
-              <button title="Switch to the musical tab" onClick={() => runMenuAction(() => setActiveTab('musical'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <Sparkles className="w-4 h-4 text-[#f59e0b]" />
-                {t.ribbon.musical}
-              </button>
+              <Tooltip title="Save or browse your song library">
+                <button onClick={() => runMenuAction(onOpenLibraryClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                  <Library className="w-4 h-4 text-[var(--text-secondary)]" />
+                  {t.saveToLibrary.title}
+                </button>
+              </Tooltip>
+              <Tooltip title="Switch to the musical tab">
+                <button onClick={() => runMenuAction(() => setActiveTab('musical'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                  <Sparkles className="w-4 h-4 text-[#f59e0b]" />
+                  {t.ribbon.musical}
+                </button>
+              </Tooltip>
 
               {/* Tools */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
-              <button title="Browse and restore previous lyrics versions" onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <History className="w-4 h-4 text-[var(--text-secondary)]" />
-                {t.ribbon.versions}
-              </button>
-              <button title="Open application settings" onClick={() => runMenuAction(onOpenSettingsClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
-                Settings
-              </button>
-              <button title="Reset and clear the current song" onClick={() => runMenuAction(() => setIsResetModalOpen(true))} disabled={song.length === 0} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
-                <Trash2 className="w-4 h-4" />
-                {t.ribbon.reset}
-              </button>
+              <Tooltip title="Browse and restore previous lyrics versions">
+                <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                  <History className="w-4 h-4 text-[var(--text-secondary)]" />
+                  {t.ribbon.versions}
+                </button>
+              </Tooltip>
+              <Tooltip title="Open application settings">
+                <button onClick={() => runMenuAction(onOpenSettingsClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                  <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
+                  Settings
+                </button>
+              </Tooltip>
+              <Tooltip title="Reset and clear the current song">
+                <button onClick={() => runMenuAction(() => setIsResetModalOpen(true))} disabled={song.length === 0} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
+                  <Trash2 className="w-4 h-4" />
+                  {t.ribbon.reset}
+                </button>
+              </Tooltip>
 
               {/* App */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">App</div>
-              <button title="About this application" onClick={() => runMenuAction(onOpenAboutClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <Info className="w-4 h-4 text-[var(--text-secondary)]" />
-                About
-              </button>
-              <button
-                title="Support the developer"
-                onClick={() => runMenuAction(() => window.open('https://github.com/sponsors/EmmanuelKerhoz', '_blank', 'noopener,noreferrer'))}
-                className={`${menuActionClass} text-pink-400 hover:bg-pink-500/10`}
-              >
-                <Heart className="w-4 h-4" />
-                Sponsor
-              </button>
+              <Tooltip title="About this application">
+                <button onClick={() => runMenuAction(onOpenAboutClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                  <Info className="w-4 h-4 text-[var(--text-secondary)]" />
+                  About
+                </button>
+              </Tooltip>
+              <Tooltip title="Support the developer">
+                <button
+                  onClick={() => runMenuAction(() => window.open('https://github.com/sponsors/EmmanuelKerhoz', '_blank', 'noopener,noreferrer'))}
+                  className={`${menuActionClass} text-pink-400 hover:bg-pink-500/10`}
+                >
+                  <Heart className="w-4 h-4" />
+                  Sponsor
+                </button>
+              </Tooltip>
             </div>
           )}
         </div>
@@ -278,7 +301,9 @@ export function TopRibbon({
       {/* RIGHT */}
       <div className="flex items-center gap-1 lg:gap-2">
         {isBusy && (
-          <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-label={processingLabel.replace(/\u2026|\.{3}$/, '')} title={processingLabel} />
+          <Tooltip title={processingLabel}>
+            <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse" aria-label={processingLabel.replace(/\u2026|\.{3}$/, '')} />
+          </Tooltip>
         )}
         {!hasApiKey && (
           <Tooltip title={t.tooltips.aiUnavailableHelp}>

@@ -79,38 +79,38 @@ describe('TopRibbon burger menu', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    expect(screen.getByRole('button', { name: 'Load/Import' }).className).not.toContain('lcars-holo');
-    expect(screen.getByRole('button', { name: 'Settings' }).className).not.toContain('lcars-holo');
+    expect(screen.getByRole('button', { name: 'Import lyrics from a file' }).className).not.toContain('lcars-holo');
+    expect(screen.getByRole('button', { name: 'Open application settings' }).className).not.toContain('lcars-holo');
     const menu = screen.getByText('Create').parentElement as HTMLDivElement;
     expect(menu.style.position).toBe('fixed');
     expect(menu.style.left).toBe('12px');
     expect(menu.style.top).toBe('6px');
     expect(menu.style.maxHeight).toContain('100dvh');
-    fireEvent.click(screen.getByRole('button', { name: 'New Lyrics Generation' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Generate new lyrics using AI' }));
     expect(onOpenNewGeneration).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'New Song' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create a new empty song' }));
     expect(onOpenNewEmpty).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Load/Import' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Import lyrics from a file' }));
     expect(onImportClick).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Library' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save or browse your song library' }));
     expect(onOpenLibraryClick).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'MUSICAL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to the musical tab' }));
     expect(mockNavigation.setActiveTab).toHaveBeenCalledWith('musical');
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open application settings' }));
     expect(onOpenSettingsClick).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'About' }));
+    fireEvent.click(screen.getByRole('button', { name: 'About this application' }));
     expect(onOpenAboutClick).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Show keyboard shortcuts' }));
