@@ -362,7 +362,6 @@ function AppInnerContent() {
                 onOpenSettingsClick={handleOpenSettings}
                 onOpenAboutClick={handleOpenAbout}
                 onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
-                onOpenSearchClick={handleOpenSearch}
                 canPasteLyrics={canPasteLyrics}
                 onPasteLyrics={handleOpenPasteModal}
                 isAnalyzing={isAnalyzing}
@@ -394,6 +393,7 @@ function AppInnerContent() {
                 onOpenLibrary={handleOpenSaveToLibraryModal}
                 onPasteLyrics={handleOpenPasteModal}
                 onGenerateSong={handleGlobalRegenerate}
+                onOpenSearch={handleOpenSearch}
               />
             </div>
 

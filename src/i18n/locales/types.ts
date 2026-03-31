@@ -31,6 +31,7 @@ export interface Translations {
     audioFeedback: string;
     language: string;
     settings: string;
+    settingsTooltip?: string;
   };
 
   ribbon: {

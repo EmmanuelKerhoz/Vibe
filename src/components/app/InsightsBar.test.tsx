@@ -89,17 +89,19 @@ describe('InsightsBar', () => {
     );
 
     const tooltips = screen.getAllByTestId('tooltip');
-    // Verify all expected tooltips: Adaptation, Detect, Analyze, Similarity
+    // Verify all expected tooltips: Detect, Adaptation, Analyze, Similarity, Search
     // (edit mode buttons are now in a single View dropdown, no individual tooltips)
-    expect(tooltips.length).toBe(4);
-    // First should be adaptation
-    expect(tooltips[0]!.getAttribute('data-title')).toContain('adapt');
-    // Second should be the detect button
-    expect(tooltips[1]!.getAttribute('data-title')).toContain('Detected');
+    expect(tooltips.length).toBe(5);
+    // First should be the detect button (now before adaptation)
+    expect(tooltips[0]!.getAttribute('data-title')).toContain('Detected');
+    // Second should be adaptation
+    expect(tooltips[1]!.getAttribute('data-title')).toContain('adapt');
     // Third should be analyze
     expect(tooltips[2]!.getAttribute('data-title')).toContain('Analyze');
     // Fourth should be similarity
     expect(tooltips[3]!.getAttribute('data-title')).toContain('Compare');
+    // Fifth should be search
+    expect(tooltips[4]!.getAttribute('data-title')).toContain('Search');
   });
 
   it('detect button shows only the primary (first) detected language', () => {
@@ -135,7 +137,7 @@ describe('InsightsBar', () => {
       </LanguageProvider>,
     );
 
-    const detectTooltip = screen.getAllByTestId('tooltip')[1]!;
+    const detectTooltip = screen.getAllByTestId('tooltip')[0]!;
     const tooltipTitle = detectTooltip.getAttribute('data-title') ?? '';
 
     // Tooltip should list at most 3 detected languages
@@ -182,7 +184,7 @@ describe('InsightsBar', () => {
       </LanguageProvider>,
     );
 
-    const detectTooltip = screen.getAllByTestId('tooltip')[1]!;
+    const detectTooltip = screen.getAllByTestId('tooltip')[0]!;
     const tooltipTitle = detectTooltip.getAttribute('data-title') ?? '';
     expect(tooltipTitle).toContain('French');
     expect(tooltipTitle).toContain('English');

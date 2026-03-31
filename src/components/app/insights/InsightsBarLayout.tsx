@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 interface InsightsBarLayoutProps {
   viewSelector: ReactNode;
+  detectControl?: ReactNode;
   translationControls: ReactNode;
   metronomeControl: ReactNode;
   insightsActions: ReactNode;
@@ -11,6 +12,7 @@ interface InsightsBarLayoutProps {
 
 export function InsightsBarLayout({
   viewSelector,
+  detectControl,
   translationControls,
   metronomeControl,
   insightsActions,
@@ -35,6 +37,7 @@ export function InsightsBarLayout({
       <div className="flex flex-col gap-2 lg:gap-3 w-full">
         <div className="flex items-center gap-2 min-w-0">
           {viewSelector}
+          {detectControl}
           {translationControls}
           {metronomeControl}
           {insightsActions}

@@ -12,6 +12,7 @@ import {
   ViewModeSelector,
   useAdaptationBannerVisibility,
 } from './insights';
+import { DetectLanguageButton } from './insights/DetectLanguageButton';
 import type { InsightsBarProps } from './insights/InsightsBar.types';
 
 export const InsightsBar = React.memo(function InsightsBar({
@@ -35,6 +36,7 @@ export const InsightsBar = React.memo(function InsightsBar({
   adaptationProgress,
   adaptationResult,
   showTranslationFeatures = true,
+  onOpenSearch = () => {},
 }: InsightsBarProps) {
   const { song, songLanguage, detectedLanguages } = useSongContext();
   const { isGenerating } = useComposerContext();
@@ -45,9 +47,10 @@ export const InsightsBar = React.memo(function InsightsBar({
   return (
     <InsightsBarLayout
       viewSelector={<ViewModeSelector editMode={editMode} switchEditMode={switchEditMode} disabled={isGenerating || isAnalyzing} />}
+      detectControl={<DetectLanguageButton detectedDisplays={detectedDisplays} hasLyrics={hasLyrics} isDetectingLanguage={isDetectingLanguage} onDetect={detectLanguage} hasApiKey={hasApiKey} />}
       translationControls={<TranslateGroup targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage} isAdaptingLanguage={isAdaptingLanguage} song={song} adaptSongLanguage={adaptSongLanguage} showTranslationFeatures={showTranslationFeatures} hasApiKey={hasApiKey} />}
       metronomeControl={<MetronomeButton isMetronomeActive={isMetronomeActive} toggleMetronome={toggleMetronome} />}
-      insightsActions={<InsightsActions webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isDetectingLanguage={isDetectingLanguage} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} hasApiKey={hasApiKey} />}
+      insightsActions={<InsightsActions webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} hasApiKey={hasApiKey} onOpenSearch={onOpenSearch} />}
       mobileKpis={<MobileKpis />}
       banner={showBanner && adaptationProgress ? <AdaptationProgressBanner progress={adaptationProgress} result={adaptationResult ?? null} onDismiss={dismissBanner} isOverlay /> : null}
     />

@@ -77,7 +77,7 @@ export function StatusBar({
 
       {/* Right: settings + theme + version */}
       <div className="flex items-center gap-1">
-        <Tooltip title={t.statusBar.settings}>
+        <Tooltip title={t.statusBar.settingsTooltip ?? t.statusBar.settings}>
           <button
             onClick={onOpenSettings}
             aria-label={t.statusBar.settings}
