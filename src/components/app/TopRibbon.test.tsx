@@ -73,7 +73,6 @@ describe('TopRibbon burger menu', () => {
           onOpenSettingsClick={onOpenSettingsClick}
           onOpenAboutClick={onOpenAboutClick}
           onOpenKeyboardShortcutsClick={onOpenKeyboardShortcutsClick}
-          onOpenSearchClick={() => {}}
           isAnalyzing={false}
         />
       </LanguageProvider>,
@@ -87,11 +86,11 @@ describe('TopRibbon burger menu', () => {
     expect(menu.style.left).toBe('12px');
     expect(menu.style.top).toBe('6px');
     expect(menu.style.maxHeight).toContain('100dvh');
-    fireEvent.click(screen.getByRole('button', { name: 'New generation' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New Generation' }));
     expect(onOpenNewGeneration).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'New empty' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New Empty' }));
     expect(onOpenNewEmpty).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -139,7 +138,6 @@ describe('TopRibbon burger menu', () => {
           onOpenSettingsClick={() => {}}
           onOpenAboutClick={() => {}}
           onOpenKeyboardShortcutsClick={() => {}}
-          onOpenSearchClick={() => {}}
           isAnalyzing={false}
         />
       </LanguageProvider>,
@@ -170,7 +168,6 @@ describe('TopRibbon burger menu', () => {
           onOpenSettingsClick={() => {}}
           onOpenAboutClick={() => {}}
           onOpenKeyboardShortcutsClick={() => {}}
-          onOpenSearchClick={() => {}}
           isAnalyzing={false}
         />
       </LanguageProvider>,
@@ -199,7 +196,6 @@ describe('TopRibbon burger menu', () => {
           onOpenSettingsClick={() => {}}
           onOpenAboutClick={() => {}}
           onOpenKeyboardShortcutsClick={() => {}}
-          onOpenSearchClick={() => {}}
           isAnalyzing={false}
         />
       </LanguageProvider>,

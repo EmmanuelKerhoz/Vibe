@@ -74,6 +74,7 @@ interface AppEditorZoneProps {
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
   onGenerateSong: () => void;
+  onOpenSearch: () => void;
 }
 
 export function AppEditorZone({
@@ -85,6 +86,7 @@ export function AppEditorZone({
   setIsSimilarityModalOpen, adaptationProgress, adaptationResult,
   playAudioFeedback,
   canPasteLyrics, onOpenLibrary, onPasteLyrics, onGenerateSong,
+  onOpenSearch,
 }: AppEditorZoneProps) {
   const { showTranslationFeatures } = useTranslationAdaptationContext();
 
@@ -105,6 +107,7 @@ export function AppEditorZone({
             hasApiKey={hasApiKey}
             adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
             showTranslationFeatures={showTranslationFeatures}
+            onOpenSearch={onOpenSearch}
           />
         </ErrorBoundary>
       )}

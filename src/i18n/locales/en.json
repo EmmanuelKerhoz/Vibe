@@ -19,8 +19,9 @@
     "words_other": "Words",
     "theme": "Dark/Light Theme",
     "audioFeedback": "Audio Feedback",
-    "language": "Switch language",
-    "settings": "Settings"
+    "language": "Switch UI Language",
+    "settings": "Settings",
+    "settingsTooltip": "All Settings"
   },
   "ribbon": {
     "lyrics": "LYRICS",
@@ -396,7 +397,7 @@
     "collapseRight": "Collapse structure panel",
     "theme": "Switch between light and dark theme",
     "audioFeedback": "Toggle audio feedback sounds",
-    "appInfo": "View app info and version",
+    "appInfo": "View App Info",
     "addSection": "Add section to structure",
     "removeSection": "Remove section from structure",
     "normalizeStructure": "Reorganize sections into standard song structure: Intro → Verse/Pre-Chorus/Chorus → Bridge → Outro",

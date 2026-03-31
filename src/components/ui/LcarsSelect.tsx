@@ -15,6 +15,8 @@ interface LcarsSelectProps {
   disabled?: boolean;
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
+  /** When provided, always shows this label in the trigger button instead of the selected option label. */
+  triggerLabel?: React.ReactNode;
   /** Override the glow/border accent colour (CSS colour string or var()). Defaults to var(--accent-color). */
   accentColor?: string;
   buttonTitle?: string;
@@ -30,6 +32,7 @@ export function LcarsSelect({
   disabled = false,
   isOpen: controlledIsOpen,
   onOpenChange,
+  triggerLabel,
   accentColor,
   buttonTitle,
 }: LcarsSelectProps) {
@@ -229,13 +232,16 @@ export function LcarsSelect({
             fontFamily: EMOJI_FONT_STACK,
             overflow: 'hidden',
           }}>
-            {typeof selectedLabel === 'string' ? (
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', width: '100%' }}>
-                {selectedLabel}
-              </span>
-            ) : (
-              <>{selectedLabel}</>
-            )}
+            {(() => {
+              const displayLabel = triggerLabel ?? selectedLabel;
+              return typeof displayLabel === 'string' ? (
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', width: '100%' }}>
+                  {displayLabel}
+                </span>
+              ) : (
+                <>{displayLabel}</>
+              );
+            })()}
           </div>
           <ChevronDown style={{ width: 14, height: 14, flexShrink: 0, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
         </button>

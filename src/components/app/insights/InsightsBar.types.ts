@@ -23,4 +23,5 @@ export interface InsightsBarProps {
   adaptationProgress?: AdaptationProgress;
   adaptationResult?: AdaptationResult | null;
   showTranslationFeatures?: boolean;
+  onOpenSearch?: () => void;
 }

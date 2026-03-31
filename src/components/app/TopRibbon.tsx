@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles, Download, Upload, Undo2, Redo2, Trash2, History,
-  PanelRight, Library, Menu, FilePlus, Settings, Info, KeyboardRegular, WandSparkles, ClipboardPaste, Heart, Search
+  PanelRight, Library, Menu, FilePlus, Settings, Info, KeyboardRegular, WandSparkles, ClipboardPaste, Heart
 } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
@@ -24,7 +24,6 @@ interface Props {
   onOpenSettingsClick: () => void;
   onOpenAboutClick: () => void;
   onOpenKeyboardShortcutsClick: () => void;
-  onOpenSearchClick: () => void;
   canPasteLyrics: boolean;
   onPasteLyrics: () => void;
   isAnalyzing: boolean;
@@ -36,7 +35,7 @@ export function TopRibbon({
   onOpenNewGeneration, onOpenNewEmpty,
   onImportClick, onExportClick,
   onOpenLibraryClick,
-  onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick, onOpenSearchClick,
+  onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick,
   canPasteLyrics,
   onPasteLyrics,
   isAnalyzing,
@@ -177,6 +176,14 @@ export function TopRibbon({
             >
               {/* Create */}
               <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Create</div>
+              <button onClick={() => runMenuAction(onOpenNewGeneration)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                <WandSparkles className="w-4 h-4 text-[var(--text-secondary)]" />
+                New Generation
+              </button>
+              <button onClick={() => runMenuAction(onOpenNewEmpty)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
+                New Empty
+              </button>
               <button onClick={() => runMenuAction(onImportClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Upload className="w-4 h-4 text-[var(--accent-color)]" />
                 Load/Import
@@ -185,13 +192,9 @@ export function TopRibbon({
                 <Download className="w-4 h-4 text-[var(--text-secondary)]" />
                 Save/Export
               </button>
-              <button onClick={() => runMenuAction(onOpenNewGeneration)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <WandSparkles className="w-4 h-4 text-[var(--text-secondary)]" />
-                New generation
-              </button>
-              <button onClick={() => runMenuAction(onOpenNewEmpty)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
-                New empty
+              <button disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
+                {t.editor.emptyState.pasteLyrics}
               </button>
 
               {/* Workspace */}
@@ -209,10 +212,6 @@ export function TopRibbon({
               {/* Tools */}
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
-              <button disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-                <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
-                {t.editor.emptyState.pasteLyrics}
-              </button>
               <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <History className="w-4 h-4 text-[var(--text-secondary)]" />
                 {t.ribbon.versions}
@@ -221,14 +220,14 @@ export function TopRibbon({
                 <Trash2 className="w-4 h-4" />
                 {t.ribbon.reset}
               </button>
-
-              {/* App */}
-              <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
-              <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">App</div>
               <button onClick={() => runMenuAction(onOpenSettingsClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
                 Settings
               </button>
+
+              {/* App */}
+              <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
+              <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">App</div>
               <button onClick={() => runMenuAction(onOpenAboutClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                 <Info className="w-4 h-4 text-[var(--text-secondary)]" />
                 About
@@ -309,16 +308,6 @@ export function TopRibbon({
           </IconButton>
         </Tooltip>
         <div className="w-px h-4 bg-[var(--border-color)] mx-1" />
-        <Tooltip title={t.tooltips.openSearch}>
-          <button
-            onClick={onOpenSearchClick}
-            aria-label={t.tooltips.openSearch}
-            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <Search className="w-4 h-4" />
-          </button>
-        </Tooltip>
         <Tooltip title={t.tooltips.keyboardShortcuts}>
           <button
             onClick={onOpenKeyboardShortcutsClick}
