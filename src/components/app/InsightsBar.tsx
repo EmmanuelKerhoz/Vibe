@@ -8,7 +8,6 @@ import {
   InsightsActions,
   MetronomeButton,
   MobileKpis,
-  TranslateGroup,
   ViewModeSelector,
   useAdaptationBannerVisibility,
 } from './insights';
@@ -45,9 +44,30 @@ export const InsightsBar = React.memo(function InsightsBar({
   return (
     <InsightsBarLayout
       viewSelector={<ViewModeSelector editMode={editMode} switchEditMode={switchEditMode} disabled={isGenerating || isAnalyzing} />}
-      translationControls={<TranslateGroup targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage} isAdaptingLanguage={isAdaptingLanguage} song={song} adaptSongLanguage={adaptSongLanguage} showTranslationFeatures={showTranslationFeatures} hasApiKey={hasApiKey} />}
+      translationControls={null}
       metronomeControl={<MetronomeButton isMetronomeActive={isMetronomeActive} toggleMetronome={toggleMetronome} />}
-      insightsActions={<InsightsActions webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isDetectingLanguage={isDetectingLanguage} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} hasApiKey={hasApiKey} />}
+      insightsActions={
+        <InsightsActions
+          webSimilarityIndex={webSimilarityIndex}
+          webBadgeLabel={webBadgeLabel}
+          libraryCount={libraryCount}
+          isDetectingLanguage={isDetectingLanguage}
+          isAnalyzing={isAnalyzing}
+          isGenerating={isGenerating}
+          hasLyrics={hasLyrics}
+          detectedDisplays={detectedDisplays}
+          detectLanguage={detectLanguage}
+          analyzeCurrentSong={analyzeCurrentSong}
+          setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+          hasApiKey={hasApiKey}
+          targetLanguage={targetLanguage}
+          setTargetLanguage={setTargetLanguage}
+          isAdaptingLanguage={isAdaptingLanguage}
+          adaptSongLanguage={adaptSongLanguage}
+          showTranslationFeatures={showTranslationFeatures}
+          song={song}
+        />
+      }
       mobileKpis={<MobileKpis />}
       banner={showBanner && adaptationProgress ? <AdaptationProgressBanner progress={adaptationProgress} result={adaptationResult ?? null} onDismiss={dismissBanner} isOverlay /> : null}
     />
