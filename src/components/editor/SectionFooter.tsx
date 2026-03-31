@@ -3,30 +3,24 @@ import { Loader2, Wand2, Plus } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { InstructionEditor } from './InstructionEditor';
 import { useTranslation } from '../../i18n';
+import { useComposerContext } from '../../contexts/ComposerContext';
+import { useSongMutation } from '../../contexts/SongMutationContext';
 
 interface SectionFooterProps {
   sectionId: string;
   preInstructions: string[];
   postInstructions: string[];
-  isGenerating: boolean;
-  isRegeneratingSection: (sectionId: string) => boolean;
-  addLineToSection: (sectionId: string, afterLineId?: string) => void;
-  handleInstructionChange: (sectionId: string, type: 'pre' | 'post', index: number, value: string) => void;
-  addInstruction: (sectionId: string, type: 'pre' | 'post') => void;
-  removeInstruction: (sectionId: string, type: 'pre' | 'post', index: number) => void;
-  regenerateSection: (sectionId: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
 }
 
 export const SectionFooter = React.memo(function SectionFooter({
   sectionId,
   preInstructions, postInstructions,
-  isGenerating, isRegeneratingSection,
-  addLineToSection,
-  handleInstructionChange, addInstruction, removeInstruction,
-  regenerateSection, playAudioFeedback,
+  playAudioFeedback,
 }: SectionFooterProps) {
   const { t } = useTranslation();
+  const { isGenerating, isRegeneratingSection, handleInstructionChange, addInstruction, removeInstruction, regenerateSection } = useComposerContext();
+  const { addLineToSection } = useSongMutation();
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-3">

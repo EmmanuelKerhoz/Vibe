@@ -29,6 +29,7 @@ import { StatusBar } from './components/app/StatusBar';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useTranslation, useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
+import { SongMutationProvider } from './contexts/SongMutationContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 
 function ModalShortcutBindings({
@@ -261,13 +262,15 @@ function AppInner() {
     <AppStateProvider>
       <DragProvider>
         <SongProvider>
-          <ComposerProvider>
+          <SongMutationProvider>
+            <ComposerProvider>
             <VersionProvider>
               <SimilarityProvider>
                 <AppProviders />
               </SimilarityProvider>
             </VersionProvider>
           </ComposerProvider>
+          </SongMutationProvider>
         </SongProvider>
       </DragProvider>
     </AppStateProvider>

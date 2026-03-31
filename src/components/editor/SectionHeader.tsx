@@ -1,36 +1,36 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ChevronUp, ChevronDown } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 import { getSectionColorHex } from '../../utils/songUtils';
-import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection } from '../../constants/sections';
+import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection, SECTION_TYPE_OPTIONS } from '../../constants/sections';
 import type { Section } from '../../types';
+import { useSongContext } from '../../contexts/SongContext';
+import { useSongMutation } from '../../contexts/SongMutationContext';
 
 interface SectionHeaderProps {
   section: Section;
   sectionIndex: number;
   songLength: number;
-  rhymeScheme: string;
-  RHYME_KEYS: string[];
-  SECTION_TYPE_OPTIONS: string[];
-  moveSectionUp: (sectionId: string) => void;
-  moveSectionDown: (sectionId: string) => void;
-  setSectionName: (sectionId: string, name: string) => void;
-  setSectionRhymeScheme: (sectionId: string, scheme: string) => void;
 }
 
 export const SectionHeader = React.memo(function SectionHeader({
-  section, sectionIndex, songLength, rhymeScheme,
-  RHYME_KEYS, SECTION_TYPE_OPTIONS,
-  moveSectionUp, moveSectionDown, setSectionName, setSectionRhymeScheme,
+  section, sectionIndex, songLength,
 }: SectionHeaderProps) {
   const { t } = useTranslation();
+  const { rhymeScheme } = useSongContext();
+  const { moveSectionUp, moveSectionDown, setSectionName, setSectionRhymeScheme } = useSongMutation();
   const sectionName: string = section.name ?? '';
   const sectionColor = getSectionColorHex(sectionName);
 
+  const RHYME_KEYS = useMemo(
+    () => ['FREE', ...Object.keys(t.rhymeSchemes).filter((key) => key !== 'FREE')],
+    [t.rhymeSchemes]
+  );
+
   const safeSectionTypeOptions = SECTION_TYPE_OPTIONS.filter((opt): opt is string => typeof opt === 'string');
-  const sectionTypeSelectOptions = React.useMemo(() => [
+  const sectionTypeSelectOptions = useMemo(() => [
     ...safeSectionTypeOptions.map(opt => ({ value: opt, label: opt.toUpperCase() })),
     ...(sectionName && !safeSectionTypeOptions.includes(sectionName)
       ? [{ value: sectionName, label: sectionName.toUpperCase() }]
