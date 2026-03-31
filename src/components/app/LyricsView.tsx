@@ -43,6 +43,7 @@ export const LyricsView = memo(function LyricsView({
   const { song, rhymeScheme, songLanguage, updateState, updateSongAndStructureWithHistory } = useSongContext();
   const { selectedLineId, isGenerating, isRegeneratingSection, handleLineClick, updateLineText,
     handleLineKeyDown, handleInstructionChange, addInstruction, removeInstruction, regenerateSection,
+    clearSelection,
   } = useComposerContext();
   const { t } = useTranslation();
   // Editor state sourced from EditorContext — no longer drilled via props
@@ -282,6 +283,7 @@ export const LyricsView = memo(function LyricsView({
                 removeInstruction={removeInstruction}
                 regenerateSection={regenerateSection}
                 playAudioFeedback={playAudioFeedback}
+                onLineBlur={clearSelection}
               />
             </div>
           ))

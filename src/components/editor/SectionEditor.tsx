@@ -43,6 +43,7 @@ interface SectionEditorProps {
   deleteLineFromSection: (sectionId: string, lineId: string) => void;
   setSectionName: (sectionId: string, name: string) => void;
   setSectionRhymeScheme: (sectionId: string, scheme: string) => void;
+  onLineBlur?: () => void;
 }
 
 export const SectionEditor = React.memo(function SectionEditor({
@@ -64,6 +65,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   moveLineUp, moveLineDown,
   addLineToSection, deleteLineFromSection,
   setSectionName, setSectionRhymeScheme,
+  onLineBlur,
 }: SectionEditorProps) {
   const { t } = useTranslation();
   const { handleDrop } = useDragHandlersContext();
@@ -169,6 +171,7 @@ export const SectionEditor = React.memo(function SectionEditor({
           addLineToSection={addLineToSection}
           deleteLineFromSection={deleteLineFromSection}
           playAudioFeedback={playAudioFeedback}
+          onLineBlur={onLineBlur}
         />
 
         <SectionFooter

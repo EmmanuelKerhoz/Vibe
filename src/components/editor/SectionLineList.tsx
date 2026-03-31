@@ -52,6 +52,7 @@ interface SectionLineListProps {
   addLineToSection: (sectionId: string, afterLineId?: string) => void;
   deleteLineFromSection: (sectionId: string, lineId: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
+  onLineBlur?: () => void;
 }
 
 export const SectionLineList = React.memo(function SectionLineList({
@@ -59,7 +60,7 @@ export const SectionLineList = React.memo(function SectionLineList({
   adaptLineLanguage, adaptingLineIds, sectionTargetLanguage,
   handleLineClick, updateLineText, handleLineKeyDown,
   moveLineUp, moveLineDown, addLineToSection, deleteLineFromSection,
-  playAudioFeedback,
+  playAudioFeedback, onLineBlur,
 }: SectionLineListProps) {
   const { lineLanguages } = useSongContext();
   const { draggedLineInfo, dragOverLineInfo } = useDrag();
@@ -120,6 +121,7 @@ export const SectionLineList = React.memo(function SectionLineList({
             adaptLineLanguage={adaptLineLanguage}
             sectionTargetLanguage={sectionTargetLanguage}
             isAdaptingLine={adaptingLineIds?.has(line.id)}
+            onLineBlur={onLineBlur}
           />
         );
       })}
