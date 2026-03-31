@@ -5,6 +5,7 @@ import { SectionHeader } from './SectionHeader';
 import { SectionAdaptControl } from './SectionAdaptControl';
 import { SectionLineList } from './SectionLineList';
 import { SectionFooter } from './SectionFooter';
+import { useTranslation } from '../../i18n';
 import { useDrag } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 
@@ -64,6 +65,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   addLineToSection, deleteLineFromSection,
   setSectionName, setSectionRhymeScheme,
 }: SectionEditorProps) {
+  const { t } = useTranslation();
   const { handleDrop } = useDragHandlersContext();
   const {
     draggedItemIndex,
@@ -142,13 +144,11 @@ export const SectionEditor = React.memo(function SectionEditor({
           <span className="flex-1 min-w-0" />
           <span className="flex-shrink-0 w-16" />
           <span className="flex-shrink-0 w-[2.75rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(section as any).t?.editor?.syllableCount ?? 'Count'}
+            {t.editor?.syllableCount ?? 'Count'}
           </span>
           <span className="flex-shrink-0 w-2" />
           <span className="flex-shrink-0 w-7 text-center text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(section as any).t?.editor?.schemaHeader ?? 'Sch.'}
+            {t.editor?.schemaHeader ?? 'Sch.'}
           </span>
         </div>
 

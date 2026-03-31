@@ -4,7 +4,6 @@ import { MetaLine } from './MetaLine';
 import { getRhymeColor, getSchemaLabelForLine, getSchemeLetterForLine } from '../../utils/songUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { useDrag } from '../../contexts/DragContext';
-import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { useSongContext } from '../../contexts/SongContext';
 import type { Section } from '../../types';
 
@@ -63,7 +62,6 @@ export const SectionLineList = React.memo(function SectionLineList({
   playAudioFeedback,
 }: SectionLineListProps) {
   const { lineLanguages } = useSongContext();
-  const { handleLineDragStart, handleLineDrop } = useDragHandlersContext();
   const { draggedLineInfo, dragOverLineInfo } = useDrag();
 
   const renderItems = useMemo(() => buildRenderItems(section.lines), [section.lines]);
