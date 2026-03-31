@@ -110,7 +110,7 @@ export function SuggestionsPanel({
                     <p className="text-sm text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white leading-relaxed flex-1">{suggestion}</p>
                     {syllables > 0 && (
                       <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-500 bg-white/5 rounded px-1.5 py-0.5 mt-0.5">
-                        {syllables} syl.
+                        {syllables} syll.
                       </span>
                     )}
                   </div>

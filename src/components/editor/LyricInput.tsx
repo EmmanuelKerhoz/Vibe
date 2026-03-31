@@ -95,11 +95,11 @@ export const LyricInput = React.memo(function LyricInput({
     const related = e.relatedTarget as HTMLElement | null;
     if (related) {
       // Focus moving to another line input — handleLineClick will set the new selection
-      if (related.dataset?.lineId) return;
+      if (related.dataset.lineId) return;
       // Focus moving into the suggestions panel — keep it open
-      if (related.closest?.('[data-suggestions-panel]')) return;
+      if (related.closest('[data-suggestions-panel]')) return;
     }
-    // Defer so that click handlers (e.g. on suggestion items) fire first
+    // Allow time for click handlers on suggestion items to fire before clearing selection
     setTimeout(onLineBlur, 80);
   };
 
