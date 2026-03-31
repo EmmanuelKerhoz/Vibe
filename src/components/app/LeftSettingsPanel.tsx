@@ -32,13 +32,12 @@ interface Props {
   hasApiKey: boolean;
   onGenerateSong: () => void;
   onRegenerateSong?: () => void;
-  isSessionHydrated: boolean;
   isMobileOverlay?: boolean;
 }
 
 const SOLID_BG_DARK = 'var(--bg-app, #0c0c0c)';
 
-type PanelContentProps = Omit<Props, 'isMobileOverlay' | 'isSessionHydrated'> & {
+type PanelContentProps = Omit<Props, 'isMobileOverlay'> & {
   t: ReturnType<typeof useTranslation>['t'];
   isMobileOverlay: boolean;
   song: ReturnType<typeof useSongContext>['song'];
@@ -57,7 +56,6 @@ export function LeftSettingsPanel({
   onSurprise, isSurprising, hasApiKey,
   onGenerateSong,
   onRegenerateSong,
-  isSessionHydrated: _isSessionHydrated,
   isMobileOverlay,
 }: Props) {
   const { t } = useTranslation();
