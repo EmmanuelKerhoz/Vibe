@@ -94,6 +94,10 @@ describe('StructureSidebar section tooltips', () => {
     renderStructureSidebar();
 
     const rail = screen.getByTestId('structure-sidebar-rail');
-    expect(rail.getAttribute('style')).toContain('left: 0px');
+    const style = rail.getAttribute('style') ?? '';
+    expect(style).toContain('position: absolute');
+    expect(style).toContain('top: 0px');
+    expect(style).toContain('left: 0px');
+    expect(style).toContain('bottom: 0px');
   });
 });
