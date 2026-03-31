@@ -107,7 +107,7 @@ export const detectSongLanguage = async (song: Section[], signal?: AbortSignal):
   try {
     const parsed = JSON.parse(text) as { languages?: unknown; lineLanguages?: unknown };
     const languages = Array.isArray(parsed.languages)
-      ? (parsed.languages as string[]).filter(l => typeof l === 'string' && l.trim())
+      ? [...new Set((parsed.languages as string[]).filter(l => typeof l === 'string' && l.trim()))]
       : [];
     const lineLanguages = Array.isArray(parsed.lineLanguages)
       ? (parsed.lineLanguages as string[]).filter(l => typeof l === 'string')

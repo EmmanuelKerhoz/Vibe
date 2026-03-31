@@ -42,7 +42,10 @@ export const InsightsBar = React.memo(function InsightsBar({
   const { isGenerating } = useComposerContext();
   const { showBanner, dismissBanner } = useAdaptationBannerVisibility(adaptationProgress);
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
-  const detectedDisplays = (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : [])).map(getLanguageDisplay);
+  const detectedDisplays = (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : []))
+    .filter((lang, i, arr) => arr.indexOf(lang) === i)
+    .slice(0, 3)
+    .map(getLanguageDisplay);
 
   return (
     <InsightsBarLayout
