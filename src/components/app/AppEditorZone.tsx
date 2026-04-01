@@ -75,6 +75,9 @@ interface AppEditorZoneProps {
   onPasteLyrics: () => void;
   onGenerateSong: () => void;
   onOpenSearch: () => void;
+  // Analysis panel
+  onToggleAnalysisPanel?: () => void;
+  isAnalysisPanelOpen?: boolean;
 }
 
 export function AppEditorZone({
@@ -87,6 +90,8 @@ export function AppEditorZone({
   playAudioFeedback,
   canPasteLyrics, onOpenLibrary, onPasteLyrics, onGenerateSong,
   onOpenSearch,
+  onToggleAnalysisPanel,
+  isAnalysisPanelOpen,
 }: AppEditorZoneProps) {
   const { showTranslationFeatures } = useTranslationAdaptationContext();
 
@@ -108,6 +113,8 @@ export function AppEditorZone({
             adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
             showTranslationFeatures={showTranslationFeatures}
             onOpenSearch={onOpenSearch}
+            onToggleAnalysisPanel={onToggleAnalysisPanel}
+            isAnalysisPanelOpen={isAnalysisPanelOpen}
           />
         </ErrorBoundary>
       )}

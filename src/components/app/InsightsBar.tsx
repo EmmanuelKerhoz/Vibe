@@ -37,6 +37,8 @@ export const InsightsBar = React.memo(function InsightsBar({
   adaptationResult,
   showTranslationFeatures = true,
   onOpenSearch = () => {},
+  onToggleAnalysisPanel,
+  isAnalysisPanelOpen,
 }: InsightsBarProps) {
   const { song, songLanguage, detectedLanguages } = useSongContext();
   const { isGenerating } = useComposerContext();
@@ -53,7 +55,7 @@ export const InsightsBar = React.memo(function InsightsBar({
       detectControl={<DetectLanguageButton detectedDisplays={detectedDisplays} hasLyrics={hasLyrics} isDetectingLanguage={isDetectingLanguage} onDetect={detectLanguage} hasApiKey={hasApiKey} />}
       translationControls={<TranslateGroup targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage} isAdaptingLanguage={isAdaptingLanguage} song={song} adaptSongLanguage={adaptSongLanguage} showTranslationFeatures={showTranslationFeatures} hasApiKey={hasApiKey} />}
       metronomeControl={<MetronomeButton isMetronomeActive={isMetronomeActive} toggleMetronome={toggleMetronome} />}
-      insightsActions={<InsightsActions webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} hasApiKey={hasApiKey} onOpenSearch={onOpenSearch} />}
+      insightsActions={<InsightsActions webSimilarityIndex={webSimilarityIndex} webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} hasApiKey={hasApiKey} onOpenSearch={onOpenSearch} onToggleAnalysisPanel={onToggleAnalysisPanel} isAnalysisPanelOpen={isAnalysisPanelOpen} />}
       mobileKpis={<MobileKpis />}
       banner={showBanner && adaptationProgress ? <AdaptationProgressBanner progress={adaptationProgress} result={adaptationResult ?? null} onDismiss={dismissBanner} isOverlay /> : null}
     />

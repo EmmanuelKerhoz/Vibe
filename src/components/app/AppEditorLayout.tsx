@@ -20,6 +20,7 @@ import { useModalHandlers } from '../../hooks/useModalHandlers';
 import { useSessionActions } from '../../hooks/useSessionActions';
 import { useLibraryActions } from '../../hooks/useLibraryActions';
 import { useImportHandlers } from '../../hooks/useImportHandlers';
+import { useLinguisticsWorker } from '../../hooks/useLinguisticsWorker';
 import { useMarkupEditor } from '../../hooks/useMarkupEditor';
 import { useTranslation } from '../../i18n';
 import { AppEditorZone } from './AppEditorZone';
@@ -35,6 +36,9 @@ const StructureSidebar = lazy(() =>
 );
 const SuggestionsPanel = lazy(() =>
   import('./SuggestionsPanel').then(m => ({ default: m.SuggestionsPanel }))
+);
+const AnalysisPanel = lazy(() =>
+  import('./AnalysisPanel').then(m => ({ default: m.AnalysisPanel }))
 );
 
 const LazyFallback = React.memo(function LazyFallback() {
@@ -85,6 +89,7 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
     setIsImportModalOpen, setIsExportModalOpen,
     setIsSettingsOpen, setIsAboutOpen,
     setIsKeyboardShortcutsModalOpen, setIsSearchReplaceOpen,
+    isAnalysisPanelOpen, setIsAnalysisPanelOpen,
     apiErrorModal, setApiErrorModal,
     confirmModal, setConfirmModal,
     hasApiKey, importInputRef,
@@ -110,6 +115,9 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
   const { hasRealLyricContent, webBadgeLabel } = useDerivedAppState({
     editMode, markupText, webSimilarityIndex,
   });
+
+  // ── Off-thread phonological analysis (Web Worker) ──────────────────────
+  const linguisticsWorker = useLinguisticsWorker(song, songLanguage);
 
   const {
     removeStructureItem, addStructureItem, loadFileForAnalysis,
@@ -193,6 +201,14 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
     handleGlobalRegenerate();
   }, [setIsLeftPanelOpen, handleGlobalRegenerate]);
 
+  const handleToggleAnalysisPanel = useCallback(() => {
+    setIsAnalysisPanelOpen(prev => !prev);
+  }, [setIsAnalysisPanelOpen]);
+
+  const handleCloseAnalysisPanel = useCallback(() => {
+    setIsAnalysisPanelOpen(false);
+  }, [setIsAnalysisPanelOpen]);
+
   const isSuggestionsOpen = activeTab === 'lyrics' && Boolean(selectedLineId);
 
   return (
@@ -261,11 +277,22 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
           onPasteLyrics={handleOpenPasteModal}
           onGenerateSong={handleGlobalRegenerate}
           onOpenSearch={handleOpenSearch}
+          onToggleAnalysisPanel={handleToggleAnalysisPanel}
+          isAnalysisPanelOpen={isAnalysisPanelOpen}
         />
       </div>
 
       <Suspense fallback={<LazyFallback />}>
-        {isSuggestionsOpen ? (
+        {isAnalysisPanelOpen ? (
+          <AnalysisPanel
+            result={linguisticsWorker.result}
+            isComputing={linguisticsWorker.isComputing}
+            error={linguisticsWorker.error}
+            isOpen={isAnalysisPanelOpen}
+            onClose={handleCloseAnalysisPanel}
+            isMobileOverlay={isMobileOrTablet}
+          />
+        ) : isSuggestionsOpen ? (
           <SuggestionsPanel
             isMobileOverlay={isMobileOrTablet}
             className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}

@@ -24,4 +24,6 @@ export interface InsightsBarProps {
   adaptationResult?: AdaptationResult | null;
   showTranslationFeatures?: boolean;
   onOpenSearch?: () => void;
+  onToggleAnalysisPanel?: () => void;
+  isAnalysisPanelOpen?: boolean;
 }

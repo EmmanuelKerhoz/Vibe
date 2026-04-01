@@ -17,6 +17,7 @@ export interface UIStateSlice {
   setIsPasteModalOpen: (v: boolean) => void;
   setIsAnalysisModalOpen: (v: boolean) => void;
   setIsSearchReplaceOpen: (v: boolean) => void;
+  setIsAnalysisPanelOpen: (v: boolean) => void;
   isAboutOpen: boolean;
   isSettingsOpen: boolean;
   apiErrorModal: { open: boolean; message: string };
@@ -33,6 +34,7 @@ export interface UIStateSlice {
   isPasteModalOpen: boolean;
   isAnalysisModalOpen: boolean;
   isSearchReplaceOpen: boolean;
+  isAnalysisPanelOpen: boolean;
   activeTab: 'lyrics' | 'musical';
   setActiveTab: (v: 'lyrics' | 'musical') => void;
   isStructureOpen: boolean;
