@@ -141,6 +141,5 @@ function normalizeATR(vowel: string): string {
   return ATR_NORMALIZE[vowel] ?? vowel;
 }
 
-// Keep ATR sets available for future extensions
-void ATR_PLUS;
-void ATR_MINUS;
+// ATR_PLUS and ATR_MINUS are available for future vowel harmony analysis extensions.
+export { ATR_PLUS, ATR_MINUS };

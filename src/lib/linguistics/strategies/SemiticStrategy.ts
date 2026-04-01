@@ -124,7 +124,7 @@ export class SemiticStrategy extends PhonologicalStrategy {
       }
       // If there are more vowels ahead, keep last consonant as onset of next syllable
       if (i < chars.length && isVowelChar(chars[i]!, lang) && i - codaStart > 0) {
-        coda = ipa.slice(codaStart, i - 1);
+        coda = chars.slice(codaStart, i - 1).join('');
         i = i - 1; // give back last consonant as next onset
       } else {
         coda = chars.slice(codaStart, i).join('');
