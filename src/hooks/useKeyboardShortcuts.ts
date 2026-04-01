@@ -139,7 +139,7 @@ export const useKeyboardShortcuts = ({
       }
       if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
       const target = e.target as HTMLElement;
-      // Allow app-level undo/redo for lyrics line inputs (data-line-id);
+      // Allow app-level undo/redo for lyrics line inputs (dataset.lineId);
       // other INPUT/TEXTAREA elements keep native browser undo.
       if ((target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') && !('lineId' in target.dataset)) return;
       e.preventDefault();
