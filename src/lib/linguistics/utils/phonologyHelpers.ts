@@ -3,25 +3,6 @@
  * Pure functions — no side-effects, no network calls.
  */
 
-import type { ToneClass } from '../core/types';
-
-// ─── Tone extraction from diacritics ─────────────────────────────────────────
-
-/** Map a combining diacritic to a ToneClass. */
-export function extractToneFromDiacritic(ch: string): ToneClass {
-  switch (ch) {
-    case '\u0301': return 'H';   // acute  ´
-    case '\u0300': return 'L';   // grave  `
-    case '\u0302': return 'HL';  // circumflex (falling)
-    case '\u030C': return 'LH';  // caron (rising)
-    case '\u0304': return 'M';   // macron (mid)
-    default: return null;
-  }
-}
-
-/** Regex matching combining tone diacritics (acute, grave, circumflex, caron, macron). */
-export const TONE_DIACRITIC_RE = /[\u0300\u0301\u0302\u030C\u0304]/;
-
 // ─── Nominal prefix stripping (Bantu class prefixes) ─────────────────────────
 
 /**
