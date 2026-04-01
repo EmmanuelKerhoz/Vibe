@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../i18n';
 import { DragProvider } from '../../contexts/DragContext';
 import { RefsProvider } from '../../contexts/RefsContext';
+import { SongMutationProvider } from '../../contexts/SongMutationContext';
 import type { Section } from '../../types';
 import { LyricsView } from './LyricsView';
 
@@ -242,15 +243,17 @@ describe('LyricsView empty state', () => {
       <DragProvider>
         <LanguageProvider>
           <RefsProvider>
-            <LyricsView
-              isAnalyzing={false}
-              hasApiKey
-              playAudioFeedback={() => {}}
-              canPasteLyrics={true}
-              onOpenLibrary={() => {}}
-              onPasteLyrics={() => {}}
-              onGenerateSong={() => {}}
-            />
+            <SongMutationProvider>
+              <LyricsView
+                isAnalyzing={false}
+                hasApiKey
+                playAudioFeedback={() => {}}
+                canPasteLyrics={true}
+                onOpenLibrary={() => {}}
+                onPasteLyrics={() => {}}
+                onGenerateSong={() => {}}
+              />
+            </SongMutationProvider>
           </RefsProvider>
         </LanguageProvider>
       </DragProvider>,
@@ -303,15 +306,17 @@ describe('LyricsView empty state', () => {
       <DragProvider>
         <LanguageProvider>
           <RefsProvider>
-            <LyricsView
-              isAnalyzing={false}
-              hasApiKey
-              playAudioFeedback={() => {}}
-              canPasteLyrics={true}
-              onOpenLibrary={() => {}}
-              onPasteLyrics={() => {}}
-              onGenerateSong={() => {}}
-            />
+            <SongMutationProvider>
+              <LyricsView
+                isAnalyzing={false}
+                hasApiKey
+                playAudioFeedback={() => {}}
+                canPasteLyrics={true}
+                onOpenLibrary={() => {}}
+                onPasteLyrics={() => {}}
+                onGenerateSong={() => {}}
+              />
+            </SongMutationProvider>
           </RefsProvider>
         </LanguageProvider>
       </DragProvider>,

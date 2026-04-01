@@ -5,6 +5,8 @@ import { getRhymeColor, getSchemaLabelForLine, getSchemeLetterForLine } from '..
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { useDrag } from '../../contexts/DragContext';
 import { useSongContext } from '../../contexts/SongContext';
+import { useComposerContext } from '../../contexts/ComposerContext';
+import { useSongMutation } from '../../contexts/SongMutationContext';
 import type { Section } from '../../types';
 
 type MetaGroup = { kind: 'meta'; lines: Section['lines'] };
@@ -37,32 +39,22 @@ function buildRenderItems(lines: Section['lines']): RenderItem[] {
 
 interface SectionLineListProps {
   section: Section;
-  rhymeScheme: string;
-  selectedLineId: string | null;
-  isGenerating: boolean;
   hasApiKey: boolean;
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
   adaptingLineIds?: Set<string>;
   sectionTargetLanguage: string;
-  handleLineClick: (lineId: string) => void;
-  updateLineText: (sectionId: string, lineId: string, text: string) => void;
-  handleLineKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => void;
-  moveLineUp: (sectionId: string, lineId: string) => void;
-  moveLineDown: (sectionId: string, lineId: string) => void;
-  addLineToSection: (sectionId: string, afterLineId?: string) => void;
-  deleteLineFromSection: (sectionId: string, lineId: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   onLineBlur?: () => void;
 }
 
 export const SectionLineList = React.memo(function SectionLineList({
-  section, rhymeScheme, selectedLineId, isGenerating, hasApiKey,
+  section, hasApiKey,
   adaptLineLanguage, adaptingLineIds, sectionTargetLanguage,
-  handleLineClick, updateLineText, handleLineKeyDown,
-  moveLineUp, moveLineDown, addLineToSection, deleteLineFromSection,
   playAudioFeedback, onLineBlur,
 }: SectionLineListProps) {
-  const { lineLanguages } = useSongContext();
+  const { rhymeScheme, lineLanguages } = useSongContext();
+  const { selectedLineId, isGenerating, handleLineClick, updateLineText, handleLineKeyDown } = useComposerContext();
+  const { moveLineUp, moveLineDown, addLineToSection, deleteLineFromSection } = useSongMutation();
   const { draggedLineInfo, dragOverLineInfo } = useDrag();
 
   const renderItems = useMemo(() => buildRenderItems(section.lines), [section.lines]);

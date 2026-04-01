@@ -8,16 +8,12 @@ import { SectionFooter } from './SectionFooter';
 import { useTranslation } from '../../i18n';
 import { useDrag } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
+import { useComposerContext } from '../../contexts/ComposerContext';
 
 interface SectionEditorProps {
   section: Section;
   sectionIndex: number;
   songLength: number;
-  rhymeScheme: string;
-  RHYME_KEYS: string[];
-  SECTION_TYPE_OPTIONS: string[];
-  selectedLineId: string | null;
-  isGenerating: boolean;
   isAnalyzing: boolean;
   hasApiKey: boolean;
   isAdaptingLanguage?: boolean;
@@ -26,48 +22,24 @@ interface SectionEditorProps {
   adaptSectionLanguage?: (sectionId: string, lang: string) => void;
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
   adaptingLineIds?: Set<string>;
-  isRegeneratingSection: (sectionId: string) => boolean;
-  handleLineClick: (lineId: string) => void;
-  updateLineText: (sectionId: string, lineId: string, text: string) => void;
-  handleLineKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => void;
-  handleInstructionChange: (sectionId: string, type: 'pre' | 'post', index: number, value: string) => void;
-  addInstruction: (sectionId: string, type: 'pre' | 'post') => void;
-  removeInstruction: (sectionId: string, type: 'pre' | 'post', index: number) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
-  regenerateSection: (sectionId: string) => void;
-  moveSectionUp: (sectionId: string) => void;
-  moveSectionDown: (sectionId: string) => void;
-  moveLineUp: (sectionId: string, lineId: string) => void;
-  moveLineDown: (sectionId: string, lineId: string) => void;
-  addLineToSection: (sectionId: string, afterLineId?: string) => void;
-  deleteLineFromSection: (sectionId: string, lineId: string) => void;
-  setSectionName: (sectionId: string, name: string) => void;
-  setSectionRhymeScheme: (sectionId: string, scheme: string) => void;
   onLineBlur?: () => void;
 }
 
 export const SectionEditor = React.memo(function SectionEditor({
-  section, sectionIndex, songLength, rhymeScheme,
-  RHYME_KEYS, SECTION_TYPE_OPTIONS,
-  selectedLineId, isGenerating, isAnalyzing, hasApiKey,
+  section, sectionIndex, songLength,
+  isAnalyzing, hasApiKey,
   isAdaptingLanguage = false,
   sectionTargetLanguage = 'English',
   onSectionTargetLanguageChange,
   adaptSectionLanguage,
   adaptLineLanguage,
   adaptingLineIds,
-  isRegeneratingSection,
-  handleLineClick, updateLineText, handleLineKeyDown,
-  handleInstructionChange, addInstruction, removeInstruction,
-  regenerateSection,
   playAudioFeedback,
-  moveSectionUp, moveSectionDown,
-  moveLineUp, moveLineDown,
-  addLineToSection, deleteLineFromSection,
-  setSectionName, setSectionRhymeScheme,
   onLineBlur,
 }: SectionEditorProps) {
   const { t } = useTranslation();
+  const { isGenerating } = useComposerContext();
   const { handleDrop } = useDragHandlersContext();
   const {
     draggedItemIndex,
@@ -120,13 +92,6 @@ export const SectionEditor = React.memo(function SectionEditor({
             section={section}
             sectionIndex={sectionIndex}
             songLength={songLength}
-            rhymeScheme={rhymeScheme}
-            RHYME_KEYS={RHYME_KEYS}
-            SECTION_TYPE_OPTIONS={SECTION_TYPE_OPTIONS}
-            moveSectionUp={moveSectionUp}
-            moveSectionDown={moveSectionDown}
-            setSectionName={setSectionName}
-            setSectionRhymeScheme={setSectionRhymeScheme}
           />
           <SectionAdaptControl
             sectionId={section.id}
@@ -156,20 +121,10 @@ export const SectionEditor = React.memo(function SectionEditor({
 
         <SectionLineList
           section={section}
-          rhymeScheme={rhymeScheme}
-          selectedLineId={selectedLineId}
-          isGenerating={isGenerating}
           hasApiKey={hasApiKey}
           adaptLineLanguage={adaptLineLanguage}
           adaptingLineIds={adaptingLineIds}
           sectionTargetLanguage={sectionTargetLanguage}
-          handleLineClick={handleLineClick}
-          updateLineText={updateLineText}
-          handleLineKeyDown={handleLineKeyDown}
-          moveLineUp={moveLineUp}
-          moveLineDown={moveLineDown}
-          addLineToSection={addLineToSection}
-          deleteLineFromSection={deleteLineFromSection}
           playAudioFeedback={playAudioFeedback}
           onLineBlur={onLineBlur}
         />
@@ -178,13 +133,6 @@ export const SectionEditor = React.memo(function SectionEditor({
           sectionId={section.id}
           preInstructions={section.preInstructions ?? []}
           postInstructions={section.postInstructions ?? []}
-          isGenerating={isGenerating}
-          isRegeneratingSection={isRegeneratingSection}
-          addLineToSection={addLineToSection}
-          handleInstructionChange={handleInstructionChange}
-          addInstruction={addInstruction}
-          removeInstruction={removeInstruction}
-          regenerateSection={regenerateSection}
           playAudioFeedback={playAudioFeedback}
         />
       </div>
