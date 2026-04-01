@@ -200,7 +200,7 @@ function parseTaiScriptSyllable(token: string, profile: TaiProfile): Syllable | 
   const vowelKey = nucleusChars.join('');
   const nucleus = vowelKey ? mapTaiVowel(vowelKey, profile.vowelMap) : 'a';
   const initialClass = profile.consonantClass[initialChar] ?? 'mid';
-  const tone = profile.toneMap[initialClass][toneMark] ?? profile.toneMap[initialClass][''];
+  const tone = profile.toneMap[initialClass][toneMark] ?? profile.toneMap[initialClass][''] ?? null;
 
   return {
     onset,

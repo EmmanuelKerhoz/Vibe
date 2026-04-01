@@ -105,7 +105,7 @@ export class VietStrategy extends PhonologicalStrategy {
 }
 
 function resolveVietProfile(lang: string): VietProfile {
-  return VIET_PROFILES[lang.toLowerCase()] ?? VIET_PROFILES.vi;
+  return VIET_PROFILES[lang.toLowerCase()] ?? VIET_PROFILES.vi!;
 }
 
 function parseVietnameseToken(token: string): Syllable | null {
