@@ -121,16 +121,19 @@ export { DEFAULT_STRUCTURE, MUSICAL_INSTRUCTIONS } from '../constants/editor';
 
 export const cleanSectionName = (name: string) => {
   if (!name) return '';
-  return (unwrapBracketToken(name) ?? name).replace(/[\[\]［］【】「」『』〔〕〈〉《》\*]/g, '').trim();
+  return (unwrapBracketToken(name) ?? name).replace(/[\[\]\uff3b\uff3d\u3010\u3011\u300c\u300d\u300e\u300f\u3014\u3015\u2329\u232a\u300a\u300b*]/g, '').trim();
 };
 
-const computeLineSyllables = (text: string): number =>
-  text
-    .split(/\s+/)
-    .filter(Boolean)
-    .reduce((acc, word) => acc + countSyllables(word), 0);
+/**
+ * Compute syllable count for a lyric line.
+ * Passes the full line text (not word-by-word) so that countSyllables can:
+ *  - strip parenthesised content correctly (regex on full line)
+ *  - apply language-specific digraph/nasal rules across word boundaries
+ */
+const computeLineSyllables = (text: string, langCode?: string): number =>
+  countSyllables(text, langCode);
 
-export const normalizeLoadedLine = (line: Record<string, unknown>): Line => {
+export const normalizeLoadedLine = (line: Record<string, unknown>, langCode?: string): Line => {
   const text = typeof line['text'] === 'string' ? line['text'] : '';
   const isMeta = typeof line['isMeta'] === 'boolean' ? line['isMeta'] : isPureMetaLine(text.trim());
   const rawSyllables = typeof line['syllables'] === 'number'
@@ -142,7 +145,7 @@ export const normalizeLoadedLine = (line: Record<string, unknown>): Line => {
     && (rawSyllables > 0 || isMeta || text.trim().length === 0);
   const syllables = canUseStoredSyllables
     ? rawSyllables
-    : (!isMeta && text.trim().length > 0 ? computeLineSyllables(text) : 0);
+    : (!isMeta && text.trim().length > 0 ? computeLineSyllables(text, langCode) : 0);
 
   return {
     id: typeof line['id'] === 'string' ? line['id'] : '',
@@ -157,12 +160,12 @@ export const normalizeLoadedLine = (line: Record<string, unknown>): Line => {
 };
 
 export const normalizeLoadedSection = (section: Record<string, unknown>): Section => {
+  const langCode = typeof section['language'] === 'string' ? section['language'] : undefined;
   const lines = Array.isArray(section['lines'])
-    ? (section['lines'] as Record<string, unknown>[]).map(normalizeLoadedLine)
+    ? (section['lines'] as Record<string, unknown>[]).map(l => normalizeLoadedLine(l, langCode))
     : [];
   const storedScheme = typeof section['rhymeScheme'] === 'string' ? section['rhymeScheme'].trim() : '';
   const lyricTexts = lines.filter(line => !line.isMeta && line.text.trim().length > 0).map(line => line.text);
-  const langCode = typeof section['language'] === 'string' ? section['language'] : undefined;
   const detectedScheme = (storedScheme.length === 0 || storedScheme.toUpperCase() === 'FREE')
     ? detectRhymeSchemeLocally(lyricTexts, langCode) ?? undefined
     : undefined;
@@ -175,7 +178,7 @@ export const normalizeLoadedSection = (section: Record<string, unknown>): Sectio
     mood: typeof section['mood'] === 'string' ? section['mood'] : '',
     preInstructions: Array.isArray(section['preInstructions']) ? (section['preInstructions'] as string[]) : [],
     postInstructions: Array.isArray(section['postInstructions']) ? (section['postInstructions'] as string[]) : [],
-    language: typeof section['language'] === 'string' ? section['language'] : undefined,
+    language: langCode,
     lines,
   };
 };
