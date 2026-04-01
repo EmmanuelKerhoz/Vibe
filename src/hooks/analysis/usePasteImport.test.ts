@@ -289,4 +289,43 @@ describe('usePasteImport', () => {
     const [song] = vi.mocked(params.updateSongAndStructureWithHistory).mock.calls[0]!;
     expect(song[0]?.rhymeScheme).toBe('ABAB');
   });
+
+  it('closes the paste modal and clears the pasted text after successful analysis', async () => {
+    const params = createParams();
+    vi.mocked(generateContentWithRetry)
+      .mockResolvedValueOnce(makeSectionResponse())
+      .mockResolvedValueOnce(makeMetadataResponse());
+
+    const { result } = renderHook(() => usePasteImport(params));
+
+    act(() => {
+      result.current.setPastedText('Première ligne\nDeuxième ligne\nTroisième ligne\nQuatrième ligne');
+    });
+
+    await act(async () => {
+      await result.current.analyzePastedLyrics();
+    });
+
+    expect(params.setIsPasteModalOpen).toHaveBeenCalledWith(false);
+    expect(result.current.pastedText).toBe('');
+  });
+
+  it('closes the paste modal even when analysis throws an error', async () => {
+    const params = createParams();
+    vi.mocked(generateContentWithRetry).mockRejectedValueOnce(new Error('API failure'));
+
+    const { result } = renderHook(() => usePasteImport(params));
+
+    act(() => {
+      result.current.setPastedText('Première ligne\nDeuxième ligne');
+    });
+
+    await act(async () => {
+      await result.current.analyzePastedLyrics();
+    });
+
+    expect(params.setIsPasteModalOpen).toHaveBeenCalledWith(false);
+    expect(result.current.pastedText).toBe('');
+    expect(params.updateSongAndStructureWithHistory).not.toHaveBeenCalled();
+  });
 });

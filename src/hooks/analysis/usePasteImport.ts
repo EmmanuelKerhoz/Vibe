@@ -235,6 +235,11 @@ export const usePasteImport = ({
   const abortControllerRef = useRef<AbortController | null>(null);
   useEffect(() => { return () => { abortCurrent(abortControllerRef); }; }, []);
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   const uiLang = resolveUiLanguageName(uiLanguage);
   const refreshClipboardText = useCallback(async () => {
     if (
@@ -460,8 +465,6 @@ export const usePasteImport = ({
 
         requestAutoTitleGeneration();
         clearLineSelection();
-        setIsPasteModalOpen(false);
-        setPastedText('');
       });
     } catch (error: unknown) {
       if (isAbortError(error)) {
@@ -470,9 +473,11 @@ export const usePasteImport = ({
       }
       handleApiError(error, 'Failed to analyze lyrics. Please try again.');
     } finally {
-      if (!wasAborted) {
+      if (!wasAborted && isMountedRef.current) {
         setIsAnalyzing(false);
         setImportProgress(EMPTY_PROGRESS);
+        setIsPasteModalOpen(false);
+        setPastedText('');
       }
     }
   };
