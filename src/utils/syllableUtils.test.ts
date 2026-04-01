@@ -14,6 +14,36 @@ describe('syllableUtils', () => {
     });
   });
 
+  describe('parenthesised content exclusion', () => {
+    it('ignores text inside parentheses for French', () => {
+      const withParens = countSyllables('la vie (oh yeah) est belle', 'fr');
+      const withoutParens = countSyllables('la vie est belle', 'fr');
+      expect(withParens).toBe(withoutParens);
+    });
+
+    it('ignores text inside parentheses without langCode', () => {
+      const withParens = countSyllables('je t\'aime (I love you)');
+      const withoutParens = countSyllables('je t\'aime');
+      expect(withParens).toBe(withoutParens);
+    });
+
+    it('handles multiple parenthesised groups', () => {
+      const withParens = countSyllables('viens (come on) avec moi (yeah yeah)', 'fr');
+      const withoutParens = countSyllables('viens avec moi', 'fr');
+      expect(withParens).toBe(withoutParens);
+    });
+
+    it('returns 0 when entire line is parenthesised', () => {
+      expect(countSyllables('(oh yeah oh yeah)', 'fr')).toBe(0);
+    });
+
+    it('ignores parenthesised content for English', () => {
+      const withParens = countSyllables('hello (world) there', 'en');
+      const withoutParens = countSyllables('hello there', 'en');
+      expect(withParens).toBe(withoutParens);
+    });
+  });
+
   describe('countSyllablesWithFamily', () => {
     it('uses French method for FR without langCode', () => {
       const result = countSyllablesWithFamily('bonjour');

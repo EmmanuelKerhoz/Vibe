@@ -1,7 +1,7 @@
 {
   "name": "vibe",
   "private": true,
-  "version": "3.26.10.3",
+  "version": "3.26.10.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -38,7 +38,7 @@
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
-    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react": "^7.37.37",
     "jsdom": "^26.0.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.7.2",

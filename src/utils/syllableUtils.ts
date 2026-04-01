@@ -16,6 +16,14 @@ export interface SyllableResult {
 }
 
 /**
+ * Strip parenthesised content from lyrics text before counting.
+ * Text inside parentheses (e.g. stage directions, backing vocals) is
+ * not sung by the lead voice and must not be counted.
+ */
+const stripParenthesised = (text: string): string =>
+  text.replace(/\([^)]*\)/g, ' ').replace(/\s{2,}/g, ' ').trim();
+
+/**
  * Count syllables for French text (current implementation)
  * This is the legacy graphemic approach that works for French
  */
@@ -136,10 +144,16 @@ export const countSyllablesWithFamily = (text: string, langCode?: string): Sylla
     return { count: 0, method: 'graphemic' };
   }
 
+  // Strip parenthesised content (backing vocals, stage directions, etc.)
+  const cleanText = stripParenthesised(text);
+  if (!cleanText) {
+    return { count: 0, method: 'graphemic' };
+  }
+
   // If no language code, use French fallback (legacy behavior)
   if (!langCode) {
     return {
-      count: countSyllablesFrench(text),
+      count: countSyllablesFrench(cleanText),
       method: 'graphemic',
     };
   }
@@ -150,7 +164,7 @@ export const countSyllablesWithFamily = (text: string, langCode?: string): Sylla
   if (!family || !config) {
     // Unknown language - use fallback
     return {
-      count: countSyllablesFallback(text),
+      count: countSyllablesFallback(cleanText),
       method: 'graphemic',
     };
   }
@@ -159,42 +173,42 @@ export const countSyllablesWithFamily = (text: string, langCode?: string): Sylla
   switch (family) {
     case 'ALGO-ROM':
       return {
-        count: countSyllablesRomance(text, langCode),
+        count: countSyllablesRomance(cleanText, langCode),
         method: 'graphemic',
         family,
       };
 
     case 'ALGO-GER':
       return {
-        count: countSyllablesGermanic(text),
+        count: countSyllablesGermanic(cleanText),
         method: 'graphemic',
         family,
       };
 
     case 'ALGO-JAP':
       return {
-        count: countMoraeJapanese(text),
+        count: countMoraeJapanese(cleanText),
         method: 'moraic',
         family,
       };
 
     case 'ALGO-SIN':
       return {
-        count: countSyllablesSinitic(text),
+        count: countSyllablesSinitic(cleanText),
         method: 'graphemic',
         family,
       };
 
     case 'ALGO-KWA':
       return {
-        count: countSyllablesTonalCV(text),
+        count: countSyllablesTonalCV(cleanText),
         method: 'tonal-CV',
         family,
       };
 
     case 'ALGO-CRV':
       return {
-        count: countSyllablesTonalCVC(text),
+        count: countSyllablesTonalCVC(cleanText),
         method: 'tonal-CV',
         family,
       };
@@ -202,7 +216,7 @@ export const countSyllablesWithFamily = (text: string, langCode?: string): Sylla
     default:
       // For all other families, use basic fallback
       return {
-        count: countSyllablesFallback(text),
+        count: countSyllablesFallback(cleanText),
         method: 'graphemic',
         family,
       };
