@@ -20,6 +20,8 @@ export interface Section {
   preInstructions?: string[];
   postInstructions?: string[];
   language?: string;
+  /** User-intended rhyme pattern (e.g. "AABB"). Tracked in UNDO/REDO history. */
+  targetSchema?: string;
 }
 
 export type LineDragInfo = { sectionId: string; lineId: string } | null;
