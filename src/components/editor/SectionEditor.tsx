@@ -14,6 +14,7 @@ interface SectionEditorProps {
   section: Section;
   sectionIndex: number;
   songLength: number;
+  lineNumberOffset?: number;
   isAnalyzing: boolean;
   hasApiKey: boolean;
   isAdaptingLanguage?: boolean;
@@ -28,6 +29,7 @@ interface SectionEditorProps {
 
 export const SectionEditor = React.memo(function SectionEditor({
   section, sectionIndex, songLength,
+  lineNumberOffset = 0,
   isAnalyzing, hasApiKey,
   isAdaptingLanguage = false,
   sectionTargetLanguage = 'English',
@@ -107,6 +109,7 @@ export const SectionEditor = React.memo(function SectionEditor({
 
         {/* Column headers */}
         <div className="flex items-center gap-1.5 pl-1 pr-8 mb-0.5 select-none" aria-hidden="true">
+          <span className="flex-shrink-0 w-6" />
           <span className="flex-shrink-0 w-3.5" />
           <span className="flex-1 min-w-0" />
           <span className="flex-shrink-0 w-16" />
@@ -122,6 +125,7 @@ export const SectionEditor = React.memo(function SectionEditor({
         <SectionLineList
           section={section}
           hasApiKey={hasApiKey}
+          lineNumberOffset={lineNumberOffset}
           adaptLineLanguage={adaptLineLanguage}
           adaptingLineIds={adaptingLineIds}
           sectionTargetLanguage={sectionTargetLanguage}

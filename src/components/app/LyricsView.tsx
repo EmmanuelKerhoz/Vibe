@@ -1,6 +1,7 @@
-import React, { useRef, memo } from 'react';
+import React, { useRef, useMemo, memo } from 'react';
 import { ClipboardPaste, Library, Music, Sparkles } from '../ui/icons';
 import { SectionEditor } from '../editor/SectionEditor';
+import { countSectionRenderItems } from '../editor/SectionLineList';
 import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
@@ -56,6 +57,15 @@ export const LyricsView = memo(function LyricsView({
     isActive: editMode === 'phonetic',
   });
 
+  const sectionLineOffsets = useMemo(() => {
+    let offset = 0;
+    return song.map((section) => {
+      const start = offset;
+      offset += countSectionRenderItems(section.lines);
+      return start;
+    });
+  }, [song]);
+
   return (
     <>
       <div className="w-full min-w-0 flex flex-col gap-1 pb-32">
@@ -109,6 +119,7 @@ export const LyricsView = memo(function LyricsView({
                 section={section}
                 sectionIndex={sectionIndex}
                 songLength={song.length}
+                lineNumberOffset={sectionLineOffsets[sectionIndex]}
                 isAnalyzing={isAnalyzing}
                 hasApiKey={hasApiKey}
                 isAdaptingLanguage={showTranslationFeatures ? isAdaptingLanguage : false}
