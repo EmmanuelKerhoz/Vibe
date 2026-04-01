@@ -14,6 +14,7 @@ import { useRefs } from '../../contexts/RefsContext';
 export interface LyricInputProps {
   line: Line;
   lineIndex: number;
+  globalLineNumber?: number;
   sectionId: string;
   sectionLinesCount: number;
   rhymePeerTexts: string[];
@@ -42,6 +43,7 @@ export interface LyricInputProps {
 export const LyricInput = React.memo(function LyricInput({
   line,
   lineIndex,
+  globalLineNumber,
   sectionId,
   sectionLinesCount,
   rhymePeerTexts,
@@ -167,6 +169,11 @@ export const LyricInput = React.memo(function LyricInput({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {/* Line number */}
+      <span className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-500 select-none" aria-hidden="true">
+        {globalLineNumber ?? ''}
+      </span>
+
       {/* Drag handle */}
       <div
         draggable

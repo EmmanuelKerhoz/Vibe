@@ -37,9 +37,15 @@ function buildRenderItems(lines: Section['lines']): RenderItem[] {
   return items;
 }
 
+/** Returns the number of visual rows rendered for a section (lyric lines + meta groups). */
+export function countSectionRenderItems(lines: Section['lines']): number {
+  return buildRenderItems(lines).length;
+}
+
 interface SectionLineListProps {
   section: Section;
   hasApiKey: boolean;
+  lineNumberOffset?: number;
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
   adaptingLineIds?: Set<string>;
   sectionTargetLanguage: string;
@@ -49,6 +55,7 @@ interface SectionLineListProps {
 
 export const SectionLineList = React.memo(function SectionLineList({
   section, hasApiKey,
+  lineNumberOffset = 0,
   adaptLineLanguage, adaptingLineIds, sectionTargetLanguage,
   playAudioFeedback, onLineBlur,
 }: SectionLineListProps) {
@@ -62,12 +69,14 @@ export const SectionLineList = React.memo(function SectionLineList({
 
   return (
     <div className="flex flex-col gap-0.5">
-      {renderItems.map((item) => {
+      {renderItems.map((item, renderIdx) => {
+        const globalLineNumber = lineNumberOffset + renderIdx + 1;
         if (item.kind === 'meta') {
           return (
             <MetaLine
               key={item.lines.map(l => l.id).join('-')}
               text={item.lines.map(l => l.text).join(' ')}
+              lineNumber={globalLineNumber}
             />
           );
         }
@@ -91,6 +100,7 @@ export const SectionLineList = React.memo(function SectionLineList({
             key={line.id}
             line={line}
             lineIndex={lyricIndex}
+            globalLineNumber={globalLineNumber}
             sectionId={section.id}
             sectionLinesCount={section.lines.filter(l => !l.isMeta).length}
             rhymePeerTexts={rhymePeerTexts}

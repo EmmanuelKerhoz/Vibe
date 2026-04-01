@@ -34,6 +34,7 @@ export function MarkdownModePanel({
         aria-label={t.editor.markupMode.title}
         className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
         spellCheck={false}
+        showLineNumbers
       />
     </EditorModeShell>
   );

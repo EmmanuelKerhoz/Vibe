@@ -48,6 +48,7 @@ export function PhoneticModePanel({
           className="w-full flex-1 min-h-0 font-mono text-sm leading-7 text-[var(--text-primary)] bg-[var(--bg-app)]"
           spellCheck={false}
           readOnly
+          showLineNumbers
         />
       </div>
       <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-between gap-3">
