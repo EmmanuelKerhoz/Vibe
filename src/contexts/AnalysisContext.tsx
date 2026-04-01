@@ -48,17 +48,20 @@ export function AnalysisProvider({
   clearLineSelection,
   requestAutoTitleGeneration,
 }: AnalysisProviderProps) {
-  const { openModal } = useModalDispatch();
+  const { openModal, closeModal } = useModalDispatch();
 
   // Stable callback refs so useSongAnalysis dependency arrays stay stable
-  // even if openModal identity changes (it shouldn't, but defensive).
+  // even if openModal/closeModal identity changes (it shouldn't, but defensive).
   const openPasteRef = useRef(() => openModal('paste'));
   openPasteRef.current = () => openModal('paste');
+  const closePasteRef = useRef(() => closeModal('paste'));
+  closePasteRef.current = () => closeModal('paste');
   const openAnalysisRef = useRef(() => openModal('analysis'));
   openAnalysisRef.current = () => openModal('analysis');
 
   const setIsPasteModalOpen = useRef((v: boolean) => {
     if (v) openPasteRef.current();
+    else closePasteRef.current();
   }).current;
 
   const setIsAnalysisModalOpen = useRef((v: boolean) => {
