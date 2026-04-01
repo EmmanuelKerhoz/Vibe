@@ -32,6 +32,7 @@ const KHMER_CONSONANT_RE = /[\u1780-\u17A2]/u;
 const KHMER_VOWEL_RE = /[\u17A3-\u17B3\u17B6-\u17C5]/u;
 const KHMER_IGNORABLE_RE = /[\u17C6-\u17D1]/u;
 const VIETNAMESE_CODAS = ['ng', 'nh', 'ch', 'c', 'm', 'n', 'p', 't'];
+const DEFAULT_VIETNAMESE_TONE: ToneClass = 'M';
 
 const VIET_PROFILES: Record<string, VietProfile> = {
   vi: {
@@ -124,7 +125,7 @@ function parseVietnameseToken(token: string): Syllable | null {
   const originalLetters = [...original];
   const vowelEnd = codaLength > 0 ? originalLetters.length - codaLength : originalLetters.length;
   const nucleus = originalLetters.slice(onsetLength, vowelEnd).join('');
-  const tone = extractToneFromText(original, VIETNAMESE_TONE_MAP) ?? 'M';
+  const tone = extractToneFromText(original, VIETNAMESE_TONE_MAP) ?? DEFAULT_VIETNAMESE_TONE;
 
   return {
     onset: base.slice(0, onsetLength),

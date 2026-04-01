@@ -181,9 +181,13 @@ function parseRomanizedSiniticSyllable(token: string, profile: SiniticProfile): 
   const segmentalRime = cleaned.slice(onset.length) || cleaned;
   const coda = extractRomanizedCoda(segmentalRime);
   const nucleus = coda ? segmentalRime.slice(0, -coda.length) : segmentalRime;
-  const tone = profile.digitResolver
-    ? profile.digitResolver(toneDigit, coda)
-    : digitTone ?? (toneMark ? extractToneFromDiacritic(toneMark, profile.diacriticMap) : profile.toneDigits['5'] ?? null);
+  const tone = resolveSiniticTone({
+    coda,
+    digitTone,
+    profile,
+    toneDigit,
+    toneMark,
+  });
 
   if (!nucleus) {
     return null;
@@ -211,4 +215,24 @@ function extractRomanizedCoda(rime: string): string {
 
 function isEnteringCoda(coda: string): boolean {
   return /[ptk]$/u.test(coda);
+}
+
+function resolveSiniticTone(params: {
+  coda: string;
+  digitTone: ToneClass;
+  profile: SiniticProfile;
+  toneDigit: string | null;
+  toneMark: string | null;
+}): ToneClass {
+  const { coda, digitTone, profile, toneDigit, toneMark } = params;
+  if (profile.digitResolver) {
+    return profile.digitResolver(toneDigit, coda);
+  }
+  if (digitTone) {
+    return digitTone;
+  }
+  if (toneMark) {
+    return extractToneFromDiacritic(toneMark, profile.diacriticMap);
+  }
+  return profile.toneDigits['5'] ?? null;
 }

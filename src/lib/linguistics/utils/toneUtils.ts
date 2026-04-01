@@ -85,7 +85,7 @@ export function extractToneFromToneDigit(
     return { base: text, toneClass: null, toneDigit: null };
   }
 
-  const toneDigit = match[1] ?? null;
+  const toneDigit = match[1]!;
   return {
     base: text.slice(0, -1),
     toneClass: toneDigit ? toneMap[toneDigit] ?? null : null,
