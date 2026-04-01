@@ -5,8 +5,10 @@
 
 import type { ToneClass } from '../core/types';
 
+const TONE_DIACRITIC_CLASS = '[\\u0300\\u0301\\u0302\\u0303\\u0304\\u0309\\u030C\\u0323]';
+
 /** Combining tone marks shared across tonal orthographies handled in the app. */
-export const TONE_DIACRITIC_RE = /[\u0300\u0301\u0302\u0303\u0304\u0309\u030C\u0323]/u;
+export const TONE_DIACRITIC_RE = new RegExp(TONE_DIACRITIC_CLASS, 'u');
 
 /** Thai / Lao spacing tone marks. */
 export const TAI_TONE_MARK_RE = /[่้๊๋່້໊໋]/u;
@@ -42,7 +44,7 @@ export function findToneDiacritic(text: string): string | null {
 
 /** Strip only tonal combining marks while preserving the base graphemes. */
 export function stripToneDiacritics(text: string): string {
-  return text.normalize('NFD').replace(/[\u0300\u0301\u0302\u0303\u0304\u0309\u030C\u0323]/gu, '').normalize('NFC');
+  return text.normalize('NFD').replace(new RegExp(TONE_DIACRITIC_CLASS, 'gu'), '').normalize('NFC');
 }
 
 /** Split a tonal string into a tone-free base and the first tonal combining mark. */

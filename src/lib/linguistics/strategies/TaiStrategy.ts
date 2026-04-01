@@ -243,7 +243,6 @@ function parseLatinTaiSyllable(token: string): Syllable | null {
 
 function mapTaiVowel(vowelKey: string, vowelMap: Record<string, string>): string {
   const candidates = Object.keys(vowelMap).sort((a, b) => b.length - a.length);
-  return candidates.find((candidate) => vowelKey.includes(candidate))
-    ? vowelMap[candidates.find((candidate) => vowelKey.includes(candidate))!]!
-    : vowelMap[vowelKey] ?? 'a';
+  const match = candidates.find((candidate) => vowelKey.includes(candidate));
+  return match ? vowelMap[match]! : vowelMap[vowelKey] ?? 'a';
 }
