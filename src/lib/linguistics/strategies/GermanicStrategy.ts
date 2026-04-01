@@ -38,6 +38,7 @@ export class GermanicStrategy extends PhonologicalStrategy {
   syllabify(ipa: string, _lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
     const syllables: Syllable[] = [];
+    // IPA vowels + orthographic vowels (needed while G2P stub passes through text).
     const vowelPattern = /[aeiouyæɛɪɒɔʊʌəɜɑ]/i;
     for (const word of words) {
       let current = '';

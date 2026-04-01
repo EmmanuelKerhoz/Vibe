@@ -74,6 +74,7 @@ export const PhonologyGrid = React.memo(function PhonologyGrid({
 
       {song.map(section => {
         const result = resultMap.get(section.id);
+        {/* targetSchema is the canonical field; rhymeScheme is legacy fallback */}
         const target = section.targetSchema ?? section.rhymeScheme ?? '';
         const detected = result?.detectedSchema ?? '';
         const matches = target && detected && target === detected;

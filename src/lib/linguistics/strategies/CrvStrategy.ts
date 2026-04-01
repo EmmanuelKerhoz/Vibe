@@ -13,8 +13,8 @@ import type { MatchingWeights, RhymeNucleus, Syllable, ToneClass, SyllableWeight
 /** Hausa permissible coda consonants. */
 const CRV_CODA_SET = new Set(['m', 'n', 'ŋ', 'l', 'r', 't', 'd', 'k']);
 
-/** Low-resource language codes. */
-const LOW_RESOURCE_LANGS = new Set(['bkv', 'iko']);
+/** Low-resource language codes — flagged in output for BK/OG. */
+export const LOW_RESOURCE_LANGS = new Set(['bkv', 'iko']);
 
 export class CrvStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-CRV' as const;
@@ -116,7 +116,6 @@ export class CrvStrategy extends PhonologicalStrategy {
     const toneClass = last?.tone ?? null;
     const weight = last?.weight ?? null;
     const codaClass = classifyCoda(coda);
-    const lowResource = LOW_RESOURCE_LANGS.has(lang);
 
     return {
       nucleus,
@@ -124,7 +123,8 @@ export class CrvStrategy extends PhonologicalStrategy {
       toneClass,
       weight,
       codaClass,
-      raw: `${nucleus}${coda}${toneClass ?? ''}${weight === 'heavy' ? '+' : ''}${lowResource ? '~' : ''}`,
+      raw: [nucleus, coda, toneClass, weight === 'heavy' ? 'H-wt' : null]
+        .filter(Boolean).join(':'),
     };
   }
 

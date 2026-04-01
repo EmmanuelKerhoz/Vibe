@@ -43,7 +43,8 @@ export class RomanceStrategy extends PhonologicalStrategy {
     // split on whitespace (word boundaries) then on vowel clusters.
     const words = ipa.split(/\s+/).filter(Boolean);
     const syllables: Syllable[] = [];
-    const vowelPattern = /[aeiouyàâæéèêëïîôœùûüÿáíóúãõɛɔɑɪʊʏ]/i;
+    // IPA vowels + orthographic vowels (needed while G2P stub passes through text).
+    const vowelPattern = /[aeiouyàâæéèêëïîôœùûüÿáíóúãõɛɔɑɪʊʏəɐ]/i;
     for (const word of words) {
       let current = '';
       for (const ch of word) {

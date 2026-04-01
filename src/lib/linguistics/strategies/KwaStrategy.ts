@@ -11,7 +11,7 @@ import { featureWeightedScore } from '../scoring';
 import type { MatchingWeights, RhymeNucleus, Syllable, ToneClass } from '../core/types';
 
 /** Set of voiced obstruents triggering tonal depression in Ewe. */
-const EWE_VOICED_OBSTRUENTS = new Set(['b', 'd', 'ɖ', 'g', 'v', 'z']);
+const EWE_VOICED_OBSTRUENTS = new Set(['b', 'd', 'ɖ', 'g', 'gb', 'v', 'z']);
 
 export class KwaStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-KWA' as const;
@@ -70,8 +70,8 @@ export class KwaStrategy extends PhonologicalStrategy {
       }
 
       if (nucleus) {
-        // Ewe tonal depression: H → M after voiced obstruant
-        if (lang === 'ee' && tone === 'H' && EWE_VOICED_OBSTRUENTS.has(onset.slice(-1))) {
+        // Ewe tonal depression: H → M after voiced obstruant (including 'gb')
+        if (lang === 'ee' && tone === 'H' && hasVoicedObstruent(onset)) {
           tone = 'M';
         }
 
@@ -129,6 +129,14 @@ function mapToneChar(ch: string): ToneClass {
     case '\u0304': return 'M';   // macron (mid)
     default: return null;
   }
+}
+
+/** Check if onset ends with a voiced obstruent (handles multi-char 'gb'). */
+function hasVoicedObstruent(onset: string): boolean {
+  if (EWE_VOICED_OBSTRUENTS.has(onset)) return true;
+  // Check last single character for single-char obstruents
+  const last = onset.slice(-1);
+  return EWE_VOICED_OBSTRUENTS.has(last);
 }
 
 /**
