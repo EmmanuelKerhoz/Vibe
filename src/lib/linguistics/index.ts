@@ -19,14 +19,17 @@ export type {
   DetectedSchema,
 } from './core';
 
-export { RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy } from './strategies';
+export { RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy, SlavicStrategy, BantuStrategy, SemiticStrategy } from './strategies';
 export { exactMatch, phonemeEditDistance, featureWeightedScore } from './scoring';
 
 // ─── Bootstrap: register all built-in strategies ────────────────────────────────
 import { PhonologicalRegistry } from './core';
-import { RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy } from './strategies';
+import { RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy, SlavicStrategy, BantuStrategy, SemiticStrategy } from './strategies';
 
 PhonologicalRegistry.register('ALGO-ROM', new RomanceStrategy());
 PhonologicalRegistry.register('ALGO-GER', new GermanicStrategy());
 PhonologicalRegistry.register('ALGO-KWA', new KwaStrategy());
 PhonologicalRegistry.register('ALGO-CRV', new CrvStrategy());
+PhonologicalRegistry.register('ALGO-SLV', new SlavicStrategy());
+PhonologicalRegistry.register('ALGO-BNT', new BantuStrategy());
+PhonologicalRegistry.register('ALGO-SEM', new SemiticStrategy());
