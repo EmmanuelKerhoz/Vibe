@@ -60,6 +60,7 @@ export function useUIState() {
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [isSearchReplaceOpen, setIsSearchReplaceOpen] = useState(false);
+  const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>('lyrics');
@@ -101,6 +102,7 @@ export function useUIState() {
     isPasteModalOpen, setIsPasteModalOpen,
     isAnalysisModalOpen, setIsAnalysisModalOpen,
     isSearchReplaceOpen, setIsSearchReplaceOpen,
+    isAnalysisPanelOpen, setIsAnalysisPanelOpen,
     activeTab, setActiveTab,
     isStructureOpen, setIsStructureOpen,
     isLeftPanelOpen, setIsLeftPanelOpen,
