@@ -4,7 +4,7 @@
  * Reads what it needs from SongContext, AppStateContext, ComposerContext,
  * AnalysisContext, and SimilarityContext directly — no new props.
  */
-import React, { Suspense, lazy, useCallback } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect } from 'react';
 import { Spinner } from '@fluentui/react-components';
 import { useAppStateContext } from '../../contexts/AppStateContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
@@ -22,6 +22,7 @@ import { useLibraryActions } from '../../hooks/useLibraryActions';
 import { useImportHandlers } from '../../hooks/useImportHandlers';
 import { useLinguisticsWorker } from '../../hooks/useLinguisticsWorker';
 import { useMarkupEditor } from '../../hooks/useMarkupEditor';
+import { useSpellCheck } from '../../hooks/composer/useSpellCheck';
 import { useTranslation } from '../../i18n';
 import { AppEditorZone } from './AppEditorZone';
 
@@ -131,6 +132,23 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
     isGeneratingSuggestion: isSurprising,
     resetSuggestionCycle,
   } = useTopicMoodSuggester({ hasApiKey });
+
+  // ── Spell-check ──────────────────────────────────────────────────────────
+  const spellCheck = useSpellCheck({
+    song,
+    songLanguage,
+    hasApiKey,
+    selectedLineId,
+    updateState: updateSongAndStructureWithHistory,
+  });
+
+  // Trigger spell-check automatically when a line is selected
+  useEffect(() => {
+    if (selectedLineId && hasApiKey) {
+      spellCheck.checkSpelling(selectedLineId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLineId, hasApiKey]);
 
   const handleSurpriseClick = useCallback(async () => {
     const suggestion = await handleSurprise();
@@ -303,6 +321,7 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
             hasApiKey={hasApiKey}
             applySuggestion={applySuggestion}
             generateSuggestions={generateSuggestions}
+            spellCheck={spellCheck}
           />
         ) : (
           <StructureSidebar
