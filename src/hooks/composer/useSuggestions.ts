@@ -187,3 +187,86 @@ ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Provid
     applySuggestion,
   };
 };
+
+type UseSynonymsParams = {
+  song: Section[];
+  songLanguage?: string;
+  hasApiKey: boolean;
+};
+
+export const useSynonyms = ({
+  song,
+  songLanguage = 'English',
+  hasApiKey,
+}: UseSynonymsParams) => {
+  const [synonyms, setSynonyms] = useState<Record<string, string[]> | null>(null);
+  const [isSynonymsLoading, setIsSynonymsLoading] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const generateSynonyms = useCallback(
+    async (lineId: string) => {
+      if (!hasApiKey) return;
+
+      setIsSynonymsLoading(true);
+      setSynonyms(null);
+
+      let currentLine: Line | null = null;
+      for (const section of song) {
+        for (const line of section.lines) {
+          if (line.id === lineId) { currentLine = line; break; }
+        }
+        if (currentLine) break;
+      }
+
+      if (!currentLine) { setIsSynonymsLoading(false); return; }
+
+      const lang = songLanguage.trim() || 'English';
+      const prompt = `You are a specialist in ${lang} lyrics and poetic vocabulary.
+
+For each word in the lyric line below, suggest up to 3 synonyms or near-synonyms that:
+- Have the SAME number of syllables as the original word (strict constraint — count carefully)
+- Fit naturally in the same position in the line
+- Match the emotional tone of the original
+
+Line: "${currentLine.text}"
+
+Return a JSON object where each key is a word from the line and the value is an array of synonym strings.
+Words with no valid same-syllable synonym should be omitted entirely.
+Return ONLY the JSON object, no markdown.`;
+
+      let wasAborted = false;
+      try {
+        await withAbort(abortRef, async (signal) => {
+          const response = await generateContentWithRetry({
+            model: AI_MODEL_NAME,
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                additionalProperties: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+              },
+            },
+            signal,
+          });
+          if (signal.aborted) { wasAborted = true; return; }
+          const parsed = safeJsonParse<Record<string, string[]>>(response.text || '{}', {});
+          setSynonyms(Object.keys(parsed).length ? parsed : null);
+        });
+      } catch (error) {
+        if (isAbortError(error)) { wasAborted = true; return; }
+        handleApiError(error, 'Failed to generate synonyms.');
+      } finally {
+        if (!wasAborted) setIsSynonymsLoading(false);
+      }
+    },
+    [song, songLanguage, hasApiKey],
+  );
+
+  const clearSynonyms = useCallback(() => setSynonyms(null), []);
+
+  return { synonyms, isSynonymsLoading, generateSynonyms, clearSynonyms };
+};
