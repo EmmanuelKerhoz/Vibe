@@ -20,28 +20,34 @@ export abstract class PhonologicalStrategy {
   abstract readonly familyId: AlgoFamily;
   abstract readonly defaultWeights: MatchingWeights;
 
-  // ─── Step 1: Normalisation & tokenisation ──────────────────────────────────
+  // ─── Step 1: Normalisation & tokenisation ──────────────────────────────
   abstract normalize(text: string, lang: string): string;
 
-  // ─── Step 2: G2P — Grapheme to Phoneme (IPA) ──────────────────────────────
+  // ─── Step 2: G2P — Grapheme to Phoneme (IPA) ──────────────────────────
   abstract g2p(normalized: string, lang: string): string;
 
-  // ─── Step 3: Syllabification ───────────────────────────────────────────────
+  // ─── Step 3: Syllabification ─────────────────────────────────────────────
   abstract syllabify(ipa: string, lang: string): Syllable[];
 
-  // ─── Step 4: Rhyme Nucleus extraction ──────────────────────────────────────
+  // ─── Step 4: Rhyme Nucleus extraction ────────────────────────────────────
   abstract extractRN(syllables: Syllable[], lang: string): RhymeNucleus;
 
-  // ─── Step 5: Scoring ───────────────────────────────────────────────────────
+  // ─── Step 5: Scoring ────────────────────────────────────────────────────
   abstract score(
     rn1: RhymeNucleus,
     rn2: RhymeNucleus,
     weights?: Partial<MatchingWeights>,
   ): number;
 
-  // ─── Canonical pipeline (final — not overridden) ───────────────────────────
+  // ─── Canonical pipeline (final — not overridden) ─────────────────────────
 
-  /** Run the full 5-step pipeline on a single text input. */
+  /**
+   * Run the full 5-step pipeline on a single text input.
+   *
+   * Note: `score` and `rhymeType` are NOT set here — a single-verse analysis
+   * has no comparison partner, so setting them would produce a misleading
+   * hard-coded value. Use `compare()` to obtain a scored `RhymePairResult`.
+   */
   analyze(text: string, lang: string): RhymeResult {
     const normalized = this.normalize(text, lang);
     const ipa = this.g2p(normalized, lang);
@@ -54,8 +60,8 @@ export abstract class PhonologicalStrategy {
       ipa,
       syllables,
       rhymeNucleus: rn,
-      score: 1.0,
-      rhymeType: 'rich',
+      score: undefined,
+      rhymeType: undefined,
       similarityMethod: 'feature',
       lowResourceFallback: false,
     };
