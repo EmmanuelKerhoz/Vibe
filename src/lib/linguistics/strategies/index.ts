@@ -12,3 +12,6 @@ export { TurkicStrategy } from './TurkicStrategy';
 export { UralicStrategy } from './UralicStrategy';
 export { DravidianStrategy } from './DravidianStrategy';
 export { IndoIranianStrategy } from './IndoIranianStrategy';
+export { JapaneseStrategy } from './JapaneseStrategy';
+export { KoreanStrategy } from './KoreanStrategy';
+export { AustronesianStrategy } from './AustronesianStrategy';
