@@ -12,10 +12,20 @@ type BrahmicProfile = {
 };
 
 const IIR_VOWELS = ['ai', 'au', 'ā', 'ī', 'ū', 'e', 'o', 'a', 'i', 'u'] as const;
+
+/**
+ * Languages for which aspirated–plain pairs are phonologically equivalent
+ * for rime purposes (voiced/voiceless aspirates rhyme with their plain
+ * counterparts in Hindi, Bengali, Punjabi poetry).
+ * Arabic-script IIR languages (ur, fa) are explicitly excluded:
+ * their 'kh'/'gh'/'sh' clusters represent distinct phonemes (/x/, /ɣ/, /ʃ/).
+ */
+const BRAHMIC_ASPIRATION_LANGS = new Set(['hi', 'bn', 'pa', 'mr', 'gu', 'ne', 'or', 'sa']);
+
 const DEVANAGARI_PROFILE: BrahmicProfile = {
   independentVowels: { 'अ': 'a', 'आ': 'ā', 'इ': 'i', 'ई': 'ī', 'उ': 'u', 'ऊ': 'ū', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au', 'ऋ': 'ri' },
   vowelSigns: { 'ा': 'ā', 'ि': 'i', 'ी': 'ī', 'ु': 'u', 'ू': 'ū', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au', 'ृ': 'ri' },
-  consonants: { 'क': 'k', 'ख': 'k', 'ग': 'g', 'घ': 'g', 'ङ': 'n', 'च': 'c', 'छ': 'c', 'ज': 'j', 'झ': 'j', 'ञ': 'n', 'ट': 't', 'ठ': 't', 'ड': 'd', 'ढ': 'd', 'ण': 'n', 'त': 't', 'थ': 't', 'द': 'd', 'ध': 'd', 'न': 'n', 'प': 'p', 'फ': 'p', 'ब': 'b', 'भ': 'b', 'म': 'm', 'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 's', 'ष': 's', 'स': 's', 'ह': 'h' },
+  consonants: { 'क': 'k', 'ख': 'k', 'ग': 'g', 'घ': 'g', 'ङ': 'n', 'च': 'c', 'छ': 'c', 'ज': 'j', 'झ': 'j', 'ञ': 'n', 'ठ': 't', 'ठ': 't', 'ड': 'd', 'ढ': 'd', 'ण': 'n', 'त': 't', 'थ': 't', 'द': 'd', 'ध': 'd', 'न': 'n', 'प': 'p', 'फ': 'p', 'ब': 'b', 'भ': 'b', 'म': 'm', 'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 's', 'ष': 's', 'स': 's', 'ह': 'h' },
   virama: '्',
   finals: { 'ं': 'n', 'ँ': 'n', 'ः': 'h' },
 };
@@ -23,7 +33,7 @@ const DEVANAGARI_PROFILE: BrahmicProfile = {
 const BENGALI_PROFILE: BrahmicProfile = {
   independentVowels: { 'অ': 'a', 'আ': 'ā', 'ই': 'i', 'ঈ': 'ī', 'উ': 'u', 'ঊ': 'ū', 'এ': 'e', 'ঐ': 'ai', 'ও': 'o', 'ঔ': 'au' },
   vowelSigns: { 'া': 'ā', 'ি': 'i', 'ী': 'ī', 'ু': 'u', 'ূ': 'ū', 'ে': 'e', 'ৈ': 'ai', 'ো': 'o', 'ৌ': 'au' },
-  consonants: { 'ক': 'k', 'খ': 'k', 'গ': 'g', 'ঘ': 'g', 'ঙ': 'n', 'চ': 'c', 'ছ': 'c', 'জ': 'j', 'ঝ': 'j', 'ঞ': 'n', 'ট': 't', 'ঠ': 't', 'ড': 'd', 'ঢ': 'd', 'ণ': 'n', 'ত': 't', 'থ': 't', 'দ': 'd', 'ধ': 'd', 'ন': 'n', 'প': 'p', 'ফ': 'p', 'ব': 'b', 'ভ': 'b', 'ম': 'm', 'য': 'y', 'র': 'r', 'ল': 'l', 'শ': 's', 'ষ': 's', 'স': 's', 'হ': 'h', 'ড়': 'd', 'ঢ়': 'd' },
+  consonants: { 'ক': 'k', 'খ': 'k', 'গ': 'g', 'ঘ': 'g', 'ঙ': 'n', 'চ': 'c', 'ছ': 'c', 'জ': 'j', 'ঝ': 'j', 'ঞ': 'n', 'ঠ': 't', 'ঠ': 't', 'ড': 'd', 'ঢ': 'd', 'ণ': 'n', 'ত': 't', 'থ': 't', 'দ': 'd', 'ধ': 'd', 'ন': 'n', 'প': 'p', 'ফ': 'p', 'ব': 'b', 'ভ': 'b', 'ম': 'm', 'য': 'y', 'র': 'r', 'ল': 'l', 'শ': 's', 'ষ': 's', 'স': 's', 'হ': 'h', 'ড়': 'd', 'ঢ়': 'd' },
   virama: '্',
   finals: { 'ং': 'n', 'ঁ': 'n', 'ঃ': 'h' },
 };
@@ -31,7 +41,7 @@ const BENGALI_PROFILE: BrahmicProfile = {
 const GURMUKHI_PROFILE: BrahmicProfile = {
   independentVowels: { 'ਅ': 'a', 'ਆ': 'ā', 'ਇ': 'i', 'ਈ': 'ī', 'ਉ': 'u', 'ਊ': 'ū', 'ਏ': 'e', 'ਐ': 'ai', 'ਓ': 'o', 'ਔ': 'au' },
   vowelSigns: { 'ਾ': 'ā', 'ਿ': 'i', 'ੀ': 'ī', 'ੁ': 'u', 'ੂ': 'ū', 'ੇ': 'e', 'ੈ': 'ai', 'ੋ': 'o', 'ੌ': 'au' },
-  consonants: { 'ਕ': 'k', 'ਖ': 'k', 'ਗ': 'g', 'ਘ': 'g', 'ਙ': 'n', 'ਚ': 'c', 'ਛ': 'c', 'ਜ': 'j', 'ਝ': 'j', 'ਞ': 'n', 'ਟ': 't', 'ਠ': 't', 'ਡ': 'd', 'ਢ': 'd', 'ਣ': 'n', 'ਤ': 't', 'ਥ': 't', 'ਦ': 'd', 'ਧ': 'd', 'ਨ': 'n', 'ਪ': 'p', 'ਫ': 'p', 'ਬ': 'b', 'ਭ': 'b', 'ਮ': 'm', 'ਯ': 'y', 'ਰ': 'r', 'ਲ': 'l', 'ਵ': 'v', 'ਸ਼': 's', 'ਸ': 's', 'ਹ': 'h', 'ੜ': 'r' },
+  consonants: { 'ਕ': 'k', 'ਖ': 'k', 'ਗ': 'g', 'ਘ': 'g', 'ਙ': 'n', 'ਚ': 'c', 'ਛ': 'c', 'ਜ': 'j', 'ਝ': 'j', 'ਞ': 'n', 'ਟ': 't', 'ਠ': 't', 'ਡ': 'd', 'ਢ': 'd', 'ਣ': 'n', 'ਤ': 't', 'ਥ': 't', 'ਦ': 'd', 'ਧ': 'd', 'ਨ': 'n', 'ਪ': 'p', 'ਫ': 'p', 'ਬ': 'b', 'ਭ': 'b', 'ਮ': 'm', 'ਯ': 'y', 'ਰ': 'r', 'ਲ': 'l', 'ਵ': 'v', 'ਸ': 's', 'ਹ': 'h', 'ਸ਼': 's', 'ੜ': 'r' },
   virama: '੍',
   finals: { 'ਂ': 'n', 'ਁ': 'n', 'ਃ': 'h' },
 };
@@ -70,7 +80,10 @@ export class IndoIranianStrategy extends PhonologicalStrategy {
     return normalized
       .split(/\s+/u)
       .filter(Boolean)
-      .map((word) => normalizeAspiration(stripAgglutinativeSuffixes(transliterateIndoIranianWord(word, lang), lang)))
+      .map((word) => normalizeAspiration(
+        stripAgglutinativeSuffixes(transliterateIndoIranianWord(word, lang), lang),
+        lang,
+      ))
       .join(' ');
   }
 
@@ -110,14 +123,26 @@ function transliterateIndoIranianWord(word: string, lang: string): string {
   }
 
   const profile = BRAHMIC_PROFILES[lang.toLowerCase()];
-  if (!profile) {
-    return word;
-  }
+  if (!profile) return word;
 
   return applyFinalSchwaDeletion(transliterateAbugida(word, profile));
 }
 
-function normalizeAspiration(word: string): string {
+/**
+ * Collapse aspirated consonant pairs to their plain equivalents for rime
+ * comparison purposes.
+ *
+ * ONLY applied to Brahmic-script IIR languages (hi, bn, pa, etc.) where
+ * aspirated/plain pairs (k/kh, g/gh, c/ch, j/jh, t/th, d/dh, p/ph, b/bh)
+ * are phonologically equivalent for rhyme matching.
+ *
+ * NOT applied to ur/fa: their ARABIC_IIR_MAP already maps Arabic consonants
+ * to Latin approximations where 'kh' = /x/ (خ), 'gh' = /ɣ/ (غ), 'sh' = /ʃ/ (ش)
+ * — collapsing these would create false rhyme pairs.
+ */
+function normalizeAspiration(word: string, lang: string): string {
+  if (!BRAHMIC_ASPIRATION_LANGS.has(lang)) return word;
+
   return word
     .replace(/chh/g, 'c')
     .replace(/kh/g, 'k')
@@ -180,10 +205,7 @@ function transliterateAbugida(word: string, profile: BrahmicProfile): string {
   for (let index = 0; index < word.length; index++) {
     const char = word[index]!;
 
-    if (/\s/u.test(char)) {
-      result += char;
-      continue;
-    }
+    if (/\s/u.test(char)) { result += char; continue; }
 
     if (profile.independentVowels[char]) {
       result += profile.independentVowels[char]!;
@@ -198,16 +220,8 @@ function transliterateAbugida(word: string, profile: BrahmicProfile): string {
     if (profile.consonants[char]) {
       const base = profile.consonants[char]!;
       const next = word[index + 1];
-      if (next === profile.virama) {
-        result += base;
-        index += 1;
-        continue;
-      }
-      if (next && profile.vowelSigns[next]) {
-        result += `${base}${profile.vowelSigns[next]!}`;
-        index += 1;
-        continue;
-      }
+      if (next === profile.virama) { result += base; index += 1; continue; }
+      if (next && profile.vowelSigns[next]) { result += `${base}${profile.vowelSigns[next]!}`; index += 1; continue; }
       result += `${base}a`;
       continue;
     }
