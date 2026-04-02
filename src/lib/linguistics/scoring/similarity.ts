@@ -34,11 +34,64 @@ function levenshtein(a: string[], b: string[]): number {
   return prev[n]!;
 }
 
-/** Split IPA string into individual phoneme segments (simplified). */
-function segmentIPA(ipa: string): string[] {
-  // Simple split on individual characters; a real implementation would
-  // handle affricates, diacritics clusters, etc.
-  return [...ipa].filter(c => c.trim().length > 0);
+/**
+ * Split an IPA string into individual phoneme tokens.
+ *
+ * Priority order (longest match first):
+ * 1. Affricates: tʃ dʒ ts dz tɕ dʑ
+ * 2. Labio-velars (KWA/BNT): kp gb ŋm
+ * 3. Base symbol + combining diacritics (U+0300–U+036F) + length mark ː
+ * 4. Single non-whitespace IPA character
+ *
+ * This replaces the naive character-by-character split that incorrectly
+ * counted each half of an affricate or labio-velar as a separate phoneme.
+ */
+export function segmentIPA(ipa: string): string[] {
+  const tokens: string[] = [];
+  let i = 0;
+  const chars = [...ipa]; // Unicode-safe iteration
+  const len = chars.length;
+
+  // Pre-built affricate / labio-velar multi-char patterns (descending length)
+  const multichar = [
+    'tʃ', 'dʒ', 'tɕ', 'dʑ', 'ts', 'dz', 'kp', 'gb', 'ŋm',
+  ];
+
+  while (i < len) {
+    const ch = chars[i]!;
+
+    // Skip whitespace
+    if (ch.trim() === '') { i++; continue; }
+
+    // Try multi-char tokens
+    let matched = false;
+    for (const mc of multichar) {
+      const mcChars = [...mc];
+      if (chars.slice(i, i + mcChars.length).join('') === mc) {
+        tokens.push(mc);
+        i += mcChars.length;
+        matched = true;
+        break;
+      }
+    }
+    if (matched) continue;
+
+    // Base char + optional combining diacritics + optional length mark
+    let token = ch;
+    i++;
+    while (i < len) {
+      const next = chars[i]!;
+      if (/[\u0300-\u036fː]/.test(next)) {
+        token += next;
+        i++;
+      } else {
+        break;
+      }
+    }
+    tokens.push(token);
+  }
+
+  return tokens;
 }
 
 export function phonemeEditDistance(rn1: RhymeNucleus, rn2: RhymeNucleus): number {
