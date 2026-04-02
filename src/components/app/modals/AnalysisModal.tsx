@@ -79,7 +79,7 @@ export function AnalysisModal({
         role="dialog"
         aria-modal="true"
         aria-label={t.analysis.title}
-        className="relative w-full h-full flex flex-col dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px] shadow-2xl overflow-hidden"
+        className="relative w-full h-full flex flex-col glass-panel rounded-none sm:rounded-[22px_6px_22px_6px] shadow-2xl overflow-hidden"
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)] flex-shrink-0">
