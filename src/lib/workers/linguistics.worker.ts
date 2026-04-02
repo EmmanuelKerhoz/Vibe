@@ -35,6 +35,9 @@ import { TurkicStrategy } from '../linguistics/strategies/TurkicStrategy';
 import { UralicStrategy } from '../linguistics/strategies/UralicStrategy';
 import { DravidianStrategy } from '../linguistics/strategies/DravidianStrategy';
 import { IndoIranianStrategy } from '../linguistics/strategies/IndoIranianStrategy';
+import { JapaneseStrategy } from '../linguistics/strategies/JapaneseStrategy';
+import { KoreanStrategy } from '../linguistics/strategies/KoreanStrategy';
+import { AustronesianStrategy } from '../linguistics/strategies/AustronesianStrategy';
 
 // ─── Bootstrap the registry inside the worker context ──────────────────────
 
@@ -46,6 +49,9 @@ PhonologicalRegistry.register('ALGO-TRK', new TurkicStrategy());
 PhonologicalRegistry.register('ALGO-FIN', new UralicStrategy());
 PhonologicalRegistry.register('ALGO-DRV', new DravidianStrategy());
 PhonologicalRegistry.register('ALGO-IIR', new IndoIranianStrategy());
+PhonologicalRegistry.register('ALGO-JAP', new JapaneseStrategy());
+PhonologicalRegistry.register('ALGO-KOR', new KoreanStrategy());
+PhonologicalRegistry.register('ALGO-AUS', new AustronesianStrategy());
 
 // ─── Utility functions ─────────────────────────────────────────────────────
 

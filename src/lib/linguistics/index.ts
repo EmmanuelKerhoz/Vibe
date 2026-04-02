@@ -19,12 +19,12 @@ export type {
   DetectedSchema,
 } from './core';
 
-export { RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy, SlavicStrategy, BantuStrategy, SemiticStrategy, SiniticStrategy, TaiStrategy, VietStrategy, TurkicStrategy, UralicStrategy, DravidianStrategy, IndoIranianStrategy } from './strategies';
+export { RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy, SlavicStrategy, BantuStrategy, SemiticStrategy, SiniticStrategy, TaiStrategy, VietStrategy, TurkicStrategy, UralicStrategy, DravidianStrategy, IndoIranianStrategy, JapaneseStrategy, KoreanStrategy, AustronesianStrategy } from './strategies';
 export { exactMatch, phonemeEditDistance, featureWeightedScore } from './scoring';
 
 // ─── Bootstrap: register all built-in strategies ────────────────────────────────
 import { PhonologicalRegistry } from './core';
-import { RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy, SlavicStrategy, BantuStrategy, SemiticStrategy, SiniticStrategy, TaiStrategy, VietStrategy, TurkicStrategy, UralicStrategy, DravidianStrategy, IndoIranianStrategy } from './strategies';
+import { RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy, SlavicStrategy, BantuStrategy, SemiticStrategy, SiniticStrategy, TaiStrategy, VietStrategy, TurkicStrategy, UralicStrategy, DravidianStrategy, IndoIranianStrategy, JapaneseStrategy, KoreanStrategy, AustronesianStrategy } from './strategies';
 
 PhonologicalRegistry.register('ALGO-ROM', new RomanceStrategy());
 PhonologicalRegistry.register('ALGO-GER', new GermanicStrategy());
@@ -40,3 +40,6 @@ PhonologicalRegistry.register('ALGO-TRK', new TurkicStrategy());
 PhonologicalRegistry.register('ALGO-FIN', new UralicStrategy());
 PhonologicalRegistry.register('ALGO-DRV', new DravidianStrategy());
 PhonologicalRegistry.register('ALGO-IIR', new IndoIranianStrategy());
+PhonologicalRegistry.register('ALGO-JAP', new JapaneseStrategy());
+PhonologicalRegistry.register('ALGO-KOR', new KoreanStrategy());
+PhonologicalRegistry.register('ALGO-AUS', new AustronesianStrategy());

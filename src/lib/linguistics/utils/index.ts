@@ -22,3 +22,10 @@ export {
 export {
   stripAgglutinativeSuffixes,
 } from './agglutinativeUtils';
+
+export {
+  isHanCharacter,
+  isHangulSyllable,
+  isKana,
+  katakanaToHiragana,
+} from './scriptUtils';
