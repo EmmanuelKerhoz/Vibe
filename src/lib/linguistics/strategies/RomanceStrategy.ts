@@ -3,14 +3,15 @@
  * docs_fusion_optimal.md §10.1 / Annexe 2 §3.
  *
  * Covers: FR, ES, IT, PT, RO, CA.
- * Key traits: MOP syllabification, lexical stress, French e-muet handling.
+ * Key traits: MOP syllabification, lexical stress, French e-muet handling,
+ *             French nasal vowel grapheme→phoneme class mapping.
  */
 
 import { PhonologicalStrategy } from '../core/PhonologicalStrategy';
 import { featureWeightedScore } from '../scoring';
 import type { MatchingWeights, RhymeNucleus, Syllable } from '../core/types';
 
-// ─── MOP onset table ─────────────────────────────────────────────────────────────
+// ─── MOP onset table ────────────────────────────────────────────────────────
 
 /**
  * Legal two-consonant onsets shared across FR/ES/IT/PT/RO/CA.
@@ -72,6 +73,56 @@ function mopSplit(cluster: string): [onset: string, prevCoda: string] {
   return [cluster.slice(-1), cluster.slice(0, -1)];
 }
 
+// ─── French nasal vowel mapping ──────────────────────────────────────────────────
+
+/**
+ * Map a (graphemic nucleus, graphemic coda) pair to a phonemic nasal
+ * vowel class token for French, when the coda is a nasal consonant
+ * that is phonemically absorbed into the preceding vowel.
+ *
+ * In French phonology, V+n/m sequences before another consonant or
+ * word-finally produce a single nasal vowel:
+ *   an/am/en/em  → /ɑ̃/  (ɑ̃) — chant, chambre, vent, temps
+ *   in/im/yn/ym  → /ɛ̃/  (ɛ̃) — fin, simple, hymne
+ *   on/om        → /ɔ̃/  (ɔ̃) — bon, ombre
+ *   un/um        → /œ̃/  (œ̃) — un, humble (merging with /ɛ̃/ in modern FR)
+ *
+ * Returns { nucleus: nasalToken, coda: '' } when the pair is nasal,
+ * or null when no nasal mapping applies (caller keeps original values).
+ *
+ * Note: this function operates on graphemes (orthographic stub).  A
+ * real G2P would also handle 'ien' (→ /jɛ̃/) and 'ein' (→ /ɛ̃/) but
+ * those require context-sensitive rules beyond simple V+nasal matching.
+ */
+function normalizeFrNasal(
+  nucleus: string,
+  coda: string,
+): { nucleus: string; coda: string } | null {
+  // Only apply when the coda starts with a nasal consonant letter.
+  if (!/^[nm]/i.test(coda)) return null;
+
+  const v = nucleus.normalize('NFD')[0]?.toLowerCase() ?? '';
+
+  if ('a\u00e2\u00e0'.includes(v) || 'e\u00e9\u00e8\u00ea\u00eb'.includes(v)) {
+    // an/am/en/em → /ɑ̃/
+    return { nucleus: 'ɑ̃', coda: '' };
+  }
+  if ('i\u00ef\u00eeyu'.includes(v) && v !== 'u') {
+    // in/im/yn/ym → /ɛ̃/
+    return { nucleus: 'ɛ̃', coda: '' };
+  }
+  if (v === 'o' || v === '\u00f4') {
+    // on/om → /ɔ̃/
+    return { nucleus: 'ɔ̃', coda: '' };
+  }
+  if (v === 'u' || v === '\u00f9' || v === '\u00fb' || v === '\u00fc') {
+    // un/um → /œ̃/ (merging with /ɛ̃/ in modern FR; kept distinct for now)
+    return { nucleus: 'œ̃', coda: '' };
+  }
+
+  return null;
+}
+
 // ─── Strategy ────────────────────────────────────────────────────────────────
 
 export class RomanceStrategy extends PhonologicalStrategy {
@@ -95,7 +146,7 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * Expansion order:
    *   1. 'qu\u2019' / 'qu\'' before 'q\u2019' / 'q\'' to avoid partial match.
    *   2. Multi-char elisions before single-char ones.
-   *   3. Both typographic (’) and straight (') apostrophes handled.
+   *   3. Both typographic (‘) and straight (') apostrophes handled.
    *
    * Covered contractions:
    *   l'   → l     (already present)
@@ -209,18 +260,34 @@ export class RomanceStrategy extends PhonologicalStrategy {
     return syllables;
   }
 
-  extractRN(syllables: Syllable[], _lang: string): RhymeNucleus {
+  extractRN(syllables: Syllable[], lang: string): RhymeNucleus {
     const stressIdx = syllables.findIndex(s => s.stressed);
     const idx = stressIdx >= 0 ? stressIdx : Math.max(0, syllables.length - 1);
     const tail = syllables.slice(idx);
-    const raw = tail.map(s => `${s.nucleus}${s.coda}`).join('');
     const primary = tail[0];
+
+    let nucleus = primary?.nucleus ?? '';
+    let coda = primary?.coda ?? '';
+
+    // French nasal vowel normalisation: V+n/m → single nasal phoneme class.
+    // Applied before building raw so that vent (/ɑ̃/) ~ content (/ɑ̃/) match.
+    if (lang === 'fr') {
+      const nasal = normalizeFrNasal(nucleus, coda);
+      if (nasal) {
+        nucleus = nasal.nucleus;
+        coda = nasal.coda;
+      }
+    }
+
+    // Rebuild raw from (possibly rewritten) primary + unchanged tail.
+    const raw = [nucleus + coda, ...tail.slice(1).map(s => `${s.nucleus}${s.coda}`)].join('');
+
     return {
-      nucleus: primary?.nucleus ?? '',
-      coda: primary?.coda ?? '',
+      nucleus,
+      coda,
       toneClass: null,
       weight: null,
-      codaClass: classifyCoda(primary?.coda ?? ''),
+      codaClass: coda ? classifyCoda(coda) : null,
       raw,
       // G2P is a stub — analysis is graphemic only; flag consumers.
       lowResourceFallback: true,
