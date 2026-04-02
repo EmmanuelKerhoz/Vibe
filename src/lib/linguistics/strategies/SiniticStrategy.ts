@@ -18,6 +18,8 @@ import {
 
 type SiniticProfile = {
   initials: string[];
+  /** Initials sorted longest-first for greedy segmentation. */
+  initialsSorted: string[];
   toneDigits: Record<string, ToneClass>;
   diacriticMap: Partial<Record<string, ToneClass>>;
   digitResolver?: (toneDigit: string | null, coda: string) => ToneClass;
@@ -26,7 +28,14 @@ type SiniticProfile = {
 const HAN_CHAR_RE = /\p{Script=Han}/u;
 const LATIN_RE = /[a-z]/i;
 
-const MANDARIN_PROFILE: SiniticProfile = {
+function buildProfile(p: Omit<SiniticProfile, 'initialsSorted'>): SiniticProfile {
+  return {
+    ...p,
+    initialsSorted: [...p.initials].sort((a, b) => b.length - a.length),
+  };
+}
+
+const MANDARIN_PROFILE: SiniticProfile = buildProfile({
   initials: ['zh', 'ch', 'sh', 'ng', 'b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'r', 'z', 'c', 's', 'w', 'y'],
   toneDigits: {
     '1': 'M',
@@ -41,7 +50,7 @@ const MANDARIN_PROFILE: SiniticProfile = {
     '\u030C': 'L',
     '\u0300': 'HL',
   },
-};
+});
 
 const CANTONESE_TONE_BANDS: Record<string, 'H' | 'M' | 'L'> = {
   '1': 'H',
@@ -67,7 +76,7 @@ const CANTONESE_NON_ENTERING_TONES: Record<'H' | 'M' | 'L', ToneClass> = {
   L: 'L',
 };
 
-const CANTONESE_PROFILE: SiniticProfile = {
+const CANTONESE_PROFILE: SiniticProfile = buildProfile({
   initials: ['gw', 'kw', 'ng', 'zh', 'ch', 'sh', 'b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'w', 'z', 'c', 's', 'j'],
   toneDigits: {},
   diacriticMap: {
@@ -81,7 +90,7 @@ const CANTONESE_PROFILE: SiniticProfile = {
       ? CANTONESE_ENTERING_TONES[band]
       : CANTONESE_NON_ENTERING_TONES[band];
   },
-};
+});
 
 const SINITIC_PROFILES: Record<string, SiniticProfile> = {
   zh: MANDARIN_PROFILE,
@@ -108,23 +117,34 @@ export class SiniticStrategy extends PhonologicalStrategy {
   }
 
   g2p(normalized: string, _lang: string): string {
-    // TODO(low-resource/SIN): this is a pass-through — no Han→Pinyin/Jyutping
-    // conversion is performed. Pure Han input (no diacritics, no tone digits)
-    // will propagate raw characters and trigger lowResourceFallback in syllabify()
-    // and extractRN(). A proper implementation would use a character-level
-    // pronunciation dictionary (CC-CEDICT for zh, words.hk for yue) to convert
-    // each Han character to its romanised form with tone before syllabification.
+    // TODO(low-resource/SIN): pass-through — no Han→Pinyin/Jyutping conversion.
+    // Pure Han input propagates raw characters and triggers lowResourceFallback.
+    // A proper implementation would use CC-CEDICT (zh) or words.hk (yue).
     return normalized;
   }
 
   syllabify(ipa: string, lang: string): Syllable[] {
     const profile = resolveSiniticProfile(lang);
-    const syllables = tokenizeSinitic(ipa).flatMap((token) => {
+
+    // Split on whitespace first, then segment each Latin token into
+    // individual Pinyin/Jyutping syllables (handles unspaced input).
+    const rawTokens = ipa.split(/\s+/u).filter(Boolean);
+    const tokens: string[] = [];
+    for (const raw of rawTokens) {
+      if (HAN_CHAR_RE.test(raw) && !LATIN_RE.test(raw)) {
+        // Pure Han — pass through; handled by lowResourceFallback path below.
+        tokens.push(raw);
+      } else if (LATIN_RE.test(raw)) {
+        // Latin (possibly unspaced Pinyin/Jyutping) — segment.
+        tokens.push(...segmentLatinSiniticToken(raw, profile));
+      } else {
+        tokens.push(raw);
+      }
+    }
+
+    const syllables = tokens.flatMap((token) => {
       if (HAN_CHAR_RE.test(token) && !LATIN_RE.test(token)) {
-        // TODO(low-resource/SIN): raw Han tokens are emitted as opaque nuclei
-        // because g2p() performed no romanisation. Each character gets
-        // lowResourceFallback:true so callers can downgrade confidence.
-        // Replace with dictionary-driven romanisation (see g2p TODO above).
+        // Raw Han: emit opaque nucleus with lowResourceFallback.
         return [...token]
           .filter((char) => HAN_CHAR_RE.test(char))
           .map<Syllable & { lowResourceFallback: boolean }>((char) => ({
@@ -156,9 +176,6 @@ export class SiniticStrategy extends PhonologicalStrategy {
     const coda = last?.coda ?? '';
     const toneClass = last?.tone ?? null;
 
-    // Propagate lowResourceFallback when the last syllable is a raw Han char.
-    // TODO(low-resource/SIN): once g2p() resolves Han to romanised form, remove
-    // this flag — it should never be set for properly processed input.
     const lowResourceFallback =
       (last as (Syllable & { lowResourceFallback?: boolean }) | undefined)
         ?.lowResourceFallback === true ||
@@ -180,38 +197,124 @@ export class SiniticStrategy extends PhonologicalStrategy {
   }
 }
 
+// ─── Sinitic profile resolution ─────────────────────────────────────────────────
+
 function resolveSiniticProfile(lang: string): SiniticProfile {
   return SINITIC_PROFILES[lang.toLowerCase()] ?? MANDARIN_PROFILE;
 }
 
-function tokenizeSinitic(text: string): string[] {
-  return text.split(/\s+/u).filter(Boolean);
+// ─── Unspaced Latin token segmentation ─────────────────────────────────────────
+
+/**
+ * Greedily segment a single Latin token (potentially unspaced Pinyin or
+ * Jyutping) into individual syllable strings.
+ *
+ * Algorithm:
+ *   pos = 0
+ *   while pos < token.length:
+ *     1. Strip leading tone digits (e.g., the '3' in 'hao3ni3hao3').
+ *        Actually: tone digits may be at the END of each syllable, so
+ *        we scan forward to find the next syllable boundary.
+ *     2. Try each initial in initialsSorted (longest first).
+ *        If token[pos..] starts with an initial, record it.
+ *     3. Consume the rime: all chars until the next initial or EOS,
+ *        excluding a trailing tone digit which belongs to this syllable.
+ *     4. Emit (initial + rime) as one token.
+ *
+ * Boundary detection: after consuming an initial, advance until we find
+ * a position where another initial matches — that position is the start
+ * of the next syllable.
+ *
+ * Edge cases:
+ *   • Null onset syllables (vowel-initial: an, ou, ai, er) — consume
+ *     vowels/non-initial-consonants until an initial boundary.
+ *   • Single-syllable tokens: returned as-is (no segmentation needed).
+ *   • Apostrophe separators (n’an, xi’an): stripped during normalization;
+ *     if present, split on them first.
+ */
+const TONE_DIGIT_RE = /[1-9]$/;
+const VOWEL_RE = /[aeiouüüêîôâ]/i;
+
+function segmentLatinSiniticToken(token: string, profile: SiniticProfile): string[] {
+  // If the token contains apostrophes (xi'an style), split on them first.
+  const apostropheParts = token.split(/['\u2019]/u).filter(Boolean);
+  if (apostropheParts.length > 1) {
+    return apostropheParts.flatMap(part => segmentLatinSiniticToken(part, profile));
+  }
+
+  const result: string[] = [];
+  let pos = 0;
+  const initials = profile.initialsSorted;
+
+  while (pos < token.length) {
+    // Try to match an initial at current position.
+    let initial = '';
+    for (const candidate of initials) {
+      if (token.startsWith(candidate, pos)) {
+        initial = candidate;
+        break;
+      }
+    }
+
+    // Advance past the initial.
+    let rimStart = pos + initial.length;
+
+    // Consume the rime: advance until we hit a position where
+    // another initial starts (but only after consuming at least one vowel
+    // to avoid mis-splitting on consonant clusters like 'ng').
+    let end = rimStart;
+    let seenVowel = false;
+
+    while (end < token.length) {
+      const ch = token[end]!;
+
+      // A tone digit at this position belongs to this syllable.
+      if (TONE_DIGIT_RE.test(ch)) {
+        end++;
+        break;
+      }
+
+      if (VOWEL_RE.test(ch)) {
+        seenVowel = true;
+        end++;
+        continue;
+      }
+
+      // Consonant: check if it starts a new initial (boundary).
+      if (seenVowel) {
+        // Check for known initial at this position — if found, stop.
+        const nextInitial = initials.find(c => token.startsWith(c, end));
+        if (nextInitial) break;
+      }
+
+      end++;
+    }
+
+    const syllable = token.slice(pos, end);
+    if (syllable) result.push(syllable);
+    pos = end;
+  }
+
+  // Fallback: if segmentation produced nothing, return the token as-is.
+  return result.length > 0 ? result : [token];
 }
+
+// ─── Romanised syllable parser ────────────────────────────────────────────────
 
 function parseRomanizedSiniticSyllable(token: string, profile: SiniticProfile): Syllable | null {
   const { base: digitless, toneClass: digitTone, toneDigit } = extractToneFromToneDigit(token.normalize('NFD'), profile.toneDigits);
   const { base, toneMark } = splitToneDiacritics(digitless);
   const cleaned = base.replace(/[''-]/gu, '').normalize('NFC');
 
-  if (!cleaned) {
-    return null;
-  }
+  if (!cleaned) return null;
 
   const onset = extractInitial(cleaned, profile.initials);
   const segmentalRime = cleaned.slice(onset.length) || cleaned;
   const coda = extractRomanizedCoda(segmentalRime);
   const nucleus = coda ? segmentalRime.slice(0, -coda.length) : segmentalRime;
-  const tone = resolveSiniticTone({
-    coda,
-    digitTone,
-    profile,
-    toneDigit,
-    toneMark,
-  });
+  const tone = resolveSiniticTone({ coda, digitTone, profile, toneDigit, toneMark });
 
-  if (!nucleus) {
-    return null;
-  }
+  if (!nucleus) return null;
 
   return {
     onset,
@@ -229,8 +332,7 @@ function extractInitial(token: string, initials: string[]): string {
 }
 
 function extractRomanizedCoda(rime: string): string {
-  const match = rime.match(ROMANIZED_CODA_RE);
-  return match?.[1] ?? '';
+  return rime.match(ROMANIZED_CODA_RE)?.[1] ?? '';
 }
 
 function isEnteringCoda(coda: string): boolean {
@@ -245,14 +347,8 @@ function resolveSiniticTone(params: {
   toneMark: string | null;
 }): ToneClass {
   const { coda, digitTone, profile, toneDigit, toneMark } = params;
-  if (profile.digitResolver) {
-    return profile.digitResolver(toneDigit, coda);
-  }
-  if (digitTone) {
-    return digitTone;
-  }
-  if (toneMark) {
-    return extractToneFromDiacritic(toneMark, profile.diacriticMap);
-  }
+  if (profile.digitResolver) return profile.digitResolver(toneDigit, coda);
+  if (digitTone) return digitTone;
+  if (toneMark) return extractToneFromDiacritic(toneMark, profile.diacriticMap);
   return profile.toneDigits['5'] ?? null;
 }
