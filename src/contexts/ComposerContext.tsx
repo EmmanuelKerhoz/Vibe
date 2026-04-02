@@ -3,6 +3,7 @@ import { useSongComposer } from '../hooks/useSongComposer';
 import { useSongContext } from './SongContext';
 import { useAppStateContext } from './AppStateContext';
 import { useLanguage } from '../i18n';
+import { getUiLanguageNameForAi } from '../i18n/constants';
 
 type ComposerContextValue = ReturnType<typeof useSongComposer>;
 
@@ -50,7 +51,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
     rhythm,
     narrative,
     songLanguage,
-    uiLanguage: language,
+    uiLanguage: getUiLanguageNameForAi(language),
     setMusicalPrompt,
     setGenre,
     setTempo,

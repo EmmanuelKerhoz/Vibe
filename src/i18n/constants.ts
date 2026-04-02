@@ -134,3 +134,13 @@ export function formatLanguageDisplay(value: string): string {
   const { label, sign } = getLanguageDisplay(value);
   return `${sign} ${label}`;
 }
+
+/**
+ * Resolves a UI locale code (e.g. 'fr') to a language name suitable for AI prompts.
+ * Returns the locale's native label (e.g. 'Français') or 'English' as a fallback.
+ * AI models reliably understand native language names in prompt instructions.
+ */
+export function getUiLanguageNameForAi(code: string): string {
+  const locale = SUPPORTED_UI_LOCALES.find(l => l.code === code);
+  return locale?.label || 'English';
+}

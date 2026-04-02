@@ -11,7 +11,6 @@ import { withAbort, isAbortError } from '../../utils/withAbort';
 import { withRetry } from '../../utils/withRetry';
 import { getDefaultLineCount } from '../../utils/songDefaults';
 import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
-import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { z } from 'zod';
 
 const LineResponseSchema = z.object({
@@ -199,7 +198,6 @@ export const useAiGeneration = ({
 }: UseAiGenerationParams) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [regeneratingSections, setRegeneratingSections] = useState<Set<string>>(new Set());
-  const resolvedUiLanguage = resolveUiLanguageName(uiLanguage);
 
   // Dedicated abort controller for generateSong / quantizeSyllables (full-song operations).
   // Separate from per-section regen controllers to avoid cross-operation abort interference
@@ -258,7 +256,7 @@ Line counts for sections:
 - Outro: 4 lines
 
 For each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
-For each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${resolvedUiLanguage}).`;
+For each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${uiLanguage}).`;
 
         const response = await withRetry(() =>
           getAi().models.generateContent({
@@ -292,7 +290,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
     }
   }, [
     structure, topic, mood, rhymeScheme, targetSyllables, songLanguage,
-    resolvedUiLanguage,
+    uiLanguage,
     updateSongAndStructureWithHistory, requestAutoTitleGeneration, setSelectedLineId,
   ]);
 
@@ -382,7 +380,7 @@ ${RHYME_ENFORCEMENT_RULES}${ipaConstraints}
 
 ${META_INSTRUCTION_HINT}
 
-IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${resolvedUiLanguage}.
+IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${uiLanguage}.
 ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}
 
 Current Section:
@@ -427,7 +425,7 @@ Return the updated section in the exact same JSON structure (as an array with on
     }
   }, [
     song, title, topic, mood, rhymeScheme, targetSyllables, songLanguage,
-    resolvedUiLanguage,
+    uiLanguage,
     updateSong,
   ]);
 
