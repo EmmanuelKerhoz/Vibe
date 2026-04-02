@@ -10,7 +10,7 @@ import { PhonologicalStrategy } from '../core/PhonologicalStrategy';
 import { featureWeightedScore } from '../scoring';
 import type { MatchingWeights, RhymeNucleus, Syllable } from '../core/types';
 
-// ─── MOP onset table ────────────────────────────────────────────────────────────────────
+// ─── MOP onset table ─────────────────────────────────────────────────────────────
 
 /**
  * Legal two-consonant onsets shared across FR/ES/IT/PT/RO/CA.
@@ -18,6 +18,14 @@ import type { MatchingWeights, RhymeNucleus, Syllable } from '../core/types';
  * Three-consonant onsets (str, spl, spr...) are omitted — they are rare in
  * the Romance corpus and the current G2P stub produces orthographic text
  * rather than IPA, making str-level clusters unreliable anyway.
+ *
+ * Added in this revision:
+ *   'sc' — legal onset in IT/ES/PT: scuola, scrivere, escribir, escrever.
+ *           Rare as onset in FR (sceptre is the canonical exception).
+ *   'gn' — legal onset in IT: gnocchi, gnomo, gnosi.
+ *           Not a true onset in FR (gn is always medial/final in native words)
+ *           but G2P is orthographic so inclusion is harmless for FR and
+ *           correct for IT.
  */
 const LEGAL_ONSETS_2 = new Set([
   'bl', 'br',
@@ -25,7 +33,9 @@ const LEGAL_ONSETS_2 = new Set([
   'dr',
   'fl', 'fr',
   'gl', 'gr',
+  'gn',           // IT: gnocchi, gnomo
   'pl', 'pr',
+  'sc',           // IT/ES/PT: scuola, escribir
   'tr',
   'vr',
   // Spanish/IT additional
@@ -35,38 +45,34 @@ const LEGAL_ONSETS_2 = new Set([
 /**
  * Split a pre-vowel consonant cluster using the Maximum Onset Principle.
  *
- * Given the consonants that precede the current vowel (cluster) and the
- * consonants that preceded the previous vowel (prevCoda), find the
- * longest legal onset from the left of cluster, assign the remainder
- * to prevCoda.
+ * Given the consonants that precede the current vowel, find the
+ * longest legal onset suffix, assign the remainder to prevCoda.
  *
  * Returns [onsetForCurrent, codaForPrevious].
  *
  * Examples (orthographic, FR/ES/IT/PT):
  *   cluster="br"  → onset="br",  prevCoda=""
- *   cluster="str" → onset="tr",   prevCoda="s"
- *   cluster="ct"  → onset="t",    prevCoda="c"
- *   cluster="ntr" → onset="tr",   prevCoda="n"
+ *   cluster="str" → onset="tr",  prevCoda="s"
+ *   cluster="ct"  → onset="t",   prevCoda="c"
+ *   cluster="ntr" → onset="tr",  prevCoda="n"
+ *   cluster="sc"  → onset="sc",  prevCoda=""   (IT: scu.o.la)
+ *   cluster="gn"  → onset="gn",  prevCoda=""   (IT: gno.cchi)
  */
 function mopSplit(cluster: string): [onset: string, prevCoda: string] {
   const len = cluster.length;
   if (len === 0) return ['', ''];
   if (len === 1) return [cluster, ''];
 
-  // Try the full cluster as a legal onset (single consonant always legal)
-  // Scan from right: find the largest suffix of cluster that is legal.
-  // Start at min(2, len) — we only have a 2-char onset table.
   const tryLen = Math.min(2, len);
   const candidate = cluster.slice(len - tryLen);
   if (LEGAL_ONSETS_2.has(candidate)) {
     return [candidate, cluster.slice(0, len - tryLen)];
   }
 
-  // Fall back: single last consonant as onset, rest is coda.
   return [cluster.slice(-1), cluster.slice(0, -1)];
 }
 
-// ─── Strategy ──────────────────────────────────────────────────────────────────────────
+// ─── Strategy ────────────────────────────────────────────────────────────────
 
 export class RomanceStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-ROM' as const;
@@ -79,11 +85,47 @@ export class RomanceStrategy extends PhonologicalStrategy {
     threshold: 0.75,
   };
 
+  /**
+   * Normalise Romance text.
+   *
+   * French elision (apostrophe contractions) expanded to full forms so that
+   * syllabify() never receives opaque onset clusters like 'qu' (from qu'elle)
+   * or 'n' (from n'est).
+   *
+   * Expansion order:
+   *   1. 'qu\u2019' / 'qu\'' before 'q\u2019' / 'q\'' to avoid partial match.
+   *   2. Multi-char elisions before single-char ones.
+   *   3. Both typographic (’) and straight (') apostrophes handled.
+   *
+   * Covered contractions:
+   *   l'   → l     (already present)
+   *   j'   → je    (already present)
+   *   d'   → de    (already present)
+   *   qu'  → que   (NEW)
+   *   c'   → ce    (NEW)
+   *   m'   → me    (NEW)
+   *   n'   → ne    (NEW)
+   *   s'   → se    (NEW)
+   *   t'   → te    (NEW)
+   */
   normalize(text: string, lang: string): string {
     let t = text.normalize('NFC').toLowerCase().trim();
+
     if (lang === 'fr') {
-      t = t.replace(/l'/g, 'l ').replace(/j'/g, 'je ').replace(/d'/g, 'de ');
+      // Handle both typographic (’ U+2019) and straight (') apostrophes.
+      // qu' must come first to avoid 'q' matching the single-char rule.
+      t = t
+        .replace(/qu[\u2019']/g, 'que ')
+        .replace(/l[\u2019']/g, 'l ')
+        .replace(/j[\u2019']/g, 'je ')
+        .replace(/d[\u2019']/g, 'de ')
+        .replace(/c[\u2019']/g, 'ce ')
+        .replace(/m[\u2019']/g, 'me ')
+        .replace(/n[\u2019']/g, 'ne ')
+        .replace(/s[\u2019']/g, 'se ')
+        .replace(/t[\u2019']/g, 'te ');
     }
+
     t = t.replace(/[^\p{L}\p{M}\s''-]/gu, '');
     return t;
   }
@@ -113,7 +155,7 @@ export class RomanceStrategy extends PhonologicalStrategy {
 
     for (const word of words) {
       const wordSyllables: Syllable[] = [];
-      let cluster = ''; // consonants accumulated before the current vowel
+      let cluster = '';
 
       for (const ch of word) {
         if (!vowelPattern.test(ch)) {
@@ -121,9 +163,7 @@ export class RomanceStrategy extends PhonologicalStrategy {
           continue;
         }
 
-        // ch is a vowel
         if (wordSyllables.length === 0) {
-          // First vowel of the word: entire cluster is the onset.
           wordSyllables.push({
             onset: cluster,
             nucleus: ch,
@@ -133,11 +173,8 @@ export class RomanceStrategy extends PhonologicalStrategy {
             stressed: false,
           });
         } else {
-          // Split the inter-vowel cluster with MOP.
           const [onset, coda] = mopSplit(cluster);
-          // Assign coda to the previous syllable.
           wordSyllables[wordSyllables.length - 1]!.coda = coda;
-          // Open the new syllable.
           wordSyllables.push({
             onset,
             nucleus: ch,
@@ -150,7 +187,6 @@ export class RomanceStrategy extends PhonologicalStrategy {
         cluster = '';
       }
 
-      // Trailing consonants → coda of last syllable.
       if (cluster && wordSyllables.length > 0) {
         wordSyllables[wordSyllables.length - 1]!.coda += cluster;
       }
