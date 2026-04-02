@@ -95,7 +95,7 @@ export abstract class PhonologicalStrategy {
 // ─── Shared categorisation (§6 — Typologie des rimes) ──────────────────────────
 
 export function categorizeScore(score: number, threshold = 0.75): RhymeType {
-  if (score < threshold && score < 0.40) return 'none';
+  if (score < threshold || score < 0.40) return 'none';
   if (score >= 0.95) return 'rich';
   if (score >= 0.85) return 'sufficient';
   if (score >= 0.60) return 'assonance';
