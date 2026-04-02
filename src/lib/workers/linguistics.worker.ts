@@ -31,6 +31,10 @@ import { RomanceStrategy } from '../linguistics/strategies/RomanceStrategy';
 import { GermanicStrategy } from '../linguistics/strategies/GermanicStrategy';
 import { KwaStrategy } from '../linguistics/strategies/KwaStrategy';
 import { CrvStrategy } from '../linguistics/strategies/CrvStrategy';
+import { TurkicStrategy } from '../linguistics/strategies/TurkicStrategy';
+import { UralicStrategy } from '../linguistics/strategies/UralicStrategy';
+import { DravidianStrategy } from '../linguistics/strategies/DravidianStrategy';
+import { IndoIranianStrategy } from '../linguistics/strategies/IndoIranianStrategy';
 
 // ─── Bootstrap the registry inside the worker context ──────────────────────
 
@@ -38,6 +42,10 @@ PhonologicalRegistry.register('ALGO-ROM', new RomanceStrategy());
 PhonologicalRegistry.register('ALGO-GER', new GermanicStrategy());
 PhonologicalRegistry.register('ALGO-KWA', new KwaStrategy());
 PhonologicalRegistry.register('ALGO-CRV', new CrvStrategy());
+PhonologicalRegistry.register('ALGO-TRK', new TurkicStrategy());
+PhonologicalRegistry.register('ALGO-FIN', new UralicStrategy());
+PhonologicalRegistry.register('ALGO-DRV', new DravidianStrategy());
+PhonologicalRegistry.register('ALGO-IIR', new IndoIranianStrategy());
 
 // ─── Utility functions ─────────────────────────────────────────────────────
 
