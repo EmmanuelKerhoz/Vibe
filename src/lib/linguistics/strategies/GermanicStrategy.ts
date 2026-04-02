@@ -223,9 +223,13 @@ export class GermanicStrategy extends PhonologicalStrategy {
  *      -y   : "happy", "lucky", "pretty", "hungry" — all penultimate
  *      -ow  : "follow", "borrow", "hollow", "narrow" — all penultimate
  *      -le  : "little", "simple", "table", "circle" — all penultimate
- * 4. Default: stress on last syllable (ultima).
- *    Rationale: English oxytones (guitar, believe, around, receive, etc.) account
- *    for a significant share of 2+-syllable words not covered by rules 2–3.
+ * 4. Default: penultimate (paroxyton dominant en anglais dissyllabique).
+ *    Rationale: the penult carries stress in the large majority of English
+ *    polysyllabic words not covered by rules 2–3 (lesson, burden, open,
+ *    current, river, center…). True oxytones (guitar, believe, around)
+ *    are less numerous and will be correctly handled once a CMU dict G2P
+ *    replaces this heuristic. Defaulting to ultima caused systematic
+ *    mis-anchoring of the rhyme nucleus on common bisyllabic words.
  */
 function applyEnglishStress(word: string, syllables: Syllable[]): void {
   const n = syllables.length;
@@ -248,8 +252,9 @@ function applyEnglishStress(word: string, syllables: Syllable[]): void {
     return;
   }
 
-  // Default: ultima (last syllable)
-  syllables[n - 1]!.stressed = true;
+  // Default: penultimate (paroxyton dominant — see JSDoc above).
+  const idx = Math.max(0, n - 2);
+  syllables[idx]!.stressed = true;
 }
 
 function classifyCoda(coda: string): 'nasal' | 'liquid' | 'obstruent' | null {
