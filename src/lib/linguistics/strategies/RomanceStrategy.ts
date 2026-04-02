@@ -131,6 +131,10 @@ export class RomanceStrategy extends PhonologicalStrategy {
   }
 
   g2p(normalized: string, _lang: string): string {
+    // Stub: G2P not yet implemented — grapheme-only analysis.
+    // TODO: add rule-based Romance G2P (FR liaison/e-muet/nasal vowels,
+    // ES stress + digraphs, PT nasal vowels, IT gemination, CA/RO specifics).
+    // Consequence: rhyme detection is orthographic, not phonological.
     return normalized;
   }
 
@@ -218,6 +222,8 @@ export class RomanceStrategy extends PhonologicalStrategy {
       weight: null,
       codaClass: classifyCoda(primary?.coda ?? ''),
       raw,
+      // G2P is a stub — analysis is graphemic only; flag consumers.
+      lowResourceFallback: true,
     };
   }
 

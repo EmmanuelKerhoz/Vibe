@@ -103,7 +103,10 @@ export class GermanicStrategy extends PhonologicalStrategy {
   }
 
   g2p(normalized: string, _lang: string): string {
-    // Stub: delegate to CMU dict / eSpeak-NG in production.
+    // Stub: G2P not yet implemented — grapheme-only analysis.
+    // TODO: delegate to CMU dict / eSpeak-NG and handle EN irregular spelling,
+    // DE vowel length + Auslautverhärtung, and NL/Scandinavian specifics.
+    // Consequence: rhyme detection is orthographic, not phonological.
     return normalized;
   }
 
@@ -193,6 +196,8 @@ export class GermanicStrategy extends PhonologicalStrategy {
       weight: null,
       codaClass: classifyCoda(primary?.coda ?? ''),
       raw,
+      // G2P is a stub — analysis is graphemic only; flag consumers.
+      lowResourceFallback: true,
     };
   }
 

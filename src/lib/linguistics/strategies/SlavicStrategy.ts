@@ -22,9 +22,9 @@ export class SlavicStrategy extends PhonologicalStrategy {
 
   readonly defaultWeights: MatchingWeights = {
     nucleus: 1.0,
-    tone: 0.0,       // non-tonal family
+    tone: 0.0,
     weight: 0.0,
-    codaClass: 0.7,  // high coda relevance
+    codaClass: 0.7,
     threshold: 0.75,
   };
 
@@ -40,7 +40,11 @@ export class SlavicStrategy extends PhonologicalStrategy {
   // ─── Step 2: G2P ───────────────────────────────────────────────────────────
 
   g2p(normalized: string, _lang: string): string {
-    // Stub: in production, delegate to eSpeak-NG / Epitran.
+    // Stub: G2P not yet implemented — grapheme-only analysis.
+    // TODO: delegate to eSpeak-NG / Epitran and model final devoicing,
+    // vowel reduction, and language-specific stress placement.
+    // Consequence: rhyme detection is mostly orthographic; Cyrillic is closer
+    // to phonology than Latin Slavic orthographies, but still incomplete.
     return normalized;
   }
 
@@ -107,6 +111,8 @@ export class SlavicStrategy extends PhonologicalStrategy {
       weight: null,
       codaClass: classifyCoda(primary?.coda ?? ''),
       raw,
+      // G2P is a stub — analysis is graphemic only; flag consumers.
+      lowResourceFallback: true,
     };
   }
 
