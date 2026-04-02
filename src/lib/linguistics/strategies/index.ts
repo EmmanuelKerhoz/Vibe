@@ -5,3 +5,6 @@ export { CrvStrategy } from './CrvStrategy';
 export { SlavicStrategy } from './SlavicStrategy';
 export { BantuStrategy } from './BantuStrategy';
 export { SemiticStrategy } from './SemiticStrategy';
+export { SiniticStrategy } from './SiniticStrategy';
+export { TaiStrategy } from './TaiStrategy';
+export { VietStrategy } from './VietStrategy';
