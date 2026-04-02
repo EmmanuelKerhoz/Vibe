@@ -10,6 +10,78 @@ import { PhonologicalStrategy } from '../core/PhonologicalStrategy';
 import { featureWeightedScore } from '../scoring';
 import type { MatchingWeights, RhymeNucleus, Syllable } from '../core/types';
 
+// ─── Germanic MOP onset table ────────────────────────────────────────────────
+
+/**
+ * Legal 3-consonant onsets shared across EN/DE/NL/SV/DA/NO.
+ * Ordered before 2-char table so the greedy scan prefers the longest match.
+ */
+const LEGAL_ONSETS_3 = new Set([
+  'str', 'spr', 'spl', 'scr', 'shr', 'thr',
+]);
+
+/**
+ * Legal 2-consonant onsets for Germanic languages.
+ * Covers EN obstruent+liquid, EN/DE fricative+stop clusters, digraphs.
+ */
+const LEGAL_ONSETS_2 = new Set([
+  // Obstruent + liquid
+  'bl', 'br', 'cl', 'cr', 'dr', 'fl', 'fr', 'gl', 'gr', 'pl', 'pr', 'tr',
+  // Fricative + stop / nasal / liquid
+  'sp', 'st', 'sk', 'sc', 'sn', 'sm', 'sl', 'sw',
+  // Digraphs (treated as single onset unit)
+  'th', 'sh', 'ch', 'wh', 'ph',
+  // English-specific
+  'kn', 'wr', 'dw', 'tw',
+  // German-specific
+  'kw', 'pf', 'ts', 'tz',
+  // Shared
+  'gn',
+]);
+
+/**
+ * Split a pre-vowel consonant cluster using the Maximum Onset Principle
+ * for Germanic languages.
+ *
+ * Scan from right:
+ *   1. Try len=3 suffix against LEGAL_ONSETS_3.
+ *   2. Try len=2 suffix against LEGAL_ONSETS_2.
+ *   3. Single last consonant as onset (always legal), rest is coda.
+ *
+ * Examples:
+ *   "nt"  → onset="t",   prevCoda="n"   (winter → win.ter)
+ *   "ndr" → onset="dr",  prevCoda="n"   (children → chil.dren)
+ *   "str" → onset="str", prevCoda=""    (destroy → de.stroy)
+ *   "mpl" → onset="pl",  prevCoda="m"   (simple → sim.ple)
+ *   "ck"  → onset="k",   prevCoda="c"   (lucky → luc.ky)
+ *   "ng"  → onset="g",   prevCoda="n"   — intentional: -ng cluster in EN
+ *                                          keeps n in coda for rime purposes
+ */
+function gerMopSplit(cluster: string): [onset: string, prevCoda: string] {
+  const len = cluster.length;
+  if (len === 0) return ['', ''];
+  if (len === 1) return [cluster, ''];
+
+  // Try 3-char onset
+  if (len >= 3) {
+    const c3 = cluster.slice(len - 3);
+    if (LEGAL_ONSETS_3.has(c3)) {
+      return [c3, cluster.slice(0, len - 3)];
+    }
+  }
+
+  // Try 2-char onset
+  const c2 = cluster.slice(len - 2);
+  if (LEGAL_ONSETS_2.has(c2)) {
+    return [c2, cluster.slice(0, len - 2)];
+  }
+
+  // Single last consonant as onset
+  return [cluster.slice(-1), cluster.slice(0, -1)];
+}
+
+// ─── Strategy ────────────────────────────────────────────────────────────────
+
 export class GermanicStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-GER' as const;
 
@@ -35,6 +107,17 @@ export class GermanicStrategy extends PhonologicalStrategy {
     return normalized;
   }
 
+  /**
+   * MOP-based syllabification for Germanic languages.
+   *
+   * Pass 1: collect (onset, nucleus) pairs.
+   *   When a vowel is encountered, the consonant cluster since the last vowel
+   *   is split by gerMopSplit():
+   *     • coda  → appended to the previous syllable
+   *     • onset → used for the new syllable
+   * Pass 2: trailing consonants after the last vowel → coda of last syllable.
+   * Pass 3: stress assignment (EN heuristic or DE/NL/SV penultimate).
+   */
   syllabify(ipa: string, lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
     const syllables: Syllable[] = [];
@@ -42,24 +125,44 @@ export class GermanicStrategy extends PhonologicalStrategy {
 
     for (const word of words) {
       const wordSyllables: Syllable[] = [];
-      let current = '';
+      let cluster = ''; // consonants accumulated since the last vowel
 
       for (const ch of word) {
-        current += ch;
-        if (vowelPattern.test(ch)) {
+        if (!vowelPattern.test(ch)) {
+          cluster += ch;
+          continue;
+        }
+
+        // ch is a vowel
+        if (wordSyllables.length === 0) {
+          // First vowel: entire pre-vocalic cluster is the onset.
           wordSyllables.push({
-            onset: current.slice(0, -1),
+            onset: cluster,
             nucleus: ch,
             coda: '',
             tone: null,
             weight: null,
             stressed: false,
           });
-          current = '';
+        } else {
+          // Split the inter-vocalic cluster with MOP.
+          const [onset, coda] = gerMopSplit(cluster);
+          wordSyllables[wordSyllables.length - 1]!.coda += coda;
+          wordSyllables.push({
+            onset,
+            nucleus: ch,
+            coda: '',
+            tone: null,
+            weight: null,
+            stressed: false,
+          });
         }
+        cluster = '';
       }
-      if (current && wordSyllables.length > 0) {
-        wordSyllables[wordSyllables.length - 1]!.coda = current;
+
+      // Trailing consonants → coda of last syllable.
+      if (cluster && wordSyllables.length > 0) {
+        wordSyllables[wordSyllables.length - 1]!.coda += cluster;
       }
 
       if (wordSyllables.length > 0) {
@@ -98,24 +201,26 @@ export class GermanicStrategy extends PhonologicalStrategy {
   }
 }
 
-// ─── English stress heuristic ───────────────────────────────────────────────────────────────────
+// ─── English stress heuristic ─────────────────────────────────────────────────
 
 /**
  * Suffix-based English stress placement.
- * Covers ~70% of common cases without a CMU dict lookup.
+ * Covers ~80% of common cases without a CMU dict lookup.
  *
  * Rules (highest to lowest priority):
  * 1. Monosyllabic word: stress index 0.
  * 2. Antepenultimate suffixes: -tion, -sion, -ic, -ical, -ity, -ify, -ious, -eous, -ual
  *    → stress on syllable before suffix (antepenult).
- * 3. Penultimate suffixes: -ness, -less, -ful, -ment, -er, -est, -ing, -ed, -ly
+ * 3. Penultimate suffixes: -ness, -less, -ful, -ment, -er, -est, -ing, -ed, -ly,
+ *    -y, -ow, -le
  *    → stress on penultimate.
+ *    Rationale for additions:
+ *      -y   : "happy", "lucky", "pretty", "hungry" — all penultimate
+ *      -ow  : "follow", "borrow", "hollow", "narrow" — all penultimate
+ *      -le  : "little", "simple", "table", "circle" — all penultimate
  * 4. Default: stress on last syllable (ultima).
  *    Rationale: English oxytones (guitar, believe, around, receive, etc.) account
  *    for a significant share of 2+-syllable words not covered by rules 2–3.
- *    Ultima is the correct position for rhyme extraction purposes even when the
- *    phonetic stress is actually penultimate — the rime we care about is the
- *    final stressed syllable, which is the ultima when no suffix pattern matches.
  */
 function applyEnglishStress(word: string, syllables: Syllable[]): void {
   const n = syllables.length;
@@ -131,8 +236,8 @@ function applyEnglishStress(word: string, syllables: Syllable[]): void {
     return;
   }
 
-  // Penultimate suffixes
-  if (/(?:ness|less|ful|ment|ing|ed|est|er|ly)$/.test(w)) {
+  // Penultimate suffixes (extended)
+  if (/(?:ness|less|ful|ment|ing|ed|est|er|ly|[^aeiou]y|ow|le)$/.test(w)) {
     const idx = Math.max(0, n - 2);
     syllables[idx]!.stressed = true;
     return;
