@@ -134,7 +134,13 @@
     "crafting": "Criando alternativas...",
     "clickToApply": "Clique para aplicar",
     "moreOptions": "Mais opções",
-    "empty": "Selecione uma linha para explorar alternativas com IA."
+    "empty": "Selecione uma linha para explorar alternativas com IA.",
+    "spellCheckTitle": "Verificação ortográfica",
+    "spellChecking": "Verificando ortografia…",
+    "applyCorrection": "Aplicar",
+    "dismiss": "Descartar",
+    "synonymsTitle": "Sinônimos",
+    "synonymsLoading": "Procurando sinônimos…"
   },
   "musical": {
     "title": "Gerador de Prompt Musical",

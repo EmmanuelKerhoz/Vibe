@@ -66,7 +66,7 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
     song, structure, rhymeScheme,
     title, setTitle, titleOrigin, topic, setTopic, mood, setMood,
     setRhymeScheme, targetSyllables, setTargetSyllables,
-    updateSongAndStructureWithHistory, replaceStateWithoutHistory, clearHistory,
+    updateSongAndStructureWithHistory, updateState, replaceStateWithoutHistory, clearHistory,
     songLanguage, setSongLanguage,
   } = useSongContext();
 
@@ -139,7 +139,7 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
     songLanguage,
     hasApiKey,
     selectedLineId,
-    updateState: updateSongAndStructureWithHistory,
+    updateState,
   });
 
   // Trigger spell-check automatically when a line is selected

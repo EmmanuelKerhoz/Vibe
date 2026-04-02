@@ -148,7 +148,13 @@
     "crafting": "대안을 만드는 중...",
     "clickToApply": "클릭하여 적용",
     "moreOptions": "더 많은 옵션",
-    "empty": "줄을 선택하여 AI 기반 대안을 확인하세요."
+    "empty": "줄을 선택하여 AI 기반 대안을 확인하세요.",
+    "spellCheckTitle": "맞춤법 검사",
+    "spellChecking": "맞춤법 검사 중…",
+    "applyCorrection": "적용",
+    "dismiss": "무시",
+    "synonymsTitle": "유의어",
+    "synonymsLoading": "유의어 검색 중…"
   },
   "musical": {
     "title": "음악 프롬프트 생성기",

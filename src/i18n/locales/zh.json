@@ -134,7 +134,13 @@
     "crafting": "正在创建替代方案...",
     "clickToApply": "点击应用",
     "moreOptions": "更多选项",
-    "empty": "选择一行以探索 AI 驱动的替代方案。"
+    "empty": "选择一行以探索 AI 驱动的替代方案。",
+    "spellCheckTitle": "拼写检查",
+    "spellChecking": "正在检查拼写…",
+    "applyCorrection": "应用",
+    "dismiss": "忽略",
+    "synonymsTitle": "同义词",
+    "synonymsLoading": "正在查找同义词…"
   },
   "musical": {
     "title": "音乐提示词生成器",

@@ -178,6 +178,12 @@ export interface Translations {
     clickToApply: string;
     moreOptions: string;
     empty: string;
+    spellCheckTitle: string;
+    spellChecking: string;
+    applyCorrection: string;
+    dismiss: string;
+    synonymsTitle: string;
+    synonymsLoading: string;
   };
 
   musical: {
