@@ -29,6 +29,11 @@ export class AustronesianStrategy extends PhonologicalStrategy {
   }
 
   g2p(normalized: string, lang: string): string {
+    // Stub: affix stripping only — full G2P not implemented.
+    // TODO: model Tagalog focus morphology, Indonesian vowel harmony,
+    // and Javanese register variation (ngoko/krama).
+    // Consequence: rhyme detection is graphemic post-stem; onset is ignored
+    // in scoring but still present in the Syllable struct for debugging.
     return normalized
       .split(/\s+/u)
       .filter(Boolean)
@@ -46,17 +51,42 @@ export class AustronesianStrategy extends PhonologicalStrategy {
     return syllables;
   }
 
+  /**
+   * extractRN for Austronesian languages.
+   *
+   * Austronesian rhyme is overwhelmingly vowel-driven (CV/CVC templates).
+   * The rime unit is nucleus + coda only — the onset is NOT part of the rime.
+   *
+   * `raw` therefore concatenates only nucleus+coda of the tail syllables,
+   * consistent with all other strategy implementations.
+   *
+   * Previous bug: `raw` included `onset`, causing false negatives when two
+   * rhyming words share nucleus+coda but differ in onset (e.g. "bata" / "data"
+   * both end in "-ata" but had raw="ba" vs raw="da").
+   *
+   * Selection heuristic: last open syllable (coda === '') if one exists,
+   * otherwise absolute last syllable. This models the strong Austronesian
+   * preference for open final syllables as the rhyme anchor.
+   */
   extractRN(syllables: Syllable[], _lang: string): RhymeNucleus {
-    const openSyllable = [...syllables].reverse().find((syllable) => syllable.coda.length === 0)
-      ?? syllables[syllables.length - 1];
+    const anchor =
+      [...syllables].reverse().find((s) => s.coda.length === 0) ??
+      syllables[syllables.length - 1];
+
+    // Tail = anchor syllable to end; raw built from nucleus+coda only.
+    const anchorIdx = anchor ? syllables.lastIndexOf(anchor) : syllables.length - 1;
+    const tail = syllables.slice(anchorIdx);
+    const raw = tail.map((s) => `${s.nucleus}${s.coda}`).join('');
 
     return {
-      nucleus: openSyllable?.nucleus ?? '',
-      coda: '',
+      nucleus: anchor?.nucleus ?? '',
+      coda: anchor?.coda ?? '',
       toneClass: null,
       weight: null,
       codaClass: null,
-      raw: [openSyllable?.onset ?? '', openSyllable?.nucleus ?? ''].filter(Boolean).join(''),
+      raw,
+      // G2P is affix-stripping only — analysis is graphemic; flag consumers.
+      lowResourceFallback: true,
     };
   }
 
@@ -72,7 +102,8 @@ function stripAustronesianAffixes(word: string, lang: string): string {
 }
 
 function stripLongestPrefix(word: string, prefixes: readonly string[]): string {
-  const prefix = [...prefixes].sort((left, right) => right.length - left.length)
+  const prefix = [...prefixes]
+    .sort((left, right) => right.length - left.length)
     .find((candidate) => word.startsWith(candidate) && hasCoreStem(word.slice(candidate.length)));
   return prefix ? word.slice(prefix.length) : word;
 }
