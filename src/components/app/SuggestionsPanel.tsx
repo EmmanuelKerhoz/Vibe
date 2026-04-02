@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Lightbulb, Sparkles, Hash, RefreshCw, Check } from '../ui/icons';
 import { useTranslation } from '../../i18n';
 import { countSyllables } from '../../utils/syllableUtils';
+import type { UseSpellCheckReturn } from '../../hooks/composer/useSpellCheck';
 
 /** Compute total syllable count for a line of text. */
 const computeSyllables = (text: string): number =>
@@ -18,6 +19,9 @@ interface Props {
   hasApiKey: boolean;
   applySuggestion: (s: string) => void;
   generateSuggestions: (lineId: string) => void;
+  spellCheck?: UseSpellCheckReturn;
+  synonyms?: Record<string, string[]> | null;
+  isSynonymsLoading?: boolean;
   isMobileOverlay?: boolean;
   className?: string;
 }
@@ -26,10 +30,15 @@ export function SuggestionsPanel({
   selectedLineId, setSelectedLineId,
   suggestions, isSuggesting, hasApiKey,
   applySuggestion, generateSuggestions,
+  spellCheck,
+  synonyms,
+  isSynonymsLoading,
   isMobileOverlay = false,
   className,
 }: Props) {
   const { t } = useTranslation();
+  const [openSynonymWord, setOpenSynonymWord] = useState<string | null>(null);
+
   const panelClassName = [
     'border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl',
     'lcars-panel fluent-animate-panel !rounded-none !border-t-0 !border-b-0 !border-r-0',
@@ -38,12 +47,16 @@ export function SuggestionsPanel({
 
   if (!selectedLineId) return null;
 
+  const hasSpellCorrection = spellCheck?.correction != null;
+  const hasSynonyms = synonyms && Object.keys(synonyms).length > 0;
+
   return (
     <div
       data-suggestions-panel
       className={panelClassName}
       style={{ overflow: 'visible' }}
     >
+      {/* LCARS accent rail */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -57,6 +70,7 @@ export function SuggestionsPanel({
       }} />
 
       <div className="w-[280px] flex flex-col h-full overflow-hidden">
+        {/* Header */}
         <div
           className="h-16 px-5 flex items-center justify-between shrink-0"
           style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}
@@ -86,6 +100,91 @@ export function SuggestionsPanel({
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
+
+          {/* ── Spell-check correction ── */}
+          {(spellCheck?.isChecking || hasSpellCorrection) && (
+            <div className="space-y-2">
+              <p className="text-[9px] uppercase tracking-widest text-zinc-500">{t.suggestions.spellCheckTitle}</p>
+              {spellCheck?.isChecking ? (
+                <div className="flex items-center gap-2 py-3 text-xs text-zinc-500 animate-pulse">
+                  <Sparkles className="w-3 h-3 text-[var(--accent-color)]" />
+                  {t.suggestions.spellChecking}
+                </div>
+              ) : hasSpellCorrection ? (
+                <div className="p-3 rounded-xl bg-white/[0.04] border border-[var(--accent-color)]/20 space-y-2">
+                  <p className="text-sm text-zinc-200 leading-relaxed">{spellCheck!.correction}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { spellCheck!.applyCorrection(spellCheck!.correction!); setSelectedLineId(null); }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[10px] text-[var(--accent-color)] uppercase tracking-wider transition-colors"
+                    >
+                      <Check className="w-3 h-3" />
+                      {t.suggestions.applyCorrection}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={spellCheck!.dismissCorrection}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] text-zinc-500 uppercase tracking-wider transition-colors"
+                    >
+                      {t.suggestions.dismiss}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* ── Synonyms ── */}
+          {(isSynonymsLoading || hasSynonyms) && (
+            <div className="space-y-2">
+              <p className="text-[9px] uppercase tracking-widest text-zinc-500">{t.suggestions.synonymsTitle}</p>
+              {isSynonymsLoading ? (
+                <div className="flex items-center gap-2 py-3 text-xs text-zinc-500 animate-pulse">
+                  <Sparkles className="w-3 h-3 text-[var(--accent-color)]" />
+                  {t.suggestions.synonymsLoading}
+                </div>
+              ) : hasSynonyms ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(synonyms!).map(([word, syns]) => (
+                    <div key={word} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setOpenSynonymWord(openSynonymWord === word ? null : word)}
+                        className="px-2 py-1 rounded-md text-[11px] bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 hover:border-[var(--accent-color)]/40 text-zinc-300 transition-all"
+                      >
+                        {word}
+                      </button>
+                      {openSynonymWord === word && (
+                        <div className="absolute bottom-full left-0 mb-1 z-20 bg-[var(--bg-secondary,#1a1a1a)] border border-white/10 rounded-xl shadow-xl p-2 space-y-1 min-w-[120px]">
+                          {syns.map(syn => (
+                            <button
+                              key={syn}
+                              type="button"
+                              onClick={() => {
+                                applySuggestion(syn);
+                                setOpenSynonymWord(null);
+                              }}
+                              className="block w-full text-left px-2 py-1 rounded text-xs text-zinc-200 hover:bg-white/10 transition-colors"
+                            >
+                              {syn}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* ── Divider if spell/synonym sections visible ── */}
+          {(hasSpellCorrection || isSynonymsLoading || hasSynonyms) && (
+            <div className="border-t border-white/5 my-2" />
+          )}
+
+          {/* ── AI line suggestions ── */}
           {isSuggesting ? (
             <div className="h-full flex flex-col items-center justify-center space-y-4 py-20">
               <div className="relative">
@@ -99,35 +198,35 @@ export function SuggestionsPanel({
               {suggestions.map((suggestion, idx) => {
                 const syllables = computeSyllables(suggestion);
                 return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => { applySuggestion(suggestion); setSelectedLineId(null); }}
-                  aria-label={`Apply suggestion: ${suggestion}`}
-                  className="group w-full p-4 text-left bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-[var(--accent-color)]/30 rounded-xl cursor-pointer transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white leading-relaxed flex-1">{suggestion}</p>
-                    {syllables > 0 && (
-                      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-500 bg-white/5 rounded px-1.5 py-0.5 mt-0.5">
-                        {syllables} syll.
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-3 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-[9px] text-[var(--accent-color)] uppercase tracking-wider">{t.suggestions.clickToApply}</span>
-                    <Check className="w-3 h-3 text-[var(--accent-color)]" />
-                  </div>
-                </button>
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => { applySuggestion(suggestion); setSelectedLineId(null); }}
+                    aria-label={`Apply suggestion: ${suggestion}`}
+                    className="group w-full p-4 text-left bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-[var(--accent-color)]/30 rounded-xl cursor-pointer transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white leading-relaxed flex-1">{suggestion}</p>
+                      {syllables > 0 && (
+                        <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-500 bg-white/5 rounded px-1.5 py-0.5 mt-0.5">
+                          {syllables} syll.
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[9px] text-[var(--accent-color)] uppercase tracking-wider">{t.suggestions.clickToApply}</span>
+                      <Check className="w-3 h-3 text-[var(--accent-color)]" />
+                    </div>
+                  </button>
                 );
               })}
-                <button
-                  type="button"
-                  onClick={() => generateSuggestions(selectedLineId)}
-                  disabled={!hasApiKey}
-                  aria-label="Generate more suggestions"
-                  className="w-full py-3 mt-4 flex items-center justify-center gap-2 text-[10px] text-zinc-500 uppercase tracking-widest hover:text-[var(--accent-color)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+              <button
+                type="button"
+                onClick={() => generateSuggestions(selectedLineId)}
+                disabled={!hasApiKey}
+                aria-label="Generate more suggestions"
+                className="w-full py-3 mt-4 flex items-center justify-center gap-2 text-[10px] text-zinc-500 uppercase tracking-widest hover:text-[var(--accent-color)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <RefreshCw className="w-3 h-3" />
                 {t.suggestions.moreOptions}
               </button>
