@@ -41,6 +41,12 @@ export interface RhymeNucleus {
   codaClass: 'nasal' | 'liquid' | 'obstruent' | null;
   /** Full trailing IPA string (nucleus + coda + following syllables). */
   raw: string;
+  /**
+   * Set to true when the strategy cannot produce a reliable phonological
+   * analysis (e.g. unsupported script, no G2P dictionary, low-resource lang).
+   * Consumers should downgrade confidence indicators when this is true.
+   */
+  lowResourceFallback?: boolean;
 }
 
 // ─── Scoring (§5–6) ───────────────────────────────────────────────────────────

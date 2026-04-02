@@ -4,6 +4,15 @@
  * Covers: ar (Arabic), he (Hebrew), am (Amharic).
  * Key traits: triconsonantal root structure, vocalic scheme extraction,
  *             hamza normalisation, matres lectionis, RTL-safe Unicode.
+ *
+ * NOTE — Amharic (am) low-resource path:
+ *   Amharic uses Ethiopic Fidel script (U+1200–U+137F). The current Arabic/Hebrew
+ *   vowel detectors (AR_LONG_VOWEL_RE, HE_VOWEL_RE) never match Fidel characters,
+ *   producing an empty syllable array and a silent analysis failure.
+ *   Until a dedicated Amharic G2P is implemented, the strategy emits a structured
+ *   TODO sentinel syllable with lowResourceFallback: true so the pipeline degrades
+ *   gracefully instead of returning an empty/misleading result.
+ *   TODO(am): replace sentinel with eSpeak-NG 'am' voice or a Fidel → IPA table.
  */
 
 import { PhonologicalStrategy } from '../core/PhonologicalStrategy';
@@ -24,8 +33,11 @@ const AR_LONG_VOWEL_RE = /[اوي]/;
 /** Hebrew vowels (basic orthographic). */
 const HE_VOWEL_RE = /[אהעוי]/;
 
-/** Latin/IPA/Amharic vowel pattern. */
+/** Latin/IPA vowel pattern (does NOT match Ethiopic — intentional). */
 const GENERAL_VOWEL_RE = /[aeiouyəɛɔɪʊäüöàáèéìíòóùú]/i;
+
+/** Ethiopic Fidel block — U+1200–U+137F. */
+const AMHARIC_FIDEL_RE = /[\u1200-\u137F]/;
 
 /** Combined vowel detection: Arabic, Hebrew, or general. */
 function isVowelChar(ch: string, lang: string): boolean {
@@ -39,6 +51,11 @@ function isLongVowel(ch: string, lang: string): boolean {
   if (lang === 'he') return HEBREW_MATRES.has(ch);
   if (lang === 'ar') return AR_LONG_VOWEL_RE.test(ch);
   return false;
+}
+
+/** Return true if text contains Ethiopic Fidel characters. */
+function isAmharicScript(text: string): boolean {
+  return AMHARIC_FIDEL_RE.test(text);
 }
 
 export class SemiticStrategy extends PhonologicalStrategy {
@@ -55,18 +72,15 @@ export class SemiticStrategy extends PhonologicalStrategy {
   // ─── Step 1: Normalisation ──────────────────────────────────────────────────
 
   normalize(text: string, lang: string): string {
-    // Work on NFC-normalised Unicode — never reverse RTL strings
     let t = text.normalize('NFC').trim();
 
     if (lang === 'ar') {
       t = normalizeHamza(t);
-      // Keep tashkeel if present (exploit short vowels); strip if absent
       if (!hasTashkeel(t)) {
         t = stripTashkeel(t);
       }
     }
 
-    // Remove non-phonemic punctuation (preserve Arabic/Hebrew script + diacritics)
     t = t.replace(/[^\p{L}\p{M}\s]/gu, '');
     return t;
   }
@@ -74,26 +88,36 @@ export class SemiticStrategy extends PhonologicalStrategy {
   // ─── Step 2: G2P ───────────────────────────────────────────────────────────
 
   g2p(normalized: string, lang: string): string {
-    // For Arabic with tashkeel, expand short vowels to explicit characters
     if (lang === 'ar' && hasTashkeel(normalized)) {
       let result = '';
       for (const ch of normalized) {
         const mapped = AR_SHORT_VOWELS[ch];
-        if (mapped) {
-          result += mapped;
-        } else {
-          result += ch;
-        }
+        result += mapped ?? ch;
       }
       return result;
     }
-    // Stub: in production, delegate to eSpeak-NG / Epitran.
     return normalized;
   }
 
   // ─── Step 3: Syllabification ────────────────────────────────────────────────
 
   syllabify(ipa: string, lang: string): Syllable[] {
+    // Amharic low-resource sentinel: Fidel script is not handled by the
+    // Arabic/Hebrew vowel detectors. Emit a single opaque syllable so that
+    // analyze() and extractRN() receive a non-empty array and can surface
+    // the lowResourceFallback flag to the UI consumer.
+    if (lang === 'am' || isAmharicScript(ipa)) {
+      return [{
+        onset: '',
+        nucleus: ipa.trim(),
+        coda: '',
+        tone: null,
+        weight: null,
+        stressed: true,
+        template: 'TODO:am',
+      }];
+    }
+
     const chars = [...ipa.replace(/\s+/g, ' ')];
     const syllables: Syllable[] = [];
     let i = 0;
@@ -105,27 +129,23 @@ export class SemiticStrategy extends PhonologicalStrategy {
       let nucleus = '';
       let coda = '';
 
-      // Consume onset consonants
       while (i < chars.length && !isVowelChar(chars[i]!, lang) && !/\s/.test(chars[i]!)) {
         onset += chars[i];
         i++;
       }
 
-      // Consume nucleus vowel
       if (i < chars.length && isVowelChar(chars[i]!, lang)) {
         nucleus = chars[i]!;
         i++;
       }
 
-      // Peek ahead for coda: consume consonants until next vowel or space
       const codaStart = i;
       while (i < chars.length && !isVowelChar(chars[i]!, lang) && !/\s/.test(chars[i]!)) {
         i++;
       }
-      // If there are more vowels ahead, keep last consonant as onset of next syllable
       if (i < chars.length && isVowelChar(chars[i]!, lang) && i - codaStart > 0) {
         coda = chars.slice(codaStart, i - 1).join('');
-        i = i - 1; // give back last consonant as next onset
+        i = i - 1;
       } else {
         coda = chars.slice(codaStart, i).join('');
       }
@@ -142,7 +162,6 @@ export class SemiticStrategy extends PhonologicalStrategy {
       }
     }
 
-    // Default stress: ultima (last syllable) for Arabic/Hebrew
     if (syllables.length > 0) {
       syllables[syllables.length - 1]!.stressed = true;
     }
@@ -152,8 +171,21 @@ export class SemiticStrategy extends PhonologicalStrategy {
 
   // ─── Step 4: Rhyme Nucleus extraction ───────────────────────────────────────
 
-  extractRN(syllables: Syllable[], _lang: string): RhymeNucleus {
-    // Find the last long vowel syllable; fall back to last syllable
+  extractRN(syllables: Syllable[], lang: string): RhymeNucleus {
+    // Amharic sentinel: propagate lowResourceFallback to the RhymeNucleus.
+    if (lang === 'am' || syllables.some(s => s.template === 'TODO:am')) {
+      const raw = syllables.map(s => s.nucleus).join('');
+      return {
+        nucleus: raw,
+        coda: '',
+        toneClass: null,
+        weight: null,
+        codaClass: null,
+        raw,
+        lowResourceFallback: true,
+      };
+    }
+
     let idx = -1;
     for (let k = syllables.length - 1; k >= 0; k--) {
       if (syllables[k]!.weight === 'heavy') {

@@ -49,6 +49,9 @@ export class KoreanStrategy extends PhonologicalStrategy {
     const last = syllables[syllables.length - 1];
     const coda = last?.coda ?? '';
 
+    // Propagate lowResourceFallback if any syllable was a non-Hangul sentinel.
+    const hasNonHangul = syllables.some(s => s.template === 'non-hangul');
+
     return {
       nucleus: last?.nucleus ?? '',
       coda,
@@ -56,6 +59,7 @@ export class KoreanStrategy extends PhonologicalStrategy {
       weight: null,
       codaClass: classifyCoda(coda),
       raw: [last?.nucleus ?? '', coda].filter(Boolean).join(':'),
+      ...(hasNonHangul ? { lowResourceFallback: true } : {}),
     };
   }
 
@@ -69,7 +73,9 @@ function transliterateKoreanWord(word: string): string[] {
 
   for (const char of word) {
     if (!isHangulSyllable(char)) {
-      syllables.push(`:${char}:`);
+      // Non-Hangul token: encode as sentinel so parseKoreanSyllableToken can
+      // detect it and set lowResourceFallback on the resulting Syllable.
+      syllables.push(`:non-hangul:${char}:`);
       continue;
     }
 
@@ -81,6 +87,20 @@ function transliterateKoreanWord(word: string): string[] {
 }
 
 function parseKoreanSyllableToken(token: string): Syllable {
+  // Non-Hangul sentinel emitted by transliterateKoreanWord.
+  if (token.startsWith(':non-hangul:')) {
+    const char = token.slice(':non-hangul:'.length, -1);
+    return {
+      onset: '',
+      nucleus: char,
+      coda: '',
+      tone: null,
+      weight: null,
+      stressed: false,
+      template: 'non-hangul',
+    };
+  }
+
   const [onset = '', nucleus = token, coda = ''] = token.split(':');
 
   return {
@@ -96,22 +116,16 @@ function parseKoreanSyllableToken(token: string): Syllable {
 
 function decomposeHangulSyllable(char: string): { onset: string; nucleus: string; coda: string } {
   const codePoint = char.codePointAt(0);
-  if (codePoint === undefined) {
-    return {
-      onset: '',
-      nucleus: char,
-      coda: '',
-    };
-  }
+  if (codePoint === undefined) return { onset: '', nucleus: char, coda: '' };
 
-  const hangulOffset = codePoint - HANGUL_BASE;
-  const onsetIndex = Math.floor(hangulOffset / HANGUL_ONSET_DIVISOR);
-  const nucleusIndex = Math.floor((hangulOffset % HANGUL_ONSET_DIVISOR) / HANGUL_NUCLEUS_DIVISOR);
-  const codaIndex = hangulOffset % HANGUL_NUCLEUS_DIVISOR;
+  const offset = codePoint - HANGUL_BASE;
+  const onsetIdx = Math.floor(offset / HANGUL_ONSET_DIVISOR);
+  const nucleusIdx = Math.floor((offset % HANGUL_ONSET_DIVISOR) / HANGUL_NUCLEUS_DIVISOR);
+  const codaIdx = offset % HANGUL_NUCLEUS_DIVISOR;
 
   return {
-    onset: HANGUL_ONSETS[onsetIndex] ?? '',
-    nucleus: HANGUL_NUCLEI[nucleusIndex] ?? char,
-    coda: HANGUL_CODAS[codaIndex] ?? '',
+    onset: HANGUL_ONSETS[onsetIdx] ?? '',
+    nucleus: HANGUL_NUCLEI[nucleusIdx] ?? char,
+    coda: HANGUL_CODAS[codaIdx] ?? '',
   };
 }
