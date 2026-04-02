@@ -11,7 +11,7 @@ export function useSongMeta() {
   const [newSectionName, setNewSectionName] = useState('');
   const [shouldAutoGenerateTitle, setShouldAutoGenerateTitle] = useState(false);
   // Elevated from useLanguageAdapter — shared between useSongAnalysis and useSongComposer
-  const [songLanguage, setSongLanguage] = useState('');
+  const [songLanguage, setSongLanguage] = useState('English');
   const [detectedLanguages, setDetectedLanguages] = useState<string[]>([]);
   const [lineLanguages, setLineLanguages] = useState<Record<string, string>>({});
   const [genre, setGenre] = useState('');
