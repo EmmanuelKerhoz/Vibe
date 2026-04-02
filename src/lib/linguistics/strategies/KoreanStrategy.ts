@@ -95,10 +95,19 @@ function parseKoreanSyllableToken(token: string): Syllable {
 }
 
 function decomposeHangulSyllable(char: string): { onset: string; nucleus: string; coda: string } {
-  const codePoint = char.codePointAt(0)! - HANGUL_BASE;
-  const onsetIndex = Math.floor(codePoint / HANGUL_ONSET_DIVISOR);
-  const nucleusIndex = Math.floor((codePoint % HANGUL_ONSET_DIVISOR) / HANGUL_NUCLEUS_DIVISOR);
-  const codaIndex = codePoint % HANGUL_NUCLEUS_DIVISOR;
+  const codePoint = char.codePointAt(0);
+  if (codePoint === undefined) {
+    return {
+      onset: '',
+      nucleus: char,
+      coda: '',
+    };
+  }
+
+  const hangulOffset = codePoint - HANGUL_BASE;
+  const onsetIndex = Math.floor(hangulOffset / HANGUL_ONSET_DIVISOR);
+  const nucleusIndex = Math.floor((hangulOffset % HANGUL_ONSET_DIVISOR) / HANGUL_NUCLEUS_DIVISOR);
+  const codaIndex = hangulOffset % HANGUL_NUCLEUS_DIVISOR;
 
   return {
     onset: HANGUL_ONSETS[onsetIndex] ?? '',

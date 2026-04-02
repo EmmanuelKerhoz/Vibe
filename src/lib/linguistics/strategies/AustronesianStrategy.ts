@@ -85,6 +85,10 @@ function stripInfixes(word: string, infixes: readonly string[]): string {
       return stem.slice(infix.length);
     }
 
+    if (stem.length <= 1) {
+      continue;
+    }
+
     const insertionIndex = AUST_VOWEL_RE.test(stem[0] ?? '') ? 0 : 1;
     if (stem.slice(insertionIndex, insertionIndex + infix.length) === infix) {
       const candidate = `${stem.slice(0, insertionIndex)}${stem.slice(insertionIndex + infix.length)}`;
@@ -111,13 +115,18 @@ function buildAustronesianSyllables(word: string): Syllable[] {
     let nucleus = '';
     let coda = '';
 
-    while (index < chars.length && !AUST_VOWEL_RE.test(chars[index]!)) {
-      onset += chars[index]!;
+    while (index < chars.length) {
+      const current = chars[index];
+      if (current === undefined || AUST_VOWEL_RE.test(current)) {
+        break;
+      }
+      onset += current;
       index += 1;
     }
 
-    if (index < chars.length && AUST_VOWEL_RE.test(chars[index]!)) {
-      nucleus = chars[index]!;
+    const current = chars[index];
+    if (current !== undefined && AUST_VOWEL_RE.test(current)) {
+      nucleus = current;
       index += 1;
     }
 

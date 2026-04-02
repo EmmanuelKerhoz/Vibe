@@ -101,7 +101,10 @@ function romanizeJapaneseWord(word: string): Mora[] {
   let index = 0;
 
   while (index < normalized.length) {
-    const char = normalized[index]!;
+    const char = normalized[index];
+    if (!char) {
+      break;
+    }
     const pair = normalized.slice(index, index + 2);
 
     if (char === 'っ') {
