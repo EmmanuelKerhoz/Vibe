@@ -68,10 +68,10 @@ const AGGLUTINATIVE_SUFFIXES: Record<string, readonly string[]> = {
 };
 
 const FAMILY_FALLBACKS: Record<string, readonly string[]> = {
-  trk: [...new Set([...AGGLUTINATIVE_SUFFIXES.tr, ...AGGLUTINATIVE_SUFFIXES.uz, ...AGGLUTINATIVE_SUFFIXES.az])],
-  fin: [...new Set([...AGGLUTINATIVE_SUFFIXES.fi, ...AGGLUTINATIVE_SUFFIXES.et, ...AGGLUTINATIVE_SUFFIXES.hu])],
-  drv: [...new Set([...AGGLUTINATIVE_SUFFIXES.ta, ...AGGLUTINATIVE_SUFFIXES.te, ...AGGLUTINATIVE_SUFFIXES.kn, ...AGGLUTINATIVE_SUFFIXES.ml])],
-  iir: [...new Set([...AGGLUTINATIVE_SUFFIXES.hi, ...AGGLUTINATIVE_SUFFIXES.ur, ...AGGLUTINATIVE_SUFFIXES.bn, ...AGGLUTINATIVE_SUFFIXES.pa, ...AGGLUTINATIVE_SUFFIXES.fa])],
+  trk: [...new Set([...(AGGLUTINATIVE_SUFFIXES.tr ?? []), ...(AGGLUTINATIVE_SUFFIXES.uz ?? []), ...(AGGLUTINATIVE_SUFFIXES.az ?? [])])],
+  fin: [...new Set([...(AGGLUTINATIVE_SUFFIXES.fi ?? []), ...(AGGLUTINATIVE_SUFFIXES.et ?? []), ...(AGGLUTINATIVE_SUFFIXES.hu ?? [])])],
+  drv: [...new Set([...(AGGLUTINATIVE_SUFFIXES.ta ?? []), ...(AGGLUTINATIVE_SUFFIXES.te ?? []), ...(AGGLUTINATIVE_SUFFIXES.kn ?? []), ...(AGGLUTINATIVE_SUFFIXES.ml ?? [])])],
+  iir: [...new Set([...(AGGLUTINATIVE_SUFFIXES.hi ?? []), ...(AGGLUTINATIVE_SUFFIXES.ur ?? []), ...(AGGLUTINATIVE_SUFFIXES.bn ?? []), ...(AGGLUTINATIVE_SUFFIXES.pa ?? []), ...(AGGLUTINATIVE_SUFFIXES.fa ?? [])])],
 };
 
 const STRIP_PASSES = 3;

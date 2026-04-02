@@ -11,7 +11,7 @@ const CYRILLIC_TURKIC_MAP: Record<string, string> = {
   а: 'a', ә: 'ə', б: 'b', в: 'v', г: 'g', ғ: 'ğ', д: 'd', е: 'e', ё: 'yo', ж: 'j', з: 'z',
   и: 'i', й: 'y', к: 'k', қ: 'q', л: 'l', м: 'm', н: 'n', ң: 'ñ', о: 'o', ө: 'ö', п: 'p',
   р: 'r', с: 's', т: 't', у: 'u', ұ: 'u', ү: 'ü', ф: 'f', х: 'h', ҳ: 'h', ц: 'ts', ч: 'ch',
-  ш: 'sh', щ: 'sh', ы: 'ı', і: 'i', э: 'e', ю: 'yu', я: 'ya', ъ: '', ь: '', ё: 'yo',
+  ш: 'sh', щ: 'sh', ы: 'ı', і: 'i', э: 'e', ю: 'yu', я: 'ya', ъ: '', ь: '',
 };
 
 export class TurkicStrategy extends PhonologicalStrategy {
