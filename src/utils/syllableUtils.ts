@@ -51,6 +51,27 @@ const countSyllablesFrench = (text: string): number => {
 };
 
 /**
+ * Count syllables for English text.
+ * Uses vowel-cluster approach with common suffix elision rules.
+ * More accurate than the generic Germanic fallback.
+ */
+const countSyllablesEnglish = (text: string): number => {
+  const words = text.toLowerCase().match(/[a-z']+/g) ?? [];
+  return words.reduce((sum, raw) => {
+    // Remove silent trailing -e patterns and common suffixes
+    let w = raw
+      .replace(/(?:[^laeiouy]es|[^laeiouy]ed|[^laeiouy]e)$/, '')
+      .replace(/^y/, '');
+    // Collapse vowel digraphs & diphthongs into single unit
+    w = w
+      .replace(/[aeiou]{2}/g, '#')
+      .replace(/[aeiouy]/g, '#');
+    const count = (w.match(/#/g) ?? []).length;
+    return sum + Math.max(1, count);
+  }, 0);
+};
+
+/**
  * Count syllables for Romance languages (fallback graphemic)
  * Simplified version - full implementation would use G2P
  */
@@ -67,70 +88,73 @@ const countSyllablesRomance = (text: string, langCode: string): number => {
 };
 
 /**
- * Count syllables for Germanic languages (fallback graphemic)
- * This is approximate - English especially needs CMU dict + neural OOV
+ * Count syllables for Germanic languages (graphemic)
+ * English uses a dedicated function; other Germanic languages use basic vowel counting.
  */
-const countSyllablesGermanic = (text: string): number => {
-  // Very basic vowel counting for now
+const countSyllablesGermanic = (text: string, langCode: string): number => {
+  if (langCode === 'en') {
+    return countSyllablesEnglish(text);
+  }
+  // DE, NL, SV, DA, NO, IS — basic vowel-group counting
   const normalized = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const vowelGroups = normalized.match(/[aeiouy]+/g);
   return vowelGroups ? vowelGroups.length : 0;
 };
 
 /**
- * Count morae for Japanese text
- * 1 character ≈ 1 mora in hiragana/katakana
- * Kanji needs segmentation (future work)
+ * Count morae for Japanese text.
+ * 1 hiragana/katakana character ≈ 1 mora.
+ * Kanji fallback: each CJK character counts as 1 mora.
  */
 const countMoraeJapanese = (text: string): number => {
-  // Simplified: count hiragana/katakana characters
-  // This is a placeholder - real implementation needs morphological analysis
-  const hiragana = text.match(/[\u3040-\u309F]/g) || [];
-  const katakana = text.match(/[\u30A0-\u30FF]/g) || [];
-  return hiragana.length + katakana.length;
+  const hiragana = text.match(/[\u3040-\u309F]/g) ?? [];
+  const katakana = text.match(/[\u30A0-\u30FF]/g) ?? [];
+  const kanaCount = hiragana.length + katakana.length;
+  if (kanaCount > 0) return kanaCount;
+  // Fallback: kanji characters (each = 1 mora when no kana present)
+  const kanji = text.match(/[\u4E00-\u9FFF\u3400-\u4DBF]/g) ?? [];
+  return kanji.length;
 };
 
 /**
- * Count syllables for Sinitic languages
- * 1 character = 1 syllable (with tone)
+ * Count syllables for Sinitic languages.
+ * 1 CJK character = 1 syllable (with tone).
+ * Covers BMP block + Extension A/B.
  */
 const countSyllablesSinitic = (text: string): number => {
-  // Count CJK unified ideographs
-  const cjk = text.match(/[\u4E00-\u9FFF]/g);
+  const cjk = text.match(/[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]/g);
   return cjk ? cjk.length : 0;
 };
 
 /**
- * Count syllables for tonal CV languages (KWA family)
- * Structure is predominantly CV, very simple
+ * Count syllables for tonal CV languages (KWA family).
+ * Uses NFC normalisation to avoid double-counting decomposed tonal diacritics.
  */
 const countSyllablesTonalCV = (text: string): number => {
-  // For CV languages, count CV pairs in normalized text
-  // This is a simplified approach
-  const normalized = text.normalize('NFD').toLowerCase();
-  // Don't strip tonal diacritics for tonal languages
+  // NFC: keep composed characters — tonal diacritics stay attached to their base vowel
+  const normalized = text.normalize('NFC').toLowerCase();
   const vowelGroups = normalized.match(/[aeiouɛɔʊ]+/g);
   return vowelGroups ? vowelGroups.length : 0;
 };
 
 /**
- * Count syllables for CVC tonal languages (CRV family)
+ * Count syllables for CVC tonal languages (CRV family).
+ * Uses NFC normalisation for the same reason as KWA.
  */
 const countSyllablesTonalCVC = (text: string): number => {
-  // Similar to CV but allows codas
-  const normalized = text.normalize('NFD').toLowerCase();
+  const normalized = text.normalize('NFC').toLowerCase();
   const vowelGroups = normalized.match(/[aeiouɛɔʊ]+/g);
   return vowelGroups ? vowelGroups.length : 0;
 };
 
 /**
- * Fallback syllable counting for unrecognized languages
- * Uses basic vowel group counting
+ * Fallback syllable counting for unrecognized languages.
+ * Uses basic vowel group counting.
  */
 const countSyllablesFallback = (text: string): number => {
   const normalized = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const vowelGroups = normalized.match(/[aeiou]+/g);
-  return vowelGroups ? vowelGroups.length : Math.max(1, text.trim().length > 0 ? 1 : 0);
+  return vowelGroups ? vowelGroups.length : 0;
 };
 
 /**
@@ -180,7 +204,7 @@ export const countSyllablesWithFamily = (text: string, langCode?: string): Sylla
 
     case 'ALGO-GER':
       return {
-        count: countSyllablesGermanic(cleanText),
+        count: countSyllablesGermanic(cleanText, langCode),
         method: 'graphemic',
         family,
       };
