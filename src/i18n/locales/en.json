@@ -149,7 +149,13 @@
     "crafting": "Crafting alternatives...",
     "clickToApply": "Click to apply",
     "moreOptions": "More options",
-    "empty": "Select a line to explore AI-powered alternatives."
+    "empty": "Select a line to explore AI-powered alternatives.",
+    "spellCheckTitle": "Spell Check",
+    "spellChecking": "Checking spelling…",
+    "applyCorrection": "Apply",
+    "dismiss": "Dismiss",
+    "synonymsTitle": "Synonyms",
+    "synonymsLoading": "Finding synonyms…"
   },
   "musical": {
     "title": "Musical Prompt Generator",

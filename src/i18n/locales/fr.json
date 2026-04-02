@@ -141,7 +141,13 @@
     "crafting": "Création d’alternatives...",
     "clickToApply": "Cliquer pour appliquer",
     "moreOptions": "Plus d’options",
-    "empty": "Sélectionnez une ligne pour explorer des alternatives IA."
+    "empty": "Sélectionnez une ligne pour explorer des alternatives IA.",
+    "spellCheckTitle": "Correcteur orthographique",
+    "spellChecking": "Vérification en cours…",
+    "applyCorrection": "Appliquer",
+    "dismiss": "Ignorer",
+    "synonymsTitle": "Synonymes",
+    "synonymsLoading": "Recherche de synonymes…"
   },
   "musical": {
     "title": "Générateur de prompt musical",

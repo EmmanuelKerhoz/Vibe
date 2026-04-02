@@ -134,7 +134,13 @@
     "crafting": "Alternativen erstellen...",
     "clickToApply": "Zum Anwenden klicken",
     "moreOptions": "Mehr Optionen",
-    "empty": "Wähle eine Zeile aus, um KI-gestützte Alternativen zu erkunden."
+    "empty": "Wähle eine Zeile aus, um KI-gestützte Alternativen zu erkunden.",
+    "spellCheckTitle": "Rechtschreibprüfung",
+    "spellChecking": "Rechtschreibung wird geprüft…",
+    "applyCorrection": "Anwenden",
+    "dismiss": "Verwerfen",
+    "synonymsTitle": "Synonyme",
+    "synonymsLoading": "Synonyme werden gesucht…"
   },
   "musical": {
     "title": "Musikalischer Prompt-Generator",
