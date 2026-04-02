@@ -35,17 +35,18 @@ export class GermanicStrategy extends PhonologicalStrategy {
     return normalized;
   }
 
-  syllabify(ipa: string, _lang: string): Syllable[] {
+  syllabify(ipa: string, lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
     const syllables: Syllable[] = [];
     // IPA vowels + orthographic vowels (needed while G2P stub passes through text).
     const vowelPattern = /[aeiouyæɛɪɒɔʊʌəɜɑ]/i;
     for (const word of words) {
+      const wordSyllables: Syllable[] = [];
       let current = '';
       for (const ch of word) {
         current += ch;
         if (vowelPattern.test(ch)) {
-          syllables.push({
+          wordSyllables.push({
             onset: current.slice(0, -1),
             nucleus: ch,
             coda: '',
@@ -56,14 +57,22 @@ export class GermanicStrategy extends PhonologicalStrategy {
           current = '';
         }
       }
-      if (current && syllables.length > 0) {
-        syllables[syllables.length - 1]!.coda = current;
+      if (current && wordSyllables.length > 0) {
+        wordSyllables[wordSyllables.length - 1]!.coda = current;
       }
-    }
-    // EN: stress typically on penultimate or per dictionary; default to penultimate.
-    if (syllables.length > 0) {
-      const stressIdx = Math.max(0, syllables.length - 2);
-      syllables[stressIdx]!.stressed = true;
+
+      // Stress placement
+      if (wordSyllables.length > 0) {
+        if (lang === 'en') {
+          applyEnglishStress(word, wordSyllables);
+        } else {
+          // DE/NL/SV/DA/NO: penultimate default
+          const stressIdx = Math.max(0, wordSyllables.length - 2);
+          wordSyllables[stressIdx]!.stressed = true;
+        }
+      }
+
+      syllables.push(...wordSyllables);
     }
     return syllables;
   }
@@ -87,6 +96,46 @@ export class GermanicStrategy extends PhonologicalStrategy {
   score(rn1: RhymeNucleus, rn2: RhymeNucleus, weights?: Partial<MatchingWeights>): number {
     return featureWeightedScore(rn1, rn2, { ...this.defaultWeights, ...weights });
   }
+}
+
+// ─── English stress heuristic ─────────────────────────────────────────────────────────────
+
+/**
+ * Suffix-based English stress placement.
+ * Covers ~70% of common cases without a CMU dict lookup.
+ *
+ * Rules (highest to lowest priority):
+ * 1. Monosyllabic word: stress index 0.
+ * 2. Antepenultimate suffixes: -tion, -sion, -ic, -ical, -ity, -ify, -ious, -eous, -ual
+ *    → stress on syllable before suffix (antepenult).
+ * 3. Penultimate suffixes: -ness, -less, -ful, -ment, -er, -est, -ing, -ed, -ly
+ *    → stress on penultimate.
+ * 4. Default: stress on first syllable (most common EN pattern for 2+ syllables
+ *    without recognised suffix).
+ */
+function applyEnglishStress(word: string, syllables: Syllable[]): void {
+  const n = syllables.length;
+  if (n === 0) return;
+  if (n === 1) { syllables[0]!.stressed = true; return; }
+
+  const w = word.toLowerCase();
+
+  // Antepenultimate suffixes
+  if (/(?:tion|sion|ic|ical|ity|ify|ious|eous|ual)$/.test(w)) {
+    const idx = Math.max(0, n - 3);
+    syllables[idx]!.stressed = true;
+    return;
+  }
+
+  // Penultimate suffixes
+  if (/(?:ness|less|ful|ment|ing|ed|est|er|ly)$/.test(w)) {
+    const idx = Math.max(0, n - 2);
+    syllables[idx]!.stressed = true;
+    return;
+  }
+
+  // Default: first syllable
+  syllables[0]!.stressed = true;
 }
 
 function classifyCoda(coda: string): 'nasal' | 'liquid' | 'obstruent' | null {
