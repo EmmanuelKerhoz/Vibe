@@ -7,6 +7,8 @@ type Mora = {
   onset: string;
   nucleus: string;
   raw: string;
+  /** True when the mora is a raw Han character with no kana romanisation. */
+  isHanFallback?: boolean;
 };
 
 const JAPANESE_VOWELS = ['a', 'i', 'u', 'e', 'o'] as const;
@@ -60,6 +62,11 @@ export class JapaneseStrategy extends PhonologicalStrategy {
   }
 
   g2p(normalized: string, _lang: string): string {
+    // TODO(low-resource/JA): Han characters are emitted as-is (no reading lookup).
+    // A proper implementation would use a kanji→yomi dictionary (e.g. kuromoji or
+    // a compact readings map) to convert each Han character to its hiragana reading
+    // before romanisation. Until then, Han chars propagate as opaque nuclei and
+    // trigger lowResourceFallback downstream.
     return normalized
       .split(/\s+/u)
       .filter(Boolean)
@@ -68,25 +75,40 @@ export class JapaneseStrategy extends PhonologicalStrategy {
   }
 
   syllabify(ipa: string, _lang: string): Syllable[] {
-    const syllables = ipa.split(/\s+/u).filter(Boolean).map(buildJapaneseMora);
+    const morae = ipa.split(/\s+/u).filter(Boolean).map((token) => {
+      // Detect raw Han token emitted by g2p Han fallback.
+      const isHanFallback = isHanCharacter(token);
+      return buildJapaneseMora(token, isHanFallback);
+    });
 
-    if (syllables.length > 0) {
-      syllables[syllables.length - 1]!.stressed = true;
+    if (morae.length > 0) {
+      morae[morae.length - 1]!.stressed = true;
     }
 
-    return syllables;
+    return morae;
   }
 
   extractRN(syllables: Syllable[], _lang: string): RhymeNucleus {
     const last = syllables[syllables.length - 1];
+    const nucleus = last?.nucleus ?? '';
+
+    // If the last syllable is a raw Han character (no kana romanisation was
+    // possible), signal degraded confidence to callers.
+    // TODO(low-resource/JA): replace with proper yomi lookup so this flag
+    // is no longer needed.
+    const lowResourceFallback =
+      (last as (Syllable & { lowResourceFallback?: boolean }) | undefined)
+        ?.lowResourceFallback === true ||
+      isHanCharacter(nucleus);
 
     return {
-      nucleus: last?.nucleus ?? '',
+      nucleus,
       coda: '',
       toneClass: null,
       weight: null,
       codaClass: null,
-      raw: last?.nucleus ?? '',
+      raw: nucleus,
+      ...(lowResourceFallback ? { lowResourceFallback: true } : {}),
     };
   }
 
@@ -135,7 +157,9 @@ function romanizeJapaneseWord(word: string): Mora[] {
     }
 
     if (isHanCharacter(char) || !isKana(char)) {
-      morae.push({ onset: '', nucleus: char, raw: char });
+      // Explicit Han fallback — not a silent swallow.
+      // TODO(low-resource/JA): resolve char to hiragana reading via dictionary.
+      morae.push({ onset: '', nucleus: char, raw: char, isHanFallback: true });
     }
     index += 1;
   }
@@ -160,9 +184,9 @@ function toJapaneseMora(raw: string): Mora {
   };
 }
 
-function buildJapaneseMora(token: string): Syllable {
+function buildJapaneseMora(token: string, isHanFallback = false): Syllable {
   const mora = toJapaneseMora(token);
-  return {
+  const base: Syllable = {
     onset: mora.onset,
     nucleus: mora.nucleus,
     coda: '',
@@ -171,6 +195,10 @@ function buildJapaneseMora(token: string): Syllable {
     stressed: false,
     template: mora.onset ? 'CV' : 'V',
   };
+  if (isHanFallback) {
+    (base as Syllable & { lowResourceFallback: boolean }).lowResourceFallback = true;
+  }
+  return base;
 }
 
 function extractJapaneseVowel(token: string): string {

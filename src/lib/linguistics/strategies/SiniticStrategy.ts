@@ -108,6 +108,12 @@ export class SiniticStrategy extends PhonologicalStrategy {
   }
 
   g2p(normalized: string, _lang: string): string {
+    // TODO(low-resource/SIN): this is a pass-through — no Han→Pinyin/Jyutping
+    // conversion is performed. Pure Han input (no diacritics, no tone digits)
+    // will propagate raw characters and trigger lowResourceFallback in syllabify()
+    // and extractRN(). A proper implementation would use a character-level
+    // pronunciation dictionary (CC-CEDICT for zh, words.hk for yue) to convert
+    // each Han character to its romanised form with tone before syllabification.
     return normalized;
   }
 
@@ -115,9 +121,13 @@ export class SiniticStrategy extends PhonologicalStrategy {
     const profile = resolveSiniticProfile(lang);
     const syllables = tokenizeSinitic(ipa).flatMap((token) => {
       if (HAN_CHAR_RE.test(token) && !LATIN_RE.test(token)) {
+        // TODO(low-resource/SIN): raw Han tokens are emitted as opaque nuclei
+        // because g2p() performed no romanisation. Each character gets
+        // lowResourceFallback:true so callers can downgrade confidence.
+        // Replace with dictionary-driven romanisation (see g2p TODO above).
         return [...token]
           .filter((char) => HAN_CHAR_RE.test(char))
-          .map<Syllable>((char) => ({
+          .map<Syllable & { lowResourceFallback: boolean }>((char) => ({
             onset: '',
             nucleus: char,
             coda: '',
@@ -125,6 +135,7 @@ export class SiniticStrategy extends PhonologicalStrategy {
             weight: null,
             stressed: false,
             template: 'CV',
+            lowResourceFallback: true,
           }));
       }
 
@@ -145,6 +156,14 @@ export class SiniticStrategy extends PhonologicalStrategy {
     const coda = last?.coda ?? '';
     const toneClass = last?.tone ?? null;
 
+    // Propagate lowResourceFallback when the last syllable is a raw Han char.
+    // TODO(low-resource/SIN): once g2p() resolves Han to romanised form, remove
+    // this flag — it should never be set for properly processed input.
+    const lowResourceFallback =
+      (last as (Syllable & { lowResourceFallback?: boolean }) | undefined)
+        ?.lowResourceFallback === true ||
+      (HAN_CHAR_RE.test(nucleus) && coda === '');
+
     return {
       nucleus,
       coda,
@@ -152,6 +171,7 @@ export class SiniticStrategy extends PhonologicalStrategy {
       weight: null,
       codaClass: classifyCoda(coda),
       raw: [nucleus, coda, toneClass].filter(Boolean).join(':'),
+      ...(lowResourceFallback ? { lowResourceFallback: true } : {}),
     };
   }
 
@@ -171,7 +191,7 @@ function tokenizeSinitic(text: string): string[] {
 function parseRomanizedSiniticSyllable(token: string, profile: SiniticProfile): Syllable | null {
   const { base: digitless, toneClass: digitTone, toneDigit } = extractToneFromToneDigit(token.normalize('NFD'), profile.toneDigits);
   const { base, toneMark } = splitToneDiacritics(digitless);
-  const cleaned = base.replace(/['’-]/gu, '').normalize('NFC');
+  const cleaned = base.replace(/[''-]/gu, '').normalize('NFC');
 
   if (!cleaned) {
     return null;
