@@ -34,6 +34,7 @@ const ALLOWED_CONFIG_KEYS = new Set([
   'frequencyPenalty',
   'seed',
   'responseMimeType',
+  'responseSchema',
 ] as const);
 
 type SanitizedConfig = {
@@ -47,6 +48,7 @@ type SanitizedConfig = {
   frequencyPenalty?: number;
   seed?: number;
   responseMimeType?: string;
+  responseSchema?: unknown;
 };
 
 /**
@@ -84,6 +86,9 @@ function sanitizeConfig(raw: Record<string, unknown>): SanitizedConfig {
         if (typeof val === 'string') {
           out.responseMimeType = val;
         }
+        break;
+      case 'responseSchema':
+        out.responseSchema = val;
         break;
     }
   }
