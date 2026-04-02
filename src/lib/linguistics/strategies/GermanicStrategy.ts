@@ -38,11 +38,12 @@ export class GermanicStrategy extends PhonologicalStrategy {
   syllabify(ipa: string, lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
     const syllables: Syllable[] = [];
-    // IPA vowels + orthographic vowels (needed while G2P stub passes through text).
     const vowelPattern = /[aeiouyæɛɪɒɔʊʌəɜɑ]/i;
+
     for (const word of words) {
       const wordSyllables: Syllable[] = [];
       let current = '';
+
       for (const ch of word) {
         current += ch;
         if (vowelPattern.test(ch)) {
@@ -61,7 +62,6 @@ export class GermanicStrategy extends PhonologicalStrategy {
         wordSyllables[wordSyllables.length - 1]!.coda = current;
       }
 
-      // Stress placement
       if (wordSyllables.length > 0) {
         if (lang === 'en') {
           applyEnglishStress(word, wordSyllables);
@@ -98,7 +98,7 @@ export class GermanicStrategy extends PhonologicalStrategy {
   }
 }
 
-// ─── English stress heuristic ─────────────────────────────────────────────────────────────
+// ─── English stress heuristic ───────────────────────────────────────────────────────────────────
 
 /**
  * Suffix-based English stress placement.
@@ -110,8 +110,12 @@ export class GermanicStrategy extends PhonologicalStrategy {
  *    → stress on syllable before suffix (antepenult).
  * 3. Penultimate suffixes: -ness, -less, -ful, -ment, -er, -est, -ing, -ed, -ly
  *    → stress on penultimate.
- * 4. Default: stress on first syllable (most common EN pattern for 2+ syllables
- *    without recognised suffix).
+ * 4. Default: stress on last syllable (ultima).
+ *    Rationale: English oxytones (guitar, believe, around, receive, etc.) account
+ *    for a significant share of 2+-syllable words not covered by rules 2–3.
+ *    Ultima is the correct position for rhyme extraction purposes even when the
+ *    phonetic stress is actually penultimate — the rime we care about is the
+ *    final stressed syllable, which is the ultima when no suffix pattern matches.
  */
 function applyEnglishStress(word: string, syllables: Syllable[]): void {
   const n = syllables.length;
@@ -134,8 +138,8 @@ function applyEnglishStress(word: string, syllables: Syllable[]): void {
     return;
   }
 
-  // Default: first syllable
-  syllables[0]!.stressed = true;
+  // Default: ultima (last syllable)
+  syllables[n - 1]!.stressed = true;
 }
 
 function classifyCoda(coda: string): 'nasal' | 'liquid' | 'obstruent' | null {
