@@ -35,7 +35,10 @@ export class KwaStrategy extends PhonologicalStrategy {
   // ─── Step 2 — G2P (rules-based tonal CV) ──────────────────────────────────
 
   g2p(normalized: string, _lang: string): string {
-    // Stub: in production, apply rule-based tonal CV G2P for BA/DI/EW/MI.
+    // Stub: G2P not yet implemented — grapheme-only analysis.
+    // TODO: rule-based tonal CV G2P for BA (Baoulé), DI (Dioula), EW (Ewe), MI (Mina).
+    // Consequence: tone diacritics are captured from orthography but consonant
+    // distinctions and underlying phonological contrasts are not resolved.
     return normalized;
   }
 
@@ -108,6 +111,8 @@ export class KwaStrategy extends PhonologicalStrategy {
       weight: null,
       codaClass: null,
       raw: `${nucleus}${toneClass ?? ''}`,
+      // G2P is a stub — analysis is graphemic only; flag consumers.
+      lowResourceFallback: true,
     };
   }
 

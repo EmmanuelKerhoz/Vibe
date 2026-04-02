@@ -38,7 +38,11 @@ export class CrvStrategy extends PhonologicalStrategy {
   // ─── Step 2 — G2P ─────────────────────────────────────────────────────────
 
   g2p(normalized: string, _lang: string): string {
-    // Stub: in production use SSP-based G2P for Hausa, fallback for BK/OG.
+    // Stub: G2P not yet implemented — grapheme-only analysis.
+    // TODO: SSP-based G2P for Hausa (ha); lowResource path for BK/OG.
+    // Consequence: moraic weight (heavy/light) is computed correctly for Hausa
+    // because it relies on orthographic vowel length markers, but phonological
+    // contrasts beyond weight are not resolved.
     return normalized;
   }
 
@@ -117,6 +121,9 @@ export class CrvStrategy extends PhonologicalStrategy {
     const weight = last?.weight ?? null;
     const codaClass = classifyCoda(coda);
 
+    // Hausa moraic weight is derived from orthography — partially reliable.
+    // All other CRV languages have no G2P: flag as low-resource.
+    const isPartiallySupported = lang === 'ha';
     return {
       nucleus,
       coda,
@@ -125,6 +132,7 @@ export class CrvStrategy extends PhonologicalStrategy {
       codaClass,
       raw: [nucleus, coda, toneClass, weight === 'heavy' ? 'H-wt' : null]
         .filter(Boolean).join(':'),
+      lowResourceFallback: !isPartiallySupported,
     };
   }
 

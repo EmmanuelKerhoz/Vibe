@@ -39,7 +39,7 @@ export class BantuStrategy extends PhonologicalStrategy {
   normalize(text: string, _lang: string): string {
     let t = text.normalize('NFC').toLowerCase().trim();
     // Strip non-phonemic punctuation
-    t = t.replace(/[^\p{L}\p{M}\s''\-]/gu, '');
+    t = t.replace(/[^\p{L}\p{M}\s''-]/gu, '');
     // Strip nominal class prefixes from each word
     t = t.split(/\s+/).map(w => stripNominalPrefix(w)).join(' ');
     return t;
@@ -48,7 +48,9 @@ export class BantuStrategy extends PhonologicalStrategy {
   // ─── Step 2: G2P ───────────────────────────────────────────────────────────
 
   g2p(normalized: string, _lang: string): string {
-    // Stub: in production, delegate to eSpeak-NG / Epitran.
+    // Stub: G2P not yet implemented — grapheme-only analysis.
+    // TODO: delegate to eSpeak-NG 'sw'/'yo'/'zu'/'xh' voices or Epitran.
+    // Consequence: rhyme detection is orthographic, not phonological.
     return normalized;
   }
 
@@ -124,6 +126,8 @@ export class BantuStrategy extends PhonologicalStrategy {
       weight: null,
       codaClass: classifyCoda(coda),
       raw: `${nucleus}${toneClass ?? ''}`,
+      // G2P is a stub — analysis is graphemic only; flag consumers.
+      lowResourceFallback: true,
     };
   }
 
