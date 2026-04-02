@@ -17,6 +17,70 @@ const VOWEL_RE = /[аеёиоуыэюяaeiouyáéíóúůýěăůàâîèü]/i;
 /** Unstressed vowels that reduce toward schwa. */
 const REDUCIBLE_RE = /[аоеяэ]/gi;
 
+// ─── Slavic MOP onset table ───────────────────────────────────────────────────
+
+/**
+ * Legal 3-consonant onsets for Slavic languages.
+ * Polish: str, spr, skr — Czech/Slovak: str, spl, skv — Russian: str, spr.
+ */
+const SLAV_LEGAL_ONSETS_3 = new Set([
+  'str', 'spr', 'skr', 'spl', 'skv', 'zdр', 'zgr',
+]);
+
+/**
+ * Legal 2-consonant onsets for Slavic languages.
+ * Covers PL/CS/SK/RU/UK common clusters.
+ * Ordered roughly by frequency; set membership is O(1) so order is cosmetic.
+ */
+const SLAV_LEGAL_ONSETS_2 = new Set([
+  // Stop + liquid
+  'kl', 'gl', 'pl', 'bl', 'pr', 'br', 'tr', 'dr', 'kr', 'gr', 'fr', 'vl',
+  // Fricative + stop / nasal / liquid
+  'sp', 'st', 'sk', 'sn', 'sm', 'sl', 'sv', 'zv', 'zn', 'zm', 'zl', 'zr',
+  // Affricate-adjacent
+  'ts', 'dz', 'tʃ', 'dʒ',
+  // Palatal clusters (Czech/Slovak)
+  'šk', 'šp', 'žv',
+]);
+
+/**
+ * Split an inter-vocalic consonant cluster using the Maximum Onset Principle
+ * for Slavic languages.
+ *
+ * Scan from right (longest → shortest):
+ *   1. Try len=3 suffix against SLAV_LEGAL_ONSETS_3.
+ *   2. Try len=2 suffix against SLAV_LEGAL_ONSETS_2.
+ *   3. Single last consonant as onset (universally legal), rest is coda.
+ *
+ * Examples (Polish):
+ *   "str" → onset="str", prevCoda=""    (strona → stro.na handled at first vowel)
+ *   "prz" → onset="rz",  prevCoda="p"   (przepis → prze.pis — approx.)
+ *   "szcz"→ onset="cz",  prevCoda="sz"  (szczyt → sz.czyt — approx.)
+ *   "wst" → onset="st",  prevCoda="w"   (wstać)
+ */
+function slavMopSplit(cluster: string): [onset: string, prevCoda: string] {
+  const len = cluster.length;
+  if (len === 0) return ['', ''];
+  if (len === 1) return [cluster, ''];
+
+  // Try 3-char onset
+  if (len >= 3) {
+    const c3 = cluster.slice(len - 3);
+    if (SLAV_LEGAL_ONSETS_3.has(c3)) {
+      return [c3, cluster.slice(0, len - 3)];
+    }
+  }
+
+  // Try 2-char onset
+  const c2 = cluster.slice(len - 2);
+  if (SLAV_LEGAL_ONSETS_2.has(c2)) {
+    return [c2, cluster.slice(0, len - 2)];
+  }
+
+  // Single last consonant as onset
+  return [cluster.slice(-1), cluster.slice(0, -1)];
+}
+
 export class SlavicStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-SLV' as const;
 
@@ -57,40 +121,62 @@ export class SlavicStrategy extends PhonologicalStrategy {
     for (const word of words) {
       // Normalise palatalisation for rhyme comparison
       const cleaned = stripPalatalization(word);
-      let current = '';
+      const wordSyllables: Syllable[] = [];
+      let cluster = '';
 
       for (const ch of cleaned) {
-        current += ch;
-        if (VOWEL_RE.test(ch)) {
-          syllables.push({
-            onset: current.slice(0, -1),
+        if (!VOWEL_RE.test(ch)) {
+          cluster += ch;
+          continue;
+        }
+
+        // ch is a vowel
+        if (wordSyllables.length === 0) {
+          // First vowel: entire pre-vocalic cluster is the onset.
+          wordSyllables.push({
+            onset: cluster,
             nucleus: ch,
             coda: '',
             tone: null,
             weight: null,
             stressed: false,
           });
-          current = '';
+        } else {
+          // Split the inter-vocalic cluster with Slavic MOP.
+          const [onset, coda] = slavMopSplit(cluster);
+          wordSyllables[wordSyllables.length - 1]!.coda += coda;
+          wordSyllables.push({
+            onset,
+            nucleus: ch,
+            coda: '',
+            tone: null,
+            weight: null,
+            stressed: false,
+          });
+        }
+        cluster = '';
+      }
+
+      // Trailing consonants → coda of last syllable
+      if (cluster && wordSyllables.length > 0) {
+        wordSyllables[wordSyllables.length - 1]!.coda = cluster;
+      }
+
+      // Default stress: paroxytone (penultimate syllable)
+      if (wordSyllables.length >= 2) {
+        wordSyllables[wordSyllables.length - 2]!.stressed = true;
+      } else if (wordSyllables.length === 1) {
+        wordSyllables[0]!.stressed = true;
+      }
+
+      // Reduce unstressed vowels toward schwa
+      for (const syl of wordSyllables) {
+        if (!syl.stressed) {
+          syl.nucleus = syl.nucleus.replace(REDUCIBLE_RE, 'ə');
         }
       }
-      // Trailing consonants → coda of last syllable
-      if (current && syllables.length > 0) {
-        syllables[syllables.length - 1]!.coda = current;
-      }
-    }
 
-    // Default stress: paroxytone (penultimate syllable)
-    if (syllables.length >= 2) {
-      syllables[syllables.length - 2]!.stressed = true;
-    } else if (syllables.length === 1) {
-      syllables[0]!.stressed = true;
-    }
-
-    // Reduce unstressed vowels toward schwa
-    for (const syl of syllables) {
-      if (!syl.stressed) {
-        syl.nucleus = syl.nucleus.replace(REDUCIBLE_RE, 'ə');
-      }
+      syllables.push(...wordSyllables);
     }
 
     return syllables;

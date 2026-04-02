@@ -23,6 +23,10 @@ const LEGAL_ONSETS_3 = new Set([
 /**
  * Legal 2-consonant onsets for Germanic languages.
  * Covers EN obstruent+liquid, EN/DE fricative+stop clusters, digraphs.
+ *
+ * Note: 'gn' is a legal onset in DE/NL/FR but NOT in EN (sign, gnome — the g
+ * is always silent word-initially in EN). It is intentionally absent here;
+ * EN silent grapheme stripping is handled by silentCodaStrip() instead.
  */
 const LEGAL_ONSETS_2 = new Set([
   // Obstruent + liquid
@@ -31,13 +35,55 @@ const LEGAL_ONSETS_2 = new Set([
   'sp', 'st', 'sk', 'sc', 'sn', 'sm', 'sl', 'sw',
   // Digraphs (treated as single onset unit)
   'th', 'sh', 'ch', 'wh', 'ph',
-  // English-specific
+  // English-specific (kn/wr are silent-g/w in onset — handled orthographically)
   'kn', 'wr', 'dw', 'tw',
-  // German-specific
-  'kw', 'pf', 'ts', 'tz',
+  // German/Dutch-specific
+  'kw', 'pf', 'ts', 'tz', 'gn',
   // Shared
-  'gn',
 ]);
+
+/**
+ * EN-only silent coda graphemes.
+ *
+ * These sequences appear in the final coda of English words where one or more
+ * graphemes are historically present but phonologically silent. Stripping them
+ * before coda classification ensures that, e.g., 'sign' and 'wine' produce
+ * the same codaClass (null / no coda), and 'knight'/'night' match correctly.
+ *
+ * Each entry maps the orthographic coda suffix → the phonological coda remnant.
+ * Order matters: longer patterns must come first.
+ *
+ * Examples:
+ *   sign  → coda "gn" → strip "g" → remnant "n"  → nasal
+ *   knife → coda "" (onset kn) — handled by MOP, not here
+ *   lamb  → coda "mb" → strip "b" → remnant "m"  → nasal
+ *   debt  → coda "bt" → strip "b" → remnant "t"  → obstruent
+ *   night → coda "ght" → strip "gh" → remnant "t" → obstruent
+ *   damn  → coda "mn" → strip "n" → remnant "m"  → nasal
+ */
+const EN_SILENT_CODA_MAP: [pattern: RegExp, replacement: string][] = [
+  [/ght$/, 't'],   // night, light, fight, bought
+  [/gn$/,  'n'],   // sign, align, design, foreign
+  [/kn$/,  'n'],   // (rare in coda, e.g. 'blacken' edge case)
+  [/mb$/,  'm'],   // lamb, bomb, thumb, dumb
+  [/mn$/,  'm'],   // damn, hymn, autumn
+  [/bt$/,  't'],   // debt, doubt, subtle
+  [/gh$/,  ''],    // high, sigh, through (trailing gh — no remnant)
+];
+
+/**
+ * Strip EN silent graphemes from a coda string.
+ * Only applied when lang === 'en'.
+ */
+function silentCodaStrip(coda: string, lang: string): string {
+  if (lang !== 'en') return coda;
+  for (const [pattern, replacement] of EN_SILENT_CODA_MAP) {
+    if (pattern.test(coda)) {
+      return coda.replace(pattern, replacement);
+    }
+  }
+  return coda;
+}
 
 /**
  * Split a pre-vowel consonant cluster using the Maximum Onset Principle
@@ -183,18 +229,28 @@ export class GermanicStrategy extends PhonologicalStrategy {
     return syllables;
   }
 
-  extractRN(syllables: Syllable[], _lang: string): RhymeNucleus {
+  extractRN(syllables: Syllable[], lang: string): RhymeNucleus {
     const stressIdx = syllables.findIndex(s => s.stressed);
     const idx = stressIdx >= 0 ? stressIdx : Math.max(0, syllables.length - 1);
     const tail = syllables.slice(idx);
-    const raw = tail.map(s => `${s.nucleus}${s.coda}`).join('');
     const primary = tail[0];
+
+    // Strip EN silent graphemes from the primary coda before classification.
+    const rawCoda = primary?.coda ?? '';
+    const phonCoda = silentCodaStrip(rawCoda, lang);
+
+    // Rebuild raw from phonological coda (not orthographic).
+    const raw = tail.map((s, i) => {
+      const c = i === 0 ? phonCoda : silentCodaStrip(s.coda, lang);
+      return `${s.nucleus}${c}`;
+    }).join('');
+
     return {
       nucleus: primary?.nucleus ?? '',
-      coda: primary?.coda ?? '',
+      coda: phonCoda,
       toneClass: null,
       weight: null,
-      codaClass: classifyCoda(primary?.coda ?? ''),
+      codaClass: classifyCoda(phonCoda),
       raw,
       // G2P is a stub — analysis is graphemic only; flag consumers.
       lowResourceFallback: true,

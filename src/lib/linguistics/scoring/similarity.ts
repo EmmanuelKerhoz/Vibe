@@ -107,19 +107,38 @@ export function phonemeEditDistance(rn1: RhymeNucleus, rn2: RhymeNucleus): numbe
 /**
  * Compute a weighted score using per-family matching weights.
  *
- * Nucleus comparison strategy:
+ * ## Nucleus comparison strategy
  * - Exact string match → 1.0 (no change, no regression for orthographic stubs).
  * - Partial phonemic overlap: uses phonemeEditDistance on the nucleus strings
  *   when they differ. This is a no-op today (orthographic stubs produce full
  *   match or full miss), but once real G2P is wired it will produce graduated
  *   scores for near-miss nuclei (e.g. IPA /ɛ/ vs /e/ → ~0.5 rather than 0).
  *
- * This keeps the scoring pipeline future-proof without breaking current behaviour.
+ * ## Threshold contract
+ * `weights.threshold` is **not** applied automatically by this function.
+ * It is stored in `MatchingWeights` as a declaration of the family's intent,
+ * but the decision to gate on it belongs to the caller (UI layer, comparison
+ * orchestrator, or test harness). This avoids silent 0-returns that break
+ * graduated scoring pipelines.
+ *
+ * To apply the threshold, use the `applyThreshold` parameter:
+ * ```ts
+ * featureWeightedScore(rn1, rn2, weights, true)
+ * // → returns 0 if score < weights.threshold, else the raw score
+ * ```
+ *
+ * Default: `applyThreshold = false` — preserves backward compatibility.
+ *
+ * @param rn1 - First rhyme nucleus
+ * @param rn2 - Second rhyme nucleus
+ * @param weights - Per-family weights including optional threshold
+ * @param applyThreshold - If true, returns 0 when score < weights.threshold
  */
 export function featureWeightedScore(
   rn1: RhymeNucleus,
   rn2: RhymeNucleus,
   weights: MatchingWeights,
+  applyThreshold = false,
 ): number {
   let score = 0;
   let totalWeight = 0;
@@ -165,5 +184,11 @@ export function featureWeightedScore(
     }
   }
 
-  return totalWeight > 0 ? score / totalWeight : 0;
+  const rawScore = totalWeight > 0 ? score / totalWeight : 0;
+
+  if (applyThreshold && rawScore < weights.threshold) {
+    return 0;
+  }
+
+  return rawScore;
 }
