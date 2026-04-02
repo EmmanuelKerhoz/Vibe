@@ -18,8 +18,12 @@ describe('agglutinative strategies', () => {
   });
 
   it('normalizes Dravidian retroflexes while preserving long vowels', () => {
+    const analysis = PhonologicalRegistry.analyze('pāṭu', 'ta');
     const result = PhonologicalRegistry.compare('pāṭu', 'pātu', 'ta');
 
+    expect(analysis?.algoId).toBe('ALGO-DRV');
+    expect(analysis?.ipa).toBe('pātu');
+    expect(analysis?.rhymeNucleus.nucleus).toBe('ā');
     expect(result?.familyId).toBe('ALGO-DRV');
     expect(result?.score).toBe(1);
   });

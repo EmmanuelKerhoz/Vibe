@@ -105,7 +105,7 @@ function buildSyllables(word: string, harmony: 'front' | 'back' | 'neutral'): Sy
       index++;
     }
 
-    if (index < chars.length && index - codaStart > 1) {
+    if (index < chars.length && index - codaStart > 0) {
       coda = chars.slice(codaStart, index - 1).join('');
       index -= 1;
     } else {
