@@ -134,6 +134,9 @@ export class TaiStrategy extends PhonologicalStrategy {
   }
 
   g2p(normalized: string, _lang: string): string {
+    // Stub: G2P not yet implemented — grapheme-only analysis.
+    // TODO: tonal G2P for Thai (th) / Lao (lo). Tone diacritics are captured
+    // from orthography in syllabify(), but phonological values are not mapped.
     return normalized;
   }
 
@@ -166,6 +169,8 @@ export class TaiStrategy extends PhonologicalStrategy {
       weight: null,
       codaClass: classifyCoda(coda),
       raw: [nucleus, coda, toneClass].filter(Boolean).join(':'),
+      // G2P is a stub — tonal analysis is graphemic only; flag consumers.
+      lowResourceFallback: true,
     };
   }
 
