@@ -70,7 +70,7 @@ const syllabifyRomance = (ipa: string): IPASyllable[] => {
 
     // Extract nucleus (vowel sequence with diacritics)
     let nucleusEnd = cursor + 1;
-    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036fː]/.test(chars[nucleusEnd]!))) {
+    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036f\u02d0]/.test(chars[nucleusEnd]!))) {
       nucleusEnd++;
     }
     const nucleus = chars.slice(cursor, nucleusEnd).join('');
@@ -91,11 +91,11 @@ const syllabifyRomance = (ipa: string): IPASyllable[] => {
     const coda = chars.slice(cursor, codaEnd).join('');
     cursor = codaEnd;
 
-    // Check for stress mark (ˈ or ˌ) in onset or before
-    const stress = onset.includes('ˈ') || (i > 0 && chars[nucleusStart - 1] === 'ˈ');
+    // Check for stress mark (\u02c8 or \u02cc) in onset or before
+    const stress = onset.includes('\u02c8') || (i > 0 && chars[nucleusStart - 1] === '\u02c8');
 
     syllables.push({
-      onset: onset.replace(/[ˈˌ]/g, ''),
+      onset: onset.replace(/[\u02c8\u02cc]/g, ''),
       nucleus,
       coda,
       stress,
@@ -106,14 +106,63 @@ const syllabifyRomance = (ipa: string): IPASyllable[] => {
 };
 
 /**
- * ALGO-GER: delegates to Romance syllabification.
- * Germanic complex codas (CVCC) are handled acceptably by the Romance
- * algorithm for rhyme detection purposes. Revisit if onset cluster
- * accuracy is required.
+ * ALGO-GER: dedicated Germanic syllabification.
+ * Preserves complex CVCC codas (strengths, crafts, texts) that the Romance
+ * MOP 50/50 split would incorrectly distribute to the next onset.
+ * Stress marks (\u02c8) are detected and stripped; unstressed syllables
+ * default to stress=false.
  */
 const syllabifyGermanic = (ipa: string): IPASyllable[] => {
-  // Germanic allows more complex codas, but basic structure is similar to Romance
-  return syllabifyRomance(ipa);
+  const syllables: IPASyllable[] = [];
+  const nuclei = findVowelNuclei(ipa);
+  const chars = Array.from(ipa);
+  let cursor = 0;
+
+  if (nuclei.length === 0) {
+    return [{ onset: ipa, nucleus: '', coda: '' }];
+  }
+
+  for (let i = 0; i < nuclei.length; i++) {
+    const nucleusStart = nuclei[i]!;
+    const nextNucleusStart = nuclei[i + 1];
+
+    const onset = chars.slice(cursor, nucleusStart).join('');
+    cursor = nucleusStart;
+
+    // Nucleus + length mark / diacritics
+    let nucleusEnd = cursor + 1;
+    while (
+      nucleusEnd < chars.length &&
+      (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036f\u02d0]/.test(chars[nucleusEnd]!))
+    ) {
+      nucleusEnd++;
+    }
+    const nucleus = chars.slice(cursor, nucleusEnd).join('');
+    cursor = nucleusEnd;
+
+    // Germanic codas: assign ALL inter-syllabic consonants to current coda
+    // (maximise coda, not onset — inverse of Romance MOP).
+    // Exception: leave at least one consonant for the next syllable's onset
+    // when a following nucleus exists.
+    let codaEnd = nextNucleusStart ?? chars.length;
+    if (nextNucleusStart !== undefined && codaEnd > nucleusEnd) {
+      // Keep exactly one consonant for next onset
+      codaEnd = Math.max(nucleusEnd, codaEnd - 1);
+    }
+    const coda = chars.slice(cursor, codaEnd).join('');
+    cursor = codaEnd;
+
+    const stress = onset.includes('\u02c8') || (i > 0 && chars[nucleusStart - 1] === '\u02c8');
+
+    syllables.push({
+      onset: onset.replace(/[\u02c8\u02cc]/g, ''),
+      nucleus,
+      coda,
+      stress,
+    });
+  }
+
+  return syllables;
 };
 
 /**
@@ -144,18 +193,16 @@ const syllabifyKwa = (ipa: string): IPASyllable[] => {
 
     // Extract nucleus with tone diacritics
     let nucleusEnd = cursor + 1;
-    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036fː]/.test(chars[nucleusEnd]!))) {
+    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036f\u02d0]/.test(chars[nucleusEnd]!))) {
       nucleusEnd++;
     }
     const nucleus = chars.slice(cursor, nucleusEnd).join('');
     cursor = nucleusEnd;
 
     // Extract tone with post-voiced depression context
-    // Pass the onset to detect if it contains voiced consonants (b, d, g, gb, v, z)
     const tone = extractTone(nucleus, onset);
 
     // Coda is minimal in Kwa languages (CV structure)
-    // But if present, extract up to next nucleus
     const codaEnd = nextNucleusStart ?? chars.length;
     const coda = chars.slice(cursor, codaEnd).join('');
     cursor = codaEnd;
@@ -199,7 +246,7 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
 
     // Extract nucleus with tone diacritics
     let nucleusEnd = cursor + 1;
-    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036fː]/.test(chars[nucleusEnd]!))) {
+    while (nucleusEnd < chars.length && (isIPAVowel(chars[nucleusEnd]!) || /[\u0300-\u036f\u02d0]/.test(chars[nucleusEnd]!))) {
       nucleusEnd++;
     }
     const nucleus = chars.slice(cursor, nucleusEnd).join('');
@@ -215,18 +262,14 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
     cursor = codaEnd;
 
     // Determine syllable weight (bimoraic)
-    // Heavy: CVC or CVː (long vowel)
-    // Light: CV
-    const hasLongVowel = nucleus.includes('ː');
+    const hasLongVowel = nucleus.includes('\u02d0');
     const weight = coda.length > 0 || hasLongVowel || nucleus.length > 1 ? 'heavy' : 'light';
 
-    // Extract tone - pass onset for context (though CRV doesn't have post-voiced depression)
     let tone = extractTone(nucleus, onset);
 
-    // Apply HL contour rule: Heavy syllables with H tone → HL contour
-    // This is a characteristic of Hausa and related CRV languages
+    // HL contour rule: Heavy syllables with H tone
     if (tone === 'H' && weight === 'heavy') {
-      tone = 'HL'; // High-Low falling contour on heavy syllables
+      tone = 'HL';
     }
 
     syllables.push({
@@ -247,9 +290,7 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
  * TODO: implement dedicated ALGO-SIN handler.
  */
 const syllabifySinitic = (ipa: string): IPASyllable[] => {
-  // Sinitic syllabification is typically at character level
-  // For IPA, we treat each CV(C) unit as a syllable
-  return syllabifyRomance(ipa); // Basic fallback
+  return syllabifyRomance(ipa);
 };
 
 /**
@@ -258,14 +299,11 @@ const syllabifySinitic = (ipa: string): IPASyllable[] => {
  * TODO: implement dedicated ALGO-JAP handler.
  */
 const syllabifyJapanese = (ipa: string): IPASyllable[] => {
-  // Japanese uses moraic timing, not syllabic
-  // For simplicity, treat CV units as syllables
-  return syllabifyRomance(ipa); // Basic fallback
+  return syllabifyRomance(ipa);
 };
 
 /**
  * Generic fallback syllabification
- * Simple CV parsing
  */
 const syllabifyFallback = (ipa: string): IPASyllable[] => {
   return syllabifyRomance(ipa);
@@ -273,33 +311,25 @@ const syllabifyFallback = (ipa: string): IPASyllable[] => {
 
 /**
  * Main syllabification dispatcher based on language family
- * Implements Step 3 of the IPA pipeline
  */
 export const syllabifyIPA = (ipa: string, family: AlgoFamily): IPASyllable[] => {
   if (!ipa || !ipa.trim()) return [];
 
-  // Remove IPA slashes if present
   const cleanIPA = ipa.replace(/^\/|\/$/g, '').replace(/\./g, '').trim();
 
   switch (family) {
     case 'ALGO-ROM':
       return syllabifyRomance(cleanIPA);
-
     case 'ALGO-GER':
       return syllabifyGermanic(cleanIPA);
-
     case 'ALGO-KWA':
       return syllabifyKwa(cleanIPA);
-
     case 'ALGO-CRV':
       return syllabifyCRV(cleanIPA);
-
     case 'ALGO-SIN':
       return syllabifySinitic(cleanIPA);
-
     case 'ALGO-JAP':
       return syllabifyJapanese(cleanIPA);
-
     default:
       return syllabifyFallback(cleanIPA);
   }
@@ -329,10 +359,21 @@ export const extractRhymeNucleus = (
 ): string => {
   if (syllables.length === 0) return '';
 
-  // Find stressed syllable (or default to last syllable)
+  // Find stressed syllable.
+  // For ALGO-GER (EN especially), falling back to the LAST syllable when no
+  // stress mark is present produces incorrect rhyme extraction (e.g.
+  // "beautiful" would rhyme on "-ful" instead of "beau-").
+  // Instead, fall back to the FIRST syllable for Germanic (most common EN
+  // stress position for uninflected content words), and keep last-syllable
+  // fallback only for non-Germanic families where final stress is typical.
   let stressedIndex = syllables.findIndex(s => s.stress);
+
   if (stressedIndex === -1) {
-    stressedIndex = syllables.length - 1; // Default: last syllable
+    if (family === 'ALGO-GER') {
+      stressedIndex = 0; // EN/DE default: first syllable
+    } else {
+      stressedIndex = syllables.length - 1; // FR/other: last syllable
+    }
   }
 
   const stressedSyllable = syllables[stressedIndex]!;
@@ -340,46 +381,32 @@ export const extractRhymeNucleus = (
   // Family-specific RN extraction
   switch (family) {
     case 'ALGO-KWA':
-      // KWA: nucleus + tone only (no coda)
       return stressedSyllable.nucleus + (stressedSyllable.tone || '');
 
     case 'ALGO-CRV':
-      // CRV: nucleus + coda + tone, weight matters
       return stressedSyllable.nucleus + stressedSyllable.coda + (stressedSyllable.tone || '');
 
     case 'ALGO-ROM': {
-      // ALGO-ROM (FR, ES, IT, PT, RO, CA):
-      // Remove trailing schwa/e-muet syllable (FR-specific silent final -e).
-      // After removal, recover the coda that the maximal-onset principle assigned
-      // to the schwa syllable's onset rather than the exposed syllable's coda.
-      // Guard: if the schwa syllable itself carries a coda (e.g. -er → /tə.ʁ/),
-      // the exposed syllable is a legitimate open syllable — keep its empty coda.
       const workingSyllables: IPASyllable[] = [...syllables];
 
       if (workingSyllables.length >= 2) {
         const lastSyl = workingSyllables[workingSyllables.length - 1]!;
-        const isSchwa = lastSyl.nucleus === 'ə' || lastSyl.nucleus === '\u0259';
+        const isSchwa = lastSyl.nucleus === '\u0259';
 
         if (isSchwa) {
           const schwaSyl = workingSyllables.pop()!;
           const exposedIdx = workingSyllables.length - 1;
           const exposed = workingSyllables[exposedIdx]!;
 
-          // Recover the coda consonant that maximal-onset absorbed into the
-          // schwa syllable's onset — but only when the schwa syllable has no
-          // coda of its own (which would indicate a legitimate open syllable
-          // such as the -er infinitive ending /tə.ʁ/).
           if (schwaSyl.coda === '') {
             workingSyllables[exposedIdx] = {
               ...exposed,
               coda: exposed.coda + schwaSyl.onset,
             };
           }
-          // If schwaSyl.coda !== '' (e.g. /tə.ʁ/ for -er), leave exposed as-is.
         }
       }
 
-      // Re-find stressed syllable within the trimmed list (default: last).
       let romStressedIdx = workingSyllables.findIndex(s => s.stress);
       if (romStressedIdx === -1) {
         romStressedIdx = workingSyllables.length - 1;
@@ -397,10 +424,6 @@ export const extractRhymeNucleus = (
     }
 
     case 'ALGO-GER': {
-      // GER (EN, DE, NL, SV, DA, NO): nucleus + full coda + all following syllables.
-      // Explicit case (rather than relying on default) so that future Germanic-specific
-      // adjustments (e.g. schwa suppression, umlaut weighting) stay isolated from
-      // other families handled by the default branch.
       let rn = stressedSyllable.nucleus + stressedSyllable.coda;
       for (let i = stressedIndex + 1; i < syllables.length; i++) {
         const syl = syllables[i]!;
@@ -409,16 +432,13 @@ export const extractRhymeNucleus = (
       return rn;
     }
 
-    default:
-      // Standard: nucleus + coda + all following syllables
+    default: {
       let rn = stressedSyllable.nucleus + stressedSyllable.coda;
-
-      // Add all following syllables
       for (let i = stressedIndex + 1; i < syllables.length; i++) {
         const syl = syllables[i]!;
         rn += syl.onset + syl.nucleus + syl.coda;
       }
-
       return rn;
+    }
   }
 };
