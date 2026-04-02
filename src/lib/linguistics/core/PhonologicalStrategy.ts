@@ -68,11 +68,11 @@ export abstract class PhonologicalStrategy {
       score: undefined,
       rhymeType: undefined,
       similarityMethod: 'feature',
-      // Propagate the flag from the nucleus rather than hard-coding false.
-      // Strategies that encounter low-resource conditions (raw Han, unsupported
-      // scripts, no G2P dictionary) set lowResourceFallback on the RhymeNucleus;
-      // this ensures the signal is not silently swallowed before reaching the UI.
-      lowResourceFallback: (rn as RhymeNucleus & { lowResourceFallback?: boolean }).lowResourceFallback ?? false,
+      // `lowResourceFallback` is declared optional on RhymeNucleus — access
+      // directly without cast. Strategies that cannot produce phonological
+      // analysis (orthographic stubs, unsupported scripts) set this to true;
+      // default to false for phonologically complete strategies.
+      lowResourceFallback: rn.lowResourceFallback ?? false,
     };
   }
 
