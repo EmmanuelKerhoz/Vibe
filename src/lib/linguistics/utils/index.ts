@@ -18,3 +18,7 @@ export {
   hasTashkeel,
   HEBREW_MATRES,
 } from './phonologyHelpers';
+
+export {
+  stripAgglutinativeSuffixes,
+} from './agglutinativeUtils';

@@ -8,3 +8,7 @@ export { SemiticStrategy } from './SemiticStrategy';
 export { SiniticStrategy } from './SiniticStrategy';
 export { TaiStrategy } from './TaiStrategy';
 export { VietStrategy } from './VietStrategy';
+export { TurkicStrategy } from './TurkicStrategy';
+export { UralicStrategy } from './UralicStrategy';
+export { DravidianStrategy } from './DravidianStrategy';
+export { IndoIranianStrategy } from './IndoIranianStrategy';
