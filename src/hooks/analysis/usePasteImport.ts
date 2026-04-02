@@ -11,6 +11,7 @@ import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
 import { buildDetectLanguagePrompt } from '../../utils/promptUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { SECTION_TYPE_DEFINITIONS } from '../../constants/sections';
+import { parseTextToSections } from '../../utils/libraryUtils';
 
 /** More aggressive retry budget for chunked paste-import calls. */
 const PASTE_IMPORT_RETRY = { maxAttempts: 3, delayMs: 1200 } as const;
@@ -28,6 +29,7 @@ type UsePasteImportParams = {
   clearLineSelection: () => void;
   setIsAnalyzing: (value: boolean) => void;
   setIsPasteModalOpen: (value: boolean) => void;
+  hasApiKey?: boolean;
 };
 
 type PasteImportChunk = {
@@ -227,6 +229,7 @@ export const usePasteImport = ({
   clearLineSelection,
   setIsAnalyzing,
   setIsPasteModalOpen,
+  hasApiKey = true,
 }: UsePasteImportParams) => {
   const [pastedText, setPastedText] = useState('');
   const [hasClipboardText, setHasClipboardText] = useState(false);
@@ -285,6 +288,21 @@ export const usePasteImport = ({
 
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
+
+    // When no API key is available, use local text parsing as a fallback so
+    // that loading a song still determines the structure (sections) without
+    // requiring AI analysis.
+    if (!hasApiKey) {
+      const sections = parseTextToSections(pastedText);
+      if (sections.length === 0) return;
+      const newStructure = sections.map(s => s.name);
+      updateSongAndStructureWithHistory(sections, newStructure);
+      requestAutoTitleGeneration();
+      clearLineSelection();
+      setIsPasteModalOpen(false);
+      setPastedText('');
+      return;
+    }
 
     const chunks = splitPastedLyricsIntoChunks(pastedText);
     if (chunks.length === 0) return;

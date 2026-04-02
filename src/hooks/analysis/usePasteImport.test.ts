@@ -328,4 +328,41 @@ describe('usePasteImport', () => {
     expect(result.current.pastedText).toBe('');
     expect(params.updateSongAndStructureWithHistory).not.toHaveBeenCalled();
   });
+
+  it('uses local text parsing when hasApiKey is false and still updates song and structure', async () => {
+    const params = { ...createParams(), hasApiKey: false };
+    const { result } = renderHook(() => usePasteImport(params));
+
+    act(() => {
+      result.current.setPastedText('[Verse 1]\nLigne un\nLigne deux\n\n[Chorus]\nRefrain un\nRefrain deux');
+    });
+
+    await act(async () => {
+      await result.current.analyzePastedLyrics();
+    });
+
+    expect(generateContentWithRetry).not.toHaveBeenCalled();
+    expect(params.updateSongAndStructureWithHistory).toHaveBeenCalledTimes(1);
+    const [song, structure] = vi.mocked(params.updateSongAndStructureWithHistory).mock.calls[0]!;
+    expect(song).toHaveLength(2);
+    expect(structure).toEqual(['Verse 1', 'Chorus']);
+    expect(params.setIsPasteModalOpen).toHaveBeenCalledWith(false);
+    expect(result.current.pastedText).toBe('');
+  });
+
+  it('does nothing when hasApiKey is false and the pasted text yields no sections', async () => {
+    const params = { ...createParams(), hasApiKey: false };
+    const { result } = renderHook(() => usePasteImport(params));
+
+    act(() => {
+      result.current.setPastedText('   ');
+    });
+
+    await act(async () => {
+      await result.current.analyzePastedLyrics();
+    });
+
+    expect(generateContentWithRetry).not.toHaveBeenCalled();
+    expect(params.updateSongAndStructureWithHistory).not.toHaveBeenCalled();
+  });
 });
