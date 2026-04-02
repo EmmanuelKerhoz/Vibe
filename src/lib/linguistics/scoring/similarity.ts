@@ -81,7 +81,7 @@ export function segmentIPA(ipa: string): string[] {
     i++;
     while (i < len) {
       const next = chars[i]!;
-      if (/[\u0300-\u036fː]/.test(next)) {
+      if (/[\u0300-\u036f\u02b0-\u02ffː]/.test(next)) {
         token += next;
         i++;
       } else {
@@ -106,7 +106,15 @@ export function phonemeEditDistance(rn1: RhymeNucleus, rn2: RhymeNucleus): numbe
 
 /**
  * Compute a weighted score using per-family matching weights.
- * This is the primary method used by most strategies.
+ *
+ * Nucleus comparison strategy:
+ * - Exact string match → 1.0 (no change, no regression for orthographic stubs).
+ * - Partial phonemic overlap: uses phonemeEditDistance on the nucleus strings
+ *   when they differ. This is a no-op today (orthographic stubs produce full
+ *   match or full miss), but once real G2P is wired it will produce graduated
+ *   scores for near-miss nuclei (e.g. IPA /ɛ/ vs /e/ → ~0.5 rather than 0).
+ *
+ * This keeps the scoring pipeline future-proof without breaking current behaviour.
  */
 export function featureWeightedScore(
   rn1: RhymeNucleus,
@@ -116,12 +124,21 @@ export function featureWeightedScore(
   let score = 0;
   let totalWeight = 0;
 
-  // Nucleus match
+  // Nucleus match — graduated via PED when nuclei differ
   if (weights.nucleus > 0) {
     totalWeight += weights.nucleus;
     if (rn1.nucleus === rn2.nucleus) {
       score += weights.nucleus;
+    } else if (rn1.nucleus && rn2.nucleus) {
+      // Use phonemeEditDistance on nucleus strings only (not full raw).
+      // Construct minimal RhymeNucleus shells for the PED helper.
+      const pedScore = phonemeEditDistance(
+        { ...rn1, raw: rn1.nucleus },
+        { ...rn2, raw: rn2.nucleus },
+      );
+      score += weights.nucleus * pedScore;
     }
+    // If either nucleus is empty, contribute 0 (handled by fall-through).
   }
 
   // Tone match

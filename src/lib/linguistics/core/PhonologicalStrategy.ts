@@ -47,6 +47,11 @@ export abstract class PhonologicalStrategy {
    * Note: `score` and `rhymeType` are NOT set here — a single-verse analysis
    * has no comparison partner, so setting them would produce a misleading
    * hard-coded value. Use `compare()` to obtain a scored `RhymePairResult`.
+   *
+   * `lowResourceFallback` is propagated from the RhymeNucleus produced by
+   * extractRN() — strategies that detect low-resource conditions (e.g. raw Han
+   * characters, unsupported scripts) set this flag on the nucleus, and it must
+   * surface here so UI consumers can downgrade confidence indicators.
    */
   analyze(text: string, lang: string): RhymeResult {
     const normalized = this.normalize(text, lang);
@@ -63,7 +68,11 @@ export abstract class PhonologicalStrategy {
       score: undefined,
       rhymeType: undefined,
       similarityMethod: 'feature',
-      lowResourceFallback: false,
+      // Propagate the flag from the nucleus rather than hard-coding false.
+      // Strategies that encounter low-resource conditions (raw Han, unsupported
+      // scripts, no G2P dictionary) set lowResourceFallback on the RhymeNucleus;
+      // this ensures the signal is not silently swallowed before reaching the UI.
+      lowResourceFallback: (rn as RhymeNucleus & { lowResourceFallback?: boolean }).lowResourceFallback ?? false,
     };
   }
 
@@ -94,11 +103,20 @@ export abstract class PhonologicalStrategy {
 
 // ─── Shared categorisation (§6 — Typologie des rimes) ──────────────────────────
 
+/**
+ * Classify a raw similarity score into a rhyme type.
+ *
+ * Guard order (most restrictive first):
+ * 1. Absolute floor: scores below 0.40 are always 'none', regardless of the
+ *    per-family threshold. This prevents a low custom threshold (e.g. 0.30)
+ *    from promoting a genuinely weak phonemic match to 'weak'.
+ * 2. Per-family threshold: scores below the configured threshold are 'none'.
+ * 3. Typed bands: rich ≥ 0.95, sufficient ≥ 0.85, assonance ≥ 0.60, else 'weak'.
+ */
 export function categorizeScore(score: number, threshold = 0.75): RhymeType {
-  if (score < threshold || score < 0.40) return 'none';
+  if (score < 0.40 || score < threshold) return 'none';
   if (score >= 0.95) return 'rich';
   if (score >= 0.85) return 'sufficient';
   if (score >= 0.60) return 'assonance';
-  if (score >= threshold) return 'weak';
-  return 'none';
+  return 'weak';
 }
