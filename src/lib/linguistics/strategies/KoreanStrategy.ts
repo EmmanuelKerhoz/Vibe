@@ -9,7 +9,7 @@ const HANGUL_NUCLEUS_DIVISOR = 28;
 
 const HANGUL_ONSETS = ['g', 'g', 'n', 'd', 'd', 'r', 'm', 'b', 'b', 's', 's', '', 'j', 'j', 'ch', 'k', 't', 'p', 'h'] as const;
 const HANGUL_NUCLEI = ['a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa', 'wae', 'oe', 'yo', 'u', 'wo', 'we', 'wi', 'yu', 'eu', 'ui', 'i'] as const;
-const HANGUL_CODAS = ['', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k', 'm', 'p', 'l', 'l', 'l', 'p', 'l', 'm', 'p', 'p', 't', 'ng', 't', 't', 'k', 't', 'p', 't'] as const;
+const HANGUL_CODAS = ['', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k', 'm', 'p', 'l', 'l', 'l', 'l', 'm', 'p', 'p', 'p', 't', 'ng', 't', 't', 'k', 't', 'p', 't'] as const;
 
 export class KoreanStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-KOR' as const;
