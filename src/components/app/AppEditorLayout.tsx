@@ -218,8 +218,6 @@ export function AppEditorLayout({
                 addStructureItem={addStructureItem}
                 removeStructureItem={removeStructureItem}
                 onScrollToSection={handleScrollToSection}
-                onRegenerateSong={handleGlobalRegenerate}
-                onGenerateSong={generateSong}
               />
             )}
           </Suspense>
