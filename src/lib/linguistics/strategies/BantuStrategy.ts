@@ -18,10 +18,11 @@ const ATR_MINUS = new Set(['ɪ', 'ʊ', 'ɛ', 'ɔ']);
 /** Map −ATR vowels to their +ATR counterparts for normalisation. */
 const ATR_NORMALIZE: Record<string, string> = {
   'ɪ': 'i', 'ʊ': 'u', 'ɛ': 'e', 'ɔ': 'o',
+  'ẹ': 'e', 'ọ': 'o',
 };
 
-/** Vowel pattern for Bantu orthographic vowels (Latin script + IPA). */
-const VOWEL_RE = /[aeiouyàáèéìíòóùúɛɔɪʊə]/i;
+/** Vowel pattern for Bantu orthographic vowels (Latin script + IPA + sub-dot). */
+const VOWEL_RE = /[aeiouyàáèéìíòóùúɛɔɪʊəẹọ]/i;
 
 export class BantuStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-BNT' as const;

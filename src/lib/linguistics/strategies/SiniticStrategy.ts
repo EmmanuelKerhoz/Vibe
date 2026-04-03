@@ -281,10 +281,19 @@ function segmentLatinSiniticToken(token: string, profile: SiniticProfile): strin
       }
 
       // Consonant: check if it starts a new initial (boundary).
+      // Only treat it as a boundary if a vowel follows the candidate initial —
+      // a following tone digit does NOT indicate a new syllable, it means
+      // the consonant is a coda of the current syllable (e.g., "baak3":
+      // 'k' is an entering-tone coda, '3' is this syllable's tone digit).
       if (seenVowel) {
-        // Check for known initial at this position — if found, stop.
         const nextInitial = initials.find(c => token.startsWith(c, end));
-        if (nextInitial) break;
+        if (nextInitial) {
+          const afterInitial = end + nextInitial.length;
+          const charAfter = token[afterInitial];
+          if (charAfter && VOWEL_RE.test(charAfter)) {
+            break;
+          }
+        }
       }
 
       end++;

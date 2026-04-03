@@ -47,7 +47,10 @@ export class KwaStrategy extends PhonologicalStrategy {
   syllabify(ipa: string, lang: string): Syllable[] {
     const vowelPattern = /[aeioɛɔuəɪʊ]/i;
     const tonePattern = /[\u0300\u0301\u0302\u0303\u0304\u030C]/;
-    const chars = [...ipa.replace(/\s+/g, '')];
+    // Decompose to NFD so that precomposed characters like á (U+00E1) are split
+    // into base letter 'a' + combining acute accent U+0301, allowing the
+    // syllabifier to separate nucleus from tone diacritic.
+    const chars = [...ipa.normalize('NFD').replace(/\s+/g, '')];
     const syllables: Syllable[] = [];
     let i = 0;
 

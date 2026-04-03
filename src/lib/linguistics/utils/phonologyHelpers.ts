@@ -19,7 +19,9 @@ export function stripNominalPrefix(word: string): string {
   ];
   const lower = word.toLowerCase();
   for (const p of prefixes) {
-    if (lower.startsWith(p) && lower.length > p.length + 1) {
+    // Require the remaining stem to be at least 3 characters long
+    // to avoid over-stripping common words (e.g. "mama" → "ma").
+    if (lower.startsWith(p) && lower.length >= p.length + 3) {
       return word.slice(p.length);
     }
   }
