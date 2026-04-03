@@ -75,13 +75,21 @@ function AppInnerContent() {
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
   const isSuggestionsOpen = activeTab === 'lyrics' && Boolean(selectedLineId);
 
-  const setIsStructureOpenAndClearLine = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
-    setIsStructureOpen(prev => {
-      const next = typeof value === 'function' ? value(prev) : value;
-      if (next) setSelectedLineId(null);
-      return next;
-    });
-  }, [setIsStructureOpen, setSelectedLineId]);
+  /**
+   * Defined once here; passed down to both MobileBottomNav and AppEditorLayout
+   * (which forwards it to StructureSidebar).
+   * Single source of truth — no duplicate definition in AppEditorLayout.
+   */
+  const setIsStructureOpenAndClearLine = useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      setIsStructureOpen(prev => {
+        const next = typeof value === 'function' ? value(prev) : value;
+        if (next) setSelectedLineId(null);
+        return next;
+      });
+    },
+    [setIsStructureOpen, setSelectedLineId],
+  );
 
   const closeMobilePanels = useCallback(() => {
     setIsLeftPanelOpen(false);
@@ -179,6 +187,7 @@ function AppInnerContent() {
           <AppEditorLayout
             isMobileOrTablet={isMobileOrTablet}
             playAudioFeedback={playAudioFeedback}
+            setIsStructureOpenAndClearLine={setIsStructureOpenAndClearLine}
           />
 
           <StatusBar

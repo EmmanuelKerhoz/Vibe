@@ -6,6 +6,7 @@
  */
 import React, { Suspense, lazy, useCallback, useEffect } from 'react';
 import { Spinner } from '@fluentui/react-components';
+import { ErrorBoundary } from './ErrorBoundary';
 import { useAppStateContext } from '../../contexts/AppStateContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSongContext } from '../../contexts/SongContext';
@@ -58,9 +59,18 @@ const LazyFallback = React.memo(function LazyFallback() {
 interface AppEditorLayoutProps {
   isMobileOrTablet: boolean;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
+  /**
+   * Passed from AppInnerContent (App.tsx) — single source of truth.
+   * Clears selectedLineId whenever the structure panel is opened.
+   */
+  setIsStructureOpenAndClearLine: (value: boolean | ((prev: boolean) => boolean)) => void;
 }
 
-export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEditorLayoutProps) {
+export function AppEditorLayout({
+  isMobileOrTablet,
+  playAudioFeedback,
+  setIsStructureOpenAndClearLine,
+}: AppEditorLayoutProps) {
   const { t } = useTranslation();
   const {
     song, structure, rhymeScheme,
@@ -206,13 +216,8 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
     setIsImportModalOpen, setIsPasteModalOpen, setPastedText, setSongLanguage,
   });
 
-  const setIsStructureOpenAndClearLine = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
-    setIsStructureOpen(prev => {
-      const next = typeof value === 'function' ? value(prev) : value;
-      if (next) setSelectedLineId(null);
-      return next;
-    });
-  }, [setIsStructureOpen, setSelectedLineId]);
+  // setIsStructureOpenAndClearLine is now passed as a prop from AppInnerContent.
+  // No local redefinition needed.
 
   const handleGenerateSongFromLeftPanel = useCallback(() => {
     setIsLeftPanelOpen(false);
@@ -231,42 +236,46 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
 
   return (
     <div className="flex-1 flex overflow-hidden">
-      <Suspense fallback={<LazyFallback />}>
-        <LeftSettingsPanel
-          isMobileOverlay={isMobileOrTablet}
-          title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
-          onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-          topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-          rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-          targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-          isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-          onSurprise={handleSurpriseClick} isSurprising={isSurprising}
-          hasApiKey={hasApiKey}
-          onGenerateSong={handleGenerateSongFromLeftPanel}
-          onRegenerateSong={handleGlobalRegenerate}
-        />
-      </Suspense>
+      <ErrorBoundary label="Left panel">
+        <Suspense fallback={<LazyFallback />}>
+          <LeftSettingsPanel
+            isMobileOverlay={isMobileOrTablet}
+            title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
+            onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
+            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
+            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
+            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
+            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
+            onSurprise={handleSurpriseClick} isSurprising={isSurprising}
+            hasApiKey={hasApiKey}
+            onGenerateSong={handleGenerateSongFromLeftPanel}
+            onRegenerateSong={handleGlobalRegenerate}
+          />
+        </Suspense>
+      </ErrorBoundary>
 
       <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
-        <Suspense fallback={<LazyFallback />}>
-          <TopRibbon
-            setIsVersionsModalOpen={setIsVersionsModalOpen}
-            setIsResetModalOpen={setIsResetModalOpen}
-            hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
-            onOpenNewGeneration={handleOpenNewGeneration}
-            onOpenNewEmpty={handleCreateEmptySong}
-            onImportClick={handleOpenImport}
-            onExportClick={handleOpenExport}
-            onOpenLibraryClick={handleOpenSaveToLibraryModal}
-            onOpenSettingsClick={handleOpenSettings}
-            onOpenAboutClick={handleOpenAbout}
-            onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
-            canPasteLyrics={canPasteLyrics}
-            onPasteLyrics={handleOpenPasteModal}
-            isAnalyzing={isAnalyzing}
-          />
-        </Suspense>
+        <ErrorBoundary label="Top ribbon">
+          <Suspense fallback={<LazyFallback />}>
+            <TopRibbon
+              setIsVersionsModalOpen={setIsVersionsModalOpen}
+              setIsResetModalOpen={setIsResetModalOpen}
+              hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+              onOpenNewGeneration={handleOpenNewGeneration}
+              onOpenNewEmpty={handleCreateEmptySong}
+              onImportClick={handleOpenImport}
+              onExportClick={handleOpenExport}
+              onOpenLibraryClick={handleOpenSaveToLibraryModal}
+              onOpenSettingsClick={handleOpenSettings}
+              onOpenAboutClick={handleOpenAbout}
+              onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
+              canPasteLyrics={canPasteLyrics}
+              onPasteLyrics={handleOpenPasteModal}
+              isAnalyzing={isAnalyzing}
+            />
+          </Suspense>
+        </ErrorBoundary>
 
         <AppEditorZone
           activeTab={activeTab}
@@ -300,43 +309,45 @@ export function AppEditorLayout({ isMobileOrTablet, playAudioFeedback }: AppEdit
         />
       </div>
 
-      <Suspense fallback={<LazyFallback />}>
-        {isAnalysisPanelOpen ? (
-          <AnalysisPanel
-            result={linguisticsWorker.result}
-            isComputing={linguisticsWorker.isComputing}
-            error={linguisticsWorker.error}
-            isOpen={isAnalysisPanelOpen}
-            onClose={handleCloseAnalysisPanel}
-            isMobileOverlay={isMobileOrTablet}
-          />
-        ) : isSuggestionsOpen ? (
-          <SuggestionsPanel
-            isMobileOverlay={isMobileOrTablet}
-            className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-            selectedLineId={selectedLineId}
-            setSelectedLineId={setSelectedLineId}
-            suggestions={suggestions}
-            isSuggesting={isSuggesting}
-            hasApiKey={hasApiKey}
-            applySuggestion={applySuggestion}
-            generateSuggestions={generateSuggestions}
-            spellCheck={spellCheck}
-          />
-        ) : (
-          <StructureSidebar
-            isMobileOverlay={isMobileOrTablet}
-            className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-            isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-            isSectionDropdownOpen={isSectionDropdownOpen}
-            setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-            addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
-            onScrollToSection={handleScrollToSection}
-            onRegenerateSong={handleGlobalRegenerate}
-            onGenerateSong={generateSong}
-          />
-        )}
-      </Suspense>
+      <ErrorBoundary label="Right panel">
+        <Suspense fallback={<LazyFallback />}>
+          {isAnalysisPanelOpen ? (
+            <AnalysisPanel
+              result={linguisticsWorker.result}
+              isComputing={linguisticsWorker.isComputing}
+              error={linguisticsWorker.error}
+              isOpen={isAnalysisPanelOpen}
+              onClose={handleCloseAnalysisPanel}
+              isMobileOverlay={isMobileOrTablet}
+            />
+          ) : isSuggestionsOpen ? (
+            <SuggestionsPanel
+              isMobileOverlay={isMobileOrTablet}
+              className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+              selectedLineId={selectedLineId}
+              setSelectedLineId={setSelectedLineId}
+              suggestions={suggestions}
+              isSuggesting={isSuggesting}
+              hasApiKey={hasApiKey}
+              applySuggestion={applySuggestion}
+              generateSuggestions={generateSuggestions}
+              spellCheck={spellCheck}
+            />
+          ) : (
+            <StructureSidebar
+              isMobileOverlay={isMobileOrTablet}
+              className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+              isSectionDropdownOpen={isSectionDropdownOpen}
+              setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+              addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+              onScrollToSection={handleScrollToSection}
+              onRegenerateSong={handleGlobalRegenerate}
+              onGenerateSong={generateSong}
+            />
+          )}
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }
