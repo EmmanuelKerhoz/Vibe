@@ -1,10 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Section } from '../types';
 import { cleanSectionName, normalizeLoadedSection } from '../utils/songUtils';
 import { DEFAULT_STRUCTURE } from '../constants/editor';
 import { safeSetItem, safeGetItem } from '../utils/safeStorage';
 import { isPristineDraft } from '../utils/songDefaults';
 import { useSongContext } from '../contexts/SongContext';
+
+/** Debounce delay for session persistence writes (ms). */
+const SAVE_DEBOUNCE_MS = 500;
 
 interface UseSessionPersistenceParams {
   song: Section[];
@@ -84,16 +87,25 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
     setIsSessionHydrated(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount-only; all refs are stable dispatchers
 
-  // Save session on every relevant change.
+  // Debounced save: avoid serialising the full song on every keystroke.
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    if (isSessionHydrated && song.length > 0 && !isPristineDraft(song, structure, rhymeScheme)) {
+    if (!isSessionHydrated || song.length === 0 || isPristineDraft(song, structure, rhymeScheme)) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
       const sessionData = {
         song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
         genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
       };
       safeSetItem('lyricist_session', JSON.stringify(sessionData));
       setHasSavedSession(true);
-    }
+    }, SAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
   }, [
     song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
     genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,

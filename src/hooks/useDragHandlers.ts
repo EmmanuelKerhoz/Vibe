@@ -112,9 +112,12 @@ export const useDragHandlers = ({
 
       const sourceLineIndex = sourceSection.lines.findIndex(l => l.id === draggedLineInfo.lineId);
       const targetLineIndex = targetSection.lines.findIndex(l => l.id === targetLineId);
+      // Guard: findIndex returns -1 if the line was removed between drag start and drop
+      // (e.g. concurrent undo). Non-null assertions below are safe only after this check.
       if (sourceLineIndex === -1 || targetLineIndex === -1) return currentSong;
 
-      const draggedLine = sourceSection.lines[sourceLineIndex]!;
+      const draggedLine = sourceSection.lines[sourceLineIndex];
+      if (!draggedLine) return currentSong;
 
       const newSourceLines = sourceSection.lines.filter((_, i) => i !== sourceLineIndex);
 

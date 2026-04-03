@@ -4,6 +4,9 @@ import { generateId } from '../utils/idUtils';
 import { VersionSnapshot } from '../utils/songDefaults';
 import { useSongContext } from '../contexts/SongContext';
 
+/** Hard cap on stored versions to prevent unbounded memory growth. */
+const MAX_VERSIONS = 50;
+
 interface UseVersionManagerParams {
   updateSongAndStructureWithHistory: (song: Section[], structure: string[]) => void;
   setIsVersionsModalOpen: (open: boolean) => void;
@@ -84,7 +87,7 @@ export function useVersionManager(params: UseVersionManagerParams) {
       });
       if (normalizedLatest === normalizedSnapshot) return previousVersions;
     }
-    return [
+    const next = [
       {
         id: generateId(), timestamp: Date.now(),
         song: JSON.parse(JSON.stringify(snapshot.song)),
@@ -94,6 +97,8 @@ export function useVersionManager(params: UseVersionManagerParams) {
       },
       ...previousVersions,
     ];
+    // Trim to MAX_VERSIONS to prevent unbounded memory growth.
+    return next.length > MAX_VERSIONS ? next.slice(0, MAX_VERSIONS) : next;
   }, []);
 
   const saveVersion = useCallback((name: string, snapshot?: VersionSnapshot) => {
