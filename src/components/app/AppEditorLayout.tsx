@@ -15,7 +15,7 @@
  * AppEditorZone/LyricsView can consume isAnalyzing / isAdaptingLanguage /
  * targetLanguage without prop relay.
  */
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
 import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useEditorState } from '../../hooks/useEditorState';
@@ -24,6 +24,7 @@ import { useTranslation } from '../../i18n';
 import { AppEditorZone } from './AppEditorZone';
 import { ComposerParamsProvider } from '../../contexts/ComposerParamsContext';
 import { InsightsBarProvider } from '../../contexts/InsightsBarContext';
+import type { InsightsBarContextValue } from '../../contexts/InsightsBarContext';
 
 const LeftSettingsPanel = lazy(() =>
   import('./LeftSettingsPanel').then(m => ({ default: m.LeftSettingsPanel }))
@@ -121,7 +122,9 @@ export function AppEditorLayout({
   } = handlers;
 
   // ── InsightsBarContext value ──────────────────────────────────────────────
-  const insightsBarValue = {
+  // Memoized to prevent cascading re-renders on all InsightsBarContext consumers
+  // whenever AppEditorLayout re-renders (e.g. on song edits propagated via SongContext).
+  const insightsBarValue = useMemo<InsightsBarContextValue>(() => ({
     targetLanguage,
     setTargetLanguage,
     isAdaptingLanguage,
@@ -142,7 +145,18 @@ export function AppEditorLayout({
     onToggleAnalysisPanel: handleToggleAnalysisPanel,
     isAnalysisPanelOpen,
     hasApiKey,
-  } as const;
+  }), [
+    targetLanguage, setTargetLanguage,
+    isAdaptingLanguage, isDetectingLanguage,
+    adaptSongLanguage, detectLanguage,
+    adaptationProgress, adaptationResult,
+    isAnalyzing, analyzeCurrentSong,
+    editMode, switchEditMode,
+    webSimilarityIndex, webBadgeLabel,
+    setIsSimilarityModalOpen, libraryCount,
+    handleOpenSearch, handleToggleAnalysisPanel,
+    isAnalysisPanelOpen, hasApiKey,
+  ]);
 
   return (
     <ComposerParamsProvider>
@@ -200,7 +214,6 @@ export function AppEditorLayout({
                   result={linguisticsWorker.result}
                   isComputing={linguisticsWorker.isComputing}
                   error={linguisticsWorker.error}
-                  isOpen={isAnalysisPanelOpen}
                   onClose={handleCloseAnalysisPanel}
                   isMobileOverlay={isMobileOrTablet}
                 />

@@ -45,6 +45,9 @@ export function useLinguisticsWorker(
   const requestIdRef = useRef(0);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRequestIdRef = useRef<string | null>(null);
+  // Guard: prevents setState calls after component unmount (race condition
+  // between worker response callback and cleanup termination).
+  const unmountedRef = useRef(false);
 
   // Stable references for current song/language
   const songRef = useRef(song);
@@ -55,6 +58,8 @@ export function useLinguisticsWorker(
   // ─── Worker lifecycle ──────────────────────────────────────────────────────
 
   useEffect(() => {
+    unmountedRef.current = false;
+
     // Guard: Worker API may not be available in test environments (jsdom).
     if (typeof Worker === 'undefined') return;
 
@@ -64,6 +69,7 @@ export function useLinguisticsWorker(
     );
 
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      if (unmountedRef.current) return;
       const response = event.data;
       if (response.type === 'result') {
         // Only accept the latest request
@@ -81,6 +87,7 @@ export function useLinguisticsWorker(
     };
 
     worker.onerror = (event) => {
+      if (unmountedRef.current) return;
       setError(event.message ?? 'Worker error');
       setIsComputing(false);
     };
@@ -88,6 +95,7 @@ export function useLinguisticsWorker(
     workerRef.current = worker;
 
     return () => {
+      unmountedRef.current = true;
       worker.terminate();
       workerRef.current = null;
       if (debounceTimerRef.current) {

@@ -84,10 +84,11 @@ function AnalysisTab({ sections }: { sections: SectionInsight[] }) {
             <DensityBar label="Alliteration" value={sec.alliterationDensity} color="var(--lcars-violet)" />
           </div>
 
-          {/* Rhyme type distribution */}
+          {/* Rhyme type distribution — typed filter guards against undefined/null
+              values in malformed worker payloads without relying on a cast. */}
           <div className="flex flex-wrap gap-1 mt-1">
-            {(Object.entries(sec.rhymeTypes) as [string, number][])
-              .filter(([, count]) => count > 0)
+            {(Object.entries(sec.rhymeTypes) as [string, unknown][])
+              .filter((entry): entry is [string, number] => typeof entry[1] === 'number' && entry[1] > 0)
               .map(([type, count]) => (
                 <Badge key={type} appearance="filled" color={rhymeTypeColor(type)} size="small">
                   {type}: {count}
@@ -132,7 +133,7 @@ function SimilarityTab({ pairs }: { pairs: SimilarityPair[] }) {
       <Text size={200} className="text-[var(--text-muted)] mb-1">
         Top {Math.min(pairs.length, 30)} pairs by phonological similarity
       </Text>
-      {pairs.slice(0, 30).map((pair, idx) => (
+      {pairs.slice(0, 30).map((pair) => (
         <div
           key={`${pair.lineIdA}-${pair.lineIdB}`}
           className="rounded border border-[var(--border-color)] p-2 bg-[var(--bg-sidebar)]"
@@ -275,7 +276,6 @@ interface AnalysisPanelProps {
   result: AnalysisResult | null;
   isComputing: boolean;
   error: string | null;
-  isOpen: boolean;
   onClose: () => void;
   isMobileOverlay?: boolean;
 }
@@ -284,7 +284,6 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
   result,
   isComputing,
   error,
-  isOpen,
   onClose,
   isMobileOverlay,
 }: AnalysisPanelProps) {
@@ -293,8 +292,6 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
   const handleTabSelect: SelectTabEventHandler = (_event, data: SelectTabData) => {
     setSelectedTab(data.value as string);
   };
-
-  if (!isOpen) return null;
 
   return (
     <aside
