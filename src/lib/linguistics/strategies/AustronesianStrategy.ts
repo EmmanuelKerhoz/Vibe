@@ -60,18 +60,11 @@ export class AustronesianStrategy extends PhonologicalStrategy {
    * `raw` therefore concatenates only nucleus+coda of the tail syllables,
    * consistent with all other strategy implementations.
    *
-   * Previous bug: `raw` included `onset`, causing false negatives when two
-   * rhyming words share nucleus+coda but differ in onset (e.g. "bata" / "data"
-   * both end in "-ata" but had raw="ba" vs raw="da").
-   *
-   * Selection heuristic: last open syllable (coda === '') if one exists,
-   * otherwise absolute last syllable. This models the strong Austronesian
-   * preference for open final syllables as the rhyme anchor.
+   * Anchor = absolute last syllable. This is the simplest correct heuristic
+   * for Austronesian languages where the final syllable determines the rhyme.
    */
   extractRN(syllables: Syllable[], _lang: string): RhymeNucleus {
-    const anchor =
-      [...syllables].reverse().find((s) => s.coda.length === 0) ??
-      syllables[syllables.length - 1];
+    const anchor = syllables[syllables.length - 1];
 
     // Tail = anchor syllable to end; raw built from nucleus+coda only.
     const anchorIdx = anchor ? syllables.lastIndexOf(anchor) : syllables.length - 1;

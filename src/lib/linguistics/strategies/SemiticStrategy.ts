@@ -79,6 +79,13 @@ function isArabicVowel(ch: string, prevCh: string): boolean {
 /** Hebrew vowels (basic orthographic matres lectionis + gutturals). */
 const HE_VOWEL_RE = /[אהעוי]/;
 
+/** Hebrew nikkud (vowel pointing) — U+05B0–U+05BD. */
+const HE_NIKKUD_RE = /[\u05B0-\u05BD]/;
+
+function isHebrewNikkud(ch: string): boolean {
+  return HE_NIKKUD_RE.test(ch);
+}
+
 /** Latin/IPA vowel pattern (does NOT match Ethiopic — intentional). */
 const GENERAL_VOWEL_RE = /[aeiouyəɛɔɪʊäüöàáèéìíòóùú]/i;
 
@@ -86,8 +93,12 @@ const GENERAL_VOWEL_RE = /[aeiouyəɛɔɪʊäüöàáèéìíòóùú]/i;
 const AMHARIC_FIDEL_RE = /[\u1200-\u137F]/;
 
 function isVowelChar(ch: string, lang: string, prevCh = ''): boolean {
-  if (lang === 'ar') return isArabicVowel(ch, prevCh);
-  if (lang === 'he') return HE_VOWEL_RE.test(ch) || HEBREW_MATRES.has(ch);
+  if (lang === 'ar') {
+    // After g2p, Arabic text may contain Latin vowels (a/u/i) replacing
+    // tashkeel diacritics. Detect both Arabic-native and Latin vowels.
+    return isArabicVowel(ch, prevCh) || GENERAL_VOWEL_RE.test(ch);
+  }
+  if (lang === 'he') return HE_VOWEL_RE.test(ch) || HEBREW_MATRES.has(ch) || isHebrewNikkud(ch);
   return GENERAL_VOWEL_RE.test(ch);
 }
 
