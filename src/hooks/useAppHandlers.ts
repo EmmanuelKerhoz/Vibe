@@ -52,18 +52,27 @@ export function useAppHandlers({
   }, [generateTitle, setTitle, setTitleOrigin]);
 
   const handleGlobalRegenerate = useCallback(() => {
+    const runGenerate = () => {
+      generateSong().catch((err: unknown) => {
+        console.error('[generateSong] unhandled error', err);
+        const message =
+          err instanceof Error ? err.message : String(err ?? 'Unknown error');
+        setApiErrorModal({ open: true, message });
+      });
+    };
+
     if (hasRealLyricContent) {
       setConfirmModal({
         open: true,
         onConfirm: () => {
           setConfirmModal(null);
-          void generateSong();
-        }
+          runGenerate();
+        },
       });
     } else {
-      void generateSong();
+      runGenerate();
     }
-  }, [hasRealLyricContent, setConfirmModal, generateSong]);
+  }, [hasRealLyricContent, setConfirmModal, generateSong, setApiErrorModal]);
 
   const handleScrollToSection = useCallback((sectionId: string) => {
     const sec = song.find((s: Section) => s.id === sectionId);
