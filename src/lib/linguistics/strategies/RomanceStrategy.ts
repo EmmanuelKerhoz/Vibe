@@ -231,7 +231,7 @@ export class RomanceStrategy extends PhonologicalStrategy {
             weight: null,
             stressed: false,
           });
-        } else if (cluster === '') {
+        } else if (cluster === '' && wordSyllables.length > 0) {
           // Adjacent vowels with no intervening consonant.
           // Romance i/u glide rule: when the previous syllable's nucleus is
           // 'i' or 'u' (with no coda yet), it acts as a palatal/labial glide

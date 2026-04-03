@@ -211,6 +211,7 @@ export class GermanicStrategy extends PhonologicalStrategy {
         } else if (
           lang === 'en' &&
           cluster === '' &&
+          wordSyllables.length > 0 &&
           EN_VOWEL_DIGRAPHS.has(
             wordSyllables[wordSyllables.length - 1]!.nucleus + ch,
           )
