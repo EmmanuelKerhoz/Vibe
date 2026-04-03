@@ -58,7 +58,17 @@ export const useSimilarityEngine = ({ hasApiKey = true }: { hasApiKey?: boolean 
   const lastFingerprintRef = useRef<string>('');
   const effectiveTitle = title.trim() === DEFAULT_TITLE ? '' : title;
 
-  const runSearch = useCallback(async (currentSections: import('../types').Section[], currentTitle: string, currentSongLanguage: string) => {
+  const runSearch = useCallback(async (
+    currentSections: import('../types').Section[],
+    currentTitle: string,
+    currentSongLanguage: string,
+    committedFingerprint: string,
+  ) => {
+    // FIX: assign lastFingerprintRef only when the search actually fires,
+    // not before the setTimeout. This prevents a cancelled debounce from
+    // leaving a stale fingerprint that blocks future re-triggers.
+    lastFingerprintRef.current = committedFingerprint;
+
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -115,11 +125,16 @@ export const useSimilarityEngine = ({ hasApiKey = true }: { hasApiKey?: boolean 
     const hasContent = effectiveTitle.trim().length > 0 || sections.some(s => s.lines.some(l => l.text.trim().length > 0));
     if (!hasContent) return;
 
-    lastFingerprintRef.current = fingerprint;
+    // NOTE: lastFingerprintRef is NOT updated here anymore.
+    // It is committed inside runSearch(), only when the search actually fires.
+    // This ensures a cancelled debounce cannot produce a ghost fingerprint
+    // that would suppress future re-triggers.
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    // Capture the fingerprint at schedule time so the closure is stable.
+    const scheduledFingerprint = fingerprint;
     debounceRef.current = setTimeout(() => {
-      runSearch(sections, effectiveTitle, songLanguage);
+      runSearch(sections, effectiveTitle, songLanguage, scheduledFingerprint);
     }, DEBOUNCE_MS);
 
     return () => {
@@ -137,8 +152,8 @@ export const useSimilarityEngine = ({ hasApiKey = true }: { hasApiKey?: boolean 
   /** Force immediate search (e.g. on user demand) */
   const triggerNow = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    runSearch(sections, effectiveTitle, songLanguage);
-  }, [effectiveTitle, sections, runSearch, songLanguage]);
+    runSearch(sections, effectiveTitle, songLanguage, fingerprint);
+  }, [effectiveTitle, sections, runSearch, songLanguage, fingerprint]);
 
   return { index, triggerNow, resetIndex };
 };

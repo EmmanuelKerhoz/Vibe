@@ -298,9 +298,11 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                       });
 
                       if (isGroupLeader && chorusItem !== undefined && chorusIdx !== undefined) {
+                        // FIX: key uses item+idx instead of idx alone to prevent DOM
+                        // recycling after drag-and-drop reorder.
                         return (
                           <div
-                            key={idx}
+                            key={`${item}-${idx}`}
                             draggable={isDraggable}
                             {...dragHandlers}
                             className={`relative flex flex-col gap-1.5 ${dragOverIndex === idx ? `ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 ${sectionButtonShapeClass}` : ''}`}
@@ -347,9 +349,10 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                         );
                       }
 
+                      // FIX: key uses item+idx instead of idx alone.
                       return (
                         <SectionRow
-                          key={idx}
+                          key={`${item}-${idx}`}
                           sectionItem={item}
                           sectionIdx={idx}
                           sectionId={sectionId}
