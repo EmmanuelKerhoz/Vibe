@@ -89,6 +89,8 @@ export function AppEditorLayout({
     // Panels
     linguisticsWorker, spellCheck,
     switchEditMode,
+    // generateSong sourced from composerCtx via useEditorState
+    generateSong,
   } = state;
 
   const {
@@ -113,11 +115,7 @@ export function AppEditorLayout({
     // Right panels
     handleCloseAnalysisPanel, handleScrollToSection,
     addStructureItem, removeStructureItem,
-    generateSong: _generateSong,
   } = handlers;
-
-  // generateSong is available via state for StructureSidebar
-  const { generateSong } = state;
 
   return (
     <div className="flex-1 flex overflow-hidden">
