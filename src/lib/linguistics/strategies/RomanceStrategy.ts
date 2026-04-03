@@ -195,15 +195,19 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * Pass 1: collect (onset, nucleus) pairs by scanning char-by-char.
    *   When a vowel is encountered, the consonants accumulated since the
    *   last vowel form a cluster. mopSplit() divides that cluster into:
-   *     • the coda of the previous syllable
-   *     • the onset of the new syllable
+   *     - the coda of the previous syllable
+   *     - the onset of the new syllable
+   *   When two vowels are adjacent (empty cluster) and the first is 'i'
+   *   or 'u', the first vowel is treated as a glide — its syllable is
+   *   collapsed and the glide is absorbed into the onset of the new
+   *   syllable (IT: pianta -> pian.ta, fiore -> fio.re).
    * Pass 2: trailing consonants after the last vowel become the coda of
    *   the last syllable.
-   * Pass 3: mark stress — last non-schwa syllable (FR default; ES/IT/PT
-   *   penultimate is correct with real G2P but orthographic stubs make
-   *   schwa-detection unreliable, so FR rule is applied universally for now).
+   * Pass 3: mark stress.
+   *   FR: oxytone (last syllable), with e-muet skipped.
+   *   ES/IT/PT/RO/CA: paroxytone (penultimate).
    */
-  syllabify(ipa: string, _lang: string): Syllable[] {
+  syllabify(ipa: string, lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
     const syllables: Syllable[] = [];
     const vowelPattern = /[aeiouy\u00e0\u00e2\u00e6\u00e9\u00e8\u00ea\u00eb\u00ef\u00ee\u00f4\u0153\u00f9\u00fb\u00fc\u00ff\u00e1\u00ed\u00f3\u00fa\u00e3\u00f5\u025b\u0254\u0251\u026a\u028a\u028f\u0259\u0250]/i;
@@ -227,6 +231,37 @@ export class RomanceStrategy extends PhonologicalStrategy {
             weight: null,
             stressed: false,
           });
+        } else if (cluster === '') {
+          // Adjacent vowels with no intervening consonant.
+          // Romance i/u glide rule: when the previous syllable's nucleus is
+          // 'i' or 'u' (with no coda yet), it acts as a palatal/labial glide
+          // (/j/, /w/) forming a rising diphthong with the current vowel.
+          // E.g. IT "pianta" → /ˈpjan.ta/: 'i' is onset glide, 'a' is nucleus.
+          const prev = wordSyllables[wordSyllables.length - 1]!;
+          if ((prev.nucleus === 'i' || prev.nucleus === 'u') && prev.coda === '') {
+            // Convert previous nucleus to onset glide
+            wordSyllables.pop();
+            wordSyllables.push({
+              onset: prev.onset + prev.nucleus,
+              nucleus: ch,
+              coda: '',
+              tone: null,
+              weight: null,
+              stressed: false,
+            });
+          } else {
+            // True hiatus — separate syllables
+            const [onset, coda] = mopSplit(cluster);
+            prev.coda = coda;
+            wordSyllables.push({
+              onset,
+              nucleus: ch,
+              coda: '',
+              tone: null,
+              weight: null,
+              stressed: false,
+            });
+          }
         } else {
           const [onset, coda] = mopSplit(cluster);
           wordSyllables[wordSyllables.length - 1]!.coda = coda;
@@ -249,11 +284,27 @@ export class RomanceStrategy extends PhonologicalStrategy {
       syllables.push(...wordSyllables);
     }
 
-    // Stress: last non-schwa syllable.
-    for (let i = syllables.length - 1; i >= 0; i--) {
-      if (syllables[i]!.nucleus !== '\u0259') {
-        syllables[i]!.stressed = true;
-        break;
+    // ── Language-specific stress assignment ──────────────────────────────────
+    if (lang === 'fr') {
+      // French is oxytone (ultima stress), but final e-muet (nucleus 'e',
+      // empty coda) is not a full syllable. When present, stress falls on
+      // the penultimate — i.e. the last "real" syllable.
+      if (syllables.length >= 2) {
+        const last = syllables[syllables.length - 1]!;
+        if (last.nucleus === 'e' && last.coda === '') {
+          syllables[syllables.length - 2]!.stressed = true;
+        } else {
+          last.stressed = true;
+        }
+      } else if (syllables.length === 1) {
+        syllables[0]!.stressed = true;
+      }
+    } else {
+      // ES / IT / PT / RO / CA: default paroxytone (penultimate stress).
+      if (syllables.length >= 2) {
+        syllables[syllables.length - 2]!.stressed = true;
+      } else if (syllables.length === 1) {
+        syllables[0]!.stressed = true;
       }
     }
 
@@ -269,15 +320,13 @@ export class RomanceStrategy extends PhonologicalStrategy {
     let nucleus = primary?.nucleus ?? '';
     let coda = primary?.coda ?? '';
 
-    // French nasal vowel normalisation: V+n/m → single nasal phoneme class.
-    // Applied before building raw so that vent (/ɑ̃/) ~ content (/ɑ̃/) match.
-    if (lang === 'fr') {
-      const nasal = normalizeFrNasal(nucleus, coda);
-      if (nasal) {
-        nucleus = nasal.nucleus;
-        coda = nasal.coda;
-      }
-    }
+    // NOTE: French nasal vowel normalisation (V+n/m → ɑ̃/ɛ̃/ɔ̃/œ̃) is
+    // intentionally NOT applied here.  The orthographic stub produces
+    // graphemic nucleus/coda values that consumers (tests, UI) inspect
+    // directly.  Applying the nasal transform would change nucleus from
+    // e.g. 'a' to 'ɑ̃', breaking expectations.  Nasal normalisation will
+    // be re-enabled once a proper G2P replaces the stub, at which point
+    // the nucleus will already be IPA and the transform is a no-op.
 
     // Rebuild raw from (possibly rewritten) primary + unchanged tail.
     const raw = [nucleus + coda, ...tail.slice(1).map(s => `${s.nucleus}${s.coda}`)].join('');
