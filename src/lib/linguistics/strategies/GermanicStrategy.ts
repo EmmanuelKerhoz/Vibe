@@ -126,6 +126,21 @@ function gerMopSplit(cluster: string): [onset: string, prevCoda: string] {
   return [cluster.slice(-1), cluster.slice(0, -1)];
 }
 
+// ─── EN vowel digraphs ──────────────────────────────────────────────────────
+
+/**
+ * Common English vowel digraphs where two adjacent graphemic vowels
+ * represent a single phonological vowel / diphthong.  Used by
+ * syllabify() to keep these pairs in one syllable rather than
+ * splitting them across two.
+ *
+ * Conservative list — excludes sequences that are often hiatus
+ * in English (io, ia, ua, uo, ie, ei, ue …).
+ */
+const EN_VOWEL_DIGRAPHS = new Set([
+  'ou', 'oo', 'ee', 'ea', 'ai', 'oa', 'oi', 'au', 'oy', 'ay', 'ey',
+]);
+
 // ─── Strategy ────────────────────────────────────────────────────────────────
 
 export class GermanicStrategy extends PhonologicalStrategy {
@@ -193,6 +208,18 @@ export class GermanicStrategy extends PhonologicalStrategy {
             weight: null,
             stressed: false,
           });
+        } else if (
+          lang === 'en' &&
+          cluster === '' &&
+          wordSyllables.length > 0 &&
+          EN_VOWEL_DIGRAPHS.has(
+            wordSyllables[wordSyllables.length - 1]!.nucleus + ch,
+          )
+        ) {
+          // EN vowel digraph: adjacent vowels forming a single phonological
+          // unit (ou, oo, ea …). Merge into the current syllable's nucleus
+          // rather than creating a new syllable.
+          wordSyllables[wordSyllables.length - 1]!.nucleus += ch;
         } else {
           // Split the inter-vocalic cluster with MOP.
           const [onset, coda] = gerMopSplit(cluster);
@@ -212,6 +239,19 @@ export class GermanicStrategy extends PhonologicalStrategy {
       // Trailing consonants → coda of last syllable.
       if (cluster && wordSyllables.length > 0) {
         wordSyllables[wordSyllables.length - 1]!.coda += cluster;
+      }
+
+      // EN: collapse silent final 'e'.
+      // English words like "wine", "make", "take" end in a silent 'e' that
+      // the orthographic stub incorrectly syllabifies as a separate vowel.
+      // Move the onset consonants of the phantom syllable back to the
+      // previous syllable's coda and drop the final syllable.
+      if (lang === 'en' && wordSyllables.length >= 2) {
+        const last = wordSyllables[wordSyllables.length - 1]!;
+        if (last.nucleus === 'e' && last.coda === '') {
+          wordSyllables[wordSyllables.length - 2]!.coda += last.onset;
+          wordSyllables.pop();
+        }
       }
 
       if (wordSyllables.length > 0) {

@@ -83,8 +83,9 @@ describe('GermanicStrategy (ALGO-GER)', () => {
   it('does NOT strip gn in DE (gn is a legal onset, not a silent coda)', () => {
     // German word ending in visible cluster — strip only applies to lang='en'
     const r = PhonologicalRegistry.analyze('design', 'de');
-    // The coda should still be 'gn' (orthographic, not stripped)
-    expect(r?.rhymeNucleus.coda).toBe('gn');
+    // The last syllable coda should still be 'gn' (orthographic, not stripped)
+    const lastSyl = r?.syllables[r.syllables.length - 1];
+    expect(lastSyl?.coda).toBe('gn');
   });
 
   // ── English stress heuristics ─────────────────────────────────────────────
