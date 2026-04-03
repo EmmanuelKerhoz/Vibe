@@ -37,7 +37,7 @@ interface Props {
 
 const SOLID_BG_DARK = 'var(--bg-app, #0c0c0c)';
 
-type PanelContentProps = Omit<Props, 'isMobileOverlay'> & {
+type PanelContentProps = Omit<Props, 'isLeftPanelOpen' | 'isMobileOverlay'> & {
   t: ReturnType<typeof useTranslation>['t'];
   isMobileOverlay: boolean;
   song: ReturnType<typeof useSongContext>['song'];
@@ -66,6 +66,20 @@ export function LeftSettingsPanel({
 
   const handleClose = () => setIsLeftPanelOpen(false);
   useFocusTrap(panelRef, !!(isMobileOverlay && isLeftPanelOpen), handleClose);
+
+  const panelContentProps: PanelContentProps = {
+    t,
+    title, setTitle, titleOrigin,
+    onGenerateTitle, isGeneratingTitle,
+    topic, setTopic, mood, setMood,
+    rhymeScheme, setRhymeScheme,
+    targetSyllables, setTargetSyllables,
+    song, isGenerating, quantizeSyllables,
+    setIsLeftPanelOpen,
+    onSurprise, isSurprising, hasApiKey,
+    onGenerateSong, onRegenerateSong,
+    isMobileOverlay: false,
+  };
 
   // ── Mobile/tablet: fixed overlay ────────────────────────────────────────────────────────
   if (isMobileOverlay) {
@@ -96,19 +110,7 @@ export function LeftSettingsPanel({
           background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
           opacity: 0.85, pointerEvents: 'none', zIndex: 10,
         }} />
-        <PanelContent
-          t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
-          onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-          topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-          rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-          targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-          song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
-          isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-          onSurprise={onSurprise} isSurprising={isSurprising} hasApiKey={hasApiKey} onGenerateSong={onGenerateSong}
-          onRegenerateSong={onRegenerateSong}
-          isMobileOverlay={true}
-          headingId={headingId}
-        />
+        <PanelContent {...panelContentProps} isMobileOverlay={true} headingId={headingId} />
       </div>
     );
   }
@@ -141,18 +143,7 @@ export function LeftSettingsPanel({
             opacity: 0.85, pointerEvents: 'none', zIndex: 2,
           }} />
           <div style={{ width: 352, minWidth: 352, flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            <PanelContent
-              t={t} title={title} setTitle={setTitle} titleOrigin={titleOrigin}
-              onGenerateTitle={onGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-              topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-              rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-              targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-              song={song} isGenerating={isGenerating} quantizeSyllables={quantizeSyllables}
-              isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-              onSurprise={onSurprise} isSurprising={isSurprising} hasApiKey={hasApiKey} onGenerateSong={onGenerateSong}
-              onRegenerateSong={onRegenerateSong}
-              isMobileOverlay={false}
-            />
+            <PanelContent {...panelContentProps} />
           </div>
         </motion.div>
       )}
@@ -166,7 +157,7 @@ function PanelContent({
   topic, setTopic, mood, setMood,
   rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
   song, isGenerating, quantizeSyllables,
-  isLeftPanelOpen: _isLeftPanelOpen, setIsLeftPanelOpen,
+  setIsLeftPanelOpen,
   onSurprise, isSurprising, hasApiKey, onGenerateSong, onRegenerateSong,
   isMobileOverlay,
   headingId,
