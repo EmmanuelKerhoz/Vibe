@@ -1,34 +1,18 @@
 /**
  * AppEditorLayout
- * Renders the center column: LeftSettingsPanel + TopRibbon + AppEditorZone.
- * Reads what it needs from SongContext, AppStateContext, ComposerContext,
- * AnalysisContext, and SimilarityContext directly — no new props.
+ * Shell: Left panel + Top ribbon + Editor zone + Right panel (conditional).
  *
- * TopRibbon now accepts only 4 props (down from 15):
- *   hasApiKey, handleApiKeyHelp, onOpenNewGeneration, onOpenNewEmpty.
- * All modal actions and analysis state are sourced inside TopRibbon via
- * useTopRibbonActions() → ModalContext + AnalysisContext.
+ * Orchestrates exactly 2 hooks:
+ *   - useEditorState    — all context reads + derived state
+ *   - useEditorHandlers — all action/handler aggregation
+ *
+ * Props surface: 3 (isMobileOrTablet, playAudioFeedback, setIsStructureOpenAndClearLine)
  */
-import React, { Suspense, lazy, useCallback, useEffect } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './ErrorBoundary';
-import { useAppStateContext } from '../../contexts/AppStateContext';
-import { useComposerContext } from '../../contexts/ComposerContext';
-import { useSongContext } from '../../contexts/SongContext';
-import { useAnalysisContext } from '../../contexts/AnalysisContext';
-import { useSimilarityContext } from '../../contexts/SimilarityContext';
-import { useSongEditor } from '../../hooks/useSongEditor';
-import { useTitleGenerator } from '../../hooks/useTitleGenerator';
-import { useTopicMoodSuggester } from '../../hooks/useTopicMoodSuggester';
-import { useDerivedAppState } from '../../hooks/useDerivedAppState';
-import { useAppHandlers } from '../../hooks/useAppHandlers';
-import { useModalHandlers } from '../../hooks/useModalHandlers';
-import { useSessionActions } from '../../hooks/useSessionActions';
-import { useLibraryActions } from '../../hooks/useLibraryActions';
-import { useImportHandlers } from '../../hooks/useImportHandlers';
-import { useLinguisticsWorker } from '../../hooks/useLinguisticsWorker';
-import { useMarkupEditor } from '../../hooks/useMarkupEditor';
-import { useSpellCheck } from '../../hooks/composer/useSpellCheck';
+import { useEditorState } from '../../hooks/useEditorState';
+import { useEditorHandlers } from '../../hooks/useEditorHandlers';
 import { useTranslation } from '../../i18n';
 import { AppEditorZone } from './AppEditorZone';
 
@@ -54,7 +38,13 @@ const LazyFallback = React.memo(function LazyFallback() {
     <div
       role="status"
       aria-label={t.common?.loading ?? 'Loading'}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', width: '100%' }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+        width: '100%',
+      }}
     >
       <Spinner size="small" />
     </div>
@@ -65,7 +55,7 @@ interface AppEditorLayoutProps {
   isMobileOrTablet: boolean;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   /**
-   * Passed from AppInnerContent (App.tsx) — single source of truth.
+   * Single source of truth from AppInnerContent.
    * Clears selectedLineId whenever the structure panel is opened.
    */
   setIsStructureOpenAndClearLine: (value: boolean | ((prev: boolean) => boolean)) => void;
@@ -76,182 +66,83 @@ export function AppEditorLayout({
   playAudioFeedback,
   setIsStructureOpenAndClearLine,
 }: AppEditorLayoutProps) {
-  const { t } = useTranslation();
-  const {
-    song, structure, rhymeScheme,
-    title, setTitle, titleOrigin, topic, setTopic, mood, setMood,
-    setRhymeScheme, targetSyllables, setTargetSyllables,
-    updateSongAndStructureWithHistory, updateState, replaceStateWithoutHistory, clearHistory,
-    songLanguage, setSongLanguage,
-  } = useSongContext();
+  const state = useEditorState();
+  const handlers = useEditorHandlers({ state, isMobileOrTablet });
 
   const {
+    // Song meta
+    title, titleOrigin, topic, setTopic, mood, setMood,
+    rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
+    // App state
+    appState, hasApiKey, editMode,
+    // Analysis
+    isAnalyzing, isAdaptingLanguage, isDetectingLanguage,
+    targetLanguage, setTargetLanguage,
+    adaptSongLanguage, detectLanguage, analyzeCurrentSong,
+    adaptationProgress, adaptationResult,
+    canPasteLyrics,
+    // Composer
     selectedLineId, setSelectedLineId, suggestions, isSuggesting,
-    generateSong, generateSuggestions, applySuggestion, clearSelection,
-  } = useComposerContext();
+    generateSuggestions, applySuggestion,
+    // Derived
+    webSimilarityIndex, webBadgeLabel, isSuggestionsOpen,
+    // Panels
+    linguisticsWorker, spellCheck,
+    switchEditMode,
+  } = state;
 
-  const { appState } = useAppStateContext();
   const {
-    activeTab, setActiveTab,
-    isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
-    editMode, setEditMode, markupText, setMarkupText, markupTextareaRef,
-    similarityMatches, setSimilarityMatches, libraryCount, setLibraryCount,
-    libraryAssets, setLibraryAssets, isSavingToLibrary, setIsSavingToLibrary,
+    isLeftPanelOpen, setIsLeftPanelOpen,
+    isStructureOpen,
+    libraryCount,
     isSectionDropdownOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen,
-    setIsSaveToLibraryModalOpen,
-    isPasteModalOpen, setIsPasteModalOpen,
-    setIsImportModalOpen, setIsExportModalOpen,
-    setIsSettingsOpen, setIsAboutOpen,
-    setIsKeyboardShortcutsModalOpen, setIsSearchReplaceOpen,
-    isAnalysisPanelOpen, setIsAnalysisPanelOpen,
-    apiErrorModal, setApiErrorModal,
-    confirmModal, setConfirmModal,
-    hasApiKey, importInputRef,
-    setIsVersionsModalOpen, setIsResetModalOpen,
+    isAnalysisPanelOpen,
   } = appState;
 
   const {
-    canPasteLyrics,
-    pastedText, setPastedText,
-    isAnalyzing, isAdaptingLanguage, isDetectingLanguage,
-    targetLanguage, setTargetLanguage,
-    sectionTargetLanguages, setSectionTargetLanguages,
-    adaptSongLanguage, detectLanguage, analyzeCurrentSong,
-    adaptationProgress, adaptationResult,
-  } = useAnalysisContext();
+    // Left panel
+    handleTitleChange, handleGenerateTitle, isGeneratingTitle,
+    handleSurpriseClick, isSurprising,
+    handleGlobalRegenerate, handleGenerateSongFromLeftPanel,
+    // Top ribbon
+    handleApiKeyHelp, handleOpenNewGeneration, handleCreateEmptySong,
+    // Editor zone
+    handleOpenPasteModal, handleOpenSaveToLibraryModal, handleOpenSearch,
+    handleToggleAnalysisPanel,
+    // Right panels
+    handleCloseAnalysisPanel, handleScrollToSection,
+    addStructureItem, removeStructureItem,
+    generateSong: _generateSong,
+  } = handlers;
 
-  const { index: webSimilarityIndex, resetIndex: resetWebSimilarityIndex } = useSimilarityContext();
-
-  const { switchEditMode, scrollToSection: scrollToSectionFn } = useMarkupEditor({
-    editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
-    updateSongAndStructureWithHistory,
-  });
-
-  const { hasRealLyricContent, webBadgeLabel } = useDerivedAppState({
-    editMode, markupText, webSimilarityIndex,
-  });
-
-  // ── Off-thread phonological analysis (Web Worker) ──────────────────────
-  const linguisticsWorker = useLinguisticsWorker(song, songLanguage);
-
-  const {
-    removeStructureItem, addStructureItem, loadFileForAnalysis,
-  } = useSongEditor({
-    openPasteModalWithText: (text: string) => { setPastedText(text); setIsPasteModalOpen(true); },
-  });
-
-  const { generateTitle, isGeneratingTitle } = useTitleGenerator();
-  const {
-    generateSuggestion: handleSurprise,
-    isGeneratingSuggestion: isSurprising,
-    resetSuggestionCycle,
-  } = useTopicMoodSuggester({ hasApiKey });
-
-  // ── Spell-check ──────────────────────────────────────────────────────────
-  const spellCheck = useSpellCheck({
-    song,
-    songLanguage,
-    hasApiKey,
-    selectedLineId,
-    updateState,
-  });
-
-  // Trigger spell-check automatically when a line is selected
-  useEffect(() => {
-    if (selectedLineId && hasApiKey) {
-      spellCheck.checkSpelling(selectedLineId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedLineId, hasApiKey]);
-
-  const handleSurpriseClick = useCallback(async () => {
-    const suggestion = await handleSurprise();
-    if (suggestion) {
-      setTopic(suggestion.topic);
-      setMood(suggestion.mood);
-    }
-  }, [handleSurprise, setMood, setTopic]);
-
-  const {
-    handleApiKeyHelp, handleTitleChange, handleGenerateTitle,
-    handleGlobalRegenerate, handleScrollToSection, handleOpenNewGeneration,
-  } = useAppHandlers({
-    t, hasRealLyricContent, isMobileOrTablet,
-    setApiErrorModal, setConfirmModal, setActiveTab,
-    setIsLeftPanelOpen, setIsStructureOpen,
-    generateTitle, generateSong, scrollToSection: scrollToSectionFn,
-  });
-
-  const {
-    handleOpenPasteModal,
-    handleOpenImport,
-    handleOpenExport,
-    handleOpenSettings,
-    handleOpenAbout,
-    handleOpenKeyboardShortcuts,
-    handleOpenSearch,
-    handleSectionTargetLanguageChange,
-  } = useModalHandlers({
-    setIsPasteModalOpen,
-    setIsImportModalOpen,
-    setIsExportModalOpen,
-    setIsSettingsOpen,
-    setIsAboutOpen,
-    setIsKeyboardShortcutsModalOpen,
-    setIsSearchReplaceOpen,
-    setSectionTargetLanguages,
-  });
-
-  const { handleCreateEmptySong } = useSessionActions({
-    song, structure, rhymeScheme, appState,
-    replaceStateWithoutHistory, clearHistory, clearSelection,
-    resetWebSimilarityIndex, resetSuggestionCycle,
-    updateSongAndStructureWithHistory, setIsResetModalOpen,
-  });
-
-  const { handleOpenSaveToLibraryModal } = useLibraryActions({
-    song, replaceStateWithoutHistory, clearHistory,
-    setSimilarityMatches, setLibraryCount, setLibraryAssets,
-    setIsSavingToLibrary, setIsSaveToLibraryModalOpen,
-  });
-
-  const { handleImportInputChange, handleImportChooseFile } = useImportHandlers({
-    importInputRef, loadFileForAnalysis,
-    setIsImportModalOpen, setIsPasteModalOpen, setPastedText, setSongLanguage,
-  });
-
-  // setIsStructureOpenAndClearLine is passed as a prop from AppInnerContent.
-  // No local redefinition needed.
-
-  const handleGenerateSongFromLeftPanel = useCallback(() => {
-    setIsLeftPanelOpen(false);
-    handleGlobalRegenerate();
-  }, [setIsLeftPanelOpen, handleGlobalRegenerate]);
-
-  const handleToggleAnalysisPanel = useCallback(() => {
-    setIsAnalysisPanelOpen(prev => !prev);
-  }, [setIsAnalysisPanelOpen]);
-
-  const handleCloseAnalysisPanel = useCallback(() => {
-    setIsAnalysisPanelOpen(false);
-  }, [setIsAnalysisPanelOpen]);
-
-  const isSuggestionsOpen = activeTab === 'lyrics' && Boolean(selectedLineId);
+  // generateSong is available via state for StructureSidebar
+  const { generateSong } = state;
 
   return (
     <div className="flex-1 flex overflow-hidden">
+      {/* ── Left panel ──────────────────────────────────────────────────── */}
       <ErrorBoundary label="Left panel">
         <Suspense fallback={<LazyFallback />}>
           <LeftSettingsPanel
             isMobileOverlay={isMobileOrTablet}
-            title={title} setTitle={handleTitleChange} titleOrigin={titleOrigin}
-            onGenerateTitle={handleGenerateTitle} isGeneratingTitle={isGeneratingTitle}
-            topic={topic} setTopic={setTopic} mood={mood} setMood={setMood}
-            rhymeScheme={rhymeScheme} setRhymeScheme={setRhymeScheme}
-            targetSyllables={targetSyllables} setTargetSyllables={setTargetSyllables}
-            isLeftPanelOpen={isLeftPanelOpen} setIsLeftPanelOpen={setIsLeftPanelOpen}
-            onSurprise={handleSurpriseClick} isSurprising={isSurprising}
+            title={title}
+            setTitle={handleTitleChange}
+            titleOrigin={titleOrigin}
+            onGenerateTitle={handleGenerateTitle}
+            isGeneratingTitle={isGeneratingTitle}
+            topic={topic}
+            setTopic={setTopic}
+            mood={mood}
+            setMood={setMood}
+            rhymeScheme={rhymeScheme}
+            setRhymeScheme={setRhymeScheme}
+            targetSyllables={targetSyllables}
+            setTargetSyllables={setTargetSyllables}
+            isLeftPanelOpen={isLeftPanelOpen}
+            setIsLeftPanelOpen={setIsLeftPanelOpen}
+            onSurprise={handleSurpriseClick}
+            isSurprising={isSurprising}
             hasApiKey={hasApiKey}
             onGenerateSong={handleGenerateSongFromLeftPanel}
             onRegenerateSong={handleGlobalRegenerate}
@@ -259,13 +150,13 @@ export function AppEditorLayout({
         </Suspense>
       </ErrorBoundary>
 
+      {/* ── Center column ───────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
+
         <ErrorBoundary label="Top ribbon">
           <Suspense fallback={<LazyFallback />}>
-            {/* TopRibbon: 4 props only (down from 15).
-                Modal actions + isAnalyzing + canPasteLyrics sourced internally
-                via useTopRibbonActions() → ModalContext + AnalysisContext. */}
+            {/* TopRibbon: 4 props only — modal actions sourced via useTopRibbonActions() */}
             <TopRibbon
               hasApiKey={hasApiKey}
               handleApiKeyHelp={handleApiKeyHelp}
@@ -276,10 +167,10 @@ export function AppEditorLayout({
         </ErrorBoundary>
 
         <AppEditorZone
-          activeTab={activeTab}
+          activeTab={appState.activeTab}
           isMobileOrTablet={isMobileOrTablet}
           hasApiKey={hasApiKey}
-          songHasContent={song.length > 0}
+          songHasContent={state.song.length > 0}
           targetLanguage={targetLanguage}
           setTargetLanguage={setTargetLanguage}
           isAdaptingLanguage={isAdaptingLanguage}
@@ -307,6 +198,7 @@ export function AppEditorLayout({
         />
       </div>
 
+      {/* ── Right panel (conditional) ────────────────────────────────────── */}
       <ErrorBoundary label="Right panel">
         <Suspense fallback={<LazyFallback />}>
           {isAnalysisPanelOpen ? (
@@ -335,10 +227,12 @@ export function AppEditorLayout({
             <StructureSidebar
               isMobileOverlay={isMobileOrTablet}
               className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-              isStructureOpen={isStructureOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+              isStructureOpen={isStructureOpen}
+              setIsStructureOpen={setIsStructureOpenAndClearLine}
               isSectionDropdownOpen={isSectionDropdownOpen}
               setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-              addStructureItem={addStructureItem} removeStructureItem={removeStructureItem}
+              addStructureItem={addStructureItem}
+              removeStructureItem={removeStructureItem}
               onScrollToSection={handleScrollToSection}
               onRegenerateSong={handleGlobalRegenerate}
               onGenerateSong={generateSong}
