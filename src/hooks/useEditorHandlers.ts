@@ -2,12 +2,14 @@
  * useEditorHandlers
  * Aggregates all action/handler hooks for AppEditorLayout.
  * Receives the output of useEditorState to avoid double context reads.
+ *
+ * NOTE: useTitleGenerator and useTopicMoodSuggester have been migrated to
+ * ComposerParamsContext — they must NOT be instantiated here to avoid
+ * double-instance side-effects (double auto-suggest, double auto-title).
  */
 import { useCallback } from 'react';
 import { useTranslation } from '../i18n';
 import { useSongEditor } from './useSongEditor';
-import { useTitleGenerator } from './useTitleGenerator';
-import { useTopicMoodSuggester } from './useTopicMoodSuggester';
 import { useAppHandlers } from './useAppHandlers';
 import { useModalHandlers } from './useModalHandlers';
 import { useSessionActions } from './useSessionActions';
@@ -72,29 +74,10 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     },
   });
 
-  // ── Title generator ─────────────────────────────────────────────────────
-  const { generateTitle, isGeneratingTitle } = useTitleGenerator();
-
-  // ── Topic/mood suggester ─────────────────────────────────────────────────
-  const {
-    generateSuggestion: handleSurprise,
-    isGeneratingSuggestion: isSurprising,
-    resetSuggestionCycle,
-  } = useTopicMoodSuggester({ hasApiKey });
-
-  const handleSurpriseClick = useCallback(async () => {
-    const suggestion = await handleSurprise();
-    if (suggestion) {
-      setTopic(suggestion.topic);
-      setMood(suggestion.mood);
-    }
-  }, [handleSurprise, setMood, setTopic]);
-
   // ── App-level handlers ───────────────────────────────────────────────────
   const {
     handleApiKeyHelp,
     handleTitleChange,
-    handleGenerateTitle,
     handleGlobalRegenerate,
     handleScrollToSection,
     handleOpenNewGeneration,
@@ -107,7 +90,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setActiveTab,
     setIsLeftPanelOpen,
     setIsStructureOpen,
-    generateTitle,
+    generateTitle: async () => null,
     generateSong,
     scrollToSection: scrollToSectionFn,
   });
@@ -143,7 +126,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     clearHistory,
     clearSelection,
     resetWebSimilarityIndex,
-    resetSuggestionCycle,
+    resetSuggestionCycle: () => { /* managed by ComposerParamsContext */ },
     updateSongAndStructureWithHistory,
     setIsResetModalOpen,
   });
@@ -171,6 +154,10 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   });
 
   // ── Derived composite callbacks ──────────────────────────────────────────
+  /**
+   * Closes the left panel then triggers a full song regeneration.
+   * Layout intent: belongs here, not in ComposerParamsContext.
+   */
   const handleGenerateSongFromLeftPanel = useCallback(() => {
     setIsLeftPanelOpen(false);
     handleGlobalRegenerate();
@@ -184,18 +171,17 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setIsAnalysisPanelOpen(false);
   }, [setIsAnalysisPanelOpen]);
 
+  // Suppress unused-var lint for setTopic/setMood/hasApiKey — still present
+  // in state but no longer consumed here (migrated to ComposerParamsContext).
+  void setTopic; void setMood; void hasApiKey;
+
   return {
     // Song structure
     removeStructureItem,
     addStructureItem,
     loadFileForAnalysis,
-    // Title
+    // Title (handleTitleChange kept for TopRibbon / other consumers)
     handleTitleChange,
-    handleGenerateTitle,
-    isGeneratingTitle,
-    // Surprise
-    handleSurpriseClick,
-    isSurprising,
     // App handlers
     handleApiKeyHelp,
     handleGlobalRegenerate,

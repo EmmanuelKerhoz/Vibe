@@ -7,6 +7,9 @@
  *   - useEditorHandlers — all action/handler aggregation
  *
  * Props surface: 3 (isMobileOrTablet, playAudioFeedback, setIsStructureOpenAndClearLine)
+ *
+ * ComposerParamsProvider wraps the layout so that SongMetaForm (inside
+ * LeftSettingsPanel) can source all song meta state without prop drilling.
  */
 import React, { Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
@@ -15,6 +18,7 @@ import { useEditorState } from '../../hooks/useEditorState';
 import { useEditorHandlers } from '../../hooks/useEditorHandlers';
 import { useTranslation } from '../../i18n';
 import { AppEditorZone } from './AppEditorZone';
+import { ComposerParamsProvider } from '../../contexts/ComposerParamsContext';
 
 const LeftSettingsPanel = lazy(() =>
   import('./LeftSettingsPanel').then(m => ({ default: m.LeftSettingsPanel }))
@@ -70,9 +74,6 @@ export function AppEditorLayout({
   const handlers = useEditorHandlers({ state, isMobileOrTablet });
 
   const {
-    // Song meta
-    title, titleOrigin, topic, setTopic, mood, setMood,
-    rhymeScheme, setRhymeScheme, targetSyllables, setTargetSyllables,
     // App state
     appState, hasApiKey, editMode,
     // Analysis
@@ -91,6 +92,8 @@ export function AppEditorLayout({
     switchEditMode,
     // generateSong sourced from composerCtx via useEditorState
     generateSong,
+    // Song (needed for AppEditorZone)
+    song,
   } = state;
 
   const {
@@ -103,10 +106,9 @@ export function AppEditorLayout({
   } = appState;
 
   const {
-    // Left panel
-    handleTitleChange, handleGenerateTitle, isGeneratingTitle,
-    handleSurpriseClick, isSurprising,
-    handleGlobalRegenerate, handleGenerateSongFromLeftPanel,
+    // Left panel layout-intent callbacks
+    handleGenerateSongFromLeftPanel,
+    handleGlobalRegenerate,
     // Top ribbon
     handleApiKeyHelp, handleOpenNewGeneration, handleCreateEmptySong,
     // Editor zone
@@ -118,126 +120,111 @@ export function AppEditorLayout({
   } = handlers;
 
   return (
-    <div className="flex-1 flex overflow-hidden">
-      {/* ── Left panel ──────────────────────────────────────────────────── */}
-      <ErrorBoundary label="Left panel">
-        <Suspense fallback={<LazyFallback />}>
-          <LeftSettingsPanel
-            isMobileOverlay={isMobileOrTablet}
-            title={title}
-            setTitle={handleTitleChange}
-            titleOrigin={titleOrigin}
-            onGenerateTitle={handleGenerateTitle}
-            isGeneratingTitle={isGeneratingTitle}
-            topic={topic}
-            setTopic={setTopic}
-            mood={mood}
-            setMood={setMood}
-            rhymeScheme={rhymeScheme}
-            setRhymeScheme={setRhymeScheme}
-            targetSyllables={targetSyllables}
-            setTargetSyllables={setTargetSyllables}
-            isLeftPanelOpen={isLeftPanelOpen}
-            setIsLeftPanelOpen={setIsLeftPanelOpen}
-            onSurprise={handleSurpriseClick}
-            isSurprising={isSurprising}
-            hasApiKey={hasApiKey}
-            onGenerateSong={handleGenerateSongFromLeftPanel}
-            onRegenerateSong={handleGlobalRegenerate}
-          />
-        </Suspense>
-      </ErrorBoundary>
-
-      {/* ── Center column ───────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
-
-        <ErrorBoundary label="Top ribbon">
+    <ComposerParamsProvider>
+      <div className="flex-1 flex overflow-hidden">
+        {/* ── Left panel ──────────────────────────────────────────────────── */}
+        <ErrorBoundary label="Left panel">
           <Suspense fallback={<LazyFallback />}>
-            {/* TopRibbon: 4 props only — modal actions sourced via useTopRibbonActions() */}
-            <TopRibbon
-              hasApiKey={hasApiKey}
-              handleApiKeyHelp={handleApiKeyHelp}
-              onOpenNewGeneration={handleOpenNewGeneration}
-              onOpenNewEmpty={handleCreateEmptySong}
+            <LeftSettingsPanel
+              isMobileOverlay={isMobileOrTablet}
+              isLeftPanelOpen={isLeftPanelOpen}
+              setIsLeftPanelOpen={setIsLeftPanelOpen}
+              onGenerateSong={handleGenerateSongFromLeftPanel}
+              onRegenerateSong={handleGlobalRegenerate}
             />
           </Suspense>
         </ErrorBoundary>
 
-        <AppEditorZone
-          activeTab={appState.activeTab}
-          isMobileOrTablet={isMobileOrTablet}
-          hasApiKey={hasApiKey}
-          songHasContent={state.song.length > 0}
-          targetLanguage={targetLanguage}
-          setTargetLanguage={setTargetLanguage}
-          isAdaptingLanguage={isAdaptingLanguage}
-          isDetectingLanguage={isDetectingLanguage}
-          isAnalyzing={isAnalyzing}
-          editMode={editMode}
-          switchEditMode={switchEditMode}
-          webSimilarityIndex={webSimilarityIndex}
-          webBadgeLabel={webBadgeLabel}
-          libraryCount={libraryCount}
-          adaptSongLanguage={adaptSongLanguage}
-          detectLanguage={detectLanguage}
-          analyzeCurrentSong={analyzeCurrentSong}
-          setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-          adaptationProgress={adaptationProgress}
-          adaptationResult={adaptationResult}
-          playAudioFeedback={playAudioFeedback}
-          canPasteLyrics={canPasteLyrics}
-          onOpenLibrary={handleOpenSaveToLibraryModal}
-          onPasteLyrics={handleOpenPasteModal}
-          onGenerateSong={handleGlobalRegenerate}
-          onOpenSearch={handleOpenSearch}
-          onToggleAnalysisPanel={handleToggleAnalysisPanel}
-          isAnalysisPanelOpen={isAnalysisPanelOpen}
-        />
-      </div>
+        {/* ── Center column ───────────────────────────────────────────────── */}
+        <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
 
-      {/* ── Right panel (conditional) ────────────────────────────────────── */}
-      <ErrorBoundary label="Right panel">
-        <Suspense fallback={<LazyFallback />}>
-          {isAnalysisPanelOpen ? (
-            <AnalysisPanel
-              result={linguisticsWorker.result}
-              isComputing={linguisticsWorker.isComputing}
-              error={linguisticsWorker.error}
-              isOpen={isAnalysisPanelOpen}
-              onClose={handleCloseAnalysisPanel}
-              isMobileOverlay={isMobileOrTablet}
-            />
-          ) : isSuggestionsOpen ? (
-            <SuggestionsPanel
-              isMobileOverlay={isMobileOrTablet}
-              className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-              selectedLineId={selectedLineId}
-              setSelectedLineId={setSelectedLineId}
-              suggestions={suggestions}
-              isSuggesting={isSuggesting}
-              hasApiKey={hasApiKey}
-              applySuggestion={applySuggestion}
-              generateSuggestions={generateSuggestions}
-              spellCheck={spellCheck}
-            />
-          ) : (
-            <StructureSidebar
-              isMobileOverlay={isMobileOrTablet}
-              className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
-              isStructureOpen={isStructureOpen}
-              setIsStructureOpen={setIsStructureOpenAndClearLine}
-              isSectionDropdownOpen={isSectionDropdownOpen}
-              setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-              addStructureItem={addStructureItem}
-              removeStructureItem={removeStructureItem}
-              onScrollToSection={handleScrollToSection}
-              onRegenerateSong={handleGlobalRegenerate}
-              onGenerateSong={generateSong}
-            />
-          )}
-        </Suspense>
-      </ErrorBoundary>
-    </div>
+          <ErrorBoundary label="Top ribbon">
+            <Suspense fallback={<LazyFallback />}>
+              <TopRibbon
+                hasApiKey={hasApiKey}
+                handleApiKeyHelp={handleApiKeyHelp}
+                onOpenNewGeneration={handleOpenNewGeneration}
+                onOpenNewEmpty={handleCreateEmptySong}
+              />
+            </Suspense>
+          </ErrorBoundary>
+
+          <AppEditorZone
+            activeTab={appState.activeTab}
+            isMobileOrTablet={isMobileOrTablet}
+            hasApiKey={hasApiKey}
+            songHasContent={song.length > 0}
+            targetLanguage={targetLanguage}
+            setTargetLanguage={setTargetLanguage}
+            isAdaptingLanguage={isAdaptingLanguage}
+            isDetectingLanguage={isDetectingLanguage}
+            isAnalyzing={isAnalyzing}
+            editMode={editMode}
+            switchEditMode={switchEditMode}
+            webSimilarityIndex={webSimilarityIndex}
+            webBadgeLabel={webBadgeLabel}
+            libraryCount={libraryCount}
+            adaptSongLanguage={adaptSongLanguage}
+            detectLanguage={detectLanguage}
+            analyzeCurrentSong={analyzeCurrentSong}
+            setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+            adaptationProgress={adaptationProgress}
+            adaptationResult={adaptationResult}
+            playAudioFeedback={playAudioFeedback}
+            canPasteLyrics={canPasteLyrics}
+            onOpenLibrary={handleOpenSaveToLibraryModal}
+            onPasteLyrics={handleOpenPasteModal}
+            onGenerateSong={handleGlobalRegenerate}
+            onOpenSearch={handleOpenSearch}
+            onToggleAnalysisPanel={handleToggleAnalysisPanel}
+            isAnalysisPanelOpen={isAnalysisPanelOpen}
+          />
+        </div>
+
+        {/* ── Right panel (conditional) ────────────────────────────────────── */}
+        <ErrorBoundary label="Right panel">
+          <Suspense fallback={<LazyFallback />}>
+            {isAnalysisPanelOpen ? (
+              <AnalysisPanel
+                result={linguisticsWorker.result}
+                isComputing={linguisticsWorker.isComputing}
+                error={linguisticsWorker.error}
+                isOpen={isAnalysisPanelOpen}
+                onClose={handleCloseAnalysisPanel}
+                isMobileOverlay={isMobileOrTablet}
+              />
+            ) : isSuggestionsOpen ? (
+              <SuggestionsPanel
+                isMobileOverlay={isMobileOrTablet}
+                className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+                selectedLineId={selectedLineId}
+                setSelectedLineId={setSelectedLineId}
+                suggestions={suggestions}
+                isSuggesting={isSuggesting}
+                hasApiKey={hasApiKey}
+                applySuggestion={applySuggestion}
+                generateSuggestions={generateSuggestions}
+                spellCheck={spellCheck}
+              />
+            ) : (
+              <StructureSidebar
+                isMobileOverlay={isMobileOrTablet}
+                className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+                isStructureOpen={isStructureOpen}
+                setIsStructureOpen={setIsStructureOpenAndClearLine}
+                isSectionDropdownOpen={isSectionDropdownOpen}
+                setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+                addStructureItem={addStructureItem}
+                removeStructureItem={removeStructureItem}
+                onScrollToSection={handleScrollToSection}
+                onRegenerateSong={handleGlobalRegenerate}
+                onGenerateSong={generateSong}
+              />
+            )}
+          </Suspense>
+        </ErrorBoundary>
+      </div>
+    </ComposerParamsProvider>
   );
 }

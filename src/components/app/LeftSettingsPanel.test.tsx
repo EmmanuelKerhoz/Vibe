@@ -1,24 +1,57 @@
+/**
+ * LeftSettingsPanel tests — adapted for the post-refactor shell signature.
+ *
+ * LeftSettingsPanel now receives only 5 props (isLeftPanelOpen,
+ * setIsLeftPanelOpen, isMobileOverlay, onGenerateSong, onRegenerateSong).
+ * All song meta state is sourced from ComposerParamsContext, which is mocked
+ * below alongside SongContext and ComposerContext.
+ */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../i18n';
 import { LeftSettingsPanel } from './LeftSettingsPanel';
 
-const mockSongContext = vi.hoisted(() => ({
-  song: [] as Array<{ id: string; name: string; lines: Array<{ id: string; text: string; isMeta: boolean }> }>,
+// ── Context mocks ──────────────────────────────────────────────────────────
+
+const mockSong = vi.hoisted(() => ({
+  current: [] as Array<{ id: string; name: string; lines: Array<{ id: string; text: string; isMeta: boolean }> }>,
 }));
 
-const mockComposerContext = vi.hoisted(() => ({
+const mockComposerParams = vi.hoisted(() => ({
+  title: 'Test',
+  setTitle: vi.fn(),
+  titleOrigin: 'user' as 'user' | 'ai',
+  setTitleOrigin: vi.fn(),
+  topic: '',
+  setTopic: vi.fn(),
+  mood: '',
+  setMood: vi.fn(),
+  rhymeScheme: 'AABB',
+  setRhymeScheme: vi.fn(),
+  targetSyllables: 8,
+  setTargetSyllables: vi.fn(),
+  get song() { return mockSong.current; },
   isGenerating: false,
   quantizeSyllables: vi.fn(),
+  isGeneratingTitle: false,
+  onGenerateTitle: vi.fn(),
+  isSurprising: false,
+  onSurprise: vi.fn(),
+  hasApiKey: true,
+}));
+
+vi.mock('../../contexts/ComposerParamsContext', () => ({
+  useComposerParamsContext: () => mockComposerParams,
+  ComposerParamsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => mockSongContext,
+  useSongContext: () => ({ song: mockSong.current }),
 }));
 
 vi.mock('../../contexts/ComposerContext', () => ({
-  useComposerContext: () => mockComposerContext,
+  useComposerContext: () => ({ isGenerating: false, quantizeSyllables: vi.fn() }),
 }));
 
 vi.mock('../ui/Tooltip', () => ({
@@ -29,206 +62,115 @@ vi.mock('../ui/Tooltip', () => ({
   ),
 }));
 
-function renderPanel(setIsLeftPanelOpen = vi.fn(), hasApiKey = true) {
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function renderPanel(
+  setIsLeftPanelOpen = vi.fn(),
+  onGenerateSong = vi.fn(),
+  onRegenerateSong?: () => void,
+) {
   return render(
     <LanguageProvider>
       <LeftSettingsPanel
-        title="Test"
-        setTitle={vi.fn()}
-        titleOrigin="user"
-        onGenerateTitle={vi.fn()}
-        isGeneratingTitle={false}
-        topic=""
-        setTopic={vi.fn()}
-        mood=""
-        setMood={vi.fn()}
-        rhymeScheme="AABB"
-        setRhymeScheme={vi.fn()}
-        targetSyllables={8}
-        setTargetSyllables={vi.fn()}
         isLeftPanelOpen
         setIsLeftPanelOpen={setIsLeftPanelOpen}
-        onSurprise={vi.fn()}
-        isSurprising={false}
-        hasApiKey={hasApiKey}
-        onGenerateSong={vi.fn()}
+        onGenerateSong={onGenerateSong}
+        onRegenerateSong={onRegenerateSong}
       />
     </LanguageProvider>,
   );
 }
 
+// ── Tests ──────────────────────────────────────────────────────────────────
+
 describe('LeftSettingsPanel', () => {
   beforeEach(() => {
-    mockSongContext.song = [];
-    mockComposerContext.isGenerating = false;
-    mockComposerContext.quantizeSyllables.mockReset();
+    mockSong.current = [];
+    mockComposerParams.isGenerating = false;
+    mockComposerParams.hasApiKey = true;
+    mockComposerParams.isSurprising = false;
+    mockComposerParams.isGeneratingTitle = false;
+    mockComposerParams.quantizeSyllables.mockReset();
+    mockComposerParams.onGenerateTitle.mockReset();
+    mockComposerParams.onSurprise.mockReset();
   });
 
   it('disables quantize when the song context is empty', () => {
     renderPanel();
-
     expect(screen.getByText('Quantize Syllables (GLOBAL)').closest('button')).toHaveProperty('disabled', true);
   });
 
   it('uses composer context for quantize and generating button state', () => {
-    mockSongContext.song = [{
-      id: 'verse-1',
-      name: 'Verse',
-      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
-    }];
-    mockComposerContext.isGenerating = true;
+    mockSong.current = [{ id: 'verse-1', name: 'Verse', lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }] }];
+    mockComposerParams.isGenerating = true;
 
     const { rerender } = renderPanel();
 
     expect(screen.getByRole('button', { name: 'Regenerate Lyrics' })).toHaveProperty('disabled', true);
     expect(screen.getByText('Quantize Syllables (GLOBAL)').closest('button')).toHaveProperty('disabled', true);
 
-    mockComposerContext.isGenerating = false;
+    mockComposerParams.isGenerating = false;
     rerender(
       <LanguageProvider>
         <LeftSettingsPanel
-          title="Test"
-          setTitle={vi.fn()}
-          titleOrigin="user"
-          onGenerateTitle={vi.fn()}
-          isGeneratingTitle={false}
-          topic=""
-          setTopic={vi.fn()}
-          mood=""
-          setMood={vi.fn()}
-          rhymeScheme="AABB"
-          setRhymeScheme={vi.fn()}
-          targetSyllables={8}
-          setTargetSyllables={vi.fn()}
           isLeftPanelOpen
           setIsLeftPanelOpen={vi.fn()}
-          onSurprise={vi.fn()}
-          isSurprising={false}
-          hasApiKey
           onGenerateSong={vi.fn()}
         />
       </LanguageProvider>,
     );
 
     fireEvent.click(screen.getByText('Quantize Syllables (GLOBAL)').closest('button') as HTMLButtonElement);
-    expect(mockComposerContext.quantizeSyllables).toHaveBeenCalledTimes(1);
+    expect(mockComposerParams.quantizeSyllables).toHaveBeenCalledTimes(1);
   });
 
   it('shows Generate Lyrics when no lyrics exist and calls the generate handler', () => {
     const onGenerateSong = vi.fn();
-
-    render(
-      <LanguageProvider>
-        <LeftSettingsPanel
-          title="Test"
-          setTitle={vi.fn()}
-          titleOrigin="user"
-          onGenerateTitle={vi.fn()}
-          isGeneratingTitle={false}
-          topic=""
-          setTopic={vi.fn()}
-          mood=""
-          setMood={vi.fn()}
-          rhymeScheme="AABB"
-          setRhymeScheme={vi.fn()}
-          targetSyllables={8}
-          setTargetSyllables={vi.fn()}
-          isLeftPanelOpen
-          setIsLeftPanelOpen={vi.fn()}
-          onSurprise={vi.fn()}
-          isSurprising={false}
-          hasApiKey
-          onGenerateSong={onGenerateSong}
-          onRegenerateSong={vi.fn()}
-        />
-      </LanguageProvider>,
-    );
+    renderPanel(vi.fn(), onGenerateSong, vi.fn());
 
     fireEvent.click(screen.getByRole('button', { name: 'Generate Lyrics' }));
-
     expect(onGenerateSong).toHaveBeenCalledTimes(1);
   });
 
   it('shows Regenerate Lyrics when lyrics exist and calls the regenerate handler', () => {
-    mockSongContext.song = [{
-      id: 'verse-1',
-      name: 'Verse',
-      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
-    }];
-
+    mockSong.current = [{ id: 'verse-1', name: 'Verse', lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }] }];
     const onRegenerateSong = vi.fn();
     const onGenerateSong = vi.fn();
 
-    render(
-      <LanguageProvider>
-        <LeftSettingsPanel
-          title="Test"
-          setTitle={vi.fn()}
-          titleOrigin="user"
-          onGenerateTitle={vi.fn()}
-          isGeneratingTitle={false}
-          topic=""
-          setTopic={vi.fn()}
-          mood=""
-          setMood={vi.fn()}
-          rhymeScheme="AABB"
-          setRhymeScheme={vi.fn()}
-          targetSyllables={8}
-          setTargetSyllables={vi.fn()}
-          isLeftPanelOpen
-          setIsLeftPanelOpen={vi.fn()}
-          onSurprise={vi.fn()}
-          isSurprising={false}
-          hasApiKey
-          onGenerateSong={onGenerateSong}
-          onRegenerateSong={onRegenerateSong}
-        />
-      </LanguageProvider>,
-    );
+    renderPanel(vi.fn(), onGenerateSong, onRegenerateSong);
 
     fireEvent.click(screen.getByRole('button', { name: 'Regenerate Lyrics' }));
-
     expect(onRegenerateSong).toHaveBeenCalledTimes(1);
     expect(onGenerateSong).not.toHaveBeenCalled();
   });
 
   it('shows Free Verse first in the default rhyme scheme selector', () => {
     renderPanel();
-
     fireEvent.click(screen.getByRole('button', { name: 'AABB (Couplets)' }));
-
     expect(screen.getAllByRole('option')[0]?.textContent).toContain('Free Verse');
   });
 
   it('closes the panel from the header control', () => {
     const setIsLeftPanelOpen = vi.fn();
-
     renderPanel(setIsLeftPanelOpen);
-
     fireEvent.click(screen.getByRole('button', { name: 'Close lyrics generation panel' }));
-
     expect(setIsLeftPanelOpen).toHaveBeenCalledWith(false);
   });
 
   it('uses the standard styled Suggest button tooltip without AI wording', () => {
     renderPanel();
-
     const suggestButton = screen.getByRole('button', { name: 'Suggest' });
     const suggestTooltip = screen.getAllByTestId('tooltip').find(tooltip =>
       /Suggest a random topic, mood .* title/.test(tooltip.getAttribute('data-title') ?? ''));
-
     expect(suggestButton.className).toContain('ux-interactive');
     expect(suggestTooltip).toBeTruthy();
   });
 
   it('disables AI-only actions when AI is unavailable', () => {
-    mockSongContext.song = [{
-      id: 'verse-1',
-      name: 'Verse',
-      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
-    }];
+    mockSong.current = [{ id: 'verse-1', name: 'Verse', lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }] }];
+    mockComposerParams.hasApiKey = false;
 
-    renderPanel(vi.fn(), false);
+    renderPanel();
 
     expect(screen.getByRole('button', { name: 'Suggest' })).toHaveProperty('disabled', true);
     expect(screen.getByRole('button', { name: 'Generate title from lyrics' })).toHaveProperty('disabled', true);
@@ -237,36 +179,14 @@ describe('LeftSettingsPanel', () => {
 
   it('hides the generate title button until lyrics exist', () => {
     const { rerender } = renderPanel();
-
     expect(screen.queryByRole('button', { name: 'Generate title from lyrics' })).toBeNull();
 
-    mockSongContext.song = [{
-      id: 'verse-1',
-      name: 'Verse',
-      lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }],
-    }];
-
+    mockSong.current = [{ id: 'verse-1', name: 'Verse', lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }] }];
     rerender(
       <LanguageProvider>
         <LeftSettingsPanel
-          title="Test"
-          setTitle={vi.fn()}
-          titleOrigin="user"
-          onGenerateTitle={vi.fn()}
-          isGeneratingTitle={false}
-          topic=""
-          setTopic={vi.fn()}
-          mood=""
-          setMood={vi.fn()}
-          rhymeScheme="AABB"
-          setRhymeScheme={vi.fn()}
-          targetSyllables={8}
-          setTargetSyllables={vi.fn()}
           isLeftPanelOpen
           setIsLeftPanelOpen={vi.fn()}
-          onSurprise={vi.fn()}
-          isSurprising={false}
-          hasApiKey
           onGenerateSong={vi.fn()}
         />
       </LanguageProvider>,
