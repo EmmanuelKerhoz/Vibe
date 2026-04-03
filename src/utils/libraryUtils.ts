@@ -357,7 +357,8 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
   return assets;
 };
 
-/** @internal Exported for focused unit tests. */
+/** Parse plain text into Section objects without AI. Used as a local fallback
+ *  when no API key is available and for library imports. */
 export const parseTextToSections = (text: string): Section[] => {
   const blocks = text.split(/\n\s*\n/);
   const sections: Section[] = [];

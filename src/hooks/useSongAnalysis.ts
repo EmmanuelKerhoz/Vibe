@@ -93,6 +93,7 @@ export const useSongAnalysis = ({
     clearLineSelection,
     setIsAnalyzing: setIsAnalyzingForSubhook,
     setIsPasteModalOpen,
+    hasApiKey,
   });
 
   const analysisEngine = useSongAnalysisEngine({
