@@ -5,9 +5,11 @@
  * rhyme scheme, syllable target) and composition actions.
  *
  * Sources all data/state from ComposerParamsContext — zero prop drilling.
- * Receives only the two layout-intent callbacks that cannot live in context:
+ * Receives only the layout-intent callbacks that cannot live in context:
  *   onGenerateSong    — new generation (may close panel)
  *   onRegenerateSong  — global regenerate (may show confirm dialog)
+ *   setIsLeftPanelOpen — close button
+ *   headingId         — aria labelling for the panel dialog
  */
 import React from 'react';
 import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle, RefreshCw } from '../ui/icons';
@@ -25,7 +27,6 @@ interface SongMetaFormProps {
   /** Passed through from the shell so the close button works */
   setIsLeftPanelOpen: (v: boolean | ((v: boolean) => boolean)) => void;
   headingId?: string;
-  isMobileOverlay?: boolean;
 }
 
 const RHYME_SCHEME_ORDER = ['FREE', 'AABB', 'ABAB', 'AAAA', 'ABCB', 'AAABBB', 'AABBCC', 'ABABAB', 'ABCABC'] as const;
@@ -35,7 +36,6 @@ export function SongMetaForm({
   onRegenerateSong,
   setIsLeftPanelOpen,
   headingId,
-  isMobileOverlay: _isMobileOverlay,
 }: SongMetaFormProps) {
   const { t } = useTranslation();
   const {
