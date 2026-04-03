@@ -29,8 +29,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
 
   const {
     song, structure, rhymeScheme,
-    appState, hasApiKey,
-    setTopic, setMood,
+    appState,
     replaceStateWithoutHistory, clearHistory, clearSelection,
     resetWebSimilarityIndex,
     updateSongAndStructureWithHistory,
@@ -75,6 +74,9 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   });
 
   // ── App-level handlers ───────────────────────────────────────────────────
+  // generateTitle is passed as a no-op stub: title generation has been migrated
+  // to ComposerParamsContext. handleGenerateTitle is intentionally not exposed
+  // in the return value — it remains internal to useAppHandlers.
   const {
     handleApiKeyHelp,
     handleTitleChange,
@@ -171,16 +173,12 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setIsAnalysisPanelOpen(false);
   }, [setIsAnalysisPanelOpen]);
 
-  // Suppress unused-var lint for setTopic/setMood/hasApiKey — still present
-  // in state but no longer consumed here (migrated to ComposerParamsContext).
-  void setTopic; void setMood; void hasApiKey;
-
   return {
     // Song structure
     removeStructureItem,
     addStructureItem,
     loadFileForAnalysis,
-    // Title (handleTitleChange kept for TopRibbon / other consumers)
+    // Title
     handleTitleChange,
     // App handlers
     handleApiKeyHelp,

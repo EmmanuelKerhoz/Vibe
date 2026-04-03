@@ -95,6 +95,7 @@ export const useKeyboardShortcuts = ({
     isSettingsOpen,
     isAboutOpen,
     isSearchReplaceOpen,
+    isKeyboardShortcutsModalOpen,
     setPromptModal,
     setConfirmModal,
     setApiErrorModal,
@@ -109,6 +110,7 @@ export const useKeyboardShortcuts = ({
     setIsSettingsOpen,
     setIsAboutOpen,
     setIsSearchReplaceOpen,
+    setIsKeyboardShortcutsModalOpen,
   } = uiState;
 
   useEffect(() => {
@@ -129,6 +131,8 @@ export const useKeyboardShortcuts = ({
         if (isImportModalOpen) { closeModal('import'); return; }
         if (isSettingsOpen) { closeModal('settings'); return; }
         if (isAboutOpen) { closeModal('about'); return; }
+        // fix: keyboard shortcuts modal was not dismissible via Escape
+        if (isKeyboardShortcutsModalOpen) { setIsKeyboardShortcutsModalOpen(false); return; }
         if (isMobileOrTablet) { closeMobilePanels(); return; }
         return;
       }
@@ -151,7 +155,7 @@ export const useKeyboardShortcuts = ({
     apiErrorModal.open, confirmModal, isAboutOpen, isAnalysisModalOpen, isExportModalOpen,
     isImportModalOpen, isMobileOrTablet, isPasteModalOpen, isResetModalOpen,
     isSaveToLibraryModalOpen, isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen,
-    isSearchReplaceOpen,
+    isSearchReplaceOpen, isKeyboardShortcutsModalOpen,
     promptModal, closeMobilePanels, redo,
     // dispatch refs from useModalDispatch are stable — no re-registration cost
     closeModal, openModal,
@@ -160,6 +164,6 @@ export const useKeyboardShortcuts = ({
     setIsPasteModalOpen, setIsResetModalOpen, setIsSaveToLibraryModalOpen, setIsSettingsOpen,
     setIsSimilarityModalOpen, setIsVersionsModalOpen,
     setApiErrorModal, undo,
-    setIsSearchReplaceOpen,
+    setIsSearchReplaceOpen, setIsKeyboardShortcutsModalOpen,
   ]);
 };

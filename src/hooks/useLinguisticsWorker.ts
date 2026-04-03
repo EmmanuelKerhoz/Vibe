@@ -144,8 +144,11 @@ export function useLinguisticsWorker(
   // ─── Debounced auto-analysis on song/language changes ──────────────────────
 
   const songFingerprint = useMemo(() => {
-    // Cheap fingerprint: concatenate section ids + line texts
-    return song.map(s => `${s.id}:${s.lines.map(l => l.text).join('|')}`).join(';;');
+    // Deterministic fingerprint: use \x00 as separator (never appears in lyrics)
+    // to avoid collisions when line text contains '|' or ';;'.
+    return song
+      .map(s => `${s.id}\x01${s.lines.map(l => encodeURIComponent(l.text)).join('\x00')}`)
+      .join('\x02');
   }, [song]);
 
   useEffect(() => {

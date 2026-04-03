@@ -15,6 +15,12 @@ interface UseAppHandlersParams {
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
   setIsLeftPanelOpen: (open: boolean) => void;
   setIsStructureOpen: (open: boolean) => void;
+  /**
+   * Title generation has been migrated to ComposerParamsContext.
+   * This param is kept for interface stability but the generated
+   * handleGenerateTitle is intentionally not returned — pass `async () => null`.
+   * @deprecated Pass no-op stub; do not wire to real generator from this hook.
+   */
   generateTitle: () => Promise<string | null>;
   generateSong: () => Promise<void>;
   scrollToSection: (section: Section) => void;
@@ -29,11 +35,11 @@ export function useAppHandlers({
   setActiveTab,
   setIsLeftPanelOpen,
   setIsStructureOpen,
-  generateTitle,
   generateSong,
   scrollToSection,
 }: UseAppHandlersParams) {
   const { song, setTitle, setTitleOrigin } = useSongContext();
+
   const handleApiKeyHelp = useCallback(() => {
     setApiErrorModal({ open: true, message: t.tooltips.aiUnavailableHelp });
   }, [setApiErrorModal, t.tooltips.aiUnavailableHelp]);
@@ -42,14 +48,6 @@ export function useAppHandlers({
     setTitle(value);
     setTitleOrigin('user');
   }, [setTitle, setTitleOrigin]);
-
-  const handleGenerateTitle = useCallback(async () => {
-    const generatedTitle = await generateTitle();
-    if (generatedTitle) {
-      setTitle(generatedTitle);
-      setTitleOrigin('ai');
-    }
-  }, [generateTitle, setTitle, setTitleOrigin]);
 
   const handleGlobalRegenerate = useCallback(() => {
     const runGenerate = () => {
@@ -88,7 +86,6 @@ export function useAppHandlers({
   return {
     handleApiKeyHelp,
     handleTitleChange,
-    handleGenerateTitle,
     handleGlobalRegenerate,
     handleScrollToSection,
     handleOpenNewGeneration,
