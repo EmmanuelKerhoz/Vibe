@@ -26,8 +26,6 @@ interface Props {
   addStructureItem: (name?: string) => void;
   removeStructureItem: (idx: number) => void;
   onScrollToSection: (sectionId: string) => void;
-  onRegenerateSong?: () => void;
-  onGenerateSong?: () => void;
   isMobileOverlay?: boolean;
   className?: string;
 }
@@ -227,7 +225,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
           className={`border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl lcars-panel fluent-animate-panel !rounded-none !border-t-0 !border-b-0 !border-r-0${className ? ` ${className}` : ''}`}
           style={{ overflow: 'visible', position: 'relative' }}
         >
-          {/* LCARS gradient separator — left edge, direct child of motion.div (overflow:visible) */}
           <div
             data-testid="structure-sidebar-rail"
             aria-hidden="true"
@@ -244,7 +241,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
 
           <div className="w-[280px] flex flex-col h-full overflow-hidden">
             <div className="h-16 px-5 flex items-center justify-between shrink-0" style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
-              {/* Reversed accent rail — touches both panel borders */}
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 height: 'var(--accent-rail-thickness, 2px)',
@@ -298,8 +294,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                       });
 
                       if (isGroupLeader && chorusItem !== undefined && chorusIdx !== undefined) {
-                        // FIX: key uses item+idx instead of idx alone to prevent DOM
-                        // recycling after drag-and-drop reorder.
                         return (
                           <div
                             key={`${item}-${idx}`}
@@ -349,7 +343,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                         );
                       }
 
-                      // FIX: key uses item+idx instead of idx alone.
                       return (
                         <SectionRow
                           key={`${item}-${idx}`}
