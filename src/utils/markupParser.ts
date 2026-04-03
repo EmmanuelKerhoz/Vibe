@@ -20,7 +20,7 @@ import { generateId } from './idUtils';
 import { countSyllables } from './syllableUtils';
 import type { Section } from '../types';
 
-// ─── Internal helpers ────────────────────────────────────────────────────────
+// --- Internal helpers --------------------------------------------------------
 
 /** Returns true if a token should be excluded from processing (empty or empty bracket). */
 const isArtifact = (text: string): boolean => {
@@ -31,9 +31,9 @@ const isArtifact = (text: string): boolean => {
 /**
  * Splits a raw text line into individual bracketed tokens + plain text.
  *
- * e.g. "[Intro][Deep dry kicks]" → ["[Intro]", "[Deep dry kicks]"]
- * e.g. "[Verse 1]"              → ["[Verse 1]"]
- * e.g. "Some lyric text"        → ["Some lyric text"]
+ * e.g. "[Intro][Deep dry kicks]" -> ["[Intro]", "[Deep dry kicks]"]
+ * e.g. "[Verse 1]"              -> ["[Verse 1]"]
+ * e.g. "Some lyric text"        -> ["Some lyric text"]
  */
 export const tokenizeLine = (rawLine: string): string[] => {
   const trimmed = rawLine.trim();
@@ -57,7 +57,7 @@ export const tokenizeLine = (rawLine: string): string[] => {
   return tokens.length > 0 ? tokens : trimmed ? [trimmed] : [];
 };
 
-// ─── Public API ──────────────────────────────────────────────────────────────
+// --- Public API --------------------------------------------------------------
 
 /**
  * Serialize a `Section[]` song into plain markup text.
@@ -197,12 +197,9 @@ export function parseMarkupToSections(
             text,
             rhymingSyllables: existingLine?.rhymingSyllables ?? '',
             rhyme: existingLine?.rhyme ?? '',
-            syllables: isMeta
-              ? 0
-              : text.split(/\s+/).reduce(
-                  (acc, word) => acc + (word ? countSyllables(word) : 0),
-                  0,
-                ),
+            // Pass the full line to countSyllables so that stripParenthesised()
+            // can match opening + closing parentheses before any word split.
+            syllables: isMeta ? 0 : countSyllables(text),
             concept: existingLine?.concept ?? (isMeta ? 'Meta' : 'New line'),
             isManual: true,
             isMeta,
