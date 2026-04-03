@@ -1,18 +1,12 @@
 /**
  * AppEditorZone
  * Renders the central content area: InsightsBar (conditional) + the scrollable
- * lyrics/musical zone. Receives only the props it cannot source from contexts
- * to avoid re-wiring everything that is already context-available downstream.
+ * lyrics/musical zone.
  *
- * Each major zone (InsightsBar, LyricsView, MusicalTab) is wrapped in its own
- * <ErrorBoundary> so a crash in one zone never takes down the others.
- *
- * Editor state (editMode, markupText, markupTextareaRef, markupDirection,
- * setEditMode, setMarkupText) is no longer passed here — LyricsView sources
- * it directly from EditorContext.
- *
- * Drag handlers (handleDrop, handleLineDragStart, handleLineDrop) are no longer
- * passed here — LyricsView and SectionEditor source them from DragHandlersContext.
+ * Props surface: 6 (down from 23).
+ * InsightsBar now sources all its state from InsightsBarContext.
+ * LyricsView sources editor state from EditorContext.
+ * Drag handlers are sourced from DragHandlersContext.
  */
 import React, { Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
@@ -21,10 +15,6 @@ import { InsightsBar } from './InsightsBar';
 import { LyricsView } from './LyricsView';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { useTranslation } from '../../i18n';
-import { useTranslationAdaptationContext } from '../../contexts/TranslationAdaptationContext';
-import type { EditMode } from '../../types';
-import type { WebSimilarityIndex } from '../../types/webSimilarity';
-import type { AdaptationProgress, AdaptationResult } from '../../hooks/analysis/useLanguageAdapter';
 
 const MusicalTab = lazy(() =>
   import('./musical/MusicalTab').then(m => ({ default: m.MusicalTab }))
@@ -46,76 +36,35 @@ function LazyFallback() {
 type PlayAudioFeedback = ReturnType<typeof useAudioFeedback>['playAudioFeedback'];
 
 interface AppEditorZoneProps {
-  // Layout
   activeTab: 'lyrics' | 'musical';
   isMobileOrTablet: boolean;
   hasApiKey: boolean;
   songHasContent: boolean;
-  // InsightsBar
-  targetLanguage: string;
-  setTargetLanguage: (v: string) => void;
-  isAdaptingLanguage: boolean;
-  isDetectingLanguage: boolean;
-  isAnalyzing: boolean;
-  editMode: EditMode;
-  switchEditMode: (mode: EditMode) => void;
-  webSimilarityIndex: WebSimilarityIndex;
-  webBadgeLabel: string | null;
-  libraryCount: number;
-  adaptSongLanguage: (newLanguage: string) => void;
-  detectLanguage: () => void;
-  analyzeCurrentSong: () => void;
-  setIsSimilarityModalOpen: (v: boolean) => void;
-  adaptationProgress: AdaptationProgress;
-  adaptationResult: AdaptationResult | null;
-  // LyricsView
   playAudioFeedback: PlayAudioFeedback;
   canPasteLyrics: boolean;
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
   onGenerateSong: () => void;
   onOpenSearch: () => void;
-  // Analysis panel
-  onToggleAnalysisPanel?: () => void;
-  isAnalysisPanelOpen?: boolean;
 }
 
 export function AppEditorZone({
-  activeTab, isMobileOrTablet, hasApiKey, songHasContent,
-  targetLanguage, setTargetLanguage,
-  isAdaptingLanguage, isDetectingLanguage, isAnalyzing,
-  editMode, switchEditMode, webSimilarityIndex, webBadgeLabel,
-  libraryCount, adaptSongLanguage, detectLanguage, analyzeCurrentSong,
-  setIsSimilarityModalOpen, adaptationProgress, adaptationResult,
+  activeTab,
+  isMobileOrTablet,
+  hasApiKey,
+  songHasContent,
   playAudioFeedback,
-  canPasteLyrics, onOpenLibrary, onPasteLyrics, onGenerateSong,
+  canPasteLyrics,
+  onOpenLibrary,
+  onPasteLyrics,
+  onGenerateSong,
   onOpenSearch,
-  onToggleAnalysisPanel,
-  isAnalysisPanelOpen,
 }: AppEditorZoneProps) {
-  const { showTranslationFeatures } = useTranslationAdaptationContext();
-
   return (
     <>
       {activeTab === 'lyrics' && songHasContent && (
         <ErrorBoundary label="Insights">
-          <InsightsBar
-            targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
-            isAdaptingLanguage={isAdaptingLanguage} isDetectingLanguage={isDetectingLanguage}
-            isAnalyzing={isAnalyzing}
-            editMode={editMode} switchEditMode={switchEditMode}
-            webSimilarityIndex={webSimilarityIndex}
-            webBadgeLabel={webBadgeLabel}
-            libraryCount={libraryCount} adaptSongLanguage={adaptSongLanguage}
-            detectLanguage={detectLanguage} analyzeCurrentSong={analyzeCurrentSong}
-            setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-            hasApiKey={hasApiKey}
-            adaptationProgress={adaptationProgress} adaptationResult={adaptationResult}
-            showTranslationFeatures={showTranslationFeatures}
-            onOpenSearch={onOpenSearch}
-            onToggleAnalysisPanel={onToggleAnalysisPanel}
-            isAnalysisPanelOpen={isAnalysisPanelOpen}
-          />
+          <InsightsBar />
         </ErrorBoundary>
       )}
 

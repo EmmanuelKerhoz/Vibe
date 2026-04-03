@@ -2,6 +2,7 @@ import React from 'react';
 import { getLanguageDisplay } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useInsightsBarContext } from '../../contexts/InsightsBarContext';
 import { AdaptationProgressBanner } from './AdaptationProgressBanner';
 import {
   InsightsBarLayout,
@@ -13,36 +14,26 @@ import {
   useAdaptationBannerVisibility,
 } from './insights';
 import { DetectLanguageButton } from './insights/DetectLanguageButton';
-import type { InsightsBarProps } from './insights/InsightsBar.types';
+import { useTranslationAdaptationContext } from '../../contexts/TranslationAdaptationContext';
 
-export const InsightsBar = React.memo(function InsightsBar({
-  targetLanguage,
-  setTargetLanguage,
-  isAdaptingLanguage,
-  isDetectingLanguage,
-  isAnalyzing,
-  editMode,
-  switchEditMode,
-  webSimilarityIndex,
-  webBadgeLabel,
-  libraryCount,
-  adaptSongLanguage,
-  detectLanguage,
-  analyzeCurrentSong,
-  setIsSimilarityModalOpen,
-  hasApiKey,
-  isMetronomeActive,
-  toggleMetronome,
-  adaptationProgress,
-  adaptationResult,
-  showTranslationFeatures = true,
-  onOpenSearch = () => {},
-  onToggleAnalysisPanel,
-  isAnalysisPanelOpen,
-}: InsightsBarProps) {
+export const InsightsBar = React.memo(function InsightsBar() {
+  const {
+    targetLanguage, setTargetLanguage,
+    isAdaptingLanguage, isDetectingLanguage, isAnalyzing,
+    editMode, switchEditMode,
+    webSimilarityIndex, webBadgeLabel, libraryCount,
+    adaptSongLanguage, detectLanguage, analyzeCurrentSong,
+    setIsSimilarityModalOpen, hasApiKey,
+    isMetronomeActive, toggleMetronome,
+    adaptationProgress, adaptationResult,
+    onOpenSearch, onToggleAnalysisPanel, isAnalysisPanelOpen,
+  } = useInsightsBarContext();
+
   const { song, songLanguage, detectedLanguages } = useSongContext();
   const { isGenerating } = useComposerContext();
+  const { showTranslationFeatures } = useTranslationAdaptationContext();
   const { showBanner, dismissBanner } = useAdaptationBannerVisibility(adaptationProgress);
+
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
   const detectedDisplays = (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : []))
     .filter((lang, i, arr) => arr.indexOf(lang) === i)
