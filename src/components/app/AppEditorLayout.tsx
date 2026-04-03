@@ -150,36 +150,41 @@ export function AppEditorLayout({
             </Suspense>
           </ErrorBoundary>
 
-          <AppEditorZone
-            activeTab={appState.activeTab}
-            isMobileOrTablet={isMobileOrTablet}
-            hasApiKey={hasApiKey}
-            songHasContent={song.length > 0}
-            targetLanguage={targetLanguage}
-            setTargetLanguage={setTargetLanguage}
-            isAdaptingLanguage={isAdaptingLanguage}
-            isDetectingLanguage={isDetectingLanguage}
-            isAnalyzing={isAnalyzing}
-            editMode={editMode}
-            switchEditMode={switchEditMode}
-            webSimilarityIndex={webSimilarityIndex}
-            webBadgeLabel={webBadgeLabel}
-            libraryCount={libraryCount}
-            adaptSongLanguage={adaptSongLanguage}
-            detectLanguage={detectLanguage}
-            analyzeCurrentSong={analyzeCurrentSong}
-            setIsSimilarityModalOpen={setIsSimilarityModalOpen}
-            adaptationProgress={adaptationProgress}
-            adaptationResult={adaptationResult}
-            playAudioFeedback={playAudioFeedback}
-            canPasteLyrics={canPasteLyrics}
-            onOpenLibrary={handleOpenSaveToLibraryModal}
-            onPasteLyrics={handleOpenPasteModal}
-            onGenerateSong={handleGlobalRegenerate}
-            onOpenSearch={handleOpenSearch}
-            onToggleAnalysisPanel={handleToggleAnalysisPanel}
-            isAnalysisPanelOpen={isAnalysisPanelOpen}
-          />
+          {/* ErrorBoundary added: LyricsView / InsightsBar were the only
+              critical zones without crash isolation. A malformed song or
+              worker error could silently take down the entire center column. */}
+          <ErrorBoundary label="Editor zone">
+            <AppEditorZone
+              activeTab={appState.activeTab}
+              isMobileOrTablet={isMobileOrTablet}
+              hasApiKey={hasApiKey}
+              songHasContent={song.length > 0}
+              targetLanguage={targetLanguage}
+              setTargetLanguage={setTargetLanguage}
+              isAdaptingLanguage={isAdaptingLanguage}
+              isDetectingLanguage={isDetectingLanguage}
+              isAnalyzing={isAnalyzing}
+              editMode={editMode}
+              switchEditMode={switchEditMode}
+              webSimilarityIndex={webSimilarityIndex}
+              webBadgeLabel={webBadgeLabel}
+              libraryCount={libraryCount}
+              adaptSongLanguage={adaptSongLanguage}
+              detectLanguage={detectLanguage}
+              analyzeCurrentSong={analyzeCurrentSong}
+              setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+              adaptationProgress={adaptationProgress}
+              adaptationResult={adaptationResult}
+              playAudioFeedback={playAudioFeedback}
+              canPasteLyrics={canPasteLyrics}
+              onOpenLibrary={handleOpenSaveToLibraryModal}
+              onPasteLyrics={handleOpenPasteModal}
+              onGenerateSong={handleGlobalRegenerate}
+              onOpenSearch={handleOpenSearch}
+              onToggleAnalysisPanel={handleToggleAnalysisPanel}
+              isAnalysisPanelOpen={isAnalysisPanelOpen}
+            />
+          </ErrorBoundary>
         </div>
 
         {/* ── Right panel (conditional) ────────────────────────────────────── */}
