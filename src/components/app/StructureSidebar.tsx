@@ -4,10 +4,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
-import { useDrag } from '../../contexts/DragContext';
-import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { getSectionColor, getSectionDotColor, getSectionTextColor } from '../../utils/songUtils';
-import type { Section } from '../../types';
 import {
   getSectionTooltipText,
   isAnchoredEndSection,
@@ -17,6 +14,10 @@ import {
 } from '../../constants/sections';
 import { useSongContext } from '../../contexts/SongContext';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import {
+  useStructureDragHandlers,
+  type StructureDragHandlers,
+} from '../../hooks/useStructureDragHandlers';
 
 interface Props {
   isStructureOpen: boolean;
@@ -32,76 +33,12 @@ interface Props {
 
 const sectionButtonShapeClass = 'rounded-[12px_4px_12px_4px]';
 
-type StructureDragHandlers = Pick<
-  React.HTMLAttributes<HTMLDivElement>,
-  'onDragStart' | 'onDragOver' | 'onDragEnter' | 'onDragLeave' | 'onDrop'
->;
-
-interface CreateStructureDragHandlersArgs {
-  itemIndex: number;
-  draggable: boolean;
-  draggedItemIndex: number | null;
-  structureLength: number;
-  hasAnchoredStart: boolean;
-  hasAnchoredEnd: boolean;
-  setDraggedItemIndex: (idx: number | null) => void;
-  setDragOverIndex: (idx: number | null) => void;
-  handleDrop: (idx: number) => void;
-}
-
-function createStructureDragHandlers({
-  itemIndex,
-  draggable,
-  draggedItemIndex,
-  structureLength,
-  hasAnchoredStart,
-  hasAnchoredEnd,
-  setDraggedItemIndex,
-  setDragOverIndex,
-  handleDrop,
-}: CreateStructureDragHandlersArgs): StructureDragHandlers {
-  return {
-    onDragStart: () => {
-      if (draggable) {
-        setDraggedItemIndex(itemIndex);
-      }
-    },
-    onDragOver: (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (draggedItemIndex === null || draggedItemIndex === itemIndex) return;
-      if (itemIndex === 0 && hasAnchoredStart) return;
-      if (itemIndex === structureLength - 1 && hasAnchoredEnd) return;
-      setDragOverIndex(itemIndex);
-    },
-    onDragEnter: (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    },
-    onDragLeave: (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setDragOverIndex(null);
-    },
-    onDrop: (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleDrop(itemIndex);
-    },
-  };
-}
-
 function getSectionOptions(structure: string[]) {
-  return SECTION_TYPE_OPTIONS
-    .filter(name => {
-      if (isAnchoredStartSection(name)) {
-        return !structure.some(isAnchoredStartSection);
-      }
-      if (isAnchoredEndSection(name)) {
-        return !structure.some(isAnchoredEndSection);
-      }
-      return true;
-    });
+  return SECTION_TYPE_OPTIONS.filter(name => {
+    if (isAnchoredStartSection(name)) return !structure.some(isAnchoredStartSection);
+    if (isAnchoredEndSection(name))   return !structure.some(isAnchoredEndSection);
+    return true;
+  });
 }
 
 function getGroupedChorusIndices(structure: string[]) {
@@ -113,6 +50,8 @@ function getGroupedChorusIndices(structure: string[]) {
   });
   return groupedIndices;
 }
+
+// ── SectionRow ────────────────────────────────────────────────────────────────
 
 interface SectionRowProps {
   sectionItem: string;
@@ -163,13 +102,18 @@ const SectionRow = React.memo(function SectionRow({
         </button>
       </Tooltip>
       <Tooltip title={removeSectionLabel}>
-        <button onClick={() => removeStructureItem(sectionIdx)} className="p-1 hover:bg-black/20 rounded transition-colors opacity-0 group-hover:opacity-100">
+        <button
+          onClick={() => removeStructureItem(sectionIdx)}
+          className="p-1 hover:bg-black/20 rounded transition-colors opacity-0 group-hover:opacity-100"
+        >
           <X className="w-3 h-3" />
         </button>
       </Tooltip>
     </div>
   );
 });
+
+// ── StructureSidebar ──────────────────────────────────────────────────────────
 
 export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
@@ -181,15 +125,11 @@ export const StructureSidebar = React.memo(function StructureSidebar({
 }: Props) {
   const { song, structure } = useSongContext();
   const { t } = useTranslation();
-  const { handleDrop } = useDragHandlersContext();
-  const {
-    draggedItemIndex,
-    setDraggedItemIndex,
-    dragOverIndex,
-    setDragOverIndex,
-  } = useDrag();
   const panelRef = useRef<HTMLDivElement>(null);
   const headingId = useId();
+
+  const { makeDragHandlers, draggedItemIndex, dragOverIndex } =
+    useStructureDragHandlers({ structure });
 
   const handleClose = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -200,15 +140,20 @@ export const StructureSidebar = React.memo(function StructureSidebar({
 
   const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|…)$/, '').trim();
   const removeSectionLabel = t.tooltips.removeSection;
-  const sectionOptions = useMemo(() => getSectionOptions(structure)
-    .map(name => ({
+
+  const sectionOptions = useMemo(
+    () => getSectionOptions(structure).map(name => ({
       value: name,
       label: name,
       title: getSectionTooltipText(name),
-    })), [structure]);
-  const groupedChorusIndices = useMemo(() => getGroupedChorusIndices(structure), [structure]);
-  const hasAnchoredStart = isAnchoredStartSection(structure[0] ?? '');
-  const hasAnchoredEnd = isAnchoredEndSection(structure[structure.length - 1] ?? '');
+    })),
+    [structure],
+  );
+
+  const groupedChorusIndices = useMemo(
+    () => getGroupedChorusIndices(structure),
+    [structure],
+  );
 
   return (
     <AnimatePresence>
@@ -240,17 +185,18 @@ export const StructureSidebar = React.memo(function StructureSidebar({
           />
 
           <div className="w-[280px] flex flex-col h-full overflow-hidden">
-            <div className="h-16 px-5 flex items-center justify-between shrink-0" style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
+            {/* Header */}
+            <div
+              className="h-16 px-5 flex items-center justify-between shrink-0"
+              style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}
+            >
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 height: 'var(--accent-rail-thickness, 2px)',
                 background: 'var(--accent-rail-gradient-h-rev)',
                 opacity: 0.85, pointerEvents: 'none', zIndex: 1,
               }} />
-              <h3
-                id={headingId}
-                className="micro-label text-zinc-400 flex items-center gap-2"
-              >
+              <h3 id={headingId} className="micro-label text-zinc-400 flex items-center gap-2">
                 <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />
                 <span className="text-[10px] uppercase tracking-widest font-semibold">{t.structure.title}</span>
               </h3>
@@ -265,114 +211,99 @@ export const StructureSidebar = React.memo(function StructureSidebar({
               )}
             </div>
 
+            {/* Section list */}
             <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
-              <div>
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-1.5">
-                    {structure.map((item, idx) => {
-                      if (groupedChorusIndices.has(idx)) return null;
+              <div className="space-y-2">
+                <div className="flex flex-col gap-1.5">
+                  {structure.map((item, idx) => {
+                    if (groupedChorusIndices.has(idx)) return null;
 
-                      const isGroupLeader = isLinkedPreChorusPair(item, structure[idx + 1]);
-                      const chorusItem = isGroupLeader ? structure[idx + 1] : undefined;
-                      const chorusIdx = isGroupLeader ? idx + 1 : undefined;
+                    const isGroupLeader = isLinkedPreChorusPair(item, structure[idx + 1]);
+                    const chorusItem  = isGroupLeader ? structure[idx + 1] : undefined;
+                    const chorusIdx   = isGroupLeader ? idx + 1 : undefined;
 
-                      const isIntro = isAnchoredStartSection(item);
-                      const isOutro = isAnchoredEndSection(item);
-                      const isDraggable = !isIntro && !isOutro;
-                      const sectionId = song[idx]?.id ?? null;
-                      const chorusSectionId = chorusIdx !== undefined ? (song[chorusIdx]?.id ?? null) : null;
-                      const dragHandlers = createStructureDragHandlers({
-                        itemIndex: idx,
-                        draggable: isDraggable,
-                        draggedItemIndex,
-                        structureLength: structure.length,
-                        hasAnchoredStart,
-                        hasAnchoredEnd,
-                        setDraggedItemIndex,
-                        setDragOverIndex,
-                        handleDrop,
-                      });
+                    const isDraggable    = !isAnchoredStartSection(item) && !isAnchoredEndSection(item);
+                    const sectionId      = song[idx]?.id ?? null;
+                    const chorusSectionId = chorusIdx !== undefined ? (song[chorusIdx]?.id ?? null) : null;
 
-                      if (isGroupLeader && chorusItem !== undefined && chorusIdx !== undefined) {
-                        return (
-                          <div
-                            key={`${item}-${idx}`}
-                            draggable={isDraggable}
-                            {...dragHandlers}
-                            className={`relative flex flex-col gap-1.5 ${dragOverIndex === idx ? `ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 ${sectionButtonShapeClass}` : ''}`}
-                          >
-                            <div className="absolute left-2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
-                              <Link2 className="w-2.5 h-2.5 text-[var(--accent-color)] opacity-60" />
-                            </div>
-                            <SectionRow
-                              sectionItem={item}
-                              sectionIdx={idx}
-                              sectionId={sectionId}
-                              draggable={false}
-                              showDragHandle={isDraggable}
-                              draggedItemIndex={draggedItemIndex}
-                              dragOverIndex={dragOverIndex}
-                              dragHandlers={dragHandlers}
-                              onScrollToSection={onScrollToSection}
-                              removeStructureItem={removeStructureItem}
-                              removeSectionLabel={removeSectionLabel}
-                            />
-                            <SectionRow
-                              sectionItem={chorusItem}
-                              sectionIdx={chorusIdx}
-                              sectionId={chorusSectionId}
-                              draggable={false}
-                              draggedItemIndex={draggedItemIndex}
-                              dragOverIndex={dragOverIndex}
-                              dragHandlers={createStructureDragHandlers({
-                                itemIndex: chorusIdx,
-                                draggable: false,
-                                draggedItemIndex,
-                                structureLength: structure.length,
-                                hasAnchoredStart,
-                                hasAnchoredEnd,
-                                setDraggedItemIndex,
-                                setDragOverIndex,
-                                handleDrop,
-                              })}
-                              onScrollToSection={onScrollToSection}
-                              removeStructureItem={removeStructureItem}
-                              removeSectionLabel={removeSectionLabel}
-                            />
-                          </div>
-                        );
-                      }
+                    // Stable key: prefer section UUID, fall back to name+idx composite
+                    const rowKey = sectionId ?? `${item}-${idx}`;
 
+                    const dragHandlers = makeDragHandlers(idx, isDraggable);
+
+                    if (isGroupLeader && chorusItem !== undefined && chorusIdx !== undefined) {
                       return (
-                        <SectionRow
-                          key={`${item}-${idx}`}
-                          sectionItem={item}
-                          sectionIdx={idx}
-                          sectionId={sectionId}
+                        <div
+                          key={rowKey}
                           draggable={isDraggable}
-                          draggedItemIndex={draggedItemIndex}
-                          dragOverIndex={dragOverIndex}
-                          dragHandlers={dragHandlers}
-                          onScrollToSection={onScrollToSection}
-                          removeStructureItem={removeStructureItem}
-                          removeSectionLabel={removeSectionLabel}
-                        />
+                          {...dragHandlers}
+                          className={`relative flex flex-col gap-1.5 ${
+                            dragOverIndex === idx
+                              ? `ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 ${sectionButtonShapeClass}`
+                              : ''
+                          }`}
+                        >
+                          <div className="absolute left-2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
+                            <Link2 className="w-2.5 h-2.5 text-[var(--accent-color)] opacity-60" />
+                          </div>
+                          <SectionRow
+                            sectionItem={item}
+                            sectionIdx={idx}
+                            sectionId={sectionId}
+                            draggable={false}
+                            showDragHandle={isDraggable}
+                            draggedItemIndex={draggedItemIndex}
+                            dragOverIndex={dragOverIndex}
+                            dragHandlers={dragHandlers}
+                            onScrollToSection={onScrollToSection}
+                            removeStructureItem={removeStructureItem}
+                            removeSectionLabel={removeSectionLabel}
+                          />
+                          <SectionRow
+                            sectionItem={chorusItem}
+                            sectionIdx={chorusIdx}
+                            sectionId={chorusSectionId}
+                            draggable={false}
+                            draggedItemIndex={draggedItemIndex}
+                            dragOverIndex={dragOverIndex}
+                            dragHandlers={makeDragHandlers(chorusIdx, false)}
+                            onScrollToSection={onScrollToSection}
+                            removeStructureItem={removeStructureItem}
+                            removeSectionLabel={removeSectionLabel}
+                          />
+                        </div>
                       );
-                    })}
-                  </div>
+                    }
 
-                  <div className="mt-3">
-                    <LcarsSelect
-                      value=""
-                      onChange={addStructureItem}
-                      options={sectionOptions}
-                      placeholder={addSectionLabel}
-                      isOpen={isSectionDropdownOpen}
-                      onOpenChange={setIsSectionDropdownOpen}
-                      accentColor="var(--lcars-cyan)"
-                      buttonTitle={t.tooltips.addSection}
-                    />
-                  </div>
+                    return (
+                      <SectionRow
+                        key={rowKey}
+                        sectionItem={item}
+                        sectionIdx={idx}
+                        sectionId={sectionId}
+                        draggable={isDraggable}
+                        draggedItemIndex={draggedItemIndex}
+                        dragOverIndex={dragOverIndex}
+                        dragHandlers={dragHandlers}
+                        onScrollToSection={onScrollToSection}
+                        removeStructureItem={removeStructureItem}
+                        removeSectionLabel={removeSectionLabel}
+                      />
+                    );
+                  })}
+                </div>
+
+                <div className="mt-3">
+                  <LcarsSelect
+                    value=""
+                    onChange={addStructureItem}
+                    options={sectionOptions}
+                    placeholder={addSectionLabel}
+                    isOpen={isSectionDropdownOpen}
+                    onOpenChange={setIsSectionDropdownOpen}
+                    accentColor="var(--lcars-cyan)"
+                    buttonTitle={t.tooltips.addSection}
+                  />
                 </div>
               </div>
             </div>
