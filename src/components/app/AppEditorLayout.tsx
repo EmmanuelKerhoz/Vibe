@@ -3,6 +3,11 @@
  * Renders the center column: LeftSettingsPanel + TopRibbon + AppEditorZone.
  * Reads what it needs from SongContext, AppStateContext, ComposerContext,
  * AnalysisContext, and SimilarityContext directly — no new props.
+ *
+ * TopRibbon now accepts only 4 props (down from 15):
+ *   hasApiKey, handleApiKeyHelp, onOpenNewGeneration, onOpenNewEmpty.
+ * All modal actions and analysis state are sourced inside TopRibbon via
+ * useTopRibbonActions() → ModalContext + AnalysisContext.
  */
 import React, { Suspense, lazy, useCallback, useEffect } from 'react';
 import { Spinner } from '@fluentui/react-components';
@@ -94,7 +99,6 @@ export function AppEditorLayout({
     libraryAssets, setLibraryAssets, isSavingToLibrary, setIsSavingToLibrary,
     isSectionDropdownOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen,
-    setIsVersionsModalOpen, setIsResetModalOpen,
     setIsSaveToLibraryModalOpen,
     isPasteModalOpen, setIsPasteModalOpen,
     setIsImportModalOpen, setIsExportModalOpen,
@@ -104,6 +108,7 @@ export function AppEditorLayout({
     apiErrorModal, setApiErrorModal,
     confirmModal, setConfirmModal,
     hasApiKey, importInputRef,
+    setIsVersionsModalOpen, setIsResetModalOpen,
   } = appState;
 
   const {
@@ -216,7 +221,7 @@ export function AppEditorLayout({
     setIsImportModalOpen, setIsPasteModalOpen, setPastedText, setSongLanguage,
   });
 
-  // setIsStructureOpenAndClearLine is now passed as a prop from AppInnerContent.
+  // setIsStructureOpenAndClearLine is passed as a prop from AppInnerContent.
   // No local redefinition needed.
 
   const handleGenerateSongFromLeftPanel = useCallback(() => {
@@ -258,21 +263,14 @@ export function AppEditorLayout({
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
         <ErrorBoundary label="Top ribbon">
           <Suspense fallback={<LazyFallback />}>
+            {/* TopRibbon: 4 props only (down from 15).
+                Modal actions + isAnalyzing + canPasteLyrics sourced internally
+                via useTopRibbonActions() → ModalContext + AnalysisContext. */}
             <TopRibbon
-              setIsVersionsModalOpen={setIsVersionsModalOpen}
-              setIsResetModalOpen={setIsResetModalOpen}
-              hasApiKey={hasApiKey} handleApiKeyHelp={handleApiKeyHelp}
+              hasApiKey={hasApiKey}
+              handleApiKeyHelp={handleApiKeyHelp}
               onOpenNewGeneration={handleOpenNewGeneration}
               onOpenNewEmpty={handleCreateEmptySong}
-              onImportClick={handleOpenImport}
-              onExportClick={handleOpenExport}
-              onOpenLibraryClick={handleOpenSaveToLibraryModal}
-              onOpenSettingsClick={handleOpenSettings}
-              onOpenAboutClick={handleOpenAbout}
-              onOpenKeyboardShortcutsClick={handleOpenKeyboardShortcuts}
-              canPasteLyrics={canPasteLyrics}
-              onPasteLyrics={handleOpenPasteModal}
-              isAnalyzing={isAnalyzing}
             />
           </Suspense>
         </ErrorBoundary>

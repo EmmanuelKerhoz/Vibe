@@ -179,10 +179,12 @@ export function parseMarkupToSections(
           const existingLineByText = existingSection?.lines.find(
             l => l.text === text && !usedLineIds.has(l.id),
           );
+          // Safe: use optional chaining instead of non-null assertion.
+          // existingSection.lines[lIdx] may be undefined when lIdx >= lines.length.
+          const existingLineAtIndex = existingSection?.lines[lIdx];
           const existingLineByIndex =
-            existingSection?.lines[lIdx] &&
-            !usedLineIds.has(existingSection.lines[lIdx]!.id)
-              ? existingSection.lines[lIdx]
+            existingLineAtIndex && !usedLineIds.has(existingLineAtIndex.id)
+              ? existingLineAtIndex
               : null;
           const existingLine = existingLineByText ?? existingLineByIndex ?? null;
 
