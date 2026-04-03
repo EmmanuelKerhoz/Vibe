@@ -10,40 +10,38 @@ import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppNavigationContext } from '../../contexts/AppStateContext';
+import { useTopRibbonActions } from '../../hooks/useTopRibbonActions';
 
+/**
+ * TopRibbon — application toolbar.
+ *
+ * Props surface only what cannot be sourced from an existing context:
+ *   hasApiKey          — from useSessionState (no dedicated context yet)
+ *   handleApiKeyHelp   — callback from useAppHandlers (parent-scoped)
+ *   onOpenNewGeneration — wizard callback (parent-scoped state machine)
+ *   onOpenNewEmpty      — session action (parent-scoped)
+ *
+ * All modal-open actions and analysis state are sourced via
+ * useTopRibbonActions() (ModalContext + AnalysisContext).
+ */
 interface Props {
-  setIsVersionsModalOpen: (v: boolean) => void;
-  setIsResetModalOpen: (v: boolean) => void;
   hasApiKey: boolean;
   handleApiKeyHelp: () => void;
   onOpenNewGeneration: () => void;
   onOpenNewEmpty: () => void;
-  onImportClick: () => void;
-  onExportClick: () => void;
-  onOpenLibraryClick: () => void;
-  onOpenSettingsClick: () => void;
-  onOpenAboutClick: () => void;
-  onOpenKeyboardShortcutsClick: () => void;
-  canPasteLyrics: boolean;
-  onPasteLyrics: () => void;
-  isAnalyzing: boolean;
 }
 
 export function TopRibbon({
-  setIsVersionsModalOpen, setIsResetModalOpen,
-  hasApiKey, handleApiKeyHelp,
-  onOpenNewGeneration, onOpenNewEmpty,
-  onImportClick, onExportClick,
-  onOpenLibraryClick,
-  onOpenSettingsClick, onOpenAboutClick, onOpenKeyboardShortcutsClick,
-  canPasteLyrics,
-  onPasteLyrics,
-  isAnalyzing,
+  hasApiKey,
+  handleApiKeyHelp,
+  onOpenNewGeneration,
+  onOpenNewEmpty,
 }: Props) {
   const MENU_WIDTH = 280;
   const MENU_VIEWPORT_PADDING = 12;
   const MENU_VERTICAL_OFFSET = 6;
   const MENU_BOTTOM_PADDING = 16;
+
   const { song, past, future, undo, redo } = useSongContext();
   const { isGenerating, clearSelection } = useComposerContext();
   const {
@@ -54,7 +52,13 @@ export function TopRibbon({
     isStructureOpen,
     setIsStructureOpen,
   } = useAppNavigationContext();
+  const {
+    openVersionsModal, openResetModal, openImport, openExport,
+    openLibrary, openSettings, openAbout, openKeyboardShortcuts,
+    openPasteModal, canPasteLyrics, isAnalyzing,
+  } = useTopRibbonActions();
   const { t } = useTranslation();
+
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
   const isBusy = isGenerating || isAnalyzing;
@@ -62,6 +66,7 @@ export function TopRibbon({
   const panelToggleLabel = isLeftPanelOpen
     ? (t.tooltips.closeLeftPanel ?? 'Close lyrics generation panel')
     : (t.tooltips.openLeftPanel ?? 'Open lyrics generation panel');
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({
     left: MENU_VIEWPORT_PADDING,
@@ -81,15 +86,12 @@ export function TopRibbon({
         top: rect.bottom + MENU_VERTICAL_OFFSET,
       });
     };
-
     updateMenuPosition();
-
     const handleOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsMenuOpen(false);
       }
     };
-
     window.addEventListener('resize', updateMenuPosition);
     window.addEventListener('scroll', updateMenuPosition, true);
     document.addEventListener('mousedown', handleOutside);
@@ -115,9 +117,7 @@ export function TopRibbon({
 
   const toggleStructurePanel = () => {
     const next = !isStructureOpen;
-    if (next) {
-      clearSelection();
-    }
+    if (next) clearSelection();
     setIsStructureOpen(next);
   };
 
@@ -141,7 +141,7 @@ export function TopRibbon({
         opacity: 0.85, pointerEvents: 'none', zIndex: 1,
       }} />
 
-      {/* LEFT: burger flush to left edge + tabs */}
+      {/* LEFT: burger + tabs */}
       <div className="flex items-center gap-3 lg:gap-6 pl-0">
         <div className="relative" style={{ zIndex: 60 }} ref={menuRef}>
           <Tooltip title="Menu">
@@ -189,19 +189,19 @@ export function TopRibbon({
                 </button>
               </Tooltip>
               <Tooltip title="Import lyrics from a file">
-                <button onClick={() => runMenuAction(onImportClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                <button onClick={() => runMenuAction(openImport)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                   <Upload className="w-4 h-4 text-[var(--accent-color)]" />
                   Load/Import
                 </button>
               </Tooltip>
               <Tooltip title="Export your song to a file">
-                <button onClick={() => runMenuAction(onExportClick)} disabled={song.length === 0} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 disabled:opacity-50`}>
+                <button onClick={() => runMenuAction(openExport)} disabled={song.length === 0} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 disabled:opacity-50`}>
                   <Download className="w-4 h-4 text-[var(--text-secondary)]" />
                   Save/Export
                 </button>
               </Tooltip>
               <Tooltip title="Paste lyrics from clipboard">
-                <button disabled={!canPasteLyrics} onClick={() => runMenuAction(onPasteLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                <button disabled={!canPasteLyrics} onClick={() => runMenuAction(openPasteModal)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                   <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
                   {t.editor.emptyState.pasteLyrics}
                 </button>
@@ -211,7 +211,7 @@ export function TopRibbon({
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Workspace</div>
               <Tooltip title="Save or browse your song library">
-                <button onClick={() => runMenuAction(onOpenLibraryClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                <button onClick={() => runMenuAction(openLibrary)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                   <Library className="w-4 h-4 text-[var(--text-secondary)]" />
                   {t.saveToLibrary.title}
                 </button>
@@ -227,19 +227,19 @@ export function TopRibbon({
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
               <Tooltip title="Browse and restore previous lyrics versions">
-                <button onClick={() => runMenuAction(() => setIsVersionsModalOpen(true))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                <button onClick={() => runMenuAction(openVersionsModal)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                   <History className="w-4 h-4 text-[var(--text-secondary)]" />
                   {t.ribbon.versions}
                 </button>
               </Tooltip>
               <Tooltip title="Open application settings">
-                <button onClick={() => runMenuAction(onOpenSettingsClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                <button onClick={() => runMenuAction(openSettings)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                   <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
                   Settings
                 </button>
               </Tooltip>
               <Tooltip title="Reset and clear the current song">
-                <button onClick={() => runMenuAction(() => setIsResetModalOpen(true))} disabled={song.length === 0} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
+                <button onClick={() => runMenuAction(openResetModal)} disabled={song.length === 0} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
                   <Trash2 className="w-4 h-4" />
                   {t.ribbon.reset}
                 </button>
@@ -249,7 +249,7 @@ export function TopRibbon({
               <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
               <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">App</div>
               <Tooltip title="About this application">
-                <button onClick={() => runMenuAction(onOpenAboutClick)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+                <button onClick={() => runMenuAction(openAbout)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
                   <Info className="w-4 h-4 text-[var(--text-secondary)]" />
                   About
                 </button>
@@ -336,7 +336,7 @@ export function TopRibbon({
         <div className="w-px h-4 bg-[var(--border-color)] mx-1" />
         <Tooltip title={t.tooltips.keyboardShortcuts}>
           <button
-            onClick={onOpenKeyboardShortcutsClick}
+            onClick={openKeyboardShortcuts}
             aria-label={t.tooltips.keyboardShortcuts}
             className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors"
             style={{ color: 'var(--text-secondary)' }}
