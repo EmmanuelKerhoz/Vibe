@@ -3,10 +3,8 @@
  * Renders the central content area: InsightsBar (conditional) + the scrollable
  * lyrics/musical zone.
  *
- * Props surface: 6 (down from 23).
- * InsightsBar now sources all its state from InsightsBarContext.
- * LyricsView sources editor state from EditorContext.
- * Drag handlers are sourced from DragHandlersContext.
+ * Props surface: 7 (isAnalyzing / isAdaptingLanguage / targetLanguage now
+ * sourced from InsightsBarContext — no longer passed as props).
  */
 import React, { Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
@@ -14,6 +12,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { InsightsBar } from './InsightsBar';
 import { LyricsView } from './LyricsView';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
+import { useInsightsBarContext } from '../../contexts/InsightsBarContext';
 import { useTranslation } from '../../i18n';
 
 const MusicalTab = lazy(() =>
@@ -58,8 +57,12 @@ export function AppEditorZone({
   onOpenLibrary,
   onPasteLyrics,
   onGenerateSong,
-  onOpenSearch,
+  onOpenSearch: _onOpenSearch,
 }: AppEditorZoneProps) {
+  // isAnalyzing / isAdaptingLanguage / targetLanguage live in InsightsBarContext
+  // which is mounted in AppEditorLayout above this component.
+  const { isAnalyzing, isAdaptingLanguage, targetLanguage } = useInsightsBarContext();
+
   return (
     <>
       {activeTab === 'lyrics' && songHasContent && (
