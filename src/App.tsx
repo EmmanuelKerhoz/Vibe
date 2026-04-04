@@ -1,33 +1,26 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef } from 'react';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
 import { AppEditorLayout } from './components/app/AppEditorLayout';
 import { AppPanelOrchestrator } from './components/app/AppPanelOrchestrator';
 import { AppModalLayer } from './components/app/AppModalLayer';
-import { useTopicMoodSuggester } from './hooks/useTopicMoodSuggester';
-import { useTitleGenerator } from './hooks/useTitleGenerator';
 import { useSimilarityContext, SimilarityProvider } from './contexts/SimilarityContext';
-import { useSessionPersistence } from './hooks/useSessionPersistence';
-import { useMarkupEditor } from './hooks/useMarkupEditor';
 import { useMobileLayout } from './hooks/useMobileLayout';
 import { useMobileInitPanels } from './hooks/useMobileInitPanels';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { useSessionActions } from './hooks/useSessionActions';
-import { useDerivedAppState } from './hooks/useDerivedAppState';
-import { useAppHandlers } from './hooks/useAppHandlers';
-import { useModalHandlers } from './hooks/useModalHandlers';
-import { useAudioFeedback } from './hooks/useAudioFeedback';
+import { useAnalysisContext } from './contexts/AnalysisContext';
+import { useAppSession } from './hooks/useAppSession';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
 import { DragHandlersProvider } from './contexts/DragHandlersContext';
 import { EditorProvider } from './contexts/EditorContext';
-import { AnalysisProvider, useAnalysisContext } from './contexts/AnalysisContext';
+import { AnalysisProvider } from './contexts/AnalysisContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
 import { TranslationAdaptationProvider } from './contexts/TranslationAdaptationContext';
 import { VersionProvider, useVersionContext } from './contexts/VersionContext';
 import { StatusBar } from './components/app/StatusBar';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
-import { useTranslation, useLanguage } from './i18n';
+import { useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { SongMutationProvider } from './contexts/SongMutationContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
@@ -48,118 +41,46 @@ function ModalShortcutBindings({
 }
 
 function AppInnerContent() {
-  const {
-    song, structure,
-    title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
-    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
-    songLanguage,
-    replaceStateWithoutHistory, clearHistory, undo, redo,
-    updateSongAndStructureWithHistory,
-  } = useSongContext();
-  const { selectedLineId, setSelectedLineId, clearSelection, generateSong } = useComposerContext();
-
+  // ── Navigation / render concerns only ──────────────────────────────────
+  const { undo, redo } = useSongContext();
   const { appState } = useAppStateContext();
   const {
-    theme, setTheme, activeTab, setActiveTab,
-    isStructureOpen, setIsStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
+    theme, setTheme,
+    activeTab, setActiveTab,
+    isStructureOpen, setIsLeftPanelOpen,
+    isLeftPanelOpen,
     audioFeedback, setAudioFeedback,
-    showTranslationFeatures,
-    editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
-    isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
-    setIsResetModalOpen,
     hasApiKey,
   } = appState;
 
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
-  useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
+  useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen: appState.setIsStructureOpen });
+
+  const { selectedLineId } = useComposerContext();
   const isSuggestionsOpen = activeTab === 'lyrics' && Boolean(selectedLineId);
-
-  /**
-   * Defined once here; passed down to both MobileBottomNav and AppEditorLayout
-   * (which forwards it to StructureSidebar).
-   * Single source of truth — no duplicate definition in AppEditorLayout.
-   */
-  const setIsStructureOpenAndClearLine = useCallback(
-    (value: boolean | ((prev: boolean) => boolean)) => {
-      setIsStructureOpen(prev => {
-        const next = typeof value === 'function' ? value(prev) : value;
-        if (next) setSelectedLineId(null);
-        return next;
-      });
-    },
-    [setIsStructureOpen, setSelectedLineId],
-  );
-
-  const closeMobilePanels = useCallback(() => {
-    setIsLeftPanelOpen(false);
-    setIsStructureOpen(false);
-    setSelectedLineId(null);
-  }, [setIsLeftPanelOpen, setIsStructureOpen, setSelectedLineId]);
-
   const showBackdrop = isMobileOrTablet && (isLeftPanelOpen || isStructureOpen || isSuggestionsOpen);
 
-  useSessionPersistence({
-    song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
-    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
-    isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
-    replaceStateWithoutHistory, clearHistory,
-  });
-
-  const { playAudioFeedback } = useAudioFeedback(audioFeedback);
-
-  // Stable ref so DragHandlersProvider never re-renders on audio toggle.
-  const playAudioFeedbackRef = useRef(playAudioFeedback);
-  playAudioFeedbackRef.current = playAudioFeedback;
-
+  // ── All session logic delegated ────────────────────────────────────────
   const {
-    isAnalyzing,
-    sectionTargetLanguages, setSectionTargetLanguages,
-    adaptSectionLanguage, adaptLineLanguage, adaptingLineIds,
-  } = useAnalysisContext();
-
-  const { index: webSimilarityIndex, resetIndex: resetWebSimilarityIndex } = useSimilarityContext();
-
-  const { resetSuggestionCycle } = useTopicMoodSuggester({ hasApiKey });
-
-  const { scrollToSection } = useMarkupEditor({
-    editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
-    updateSongAndStructureWithHistory,
-  });
-
-  const { hasRealLyricContent } = useDerivedAppState({ editMode, markupText, webSimilarityIndex });
-
-  const { generateTitle } = useTitleGenerator();
-  const { t } = useTranslation();
-
-  const { handleGlobalRegenerate } = useAppHandlers({
-    t, hasRealLyricContent, isMobileOrTablet,
-    setApiErrorModal: appState.setApiErrorModal, setConfirmModal: appState.setConfirmModal,
-    setActiveTab, setIsLeftPanelOpen, setIsStructureOpen,
-    generateTitle, generateSong, scrollToSection,
-  });
-
-  const {
+    playAudioFeedback,
+    playAudioFeedbackRef,
+    handleGlobalRegenerate,
     handleOpenSettings,
     handleOpenAbout,
     handleSectionTargetLanguageChange,
-  } = useModalHandlers({
-    setIsPasteModalOpen: appState.setIsPasteModalOpen,
-    setIsImportModalOpen: appState.setIsImportModalOpen,
-    setIsExportModalOpen: appState.setIsExportModalOpen,
-    setIsSettingsOpen: appState.setIsSettingsOpen,
-    setIsAboutOpen: appState.setIsAboutOpen,
-    setIsKeyboardShortcutsModalOpen: appState.setIsKeyboardShortcutsModalOpen,
-    setIsSearchReplaceOpen: appState.setIsSearchReplaceOpen,
-    setSectionTargetLanguages,
-  });
+    setIsStructureOpenAndClearLine,
+    closeMobilePanels,
+    isAnalyzing,
+  } = useAppSession();
 
-  useSessionActions({
-    song, structure, rhymeScheme, appState,
-    replaceStateWithoutHistory, clearHistory, clearSelection,
-    resetWebSimilarityIndex, resetSuggestionCycle,
-    updateSongAndStructureWithHistory, setIsResetModalOpen,
-  });
+  const {
+    sectionTargetLanguages,
+    adaptSectionLanguage, adaptLineLanguage, adaptingLineIds,
+  } = useAnalysisContext();
+
+  const { appState: appStateFull } = useAppStateContext();
+  const { showTranslationFeatures } = appStateFull;
 
   return (
     <TranslationAdaptationProvider
@@ -202,11 +123,14 @@ function AppInnerContent() {
 
           {isMobileOrTablet && (
             <MobileBottomNav
-              isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
+              isLeftPanelOpen={isLeftPanelOpen}
+              isStructureOpen={isStructureOpen}
               activeTab={activeTab}
               hasApiKey={hasApiKey}
-              setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-              setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
+              setIsLeftPanelOpen={setIsLeftPanelOpen}
+              setIsStructureOpen={setIsStructureOpenAndClearLine}
+              setActiveTab={setActiveTab}
+              onGenerateSong={handleGlobalRegenerate}
               onOpenSettings={handleOpenSettings}
             />
           )}
@@ -273,12 +197,12 @@ function AppInner() {
         <SongProvider>
           <SongMutationProvider>
             <ComposerProvider>
-            <VersionProvider>
-              <SimilarityProvider>
-                <AppProviders />
-              </SimilarityProvider>
-            </VersionProvider>
-          </ComposerProvider>
+              <VersionProvider>
+                <SimilarityProvider>
+                  <AppProviders />
+                </SimilarityProvider>
+              </VersionProvider>
+            </ComposerProvider>
           </SongMutationProvider>
         </SongProvider>
       </DragProvider>
