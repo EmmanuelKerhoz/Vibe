@@ -8,6 +8,7 @@
  */
 
 interface WindowWithWebkitAudio extends Window {
+  AudioContext: typeof AudioContext;
   webkitAudioContext?: typeof AudioContext;
 }
 
