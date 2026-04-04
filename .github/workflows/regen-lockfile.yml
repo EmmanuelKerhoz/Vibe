@@ -6,7 +6,7 @@ on:
       branch:
         description: 'Branch to regenerate lockfile on'
         required: true
-        default: 'copilot/add-missing-i18n-keys'
+        default: 'main'
 
 jobs:
   regen-lockfile:
@@ -29,9 +29,12 @@ jobs:
         run: npm install --package-lock-only
 
       - name: Commit regenerated lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
           git add package-lock.json
-          git diff --staged --quiet || git commit -m "fix: regenerate complete package-lock.json [ci]"
-          git push
+          git diff --staged --quiet || git commit -m "fix: regenerate complete package-lock.json [ci] v1.7.12"
+          git push origin ${{ github.event.inputs.branch }}
