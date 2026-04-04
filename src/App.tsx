@@ -273,12 +273,12 @@ function AppInner() {
         <SongProvider>
           <SongMutationProvider>
             <ComposerProvider>
-            <VersionProvider>
-              <SimilarityProvider>
-                <AppProviders />
-              </SimilarityProvider>
-            </VersionProvider>
-          </ComposerProvider>
+              <VersionProvider>
+                <SimilarityProvider>
+                  <AppProviders />
+                </SimilarityProvider>
+              </VersionProvider>
+            </ComposerProvider>
           </SongMutationProvider>
         </SongProvider>
       </DragProvider>

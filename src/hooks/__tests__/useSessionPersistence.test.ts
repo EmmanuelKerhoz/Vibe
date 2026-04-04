@@ -174,4 +174,42 @@ describe('useSessionPersistence', () => {
     expect(params.setHasSavedSession).not.toHaveBeenCalled();
     expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
   });
+
+  it('skips hydration when stored session is valid JSON but fails schema validation', () => {
+    const params = createParams();
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // Valid JSON, but tempo is an object (schema expects number | string)
+    localStorage.setItem('lyricist_session', JSON.stringify({
+      song: [{ name: 'Verse', lines: [{ text: 'hello' }] }],
+      tempo: { invalid: true },
+    }));
+
+    expect(() => {
+      renderHook(() => useSessionPersistence(params));
+    }).not.toThrow();
+
+    expect(consoleWarnSpy).toHaveBeenCalled();
+    expect(params.replaceStateWithoutHistory).not.toHaveBeenCalled();
+    expect(params.clearHistory).not.toHaveBeenCalled();
+    expect(params.setHasSavedSession).not.toHaveBeenCalled();
+    expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
+  });
+
+  it('restores empty string fields when stored with !== undefined checks', () => {
+    const params = createParams();
+    localStorage.setItem('lyricist_session', JSON.stringify({
+      song: [{ name: 'Verse', lines: [{ text: 'hello' }] }],
+      title: '',
+      topic: '',
+      mood: '',
+    }));
+
+    renderHook(() => useSessionPersistence(params));
+
+    expect(songContextSetters.setTitle).toHaveBeenCalledWith('');
+    expect(songContextSetters.setTopic).toHaveBeenCalledWith('');
+    expect(songContextSetters.setMood).toHaveBeenCalledWith('');
+    expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
+  });
 });
