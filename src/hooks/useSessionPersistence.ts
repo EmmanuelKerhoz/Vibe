@@ -5,6 +5,7 @@ import { DEFAULT_STRUCTURE } from '../constants/editor';
 import { safeSetItem, safeGetItem } from '../utils/safeStorage';
 import { isPristineDraft } from '../utils/songDefaults';
 import { useSongContext } from '../contexts/SongContext';
+import { SessionSchema } from '../schemas/sessionSchema';
 
 /** Debounce delay for session persistence writes (ms). */
 const SAVE_DEBOUNCE_MS = 500;
@@ -53,35 +54,47 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
     const savedRaw = safeGetItem('lyricist_session');
     if (savedRaw) {
       try {
-        const parsed = JSON.parse(savedRaw);
-        // Guard: parsed.song must be a non-empty array before mapping.
-        // Without this, a corrupted session where song=null/{} would throw
-        // inside .map(), silently swallowed by the catch block and leaving
-        // isSessionHydrated=false, blocking the entire app.
-        if (Array.isArray(parsed.song) && parsed.song.length > 0) {
-          setHasSavedSession(true);
-          const cleanedSong: Section[] = (parsed.song as Record<string, unknown>[]).map(normalizeStoredSection);
-          const nextStructure = cleanedSong.length > 0
-            ? cleanedSong.map((s: Section) => s.name)
-            : (parsed.structure ? parsed.structure.map((s: string) => cleanSectionName(s)) : DEFAULT_STRUCTURE);
-          replaceStateWithoutHistory(cleanedSong, nextStructure);
-          if (parsed.title) setTitle(parsed.title);
-          if (parsed.titleOrigin) setTitleOrigin(parsed.titleOrigin);
-          if (parsed.topic) setTopic(parsed.topic);
-          if (parsed.mood) setMood(parsed.mood);
-          if (parsed.rhymeScheme) setRhymeScheme(parsed.rhymeScheme);
-          if (parsed.targetSyllables) setTargetSyllables(parsed.targetSyllables);
-          if (parsed.genre) setGenre(parsed.genre);
-          if (parsed.tempo) setTempo(parseInt(String(parsed.tempo), 10) || 120);
-          if (parsed.instrumentation) setInstrumentation(parsed.instrumentation);
-          if (parsed.rhythm) setRhythm(parsed.rhythm);
-          if (parsed.narrative) setNarrative(parsed.narrative);
-          if (parsed.musicalPrompt) setMusicalPrompt(parsed.musicalPrompt);
-          if (parsed.songLanguage) setSongLanguage(parsed.songLanguage);
-          clearHistory();
+        const rawParsed: unknown = JSON.parse(savedRaw);
+        const result = SessionSchema.safeParse(rawParsed);
+
+        if (!result.success) {
+          // Schema validation failed — session is corrupted or from an
+          // incompatible version. Log in dev, skip hydration gracefully.
+          if (import.meta.env.DEV) {
+            console.warn('[useSessionPersistence] Invalid session schema:', result.error.flatten());
+          }
+        } else {
+          const parsed = result.data;
+
+          // Guard: parsed.song must be a non-empty array before mapping.
+          if (Array.isArray(parsed.song) && parsed.song.length > 0) {
+            setHasSavedSession(true);
+            const cleanedSong: Section[] = (parsed.song as Record<string, unknown>[]).map(normalizeStoredSection);
+            const nextStructure = cleanedSong.length > 0
+              ? cleanedSong.map((s: Section) => s.name)
+              : (parsed.structure
+                ? parsed.structure.map((s: string) => cleanSectionName(s))
+                : DEFAULT_STRUCTURE);
+            replaceStateWithoutHistory(cleanedSong, nextStructure);
+
+            if (parsed.title)             setTitle(parsed.title);
+            if (parsed.titleOrigin)       setTitleOrigin(parsed.titleOrigin);
+            if (parsed.topic)             setTopic(parsed.topic);
+            if (parsed.mood)              setMood(parsed.mood);
+            if (parsed.rhymeScheme)       setRhymeScheme(parsed.rhymeScheme);
+            if (parsed.targetSyllables)   setTargetSyllables(parsed.targetSyllables);
+            if (parsed.genre)             setGenre(parsed.genre);
+            if (parsed.tempo)             setTempo(parseInt(String(parsed.tempo), 10) || 120);
+            if (parsed.instrumentation)   setInstrumentation(parsed.instrumentation);
+            if (parsed.rhythm)            setRhythm(parsed.rhythm);
+            if (parsed.narrative)         setNarrative(parsed.narrative);
+            if (parsed.musicalPrompt)     setMusicalPrompt(parsed.musicalPrompt);
+            if (parsed.songLanguage)      setSongLanguage(parsed.songLanguage);
+            clearHistory();
+          }
         }
       } catch (e) {
-        console.error('Failed to parse saved session', e);
+        console.error('[useSessionPersistence] Failed to parse saved session', e);
       }
     }
     setIsSessionHydrated(true);
