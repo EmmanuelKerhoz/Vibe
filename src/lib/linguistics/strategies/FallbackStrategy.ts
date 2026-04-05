@@ -140,8 +140,16 @@ export class FallbackStrategy extends PhonologicalStrategy {
       toneClass: null,
       weight: null,
       codaClass: null,
-      // FIX: raw must include coda so phonemeEditDistance / featureWeightedScore
-      // operate on the full rhyme nucleus string, not nucleus-only.
+      // raw includes coda so external consumers (phonemeEditDistance,
+      // featureWeightedScore) operate on the full rhyme nucleus string.
+      // Note: score() below compares nucleus-only — this is intentional and
+      // consistent with defaultWeights.codaClass = 0.0 (ALGO-ROBUST ignores
+      // coda in its own scoring path). The divergence is by design:
+      //   • raw = nucleus + coda  → for PED / external callers
+      //   • score() uses nucleus  → ALGO-ROBUST spec (no coda weight)
+      // Consequence: score() and featureWeightedScore(rn1, rn2, robustWeights)
+      // may return slightly different values when coda is non-empty. Callers
+      // that need strict consistency should use featureWeightedScore directly.
       raw: nucleus + coda,
       lowResourceFallback: true,
     };
@@ -149,6 +157,23 @@ export class FallbackStrategy extends PhonologicalStrategy {
 
   // ─── Step 5 — Scoring (capped at ROBUST_SCORE_CAP) ───────────────────────
 
+  /**
+   * Nucleus-only Levenshtein similarity, capped at ROBUST_SCORE_CAP (0.65).
+   *
+   * ## Nucleus-only invariant
+   * This method intentionally compares `rn.nucleus` strings, not `rn.raw`.
+   * ALGO-ROBUST sets `defaultWeights.codaClass = 0.0` — coda is irrelevant
+   * to this family's scoring. Using `raw` (nucleus + coda) would silently
+   * introduce coda influence that the family spec explicitly excludes.
+   *
+   * If you need a scored comparison that respects an explicit weight set
+   * (including non-zero codaClass), call `featureWeightedScore(rn1, rn2, weights)`
+   * directly instead of going through this method.
+   *
+   * ## Score cap
+   * The 0.65 cap signals partial confidence to consumers. Always check
+   * `rn.lowResourceFallback === true` when branching on score quality.
+   */
   score(rn1: RhymeNucleus, rn2: RhymeNucleus, _weights?: Partial<MatchingWeights>): number {
     if (!rn1.nucleus || !rn2.nucleus) return 0;
     const raw = levenshteinSimilarity(rn1.nucleus, rn2.nucleus);
