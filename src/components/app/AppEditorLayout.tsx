@@ -118,7 +118,7 @@ export function AppEditorLayout({
     handleOpenPasteModal, handleOpenSaveToLibraryModal, handleOpenSearch,
     handleToggleAnalysisPanel,
     handleCloseAnalysisPanel, handleScrollToSection,
-    addStructureItem, removeStructureItem,
+    addStructureItem, removeStructureItem, normalizeStructure,
   } = handlers;
 
   // ── InsightsBarContext value ──────────────────────────────────────────────
@@ -240,6 +240,7 @@ export function AppEditorLayout({
                   setIsSectionDropdownOpen={setIsSectionDropdownOpen}
                   addStructureItem={addStructureItem}
                   removeStructureItem={removeStructureItem}
+                  normalizeStructure={normalizeStructure}
                   onScrollToSection={handleScrollToSection}
                 />
               )}
