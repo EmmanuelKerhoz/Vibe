@@ -31,7 +31,7 @@ function levenshtein(a: string, b: string): number {
   if (a.length === 0) return b.length;
   if (b.length === 0) return a.length;
   const dp: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
-    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    Array.from({ length: b.length + 1 }, (__, j) => (i === 0 ? j : j === 0 ? i : 0))
   );
   for (let i = 1; i <= a.length; i++) {
     for (let j = 1; j <= b.length; j++) {
@@ -68,7 +68,7 @@ export class FallbackStrategy extends PhonologicalStrategy {
       .normalize('NFC')
       .toLowerCase()
       .trim()
-      .replace(/[^\p{L}\p{M}\s]/gu, '');
+      .replace(/[^-]+/gu, '');
   }
 
   // ─── Step 2 — G2P (identity: no language-specific rules) ─────────────────
