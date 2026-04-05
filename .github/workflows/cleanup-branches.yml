@@ -109,17 +109,15 @@ jobs:
                 continue;
               }
 
-              // Dead branches: fully merged into default, OR abandoned (closed PR, never merged)
+              // Dead branches: fully merged into default, abandoned (closed PR, never merged),
+              // or orphaned (no PR ever opened — all commits are outside main).
+              // All three categories are deleted; only branches with an open PR are kept.
               const isAbandoned = closedUnmergedPrRefs.has(branch.name);
-              if (!isMerged && !isAbandoned) {
-                console.log(`⊘ Keeping ${branch.name} (has unmerged commits, no closed PR)`);
-                ignored++;
-                continue;
-              }
-
               const reason = isMerged
                 ? `fully merged into ${defaultBranch}`
-                : 'abandoned (PR closed without merging)';
+                : isAbandoned
+                  ? 'abandoned (PR closed without merging)'
+                  : 'orphaned (no PR, commits not in default branch)';
               try {
                 await github.rest.git.deleteRef({
                   owner,
