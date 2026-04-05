@@ -91,6 +91,12 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
     }
   }, [audioFeedback, getAudioContext]);
 
+  // Stable ref so the global click listener never re-registers on audioFeedback toggle.
+  // The ref is updated synchronously after every render so the handler always
+  // closes over the latest playAudioFeedback without triggering a new effect.
+  const playAudioFeedbackRef = useRef(playAudioFeedback);
+  useEffect(() => { playAudioFeedbackRef.current = playAudioFeedback; }, [playAudioFeedback]);
+
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -105,12 +111,12 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
         target.closest('button') ||
         target.closest('.fluent-button')
       ) {
-        playAudioFeedback('click');
+        playAudioFeedbackRef.current('click');
       }
     };
     document.addEventListener('click', handleGlobalClick);
     return () => document.removeEventListener('click', handleGlobalClick);
-  }, [playAudioFeedback]);
+  }, []); // mount-only — ref keeps the callback fresh without re-registering
 
   return { playAudioFeedback };
 };
