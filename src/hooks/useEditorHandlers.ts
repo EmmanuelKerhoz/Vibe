@@ -66,7 +66,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   } = appState;
 
   // ── Song editor (add/remove structure, file analysis) ───────────────────
-  const { removeStructureItem, addStructureItem, loadFileForAnalysis } = useSongEditor({
+  const { removeStructureItem, addStructureItem, normalizeStructure, loadFileForAnalysis } = useSongEditor({
     openPasteModalWithText: (text: string) => {
       setPastedText(text);
       setIsPasteModalOpen(true);
@@ -177,6 +177,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     // Song structure
     removeStructureItem,
     addStructureItem,
+    normalizeStructure,
     loadFileForAnalysis,
     // Title
     handleTitleChange,

@@ -1,8 +1,9 @@
 import React, { useId, useMemo, useRef } from 'react';
-import { X, BarChart2, GripVertical, Link2 } from '../ui/icons';
+import { X, BarChart2, GripVertical, Link2, AlignLeft } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';
 import { LcarsSelect } from '../ui/LcarsSelect';
+import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { getSectionColor, getSectionDotColor, getSectionTextColor } from '../../utils/songUtils';
 import {
@@ -26,6 +27,7 @@ interface Props {
   setIsSectionDropdownOpen: (v: boolean) => void;
   addStructureItem: (name?: string) => void;
   removeStructureItem: (idx: number) => void;
+  normalizeStructure: () => void;
   onScrollToSection: (sectionId: string) => void;
   isMobileOverlay?: boolean;
   className?: string;
@@ -118,7 +120,7 @@ const SectionRow = React.memo(function SectionRow({
 export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
   isSectionDropdownOpen, setIsSectionDropdownOpen,
-  addStructureItem, removeStructureItem,
+  addStructureItem, removeStructureItem, normalizeStructure,
   onScrollToSection,
   isMobileOverlay = false,
   className,
@@ -305,6 +307,21 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     buttonTitle={t.tooltips.addSection}
                   />
                 </div>
+
+                <Tooltip title={t.tooltips.normalizeStructure}>
+                  <div className="lcars-gradient-outline mt-4" style={{ borderRadius: sectionButtonShapeClass, width: '100%' }}>
+                    <Button
+                      onClick={normalizeStructure}
+                      disabled={structure.length === 0}
+                      variant="outlined" fullWidth
+                      startIcon={<AlignLeft className="w-3.5 h-3.5" />}
+                      className="ux-interactive"
+                      style={{ fontSize: '10px', padding: '4px 0', borderRadius: sectionButtonShapeClass }}
+                    >
+                      {t.structure.normalize}
+                    </Button>
+                  </div>
+                </Tooltip>
               </div>
             </div>
           </div>
