@@ -68,7 +68,7 @@ export class FallbackStrategy extends PhonologicalStrategy {
       .normalize('NFC')
       .toLowerCase()
       .trim()
-      .replace(/[^-]/gu, '');
+      .replace(/[^-]+/gu, '');
   }
 
   // ─── Step 2 — G2P (identity: no language-specific rules) ─────────────────
