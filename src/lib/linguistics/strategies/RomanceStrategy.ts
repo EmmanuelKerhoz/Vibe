@@ -90,7 +90,15 @@ function mopSplit(cluster: string): [onset: string, prevCoda: string] {
  * Returns { nucleus: nasalToken, coda: '' } when the pair is nasal,
  * or null when no nasal mapping applies (caller keeps original values).
  *
- * Note: this function operates on graphemes (orthographic stub).  A
+ * ## Dead code notice
+ * This function is NOT called by extractRN() and has no active call-site.
+ * It is kept because it encodes correct FR phonological rules that will be
+ * re-enabled once a proper G2P replaces the orthographic stub.
+ * At that point, extractRN() will receive IPA input and the nasal transform
+ * will be a genuine V+nasal → nasal-vowel conversion, not a graphemic hack.
+ * DO NOT delete or simplify — it is intentionally dormant, not dead code.
+ *
+ * Note: this function operates on graphemes (orthographic stub). A
  * real G2P would also handle 'ien' (→ /jɛ̃/) and 'ein' (→ /ɛ̃/) but
  * those require context-sensitive rules beyond simple V+nasal matching.
  */
@@ -123,6 +131,10 @@ function normalizeFrNasal(
   return null;
 }
 
+// Suppress unused-variable lint warning for the intentionally dormant function.
+// Remove this line once normalizeFrNasal is wired to the G2P pipeline.
+void (normalizeFrNasal as unknown);
+
 // ─── Strategy ────────────────────────────────────────────────────────────────
 
 export class RomanceStrategy extends PhonologicalStrategy {
@@ -146,7 +158,7 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * Expansion order:
    *   1. 'qu\u2019' / 'qu\'' before 'q\u2019' / 'q\'' to avoid partial match.
    *   2. Multi-char elisions before single-char ones.
-   *   3. Both typographic (‘) and straight (') apostrophes handled.
+   *   3. Both typographic (') and straight (') apostrophes handled.
    *
    * Covered contractions:
    *   l'   → l     (already present)
@@ -163,7 +175,7 @@ export class RomanceStrategy extends PhonologicalStrategy {
     let t = text.normalize('NFC').toLowerCase().trim();
 
     if (lang === 'fr') {
-      // Handle both typographic (’ U+2019) and straight (') apostrophes.
+      // Handle both typographic (' U+2019) and straight (') apostrophes.
       // qu' must come first to avoid 'q' matching the single-char rule.
       t = t
         .replace(/qu[\u2019']/g, 'que ')
@@ -321,12 +333,10 @@ export class RomanceStrategy extends PhonologicalStrategy {
     let coda = primary?.coda ?? '';
 
     // NOTE: French nasal vowel normalisation (V+n/m → ɑ̃/ɛ̃/ɔ̃/œ̃) is
-    // intentionally NOT applied here.  The orthographic stub produces
-    // graphemic nucleus/coda values that consumers (tests, UI) inspect
-    // directly.  Applying the nasal transform would change nucleus from
-    // e.g. 'a' to 'ɑ̃', breaking expectations.  Nasal normalisation will
-    // be re-enabled once a proper G2P replaces the stub, at which point
-    // the nucleus will already be IPA and the transform is a no-op.
+    // intentionally NOT applied here. normalizeFrNasal() is dormant pending
+    // a proper G2P — see its JSDoc for the re-enabling plan. The variables
+    // nucleus and coda are declared `let` to allow future assignment here.
+    void lang; // suppress lint until normalizeFrNasal is wired
 
     // Rebuild raw from (possibly rewritten) primary + unchanged tail.
     const raw = [nucleus + coda, ...tail.slice(1).map(s => `${s.nucleus}${s.coda}`)].join('');

@@ -112,6 +112,14 @@ export abstract class PhonologicalStrategy {
  *    from promoting a genuinely weak phonemic match to 'weak'.
  * 2. Per-family threshold: scores below the configured threshold are 'none'.
  * 3. Typed bands: rich ≥ 0.95, sufficient ≥ 0.85, assonance ≥ 0.60, else 'weak'.
+ *
+ * ## Band reachability
+ * With the default threshold (0.75), the 'weak' band [0.60–0.75) is
+ * inaccessible: guard #2 returns 'none' for any score < 0.75 before reaching
+ * the 'weak' check. The 'weak' band is only reachable when the caller passes
+ * a threshold < 0.60 (e.g. the ALGO-ROBUST fallback uses threshold=0.50).
+ * This is intentional — families with a high threshold signal that they
+ * consider the 0.60–0.75 range too ambiguous to label as a rhyme type.
  */
 export function categorizeScore(score: number, threshold = 0.75): RhymeType {
   if (score < 0.40 || score < threshold) return 'none';

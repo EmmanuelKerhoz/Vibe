@@ -40,7 +40,13 @@ function levenshtein(a: string[], b: string[]): number {
  * Priority order (longest match first):
  * 1. Affricates: tʃ dʒ ts dz tɕ dʑ
  * 2. Labio-velars (KWA/BNT): kp gb ŋm
- * 3. Base symbol + combining diacritics (U+0300–U+036F) + length mark ː
+ * 3. Base symbol + combining diacritics (U+0300–U+036F) +
+ *    superscript modifiers (U+02B0–U+02C8 strict) + length mark ː
+ *    Note: range is intentionally capped at U+02C8 (modifier letter
+ *    vertical line / primary stress mark) to exclude U+02BB (ʻ okina /
+ *    glottal stop in Hawaiian and Semitic transcription) and other
+ *    modified-letter codepoints above U+02C8 that are standalone phonemes,
+ *    not diacritics decorating a base symbol.
  * 4. Single non-whitespace IPA character
  *
  * This replaces the naive character-by-character split that incorrectly
@@ -76,12 +82,13 @@ export function segmentIPA(ipa: string): string[] {
     }
     if (matched) continue;
 
-    // Base char + optional combining diacritics + optional length mark
+    // Base char + optional combining diacritics + optional superscript
+    // modifiers (U+02B0–U+02C8 only) + optional length mark ː
     let token = ch;
     i++;
     while (i < len) {
       const next = chars[i]!;
-      if (/[\u0300-\u036f\u02b0-\u02ffː]/.test(next)) {
+      if (/[\u0300-\u036f\u02b0-\u02c8ː]/.test(next)) {
         token += next;
         i++;
       } else {

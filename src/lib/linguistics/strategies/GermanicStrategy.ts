@@ -141,6 +141,24 @@ const EN_VOWEL_DIGRAPHS = new Set([
   'ou', 'oo', 'ee', 'ea', 'ai', 'oa', 'oi', 'au', 'oy', 'ay', 'ey',
 ]);
 
+/**
+ * English verbal contractions to expand during normalisation.
+ *
+ * IMPORTANT — possessive 's (John's, Mary's) is intentionally excluded:
+ * expanding it to "is" would alter the syllable count and rhyme nucleus of
+ * the host word, causing systematic mis-anchoring. Only unambiguously verbal
+ * contractions are expanded here. The possessive apostrophe is stripped by
+ * the general punctuation filter that follows.
+ */
+const EN_VERBAL_CONTRACTIONS: [pattern: RegExp, replacement: string][] = [
+  [/n't/g, ' not'],
+  [/'re/g,  ' are'],
+  [/'ve/g,  ' have'],
+  [/'ll/g,  ' will'],
+  [/'d/g,   ' would'],
+  [/'m/g,   ' am'],
+];
+
 // ─── Strategy ────────────────────────────────────────────────────────────────
 
 export class GermanicStrategy extends PhonologicalStrategy {
@@ -157,7 +175,11 @@ export class GermanicStrategy extends PhonologicalStrategy {
   normalize(text: string, lang: string): string {
     let t = text.normalize('NFC').toLowerCase().trim();
     if (lang === 'en') {
-      t = t.replace(/n't/g, ' not').replace(/'re/g, ' are').replace(/'s/g, ' is');
+      // Expand verbal contractions only — possessive 's is excluded
+      // to avoid "John's" → "John is" (syllable distortion).
+      for (const [pattern, replacement] of EN_VERBAL_CONTRACTIONS) {
+        t = t.replace(pattern, replacement);
+      }
     }
     t = t.replace(/[^\p{L}\p{M}\s''-]/gu, '');
     return t;

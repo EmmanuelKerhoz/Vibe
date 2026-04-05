@@ -133,13 +133,16 @@ export class FallbackStrategy extends PhonologicalStrategy {
   extractRN(syllables: Syllable[], _lang: string): RhymeNucleus {
     const last = syllables[syllables.length - 1];
     const nucleus = last?.nucleus ?? '';
+    const coda = last?.coda ?? '';
     return {
       nucleus,
-      coda: last?.coda ?? '',
+      coda,
       toneClass: null,
       weight: null,
       codaClass: null,
-      raw: nucleus,
+      // FIX: raw must include coda so phonemeEditDistance / featureWeightedScore
+      // operate on the full rhyme nucleus string, not nucleus-only.
+      raw: nucleus + coda,
       lowResourceFallback: true,
     };
   }
