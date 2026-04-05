@@ -21,7 +21,9 @@ export type AlgoFamily =
   | 'ALGO-FIN'   // Uralic
   | 'ALGO-TAI'   // Tai-Kadai
   | 'ALGO-VIET'  // Austroasiatic
-  | 'ALGO-AUS';  // Austronesian
+  | 'ALGO-AUS'   // Austronesian
+  | 'ALGO-CRE'   // Creole / Pidgin
+  | 'ALGO-ROBUST'; // Universal fallback
 
 export interface LanguageFamilyConfig {
   family: AlgoFamily;
@@ -43,7 +45,8 @@ export const LANGUAGE_FLAGS: Record<string, string> = {
   'ru': '🇷🇺', 'pl': '🇵🇱', 'cs': '🇨🇿', 'sk': '🇸🇰', 'uk': '🇺🇦', 'bg': '🇧🇬', 'sr': '🇷🇸', 'hr': '🇭🇷',
   'dyu': '🇨🇮', 'bci': '🇨🇮', 'ee': '🇹🇬', 'gej': '🇹🇬', 'sw': '🇰🇪', 'yo': '🇳🇬', 'zu': '🇿🇦', 'xh': '🇿🇦', 'ha': '🇳🇬',
   'zh': '🇨🇳', 'yue': '🇭🇰', 'ja': '🇯🇵', 'ko': '🇰🇷', 'hi': '🇮🇳', 'th': '🇹🇭', 'vi': '🇻🇳',
-  'ar': '🇸🇦', 'he': '🇮🇱', 'tr': '🇹🇷', 'id': '🇮🇩'
+  'ar': '🇸🇦', 'he': '🇮🇱', 'tr': '🇹🇷', 'id': '🇮🇩',
+  'nou': '🇨🇮', 'pcm': '🇳🇬', 'cfg': '🇨🇲',
 };
 
 export const LANG_TO_FAMILY: Record<string, AlgoFamily> = {
@@ -63,6 +66,7 @@ export const LANG_TO_FAMILY: Record<string, AlgoFamily> = {
   'th': 'ALGO-TAI', 'lo': 'ALGO-TAI',
   'vi': 'ALGO-VIET', 'km': 'ALGO-VIET',
   'id': 'ALGO-AUS', 'ms': 'ALGO-AUS', 'tl': 'ALGO-AUS', 'jv': 'ALGO-AUS',
+  'nou': 'ALGO-CRE', 'pcm': 'ALGO-CRE', 'cfg': 'ALGO-CRE',
 };
 
 export const FAMILY_CONFIG: Record<AlgoFamily, LanguageFamilyConfig> = {
@@ -83,6 +87,8 @@ export const FAMILY_CONFIG: Record<AlgoFamily, LanguageFamilyConfig> = {
   'ALGO-TAI': { family: 'ALGO-TAI', label: 'Tai-Kadai', flag: '🇹🇭', hasTones: true, hasVowelHarmony: false, syllableStructure: 'CVC', codaRelevance: 'medium' },
   'ALGO-VIET': { family: 'ALGO-VIET', label: 'Austroasiatic', flag: '🇻🇳', hasTones: true, hasVowelHarmony: false, syllableStructure: 'CVC', codaRelevance: 'high' },
   'ALGO-AUS': { family: 'ALGO-AUS', label: 'Austronesian', flag: '🇮🇩', hasTones: false, hasVowelHarmony: false, syllableStructure: 'CVC', codaRelevance: 'low' },
+  'ALGO-CRE': { family: 'ALGO-CRE', label: 'Creole / Pidgin', flag: '🇨🇮', hasTones: false, hasVowelHarmony: false, syllableStructure: 'CV', codaRelevance: 'low' },
+  'ALGO-ROBUST': { family: 'ALGO-ROBUST', label: 'Unknown / Fallback', flag: '🌐', hasTones: false, hasVowelHarmony: false, syllableStructure: 'CV', codaRelevance: 'none' },
 };
 
 export const getAlgoFamily = (langCode: string): AlgoFamily | undefined => {
@@ -115,6 +121,7 @@ export const LANGUAGE_NAME_TO_CODE: Record<string, string> = {
   'french': 'fr', 'spanish': 'es', 'italian': 'it', 'portuguese': 'pt', 'romanian': 'ro', 'catalan': 'ca',
   'russian': 'ru', 'polish': 'pl', 'czech': 'cs', 'slovak': 'sk', 'uk': 'uk', 'bulgarian': 'bg', 'serbian': 'sr', 'croatian': 'hr',
   'yoruba': 'yo', 'swahili': 'sw', 'zulu': 'zu', 'xhosa': 'xh', 'hausa': 'ha', 'baoulé': 'bci', 'baoule': 'bci', 'baule': 'bci', 'dioula': 'dyu', 'ewe': 'ee', 'mina': 'gej',
+  'nouchi': 'nou', 'nigerian pidgin': 'pcm', 'pidgin': 'pcm', 'camfranglais': 'cfg',
   'chinese': 'zh', 'mandarin': 'zh', 'cantonese': 'yue', 'japanese': 'ja', 'korean': 'ko', 'hindi': 'hi', 'urdu': 'ur', 'bengali': 'bn', 'punjabi': 'pa', 'persian': 'fa', 'tamil': 'ta', 'telugu': 'te', 'kannada': 'kn', 'malayalam': 'ml', 'thai': 'th', 'vietnamese': 'vi', 'indonesian': 'id', 'malay': 'ms', 'tagalog': 'tl',
   'arabic': 'ar', 'hebrew': 'he', 'amharic': 'am', 'turkish': 'tr', 'finnish': 'fi', 'hungarian': 'hu',
 };

@@ -15,3 +15,5 @@ export { IndoIranianStrategy } from './IndoIranianStrategy';
 export { JapaneseStrategy } from './JapaneseStrategy';
 export { KoreanStrategy } from './KoreanStrategy';
 export { AustronesianStrategy } from './AustronesianStrategy';
+export { CreoleStrategy } from './CreoleStrategy';
+export { FallbackStrategy } from './FallbackStrategy';
