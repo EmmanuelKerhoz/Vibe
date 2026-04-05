@@ -64,9 +64,31 @@ export function SongProvider({ children }: { children: ReactNode }) {
     [history.past, history.future, history.undo, history.redo],
   );
 
+  // SongContext value — depends on primitive state slices and stable callbacks,
+  // NOT on the `history` object reference (which is reconstructed every render).
+  // This prevents the memo from invalidating on every SongProvider render and
+  // cascading re-renders to all useSongContext() consumers.
   const value = useMemo<SongContextValue>(
     () => ({ ...history, ...meta }),
-    [history, meta],
+    [
+      // State slices — change only when song data mutates
+      history.song,
+      history.structure,
+      history.past,
+      history.future,
+      // Callbacks — all useCallback([], []) or useCallback([stable], [stable]),
+      // referentially stable across renders
+      history.updateState,
+      history.updateSongWithHistory,
+      history.updateStructureWithHistory,
+      history.updateSongAndStructureWithHistory,
+      history.replaceStateWithoutHistory,
+      history.clearHistory,
+      history.undo,
+      history.redo,
+      // Meta — stable ref from useSongMeta
+      meta,
+    ],
   );
 
   return (
