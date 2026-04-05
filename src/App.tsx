@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
 import { AppEditorLayout } from './components/app/AppEditorLayout';
@@ -174,9 +174,15 @@ function AppProviders() {
   const isGeneratingRef = React.useRef(isGenerating);
   isGeneratingRef.current = isGenerating;
 
-  const markupDirection = appState.markupText
-    ? (/[\u0600-\u06FF\u0750-\u077F\u0590-\u05FF]/.test(appState.markupText) ? 'rtl' : 'ltr')
-    : 'ltr';
+  // Memoize on markupText only — avoids re-running the RTL regex on every
+  // unrelated context re-render (e.g. modal open/close, tab switch).
+  const markupDirection = useMemo(
+    () =>
+      appState.markupText
+        ? (/[\u0600-\u06FF\u0750-\u077F\u0590-\u05FF]/.test(appState.markupText) ? 'rtl' : 'ltr')
+        : 'ltr',
+    [appState.markupText],
+  );
 
   return (
     <EditorProvider
