@@ -61,7 +61,6 @@ export function SongProvider({ children }: { children: ReactNode }) {
     }),
     // history.past and history.future are new array references only when
     // applySnapshot/undo/redo fires — not on every song mutation.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [history.past, history.future, history.undo, history.redo],
   );
 

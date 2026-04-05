@@ -57,7 +57,6 @@ export function useStructureDragHandlers({ structure }: UseStructureDragHandlers
         handleDrop(itemIndex);
       },
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [draggedItemIndex, structureLength, hasAnchoredStart, hasAnchoredEnd,
      setDraggedItemIndex, setDragOverIndex, handleDrop],
   );
