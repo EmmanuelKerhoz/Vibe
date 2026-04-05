@@ -187,22 +187,31 @@ function AppProviders() {
       markupTextareaRef={appState.markupTextareaRef}
       markupDirection={markupDirection}
     >
-      <ModalProvider uiState={uiStateForProvider}>
-        <AnalysisProvider
-          uiLanguage={language}
-          isGeneratingRef={isGeneratingRef}
-          hasApiKey={appState.hasApiKey}
-          saveVersion={saveVersion}
-          updateState={updateState}
-          updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
-          clearLineSelection={clearSelection}
-          requestAutoTitleGeneration={() => setShouldAutoGenerateTitle(true)}
-        >
-          <ErrorBoundary>
-            <AppInnerContent />
-          </ErrorBoundary>
-        </AnalysisProvider>
-      </ModalProvider>
+      {/*
+       * Scoped boundary — catches crashes originating inside ModalProvider
+       * or AnalysisProvider (Web Worker init failure, modal dispatch
+       * exception, etc.) before they reach AppInner and cause a full
+       * white-screen. The inner boundary on AppInnerContent remains as a
+       * second line of defence for errors in the content tree.
+       */}
+      <ErrorBoundary label="Analysis">
+        <ModalProvider uiState={uiStateForProvider}>
+          <AnalysisProvider
+            uiLanguage={language}
+            isGeneratingRef={isGeneratingRef}
+            hasApiKey={appState.hasApiKey}
+            saveVersion={saveVersion}
+            updateState={updateState}
+            updateSongAndStructureWithHistory={updateSongAndStructureWithHistory}
+            clearLineSelection={clearSelection}
+            requestAutoTitleGeneration={() => setShouldAutoGenerateTitle(true)}
+          >
+            <ErrorBoundary>
+              <AppInnerContent />
+            </ErrorBoundary>
+          </AnalysisProvider>
+        </ModalProvider>
+      </ErrorBoundary>
     </EditorProvider>
   );
 }
