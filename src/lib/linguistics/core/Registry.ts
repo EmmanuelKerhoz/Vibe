@@ -5,6 +5,10 @@
  * via the LANG_TO_FAMILY mapping from constants/langFamilyMap.
  *
  * Pattern: Strategy + Registry (docs_fusion_optimal.md §14).
+ *
+ * Fallback: when no strategy is found for a language code, ALGO-ROBUST
+ * (FallbackStrategy) is used automatically. Score is capped at 0.65
+ * and result carries `partialSignal: true`.
  */
 
 import { LANG_TO_FAMILY, type AlgoFamily } from '../../../constants/langFamilyMap';
@@ -13,16 +17,24 @@ import type { RhymePairResult, RhymeResult, SimilarityMethod } from './types';
 
 class PhonologicalRegistryImpl {
   private readonly strategies = new Map<AlgoFamily, PhonologicalStrategy>();
+  private fallback: PhonologicalStrategy | undefined;
 
   /** Register a strategy for the given family. */
   register(family: AlgoFamily, strategy: PhonologicalStrategy): void {
     this.strategies.set(family, strategy);
+    if (family === 'ALGO-ROBUST') {
+      this.fallback = strategy;
+    }
   }
 
-  /** Resolve the strategy for a language code, or undefined if not registered. */
+  /**
+   * Resolve the strategy for a language code.
+   * Falls back to ALGO-ROBUST if no mapping or registration found.
+   */
   resolve(langCode: string): PhonologicalStrategy | undefined {
     const family = LANG_TO_FAMILY[langCode.toLowerCase()];
-    return family ? this.strategies.get(family) : undefined;
+    const strategy = family ? this.strategies.get(family) : undefined;
+    return strategy ?? this.fallback;
   }
 
   /** Resolve with explicit family ID (bypass lang lookup). */
