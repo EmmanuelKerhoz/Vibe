@@ -23,7 +23,7 @@ import type { MatchingWeights, RhymeNucleus, Syllable } from '../core/types';
 const ROBUST_SCORE_CAP = 0.65;
 
 /** Unicode vowel set covering Latin, Cyrillic, Arabic, Devanagari basics. */
-const VOWEL_RE = /[aeiouyéèêàùâîôûœøɛɔɑɪʊəʌæɒ\u0627\u0648\u064A\u0410\u0415\u0418\u041E\u0423\u042B\u042E\u042F\u0430\u0435\u0438\u043E\u0443\u044B\u0440\u044F\u0900-\u097F]/i;
+const VOWEL_RE = /[aeiouyéèêàùâîôûœøɛɔɑɪʊəʌæɒ\u0627\u0648\u064A\u0410\u0415\u0418\u041E\u0423\u042B\u042E\u042F\u0430\u0435\u0438\u043E\u0443\u044B\u044E\u044F\u0900-\u097F]/i;
 
 /** Levenshtein distance between two strings. */
 function levenshtein(a: string, b: string): number {
@@ -68,7 +68,7 @@ export class FallbackStrategy extends PhonologicalStrategy {
       .normalize('NFC')
       .toLowerCase()
       .trim()
-      .replace(/[^\u007F\u0020\u003A\u003C\u003E]/gu, '');
+      .replace(/[^]/gu, '');
   }
 
   // ─── Step 2 — G2P (identity: no language-specific rules) ─────────────────
