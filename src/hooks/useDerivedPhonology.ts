@@ -12,7 +12,7 @@
 
 import { useMemo } from 'react';
 import type { Section } from '../types';
-import type { DetectedSchema } from '../lib/linguistics/core/types';
+import type { DetectedSchema, RhymeNucleus, RhymeResult } from '../lib/linguistics/core/types';
 import { PhonologicalRegistry } from '../lib/linguistics/core/Registry';
 import { categorizeScore } from '../lib/linguistics/core/PhonologicalStrategy';
 import { languageNameToCode } from '../constants/langFamilyMap';
@@ -47,8 +47,8 @@ function lastWord(line: string): string {
  * This replaces the previous greedy AABB-only assignment.
  */
 function assignRhymeLabels(
-  analyses: ReturnType<InstanceType<typeof import('../lib/linguistics/core/PhonologicalStrategy').PhonologicalStrategy>['analyze']>[],
-  score: (a: import('../lib/linguistics/core/types').RhymeNucleus, b: import('../lib/linguistics/core/types').RhymeNucleus) => number,
+  analyses: RhymeResult[],
+  score: (a: RhymeNucleus, b: RhymeNucleus) => number,
 ): { labels: string[]; confidence: number } {
   const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const labels: string[] = new Array(analyses.length).fill('');
@@ -139,7 +139,7 @@ export function useDerivedPhonology(
       }
 
       // Analyse the last prosodic word of each line (rhyme-bearing token)
-      const analyses = lines.map(l => strategy.analyze(lastWord(l.text), langCode));
+      const analyses: RhymeResult[] = lines.map(l => strategy.analyze(lastWord(l.text), langCode));
 
       const { labels, confidence } = assignRhymeLabels(analyses, strategy.score.bind(strategy));
 
