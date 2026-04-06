@@ -39,6 +39,14 @@ import { IndoIranianStrategy } from '../linguistics/strategies/IndoIranianStrate
 import { JapaneseStrategy } from '../linguistics/strategies/JapaneseStrategy';
 import { KoreanStrategy } from '../linguistics/strategies/KoreanStrategy';
 import { AustronesianStrategy } from '../linguistics/strategies/AustronesianStrategy';
+import { BantuStrategy } from '../linguistics/strategies/BantuStrategy';
+import { SemiticStrategy } from '../linguistics/strategies/SemiticStrategy';
+import { SiniticStrategy } from '../linguistics/strategies/SiniticStrategy';
+import { SlavicStrategy } from '../linguistics/strategies/SlavicStrategy';
+import { TaiStrategy } from '../linguistics/strategies/TaiStrategy';
+import { VietStrategy } from '../linguistics/strategies/VietStrategy';
+import { CreoleStrategy } from '../linguistics/strategies/CreoleStrategy';
+import { FallbackStrategy } from '../linguistics/strategies/FallbackStrategy';
 
 // ─── Bootstrap the registry inside the worker context ──────────────────────
 
@@ -53,6 +61,14 @@ PhonologicalRegistry.register('ALGO-IIR', new IndoIranianStrategy());
 PhonologicalRegistry.register('ALGO-JAP', new JapaneseStrategy());
 PhonologicalRegistry.register('ALGO-KOR', new KoreanStrategy());
 PhonologicalRegistry.register('ALGO-AUS', new AustronesianStrategy());
+PhonologicalRegistry.register('ALGO-BNT', new BantuStrategy());
+PhonologicalRegistry.register('ALGO-SEM', new SemiticStrategy());
+PhonologicalRegistry.register('ALGO-SIN', new SiniticStrategy());
+PhonologicalRegistry.register('ALGO-SLV', new SlavicStrategy());
+PhonologicalRegistry.register('ALGO-TAI', new TaiStrategy());
+PhonologicalRegistry.register('ALGO-VIET', new VietStrategy());
+PhonologicalRegistry.register('ALGO-CRL', new CreoleStrategy());
+PhonologicalRegistry.register('ALGO-FBK', new FallbackStrategy());
 
 // ─── Utility functions ─────────────────────────────────────────────────────
 
