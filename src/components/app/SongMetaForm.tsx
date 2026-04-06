@@ -114,7 +114,7 @@ export function SongMetaForm({
                 variant="outlined" color="primary"
                 className="ux-interactive"
                 startIcon={isSurprising ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />}
-                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '8px 2px 8px 2px' }}
+                style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px 2px 8px 2px' }}
               >
                 Suggest
               </Button>
@@ -234,7 +234,7 @@ export function SongMetaForm({
               disabled={song.length === 0 || isGenerating}
               variant="outlined" color="primary" fullWidth
               startIcon={<Ruler className="w-3.5 h-3.5" />}
-              style={{ fontSize: '10px', padding: '4px 0' }}
+              style={{ fontSize: '11px', padding: '4px 0' }}
             >
               {t.leftPanel.quantize}
             </Button>
@@ -252,7 +252,7 @@ export function SongMetaForm({
               variant="outlined" color="primary" fullWidth
               className="ux-interactive"
               startIcon={primaryActionIcon}
-              style={{ fontSize: '10px', padding: '4px 0', borderRadius: '10px 3px 10px 3px' }}
+              style={{ fontSize: '11px', padding: '4px 0', borderRadius: '10px 3px 10px 3px' }}
             >
               {primaryActionLabel}
             </Button>

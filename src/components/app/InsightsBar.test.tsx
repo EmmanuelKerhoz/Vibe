@@ -129,6 +129,10 @@ describe('InsightsBar', () => {
     expect(tooltips[4]!.getAttribute('data-title')).toContain('Phonological');
     // Sixth should be search
     expect(tooltips[5]!.getAttribute('data-title')).toContain('Search');
+
+    expect(screen.getByRole('button', { name: /English/i }).className).toContain('text-[11px]');
+    expect(screen.getByText(/^View$/).className).toContain('text-[11px]');
+    expect(tooltips[1]!.querySelector('span.truncate')?.className).toContain('text-[11px]');
   });
 
   it('detect button shows only the primary (first) detected language', () => {
