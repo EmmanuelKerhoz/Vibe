@@ -39,10 +39,10 @@ export function SuggestionsPanel({
   const { t } = useTranslation();
   const [openSynonymWord, setOpenSynonymWord] = useState<string | null>(null);
 
-  // Aligned with LeftSettingsPanel: lcars-panel drives shape + bg,
-  // no bg-fluent-sidebar override, no !rounded-none that would cancel the LCARS radius.
+  // Panels own their visual boundary via lcars-panel + LCARS rail.
+  // No external border-l/border-r — the rail IS the separator.
   const panelClassName = [
-    'border-l border-fluent-border flex flex-col z-50 shadow-2xl',
+    'flex flex-col z-50 shadow-2xl',
     'lcars-panel fluent-animate-panel',
     className,
   ].filter(Boolean).join(' ');
@@ -56,13 +56,13 @@ export function SuggestionsPanel({
     <div
       data-suggestions-panel
       className={panelClassName}
-      style={{ overflow: 'visible' }}
+      style={{ overflow: 'visible', position: 'relative' }}
     >
       {/* LCARS accent rail */}
       <div style={{
         position: 'absolute',
         top: 0,
-        left: -1,
+        left: 0,
         bottom: 0,
         width: '2px',
         background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',

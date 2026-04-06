@@ -169,7 +169,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
           animate={{ width: 280, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className={`border-l border-fluent-border flex flex-col z-50 shadow-2xl lcars-panel fluent-animate-panel${className ? ` ${className}` : ''}`}
+          className={`flex flex-col z-50 shadow-2xl lcars-panel fluent-animate-panel${className ? ` ${className}` : ''}`}
           style={{ overflow: 'visible', position: 'relative' }}
         >
           <div
@@ -228,7 +228,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     const sectionId      = song[idx]?.id ?? null;
                     const chorusSectionId = chorusIdx !== undefined ? (song[chorusIdx]?.id ?? null) : null;
 
-                    // Stable key: prefer section UUID, fall back to name+idx composite
                     const rowKey = sectionId ?? `${item}-${idx}`;
 
                     const dragHandlers = makeDragHandlers(idx, isDraggable);

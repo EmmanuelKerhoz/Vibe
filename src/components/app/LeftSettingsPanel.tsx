@@ -73,7 +73,6 @@ export function LeftSettingsPanel({
           backgroundColor: 'color-mix(in srgb, var(--bg-app, #0c0c0c) 98%, transparent)',
           backdropFilter: 'none',
           WebkitBackdropFilter: 'none',
-          borderRight: '1px solid var(--border-color, rgba(255,255,255,0.08))',
         }}
       >
         {LCARS_SEPARATOR}
@@ -98,7 +97,6 @@ export function LeftSettingsPanel({
             backgroundColor: SOLID_BG_DARK,
             backdropFilter: 'none',
             WebkitBackdropFilter: 'none',
-            borderRight: '1px solid var(--border-color, rgba(255,255,255,0.08))',
             minWidth: 0,
           }}
         >
