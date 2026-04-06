@@ -67,7 +67,7 @@ PhonologicalRegistry.register('ALGO-SIN',    new SiniticStrategy());
 PhonologicalRegistry.register('ALGO-SLV',    new SlavicStrategy());
 PhonologicalRegistry.register('ALGO-TAI',    new TaiStrategy());
 PhonologicalRegistry.register('ALGO-VIET',   new VietStrategy());
-PhonologicalRegistry.register('ALGO-CRL',    new CreoleStrategy());
+PhonologicalRegistry.register('ALGO-CRE',    new CreoleStrategy());
 // ALGO-ROBUST must be registered last — Registry.ts uses this key to set
 // this.fallback, which is returned by resolve() for any unknown langcode.
 PhonologicalRegistry.register('ALGO-ROBUST', new FallbackStrategy());
