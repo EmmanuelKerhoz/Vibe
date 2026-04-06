@@ -30,7 +30,7 @@ const MENU_VERTICAL_OFFSET = 6;
 const MENU_BOTTOM_PADDING = 16;
 
 export const menuActionClass =
-  'flex w-full items-center gap-3 bg-transparent px-4 py-2.5 text-[12px] text-left ' +
+  'flex w-full items-center gap-3 bg-transparent px-4 py-1.5 text-[12px] text-left ' +
   'transition-colors outline-none focus-visible:bg-[var(--accent-color)]/10 ' +
   'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent';
 
