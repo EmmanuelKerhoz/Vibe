@@ -93,7 +93,41 @@ export function selectUIStateSlice(appState: AppStateBag): UIStateSlice {
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const appState = useAppState();
 
-  const uiStateForProvider = useUIStateForProvider(selectUIStateSlice(appState));
+  // Memoised slice — selectUIStateSlice creates a new object on every call;
+  // wrapping it here ensures useUIStateForProvider receives a stable reference
+  // as long as none of the slice's members change.
+  // useState setters are referentially stable by spec, so this memo only
+  // invalidates when an open/close boolean or a dynamic modal payload changes.
+  const uiSlice = useMemo<UIStateSlice>(
+    () => selectUIStateSlice(appState),
+    [
+      // setters — stable by spec, listed for completeness / ESLint satisfaction
+      appState.setIsAboutOpen, appState.setIsSettingsOpen,
+      appState.setApiErrorModal, appState.setIsImportModalOpen,
+      appState.setIsExportModalOpen, appState.setIsSectionDropdownOpen,
+      appState.setIsSimilarityModalOpen, appState.setIsSaveToLibraryModalOpen,
+      appState.setIsVersionsModalOpen, appState.setIsResetModalOpen,
+      appState.setIsKeyboardShortcutsModalOpen, appState.setConfirmModal,
+      appState.setPromptModal, appState.setIsPasteModalOpen,
+      appState.setIsAnalysisModalOpen, appState.setIsSearchReplaceOpen,
+      appState.setIsAnalysisPanelOpen, appState.setActiveTab,
+      appState.setIsStructureOpen, appState.setIsLeftPanelOpen,
+      // booleans & dynamic payloads — actual invalidation triggers
+      appState.isAboutOpen, appState.isSettingsOpen,
+      appState.apiErrorModal, appState.isImportModalOpen,
+      appState.isExportModalOpen, appState.isSectionDropdownOpen,
+      appState.isSimilarityModalOpen, appState.isSaveToLibraryModalOpen,
+      appState.isVersionsModalOpen, appState.isResetModalOpen,
+      appState.isKeyboardShortcutsModalOpen, appState.confirmModal,
+      appState.promptModal, appState.isPasteModalOpen,
+      appState.isAnalysisModalOpen, appState.isSearchReplaceOpen,
+      appState.isAnalysisPanelOpen, appState.activeTab,
+      appState.isStructureOpen, appState.isLeftPanelOpen,
+      appState.importInputRef,
+    ],
+  );
+
+  const uiStateForProvider = useUIStateForProvider(uiSlice);
 
   // Memoised context value — re-renders all consumers only when appState
   // or uiStateForProvider reference changes (i.e. on every state mutation
