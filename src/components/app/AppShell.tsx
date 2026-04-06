@@ -45,7 +45,7 @@ export function AppShell({
         )}
         {isGenerating && (
           <div
-            className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-[1px] p-4"
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-[1px] p-4 pointer-events-auto"
             aria-busy="true"
           >
             <div
