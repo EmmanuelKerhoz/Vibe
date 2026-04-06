@@ -10,7 +10,7 @@
  */
 
 import type { DetectedSchema } from '../core/types';
-import { PhonologicalRegistry } from '../PhonologicalRegistry';
+import { PhonologicalRegistry } from '../core/Registry';
 import { splitIntoRhymingLines, extractLineTail } from './lyricSegmenter';
 
 /** Minimum similarity score to consider two lines as rhyming. */
@@ -42,7 +42,7 @@ export function detectRhymeScheme(
     for (let j = i + 1; j < n; j++) {
       try {
         const result = PhonologicalRegistry.compare(tails[i]!, tails[j]!, lang);
-        matrix[i]![j] = result.score;
+        matrix[i]![j] = result?.score ?? 0;
       } catch {
         // Strategy not found for lang — use exact-string fallback
         matrix[i]![j] = tails[i] === tails[j] ? 1.0 : 0.0;
