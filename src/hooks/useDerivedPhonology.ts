@@ -63,12 +63,12 @@ function assignRhymeLabels(
       let matched = false;
       for (const [bucketLabel, members] of buckets) {
         for (const mi of members) {
-          const s = scoreFn(analyses[mi]!.rhymeNucleus, analyses[i]!.rhymeNucleus);
-          const rt = categorizeScore(s);
-          if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
+          const bucketScore = scoreFn(analyses[mi]!.rhymeNucleus, analyses[i]!.rhymeNucleus);
+          const bucketRt = categorizeScore(bucketScore);
+          if (bucketRt === 'rich' || bucketRt === 'sufficient' || bucketRt === 'assonance') {
             labels[i] = bucketLabel;
             buckets.get(bucketLabel)!.push(i);
-            totalScore += s;
+            totalScore += bucketScore;
             pairCount++;
             matched = true;
             break;
@@ -88,12 +88,12 @@ function assignRhymeLabels(
     // Propagate current label forward to all subsequent unlabelled lines
     for (let j = i + 1; j < analyses.length; j++) {
       if (labels[j]) continue;
-      const s = scoreFn(analyses[i]!.rhymeNucleus, analyses[j]!.rhymeNucleus);
-      const rt = categorizeScore(s);
-      if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
+      const fwdScore = scoreFn(analyses[i]!.rhymeNucleus, analyses[j]!.rhymeNucleus);
+      const fwdRt = categorizeScore(fwdScore);
+      if (fwdRt === 'rich' || fwdRt === 'sufficient' || fwdRt === 'assonance') {
         labels[j] = labels[i]!;
         buckets.get(labels[i]!)!.push(j);
-        totalScore += s;
+        totalScore += fwdScore;
         pairCount++;
       }
     }
