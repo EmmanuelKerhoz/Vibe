@@ -14,6 +14,10 @@
  * InsightsBarProvider is mounted here so that both InsightsBar and
  * AppEditorZone/LyricsView can consume isAnalyzing / isAdaptingLanguage /
  * targetLanguage without prop relay.
+ *
+ * Note: webSimilarityIndex is intentionally excluded from InsightsBarContext
+ * to prevent re-rendering the entire InsightsBar subtree on every similarity
+ * engine run. SimilarityButton reads index directly from SimilarityContext.
  */
 import React, { Suspense, lazy, useMemo } from 'react';
 import { Spinner } from '@fluentui/react-components';
@@ -92,7 +96,7 @@ export function AppEditorLayout({
     selectedLineId, setSelectedLineId, suggestions, isSuggesting,
     generateSuggestions, applySuggestion,
     // Derived
-    webSimilarityIndex, webBadgeLabel, isSuggestionsOpen,
+    webBadgeLabel, isSuggestionsOpen,
     // Panels
     linguisticsWorker, spellCheck,
     switchEditMode,
@@ -122,8 +126,9 @@ export function AppEditorLayout({
   } = handlers;
 
   // ── InsightsBarContext value ──────────────────────────────────────────────
-  // Memoized to prevent cascading re-renders on all InsightsBarContext consumers
-  // whenever AppEditorLayout re-renders (e.g. on song edits propagated via SongContext).
+  // webSimilarityIndex is intentionally excluded: SimilarityButton reads it
+  // directly from SimilarityContext, preventing re-renders of the full
+  // InsightsBar subtree on every similarity engine run.
   const insightsBarValue = useMemo<InsightsBarContextValue>(() => ({
     targetLanguage,
     setTargetLanguage,
@@ -137,7 +142,6 @@ export function AppEditorLayout({
     analyzeCurrentSong,
     editMode,
     switchEditMode,
-    webSimilarityIndex,
     webBadgeLabel,
     setIsSimilarityModalOpen,
     libraryCount,
@@ -152,7 +156,7 @@ export function AppEditorLayout({
     adaptationProgress, adaptationResult,
     isAnalyzing, analyzeCurrentSong,
     editMode, switchEditMode,
-    webSimilarityIndex, webBadgeLabel,
+    webBadgeLabel,
     setIsSimilarityModalOpen, libraryCount,
     handleOpenSearch, handleToggleAnalysisPanel,
     isAnalysisPanelOpen, hasApiKey,

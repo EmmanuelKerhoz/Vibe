@@ -1,14 +1,13 @@
 import { Loader2, Search } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
-import type { useSimilarityEngine } from '../../../hooks/useSimilarityEngine';
+import { useSimilarityContext } from '../../../contexts/SimilarityContext';
 
 interface SimilarityButtonProps {
   isGenerating: boolean;
   isAnalyzing: boolean;
   hasLyrics: boolean;
   hasApiKey: boolean;
-  webSimilarityIndex: ReturnType<typeof useSimilarityEngine>['index'];
   webBadgeLabel: string | null;
   libraryCount: number;
   setIsSimilarityModalOpen: (open: boolean) => void;
@@ -19,12 +18,14 @@ export function SimilarityButton({
   isAnalyzing,
   hasLyrics,
   hasApiKey,
-  webSimilarityIndex,
   webBadgeLabel,
   libraryCount,
   setIsSimilarityModalOpen,
 }: SimilarityButtonProps) {
   const { t } = useTranslation();
+  // Read index directly from SimilarityContext to avoid re-rendering
+  // the InsightsBar subtree on every similarity engine run.
+  const { index: webSimilarityIndex } = useSimilarityContext();
   const isDisabled = !hasApiKey || isGenerating || isAnalyzing || !hasLyrics;
   const tooltipTitle = !hasApiKey
     ? (t.tooltips.aiUnavailable ?? 'AI unavailable')

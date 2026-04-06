@@ -6,9 +6,12 @@
  *
  * Mounted once in AppEditorLayout, consumed directly by InsightsBar
  * and its sub-components — eliminates the 17-prop relay through AppEditorZone.
+ *
+ * Note: webSimilarityIndex is intentionally absent from this context.
+ * SimilarityButton reads it directly from useSimilarityContext() to avoid
+ * re-rendering the entire InsightsBar subtree on every similarity engine run.
  */
 import React, { createContext, useContext, type ReactNode } from 'react';
-import type { useSimilarityEngine } from '../hooks/useSimilarityEngine';
 import type { AdaptationProgress, AdaptationResult } from '../hooks/analysis/useLanguageAdapter';
 import type { EditMode } from '../types';
 
@@ -28,8 +31,7 @@ export interface InsightsBarContextValue {
   // Edit mode
   editMode: EditMode;
   switchEditMode: (mode: EditMode) => void;
-  // Similarity
-  webSimilarityIndex: ReturnType<typeof useSimilarityEngine>['index'];
+  // Similarity (badge label only — index is read directly from SimilarityContext)
   webBadgeLabel: string | null;
   setIsSimilarityModalOpen: (v: boolean) => void;
   // Library

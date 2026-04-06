@@ -2,14 +2,12 @@ import { Search } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
 import { DataBarVertical24Regular } from '@fluentui/react-icons';
 import { getLanguageDisplay, useTranslation } from '../../../i18n';
-import type { useSimilarityEngine } from '../../../hooks/useSimilarityEngine';
 import { AnalyzeSongButton } from './AnalyzeSongButton';
 import { SimilarityButton } from './SimilarityButton';
 
 type LanguageDisplay = ReturnType<typeof getLanguageDisplay>;
 
 interface InsightsActionsProps {
-  webSimilarityIndex: ReturnType<typeof useSimilarityEngine>['index'];
   webBadgeLabel: string | null;
   libraryCount: number;
   isAnalyzing: boolean;
@@ -25,7 +23,6 @@ interface InsightsActionsProps {
 }
 
 export function InsightsActions({
-  webSimilarityIndex,
   webBadgeLabel,
   libraryCount,
   isAnalyzing,
@@ -48,7 +45,6 @@ export function InsightsActions({
         isGenerating={isGenerating}
         isAnalyzing={isAnalyzing}
         hasLyrics={hasLyrics}
-        webSimilarityIndex={webSimilarityIndex}
         webBadgeLabel={webBadgeLabel}
         libraryCount={libraryCount}
         setIsSimilarityModalOpen={setIsSimilarityModalOpen}
