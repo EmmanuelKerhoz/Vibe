@@ -63,7 +63,7 @@ const LazyFallback = React.memo(function LazyFallback() {
 
 interface AppEditorLayoutProps {
   isMobileOrTablet: boolean;
-  playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
+  playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => Promise<void>;
   /**
    * Single source of truth from AppInnerContent.
    * Clears selectedLineId whenever the structure panel is opened.
