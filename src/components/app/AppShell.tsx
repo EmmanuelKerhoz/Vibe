@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FluentProvider, Spinner, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 import bannerImage from '../../../docs/Lyricist_Splash_Medium.png';
 
@@ -25,6 +25,22 @@ export function AppShell({
   onBackdropClick,
   children,
 }: AppShellProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const contentEl = contentRef.current;
+    if (!contentEl) return;
+
+    if (isGenerating) {
+      contentEl.setAttribute('aria-hidden', 'true');
+      overlayRef.current?.focus();
+      return;
+    }
+
+    contentEl.removeAttribute('aria-hidden');
+  }, [isGenerating]);
+
   return (
     <FluentProvider
       theme={theme === 'dark' ? webDarkTheme : webLightTheme}
@@ -45,8 +61,16 @@ export function AppShell({
         )}
         {isGenerating && (
           <div
+            ref={overlayRef}
+            tabIndex={-1}
             className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-[1px] p-4 pointer-events-auto"
             aria-busy="true"
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape' && event.key !== 'Tab') return;
+              event.preventDefault();
+              event.stopPropagation();
+              overlayRef.current?.focus();
+            }}
           >
             <div
               role="status"
@@ -70,7 +94,9 @@ export function AppShell({
             </div>
           </div>
         )}
-        {children}
+        <div ref={contentRef} className={isGenerating ? 'pointer-events-none' : undefined}>
+          {children}
+        </div>
       </div>
     </FluentProvider>
   );

@@ -543,5 +543,6 @@ describe('App markup mode reset', () => {
     expect(screen.getByRole('status', { name: 'Song generation in progress' })).toBeTruthy();
     expect(screen.getByText('Generating your song…')).toBeTruthy();
     expect(screen.getByText('Please wait while the editor is temporarily locked.')).toBeTruthy();
+    expect(screen.getByTestId('left-settings-panel').closest('[aria-hidden="true"]')).toBeTruthy();
   });
 });
