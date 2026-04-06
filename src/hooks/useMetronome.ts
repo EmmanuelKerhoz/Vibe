@@ -1,8 +1,3 @@
-/**
- * @status dormant — implémentation complète, non exposée dans l'UI.
- * Candidat à intégration dans MusicalParamsPanel (métronome)
- * et StatusBar / SettingsPanel (storage estimate).
- */
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 // Type-safe detection of the webkit-prefixed AudioContext fallback.
@@ -144,9 +139,13 @@ export function useMetronome(bpm: number): UseMetronomeReturn {
       const ctx = getOrCreateAudioContext(audioCtxRef);
       if (!ctx) return;
       if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
+        // Await resume before starting the scheduler so that ctx.currentTime
+        // is live when the lookahead loop first runs (fixes silent first tick
+        // on mobile / after browser inactivity).
+        ctx.resume().then(() => { setIsPlaying(true); }).catch(() => {});
+      } else {
+        setIsPlaying(true);
       }
-      setIsPlaying(true);
     }
   }, [isPlaying, stop]);
 
