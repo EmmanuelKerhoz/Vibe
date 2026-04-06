@@ -41,5 +41,5 @@ export interface UIStateSlice {
   setIsStructureOpen: (v: boolean) => void;
   isLeftPanelOpen: boolean;
   setIsLeftPanelOpen: (v: boolean) => void;
-  importInputRef: RefObject<HTMLInputElement>;
+  importInputRef: RefObject<HTMLInputElement | null>;
 }
