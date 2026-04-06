@@ -26,10 +26,18 @@ export function splitIntoRhymingLines(text: string): string[] {
 
 /**
  * Extract the rhyme-bearing tail of a line.
- * Returns the last word, lowercased, with punctuation stripped.
+ * Returns the last word, lowercased, with trailing punctuation stripped.
+ *
+ * Extended charset vs. original:
+ *   - Typographic double quotes \u201C \u201D (" ") added — common in
+ *     copy-pasted lyrics from streaming platforms.
+ *   - Closing parenthesis ) added — annotations like "(yeah)" at line end.
+ *   - Closing bracket ] added — rare but present in some lyric formats.
  */
 export function extractLineTail(line: string): string {
   const words = line.trim().split(/\s+/);
   const last = words[words.length - 1] ?? '';
-  return last.toLowerCase().replace(/[.,!?;:"'«»…\-–—]+$/, '');
+  return last
+    .toLowerCase()
+    .replace(/[.,!?;:"'\u201C\u201D«»…\-–—\)\]]+$/, '');
 }

@@ -31,8 +31,26 @@ export function countSyllablesFromIPA(ipa: string): number {
 
 // ── Orthographic fallback heuristics ──────────────────────────────────────
 
-/** FR: words ending in silent -e, -es, -ent (3p plural verb) */
-const FR_SILENT_E_RE = /(?<=[^aeiouéèêëàâùîïôœ])e[s]?$|ent$/i;
+/**
+ * FR: silent -e and -es endings (preceded by a consonant grapheme).
+ *
+ * The original pattern also matched `ent$` to handle the 3rd-person-plural
+ * verbal ending "ils chantent" → /ʃɑ̃t/. However, `ent$` is over-broad:
+ * it incorrectly elides the final syllable of nominal/adjectival words like
+ * "talent", "serpent", "orient", "différent" where /ɑ̃/ is fully pronounced.
+ *
+ * Fix: `ent$` is replaced by a tighter verbal-form guard that requires
+ * the two characters before `ent` to be a consonant + consonant sequence
+ * (typical of 3p-pl verb stems: chant-ent, parl-ent, viv-ent, pren-ent).
+ * Pure nominal endings like "talent" (l+e+n+t) are excluded because the
+ * vowel group count already accounts for the /ɑ̃/ nucleus.
+ *
+ * Pattern breakdown:
+ *   (?<=[^aeiouéèêëàâùîïôœ])e[s]?$   — silent -e / -es after consonant
+ *   (?<=[^aeiouéèêëàâùîïôœ]{2})ent$  — verbal -ent after ≥2 consonants
+ */
+const FR_SILENT_E_RE =
+  /(?<=[^aeiouéèêëàâùîïôœ])e[s]?$|(?<=[^aeiouéèêëàâùîïôœ]{2})ent$/i;
 
 /**
  * Count syllables from a raw word using language-aware heuristics.

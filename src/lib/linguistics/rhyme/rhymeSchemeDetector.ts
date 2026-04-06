@@ -17,6 +17,21 @@ import { splitIntoRhymingLines, extractLineTail } from './lyricSegmenter';
 const RHYME_THRESHOLD = 0.65;
 
 /**
+ * Generate a label for a given 0-based label index.
+ *
+ * For indices 0–25: single uppercase letter A–Z.
+ * For indices ≥ 26: two-letter compound AA, AB, … AZ, BA, …
+ * This avoids the non-alphabetic characters that
+ * String.fromCharCode(65 + n) produces for n ≥ 26.
+ */
+function labelForIndex(index: number): string {
+  if (index < 26) return String.fromCharCode(65 + index);
+  const hi = Math.floor(index / 26) - 1;
+  const lo = index % 26;
+  return String.fromCharCode(65 + hi) + String.fromCharCode(65 + lo);
+}
+
+/**
  * Detect the rhyme scheme of a lyric block.
  *
  * @param text  - Raw lyric text (may include section markers).
@@ -51,13 +66,15 @@ export function detectRhymeScheme(
   }
 
   // ── Label assignment ─────────────────────────────────────────────────────
-  // Assign letter labels (A, B, C…) greedily by first rhyme match ≥ threshold.
+  // Assign letter labels (A, B, C… AA, AB…) greedily by first rhyme match
+  // ≥ threshold. labelForIndex() produces safe alphabetic labels for any
+  // number of lines without falling back to non-letter codepoints.
   const labels: string[] = new Array(n).fill('') as string[];
-  let nextCode = 65; // 'A'
+  let nextIndex = 0;
 
   for (let i = 0; i < n; i++) {
     if (labels[i] !== '') continue;
-    labels[i] = String.fromCharCode(nextCode++);
+    labels[i] = labelForIndex(nextIndex++);
     for (let j = i + 1; j < n; j++) {
       if (labels[j] === '' && (matrix[i]![j] ?? 0) >= RHYME_THRESHOLD) {
         labels[j] = labels[i]!;
