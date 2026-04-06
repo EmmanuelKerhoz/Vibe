@@ -58,7 +58,7 @@ export function TranslateGroup({
       {isAdaptingLanguage
         ? <Loader2 className="w-3 h-3 animate-spin flex-shrink-0" aria-hidden="true" />
         : <Languages className="w-3 h-3 flex-shrink-0" aria-hidden="true" />}
-      <span className="truncate text-[10px] font-bold uppercase tracking-wider">
+      <span className="truncate text-[11px] font-bold uppercase tracking-wider">
         {t.editor.adaptation ?? 'Adaptation'}
       </span>
     </span>

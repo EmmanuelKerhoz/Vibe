@@ -18,7 +18,7 @@ export function ViewModeSelector({ editMode, switchEditMode, disabled }: ViewMod
         <LcarsSelect
           value={editMode}
           onChange={(value) => switchEditMode(value as EditMode)}
-          triggerLabel={<span className="flex items-center gap-1.5 text-[10px]">{t.editor.lyricsEditors ?? 'View'}</span>}
+          triggerLabel={<span className="flex items-center gap-1.5 text-[11px]">{t.editor.lyricsEditors ?? 'View'}</span>}
           options={[
             { value: 'text', label: <span className="flex items-center gap-1.5"><Type className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.textModeLabel}</span></span> },
             { value: 'markdown', label: <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" aria-hidden="true" /><span>{t.editor.markupModeLabel}</span></span> },

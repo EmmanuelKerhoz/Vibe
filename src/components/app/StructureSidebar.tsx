@@ -305,6 +305,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     onOpenChange={setIsSectionDropdownOpen}
                     accentColor="var(--lcars-cyan)"
                     buttonTitle={t.tooltips.addSection}
+                    style={{ fontSize: '11px' }}
                   />
                 </div>
 
@@ -316,7 +317,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                       variant="outlined" fullWidth
                       startIcon={<AlignLeft className="w-3.5 h-3.5" />}
                       className="ux-interactive"
-                      style={{ fontSize: '10px', padding: '4px 0', borderRadius: sectionButtonShapeClass }}
+                      style={{ fontSize: '11px', padding: '4px 0', borderRadius: sectionButtonShapeClass }}
                     >
                       {t.structure.normalize}
                     </Button>

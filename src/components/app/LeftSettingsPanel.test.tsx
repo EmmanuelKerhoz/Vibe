@@ -163,7 +163,18 @@ describe('LeftSettingsPanel', () => {
     const suggestTooltip = screen.getAllByTestId('tooltip').find(tooltip =>
       /Suggest a random topic, mood .* title/.test(tooltip.getAttribute('data-title') ?? ''));
     expect(suggestButton.className).toContain('ux-interactive');
+    expect(suggestButton.getAttribute('style')).toContain('font-size: 11px');
     expect(suggestTooltip).toBeTruthy();
+  });
+
+  it('keeps the compact action buttons on the shared 11px control size', () => {
+    mockSong.current = [{ id: 'verse-1', name: 'Verse', lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }] }];
+
+    renderPanel();
+
+    expect(screen.getByRole('button', { name: 'Suggest' }).getAttribute('style')).toContain('font-size: 11px');
+    expect(screen.getByRole('button', { name: 'Quantize Syllables (GLOBAL)' }).getAttribute('style')).toContain('font-size: 11px');
+    expect(screen.getByRole('button', { name: 'Regenerate Lyrics' }).getAttribute('style')).toContain('font-size: 11px');
   });
 
   it('disables AI-only actions when AI is unavailable', () => {
