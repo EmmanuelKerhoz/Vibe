@@ -92,7 +92,7 @@ export function SongMetaForm({
             type="button"
             onClick={() => setIsLeftPanelOpen(false)}
             aria-label="Close lyrics generation panel"
-            className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors"
+            className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
             <span aria-hidden="true" className="text-lg leading-none">&times;</span>
           </button>
@@ -133,7 +133,7 @@ export function SongMetaForm({
                   </Tooltip>
                 ) : (
                   <Tooltip title={t.tooltips.userEnteredTitle}>
-                    <User className="w-3 h-3 text-zinc-400" />
+                    <User className="w-3 h-3 text-zinc-500 dark:text-zinc-400" />
                   </Tooltip>
                 )}
               </div>
@@ -195,7 +195,7 @@ export function SongMetaForm({
           </div>
         </div>
 
-        <div className="h-px bg-white/5 mx-1" />
+        <div className="h-px bg-black/5 dark:bg-white/5 mx-1" />
 
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-cyan,#06b6d4)] opacity-80" />

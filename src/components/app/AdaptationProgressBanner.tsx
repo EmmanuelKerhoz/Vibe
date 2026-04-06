@@ -58,7 +58,7 @@ function StepIndicatorRow({
                     ? 'bg-emerald-400'
                     : stepActive
                     ? 'bg-[var(--accent-color)] animate-pulse'
-                    : 'bg-white/15'
+                    : 'bg-zinc-300 dark:bg-white/15'
                 }`}
               />
               <span
@@ -67,14 +67,14 @@ function StepIndicatorRow({
                     ? 'text-emerald-400'
                     : stepActive
                     ? 'text-[var(--accent-color)] font-semibold'
-                    : 'text-zinc-600'
+                    : 'text-zinc-500 dark:text-zinc-600'
                 }`}
               >
                 {stepLabel}
               </span>
             </div>
             {idx < ORDERED_STEP_IDS.length - 1 && (
-              <span className="text-zinc-700 mx-0.5">›</span>
+              <span className="text-zinc-500 dark:text-zinc-700 mx-0.5">›</span>
             )}
           </React.Fragment>
         );
@@ -110,11 +110,11 @@ export function AdaptationProgressBanner({
           ? 'bg-red-400/5 border-red-400/20'
           : isDone && result
           ? scoreBg(result.score)
-          : 'bg-white/3 border-white/10'
+          : 'bg-black/[0.02] dark:bg-white/3 border-black/10 dark:border-white/10'
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 font-semibold tracking-wider uppercase text-zinc-300">
+        <div className="flex items-center gap-1.5 font-semibold tracking-wider uppercase text-zinc-700 dark:text-zinc-300">
           {isFailed
             ? <XCircle className="w-3 h-3 text-red-400" aria-hidden="true" />
             : isDone && result
@@ -122,12 +122,12 @@ export function AdaptationProgressBanner({
               ? <CheckCircle2 className="w-3 h-3 text-emerald-400" aria-hidden="true" />
               : <AlertTriangle className="w-3 h-3 text-amber-400" aria-hidden="true" />
             : <Loader2 className="w-3 h-3 animate-spin text-[var(--accent-color)]" aria-hidden="true" />}
-          <span className="text-zinc-400">{progress.label}</span>
+          <span className="text-zinc-600 dark:text-zinc-400">{progress.label}</span>
         </div>
         {(isDone || isFailed) && (
           <button
             onClick={onDismiss}
-            className="text-zinc-500 hover:text-zinc-300 transition-colors leading-none px-1"
+            className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors leading-none px-1"
             aria-label={t.adaptationProgress?.dismissResult ?? 'Dismiss adaptation result'}
           >
             ✕
@@ -140,7 +140,7 @@ export function AdaptationProgressBanner({
       {isDone && result && (
         <div className="flex flex-col gap-1 mt-0.5">
           <div className="flex items-center gap-2">
-            <span className="text-zinc-500">{t.adaptationProgress?.fidelityScore ?? 'Fidelity score'}</span>
+            <span className="text-zinc-600 dark:text-zinc-500">{t.adaptationProgress?.fidelityScore ?? 'Fidelity score'}</span>
             <span className={`font-bold tabular-nums ${scoreColor(result.score)}`}>
               {result.score}/100
             </span>

@@ -198,7 +198,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                 background: 'var(--accent-rail-gradient-h-rev)',
                 opacity: 0.85, pointerEvents: 'none', zIndex: 1,
               }} />
-              <h3 id={headingId} className="micro-label text-zinc-400 flex items-center gap-2">
+              <h3 id={headingId} className="micro-label text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
                 <BarChart2 className="w-4 h-4 text-[var(--accent-color)]" />
                 <span className="text-[10px] uppercase tracking-widest font-semibold">{t.structure.title}</span>
               </h3>

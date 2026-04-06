@@ -28,7 +28,7 @@ export function AppShell({
       style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}
     >
       <div
-        className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-zinc-400 flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${
+        className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-[var(--text-primary)] flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${
           theme === 'dark' ? 'dark' : ''
         }`}
       >

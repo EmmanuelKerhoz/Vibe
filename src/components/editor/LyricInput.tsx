@@ -161,7 +161,7 @@ export const LyricInput = React.memo(function LyricInput({
     <div
       className={[
         'group relative flex items-center gap-1.5 rounded pl-1 pr-8 py-0.5 transition-all',
-        isSelected ? 'bg-white/5' : 'hover:bg-white/[0.03]',
+        isSelected ? 'bg-black/[0.03] dark:bg-white/5' : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.03]',
         isDraggedLine ? 'opacity-40' : '',
         isDragOverLine ? 'border-t border-[var(--accent-color)]/60' : '',
       ].join(' ')}
@@ -188,7 +188,7 @@ export const LyricInput = React.memo(function LyricInput({
       <Tooltip title={line.isManual ? (t.editor?.humanLine ?? 'Human line') : (t.editor?.aiLine ?? 'AI-generated line')}>
         <span className="flex-shrink-0 flex items-center justify-center w-3.5">
           {line.isManual
-            ? <User className="h-2.5 w-2.5 text-zinc-400" />
+            ? <User className="h-2.5 w-2.5 text-zinc-500 dark:text-zinc-400" />
             : <Bot className="h-2.5 w-2.5 text-[var(--accent-color)]" />}
         </span>
       </Tooltip>
@@ -246,32 +246,32 @@ export const LyricInput = React.memo(function LyricInput({
         )}
         <Tooltip title={t.editor?.moveLineUp ?? 'Move line up'}>
           <button type="button" onClick={() => { moveLineUp(sectionId, line.id); playAudioFeedback('click'); }} disabled={lineIndex === 0}
-            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">
+            className="flex h-4 w-4 items-center justify-center text-zinc-500 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">
             <ChevronUp className="h-2.5 w-2.5" />
           </button>
         </Tooltip>
         <Tooltip title={t.editor?.moveLineDown ?? 'Move line down'}>
           <button type="button" onClick={() => { moveLineDown(sectionId, line.id); playAudioFeedback('click'); }} disabled={lineIndex === sectionLinesCount - 1}
-            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">
+            className="flex h-4 w-4 items-center justify-center text-zinc-500 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">
             <ChevronDown className="h-2.5 w-2.5" />
           </button>
         </Tooltip>
         <Tooltip title={t.editor?.addLineAfter ?? 'Add line after'}>
           <button type="button" onClick={() => { addLineToSection(sectionId, line.id); playAudioFeedback('click'); }}
-            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-zinc-200 transition">
+            className="flex h-4 w-4 items-center justify-center text-zinc-500 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-200 transition">
             <Plus className="h-2.5 w-2.5" />
           </button>
         </Tooltip>
         <Tooltip title={t.editor?.deleteLine ?? 'Delete line'}>
           <button type="button" onClick={() => { deleteLineFromSection(sectionId, line.id); playAudioFeedback('click'); }} disabled={sectionLinesCount <= 1}
-            className="flex h-4 w-4 items-center justify-center text-zinc-600 hover:text-red-400 disabled:opacity-20 disabled:cursor-not-allowed transition">
+            className="flex h-4 w-4 items-center justify-center text-zinc-500 dark:text-zinc-600 hover:text-red-400 disabled:opacity-20 disabled:cursor-not-allowed transition">
             <Trash2 className="h-2.5 w-2.5" />
           </button>
         </Tooltip>
       </div>
 
       {/* COL: COUNT */}
-      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors w-[2.75rem] text-right">
+      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-500 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-400 transition-colors w-[2.75rem] text-right">
         {line.syllables > 0 ? line.syllables : ''}
       </span>
 
