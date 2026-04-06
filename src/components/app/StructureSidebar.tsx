@@ -53,7 +53,7 @@ function getGroupedChorusIndices(structure: string[]) {
   return groupedIndices;
 }
 
-// ── SectionRow ────────────────────────────────────────────────────────────────
+// ── SectionRow ──────────────────────────────────────────────────────────────────────────
 
 interface SectionRowProps {
   sectionItem: string;
@@ -115,7 +115,7 @@ const SectionRow = React.memo(function SectionRow({
   );
 });
 
-// ── StructureSidebar ──────────────────────────────────────────────────────────
+// ── StructureSidebar ────────────────────────────────────────────────────────────────────
 
 export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
@@ -140,7 +140,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
 
   useFocusTrap(panelRef, !!(isMobileOverlay && isStructureOpen), () => setIsStructureOpen(false));
 
-  const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|…)$/, '').trim();
+  const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|\u2026)$/, '').trim();
   const removeSectionLabel = t.tooltips.removeSection;
 
   const sectionOptions = useMemo(
@@ -172,20 +172,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
           className={`flex flex-col z-50 shadow-2xl lcars-panel fluent-animate-panel${className ? ` ${className}` : ''}`}
           style={{ overflow: 'visible', position: 'relative' }}
         >
-          <div
-            data-testid="structure-sidebar-rail"
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              top: 0, left: 0, bottom: 0,
-              width: '2px',
-              background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-              opacity: 0.85,
-              pointerEvents: 'none',
-              zIndex: 20,
-            }}
-          />
-
           <div className="w-[280px] flex flex-col h-full overflow-hidden">
             {/* Header */}
             <div
