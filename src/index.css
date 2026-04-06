@@ -510,6 +510,20 @@
 }
 
 /* ===========================================================================
+   DOUBLE-BORDER FIX — when .dialog-surface is wrapped by .lcars-gradient-outline
+   the outer wrapper already provides the 2px gradient border via padding+bg.
+   Suppress the inner solid border AND the inner ::after gradient overlay.
+   =========================================================================== */
+
+.lcars-gradient-outline > .dialog-surface {
+  border: none;
+}
+
+.lcars-gradient-outline > .dialog-surface::after {
+  display: none !important;
+}
+
+/* ===========================================================================
    LCARS CONTAINER GRADIENT BORDER — shared border overlay for containers
    Keeps inner fills untouched by masking the gradient to the border only.
    =========================================================================== */
