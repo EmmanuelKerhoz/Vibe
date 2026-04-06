@@ -1,1 +1,106 @@
-aW1wb3J0IFJlYWN0LCB7IHVzZUVmZmVjdCwgdXNlUmVmIH0gZnJvbSAncmVhY3QnOwppbXBvcnQgeyBGbHVlbnRQcm92aWRlciwgU3Bpbm5lciwgd2ViTGlnaHRUaGVtZSwgd2ViRGFya1RoZW1lIH0gZnJvbSAnQGZsdWVudHVpL3JlYWN0LWNvbXBvbmVudHMnOwppbXBvcnQgYmFubmVySW1hZ2UgZnJvbSAnLi4vLi4vLi4vZG9jcy9MeXJpY2lzdF9TcGxhc2hfTWVkaXVtLnBuZyc7CgppbnRlcmZhY2UgQXBwU2hlbGxQcm9wcyB7CiAgdGhlbWU6ICdsaWdodCcgfCAnZGFyayc7CiAgaXNNb2JpbGVPclRhYmxldDogYm9vbGVhbjsKICBzaG93QmFja2Ryb3A6IGJvb2xlYW47CiAgaXNHZW5lcmF0aW5nOiBib29sZWFuOwogIG9uQmFja2Ryb3BDbGljazogKCkgPT4gdm9pZDsKICBjaGlsZHJlbjogUmVhY3QuUmVhY3ROb2RlOwp9CgovKioKICogQXBwU2hlbGwg4oCUIHB1cmUgbGF5b3V0IHdyYXBwZXIuCiAqIE93bnM6IEZsdWVudFByb3ZpZGVyIHRoZW1pbmcsIG1vYmlsZSBiYWNrZHJvcCBvdmVybGF5LCBvdXRlciBmbGV4IHN0cnVjdHVyZS4KICogQ29udGFpbnMgemVybyBidXNpbmVzcyBsb2dpYyBhbmQgemVybyBob29rcy4KICogUGhhc2UgMSBvZiBBcHBJbm5lckNvbnRlbnQgZ29kLWNvbXBvbmVudCByZWZhY3Rvci4KICovCmV4cG9ydCBmdW5jdGlvbiBBcHBTaGVsbCh7CiAgdGhlbWUsCiAgaXNNb2JpbGVPclRhYmxldCwKICBzaG93QmFja2Ryb3AsCiAgaXNHZW5lcmF0aW5nLAogIG9uQmFja2Ryb3BDbGljayxjaGlsZHJlbiwKfTogQXBwU2hlbGxQcm9wcykgewogIGNvbnN0IGNvbnRlbnRSZWYgPSB1c2VSZWY8SFRNTERpdkVsZW1lbnQ+KG51bGwpOwogIGNvbnN0IG92ZXJsYXlSZWYgPSB1c2VSZWY8SFRNTERpdkVsZW1lbnQ+KG51bGwpOwoKICB1c2VFZmZlY3QoKCkgPT4gewogICAgY29uc3QgY29udGVudEVsID0gY29udGVudFJlZi5jdXJyZW50OwogICAgaWYgKCFjb250ZW50RWwpIHJldHVybjsKCiAgICBpZiAoaXNHZW5lcmF0aW5nKSB7CiAgICAgIGNvbnRlbnRFbC5zZXRBdHRyaWJ1dGUoJ2FyaWEtaGlkZGVuJywgJ3RydWUnKTsKICAgICAgb3ZlcmxheVJlZi5jdXJyZW50Py5mb2N1cygpOwogICAgICByZXR1cm47CiAgICB9CgogICAgY29udGVudEVsLnJlbW92ZUF0dHJpYnV0ZSgnYXJpYS1oaWRkZW4nKTsKICB9LCBbaXNHZW5lcmF0aW5nXSk7CgogIHJldHVybiAoCiAgICA8Rmx1ZW50UHJvdmlkZXIKICAgICAgdGhlbWU9e3RoZW1lID09PSAnZGFyaycgPyB3ZWJEYXJrVGhlbWUgOiB3ZWJMaWdodFRoZW1lfQogICAgICBzdHlsZT17eyBoZWlnaHQ6ICcxMDAlJywgd2lkdGg6ICcxMDAlJywgYmFja2dyb3VuZENvbG9yOiAndHJhbnNwYXJlbnQnIH19CiAgICA+CiAgICAgIDxkaXYKICAgICAgICBjbGFzc05hbWU9e2BmdWktRmx1ZW50UHJvdmlkZXIgdWktZmx1ZW50IGgtc2NyZWVuIHctZnVsbCBiZy1mbHVlbnQtYmcgdGV4dC1bdmFyKC0tdGV4dC1wcmltYXJ5KV0gZmxleCBmbGV4LWNvbCBvdmVyZmxvdy1oaWRkZW4gZm9udC1zYW5zIHNlbGVjdGlvbjpiZy1bdmFyKC0tYWNjZW50LWNvbG9yKV0vMzAgJHsKICAgICAgICAgIHRoZW1lID09PSAnZGFyaycgPyAnZGFyaycgOiAnJwogICAgICAgIH1gfQogICAgICA+CiAgICAgICAge3Nob3dCYWNrZHJvcCAmJiAoCiAgICAgICAgICA8YnV0dG9uCiAgICAgICAgICAgIHR5cGU9ImJ1dHRvbiIKICAgICAgICAgICAgY2xhc3NOYW1lPSJtb2JpbGUtcGFuZWwtYmFja2Ryb3AiCiAgICAgICAgICAgIG9uQ2xpY2s9e29uQmFja2Ryb3BDbGlja30KICAgICAgICAgICAgYXJpYS1sYWJlbD0iQ2xvc2UgbW9iaWxlIHBhbmVscyIKICAgICAgICAgIC8+CiAgICAgICAgKX0KICAgICAgICB7aXNHZW5lcmF0aW5nICYmICgKICAgICAgICAgIDxkaXYKICAgICAgICAgICAgcmVmPXtvdmVybGF5UmVmfQogICAgICAgICAgICB0YWJJbmRleD17LTF9CiAgICAgICAgICAgIGNsYXNzTmFtZT0iZml4ZWQgaW5zZXQtMCB6LVs5MF0gZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgYmctYmxhY2svNzAgYmFja2Ryb3AtYmx1ci1bMXB4XSBwLTQgcG9pbnRlci1ldmVudHMtYXV0byIKICAgICAgICAgICAgYXJpYS1idXN5PSJ0cnVlIgogICAgICAgICAgICBvbktleURvd249eyhldmVudCkgPT4gewogICAgICAgICAgICAgIGlmIChldmVudC5rZXkgIT09ICdFc2NhcGUnICYmIGV2ZW50LmtleSAhPT0gJ1RhYicpIHJldHVybjsKICAgICAgICAgICAgICBldmVudC5wcmV2ZW50RGVmYXVsdCgpOwogICAgICAgICAgICAgIGV2ZW50LnN0b3BQcm9wYWdhdGlvbigpOwogICAgICAgICAgICAgIG92ZXJsYXlSZWYuY3VycmVudD8uZm9jdXMoKTsKICAgICAgICAgICAgfX0KICAgICAgICAgID4KICAgICAgICAgICAgPGRpdgogICAgICAgICAgICAgIHJvbGU9InN0YXR1cyIKICAgICAgICAgICAgICBhcmlhLWxpdmU9InBvbGl0ZSIKICAgICAgICAgICAgICBhcmlhLWxhYmVsPSJTb25nIGdlbmVyYXRpb24gaW4gcHJvZ3Jlc3MiCiAgICAgICAgICAgICAgY2xhc3NOYW1lPSJ3LWZ1bGwgbWF4LXctbWQgb3ZlcmZsb3ctaGlkZGVuIHJvdW5kZWQtWzI0cHhfOHB4XzI0cHhfOHB4XSBib3JkZXIgYm9yZGVyLVt2YXIoLS1ib3JkZXItY29sb3IpXSBiZy1bdmFyKC0tYmctc2lkZWJhcildIHNoYWRvdy0yeGwiCiAgICAgICAgICAgID4KICAgICAgICAgICAgICA8aW1nCiAgICAgICAgICAgICAgICBzcmM9e2Jhbm5lckltYWdlfQogICAgICAgICAgICAgICAgYWx0PSIiCiAgICAgICAgICAgICAgICBhcmlhLWhpZGRlbj0idHJ1ZSIKICAgICAgICAgICAgICAgIGNsYXNzTmFtZT0idy1mdWxsIGJsb2NrIgogICAgICAgICAgICAgIC8+CiAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9ImZsZXggaXRlbXMtY2VudGVyIGdhcC0zIHB4LTUgcHktNCI+CiAgICAgICAgICAgICAgICA8U3Bpbm5lciBzaXplPSJtZWRpdW0iIC8+CiAgICAgICAgICAgICAgICA8ZGl2PgogICAgICAgICAgICAgICAgICA8cCBjbGFzc05hbWU9InRleHQtc20gZm9udC1zZW1pYm9sZCB0ZXh0LVt2YXIoLS10ZXh0LXByaW1hcnkpXSI+R2VuZXJhdGluZyB5b3VyIHNvbmfigKY8L3A+CiAgICAgICAgICAgICAgICAgIDxwIGNsYXNzTmFtZT0idGV4dC14cyB0ZXh0LVt2YXIoLS10ZXh0LXNlY29uZGFyeSldIj5QbGVhc2Ugd2FpdCB3aGlsZSB0aGUgZWRpdG9yIGlzIHRlbXBvcmFyaWx5IGxvY2tlZC48L3A+CiAgICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICA8L2Rpdj4KICAgICAgICApfQogICAgICAgIDxkaXYKICAgICAgICAgIHJlZj17Y29udGVudFJlZn0KICAgICAgICAgIGNsYXNzTmFtZT17YGZsZXggZmxleC1jb2wgZmxleC0xIG1pbi1oLTAke2lzR2VuZXJhdGluZyA/ICcgcG9pbnRlci1ldmVudHMtbm9uZScgOiAnJ31gfQogICAgICAgID4KICAgICAgICAgIHtjaGlsZHJlbn0KICAgICAgICA8L2Rpdj4KICAgICAgPC9kaXY+CiAgICA8L0ZsdWVudFByb3ZpZGVyPgogICk7Cn0K
+import React, { useEffect, useRef } from 'react';
+import { FluentProvider, Spinner, webLightTheme, webDarkTheme } from '@fluentui/react-components';
+import bannerImage from '../../../docs/Lyricist_Splash_Medium.png';
+
+interface AppShellProps {
+  theme: 'light' | 'dark';
+  isMobileOrTablet: boolean;
+  showBackdrop: boolean;
+  isGenerating: boolean;
+  onBackdropClick: () => void;
+  children: React.ReactNode;
+}
+
+/**
+ * AppShell — pure layout wrapper.
+ * Owns: FluentProvider theming, mobile backdrop overlay, outer flex structure.
+ * Contains zero business logic and zero hooks.
+ * Phase 1 of AppInnerContent god-component refactor.
+ */
+export function AppShell({
+  theme,
+  isMobileOrTablet,
+  showBackdrop,
+  isGenerating,
+  onBackdropClick,
+  children,
+}: AppShellProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const contentEl = contentRef.current;
+    if (!contentEl) return;
+
+    if (isGenerating) {
+      contentEl.setAttribute('aria-hidden', 'true');
+      overlayRef.current?.focus();
+      return;
+    }
+
+    contentEl.removeAttribute('aria-hidden');
+  }, [isGenerating]);
+
+  return (
+    <FluentProvider
+      theme={theme === 'dark' ? webDarkTheme : webLightTheme}
+      style={{ height: '100%', width: '100%', backgroundColor: 'transparent' }}
+    >
+      <div
+        className={`fui-FluentProvider ui-fluent h-screen w-full bg-fluent-bg text-[var(--text-primary)] flex flex-col overflow-hidden font-sans selection:bg-[var(--accent-color)]/30 ${
+          theme === 'dark' ? 'dark' : ''
+        }`}
+      >
+        {showBackdrop && (
+          <button
+            type="button"
+            className="mobile-panel-backdrop"
+            onClick={onBackdropClick}
+            aria-label="Close mobile panels"
+          />
+        )}
+        {isGenerating && (
+          <div
+            ref={overlayRef}
+            tabIndex={-1}
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-[1px] p-4 pointer-events-auto"
+            aria-busy="true"
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape' && event.key !== 'Tab') return;
+              event.preventDefault();
+              event.stopPropagation();
+              overlayRef.current?.focus();
+            }}
+          >
+            <div
+              role="status"
+              aria-live="polite"
+              aria-label="Song generation in progress"
+              className="w-full max-w-md overflow-hidden rounded-[24px_8px_24px_8px] border border-[var(--border-color)] bg-[var(--bg-sidebar)] shadow-2xl"
+            >
+              <img
+                src={bannerImage}
+                alt=""
+                aria-hidden="true"
+                className="w-full block"
+              />
+              <div className="flex items-center gap-3 px-5 py-4">
+                <Spinner size="medium" />
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Generating your song…</p>
+                  <p className="text-xs text-[var(--text-secondary)]">Please wait while the editor is temporarily locked.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <div
+          ref={contentRef}
+          className={`flex flex-col flex-1 min-h-0${isGenerating ? ' pointer-events-none' : ''}`}
+        >
+          {children}
+        </div>
+      </div>
+    </FluentProvider>
+  );
+}
