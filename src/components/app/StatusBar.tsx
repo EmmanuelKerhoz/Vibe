@@ -55,21 +55,21 @@ export function StatusBar({
         <StorageGauge />
         <div className="lcars-divider hidden lg:block" />
         {/* KPIs — desktop only (hidden on mobile, shown in InsightsBar) */}
-        <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
+        <span className="hidden lg:inline telemetry-text text-zinc-700 dark:text-zinc-400">
           {sectionCount}{' '}
-          <span className="text-zinc-400 dark:text-zinc-600 uppercase">
+          <span className="text-zinc-500 dark:text-zinc-600 uppercase">
             {tPlural(statusBarDict, 'sections', sectionCount, language)}
           </span>
         </span>
-        <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
+        <span className="hidden lg:inline telemetry-text text-zinc-700 dark:text-zinc-400">
           {wordCount}{' '}
-          <span className="text-zinc-400 dark:text-zinc-600 uppercase">
+          <span className="text-zinc-500 dark:text-zinc-600 uppercase">
             {tPlural(statusBarDict, 'words', wordCount, language)}
           </span>
         </span>
-        <span className="hidden lg:inline telemetry-text text-zinc-600 dark:text-zinc-400">
+        <span className="hidden lg:inline telemetry-text text-zinc-700 dark:text-zinc-400">
           {charCount}{' '}
-          <span className="text-zinc-400 dark:text-zinc-600 uppercase">
+          <span className="text-zinc-500 dark:text-zinc-600 uppercase">
             {t.insights.characters}
           </span>
         </span>

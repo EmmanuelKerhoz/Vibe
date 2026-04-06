@@ -42,7 +42,7 @@ export function InsightsActions({
 
   return (
     <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-      <span className="hidden lg:inline micro-label text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsInsights ?? 'INSIGHTS'}</span>
+      <span className="hidden lg:inline micro-label text-zinc-600 dark:text-zinc-500 whitespace-nowrap mr-0.5">{t.editor.lyricsInsights ?? 'INSIGHTS'}</span>
       <AnalyzeSongButton isGenerating={isGenerating} isAnalyzing={isAnalyzing} hasLyrics={hasLyrics} onAnalyze={analyzeCurrentSong} hasApiKey={hasApiKey} />
       <SimilarityButton
         isGenerating={isGenerating}

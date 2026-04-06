@@ -27,10 +27,7 @@ export const SectionFooter = React.memo(function SectionFooter({
       <button
         type="button"
         onClick={() => { addLineToSection(sectionId); playAudioFeedback('click'); }}
-        className="flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition"
-      >
-        <Plus className="h-3 w-3" />
-        {t.editor.addLine ?? '+ ADD LINE'}
+        className="flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
       </button>
       <InstructionEditor
         sectionId={sectionId}
@@ -54,7 +51,7 @@ export const SectionFooter = React.memo(function SectionFooter({
             type="button"
             onClick={() => { regenerateSection(sectionId); playAudioFeedback('click'); }}
             disabled={isRegeneratingSection(sectionId)}
-            className="ml-auto flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="ml-auto flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isRegeneratingSection(sectionId)
               ? <Loader2 className="h-3 w-3 animate-spin" />

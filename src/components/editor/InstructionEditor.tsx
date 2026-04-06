@@ -43,7 +43,7 @@ export const InstructionEditor = ({
           </div>
           <button
             onClick={() => onRemove(sectionId, type, idx)}
-            className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+            className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>

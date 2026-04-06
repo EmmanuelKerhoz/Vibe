@@ -187,7 +187,7 @@ export function TopRibbon({
                 width: `${MENU_WIDTH}px`,
                 maxHeight: `calc(100dvh - ${menuPosition.top}px - var(--mobile-nav-h, 56px) - var(--sab, 0px) - ${MENU_BOTTOM_PADDING}px)`,
                 backgroundColor: 'var(--bg-app, #111)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 0 0 1px rgba(0,0,0,0.06)',
                 zIndex: 70,
               }}
             >
@@ -290,7 +290,7 @@ export function TopRibbon({
           <button
             onClick={() => setActiveTab('lyrics')}
             className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${
-              activeTab === 'lyrics' ? 'text-[var(--accent-color)]' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-400'
+              activeTab === 'lyrics' ? 'text-[var(--accent-color)]' : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-400'
             }`}
           >
             {t.ribbon.lyrics}
@@ -304,7 +304,7 @@ export function TopRibbon({
           <button
             onClick={() => setActiveTab('musical')}
             className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${
-              activeTab === 'musical' ? 'text-[#f59e0b]' : 'text-zinc-500 hover:text-[#f59e0b]'
+              activeTab === 'musical' ? 'text-[#f59e0b]' : 'text-zinc-600 dark:text-zinc-500 hover:text-[#f59e0b]'
             }`}
           >
             {t.ribbon.musical}

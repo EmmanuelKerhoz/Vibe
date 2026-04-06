@@ -45,14 +45,14 @@ export const SectionHeader = React.memo(function SectionHeader({
           <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>
             <button type="button" onClick={() => moveSectionUp(section.id)}
               disabled={sectionIndex === 0 || isAnchoredStartSection(sectionName)}
-              className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+              className="flex h-5 w-5 items-center justify-center text-zinc-500 dark:text-zinc-600 transition hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
               <ChevronUp className="h-3 w-3" />
             </button>
           </Tooltip>
           <Tooltip title={t.editor.moveSectionDown ?? 'Move section down'}>
             <button type="button" onClick={() => moveSectionDown(section.id)}
               disabled={sectionIndex === songLength - 1 || isAnchoredEndSection(sectionName)}
-              className="flex h-5 w-5 items-center justify-center text-zinc-600 transition hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+              className="flex h-5 w-5 items-center justify-center text-zinc-500 dark:text-zinc-600 transition hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
               <ChevronDown className="h-3 w-3" />
             </button>
           </Tooltip>

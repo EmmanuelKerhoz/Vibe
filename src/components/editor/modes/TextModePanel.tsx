@@ -49,14 +49,7 @@ export function TextModePanel({
         >
           <div ref={gutterContentRef} style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', willChange: 'transform' }}>
             {lines.map((_, i) => (
-              <div key={i} className="leading-7 text-right pr-2 text-[10px] tabular-nums font-mono text-zinc-500 select-none">
-                {i + 1}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="relative flex-1 min-h-0 overflow-hidden">
-          <textarea
+              <div key={i} className="leading-7 text-right pr-2 text-[10px] tabular-nums font-mono text-zinc-500 dark:text-zinc-500 select-none">
             ref={markupTextareaRef as RefObject<HTMLTextAreaElement>}
             value={markupText}
             onChange={(e) => setMarkupText(e.target.value)}

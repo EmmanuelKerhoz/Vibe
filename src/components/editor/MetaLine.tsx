@@ -16,7 +16,7 @@ export function MetaLine({ text, lineNumber, className = '' }: MetaLineProps) {
   const parts = tokenizeMetaInline(text);
   return (
     <div className={`flex items-center gap-1.5 ${className}`}>
-      <span className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-500 select-none" aria-hidden="true">
+      <span className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-500 dark:text-zinc-500 select-none" aria-hidden="true">
         {lineNumber ?? ''}
       </span>
       <span

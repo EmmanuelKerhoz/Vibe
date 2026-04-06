@@ -90,17 +90,7 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
     >
       <div ref={gutterContentRef} style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', willChange: 'transform' }}>
         {lines.map((_, i) => (
-          <div key={i} className="leading-7 text-right pr-2 text-[10px] tabular-nums font-mono text-zinc-500 select-none">
-            {i + 1}
-          </div>
-        ))}
-      </div>
-    </div>
-  ) : null;
-
-  return (
-    <div className={showLineNumbers ? 'flex flex-row flex-1 min-h-0 overflow-hidden' : 'relative flex-1 min-h-0 overflow-hidden'}>
-      {gutterEl}
+          <div key={i} className="leading-7 text-right pr-2 text-[10px] tabular-nums font-mono text-zinc-500 dark:text-zinc-500 select-none">
       <div className="relative flex-1 min-h-0 overflow-hidden">
         <div
           ref={mirrorRef}
