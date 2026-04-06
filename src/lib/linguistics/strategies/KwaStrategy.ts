@@ -37,8 +37,6 @@ export class KwaStrategy extends PhonologicalStrategy {
   g2p(normalized: string, _lang: string): string {
     // Stub: G2P not yet implemented — grapheme-only analysis.
     // TODO: rule-based tonal CV G2P for BA (Baoulé), DI (Dioula), EW (Ewe), MI (Mina).
-    // Consequence: tone diacritics are captured from orthography but consonant
-    // distinctions and underlying phonological contrasts are not resolved.
     return normalized;
   }
 
@@ -47,9 +45,6 @@ export class KwaStrategy extends PhonologicalStrategy {
   syllabify(ipa: string, lang: string): Syllable[] {
     const vowelPattern = /[aeioɛɔuəɪʊ]/i;
     const tonePattern = /[\u0300\u0301\u0302\u0303\u0304\u030C]/;
-    // Decompose to NFD so that precomposed characters like á (U+00E1) are split
-    // into base letter 'a' + combining acute accent U+0301, allowing the
-    // syllabifier to separate nucleus from tone diacritic.
     const chars = [...ipa.normalize('NFD').replace(/\s+/g, '')];
     const syllables: Syllable[] = [];
     let i = 0;
@@ -59,24 +54,20 @@ export class KwaStrategy extends PhonologicalStrategy {
       let nucleus = '';
       let tone: ToneClass = null;
 
-      // Consume onset consonants
       while (i < chars.length && !vowelPattern.test(chars[i]!) && !tonePattern.test(chars[i]!)) {
         onset += chars[i];
         i++;
       }
-      // Consume nucleus (vowel)
       if (i < chars.length && vowelPattern.test(chars[i]!)) {
         nucleus = chars[i]!;
         i++;
       }
-      // Consume tone diacritics immediately following nucleus
       if (i < chars.length && tonePattern.test(chars[i]!)) {
         tone = mapToneChar(chars[i]!);
         i++;
       }
 
       if (nucleus) {
-        // Ewe tonal depression: H → M after voiced obstruant (including 'gb')
         if (lang === 'ee' && tone === 'H' && hasVoicedObstruent(onset)) {
           tone = 'M';
         }
@@ -84,7 +75,7 @@ export class KwaStrategy extends PhonologicalStrategy {
         syllables.push({
           onset,
           nucleus,
-          coda: '',          // CV structure — coda negligible
+          coda: '',
           tone,
           weight: null,
           stressed: false,
@@ -93,7 +84,6 @@ export class KwaStrategy extends PhonologicalStrategy {
       }
     }
 
-    // Mark last syllable as rhythmic center
     if (syllables.length > 0) {
       syllables[syllables.length - 1]!.stressed = true;
     }
@@ -114,7 +104,6 @@ export class KwaStrategy extends PhonologicalStrategy {
       weight: null,
       codaClass: null,
       raw: `${nucleus}${toneClass ?? ''}`,
-      // G2P is a stub — analysis is graphemic only; flag consumers.
       lowResourceFallback: true,
     };
   }
@@ -139,22 +128,42 @@ function mapToneChar(ch: string): ToneClass {
   }
 }
 
-/** Check if onset ends with a voiced obstruent (handles multi-char 'gb'). */
 function hasVoicedObstruent(onset: string): boolean {
   if (EWE_VOICED_OBSTRUENTS.has(onset)) return true;
-  // Check last single character for single-char obstruents
-  const last = onset.slice(-1);
-  return EWE_VOICED_OBSTRUENTS.has(last);
+  return EWE_VOICED_OBSTRUENTS.has(onset.slice(-1));
 }
 
 /**
- * Normalise Baoulé 5-level tones to binary HL (§11.3).
- * H = {H, MH}, L = {ML, M, L}.
+ * Normalise les tons par langue vers les classes binaires ou ternaires
+ * effectivement utilisées dans le scoring.
+ *
+ * bci (Baoulé) — 5 niveaux → binaire H/L (§11.3) :
+ *   H = {H, MH}, L = {ML, M, L, null}
+ *
+ * dyu (Dioula/Bambara) — système à 2 tons phonémiques H/L (Mandé) :
+ *   - Les tons contours (HL, LH) n'existent pas en Dioula standard ;
+ *     si présents (artefact diacritique), on les mappe vers leur
+ *     composante dominante : HL → H, LH → L.
+ *   - null (mot sans diacritique, courant en orthographe non diacritisée)
+ *     → L par convention (ton bas = non-marqué en Dioula).
+ *
+ * ee / gej / mi — pass-through : les ToneClass issues de mapToneChar()
+ *   (H, L, M, HL, LH) sont utilisées telles quelles dans le scoring ;
+ *   la dépression tonale Ewe est déjà traitée en syllabify().
+ *
+ * Toute autre langue → pass-through.
  */
 function normalizeTone(tone: ToneClass, lang: string): ToneClass {
-  if (lang === 'bci' && tone) {
+  if (lang === 'bci') {
     if (tone === 'H' || tone === 'MH') return 'H';
     return 'L';
   }
+
+  if (lang === 'dyu') {
+    if (tone === 'H' || tone === 'HL') return 'H';
+    // null, L, LH, M → L (ton bas = non-marqué en Dioula)
+    return 'L';
+  }
+
   return tone;
 }
