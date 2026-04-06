@@ -25,6 +25,88 @@ export interface SectionPhonologyResult {
 }
 
 /**
+ * Extract the last prosodic word from a line for rhyme nucleus analysis.
+ * Strips trailing punctuation before returning the token.
+ */
+function lastWord(line: string): string {
+  const tokens = line.trim().split(/\s+/);
+  const last = tokens[tokens.length - 1] ?? '';
+  return last.replace(/[.,!?;:\-—…"'«»]+$/g, '');
+}
+
+/**
+ * Assign rhyme labels (A, B, C, …) to an array of pre-computed RN analyses.
+ *
+ * Algorithm:
+ *   - For each unlabelled line i, assign the next free letter.
+ *   - Then compare line i against ALL subsequent unlabelled lines j.
+ *   - Also compare line j against ALL already-labelled buckets to enable
+ *     ABAB / embraced (ABBA) detection — a line already seen as unlabelled
+ *     in a previous pass can still match an existing bucket.
+ *
+ * This replaces the previous greedy AABB-only assignment.
+ */
+function assignRhymeLabels(
+  analyses: ReturnType<InstanceType<typeof import('../lib/linguistics/core/PhonologicalStrategy').PhonologicalStrategy>['analyze']>[],
+  score: (a: import('../lib/linguistics/core/types').RhymeNucleus, b: import('../lib/linguistics/core/types').RhymeNucleus) => number,
+): { labels: string[]; confidence: number } {
+  const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const labels: string[] = new Array(analyses.length).fill('');
+  // Map label → list of RN indices that carry that label
+  const buckets = new Map<string, number[]>();
+  let nextLabel = 0;
+  let totalScore = 0;
+  let pairCount = 0;
+
+  for (let i = 0; i < analyses.length; i++) {
+    // Try to match line i against an existing bucket first (enables ABAB)
+    if (!labels[i]) {
+      let matched = false;
+      for (const [bucketLabel, members] of buckets) {
+        for (const mi of members) {
+          const s = score(analyses[mi]!.rhymeNucleus, analyses[i]!.rhymeNucleus);
+          const rt = categorizeScore(s);
+          if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
+            labels[i] = bucketLabel;
+            buckets.get(bucketLabel)!.push(i);
+            totalScore += s;
+            pairCount++;
+            matched = true;
+            break;
+          }
+        }
+        if (matched) break;
+      }
+      // No existing bucket matched — open a new one
+      if (!labels[i]) {
+        const label = ALPHA[nextLabel % ALPHA.length] ?? '?';
+        labels[i] = label;
+        buckets.set(label, [i]);
+        nextLabel++;
+      }
+    }
+
+    // Propagate current label forward to all subsequent unlabelled lines
+    for (let j = i + 1; j < analyses.length; j++) {
+      if (labels[j]) continue;
+      const s = score(analyses[i]!.rhymeNucleus, analyses[j]!.rhymeNucleus);
+      const rt = categorizeScore(s);
+      if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
+        labels[j] = labels[i]!;
+        buckets.get(labels[i]!)!.push(j);
+        totalScore += s;
+        pairCount++;
+      }
+    }
+  }
+
+  return {
+    labels,
+    confidence: pairCount > 0 ? totalScore / pairCount : 0,
+  };
+}
+
+/**
  * Derive per-section detected rhyme schema from phonological analysis.
  * Returns a stable reference when the song/language input has not changed.
  */
@@ -37,10 +119,12 @@ export function useDerivedPhonology(
 
     return song.map(section => {
       const lines = section.lines.filter(l => !l.isMeta && l.text.trim().length > 0);
+      const emptySchema: DetectedSchema = { pattern: '', confidence: 0, lineCount: 0 };
+
       if (lines.length < 2) {
         return {
           sectionId: section.id,
-          detectedSchema: '',
+          detectedSchema: emptySchema,
           lineLabels: lines.map(() => ''),
         };
       }
@@ -49,39 +133,23 @@ export function useDerivedPhonology(
       if (!strategy) {
         return {
           sectionId: section.id,
-          detectedSchema: '',
+          detectedSchema: emptySchema,
           lineLabels: lines.map(() => ''),
         };
       }
 
-      // Analyse each line
-      const analyses = lines.map(l => strategy.analyze(l.text.trim(), langCode));
+      // Analyse the last prosodic word of each line (rhyme-bearing token)
+      const analyses = lines.map(l => strategy.analyze(lastWord(l.text), langCode));
 
-      // Assign rhyme labels via pairwise comparison
-      const labels: string[] = new Array(lines.length).fill('') as string[];
-      let nextLabel = 0;
-      const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-      for (let i = 0; i < analyses.length; i++) {
-        if (labels[i]) continue; // already labelled
-        const label = ALPHA[nextLabel % ALPHA.length] ?? '?';
-        labels[i] = label;
-        nextLabel++;
-        for (let j = i + 1; j < analyses.length; j++) {
-          if (labels[j]) continue;
-          const a = analyses[i]!;
-          const b = analyses[j]!;
-          const score = strategy.score(a.rhymeNucleus, b.rhymeNucleus);
-          const rhymeType = categorizeScore(score);
-          if (rhymeType === 'rich' || rhymeType === 'sufficient' || rhymeType === 'assonance') {
-            labels[j] = label;
-          }
-        }
-      }
+      const { labels, confidence } = assignRhymeLabels(analyses, strategy.score.bind(strategy));
 
       return {
         sectionId: section.id,
-        detectedSchema: labels.join(''),
+        detectedSchema: {
+          pattern: labels.join(''),
+          confidence,
+          lineCount: lines.length,
+        } satisfies DetectedSchema,
         lineLabels: labels,
       };
     });
