@@ -5,7 +5,7 @@
 
 import type { AlgoFamily } from '../../../constants/langFamilyMap';
 
-// ─── Syllable model (§4.1) ──────────────────────────────────────────────────────────
+// ─── Syllable model (§4.1) ───────────────────────────────────────────────────────
 
 /** Tone class normalised to binary HIGH/LOW for cross-family comparison. */
 export type ToneClass = 'H' | 'L' | 'HL' | 'LH' | 'M' | 'MH' | 'ML' | null;
@@ -25,7 +25,7 @@ export interface Syllable {
   template?: string;
 }
 
-// ─── Rhyme Nucleus (§4.2) ──────────────────────────────────────────────────────
+// ─── Rhyme Nucleus (§4.2) ────────────────────────────────────────────
 
 /** Rhyme Nucleus extracted from the last stressed syllable through end of verse. */
 export interface RhymeNucleus {
@@ -49,7 +49,7 @@ export interface RhymeNucleus {
   lowResourceFallback?: boolean;
 }
 
-// ─── Scoring (§5–6) ───────────────────────────────────────────────────────────
+// ─── Scoring (§5–6) ───────────────────────────────────────────────────
 
 export type SimilarityMethod = 'exact' | 'edit' | 'feature' | 'embedding';
 
@@ -57,10 +57,6 @@ export type RhymeType = 'rich' | 'sufficient' | 'assonance' | 'weak' | 'none';
 
 /**
  * Unified output structure (§7).
- *
- * `score` and `rhymeType` are intentionally optional: a single-verse analysis
- * has no comparison partner, so no score is computed. Use `RhymePairResult`
- * (returned by `compare()`) for a scored, typed rhyme result.
  */
 export interface RhymeResult {
   algoId: AlgoFamily;
@@ -92,21 +88,46 @@ export interface RhymePairResult {
   debug?: Record<string, unknown>;
 }
 
-// ─── Rhyme schema: target vs detected (§ store integration) ───────────────────────
+// ─── Rhyme schema ──────────────────────────────────────────────────────────
 
 /**
- * targetSchema — user's intended rhyme pattern (e.g. "AABB").
+ * targetSchema — user’s intended rhyme pattern (e.g. "AABB").
  * Tracked in the UNDO/REDO history because it is a user-driven mutation.
  */
 export type TargetSchema = string;
 
 /**
- * detectedSchema — phonologically computed rhyme pattern from line analysis.
+ * DetectedSchema — phonologically computed rhyme pattern from lyric block analysis.
+ * Produced by `detectRhymeScheme()` in rhyme/rhymeSchemeDetector.ts.
  * Pure derived state: MUST NOT be stored in history stack.
  */
-export type DetectedSchema = string;
+export interface DetectedSchema {
+  /** Letter-label pattern e.g. "AABB", "ABAB", "ABCA". */
+  pattern: string;
+  /** Mean similarity score among rhyming pairs (0–1). */
+  confidence: number;
+  /** Number of rhyme-bearing lines analysed. */
+  lineCount: number;
+}
 
-// ─── Matching weights (per-family configurable) ─────────────────────────────────
+// ─── LyricAnalysis ──────────────────────────────────────────────────────────
+
+/**
+ * Full analysis of a lyric block: per-line RhymeResult + detected schema + syllable counts.
+ * Returned by `PhonologicalStrategy.analyzeLyric()`.
+ */
+export interface LyricAnalysis {
+  /** Ordered per-line phonological results (one per rhyme-bearing line). */
+  lines: RhymeResult[];
+  /** Detected rhyme scheme for the block. */
+  detectedSchema: DetectedSchema;
+  /** Per-line syllable counts (parallel to `lines`). */
+  syllableCounts: number[];
+  /** True if any line fell back to low-resource path. */
+  hasLowResourceLines: boolean;
+}
+
+// ─── Matching weights (per-family configurable) ───────────────────────────
 
 export interface MatchingWeights {
   nucleus: number;
