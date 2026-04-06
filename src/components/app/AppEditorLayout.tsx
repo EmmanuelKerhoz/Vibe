@@ -161,7 +161,10 @@ export function AppEditorLayout({
   return (
     <ComposerParamsProvider>
       <InsightsBarProvider value={insightsBarValue}>
-        <div className="flex-1 flex overflow-hidden">
+        {/* min-h-0 is required: without it, flex-1 in a flex-col can grow
+            beyond its allocated space and push siblings (StatusBar) out of
+            view. overflow-hidden then clips them entirely. */}
+        <div className="flex-1 flex overflow-hidden min-h-0">
           {/* ── Left panel ──────────────────────────────────────────────────── */}
           <ErrorBoundary label="Left panel">
             <Suspense fallback={<LazyFallback />}>
