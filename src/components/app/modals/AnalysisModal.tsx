@@ -129,10 +129,10 @@ export function AnalysisModal({
                 </div>
               </div>
               <div className="space-y-3 text-center">
-                <h4 className="text-xl font-medium text-zinc-100">{t.analysis.deepAnalysis}</h4>
+                <h4 className="text-xl font-medium text-[var(--text-primary)]">{t.analysis.deepAnalysis}</h4>
                 <div className="flex flex-col items-center gap-2">
                   {analysisSteps.map((step, idx) => (
-                    <p key={idx} className={`text-sm transition-all duration-500 ${idx === analysisSteps.length - 1 ? 'text-[var(--accent-color)] font-medium scale-110' : 'text-zinc-500 opacity-50'}`}>{step}</p>
+                    <p key={idx} className={`text-sm transition-all duration-500 ${idx === analysisSteps.length - 1 ? 'text-[var(--accent-color)] font-medium scale-110' : 'text-[var(--text-secondary)] opacity-50'}`}>{step}</p>
                   ))}
                 </div>
               </div>
@@ -143,13 +143,13 @@ export function AnalysisModal({
                 <h4 className="micro-label text-[var(--accent-color)] flex items-center gap-2">
                   <BookOpen className="w-3.5 h-3.5" />{t.analysis.theme}
                 </h4>
-                <p className="text-zinc-300 leading-relaxed bg-white/[0.02] p-4 rounded-xl border border-white/5">{analysisReport.theme}</p>
+                <p className="text-[var(--text-secondary)] leading-relaxed bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5">{analysisReport.theme}</p>
               </section>
               <section className="space-y-3">
                 <h4 className="micro-label text-[var(--accent-color)] flex items-center gap-2">
                   <Activity className="w-3.5 h-3.5" />{t.analysis.emotionalArc}
                 </h4>
-                <p className="text-zinc-300 leading-relaxed bg-white/[0.02] p-4 rounded-xl border border-white/5">{analysisReport.emotionalArc}</p>
+                <p className="text-[var(--text-secondary)] leading-relaxed bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5">{analysisReport.emotionalArc}</p>
               </section>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <section className="space-y-3">
@@ -158,7 +158,7 @@ export function AnalysisModal({
                   </h4>
                   <ul className="space-y-2">
                     {strengths.map((s, i) => (
-                      <li key={i} className="text-sm text-zinc-400 flex gap-2"><span className="text-emerald-500 mt-1">•</span>{s}</li>
+                      <li key={i} className="text-sm text-[var(--text-secondary)] flex gap-2"><span className="text-emerald-500 mt-1">•</span>{s}</li>
                     ))}
                   </ul>
                 </section>
@@ -178,13 +178,13 @@ export function AnalysisModal({
                               ? 'bg-emerald-500 border-emerald-500 text-white'
                               : selectedAnalysisItems.has(s)
                               ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white'
-                              : 'border-white/20 hover:border-amber-500/50 group-hover:bg-amber-500/10'
+                              : 'border-[var(--border-color)] hover:border-amber-500/50 group-hover:bg-amber-500/10'
                           }`}
                         >
-                          {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-3 h-3" /> : <div className="w-1.5 h-1.5 rounded-full bg-white/20 group-hover:bg-amber-500/50" />}
+                          {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-3 h-3" /> : <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/20 group-hover:bg-amber-500/50" />}
                         </button>
                         <span className={`flex-1 text-sm leading-relaxed transition-colors ${
-                          appliedAnalysisItems.has(s) ? 'text-zinc-500 line-through' : selectedAnalysisItems.has(s) ? 'text-zinc-200' : 'text-zinc-400'
+                          appliedAnalysisItems.has(s) ? 'text-[var(--text-secondary)] line-through' : selectedAnalysisItems.has(s) ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
                         }`}>{s}</span>
                         {/* One-click apply button — visible on hover, hidden once applied */}
                         {applyAnalysisItem && !appliedAnalysisItems.has(s) && (
@@ -231,10 +231,10 @@ export function AnalysisModal({
                     <div key={i} onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)}
                       className={`text-xs p-3 rounded-lg border transition-all cursor-pointer flex items-start gap-3 group ${
                         appliedAnalysisItems.has(s)
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-zinc-500'
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-[var(--text-secondary)]'
                           : selectedAnalysisItems.has(s)
-                          ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/30 text-zinc-200'
-                          : 'bg-blue-500/5 border-blue-500/10 text-zinc-400 hover:bg-blue-500/10 hover:border-blue-500/30'
+                          ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/30 text-[var(--text-primary)]'
+                          : 'bg-blue-500/5 border-blue-500/10 text-[var(--text-secondary)] hover:bg-blue-500/10 hover:border-blue-500/30'
                       }`}
                     >
                       <div className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center ${
@@ -242,7 +242,7 @@ export function AnalysisModal({
                           ? 'bg-emerald-500 border-emerald-500 text-white'
                           : selectedAnalysisItems.has(s)
                           ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white'
-                          : 'border-white/20 group-hover:border-blue-500/50'
+                          : 'border-[var(--border-color)] group-hover:border-blue-500/50'
                       }`}>
                         {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-2.5 h-2.5" /> : <Plus className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />}
                       </div>
@@ -251,10 +251,10 @@ export function AnalysisModal({
                   ))}
                 </div>
               </section>
-              <section className="pt-6 border-t border-white/5">
+              <section className="pt-6 border-t border-black/5 dark:border-white/5">
                 <div className="bg-[var(--accent-color)]/5 border border-[var(--accent-color)]/20 p-5 rounded-2xl">
                   <h4 className="text-sm font-medium text-[var(--accent-color)] mb-2">{t.analysis.summary}</h4>
-                  <p className="text-sm text-zinc-300 italic leading-relaxed">"{analysisReport.summary}"</p>
+                  <p className="text-sm text-[var(--text-secondary)] italic leading-relaxed">"{analysisReport.summary}"</p>
                 </div>
               </section>
                 </>
@@ -262,7 +262,7 @@ export function AnalysisModal({
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center py-20">
-              <p className="text-zinc-500">{t.analysis.noData}</p>
+              <p className="text-[var(--text-secondary)]">{t.analysis.noData}</p>
             </div>
           )}
         </div>
