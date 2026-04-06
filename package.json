@@ -1,1 +1,34 @@
-{"name":"vibe","private":true,"version":"1.8.0.2","type":"module","scripts":{"dev":"vite","build":"tsc && vite build","lint":"eslint . --ext ts,tsx --report-unused-disable-directives","preview":"vite preview","test":"vitest run","test:watch":"vitest"},"dependencies":{"@fluentui/react-components":"^9.62.0","@fluentui/react-icons":"^2.0.277","@google/genai":"^0.7.0","@tailwindcss/vite":"^4.0.0","fflate":"^0.8.2","motion":"^11.15.0","react":"^18.3.1","react-dom":"^18.3.1","tailwindcss":"^4.0.0","zod":"^3.23.8"},"devDependencies":{"@testing-library/jest-dom":"^6.6.3","@testing-library/react":"^16.1.0","@testing-library/user-event":"^14.5.2","@types/node":"^22.0.0","@types/react":"^18.3.12","@types/react-dom":"^18.3.1","@typescript-eslint/eslint-plugin":"^8.15.0","@typescript-eslint/parser":"^8.15.0","@vitejs/plugin-react":"^4.3.4","autoprefixer":"^10.4.20","eslint":"^9.15.0","eslint-plugin-react-hooks":"^5.0.0","eslint-plugin-react-refresh":"^0.4.14","jsdom":"^29.0.1","postcss":"^8.4.49","typescript":"^5.6.3","vite":"^6.0.3","vite-plugin-pwa":"^0.21.0","vitest":"^2.1.8"}}
+{
+  "name": "vibe",
+  "version": "1.8.0.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fluentui/react-components": "^9.63.2",
+    "motion": "^12.6.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@tailwindcss/vite": "^4.0.14",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "tailwindcss": "^4.0.14",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  }
+}

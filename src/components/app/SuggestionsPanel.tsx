@@ -39,9 +39,11 @@ export function SuggestionsPanel({
   const { t } = useTranslation();
   const [openSynonymWord, setOpenSynonymWord] = useState<string | null>(null);
 
+  // Aligned with LeftSettingsPanel: lcars-panel drives shape + bg,
+  // no bg-fluent-sidebar override, no !rounded-none that would cancel the LCARS radius.
   const panelClassName = [
-    'border-l border-fluent-border bg-fluent-sidebar flex flex-col z-50 shadow-2xl',
-    'lcars-panel fluent-animate-panel !rounded-none !border-t-0 !border-b-0 !border-r-0',
+    'border-l border-fluent-border flex flex-col z-50 shadow-2xl',
+    'lcars-panel fluent-animate-panel',
     className,
   ].filter(Boolean).join(' ');
 

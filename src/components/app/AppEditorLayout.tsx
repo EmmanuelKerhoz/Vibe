@@ -161,10 +161,13 @@ export function AppEditorLayout({
   return (
     <ComposerParamsProvider>
       <InsightsBarProvider value={insightsBarValue}>
-        {/* min-h-0 is required: without it, flex-1 in a flex-col can grow
-            beyond its allocated space and push siblings (StatusBar) out of
-            view. overflow-hidden then clips them entirely. */}
-        <div className="flex-1 flex overflow-hidden min-h-0">
+        {/*
+          lcars-lyrics-area is placed on the flex row parent so that the
+          textured background shows through the rounded corners of the
+          right panels (StructureSidebar, SuggestionsPanel, AnalysisPanel).
+          min-h-0 prevents flex-1 from overflowing and pushing the StatusBar.
+        */}
+        <div className="flex-1 flex overflow-hidden min-h-0 lcars-lyrics-area">
           {/* ── Left panel ──────────────────────────────────────────────────── */}
           <ErrorBoundary label="Left panel">
             <Suspense fallback={<LazyFallback />}>
@@ -179,6 +182,11 @@ export function AppEditorLayout({
           </ErrorBoundary>
 
           {/* ── Center column ───────────────────────────────────────────────── */}
+          {/*
+            bg-fluent-bg keeps the editor zone background independent from
+            the textured row parent — the texture should only show through
+            at the rounded panel corners, not flood the editor area.
+          */}
           <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
             {/* Ambient glow — max-w-full prevents overflow on mobile viewports */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
