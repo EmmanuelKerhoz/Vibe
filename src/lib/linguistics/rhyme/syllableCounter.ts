@@ -32,25 +32,24 @@ export function countSyllablesFromIPA(ipa: string): number {
 // ── Orthographic fallback heuristics ──────────────────────────────────────
 
 /**
- * FR: silent -e and -es endings (preceded by a consonant grapheme).
+ * FR: silent -e and -es endings.
  *
- * The original pattern also matched `ent$` to handle the 3rd-person-plural
- * verbal ending "ils chantent" → /ʃɑ̃t/. However, `ent$` is over-broad:
- * it incorrectly elides the final syllable of nominal/adjectival words like
- * "talent", "serpent", "orient", "différent" where /ɑ̃/ is fully pronounced.
+ * Silent -e applies when the final -e (or -es) is preceded by an obstruent
+ * or nasal consonant grapheme, BUT NOT when preceded by a sonorant (r, l, n, m)
+ * which typically forms a schwa syllable: "sombre" (som-bre), "simple" (sim-ple),
+ * "ventre" (ven-tre), "calme" (cal-me).
  *
- * Fix: `ent$` is replaced by a tighter verbal-form guard that requires
- * the two characters before `ent` to be a consonant + consonant sequence
- * (typical of 3p-pl verb stems: chant-ent, parl-ent, viv-ent, pren-ent).
- * Pure nominal endings like "talent" (l+e+n+t) are excluded because the
- * vowel group count already accounts for the /ɑ̃/ nucleus.
+ * The verbal -ent ending (3p-pl) is handled by a separate stricter guard
+ * requiring ≥2 preceding consonant graphemes.
  *
  * Pattern breakdown:
- *   (?<=[^aeiouéèêëàâùîïôœ])e[s]?$   — silent -e / -es after consonant
- *   (?<=[^aeiouéèêëàâùîïôœ]{2})ent$  — verbal -ent after ≥2 consonants
+ *   (?<![rlnm])(?<=[^aeiouéèêëàâùîïôœ])e[s]?$
+ *     — silent -e / -es after non-sonorant consonant (e.g. grande, dure)
+ *   (?<=[^aeiouéèêëàâùîïôœ]{2})ent$
+ *     — verbal -ent after ≥2 consonants (e.g. parlent, chantent)
  */
 const FR_SILENT_E_RE =
-  /(?<=[^aeiouéèêëàâùîïôœ])e[s]?$|(?<=[^aeiouéèêëàâùîïôœ]{2})ent$/i;
+  /(?<![rlnm])(?<=[^aeiouéèêëàâùîïôœ])e[s]?$|(?<=[^aeiouéèêëàâùîïôœ]{2})ent$/i;
 
 /**
  * Count syllables from a raw word using language-aware heuristics.
