@@ -299,9 +299,9 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
         isMobileOverlay ? 'structure-sidebar-mobile-overlay' : ''
       }`}
       style={{
-        width: isMobileOverlay ? '100%' : '320px',
-        minWidth: isMobileOverlay ? undefined : '280px',
-        maxWidth: isMobileOverlay ? undefined : '400px',
+        // clamp absorbs narrow-viewport constraints (< 320px, iPhone SE landscape
+        // with safe-area) that a fixed 320px value would escape under overflow:hidden.
+        width: isMobileOverlay ? '100%' : 'clamp(280px, 25vw, 400px)',
         height: '100%',
         overflow: 'hidden',
       }}
