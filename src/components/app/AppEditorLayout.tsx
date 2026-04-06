@@ -65,6 +65,54 @@ const LazyFallback = React.memo(function LazyFallback() {
   );
 });
 
+/**
+ * Minimal error fallback for right-side panels.
+ * Renders a small inline error strip with a close button — never a full reload.
+ * onClose resets the panel state in the parent so the user can reopen cleanly.
+ */
+function PanelErrorFallback({ label, onClose }: { label: string; onClose?: () => void }) {
+  return (
+    <div
+      role="alert"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '0.5rem',
+        padding: '1rem',
+        background: 'var(--colorNeutralBackground2, #1c1c1c)',
+        borderLeft: '2px solid var(--colorPaletteRedBorder1, #f87171)',
+        color: 'var(--colorNeutralForeground1, #e0e0e0)',
+        fontSize: '0.75rem',
+        fontFamily: 'var(--fontFamilyBase, sans-serif)',
+        width: '100%',
+      }}
+    >
+      <span style={{ fontWeight: 600 }}>{label} unavailable</span>
+      <span style={{ color: 'var(--colorNeutralForeground3, #888)' }}>
+        An unexpected error occurred in this panel.
+      </span>
+      {onClose && (
+        <button
+          onClick={onClose}
+          style={{
+            marginTop: '0.25rem',
+            padding: '0.25rem 0.75rem',
+            background: 'transparent',
+            border: '1px solid var(--colorNeutralStroke1, #444)',
+            borderRadius: '4px',
+            color: 'var(--colorNeutralForeground1, #e0e0e0)',
+            cursor: 'pointer',
+            fontSize: '0.75rem',
+          }}
+        >
+          Close panel
+        </button>
+      )}
+    </div>
+  );
+}
+
 interface AppEditorLayoutProps {
   isMobileOrTablet: boolean;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => Promise<void>;
@@ -222,10 +270,23 @@ export function AppEditorLayout({
             </ErrorBoundary>
           </div>
 
-          {/* ── Right panel (conditional) ────────────────────────────────────── */}
-          <ErrorBoundary label="Right panel">
-            <Suspense fallback={<LazyFallback />}>
-              {isAnalysisPanelOpen ? (
+          {/* ── Right panels — each isolated in its own boundary ─────────────── */}
+          {/*
+            Each conditional panel has its own ErrorBoundary with a lightweight
+            PanelErrorFallback. An exception in AnalysisPanel no longer affects
+            SuggestionsPanel or StructureSidebar, and never triggers a full reload.
+          */}
+          <Suspense fallback={<LazyFallback />}>
+            {isAnalysisPanelOpen ? (
+              <ErrorBoundary
+                label="Analysis panel"
+                fallback={
+                  <PanelErrorFallback
+                    label="Analysis panel"
+                    onClose={handleCloseAnalysisPanel}
+                  />
+                }
+              >
                 <AnalysisPanel
                   result={linguisticsWorker.result}
                   isComputing={linguisticsWorker.isComputing}
@@ -233,7 +294,12 @@ export function AppEditorLayout({
                   onClose={handleCloseAnalysisPanel}
                   isMobileOverlay={isMobileOrTablet}
                 />
-              ) : isSuggestionsOpen ? (
+              </ErrorBoundary>
+            ) : isSuggestionsOpen ? (
+              <ErrorBoundary
+                label="Suggestions panel"
+                fallback={<PanelErrorFallback label="Suggestions panel" />}
+              >
                 <SuggestionsPanel
                   isMobileOverlay={isMobileOrTablet}
                   className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
@@ -246,7 +312,12 @@ export function AppEditorLayout({
                   generateSuggestions={generateSuggestions}
                   spellCheck={spellCheck}
                 />
-              ) : (
+              </ErrorBoundary>
+            ) : (
+              <ErrorBoundary
+                label="Structure sidebar"
+                fallback={<PanelErrorFallback label="Structure sidebar" />}
+              >
                 <StructureSidebar
                   isMobileOverlay={isMobileOrTablet}
                   className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
@@ -259,9 +330,9 @@ export function AppEditorLayout({
                   normalizeStructure={normalizeStructure}
                   onScrollToSection={handleScrollToSection}
                 />
-              )}
-            </Suspense>
-          </ErrorBoundary>
+              </ErrorBoundary>
+            )}
+          </Suspense>
         </div>
       </InsightsBarProvider>
     </ComposerParamsProvider>

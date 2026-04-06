@@ -4,6 +4,12 @@ interface Props {
   children: ReactNode;
   /** Optional label shown in the fallback header (for scoped boundaries). */
   label?: string;
+  /**
+   * Optional custom fallback UI. When provided, replaces the default
+   * monospace error screen entirely. Use for non-critical zones where
+   * a full-page reload prompt would be disproportionate.
+   */
+  fallback?: ReactNode;
 }
 
 interface State {
@@ -24,15 +30,17 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Capture errorInfo (component stack) which is only available here.
     this.setState({ errorInfo });
     console.error('[ErrorBoundary] Uncaught error:', error, errorInfo);
   }
 
   render() {
     const { error, errorInfo } = this.state;
-    const { label } = this.props;
+    const { label, fallback } = this.props;
     if (!error) return this.props.children;
+
+    // Custom fallback: use as-is (caller is responsible for dismiss/recovery UX).
+    if (fallback !== undefined) return fallback;
 
     const isDev = import.meta.env.DEV;
 
