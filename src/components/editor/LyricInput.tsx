@@ -170,7 +170,7 @@ export const LyricInput = React.memo(function LyricInput({
       onDrop={handleDrop}
     >
       {/* Line number */}
-      <span className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-500 dark:text-zinc-500 select-none" aria-hidden="true">
+      <span className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-500 select-none" aria-hidden="true">
         {globalLineNumber ?? ''}
       </span>
 

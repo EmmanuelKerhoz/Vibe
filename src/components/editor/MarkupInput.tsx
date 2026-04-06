@@ -90,7 +90,7 @@ export function MarkupInput({ value, onChange, textareaRef, className = '', spel
     >
       <div ref={gutterContentRef} style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', willChange: 'transform' }}>
         {lines.map((_, i) => (
-          <div key={i} className="leading-7 text-right pr-2 text-[10px] tabular-nums font-mono text-zinc-500 dark:text-zinc-500 select-none">
+          <div key={i} className="leading-7 text-right pr-2 text-[10px] tabular-nums font-mono text-zinc-500 select-none">
             {i + 1}
           </div>
         ))}

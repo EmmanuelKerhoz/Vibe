@@ -127,7 +127,7 @@ export function AdaptationProgressBanner({
         {(isDone || isFailed) && (
           <button
             onClick={onDismiss}
-            className="text-zinc-500 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors leading-none px-1"
+            className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors leading-none px-1"
             aria-label={t.adaptationProgress?.dismissResult ?? 'Dismiss adaptation result'}
           >
             ✕

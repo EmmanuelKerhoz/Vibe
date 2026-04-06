@@ -107,6 +107,8 @@ export function SuggestionsPanel({
               <p className="text-[9px] uppercase tracking-widest text-zinc-600 dark:text-zinc-500">{t.suggestions.spellCheckTitle}</p>
               {spellCheck?.isChecking ? (
                 <div className="flex items-center gap-2 py-3 text-xs text-zinc-600 dark:text-zinc-500 animate-pulse">
+                  <Sparkles className="w-3 h-3 text-[var(--accent-color)]" />
+                  {t.suggestions.spellChecking}
                 </div>
               ) : hasSpellCorrection ? (
                 <div className="p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-[var(--accent-color)]/20 space-y-2">
@@ -139,6 +141,8 @@ export function SuggestionsPanel({
               <p className="text-[9px] uppercase tracking-widest text-zinc-600 dark:text-zinc-500">{t.suggestions.synonymsTitle}</p>
               {isSynonymsLoading ? (
                 <div className="flex items-center gap-2 py-3 text-xs text-zinc-600 dark:text-zinc-500 animate-pulse">
+                  <Sparkles className="w-3 h-3 text-[var(--accent-color)]" />
+                  {t.suggestions.synonymsLoading}
                 </div>
               ) : hasSynonyms ? (
                 <div className="flex flex-wrap gap-1.5">
