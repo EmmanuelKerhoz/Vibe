@@ -20,6 +20,7 @@
  *                                 Re-renders only on navigation mutations.
  */
 import React, { createContext, useContext, useMemo, type ReactNode } from 'react';
+import type { RefObject } from 'react';
 import { useAppState } from '../hooks/useAppState';
 import { useUIStateForProvider } from '../hooks/useUIStateForProvider';
 import type { UIStateBag } from './ModalContext';
@@ -86,22 +87,18 @@ export function selectUIStateSlice(appState: AppStateBag): UIStateSlice {
     setIsStructureOpen: appState.setIsStructureOpen,
     isLeftPanelOpen: appState.isLeftPanelOpen,
     setIsLeftPanelOpen: appState.setIsLeftPanelOpen,
-    importInputRef: appState.importInputRef,
+    // useRef<HTMLInputElement>(null) returns MutableRefObject<HTMLInputElement|null>
+    // in @types/react 18.x — cast to RefObject<HTMLInputElement> to satisfy the slice contract.
+    importInputRef: appState.importInputRef as RefObject<HTMLInputElement>,
   };
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const appState = useAppState();
 
-  // Memoised slice — selectUIStateSlice creates a new object on every call;
-  // wrapping it here ensures useUIStateForProvider receives a stable reference
-  // as long as none of the slice's members change.
-  // useState setters are referentially stable by spec, so this memo only
-  // invalidates when an open/close boolean or a dynamic modal payload changes.
   const uiSlice = useMemo<UIStateSlice>(
     () => selectUIStateSlice(appState),
     [
-      // setters — stable by spec, listed for completeness / ESLint satisfaction
       appState.setIsAboutOpen, appState.setIsSettingsOpen,
       appState.setApiErrorModal, appState.setIsImportModalOpen,
       appState.setIsExportModalOpen, appState.setIsSectionDropdownOpen,
@@ -112,7 +109,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       appState.setIsAnalysisModalOpen, appState.setIsSearchReplaceOpen,
       appState.setIsAnalysisPanelOpen, appState.setActiveTab,
       appState.setIsStructureOpen, appState.setIsLeftPanelOpen,
-      // booleans & dynamic payloads — actual invalidation triggers
       appState.isAboutOpen, appState.isSettingsOpen,
       appState.apiErrorModal, appState.isImportModalOpen,
       appState.isExportModalOpen, appState.isSectionDropdownOpen,
@@ -129,17 +125,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const uiStateForProvider = useUIStateForProvider(uiSlice);
 
-  // Memoised context value — re-renders all consumers only when appState
-  // or uiStateForProvider reference changes (i.e. on every state mutation
-  // for the full context, but see AppNavigationContext for fine-grained use).
   const contextValue = useMemo(
     () => ({ appState, uiStateForProvider }),
     [appState, uiStateForProvider],
   );
 
-  // Navigation sub-value — stable reference as long as tab/panel state
-  // hasn't changed. Components like TopRibbon and MobileBottomNav can
-  // subscribe here and skip re-renders from modal churn.
   const navigationValue = useMemo<AppNavigationValue>(
     () => ({
       activeTab: appState.activeTab,
