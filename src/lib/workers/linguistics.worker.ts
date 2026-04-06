@@ -50,25 +50,27 @@ import { FallbackStrategy } from '../linguistics/strategies/FallbackStrategy';
 
 // ─── Bootstrap the registry inside the worker context ──────────────────────
 
-PhonologicalRegistry.register('ALGO-ROM', new RomanceStrategy());
-PhonologicalRegistry.register('ALGO-GER', new GermanicStrategy());
-PhonologicalRegistry.register('ALGO-KWA', new KwaStrategy());
-PhonologicalRegistry.register('ALGO-CRV', new CrvStrategy());
-PhonologicalRegistry.register('ALGO-TRK', new TurkicStrategy());
-PhonologicalRegistry.register('ALGO-FIN', new UralicStrategy());
-PhonologicalRegistry.register('ALGO-DRV', new DravidianStrategy());
-PhonologicalRegistry.register('ALGO-IIR', new IndoIranianStrategy());
-PhonologicalRegistry.register('ALGO-JAP', new JapaneseStrategy());
-PhonologicalRegistry.register('ALGO-KOR', new KoreanStrategy());
-PhonologicalRegistry.register('ALGO-AUS', new AustronesianStrategy());
-PhonologicalRegistry.register('ALGO-BNT', new BantuStrategy());
-PhonologicalRegistry.register('ALGO-SEM', new SemiticStrategy());
-PhonologicalRegistry.register('ALGO-SIN', new SiniticStrategy());
-PhonologicalRegistry.register('ALGO-SLV', new SlavicStrategy());
-PhonologicalRegistry.register('ALGO-TAI', new TaiStrategy());
-PhonologicalRegistry.register('ALGO-VIET', new VietStrategy());
-PhonologicalRegistry.register('ALGO-CRL', new CreoleStrategy());
-PhonologicalRegistry.register('ALGO-FBK', new FallbackStrategy());
+PhonologicalRegistry.register('ALGO-ROM',    new RomanceStrategy());
+PhonologicalRegistry.register('ALGO-GER',    new GermanicStrategy());
+PhonologicalRegistry.register('ALGO-KWA',    new KwaStrategy());
+PhonologicalRegistry.register('ALGO-CRV',    new CrvStrategy());
+PhonologicalRegistry.register('ALGO-TRK',    new TurkicStrategy());
+PhonologicalRegistry.register('ALGO-FIN',    new UralicStrategy());
+PhonologicalRegistry.register('ALGO-DRV',    new DravidianStrategy());
+PhonologicalRegistry.register('ALGO-IIR',    new IndoIranianStrategy());
+PhonologicalRegistry.register('ALGO-JAP',    new JapaneseStrategy());
+PhonologicalRegistry.register('ALGO-KOR',    new KoreanStrategy());
+PhonologicalRegistry.register('ALGO-AUS',    new AustronesianStrategy());
+PhonologicalRegistry.register('ALGO-BNT',    new BantuStrategy());
+PhonologicalRegistry.register('ALGO-SEM',    new SemiticStrategy());
+PhonologicalRegistry.register('ALGO-SIN',    new SiniticStrategy());
+PhonologicalRegistry.register('ALGO-SLV',    new SlavicStrategy());
+PhonologicalRegistry.register('ALGO-TAI',    new TaiStrategy());
+PhonologicalRegistry.register('ALGO-VIET',   new VietStrategy());
+PhonologicalRegistry.register('ALGO-CRL',    new CreoleStrategy());
+// ALGO-ROBUST must be registered last — Registry.ts uses this key to set
+// this.fallback, which is returned by resolve() for any unknown langcode.
+PhonologicalRegistry.register('ALGO-ROBUST', new FallbackStrategy());
 
 // ─── Utility functions ─────────────────────────────────────────────────────
 
