@@ -42,7 +42,7 @@ function ModalShortcutBindings({
 function AppInnerContent() {
   // ── Song state (only what JSX needs directly) ─────────────────────────
   const { undo, redo } = useSongContext();
-  const { selectedLineId, setSelectedLineId } = useComposerContext();
+  const { isGenerating, selectedLineId, setSelectedLineId } = useComposerContext();
 
   // ── Navigation context (isolated from modal churn) ────────────────────
   const {
@@ -126,6 +126,7 @@ function AppInnerContent() {
           theme={theme}
           isMobileOrTablet={isMobileOrTablet}
           showBackdrop={showBackdrop}
+          isGenerating={isGenerating}
           onBackdropClick={closeMobilePanels}
         >
           <AppEditorLayout

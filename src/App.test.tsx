@@ -534,4 +534,15 @@ describe('App markup mode reset', () => {
     expect('applyAnalysisItem' in lastProps).toBe(true);
     expect(typeof lastProps.applyAnalysisItem).toBe('function');
   });
+
+  it('shows a blocking generation splash while a song is being generated', async () => {
+    mockAppState.initialIsGenerating = true;
+
+    await act(async () => { render(<App />); });
+
+    expect(screen.getByRole('status', { name: 'Song generation in progress' })).toBeTruthy();
+    expect(screen.getByText('Generating your song…')).toBeTruthy();
+    expect(screen.getByText('Please wait while the editor is temporarily locked.')).toBeTruthy();
+    expect(screen.getByTestId('left-settings-panel').closest('[aria-hidden="true"]')).toBeTruthy();
+  });
 });
