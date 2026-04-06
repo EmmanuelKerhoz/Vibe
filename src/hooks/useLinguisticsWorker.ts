@@ -17,7 +17,7 @@ import type {
   WorkerRequest,
   WorkerResponse,
   AnalysisResult,
-  SectionPayload,
+  SectionInput,
 } from '../lib/workers/linguistics.types';
 
 export interface LinguisticsWorkerState {
@@ -115,7 +115,7 @@ export function useLinguisticsWorker(
     const langCode = languageNameToCode(currentLang ?? 'English') ?? 'en';
 
     // Build payload
-    const sections: SectionPayload[] = currentSong.map(s => ({
+    const sections: SectionInput[] = currentSong.map(s => ({
       sectionId: s.id,
       sectionName: s.name,
       lines: s.lines.map(l => ({
