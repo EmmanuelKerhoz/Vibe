@@ -64,7 +64,8 @@ export function useUIState() {
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>('lyrics');
-  const [isStructureOpen, setIsStructureOpen] = useState(true);
+  // Starts closed — AppEditorLayout opens it automatically once song has content.
+  const [isStructureOpen, setIsStructureOpen] = useState(false);
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
 
   // ── Edit mode ────────────────────────────────────────────────────────────
