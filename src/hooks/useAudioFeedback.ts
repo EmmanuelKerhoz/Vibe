@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 // Type-safe detection of the webkit-prefixed AudioContext fallback.
 // Avoids `any` cast while remaining compatible with older mobile browsers.
 type WindowWithWebkitAudio = Window & typeof globalThis & {
+  AudioContext: typeof AudioContext;
   webkitAudioContext?: typeof AudioContext;
 };
 
@@ -37,14 +38,22 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
     };
   }, []);
 
-  const playAudioFeedback = useCallback((type: 'click' | 'success' | 'error' | 'drag' | 'drop') => {
+  const playAudioFeedback = useCallback(async (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => {
     if (!audioFeedback) return;
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
+
+      // FIX: await resume() before touching the graph — on iOS Safari the
+      // context stays suspended for several frames after the call returns,
+      // and starting an oscillator in a suspended context produces silence.
       if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
+        try { await ctx.resume(); } catch { return; }
       }
+      // Guard: if still not running after resume (e.g. no user gesture yet),
+      // skip rather than produce silence.
+      if (ctx.state !== 'running') return;
+
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);

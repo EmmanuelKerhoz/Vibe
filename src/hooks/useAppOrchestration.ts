@@ -17,6 +17,10 @@
  *
  * Returns only the values that AppInnerContent needs to wire into JSX or
  * pass to child components.
+ *
+ * isMobileOrTablet is received as a parameter (computed once in
+ * AppInnerContent via useMobileLayout) to avoid a duplicate matchMedia
+ * listener that would otherwise fire on every breakpoint change.
  */
 import { useTranslation } from '../i18n';
 import { useAudioFeedback } from './useAudioFeedback';
@@ -28,7 +32,6 @@ import { useSessionPersistence } from './useSessionPersistence';
 import { useDerivedAppState } from './useDerivedAppState';
 import { useTopicMoodSuggester } from './useTopicMoodSuggester';
 import { useTitleGenerator } from './useTitleGenerator';
-import { useMobileLayout } from './useMobileLayout';
 import { useSimilarityContext } from '../contexts/SimilarityContext';
 import { useAnalysisContext } from '../contexts/AnalysisContext';
 import { useSongContext } from '../contexts/SongContext';
@@ -57,7 +60,7 @@ export interface AppOrchestrationResult {
   hasRealLyricContent: boolean;
 }
 
-export function useAppOrchestration(): AppOrchestrationResult {
+export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestrationResult {
   const {
     song, structure,
     title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
@@ -78,10 +81,6 @@ export function useAppOrchestration(): AppOrchestrationResult {
     hasApiKey,
     setActiveTab, setIsLeftPanelOpen, setIsStructureOpen,
   } = appState;
-
-  // ── Mobile layout ────────────────────────────────────────────────────────
-  const { isMobile, isTablet } = useMobileLayout();
-  const isMobileOrTablet = isMobile || isTablet;
 
   // ── Session persistence ──────────────────────────────────────────────────
   useSessionPersistence({

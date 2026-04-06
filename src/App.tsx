@@ -55,7 +55,7 @@ function AppInnerContent() {
   const { appState } = useAppStateContext();
   const { theme, setTheme, audioFeedback, setAudioFeedback, hasApiKey } = appState;
 
-  // ── Mobile layout ─────────────────────────────────────────────────────
+  // ── Mobile layout — single source of truth, passed down as prop ───────
   const { isMobile, isTablet } = useMobileLayout();
   const isMobileOrTablet = isMobile || isTablet;
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
@@ -88,6 +88,8 @@ function AppInnerContent() {
   const showBackdrop = isMobileOrTablet && (isLeftPanelOpen || isStructureOpen || isSuggestionsOpen);
 
   // ── Orchestration (session, audio, handlers, analysis…) ──────────────
+  // isMobileOrTablet is passed as param — useAppOrchestration no longer
+  // calls useMobileLayout internally, eliminating the duplicate listener.
   const {
     playAudioFeedback,
     playAudioFeedbackRef,
@@ -101,7 +103,7 @@ function AppInnerContent() {
     adaptSectionLanguage,
     adaptLineLanguage,
     adaptingLineIds,
-  } = useAppOrchestration();
+  } = useAppOrchestration(isMobileOrTablet);
 
   return (
     <TranslationAdaptationProvider
