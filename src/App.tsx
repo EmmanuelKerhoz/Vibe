@@ -60,7 +60,11 @@ function AppInnerContent() {
   const isMobileOrTablet = isMobile || isTablet;
   useMobileInitPanels({ isMobileOrTablet, setIsLeftPanelOpen, setIsStructureOpen });
 
-  const isSuggestionsOpen = activeTab === 'lyrics' && Boolean(selectedLineId);
+  // Memoized: recomputes only when tab or selected line changes.
+  const isSuggestionsOpen = useMemo(
+    () => activeTab === 'lyrics' && Boolean(selectedLineId),
+    [activeTab, selectedLineId],
+  );
 
   // ── Stable callbacks ──────────────────────────────────────────────────
   /**
