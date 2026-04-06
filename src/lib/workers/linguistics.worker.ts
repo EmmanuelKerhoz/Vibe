@@ -131,7 +131,7 @@ function computeAlliterationDensity(lines: string[]): number {
  */
 function assignRhymeLabels(
   analyses: (RhymeResult | null)[],
-  score: (a: RhymeNucleus, b: RhymeNucleus) => number,
+  scoreFn: (a: RhymeNucleus, b: RhymeNucleus) => number,
 ): { labels: string[]; confidence: number; rhymeTypes: Record<RhymeType, number> } {
   const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const labels: string[] = new Array(analyses.length).fill('');
@@ -154,7 +154,7 @@ function assignRhymeLabels(
         for (const mi of members) {
           const am = analyses[mi];
           if (!am) continue;
-          const s = score(am.rhymeNucleus, ai.rhymeNucleus);
+          const s = scoreFn(am.rhymeNucleus, ai.rhymeNucleus);
           const rt = categorizeScore(s);
           if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
             labels[i] = bucketLabel;
@@ -181,7 +181,7 @@ function assignRhymeLabels(
       if (labels[j]) continue;
       const aj = analyses[j];
       if (!aj) continue;
-      const s = score(ai.rhymeNucleus, aj.rhymeNucleus);
+      const s = scoreFn(ai.rhymeNucleus, aj.rhymeNucleus);
       const rt = categorizeScore(s);
       if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
         labels[j] = labels[i]!;
@@ -240,15 +240,15 @@ function runAnalysis(payload: AnalyzePayload): AnalysisResult {
           const a = analyses[i];
           const b = analyses[j];
           if (!a || !b) continue;
-          const score = strategy.score(a.rhymeNucleus, b.rhymeNucleus);
-          const rhymeType = categorizeScore(score);
-          if (score > 0.3) {
+          const pairScore = strategy.score(a.rhymeNucleus, b.rhymeNucleus);
+          const rhymeType = categorizeScore(pairScore);
+          if (pairScore > 0.3) {
             allSimilarityPairs.push({
               lineIdA: nonMetaLines[i]!.lineId,
               lineIdB: nonMetaLines[j]!.lineId,
               textA: nonMetaLines[i]!.text,
               textB: nonMetaLines[j]!.text,
-              score,
+              score: pairScore,
               rhymeType,
               pairResult: strategy.compare(
                 nonMetaLines[i]!.text.trim(),

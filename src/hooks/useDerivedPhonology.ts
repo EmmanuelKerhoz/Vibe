@@ -48,11 +48,10 @@ function lastWord(line: string): string {
  */
 function assignRhymeLabels(
   analyses: RhymeResult[],
-  score: (a: RhymeNucleus, b: RhymeNucleus) => number,
+  scoreFn: (a: RhymeNucleus, b: RhymeNucleus) => number,
 ): { labels: string[]; confidence: number } {
   const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const labels: string[] = new Array(analyses.length).fill('');
-  // Map label → list of RN indices that carry that label
   const buckets = new Map<string, number[]>();
   let nextLabel = 0;
   let totalScore = 0;
@@ -64,7 +63,7 @@ function assignRhymeLabels(
       let matched = false;
       for (const [bucketLabel, members] of buckets) {
         for (const mi of members) {
-          const s = score(analyses[mi]!.rhymeNucleus, analyses[i]!.rhymeNucleus);
+          const s = scoreFn(analyses[mi]!.rhymeNucleus, analyses[i]!.rhymeNucleus);
           const rt = categorizeScore(s);
           if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
             labels[i] = bucketLabel;
@@ -89,7 +88,7 @@ function assignRhymeLabels(
     // Propagate current label forward to all subsequent unlabelled lines
     for (let j = i + 1; j < analyses.length; j++) {
       if (labels[j]) continue;
-      const s = score(analyses[i]!.rhymeNucleus, analyses[j]!.rhymeNucleus);
+      const s = scoreFn(analyses[i]!.rhymeNucleus, analyses[j]!.rhymeNucleus);
       const rt = categorizeScore(s);
       if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
         labels[j] = labels[i]!;
