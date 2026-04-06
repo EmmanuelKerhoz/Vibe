@@ -94,6 +94,8 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
   // Stable ref so the global click listener never re-registers on audioFeedback toggle.
   // The ref is updated synchronously after every render so the handler always
   // closes over the latest playAudioFeedback without triggering a new effect.
+  // Exposed in the return value so callers (e.g. useAppOrchestration) can use
+  // the same ref without duplicating the ref management.
   const playAudioFeedbackRef = useRef(playAudioFeedback);
   useEffect(() => { playAudioFeedbackRef.current = playAudioFeedback; }, [playAudioFeedback]);
 
@@ -118,5 +120,5 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
     return () => document.removeEventListener('click', handleGlobalClick);
   }, []); // mount-only — ref keeps the callback fresh without re-registering
 
-  return { playAudioFeedback };
+  return { playAudioFeedback, playAudioFeedbackRef };
 };
