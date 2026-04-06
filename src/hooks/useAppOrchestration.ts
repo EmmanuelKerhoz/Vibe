@@ -18,7 +18,6 @@
  * Returns only the values that AppInnerContent needs to wire into JSX or
  * pass to child components.
  */
-import { useRef } from 'react';
 import { useTranslation } from '../i18n';
 import { useAudioFeedback } from './useAudioFeedback';
 import { useMarkupEditor } from './useMarkupEditor';
@@ -29,6 +28,7 @@ import { useSessionPersistence } from './useSessionPersistence';
 import { useDerivedAppState } from './useDerivedAppState';
 import { useTopicMoodSuggester } from './useTopicMoodSuggester';
 import { useTitleGenerator } from './useTitleGenerator';
+import { useMobileLayout } from './useMobileLayout';
 import { useSimilarityContext } from '../contexts/SimilarityContext';
 import { useAnalysisContext } from '../contexts/AnalysisContext';
 import { useSongContext } from '../contexts/SongContext';
@@ -38,7 +38,7 @@ import { useAppStateContext } from '../contexts/AppStateContext';
 export interface AppOrchestrationResult {
   // Audio
   playAudioFeedback: ReturnType<typeof useAudioFeedback>['playAudioFeedback'];
-  playAudioFeedbackRef: React.MutableRefObject<ReturnType<typeof useAudioFeedback>['playAudioFeedback']>;
+  playAudioFeedbackRef: ReturnType<typeof useAudioFeedback>['playAudioFeedbackRef'];
   // Markup / editor
   scrollToSection: ReturnType<typeof useMarkupEditor>['scrollToSection'];
   // Handlers
@@ -67,7 +67,7 @@ export function useAppOrchestration(): AppOrchestrationResult {
     updateSongAndStructureWithHistory,
   } = useSongContext();
 
-  const { selectedLineId, setSelectedLineId, clearSelection, generateSong } = useComposerContext();
+  const { clearSelection, generateSong } = useComposerContext();
 
   const { appState } = useAppStateContext();
   const {
@@ -79,6 +79,10 @@ export function useAppOrchestration(): AppOrchestrationResult {
     setActiveTab, setIsLeftPanelOpen, setIsStructureOpen,
   } = appState;
 
+  // ── Mobile layout ────────────────────────────────────────────────────────
+  const { isMobile, isTablet } = useMobileLayout();
+  const isMobileOrTablet = isMobile || isTablet;
+
   // ── Session persistence ──────────────────────────────────────────────────
   useSessionPersistence({
     song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
@@ -88,9 +92,9 @@ export function useAppOrchestration(): AppOrchestrationResult {
   });
 
   // ── Audio feedback ───────────────────────────────────────────────────────
-  const { playAudioFeedback } = useAudioFeedback(audioFeedback);
-  const playAudioFeedbackRef = useRef(playAudioFeedback);
-  playAudioFeedbackRef.current = playAudioFeedback;
+  // playAudioFeedbackRef is sourced directly from useAudioFeedback — the hook
+  // owns the stable ref to avoid duplicating the ref management here.
+  const { playAudioFeedback, playAudioFeedbackRef } = useAudioFeedback(audioFeedback);
 
   // ── Analysis bridge ──────────────────────────────────────────────────────
   const {
@@ -118,7 +122,7 @@ export function useAppOrchestration(): AppOrchestrationResult {
 
   // ── App handlers ─────────────────────────────────────────────────────────
   const { handleGlobalRegenerate } = useAppHandlers({
-    t, hasRealLyricContent, isMobileOrTablet: false, // resolved by caller via useMobileLayout
+    t, hasRealLyricContent, isMobileOrTablet,
     setApiErrorModal: appState.setApiErrorModal, setConfirmModal: appState.setConfirmModal,
     setActiveTab, setIsLeftPanelOpen, setIsStructureOpen,
     generateTitle, generateSong, scrollToSection,
