@@ -4,7 +4,16 @@
  *
  * Covers: FR, ES, IT, PT, RO, CA.
  * Key traits: MOP syllabification, lexical stress, French G2P (nasal vowels,
- *             digraphs), French e-muet handling.
+ *             digraphs, silent final consonants, mute final e).
+ *
+ * IMPORTANT — pipeline order for FR:
+ *   normalize() → g2p() [calls frenchG2P per token, strips e-muet + final
+ *   consonants] → syllabify() → stress() → extractRN()
+ *
+ *   frenchG2P() now strips the mute final 'e' BEFORE syllabification, so
+ *   syllabify() will never see a trailing bare-e syllable for French.
+ *   The stress rule must reflect this: always accent the final syllable
+ *   (post-strip), not the penultimate.
  */
 
 import { PhonologicalStrategy } from '../core/PhonologicalStrategy';
@@ -12,12 +21,8 @@ import { featureWeightedScore } from '../scoring';
 import type { MatchingWeights, RhymeNucleus, Syllable } from '../core/types';
 import { frenchG2P } from './FrenchG2P';
 
-// ─── MOP onset table ────────────────────────────────────────────────────────
+// ─── MOP onset table ────────────────────────────────────────────────────────────
 
-/**
- * Legal two-consonant onsets shared across FR/ES/IT/PT/RO/CA.
- * Ordered longest-first so the greedy scan finds the largest legal onset.
- */
 const LEGAL_ONSETS_2 = new Set([
   'bl', 'br',
   'cl', 'cr',
@@ -44,7 +49,30 @@ function mopSplit(cluster: string): [onset: string, prevCoda: string] {
   return [cluster.slice(-1), cluster.slice(0, -1)];
 }
 
-// ─── Strategy ────────────────────────────────────────────────────────────────
+// ─── IPA nasal-vowel NFC codepoints ───────────────────────────────────────────
+// FrenchG2P emits: base vowel + U+0303 (combining tilde).
+// Keep as constants to avoid source-file encoding drift.
+const TILDE = '\u0303';
+const FR_NASAL_TO_BASE: [nasal: string, base: string][] = [
+  ['\u0251' + TILDE, '\u0251'],  // ɑ̃ → ɑ  (an/en family)
+  ['\u025b' + TILDE, '\u025b'],  // ɛ̃ → ɛ  (in/im family)
+  ['\u0254' + TILDE, '\u0254'],  // ɔ̃ → ɔ  (on/om family)
+  ['\u0153' + TILDE, '\u0153'],  // œ̃ → œ  (un/um family)
+];
+
+/**
+ * Strip the combining tilde from a nasal nucleus so that the bare IPA
+ * vowel can be used for rhyme comparison.
+ * e.g. \u0251\u0303 (\u0251 + combining-tilde) → \u0251
+ */
+function denasalise(nucleus: string): string {
+  for (const [nasal, base] of FR_NASAL_TO_BASE) {
+    if (nucleus === nasal) return base;
+  }
+  return nucleus;
+}
+
+// ─── Strategy ───────────────────────────────────────────────────────────────
 
 export class RomanceStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-ROM' as const;
@@ -77,7 +105,8 @@ export class RomanceStrategy extends PhonologicalStrategy {
 
   /**
    * Grapheme-to-phoneme transform.
-   * FR: delegates to rule-based FrenchG2P (nasal vowels, digraphs, mute-h).
+   * FR: delegates to rule-based FrenchG2P (nasal vowels, digraphs, mute-h,
+   *     silent final consonants, mute final e).
    * Other Romance languages: orthographic pass-through (stub).
    */
   g2p(normalized: string, lang: string): string {
@@ -87,30 +116,24 @@ export class RomanceStrategy extends PhonologicalStrategy {
         .map(w => frenchG2P(w))
         .join(' ');
     }
-    // ES / IT / PT / RO / CA — orthographic stub (TODO per-language G2P)
     return normalized;
   }
 
   /**
    * MOP-based syllabification.
    *
-   * vowelPattern includes IPA tokens produced by FrenchG2P:
-   *   ɑ̃ ɛ̃ ɔ̃ œ̃  — nasal vowels
-   *   ø           — front rounded (eu/œu)
-   *   w           — onset of /wa/ (oi)
-   * These are multi-codepoint sequences; the char-by-char scan treats each
-   * Unicode scalar value individually. Nasal vowels (base + combining tilde
-   * U+0303) will be seen as two chars: the scanner picks up the base vowel
-   * (ɑ ɛ ɔ œ) which are included in the vowelPattern, then the combining
-   * diacritic is absorbed as a non-vowel into the next cluster (harmless
-   * since it's never a syllable boundary).
+   * NOTE: for French, frenchG2P() has already stripped mute final 'e' and
+   * silent final consonants before this method is called. The vowel pattern
+   * must still include IPA nasal bases (\u0251 \u025b \u0254 \u0153) and
+   * glide \u0265 (ɥ) so they are treated as syllable nuclei.
    */
   syllabify(ipa: string, lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
     const syllables: Syllable[] = [];
 
-    // Extended vowel pattern: orthographic + IPA tokens from FrenchG2P
-    const vowelPattern = /[aeiouyàâæéèêëïîôœùûüÿáíóúãõɛɔɑɪʊɵəɐɯɤɶøɨ]/i;
+    // Extended vowel pattern: orthographic + IPA tokens from FrenchG2P.
+    // Includes: ɥ (glide from ui→ɥi), ɑ ɛ ɔ œ (nasal bases), ø (eu/œu).
+    const vowelPattern = /[aeiouyàâæéèêëïîôœùûüÿáíóúãõɛɔɑɪʊɵəɐɯɤɶøɨɥ]/i;
 
     for (const word of words) {
       const wordSyllables: Syllable[] = [];
@@ -174,9 +197,8 @@ export class RomanceStrategy extends PhonologicalStrategy {
         wordSyllables[wordSyllables.length - 1]!.coda += cluster;
       }
 
-      // Absorb leading combining diacritics (e.g. U+0303 combining tilde) from
-      // each syllable's coda into its nucleus, so that nasal vowels like ɑ̃
-      // stay together as one nucleus token rather than being split.
+      // Absorb leading combining diacritics (U+0303 etc.) from each
+      // syllable's coda into its nucleus — keeps nasal vowels intact.
       for (const syl of wordSyllables) {
         const combiningMarks = syl.coda.match(/^\p{M}+/u);
         if (combiningMarks) {
@@ -188,19 +210,18 @@ export class RomanceStrategy extends PhonologicalStrategy {
       syllables.push(...wordSyllables);
     }
 
-    // ── Stress assignment ────────────────────────────────────────────────────
+    // ── Stress assignment ──────────────────────────────────────────────────────────────
     if (lang === 'fr') {
-      if (syllables.length >= 2) {
-        const last = syllables[syllables.length - 1]!;
-        if (last.nucleus === 'e' && last.coda === '') {
-          syllables[syllables.length - 2]!.stressed = true;
-        } else {
-          last.stressed = true;
-        }
-      } else if (syllables.length === 1) {
-        syllables[0]!.stressed = true;
+      // Post-G2P: frenchG2P has already stripped mute final 'e' and silent
+      // final consonants. The last syllable in `syllables` IS the phonological
+      // final syllable — always stressed in French (phrase-final accent).
+      // The legacy penultimate rule ("if last nucleus === 'e', stress n-2")
+      // no longer applies because 'e' will have been stripped upstream.
+      if (syllables.length > 0) {
+        syllables[syllables.length - 1]!.stressed = true;
       }
     } else {
+      // ES / IT / PT / RO / CA: penultimate stress (default)
       if (syllables.length >= 2) {
         syllables[syllables.length - 2]!.stressed = true;
       } else if (syllables.length === 1) {
@@ -214,11 +235,15 @@ export class RomanceStrategy extends PhonologicalStrategy {
   /**
    * Extract the rhyme nucleus from the stressed syllable through end of word.
    *
-   * For French (lang === 'fr'), IPA nasal vowels produced by FrenchG2P are
-   * mapped back to their orthographic base vowel categories for rhyme
-   * comparison: ɑ̃→a, ɛ̃→e, ɔ̃→o, œ̃→e. This ensures that words like
-   * "chante" and "plante" share the same rhyme nucleus 'a', matching the
-   * orthographic convention used in French song-lyric analysis.
+   * For French, IPA nasal vowels produced by FrenchG2P (base + U+0303) are
+   * denasalised to their bare IPA base for rhyme comparison:
+   *   ɑ̃ → ɑ   ɛ̃ → ɛ   ɔ̃ → ɔ   œ̃ → œ
+   *
+   * This ensures that "chant" (ʃɑ̃), "vent" (vɑ̃), "chante" (ʃɑ̃) and
+   * "vente" (vɑ̃) all share nucleus ɑ and rhyme perfectly.
+   *
+   * Glide ɥ (from ui→ɥi) is preserved as-is in the nucleus: "nuit" and
+   * "fuite" share nucleus ɥi.
    */
   extractRN(syllables: Syllable[], lang: string): RhymeNucleus {
     const stressIdx = syllables.findIndex(s => s.stressed);
@@ -226,19 +251,16 @@ export class RomanceStrategy extends PhonologicalStrategy {
     const tail = syllables.slice(idx);
     const primary = tail[0];
 
-    // Map IPA nasal vowels to their orthographic base for rhyme comparison.
-    // e.g. ɑ̃ → a, ɛ̃ → e, ɔ̃ → o, œ̃ → e so that "chante" and "plante" share 'a'.
     let nucleus = primary?.nucleus ?? '';
     if (lang === 'fr') {
-      nucleus = nucleus
-        .replace(/ɑ\u0303/g, 'a')
-        .replace(/ɛ\u0303/g, 'e')
-        .replace(/ɔ\u0303/g, 'o')
-        .replace(/œ\u0303/g, 'e');
+      nucleus = denasalise(nucleus);
     }
     const coda = primary?.coda ?? '';
 
-    const raw = [nucleus + coda, ...tail.slice(1).map(s => `${s.nucleus}${s.coda}`)].join('');
+    const raw = [
+      nucleus + coda,
+      ...tail.slice(1).map(s => `${denasalise(s.nucleus)}${s.coda}`),
+    ].join('');
 
     return {
       nucleus,
