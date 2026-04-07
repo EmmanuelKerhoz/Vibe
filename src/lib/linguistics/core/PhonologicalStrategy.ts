@@ -85,7 +85,7 @@ export abstract class PhonologicalStrategy {
   ): RhymePairResult {
     const a = this.analyze(text1, lang);
     const b = this.analyze(text2, lang);
-    const s = this.score(a.rhymeNucleus, b.rhymeNucleus);
+    const pairScore = this.score(a.rhymeNucleus, b.rhymeNucleus);
     const threshold = options?.threshold ?? this.defaultWeights.threshold;
     return {
       familyId: this.familyId,
@@ -94,8 +94,8 @@ export abstract class PhonologicalStrategy {
       text2,
       rn1: a.rhymeNucleus,
       rn2: b.rhymeNucleus,
-      score: s,
-      rhymeType: categorizeScore(s, threshold),
+      score: pairScore,
+      rhymeType: categorizeScore(pairScore, threshold),
       method: options?.method ?? 'feature',
     };
   }
@@ -121,10 +121,10 @@ export abstract class PhonologicalStrategy {
  * This is intentional — families with a high threshold signal that they
  * consider the 0.60–0.75 range too ambiguous to label as a rhyme type.
  */
-export function categorizeScore(score: number, threshold = 0.75): RhymeType {
-  if (score < 0.40 || score < threshold) return 'none';
-  if (score >= 0.95) return 'rich';
-  if (score >= 0.85) return 'sufficient';
-  if (score >= 0.60) return 'assonance';
+export function categorizeScore(rawScore: number, threshold = 0.75): RhymeType {
+  if (rawScore < 0.40 || rawScore < threshold) return 'none';
+  if (rawScore >= 0.95) return 'rich';
+  if (rawScore >= 0.85) return 'sufficient';
+  if (rawScore >= 0.60) return 'assonance';
   return 'weak';
 }

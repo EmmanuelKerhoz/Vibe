@@ -21,6 +21,7 @@ import type {
 } from './linguistics.types';
 
 import type {
+  RhymeNucleus,
   RhymeResult,
   RhymeType,
 } from '../linguistics/core/types';
@@ -38,31 +39,58 @@ import { IndoIranianStrategy } from '../linguistics/strategies/IndoIranianStrate
 import { JapaneseStrategy } from '../linguistics/strategies/JapaneseStrategy';
 import { KoreanStrategy } from '../linguistics/strategies/KoreanStrategy';
 import { AustronesianStrategy } from '../linguistics/strategies/AustronesianStrategy';
+import { BantuStrategy } from '../linguistics/strategies/BantuStrategy';
+import { SemiticStrategy } from '../linguistics/strategies/SemiticStrategy';
+import { SiniticStrategy } from '../linguistics/strategies/SiniticStrategy';
+import { SlavicStrategy } from '../linguistics/strategies/SlavicStrategy';
+import { TaiStrategy } from '../linguistics/strategies/TaiStrategy';
+import { VietStrategy } from '../linguistics/strategies/VietStrategy';
+import { CreoleStrategy } from '../linguistics/strategies/CreoleStrategy';
+import { FallbackStrategy } from '../linguistics/strategies/FallbackStrategy';
 
 // ─── Bootstrap the registry inside the worker context ──────────────────────
 
-PhonologicalRegistry.register('ALGO-ROM', new RomanceStrategy());
-PhonologicalRegistry.register('ALGO-GER', new GermanicStrategy());
-PhonologicalRegistry.register('ALGO-KWA', new KwaStrategy());
-PhonologicalRegistry.register('ALGO-CRV', new CrvStrategy());
-PhonologicalRegistry.register('ALGO-TRK', new TurkicStrategy());
-PhonologicalRegistry.register('ALGO-FIN', new UralicStrategy());
-PhonologicalRegistry.register('ALGO-DRV', new DravidianStrategy());
-PhonologicalRegistry.register('ALGO-IIR', new IndoIranianStrategy());
-PhonologicalRegistry.register('ALGO-JAP', new JapaneseStrategy());
-PhonologicalRegistry.register('ALGO-KOR', new KoreanStrategy());
-PhonologicalRegistry.register('ALGO-AUS', new AustronesianStrategy());
+PhonologicalRegistry.register('ALGO-ROM',    new RomanceStrategy());
+PhonologicalRegistry.register('ALGO-GER',    new GermanicStrategy());
+PhonologicalRegistry.register('ALGO-KWA',    new KwaStrategy());
+PhonologicalRegistry.register('ALGO-CRV',    new CrvStrategy());
+PhonologicalRegistry.register('ALGO-TRK',    new TurkicStrategy());
+PhonologicalRegistry.register('ALGO-FIN',    new UralicStrategy());
+PhonologicalRegistry.register('ALGO-DRV',    new DravidianStrategy());
+PhonologicalRegistry.register('ALGO-IIR',    new IndoIranianStrategy());
+PhonologicalRegistry.register('ALGO-JAP',    new JapaneseStrategy());
+PhonologicalRegistry.register('ALGO-KOR',    new KoreanStrategy());
+PhonologicalRegistry.register('ALGO-AUS',    new AustronesianStrategy());
+PhonologicalRegistry.register('ALGO-BNT',    new BantuStrategy());
+PhonologicalRegistry.register('ALGO-SEM',    new SemiticStrategy());
+PhonologicalRegistry.register('ALGO-SIN',    new SiniticStrategy());
+PhonologicalRegistry.register('ALGO-SLV',    new SlavicStrategy());
+PhonologicalRegistry.register('ALGO-TAI',    new TaiStrategy());
+PhonologicalRegistry.register('ALGO-VIET',   new VietStrategy());
+PhonologicalRegistry.register('ALGO-CRE',    new CreoleStrategy());
+// ALGO-ROBUST must be registered last — Registry.ts uses this key to set
+// this.fallback, which is returned by resolve() for any unknown langcode.
+PhonologicalRegistry.register('ALGO-ROBUST', new FallbackStrategy());
 
 // ─── Utility functions ─────────────────────────────────────────────────────
 
 function countSyllables(text: string): number {
-  // Simple heuristic: count vowel groups
   const vowelGroups = text.toLowerCase().match(/[aeiouyàâäéèêëïîôùûüÿœæáíóúãõ]+/gi);
   return vowelGroups ? vowelGroups.length : 0;
 }
 
 function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(w => w.length > 0).length;
+}
+
+/**
+ * Extract the last prosodic word from a line for rhyme nucleus analysis.
+ * Strips trailing punctuation before returning the token.
+ */
+function lastWord(line: string): string {
+  const tokens = line.trim().split(/\s+/);
+  const last = tokens[tokens.length - 1] ?? '';
+  return last.replace(/[.,!?;:\-—…"'«»]+$/g, '');
 }
 
 /** Compute assonance density: ratio of lines sharing a vowel nucleus. */
@@ -82,16 +110,96 @@ function computeAssonanceDensity(analyses: (RhymeResult | null)[]): number {
 function computeAlliterationDensity(lines: string[]): number {
   const nonEmpty = lines.filter(l => l.trim().length > 0);
   if (nonEmpty.length < 2) return 0;
-  const initials = nonEmpty.map(l => {
-    const first = l.trim().charAt(0).toLowerCase();
-    return first;
-  });
+  const initials = nonEmpty.map(l => l.trim().charAt(0).toLowerCase());
   const counts = new Map<string, number>();
   for (const c of initials) {
     counts.set(c, (counts.get(c) ?? 0) + 1);
   }
   const repeating = [...counts.values()].filter(c => c > 1).reduce((s, c) => s + c, 0);
   return repeating / nonEmpty.length;
+}
+
+/**
+ * Assign rhyme labels (A, B, C, …) enabling ABAB / embraced (ABBA) detection.
+ *
+ * Each unlabelled line is first compared against all existing label buckets
+ * (by testing against every member of each bucket). If a match is found the
+ * existing label is reused — this is what makes ABAB detectable.
+ * If no bucket matches, a new letter is assigned.
+ * A forward propagation pass then assigns the current label to all subsequent
+ * unlabelled lines that rhyme with the current one.
+ */
+function assignRhymeLabels(
+  analyses: (RhymeResult | null)[],
+  scoreFn: (a: RhymeNucleus, b: RhymeNucleus) => number,
+): { labels: string[]; confidence: number; rhymeTypes: Record<RhymeType, number> } {
+  const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const labels: string[] = new Array(analyses.length).fill('');
+  const buckets = new Map<string, number[]>();
+  const rhymeTypes: Record<RhymeType, number> = {
+    rich: 0, sufficient: 0, assonance: 0, weak: 0, none: 0,
+  };
+  let nextLabel = 0;
+  let totalScore = 0;
+  let pairCount = 0;
+
+  for (let i = 0; i < analyses.length; i++) {
+    const ai = analyses[i];
+    if (!ai) continue;
+
+    // Attempt to match against an existing bucket (enables ABAB reuse)
+    if (!labels[i]) {
+      let matched = false;
+      for (const [bucketLabel, members] of buckets) {
+        for (const mi of members) {
+          const am = analyses[mi];
+          if (!am) continue;
+          const s = scoreFn(am.rhymeNucleus, ai.rhymeNucleus);
+          const rt = categorizeScore(s);
+          if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
+            labels[i] = bucketLabel;
+            buckets.get(bucketLabel)!.push(i);
+            rhymeTypes[rt]++;
+            totalScore += s;
+            pairCount++;
+            matched = true;
+            break;
+          }
+        }
+        if (matched) break;
+      }
+      if (!labels[i]) {
+        const label = ALPHA[nextLabel % ALPHA.length] ?? '?';
+        labels[i] = label;
+        buckets.set(label, [i]);
+        nextLabel++;
+      }
+    }
+
+    // Forward propagation
+    for (let j = i + 1; j < analyses.length; j++) {
+      if (labels[j]) continue;
+      const aj = analyses[j];
+      if (!aj) continue;
+      const s = scoreFn(ai.rhymeNucleus, aj.rhymeNucleus);
+      const rt = categorizeScore(s);
+      if (rt === 'rich' || rt === 'sufficient' || rt === 'assonance') {
+        labels[j] = labels[i]!;
+        buckets.get(labels[i]!)!.push(j);
+        rhymeTypes[rt]++;
+        totalScore += s;
+        pairCount++;
+      } else {
+        rhymeTypes[rt]++;
+      }
+    }
+  }
+
+  return {
+    labels,
+    confidence: pairCount > 0 ? totalScore / pairCount : 0,
+    rhymeTypes,
+  };
 }
 
 // ─── Analysis engine ────────────────────────────────────────────────────────
@@ -107,54 +215,40 @@ function runAnalysis(payload: AnalyzePayload): AnalysisResult {
   for (const section of sections) {
     const nonMetaLines = section.lines.filter(l => !l.isMeta && l.text.trim().length > 0);
 
-    // Analyze each line
+    // Analyse the last prosodic word of each line (rhyme-bearing token)
     const analyses: (RhymeResult | null)[] = nonMetaLines.map(l =>
-      strategy ? strategy.analyze(l.text.trim(), langCode) : null,
+      strategy ? strategy.analyze(lastWord(l.text), langCode) : null,
     );
 
-    // Assign rhyme labels (A, B, C, …) via pairwise scoring
-    const labels: string[] = new Array(nonMetaLines.length).fill('') as string[];
-    let nextLabel = 0;
-    const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const rhymeTypes: Record<RhymeType, number> = {
+    let labels: string[] = new Array(nonMetaLines.length).fill('');
+    let detectedPattern = '';
+    let confidence = 0;
+    let rhymeTypes: Record<RhymeType, number> = {
       rich: 0, sufficient: 0, assonance: 0, weak: 0, none: 0,
     };
 
     if (strategy && nonMetaLines.length >= 2) {
-      for (let i = 0; i < analyses.length; i++) {
-        if (labels[i]) continue;
-        const label = ALPHA[nextLabel % ALPHA.length] ?? '?';
-        labels[i] = label;
-        nextLabel++;
-        for (let j = i + 1; j < analyses.length; j++) {
-          if (labels[j]) continue;
-          const a = analyses[i];
-          const b = analyses[j];
-          if (!a || !b) continue;
-          const score = strategy.score(a.rhymeNucleus, b.rhymeNucleus);
-          const rhymeType = categorizeScore(score);
-          if (rhymeType === 'rich' || rhymeType === 'sufficient' || rhymeType === 'assonance') {
-            labels[j] = label;
-          }
-        }
-      }
+      const result = assignRhymeLabels(analyses, strategy.score.bind(strategy));
+      labels = result.labels;
+      confidence = result.confidence;
+      rhymeTypes = result.rhymeTypes;
+      detectedPattern = labels.join('');
 
-      // Build similarity pairs (top N closest pairs)
+      // Build similarity pairs (cross-section, score > 0.3)
       for (let i = 0; i < analyses.length; i++) {
         for (let j = i + 1; j < analyses.length; j++) {
           const a = analyses[i];
           const b = analyses[j];
           if (!a || !b) continue;
-          const score = strategy.score(a.rhymeNucleus, b.rhymeNucleus);
-          const rhymeType = categorizeScore(score);
-          rhymeTypes[rhymeType]++;
-          if (score > 0.3) {
+          const pairScore = strategy.score(a.rhymeNucleus, b.rhymeNucleus);
+          const rhymeType = categorizeScore(pairScore);
+          if (pairScore > 0.3) {
             allSimilarityPairs.push({
               lineIdA: nonMetaLines[i]!.lineId,
               lineIdB: nonMetaLines[j]!.lineId,
               textA: nonMetaLines[i]!.text,
               textB: nonMetaLines[j]!.text,
-              score,
+              score: pairScore,
               rhymeType,
               pairResult: strategy.compare(
                 nonMetaLines[i]!.text.trim(),
@@ -187,7 +281,12 @@ function runAnalysis(payload: AnalyzePayload): AnalysisResult {
       sectionId: section.sectionId,
       sectionName: section.sectionName,
       targetSchema: section.targetSchema ?? '',
-      detectedSchema: labels.join(''),
+      detectedSchema: detectedPattern,
+      detectedSchemaObj: {
+        pattern: detectedPattern,
+        confidence,
+        lineCount: nonMetaLines.length,
+      },
       lineInsights,
       totalSyllables,
       totalWords,
@@ -206,7 +305,7 @@ function runAnalysis(payload: AnalyzePayload): AnalysisResult {
   return {
     requestId,
     sections: sectionInsights,
-    similarityPairs: allSimilarityPairs.slice(0, 50), // Cap at 50 pairs
+    similarityPairs: allSimilarityPairs.slice(0, 50),
     computeTimeMs: performance.now() - start,
   };
 }

@@ -28,22 +28,19 @@ export type AlgoFamily =
 export interface LanguageFamilyConfig {
   family: AlgoFamily;
   label: string;
-  flag: string; // Restored for UI rendering
+  flag: string;
   hasTones: boolean;
   hasVowelHarmony: boolean;
   syllableStructure: 'CV' | 'CVC' | 'CVCC' | 'complex';
   codaRelevance: 'none' | 'low' | 'medium' | 'high';
 }
 
-/**
- * Flag mapping for specific ISO codes
- * Used to recover the visual identity of the language dropdowns
- */
 export const LANGUAGE_FLAGS: Record<string, string> = {
   'fr': '🇫🇷', 'es': '🇪🇸', 'it': '🇮🇹', 'pt': '🇵🇹', 'ro': '🇷🇴', 'ca': '🇦🇩',
   'en': '🇬🇧', 'de': '🇩🇪', 'nl': '🇳🇱', 'sv': '🇸🇪', 'da': '🇩🇰', 'no': '🇳🇴', 'is': '🇮🇸',
   'ru': '🇷🇺', 'pl': '🇵🇱', 'cs': '🇨🇿', 'sk': '🇸🇰', 'uk': '🇺🇦', 'bg': '🇧🇬', 'sr': '🇷🇸', 'hr': '🇭🇷',
   'dyu': '🇨🇮', 'bci': '🇨🇮', 'ee': '🇹🇬', 'gej': '🇹🇬', 'sw': '🇰🇪', 'yo': '🇳🇬', 'zu': '🇿🇦', 'xh': '🇿🇦', 'ha': '🇳🇬',
+  'bm': '🇲🇱', 'ff': '🇬🇳', 'lua': '🇨🇩', 'mos': '🇧🇫',
   'zh': '🇨🇳', 'yue': '🇭🇰', 'ja': '🇯🇵', 'ko': '🇰🇷', 'hi': '🇮🇳', 'th': '🇹🇭', 'vi': '🇻🇳',
   'ar': '🇸🇦', 'he': '🇮🇱', 'tr': '🇹🇷', 'id': '🇮🇩',
   'nou': '🇨🇮', 'pcm': '🇳🇬', 'cfg': '🇨🇲',
@@ -56,7 +53,9 @@ export const LANG_TO_FAMILY: Record<string, AlgoFamily> = {
   'ar': 'ALGO-SEM', 'he': 'ALGO-SEM', 'am': 'ALGO-SEM',
   'zh': 'ALGO-SIN', 'yue': 'ALGO-SIN', 'wuu': 'ALGO-SIN',
   'ja': 'ALGO-JAP', 'ko': 'ALGO-KOR',
+  // Bantu — extended with Bambara (bm), Fula (ff), Luba (lua), Mooré (mos)
   'sw': 'ALGO-BNT', 'yo': 'ALGO-BNT', 'zu': 'ALGO-BNT', 'xh': 'ALGO-BNT',
+  'bm': 'ALGO-BNT', 'ff': 'ALGO-BNT', 'lua': 'ALGO-BNT', 'mos': 'ALGO-BNT',
   'bci': 'ALGO-KWA', 'dyu': 'ALGO-KWA', 'ee': 'ALGO-KWA', 'gej': 'ALGO-KWA',
   'bkv': 'ALGO-CRV', 'ijn': 'ALGO-CRV', 'iko': 'ALGO-CRV', 'ha': 'ALGO-CRV',
   'hi': 'ALGO-IIR', 'ur': 'ALGO-IIR', 'bn': 'ALGO-IIR', 'pa': 'ALGO-IIR', 'fa': 'ALGO-IIR',
@@ -120,9 +119,15 @@ export const LANGUAGE_NAME_TO_CODE: Record<string, string> = {
   'english': 'en', 'german': 'de', 'dutch': 'nl', 'swedish': 'sv', 'danish': 'da', 'norwegian': 'no', 'icelandic': 'is',
   'french': 'fr', 'spanish': 'es', 'italian': 'it', 'portuguese': 'pt', 'romanian': 'ro', 'catalan': 'ca',
   'russian': 'ru', 'polish': 'pl', 'czech': 'cs', 'slovak': 'sk', 'uk': 'uk', 'bulgarian': 'bg', 'serbian': 'sr', 'croatian': 'hr',
-  'yoruba': 'yo', 'swahili': 'sw', 'zulu': 'zu', 'xhosa': 'xh', 'hausa': 'ha', 'baoulé': 'bci', 'baoule': 'bci', 'baule': 'bci', 'dioula': 'dyu', 'ewe': 'ee', 'mina': 'gej',
+  'yoruba': 'yo', 'swahili': 'sw', 'zulu': 'zu', 'xhosa': 'xh', 'hausa': 'ha',
+  'baoulé': 'bci', 'baoule': 'bci', 'baule': 'bci', 'dioula': 'dyu', 'ewe': 'ee', 'mina': 'gej',
+  'bambara': 'bm', 'dioula bambara': 'bm', 'fula': 'ff', 'fulfulde': 'ff', 'peul': 'ff',
+  'luba': 'lua', 'moore': 'mos', 'mooré': 'mos',
   'nouchi': 'nou', 'nigerian pidgin': 'pcm', 'pidgin': 'pcm', 'camfranglais': 'cfg',
-  'chinese': 'zh', 'mandarin': 'zh', 'cantonese': 'yue', 'japanese': 'ja', 'korean': 'ko', 'hindi': 'hi', 'urdu': 'ur', 'bengali': 'bn', 'punjabi': 'pa', 'persian': 'fa', 'tamil': 'ta', 'telugu': 'te', 'kannada': 'kn', 'malayalam': 'ml', 'thai': 'th', 'vietnamese': 'vi', 'indonesian': 'id', 'malay': 'ms', 'tagalog': 'tl',
+  'chinese': 'zh', 'mandarin': 'zh', 'cantonese': 'yue', 'japanese': 'ja', 'korean': 'ko',
+  'hindi': 'hi', 'urdu': 'ur', 'bengali': 'bn', 'punjabi': 'pa', 'persian': 'fa',
+  'tamil': 'ta', 'telugu': 'te', 'kannada': 'kn', 'malayalam': 'ml',
+  'thai': 'th', 'vietnamese': 'vi', 'indonesian': 'id', 'malay': 'ms', 'tagalog': 'tl',
   'arabic': 'ar', 'hebrew': 'he', 'amharic': 'am', 'turkish': 'tr', 'finnish': 'fi', 'hungarian': 'hu',
 };
 

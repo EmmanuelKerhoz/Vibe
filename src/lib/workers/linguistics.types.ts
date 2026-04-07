@@ -1,43 +1,41 @@
 /**
- * Typed message protocol for the linguistics Web Worker.
- * All heavy phonological computation runs off the main thread.
+ * linguistics.types.ts — Shared type contract between the main thread and
+ * the linguistics Web Worker.
  *
- * Architecture invariant: results are pure derived state —
- * they MUST NOT enter the UNDO/REDO history stack.
+ * All messages exchanged via postMessage() are typed here.
  */
 
-import type {
-  RhymeResult,
-  RhymePairResult,
-  RhymeType,
-} from '../linguistics/core/types';
+import type { RhymeResult, RhymePairResult, RhymeType, DetectedSchema } from '../linguistics/core/types';
 
-// ─── Request (main → worker) ────────────────────────────────────────────────
+// ─── Worker message protocol ────────────────────────────────────────────────
 
-export interface AnalyzePayload {
-  /** Unique request id for deduplication. */
-  requestId: string;
-  sections: SectionPayload[];
-  langCode: string;
-}
-
-export interface SectionPayload {
-  sectionId: string;
-  sectionName: string;
-  lines: LinePayload[];
-  targetSchema?: string;
-}
-
-export interface LinePayload {
+export interface LineInput {
   lineId: string;
   text: string;
   isMeta: boolean;
 }
 
+export interface SectionInput {
+  sectionId: string;
+  sectionName: string;
+  lines: LineInput[];
+  targetSchema?: string;
+}
+
+export interface AnalyzePayload {
+  requestId: string;
+  sections: SectionInput[];
+  langCode: string;
+}
+
 export type WorkerRequest =
   | { type: 'analyze'; payload: AnalyzePayload };
 
-// ─── Response (worker → main) ────────────────────────────────────────────────
+export type WorkerResponse =
+  | { type: 'result'; payload: AnalysisResult }
+  | { type: 'error'; payload: { requestId: string; message: string } };
+
+// ─── Result types ────────────────────────────────────────────────────────────
 
 export interface LineInsight {
   lineId: string;
@@ -45,24 +43,38 @@ export interface LineInsight {
   syllableCount: number;
   charCount: number;
   wordCount: number;
+  /** Rhyme label assigned by the schema detector (A, B, C, …). */
   rhymeLabel: string;
+  /** Full phonological analysis result; null when strategy unavailable. */
   rhymeResult: RhymeResult | null;
 }
 
 export interface SectionInsight {
   sectionId: string;
   sectionName: string;
+  /** User-defined target schema (e.g. "AABB"). */
   targetSchema: string;
+  /**
+   * Detected schema as a plain letter string (e.g. "ABAB").
+   * Kept for legacy consumers that expect a bare string.
+   */
   detectedSchema: string;
+  /**
+   * Detected schema as a typed object with confidence and line count.
+   * Preferred over `detectedSchema` for new consumers.
+   */
+  detectedSchemaObj: DetectedSchema;
   lineInsights: LineInsight[];
   totalSyllables: number;
   totalWords: number;
   totalChars: number;
   avgSyllablesPerLine: number;
   avgWordsPerLine: number;
+  /** Distribution of rhyme types across all scored pairs in this section. */
   rhymeTypes: Record<RhymeType, number>;
-  /** Assonance/alliteration density (0–1). */
+  /** Ratio of lines sharing a vowel nucleus (0–1). */
   assonanceDensity: number;
+  /** Ratio of lines sharing initial consonant (0–1). */
   alliterationDensity: number;
 }
 
@@ -73,7 +85,7 @@ export interface SimilarityPair {
   textB: string;
   score: number;
   rhymeType: RhymeType;
-  pairResult: RhymePairResult | null;
+  pairResult: RhymePairResult;
 }
 
 export interface AnalysisResult {
@@ -82,7 +94,3 @@ export interface AnalysisResult {
   similarityPairs: SimilarityPair[];
   computeTimeMs: number;
 }
-
-export type WorkerResponse =
-  | { type: 'result'; payload: AnalysisResult }
-  | { type: 'error'; payload: { requestId: string; message: string } };

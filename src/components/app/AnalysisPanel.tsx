@@ -30,6 +30,7 @@ import {
 } from '@fluentui/react-icons';
 import type { SelectTabData, SelectTabEventHandler } from '@fluentui/react-components';
 import type { AnalysisResult, SectionInsight, SimilarityPair } from '../../lib/workers/linguistics.types';
+import type { DetectedSchema } from '../../lib/linguistics/core/types';
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
@@ -75,7 +76,11 @@ function AnalysisTab({ sections }: { sections: SectionInsight[] }) {
           {/* Rhyme Schema */}
           <div className="flex items-center gap-2 mb-2">
             <Text size={200} className="text-[var(--text-muted)] min-w-[80px]">Schema:</Text>
-            <SchemaDisplay target={sec.targetSchema} detected={sec.detectedSchema} />
+            <SchemaDisplay
+              target={sec.targetSchema}
+              detected={sec.detectedSchema}
+              detectedSchemaObj={sec.detectedSchemaObj}
+            />
           </div>
 
           {/* Assonance / Alliteration density bars */}
@@ -211,8 +216,27 @@ function SectionInsightCard({ section }: { section: SectionInsight }) {
   );
 }
 
-function SchemaDisplay({ target, detected }: { target: string; detected: string }) {
+function SchemaDisplay({
+  target,
+  detected,
+  detectedSchemaObj,
+}: {
+  target: string;
+  detected: string;
+  detectedSchemaObj?: DetectedSchema;
+}) {
   const match = target && detected && target === detected;
+  const confidence = detectedSchemaObj?.confidence ?? null;
+  const confidencePct = confidence !== null ? `${Math.round(confidence * 100)}%` : null;
+
+  const detectedTooltip = [
+    `Detected: ${detected || '—'}`,
+    confidencePct ? `Confidence: ${confidencePct}` : null,
+    detectedSchemaObj?.lineCount ? `Lines: ${detectedSchemaObj.lineCount}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <div className="flex items-center gap-1">
       {target && (
@@ -221,7 +245,7 @@ function SchemaDisplay({ target, detected }: { target: string; detected: string 
         </Tooltip>
       )}
       {target && detected && <span className="text-[var(--text-muted)]">→</span>}
-      <Tooltip content="Detected schema" relationship="label">
+      <Tooltip content={detectedTooltip} relationship="label">
         <Badge
           appearance="filled"
           color={match ? 'success' : detected ? 'warning' : 'informative'}
@@ -230,6 +254,9 @@ function SchemaDisplay({ target, detected }: { target: string; detected: string 
           {detected || '—'}
         </Badge>
       </Tooltip>
+      {confidencePct && (
+        <span className="text-[var(--text-muted)] text-xs font-mono">{confidencePct}</span>
+      )}
     </div>
   );
 }
