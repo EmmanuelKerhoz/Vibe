@@ -73,3 +73,8 @@ PhonologicalRegistry.register('ALGO-AUS',    new AustronesianStrategy());
 PhonologicalRegistry.register('ALGO-CRE',    new CreoleStrategy());
 // ALGO-ROBUST must be last: Registry captures it as this.fallback
 PhonologicalRegistry.register('ALGO-ROBUST', new FallbackStrategy());
+
+// ─── Bootstrap: register all built-in lexicons ───────────────────────────────
+// Must run AFTER strategies are registered (suggestRhymes calls Registry.analyze).
+import { initLexicons } from './lexicons/initLexicons';
+initLexicons();
