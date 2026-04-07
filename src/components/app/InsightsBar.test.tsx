@@ -69,6 +69,19 @@ vi.mock('../../hooks/useAppKpis', () => ({
   }),
 }));
 
+vi.mock('../../contexts/SimilarityContext', () => ({
+  useSimilarityContext: () => ({
+    index: {
+      candidates: [],
+      status: 'idle' as const,
+      lastUpdated: null,
+      error: null,
+    },
+    triggerNow: vi.fn(),
+    resetIndex: vi.fn(),
+  }),
+}));
+
 function buildInsightsBarContextValue(overrides?: Partial<InsightsBarContextValue>): InsightsBarContextValue {
   const webSimilarityIndex: WebSimilarityIndex = {
     candidates: [],

@@ -178,7 +178,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
               className="h-16 px-5 flex items-center justify-between shrink-0"
               style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}
             >
-              <div style={{
+              <div data-testid="structure-sidebar-rail" style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 height: 'var(--accent-rail-thickness, 2px)',
                 background: 'var(--accent-rail-gradient-h-rev)',
