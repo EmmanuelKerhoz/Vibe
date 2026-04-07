@@ -44,36 +44,33 @@ export abstract class PhonologicalStrategy {
   /**
    * Run the full 5-step pipeline on a single text input.
    *
-   * Note: `score` and `rhymeType` are NOT set here — a single-verse analysis
-   * has no comparison partner, so setting them would produce a misleading
-   * hard-coded value. Use `compare()` to obtain a scored `RhymePairResult`.
+   * `nucleus` is sourced from `rn.nucleus` (the RhymeNucleus produced by
+   * extractRN) so that onset-glides (e.g. ɥ in French nuit/fuite) are
+   * included in the composite nucleus exposed on RhymeResult.
+   * Previously this used `stressedSyl.nucleus` which excluded the glide,
+   * causing `analyze('nuit','fr').nucleus` to return 'i' instead of 'ɥi'.
    *
-   * `lowResourceFallback` is propagated from the RhymeNucleus produced by
-   * extractRN() — strategies that detect low-resource conditions (e.g. raw Han
-   * characters, unsupported scripts) set this flag on the nucleus, and it must
-   * surface here so UI consumers can downgrade confidence indicators.
+   * `lowResourceFallback` is propagated from the RhymeNucleus.
    */
   analyze(text: string, lang: string): RhymeResult {
     const normalized = this.normalize(text, lang);
     const ipa = this.g2p(normalized, lang);
     const syllables = this.syllabify(ipa, lang);
     const rn = this.extractRN(syllables, lang);
-    const stressedSyl = syllables.find(s => s.stressed) ?? syllables[syllables.length - 1];
     return {
       algoId: this.familyId,
       lang,
       input: text,
       ipa,
       syllables,
-      nucleus: stressedSyl?.nucleus ?? '',
+      // Use rn.nucleus (includes onset-glide composite) rather than the raw
+      // syllable nucleus, so that RhymeResult.nucleus matches what consumers
+      // expect as the phonologically meaningful rhyming unit.
+      nucleus: rn.nucleus,
       rhymeNucleus: rn,
       score: undefined,
       rhymeType: undefined,
       similarityMethod: 'feature',
-      // `lowResourceFallback` is declared optional on RhymeNucleus — access
-      // directly without cast. Strategies that cannot produce phonological
-      // analysis (orthographic stubs, unsupported scripts) set this to true;
-      // default to false for phonologically complete strategies.
       lowResourceFallback: rn.lowResourceFallback ?? false,
     };
   }
@@ -109,19 +106,9 @@ export abstract class PhonologicalStrategy {
  * Classify a raw similarity score into a rhyme type.
  *
  * Guard order (most restrictive first):
- * 1. Absolute floor: scores below 0.40 are always 'none', regardless of the
- *    per-family threshold. This prevents a low custom threshold (e.g. 0.30)
- *    from promoting a genuinely weak phonemic match to 'weak'.
+ * 1. Absolute floor: scores below 0.40 are always 'none'.
  * 2. Per-family threshold: scores below the configured threshold are 'none'.
  * 3. Typed bands: rich ≥ 0.95, sufficient ≥ 0.85, assonance ≥ 0.60, else 'weak'.
- *
- * ## Band reachability
- * With the default threshold (0.75), the 'weak' band [0.60–0.75) is
- * inaccessible: guard #2 returns 'none' for any score < 0.75 before reaching
- * the 'weak' check. The 'weak' band is only reachable when the caller passes
- * a threshold < 0.60 (e.g. the ALGO-ROBUST fallback uses threshold=0.50).
- * This is intentional — families with a high threshold signal that they
- * consider the 0.60–0.75 range too ambiguous to label as a rhyme type.
  */
 export function categorizeScore(rawScore: number, threshold = 0.75): RhymeType {
   if (rawScore < 0.40 || rawScore < threshold) return 'none';

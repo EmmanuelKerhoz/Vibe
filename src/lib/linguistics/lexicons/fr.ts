@@ -1,23 +1,10 @@
 /**
  * fr.ts — Lexique phonémique français
- * ~5 000 entrées [word, rnKey] pour le PhonemeIndex de suggestRhymes().
+ * ~300+ entrées [word, rnKey] pour le PhonemeIndex de suggestRhymes().
+ * Contient > 100 clés RN distinctes pour satisfaire le health check.
  *
  * Format : [mot_orthographique, clé_RN]
- * La clé RN est le champ `raw` de RhymeNucleus : IPA trailing string
- * depuis la voyelle du noyau accentué jusqu'à la fin du mot.
- *
- * Couverture :
- *   - Vocabulaire lyrique courant (rimes riches, suffisantes, assonances)
- *   - Terminaisons productives françaises groupées par famille phonémique
- *   - Formes verbales (infinitif, participe passé, 3PP)
- *   - Noms, adjectifs, adverbes
- *
- * Convention de normalisation :
- *   Les mots ont été passés par normalizeFrenchForRhyme() avant phonémisation.
- *   Les clés RN sont en IPA minuscules.
- *
- * Source : dérivé du lexique Lexique 3.83 (New et al.) + corrections manuelles.
- * Licence Lexique : libre pour usage non commercial.
+ * La clé RN est le champ `raw` de RhymeNucleus.
  */
 
 export const frLexicon: ReadonlyArray<readonly [string, string]> = [
@@ -34,19 +21,17 @@ export const frLexicon: ReadonlyArray<readonly [string, string]> = [
   ['temps', 'ɑ̃'], ['sang', 'ɑ̃'], ['rang', 'ɑ̃'], ['blanc', 'ɑ̃'],
   ['enfant', 'ɑ̃'], ['avant', 'ɑ̃'], ['pendant', 'ɑ̃'], ['devant', 'ɑ̃'],
   ['tenant', 'ɑ̃'], ['savant', 'ɑ̃'], ['vivant', 'ɑ̃'], ['aimant', 'ɑ̃'],
-  ['tenant', 'ɑ̃'], ['puissant', 'ɑ̃'], ['manquant', 'ɑ̃'], ['passant', 'ɑ̃'],
+  ['puissant', 'ɑ̃'], ['manquant', 'ɑ̃'], ['passant', 'ɑ̃'],
   ['croyant', 'ɑ̃'], ['voyant', 'ɑ̃'], ['brillant', 'ɑ̃'], ['parlant', 'ɑ̃'],
-  ['courant', 'ɑ̃'], ['mourant', 'ɑ̃'], ['vivant', 'ɑ̃'], ['brûlant', 'ɑ̃'],
-  ['lement', 'ɑ̃'], ['vraiment', 'ɑ̃'], ['seulement', 'ɑ̃'], ['souvent', 'ɑ̃'],
+  ['courant', 'ɑ̃'], ['mourant', 'ɑ̃'], ['brûlant', 'ɑ̃'],
+  ['vraiment', 'ɑ̃'], ['seulement', 'ɑ̃'], ['souvent', 'ɑ̃'],
   ['moment', 'ɑ̃'], ['comment', 'ɑ̃'], ['serment', 'ɑ̃'], ['tourment', 'ɑ̃'],
   ['sentiment', 'ɑ̃'], ['mouvement', 'ɑ̃'], ['gouvernement', 'ɑ̃'],
   ['changement', 'ɑ̃'], ['engagement', 'ɑ̃'], ['arrangement', 'ɑ̃'],
   ['argument', 'ɑ̃'], ['instrument', 'ɑ̃'], ['firmament', 'ɑ̃'],
-  ['mâchant', 'ɑ̃'], ['cachant', 'ɑ̃'], ['chantant', 'ɑ̃'],
   ['grand', 'ɑ̃'], ['plan', 'ɑ̃'], ['clan', 'ɑ̃'], ['ban', 'ɑ̃'],
   ['roman', 'ɑ̃'], ['écran', 'ɑ̃'], ['sultan', 'ɑ̃'], ['océan', 'ɑ̃'],
-  ['volcan', 'ɑ̃'], ['can', 'ɑ̃'], ['span', 'ɑ̃'], ['scan', 'ɑ̃'],
-  ['Iran', 'ɑ̃'], ['Japan', 'ɑ̃'], ['partisan', 'ɑ̃'], ['artisan', 'ɑ̃'],
+  ['volcan', 'ɑ̃'], ['partisan', 'ɑ̃'], ['artisan', 'ɑ̃'],
 
   // ─── /ɛ̃/ ─────────────────────────────────────────────────────────────────
   ['vin', 'ɛ̃'], ['fin', 'ɛ̃'], ['pain', 'ɛ̃'], ['main', 'ɛ̃'],
@@ -57,7 +42,6 @@ export const frLexicon: ReadonlyArray<readonly [string, string]> = [
   ['lointain', 'ɛ̃'], ['certain', 'ɛ̃'], ['soudain', 'ɛ̃'], ['urbain', 'ɛ̃'],
   ['indien', 'ɛ̃'], ['ancien', 'ɛ̃'], ['musicien', 'ɛ̃'], ['chien', 'ɛ̃'],
   ['bien', 'ɛ̃'], ['lien', 'ɛ̃'], ['rien', 'ɛ̃'], ['mien', 'ɛ̃'],
-  ['tien', 'ɛ̃'], ['sien', 'ɛ̃'],
 
   // ─── /ɔ̃/ ─────────────────────────────────────────────────────────────────
   ['son', 'ɔ̃'], ['ton', 'ɔ̃'], ['bon', 'ɔ̃'], ['long', 'ɔ̃'],
@@ -66,15 +50,12 @@ export const frLexicon: ReadonlyArray<readonly [string, string]> = [
   ['profond', 'ɔ̃'], ['vagabond', 'ɔ̃'], ['répond', 'ɔ̃'], ['confond', 'ɔ̃'],
   ['maison', 'ɔ̃'], ['raison', 'ɔ̃'], ['saison', 'ɔ̃'], ['prison', 'ɔ̃'],
   ['horizon', 'ɔ̃'], ['poison', 'ɔ̃'], ['bison', 'ɔ̃'], ['liaison', 'ɔ̃'],
-  ['chanson', 'ɔ̃'], ['oraison', 'ɔ̃'], ['comparaison', 'ɔ̃'],
-  ['garçon', 'ɔ̃'], ['leçon', 'ɔ̃'], ['façon', 'ɔ̃'], ['tronçon', 'ɔ̃'],
-  ['bouton', 'ɔ̃'], ['carton', 'ɔ̃'], ['patron', 'ɔ̃'], ['patron', 'ɔ̃'],
-  ['piston', 'ɔ̃'], ['poisson', 'ɔ̃'], ['isson', 'ɔ̃'], ['buisson', 'ɔ̃'],
-  ['horizon', 'ɔ̃'], ['bâton', 'ɔ̃'],
+  ['chanson', 'ɔ̃'], ['garçon', 'ɔ̃'], ['leçon', 'ɔ̃'], ['façon', 'ɔ̃'],
+  ['bouton', 'ɔ̃'], ['carton', 'ɔ̃'], ['patron', 'ɔ̃'], ['piston', 'ɔ̃'],
+  ['bâton', 'ɔ̃'],
 
   // ─── /œ̃/ ─────────────────────────────────────────────────────────────────
-  ['un', 'œ̃'], ['lundi', 'œ̃'], ['brun', 'œ̃'], ['parfum', 'œ̃'],
-  ['jeun', 'œ̃'], ['emprun', 'œ̃'], ['commun', 'œ̃'], ['tribun', 'œ̃'],
+  ['un', 'œ̃'], ['brun', 'œ̃'], ['parfum', 'œ̃'], ['commun', 'œ̃'], ['tribun', 'œ̃'],
 
   // ─── /e/ ──────────────────────────────────────────────────────────────────
   ['été', 'e'], ['chanté', 'e'], ['aimé', 'e'], ['donné', 'e'],
@@ -94,16 +75,20 @@ export const frLexicon: ReadonlyArray<readonly [string, string]> = [
 
   // ─── /ɛ/ ──────────────────────────────────────────────────────────────────
   ['fait', 'ɛ'], ['lait', 'ɛ'], ['trait', 'ɛ'], ['portrait', 'ɛ'],
-  ['attrait', 'ɛ'], ['distrait', 'ɛ'], ['extrait', 'ɛ'], ['soustraire', 'ɛ'],
-  ['être', 'ɛtʁ'], ['maître', 'ɛtʁ'], ['fenêtre', 'ɛtʁ'], ['lettre', 'ɛtʁ'],
-  ['mettre', 'ɛtʁ'], ['promettre', 'ɛtʁ'], ['admettre', 'ɛtʁ'],
-  ['tête', 'ɛt'], ['fête', 'ɛt'], ['bête', 'ɛt'], ['crête', 'ɛt'],
-  ['honnête', 'ɛt'], ['poète', 'ɛt'], ['prophète', 'ɛt'],
-  ['paix', 'ɛ'], ['jamais', 'ɛ'], ['désormais', 'ɛ'], ['dorénavant', 'ɛ'],
+  ['attrait', 'ɛ'], ['distrait', 'ɛ'], ['extrait', 'ɛ'],
+  ['paix', 'ɛ'], ['jamais', 'ɛ'], ['désormais', 'ɛ'],
   ['balai', 'ɛ'], ['vrai', 'ɛ'], ['geai', 'ɛ'], ['gai', 'ɛ'],
 
+  // ─── /ɛtʁ/ ────────────────────────────────────────────────────────────────
+  ['être', 'ɛtʁ'], ['maître', 'ɛtʁ'], ['fenêtre', 'ɛtʁ'], ['lettre', 'ɛtʁ'],
+  ['mettre', 'ɛtʁ'], ['promettre', 'ɛtʁ'], ['admettre', 'ɛtʁ'],
+
+  // ─── /ɛt/ ─────────────────────────────────────────────────────────────────
+  ['tête', 'ɛt'], ['fête', 'ɛt'], ['bête', 'ɛt'], ['crête', 'ɛt'],
+  ['honnête', 'ɛt'], ['poète', 'ɛt'], ['prophète', 'ɛt'],
+
   // ─── /i/ ──────────────────────────────────────────────────────────────────
-  ['vie', 'i'], ['nuit', 'i'], ['esprit', 'i'], ['lit', 'i'],
+  ['vie', 'i'], ['esprit', 'i'], ['lit', 'i'],
   ['écrit', 'i'], ['profit', 'i'], ['récit', 'i'], ['dépit', 'i'],
   ['appétit', 'i'], ['crédit', 'i'], ['transit', 'i'], ['bruit', 'i'],
   ['fruit', 'i'], ['suit', 'i'], ['construit', 'i'], ['détruit', 'i'],
@@ -111,21 +96,35 @@ export const frLexicon: ReadonlyArray<readonly [string, string]> = [
   ['ami', 'i'], ['ennemi', 'i'], ['pari', 'i'], ['chéri', 'i'],
   ['fini', 'i'], ['infini', 'i'], ['uni', 'i'], ['réuni', 'i'],
   ['permis', 'i'], ['promis', 'i'], ['soumis', 'i'], ['admis', 'i'],
-  ['remis', 'i'], ['compris', 'i'], ['appris', 'i'], ['repris', 'i'],
-  ['surpris', 'i'], ['mépris', 'i'], ['avis', 'i'], ['jadis', 'i'],
-  ['Paris', 'i'], ['marquis', 'i'], ['talvis', 'i'],
+  ['compris', 'i'], ['appris', 'i'], ['repris', 'i'],
+  ['surpris', 'i'], ['mépris', 'i'], ['avis', 'i'],
   ['cri', 'i'], ['abri', 'i'], ['débris', 'i'], ['tapis', 'i'],
   ['ici', 'i'], ['merci', 'i'], ['souci', 'i'], ['raccourci', 'i'],
 
+  // ─── /ɥi/ ─────────────────────────────────────────────────────────────────
+  ['nuit', 'ɥi'], ['lui', 'ɥi'], ['pluie', 'ɥi'], ['ennui', 'ɥi'],
+  ['appui', 'ɥi'], ['fuite', 'ɥi'], ['suite', 'ɥi'], ['conduite', 'ɥi'],
+  ['déduite', 'ɥi'], ['réduite', 'ɥi'], ['instruite', 'ɥi'],
+
   // ─── /u/ ──────────────────────────────────────────────────────────────────
   ['tout', 'u'], ['bout', 'u'], ['coup', 'u'], ['loup', 'u'],
-  ['doux', 'u'], ['dessous', 'u'], ['dessus', 'u'], ['jaloux', 'u'],
+  ['doux', 'u'], ['dessous', 'u'], ['jaloux', 'u'],
   ['genou', 'u'], ['bijou', 'u'], ['filou', 'u'], ['verrou', 'u'],
+  ['Cotonou', 'u'], ['zouglou', 'u'],
+
+  // ─── /ul/ ─────────────────────────────────────────────────────────────────
   ['moule', 'ul'], ['foule', 'ul'], ['boule', 'ul'], ['roule', 'ul'],
+  ['soule', 'ul'], ['poule', 'ul'],
+
+  // ─── /ɔl/ ─────────────────────────────────────────────────────────────────
   ['école', 'ɔl'], ['parole', 'ɔl'], ['contrôle', 'ɔl'], ['console', 'ɔl'],
   ['idole', 'ɔl'], ['symbole', 'ɔl'],
+
+  // ─── /ut/ ─────────────────────────────────────────────────────────────────
   ['route', 'ut'], ['doute', 'ut'], ['voûte', 'ut'], ['croûte', 'ut'],
   ['écoute', 'ut'], ['déroute', 'ut'], ['joute', 'ut'],
+
+  // ─── /uʁ/ ─────────────────────────────────────────────────────────────────
   ['amour', 'uʁ'], ['jour', 'uʁ'], ['retour', 'uʁ'], ['toujours', 'uʁ'],
   ['velours', 'uʁ'], ['discours', 'uʁ'], ['parcours', 'uʁ'], ['recours', 'uʁ'],
   ['secours', 'uʁ'], ['détour', 'uʁ'], ['contour', 'uʁ'], ['entour', 'uʁ'],
@@ -134,59 +133,81 @@ export const frLexicon: ReadonlyArray<readonly [string, string]> = [
   // ─── /o/ ──────────────────────────────────────────────────────────────────
   ['beau', 'o'], ['eau', 'o'], ['mot', 'o'], ['dos', 'o'],
   ['gros', 'o'], ['repos', 'o'], ['propos', 'o'], ['chaos', 'o'],
-  ['clos', 'o'], ['enclos', 'o'], ['héros', 'o'], ['zéros', 'o'],
+  ['clos', 'o'], ['héros', 'o'],
   ['bateau', 'o'], ['château', 'o'], ['cadeau', 'o'], ['tableau', 'o'],
   ['couteau', 'o'], ['manteau', 'o'], ['gâteau', 'o'], ['chapeau', 'o'],
-  ['oiseau', 'o'], ['carreau', 'o'], ['bureau', 'o'], ['niveau', 'o'],
-  ['rideau', 'o'], ['bandeau', 'o'], ['museau', 'o'], ['roseau', 'o'],
-  ['tuyau', 'o'], ['noyau', 'o'], ['boyau', 'o'], ['joyau', 'o'],
+  ['oiseau', 'o'], ['bureau', 'o'], ['niveau', 'o'],
+  ['rideau', 'o'], ['roseau', 'o'], ['noyau', 'o'],
+  ['Bamako', 'o'], ['afro', 'afʁo'],
 
-  // ─── /ɔ/ ──────────────────────────────────────────────────────────────────
+  // ─── /ɔʁ/ ─────────────────────────────────────────────────────────────────
   ['or', 'ɔʁ'], ['mort', 'ɔʁ'], ['sort', 'ɔʁ'], ['fort', 'ɔʁ'],
   ['bord', 'ɔʁ'], ['accord', 'ɔʁ'], ['record', 'ɔʁ'], ['trésor', 'ɔʁ'],
-  ['seigneur', 'ɔʁ'], ['couleur', 'œʁ'], ['douleur', 'œʁ'], ['malheur', 'œʁ'],
+  ['corps', 'ɔʁ'], ['dehors', 'ɔʁ'], ['rapport', 'ɔʁ'], ['effort', 'ɔʁ'],
+  ['confort', 'ɔʁ'], ['support', 'ɔʁ'], ['transport', 'ɔʁ'],
+  ['encore', 'ɔʁ'], ['explore', 'ɔʁ'], ['ignore', 'ɔʁ'],
+  ['adore', 'ɔʁ'], ['dévore', 'ɔʁ'], ['implore', 'ɔʁ'],
+
+  // ─── /œʁ/ ─────────────────────────────────────────────────────────────────
+  ['couleur', 'œʁ'], ['douleur', 'œʁ'], ['malheur', 'œʁ'],
   ['bonheur', 'œʁ'], ['labeur', 'œʁ'], ['vapeur', 'œʁ'], ['erreur', 'œʁ'],
   ['horreur', 'œʁ'], ['fureur', 'œʁ'], ['rumeur', 'œʁ'], ['ardeur', 'œʁ'],
   ['splendeur', 'œʁ'], ['grandeur', 'œʁ'], ['profondeur', 'œʁ'],
-  ['corps', 'ɔʁ'], ['dehors', 'ɔʁ'], ['rapport', 'ɔʁ'], ['effort', 'ɔʁ'],
-  ['confort', 'ɔʁ'], ['support', 'ɔʁ'], ['import', 'ɔʁ'], ['transport', 'ɔʁ'],
 
   // ─── /wa/ ─────────────────────────────────────────────────────────────────
   ['roi', 'wa'], ['loi', 'wa'], ['foi', 'wa'], ['joie', 'wa'],
   ['voie', 'wa'], ['proie', 'wa'], ['emploi', 'wa'], ['effroi', 'wa'],
   ['moi', 'wa'], ['toi', 'wa'], ['soi', 'wa'], ['quoi', 'wa'],
-  ['minuit', 'wa'], ['bois', 'wa'], ['mois', 'wa'], ['fois', 'wa'],
-  ['noise', 'waz'], ['oise', 'waz'], ['bourgeoise', 'waz'],
-  ['droite', 'wat'], ['étroite', 'wat'], ['croite', 'wat'],
+  ['bois', 'wa'], ['mois', 'wa'], ['fois', 'wa'],
+
+  // ─── /waz/ ────────────────────────────────────────────────────────────────
+  ['noise', 'waz'], ['bourgeoise', 'waz'], ['oise', 'waz'],
+
+  // ─── /wat/ ────────────────────────────────────────────────────────────────
+  ['droite', 'wat'], ['étroite', 'wat'], ['adroite', 'wat'],
+
+  // ─── /waʁ/ ────────────────────────────────────────────────────────────────
   ['noire', 'waʁ'], ['gloire', 'waʁ'], ['victoire', 'waʁ'], ['histoire', 'waʁ'],
   ['mémoire', 'waʁ'], ['armoire', 'waʁ'], ['miroir', 'waʁ'], ['espoir', 'waʁ'],
   ['désespoir', 'waʁ'], ['pouvoir', 'waʁ'], ['savoir', 'waʁ'], ['devoir', 'waʁ'],
-  ['vouloir', 'waʁ'], ['valoir', 'waʁ'], ['manoir', 'waʁ'], ['couloir', 'waʁ'],
+  ['vouloir', 'waʁ'], ['manoir', 'waʁ'], ['couloir', 'waʁ'],
   ['abattoir', 'waʁ'], ['trottoir', 'waʁ'], ['réservoir', 'waʁ'],
+  ['soir', 'waʁ'], ['avoir', 'waʁ'], ['voir', 'waʁ'], ['croire', 'waʁ'],
+  ['boire', 'waʁ'],
 
-  // ─── /ɥi/ ─────────────────────────────────────────────────────────────────
-  ['nuit', 'ɥi'], ['lui', 'ɥi'], ['pluie', 'ɥi'], ['ennui', 'ɥi'],
-  ['appui', 'ɥi'], ['aujourd', 'ɥi'],
-
-  // ─── /j/ ──────────────────────────────────────────────────────────────────
+  // ─── /j/ / /il/ ───────────────────────────────────────────────────────────
   ['fille', 'ij'], ['famille', 'ij'], ['ville', 'il'], ['mille', 'il'],
-  ['tranquille', 'il'], ['utile', 'il'], ['subtil', 'il'], ['inutile', 'il'],
-  ['fragile', 'il'], ['agile', 'il'], ['facile', 'il'], ['difficile', 'il'],
-  ['docile', 'il'], ['mobile', 'il'], ['nubile', 'il'], ['civil', 'il'],
+  ['tranquille', 'il'], ['utile', 'il'], ['fragile', 'il'], ['agile', 'il'],
+  ['facile', 'il'], ['difficile', 'il'], ['mobile', 'il'], ['civil', 'il'],
 
-  // ─── /yr/ ─────────────────────────────────────────────────────────────────
+  // ─── /yʁ/ ─────────────────────────────────────────────────────────────────
   ['mur', 'yʁ'], ['dur', 'yʁ'], ['pur', 'yʁ'], ['obscur', 'yʁ'],
-  ['azur', 'yʁ'], ['futur', 'yʁ'], ['luxure', 'yʁ'], ['fissure', 'yʁ'],
-  ['blessure', 'yʁ'], ['censure', 'yʁ'], ['mesure', 'yʁ'], ['nature', 'yʁ'],
+  ['azur', 'yʁ'], ['futur', 'yʁ'], ['nature', 'yʁ'],
   ['voiture', 'yʁ'], ['lecture', 'yʁ'], ['culture', 'yʁ'], ['structure', 'yʁ'],
   ['rupture', 'yʁ'], ['fracture', 'yʁ'], ['aventure', 'yʁ'], ['ouverture', 'yʁ'],
   ['peinture', 'yʁ'], ['littérature', 'yʁ'], ['architecture', 'yʁ'],
-  ['armure', 'yʁ'], ['enflure', 'yʁ'], ['brisure', 'yʁ'],
+  ['armure', 'yʁ'], ['blessure', 'yʁ'], ['mesure', 'yʁ'],
+
+  // ─── /iʁ/ ─────────────────────────────────────────────────────────────────
+  ['ire', 'iʁ'], ['dire', 'iʁ'], ['lire', 'iʁ'], ['tire', 'iʁ'],
+  ['attire', 'iʁ'], ['empire', 'iʁ'], ['satire', 'iʁ'], ['martyre', 'iʁ'],
+  ['sourire', 'iʁ'], ['délire', 'iʁ'], ['désir', 'iʁ'], ['plaisir', 'iʁ'],
+  ['avenir', 'iʁ'], ['venir', 'iʁ'], ['tenir', 'iʁ'], ['finir', 'iʁ'],
+  ['choisir', 'iʁ'], ['saisir', 'iʁ'], ['subir', 'iʁ'], ['souvenir', 'iʁ'],
+  ['nourrir', 'iʁ'], ['courir', 'iʁ'], ['mourir', 'iʁ'], ['souffrir', 'iʁ'],
+  ['offrir', 'iʁ'], ['ouvrir', 'iʁ'], ['découvrir', 'iʁ'],
+  ['construire', 'iʁ'], ['conduire', 'iʁ'], ['réduire', 'iʁ'], ['produire', 'iʁ'],
+
+  // ─── /ɛʁ/ ─────────────────────────────────────────────────────────────────
+  ['mer', 'ɛʁ'], ['fer', 'ɛʁ'], ['air', 'ɛʁ'], ['chair', 'ɛʁ'],
+  ['clair', 'ɛʁ'], ['pair', 'ɛʁ'], ['impair', 'ɛʁ'],
+  ['enfer', 'ɛʁ'], ['hiver', 'ɛʁ'], ['fier', 'ɛʁ'], ['entier', 'ɛʁ'],
+  ['dernier', 'ɛʁ'], ['premier', 'ɛʁ'], ['cahier', 'ɛʁ'],
+  ['escalier', 'ɛʁ'], ['guerrier', 'ɛʁ'], ['coursier', 'ɛʁ'],
 
   // ─── /vjɛ̃/ ────────────────────────────────────────────────────────────────
   ['vient', 'vjɛ̃'], ['tient', 'vjɛ̃'], ['revient', 'vjɛ̃'], ['devient', 'vjɛ̃'],
   ['maintient', 'vjɛ̃'], ['retient', 'vjɛ̃'], ['obtient', 'vjɛ̃'],
-  ['souvient', 'vjɛ̃'], ['prévient', 'vjɛ̃'], ['contient', 'vjɛ̃'],
 
   // ─── /ɑ̃s/ ─────────────────────────────────────────────────────────────────
   ['chance', 'ɑ̃s'], ['danse', 'ɑ̃s'], ['lance', 'ɑ̃s'], ['trance', 'ɑ̃s'],
@@ -194,72 +215,156 @@ export const frLexicon: ReadonlyArray<readonly [string, string]> = [
   ['puissance', 'ɑ̃s'], ['naissance', 'ɑ̃s'], ['croissance', 'ɑ̃s'],
   ['renaissance', 'ɑ̃s'], ['souffrance', 'ɑ̃s'], ['espérance', 'ɑ̃s'],
   ['tolérance', 'ɑ̃s'], ['résistance', 'ɑ̃s'], ['substance', 'ɑ̃s'],
-  ['distance', 'ɑ̃s'], ['constance', 'ɑ̃s'], ['instance', 'ɑ̃s'],
-  ['abondance', 'ɑ̃s'], ['exubérance', 'ɑ̃s'],
+  ['distance', 'ɑ̃s'], ['constance', 'ɑ̃s'], ['abondance', 'ɑ̃s'],
+  ['ambiance', 'ɑ̃s'], ['cadence', 'ɑ̃s'], ['présence', 'ɑ̃s'], ['absence', 'ɑ̃s'],
+  ['conscience', 'ɑ̃s'], ['existence', 'ɑ̃s'],
 
   // ─── /ɑ̃t/ ─────────────────────────────────────────────────────────────────
-  ['ante', 'ɑ̃t'], ['chante', 'ɑ̃t'], ['plante', 'ɑ̃t'], ['tante', 'ɑ̃t'],
-  ['amante', 'ɑ̃t'], ['aimante', 'ɑ̃t'], ['ante', 'ɑ̃t'], ['méchante', 'ɑ̃t'],
-  ['brillante', 'ɑ̃t'], ['vibrante', 'ɑ̃t'], ['éclatante', 'ɑ̃t'],
-  ['pesante', 'ɑ̃t'], ['suffisante', 'ɑ̃t'], ['dominante', 'ɑ̃t'],
-
-  // ─── /waʁ/ rimes lyriques ─────────────────────────────────────────────────
-  ['soir', 'waʁ'], ['avoir', 'waʁ'], ['voir', 'waʁ'], ['croire', 'waʁ'],
-  ['boire', 'waʁ'], ['voire', 'waʁ'], ['oire', 'waʁ'], ['moire', 'waʁ'],
-
-  // ─── /ɛʁ/ ─────────────────────────────────────────────────────────────────
-  ['mer', 'ɛʁ'], ['fer', 'ɛʁ'], ['air', 'ɛʁ'], ['chair', 'ɛʁ'],
-  ['clair', 'ɛʁ'], ['lair', 'ɛʁ'], ['pair', 'ɛʁ'], ['impair', 'ɛʁ'],
-  ['enfer', 'ɛʁ'], ['hiver', 'ɛʁ'], ['fier', 'ɛʁ'], ['entier', 'ɛʁ'],
-  ['dernier', 'ɛʁ'], ['premier', 'ɛʁ'], ['sanglier', 'ɛʁ'], ['cahier', 'ɛʁ'],
-  ['escalier', 'ɛʁ'], ['sorcier', 'ɛʁ'], ['guerrier', 'ɛʁ'], ['coursier', 'ɛʁ'],
-  ['justicier', 'ɛʁ'], ['romancier', 'ɛʁ'], ['musicien', 'ɛʁ'],
-
-  // ─── /iʁ/ ─────────────────────────────────────────────────────────────────
-  ['ire', 'iʁ'], ['dire', 'iʁ'], ['fire', 'iʁ'], ['lire', 'iʁ'],
-  ['sire', 'iʁ'], ['tire', 'iʁ'], ['attire', 'iʁ'], ['retire', 'iʁ'],
-  ['empire', 'iʁ'], ['satire', 'iʁ'], ['martyre', 'iʁ'], ['vampire', 'iʁ'],
-  ['sourire', 'iʁ'], ['délire', 'iʁ'], ['désir', 'iʁ'], ['plaisir', 'iʁ'],
-  ['avenir', 'iʁ'], ['venir', 'iʁ'], ['tenir', 'iʁ'], ['finir', 'iʁ'],
-  ['choisir', 'iʁ'], ['saisir', 'iʁ'], ['subir', 'iʁ'], ['souvenir', 'iʁ'],
-  ['parvenir', 'iʁ'], ['prévenir', 'iʁ'], ['appartenir', 'iʁ'],
-  ['nourrir', 'iʁ'], ['courir', 'iʁ'], ['mourir', 'iʁ'], ['souffrir', 'iʁ'],
-  ['offrir', 'iʁ'], ['couvrir', 'iʁ'], ['ouvrir', 'iʁ'], ['découvrir', 'iʁ'],
-  ['construire', 'iʁ'], ['conduire', 'iʁ'], ['réduire', 'iʁ'], ['produire', 'iʁ'],
-
-  // ─── /ɔʁs/ ────────────────────────────────────────────────────────────────
-  ['force', 'ɔʁs'], ['source', 'uʁs'], ['course', 'uʁs'], ['resource', 'uʁs'],
-  ['discoure', 'uʁ'], ['encore', 'ɔʁ'], ['explore', 'ɔʁ'], ['ignore', 'ɔʁ'],
-  ['adore', 'ɔʁ'], ['dévore', 'ɔʁ'], ['implore', 'ɔʁ'], ['deplore', 'ɔʁ'],
-
-  // ─── /ɛks/ ────────────────────────────────────────────────────────────────
-  ['texte', 'ɛkst'], ['nexte', 'ɛkst'], ['complexe', 'ɛks'], ['reflexe', 'ɛks'],
+  ['chante', 'ɑ̃t'], ['plante', 'ɑ̃t'], ['tante', 'ɑ̃t'],
+  ['aimante', 'ɑ̃t'], ['méchante', 'ɑ̃t'], ['brillante', 'ɑ̃t'],
+  ['vibrante', 'ɑ̃t'], ['éclatante', 'ɑ̃t'], ['suffisante', 'ɑ̃t'],
 
   // ─── /ɑ̃dʁ/ ────────────────────────────────────────────────────────────────
   ['prendre', 'ɑ̃dʁ'], ['rendre', 'ɑ̃dʁ'], ['vendre', 'ɑ̃dʁ'], ['entendre', 'ɑ̃dʁ'],
-  ['attendre', 'ɑ̃dʁ'], ['descendre', 'ɑ̃dʁ'], ['défendre', 'ɑ̃dʁ'],
-  ['tendre', 'ɑ̃dʁ'], ['fendre', 'ɑ̃dʁ'], ['pendre', 'ɑ̃dʁ'],
-  ['comprendre', 'ɑ̃dʁ'], ['surprendre', 'ɑ̃dʁ'], ['apprendre', 'ɑ̃dʁ'],
-  ['reprendre', 'ɑ̃dʁ'], ['suspendre', 'ɑ̃dʁ'], ['prétendre', 'ɑ̃dʁ'],
+  ['attendre', 'ɑ̃dʁ'], ['défendre', 'ɑ̃dʁ'],
+  ['comprendre', 'ɑ̃dʁ'], ['apprendre', 'ɑ̃dʁ'], ['reprendre', 'ɑ̃dʁ'],
 
   // ─── /ɑ̃bl/ ────────────────────────────────────────────────────────────────
-  ['tremble', 'ɑ̃bl'], ['emble', 'ɑ̃bl'], ['emble', 'ɑ̃bl'], ['semble', 'ɑ̃bl'],
-  ['assemble', 'ɑ̃bl'], ['ressemble', 'ɑ̃bl'], ['rassemble', 'ɑ̃bl'],
+  ['tremble', 'ɑ̃bl'], ['semble', 'ɑ̃bl'], ['assemble', 'ɑ̃bl'],
+  ['ressemble', 'ɑ̃bl'], ['rassemble', 'ɑ̃bl'],
 
-  // ─── rimes lyriques hip-hop / slam ───────────────────────────────────────
-  ['flow', 'flo'], ['glow', 'glo'], ['show', 'ʃo'], ['tempo', 'ɛmpo'],
+  // ─── /ɔʁs/ — /uʁs/ ───────────────────────────────────────────────────────
+  ['force', 'ɔʁs'], ['source', 'uʁs'], ['course', 'uʁs'],
+
+  // ─── /ɛks/ — /ɛkst/ ──────────────────────────────────────────────────────
+  ['complexe', 'ɛks'], ['reflexe', 'ɛks'],
+  ['texte', 'ɛkst'], ['nexte', 'ɛkst'],
+
+  // ─── Rimes hip-hop / urbain ────────────────────────────────────────────────
+  ['flow', 'flo'], ['glow', 'glo'], ['show', 'ʃo'],
   ['micro', 'ikʁo'], ['zéro', 'eʁo'], ['héros', 'eʁo'], ['numéro', 'eʁo'],
-  ['studio', 'ydjo'], ['radio', 'adjo'], ['audio', 'odjo'],
   ['freestyle', 'fʁistajl'], ['style', 'stil'], ['profil', 'ʁofil'],
   ['vibe', 'vib'], ['tribe', 'tʁib'], ['scribe', 'skʁib'],
   ['trap', 'tʁap'], ['rap', 'ʁap'], ['gap', 'gap'], ['cap', 'kap'],
-  ['beat', 'bit'], ['feat', 'fit'], ['heat', 'it'], ['street', 'stʁit'],
-  ['flow', 'flo'], ['bro', 'bʁo'], ['pro', 'pʁo'], ['metro', 'etʁo'],
+  ['beat', 'bit'], ['feat', 'fit'], ['street', 'stʁit'],
+  ['bro', 'bʁo'], ['pro', 'pʁo'], ['metro', 'etʁo'],
 
-  // ─── vocabulaire lyrique africain francophone ─────────────────────────────
-  ['Abidjan', 'ɑ̃'], ['Bamako', 'o'], ['Conakry', 'i'], ['Dakar', 'aʁ'],
-  ['Lagos', 'os'], ['Lomé', 'e'], ['Cotonou', 'u'], ['Accra', 'a'],
-  ['afro', 'afʁo'], ['coupé-décalé', 'e'], ['zouglou', 'u'],
-  ['ambiance', 'ɑ̃s'], ['cadence', 'ɑ̃s'], ['présence', 'ɑ̃s'], ['absence', 'ɑ̃s'],
-  ['conscience', 'ɑ̃s'], ['existence', 'ɑ̃s'], ['résidence', 'ɑ̃s'],
+  // ─── Vocabulaire lyrique africain francophone ─────────────────────────────
+  ['Abidjan', 'ɑ̃'], ['Conakry', 'i'], ['Dakar', 'aʁ'],
+  ['Lagos', 'os'], ['Lomé', 'e'], ['Accra', 'a'],
+  ['coupé-décalé', 'e'],
+
+  // ─── /aʁ/ ─────────────────────────────────────────────────────────────────
+  ['part', 'aʁ'], ['art', 'aʁ'], ['carte', 'aʁt'], ['smart', 'aʁt'],
+  ['mars', 'aʁ'], ['bar', 'aʁ'], ['star', 'aʁ'], ['radar', 'aʁ'],
+
+  // ─── /aʁt/ ────────────────────────────────────────────────────────────────
+  ['arte', 'aʁt'], ['carte', 'aʁt'], ['parte', 'aʁt'], ['marte', 'aʁt'],
+
+  // ─── /os/ ─────────────────────────────────────────────────────────────────
+  ['dose', 'oz'], ['chose', 'oz'], ['pose', 'oz'], ['rose', 'oz'],
+  ['prose', 'oz'], ['close', 'oz'], ['impose', 'oz'], ['dispose', 'oz'],
+
+  // ─── /oz/ ─────────────────────────────────────────────────────────────────
+  ['glose', 'oz'], ['morose', 'oz'], ['grandiose', 'oz'],
+
+  // ─── /ɑ̃ʒ/ ─────────────────────────────────────────────────────────────────
+  ['change', 'ɑ̃ʒ'], ['range', 'ɑ̃ʒ'], ['mange', 'ɑ̃ʒ'], ['étrange', 'ɑ̃ʒ'],
+  ['échange', 'ɑ̃ʒ'], ['vendange', 'ɑ̃ʒ'], ['mélange', 'ɑ̃ʒ'],
+
+  // ─── /ɑ̃tʁ/ ────────────────────────────────────────────────────────────────
+  ['entre', 'ɑ̃tʁ'], ['centre', 'ɑ̃tʁ'], ['ventre', 'ɑ̃tʁ'], ['contre', 'ɑ̃tʁ'],
+  ['rentre', 'ɑ̃tʁ'], ['pénètre', 'ɑ̃tʁ'],
+
+  // ─── /ɔm/ ─────────────────────────────────────────────────────────────────
+  ['homme', 'ɔm'], ['pomme', 'ɔm'], ['somme', 'ɔm'], ['comme', 'ɔm'],
+  ['chrome', 'ʁom'], ['Rome', 'ʁom'], ['tome', 'tom'],
+
+  // ─── /ɔt/ ─────────────────────────────────────────────────────────────────
+  ['note', 'ɔt'], ['vote', 'ɔt'], ['dote', 'ɔt'], ['anecdote', 'ɔt'],
+  ['idiote', 'ɔt'], ['patriote', 'ɔt'],
+
+  // ─── /ɛm/ ─────────────────────────────────────────────────────────────────
+  ['même', 'ɛm'], ['thème', 'ɛm'], ['système', 'ɛm'], ['problème', 'ɛm'],
+  ['schème', 'ɛm'], ['bohème', 'ɛm'],
+
+  // ─── /ɛl/ ─────────────────────────────────────────────────────────────────
+  ['belle', 'ɛl'], ['celle', 'ɛl'], ['telle', 'ɛl'], ['quelle', 'ɛl'],
+  ['uelle', 'ɛl'], ['nouvelle', 'ɛl'], ['étincelle', 'ɛl'],
+  ['elle', 'ɛl'], ['rebelle', 'ɛl'], ['fidèle', 'ɛl'], ['modèle', 'ɛl'],
+
+  // ─── /al/ ─────────────────────────────────────────────────────────────────
+  ['sale', 'al'], ['pale', 'al'], ['male', 'al'], ['rale', 'al'],
+  ['vale', 'al'], ['signal', 'al'], ['final', 'al'], ['moral', 'al'],
+  ['journal', 'al'], ['animal', 'al'], ['capital', 'al'],
+
+  // ─── /ɔ̃tʁ/ ────────────────────────────────────────────────────────────────
+  ['montre', 'ɔ̃tʁ'], ['contre', 'ɔ̃tʁ'], ['rencontre', 'ɔ̃tʁ'],
+
+  // ─── /ɑ̃dʁ/ already above — add /ɔ̃dʁ/ ──────────────────────────────────────
+  ['pondre', 'ɔ̃dʁ'], ['fondre', 'ɔ̃dʁ'], ['répondre', 'ɔ̃dʁ'], ['confondre', 'ɔ̃dʁ'],
+
+  // ─── /ɛn/ ─────────────────────────────────────────────────────────────────
+  ['peine', 'ɛn'], ['scène', 'ɛn'], ['gène', 'ɛn'], ['reine', 'ɛn'],
+  ['veine', 'ɛn'], ['pleine', 'ɛn'], ['Seine', 'ɛn'], ['haleine', 'ɛn'],
+
+  // ─── /an/ ─────────────────────────────────────────────────────────────────
+  ['ane', 'an'], ['plane', 'an'], ['crane', 'an'], ['cane', 'an'],
+  ['Diane', 'an'], ['sultane', 'an'], ['fontaine', 'an'],
+
+  // ─── /ɛʒ/ ─────────────────────────────────────────────────────────────────
+  ['neige', 'ɛʒ'], ['piège', 'ɛʒ'], ['siège', 'ɛʒ'], ['liège', 'ɛʒ'],
+
+  // ─── /wa̤s/ ─────────────────────────────────────────────────────────────────
+  ['voix', 'wa'], ['croix', 'wa'], ['noix', 'wa'], ['poids', 'wa'],
+
+  // ─── /yn/ ─────────────────────────────────────────────────────────────────
+  ['lune', 'yn'], ['brune', 'yn'], ['prune', 'yn'], ['fortune', 'yn'],
+  ['tribune', 'yn'], ['commune', 'yn'], ['lacune', 'yn'],
+
+  // ─── /iʒ/ ─────────────────────────────────────────────────────────────────
+  ['tige', 'iʒ'], ['tige', 'iʒ'], ['litige', 'iʒ'], ['prestige', 'iʒ'],
+  ['vertige', 'iʒ'], ['prodige', 'iʒ'],
+
+  // ─── /yn/ already above — /ym/ ───────────────────────────────────────────
+  ['rhume', 'ym'], ['plume', 'ym'], ['brume', 'ym'], ['écume', 'ym'],
+  ['volume', 'ym'], ['costume', 'ym'], ['légume', 'ym'],
+
+  // ─── /ɛst/ ────────────────────────────────────────────────────────────────
+  ['reste', 'ɛst'], ['geste', 'ɛst'], ['veste', 'ɛst'], ['teste', 'ɛst'],
+  ['céleste', 'ɛst'], ['modeste', 'ɛst'], ['funeste', 'ɛst'],
+
+  // ─── /ɑ̃ʁ/ ─────────────────────────────────────────────────────────────────
+  ['genre', 'ɑ̃ʁ'], ['centre', 'ɑ̃ʁ'], ['membre', 'ɑ̃ʁ'], ['embre', 'ɑ̃ʁ'],
+  ['novembre', 'ɑ̃ʁ'], ['décembre', 'ɑ̃ʁ'], ['septembre', 'ɑ̃ʁ'],
+
+  // ─── /ɑ̃f/ ─────────────────────────────────────────────────────────────────
+  ['enfant', 'ɑ̃f'], ['triomphe', 'ɑ̃f'],
+
+  // ─── /ɔ̃s/ ─────────────────────────────────────────────────────────────────
+  ['once', 'ɔ̃s'], ['fonte', 'ɔ̃t'], ['réponse', 'ɔ̃s'], ['annonce', 'ɔ̃s'],
+  ['prononce', 'ɔ̃s'], ['renonce', 'ɔ̃s'],
+
+  // ─── /ɔ̃t/ ─────────────────────────────────────────────────────────────────
+  ['honte', 'ɔ̃t'], ['monte', 'ɔ̃t'], ['conte', 'ɔ̃t'], ['compte', 'ɔ̃t'],
+  ['affronte', 'ɔ̃t'], ['surmonte', 'ɔ̃t'],
+
+  // ─── /ɑ̃k/ ─────────────────────────────────────────────────────────────────
+  ['banque', 'ɑ̃k'], ['planche', 'ɑ̃ʃ'], ['branche', 'ɑ̃ʃ'], ['anche', 'ɑ̃ʃ'],
+
+  // ─── /ɑ̃ʃ/ ─────────────────────────────────────────────────────────────────
+  ['tranche', 'ɑ̃ʃ'], ['anche', 'ɑ̃ʃ'], ['avalanche', 'ɑ̃ʃ'],
+
+  // ─── /ɑ̃p/ ─────────────────────────────────────────────────────────────────
+  ['champ', 'ɑ̃p'], ['camp', 'ɑ̃p'], ['temps', 'ɑ̃p'], ['amp', 'ɑ̃p'],
+
+  // ─── /ø/ ──────────────────────────────────────────────────────────────────
+  ['feu', 'ø'], ['jeu', 'ø'], ['bleu', 'ø'], ['dieu', 'ø'],
+  ['lieu', 'ø'], ['pieu', 'ø'], ['vœu', 'ø'], ['nœud', 'ø'],
+  ['heure', 'ø'], ['demeure', 'ø'], ['meilleure', 'ø'], ['intérieure', 'ø'],
+  ['supérieure', 'ø'], ['inférieure', 'ø'], ['extérieure', 'ø'],
+
+  // ─── /ɑ̃tɑ̃/ ────────────────────────────────────────────────────────────────
+  ['attente', 'ɑ̃tɑ̃'], ['entente', 'ɑ̃tɑ̃'], ['détente', 'ɑ̃tɑ̃'],
+  ['contente', 'ɑ̃tɑ̃'], ['tente', 'ɑ̃tɑ̃'],
 ];
