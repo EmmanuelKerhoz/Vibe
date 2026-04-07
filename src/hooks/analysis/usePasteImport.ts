@@ -91,7 +91,7 @@ const METADATA_RESPONSE_SCHEMA = {
 };
 
 const normalizeSectionHeaderCandidate = (line: string): string => {
-  const trimmed = line.trim().replace(/^#+\s*/, '').replace(/[:：]\s*$/, '');
+  const trimmed = line.trim().replace(/^#+\s*/, '').replace(/[::\u003a]\s*$/, '');
   const bracketValue = unwrapBracketToken(trimmed);
   return cleanSectionName(bracketValue ?? trimmed);
 };
@@ -289,9 +289,6 @@ export const usePasteImport = ({
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
 
-    // When no API key is available, use local text parsing as a fallback so
-    // that loading a song still determines the structure (sections) without
-    // requiring AI analysis.
     if (!hasApiKey) {
       const sections = parseTextToSections(pastedText);
       if (sections.length === 0) return;
@@ -313,22 +310,16 @@ export const usePasteImport = ({
       total: chunks.length,
       currentLabel: chunks[0]?.displayLabel ?? '',
     });
+
+    // Atomic counter for parallel progress updates
+    const completedRef = { count: 0 };
+
     let wasAborted = false;
     try {
       await withAbort(abortControllerRef, async (nextSignal) => {
-        const analyzedSections: Array<{
-          name: string;
-          rhymeScheme?: string;
-          lines: Array<{ text?: string; rhymingSyllables?: string; rhyme?: string; syllables?: number; concept?: string }>;
-        }> = [];
 
-        for (const [index, chunk] of chunks.entries()) {
-          setImportProgress({
-            current: index + 1,
-            total: chunks.length,
-            currentLabel: chunk.displayLabel,
-          });
-
+        // --- Parallel fetch: all chunks + metadata launched simultaneously ---
+        const chunkPromises = chunks.map(async (chunk) => {
           try {
             const response = await generateContentWithRetry({
               model: AI_MODEL_NAME,
@@ -340,10 +331,7 @@ export const usePasteImport = ({
               signal: nextSignal,
             }, PASTE_IMPORT_RETRY);
 
-            if (nextSignal.aborted) {
-              wasAborted = true;
-              return;
-            }
+            if (nextSignal.aborted) return null;
 
             const section = safeJsonParse<{
               name?: string;
@@ -351,55 +339,58 @@ export const usePasteImport = ({
               lines?: Array<{ text?: string; rhymingSyllables?: string; rhyme?: string; syllables?: number; concept?: string }>;
             }>(response.text || '{}', {});
 
-            analyzedSections.push({
+            return {
               name: section.name?.trim() || chunk.nameHint || chunk.displayLabel,
               rhymeScheme: section.rhymeScheme,
               lines: section.lines ?? [],
-            });
+              _displayLabel: chunk.displayLabel,
+            };
           } catch (sectionError) {
-            if (isAbortError(sectionError)) {
-              wasAborted = true;
-              return;
-            }
+            if (isAbortError(sectionError)) return null;
             console.warn(`Paste import: section "${chunk.displayLabel}" failed after retries, skipping.`, sectionError);
+            return null;
+          } finally {
+            completedRef.count += 1;
+            setImportProgress({
+              current: completedRef.count,
+              total: chunks.length,
+              currentLabel: chunk.displayLabel,
+            });
           }
+        });
+
+        const metadataPromise = generateContentWithRetry({
+          model: AI_MODEL_NAME,
+          contents: buildMetadataPrompt(pastedText, uiLang),
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: METADATA_RESPONSE_SCHEMA,
+          },
+          signal: nextSignal,
+        }, PASTE_IMPORT_RETRY).then(res =>
+          safeJsonParse<{ topic?: string; mood?: string; language?: string }>(res.text || '{}', {})
+        ).catch((err) => {
+          console.debug('Failed to analyze pasted lyrics metadata:', err);
+          return {} as { topic?: string; mood?: string; language?: string };
+        });
+
+        const [chunkResults, metadata] = await Promise.all([
+          Promise.all(chunkPromises),
+          metadataPromise,
+        ]);
+
+        if (nextSignal.aborted) {
+          wasAborted = true;
+          return;
         }
 
-        let topicFromImport = '';
-        let moodFromImport = '';
-        let detectedLanguage = '';
+        const analyzedSections = chunkResults.filter((r): r is NonNullable<typeof r> => r !== null);
 
-        try {
-          const metadataResponse = await generateContentWithRetry({
-            model: AI_MODEL_NAME,
-            contents: buildMetadataPrompt(pastedText, uiLang),
-            config: {
-              responseMimeType: 'application/json',
-              responseSchema: METADATA_RESPONSE_SCHEMA,
-            },
-            signal: nextSignal,
-          }, PASTE_IMPORT_RETRY);
-          if (nextSignal.aborted) {
-            wasAborted = true;
-            return;
-          }
+        let topicFromImport = typeof metadata.topic === 'string' ? metadata.topic.trim() : '';
+        let moodFromImport = typeof metadata.mood === 'string' ? metadata.mood.trim() : '';
+        let detectedLanguage = typeof metadata.language === 'string' ? metadata.language.trim() : '';
 
-          const metadata = safeJsonParse<{
-            topic?: string;
-            mood?: string;
-            language?: string;
-          }>(metadataResponse.text || '{}', {});
-
-          topicFromImport = typeof metadata.topic === 'string' ? metadata.topic.trim() : '';
-          moodFromImport = typeof metadata.mood === 'string' ? metadata.mood.trim() : '';
-          detectedLanguage = typeof metadata.language === 'string' ? metadata.language.trim() : '';
-        } catch (error) {
-          console.debug('Failed to analyze pasted lyrics metadata, continuing with section results:', error);
-        }
-
-        if (topicFromImport) setTopic(topicFromImport);
-        if (moodFromImport) setMood(moodFromImport);
-
+        // Fallback language detection only if metadata call returned nothing
         if (!detectedLanguage) {
           try {
             const detectionResponse = await generateContentWithRetry({
@@ -407,15 +398,15 @@ export const usePasteImport = ({
               contents: buildDetectLanguagePrompt(pastedText),
               signal: nextSignal,
             }, PASTE_IMPORT_RETRY);
-            if (nextSignal.aborted) {
-              wasAborted = true;
-              return;
-            }
-            detectedLanguage = detectionResponse.text?.trim() || detectedLanguage;
+            if (nextSignal.aborted) { wasAborted = true; return; }
+            detectedLanguage = detectionResponse.text?.trim() || '';
           } catch (error) {
-            console.debug('Failed to detect pasted lyrics language, continuing with parsed result:', error);
+            console.debug('Failed to detect pasted lyrics language:', error);
           }
         }
+
+        if (topicFromImport) setTopic(topicFromImport);
+        if (moodFromImport) setMood(moodFromImport);
 
         if (
           detectedLanguage
@@ -425,12 +416,11 @@ export const usePasteImport = ({
           onLanguageMismatch?.(detectedLanguage);
         }
 
-        const sections = analyzedSections;
-        if (sections.length === 0) {
+        if (analyzedSections.length === 0) {
           throw new Error('No sections could be extracted. Please check the lyrics format.');
         }
 
-        const songWithIds: Section[] = sections.map((section) => {
+        const songWithIds: Section[] = analyzedSections.map((section) => {
           const lines: Section['lines'] = (section.lines ?? []).map((line) => ({
             id: generateId(),
             text: (line.text ?? '') as string,
@@ -444,7 +434,6 @@ export const usePasteImport = ({
 
           let finalScheme: string = section.rhymeScheme || rhymeScheme;
           if (finalScheme.toUpperCase() === 'FREE') {
-            // Derive scheme from per-line AI rhyme labels when available
             const lyricLines = lines.filter(l => !l.isMeta);
             const aiLabels = lyricLines.map(l => (l.rhyme || '').toUpperCase());
             const labelCounts: Record<string, number> = {};
@@ -455,7 +444,6 @@ export const usePasteImport = ({
             if (hasAiRhymes) {
               finalScheme = aiLabels.map(l => (l && l !== 'X') ? l : 'X').join('');
             } else {
-              // Fall back to local graphemic detection
               const lyricTexts = lyricLines.map(l => l.text);
               const detected = detectRhymeSchemeLocally(lyricTexts);
               if (detected && detected.toUpperCase() !== 'FREE') {
@@ -474,7 +462,7 @@ export const usePasteImport = ({
           };
         });
 
-        const newStructure = sections.map((s) => cleanSectionName(s.name));
+        const newStructure = analyzedSections.map((s) => cleanSectionName(s.name));
         updateSongAndStructureWithHistory(songWithIds, newStructure);
 
         if (detectedLanguage) {

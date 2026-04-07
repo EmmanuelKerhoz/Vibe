@@ -10,6 +10,7 @@ export type {
   SyllableWeight,
   TargetSchema,
   DetectedSchema,
+  LyricAnalysis,
 } from './types';
 export { PhonologicalStrategy, categorizeScore } from './PhonologicalStrategy';
 export { PhonologicalRegistry } from './Registry';
