@@ -1023,6 +1023,7 @@ html, body, #root {
 .lcars-band {
   display: flex;
   align-items: stretch;
+  --lcars-band-border-thickness: 1px;
   background-color: var(--bg-card);
   backdrop-filter: var(--layer2-blur);
   border-radius: 24px 4px 24px 4px;
@@ -1044,9 +1045,14 @@ html, body, #root {
 /* The colored left stripe — TL=24px matches band, BL=4px matches band
    asymmetric LCARS shape: top-left rounded, bottom-left sharp. */
 .lcars-band-stripe {
-  width: 16px;
+  width: calc(16px - var(--lcars-band-border-thickness));
   flex-shrink: 0;
-  border-radius: 24px 0 0 4px;
+  margin: var(--lcars-band-border-thickness) 0 var(--lcars-band-border-thickness) var(--lcars-band-border-thickness);
+  border-radius:
+    calc(24px - var(--lcars-band-border-thickness))
+    0
+    0
+    calc(4px - var(--lcars-band-border-thickness));
 }
 
 .lcars-lyrics-area {
