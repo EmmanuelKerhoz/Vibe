@@ -16,7 +16,8 @@ export type RhymeGroup = 'perfect' | 'near' | 'assonance';
 
 export interface GroupedSuggestion {
   word: string;
-  ipa: string;
+  /** IPA nucleus string from RhymeSuggestion.rhymeNucleus. */
+  nucleus: string;
   score: number;
   group: RhymeGroup;
 }
@@ -47,10 +48,10 @@ function mapSuggestions(raw: RhymeSuggestion[]): GroupedSuggestion[] {
   return raw
     .slice(0, MAX_RESULTS)
     .map(s => ({
-      word:  s.word,
-      ipa:   s.ipa ?? '',
-      score: s.score,
-      group: classifyScore(s.score),
+      word:    s.word,
+      nucleus: s.rhymeNucleus,
+      score:   s.score,
+      group:   classifyScore(s.score),
     }));
 }
 

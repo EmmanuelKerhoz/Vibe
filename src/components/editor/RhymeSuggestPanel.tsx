@@ -120,8 +120,8 @@ export const RhymeSuggestPanel = React.memo(function RhymeSuggestPanel({
                 ].join(' ')}
               >
                 <span className="font-semibold">{s.word}</span>
-                {s.ipa && (
-                  <span className="text-zinc-500 text-[9px]">/{s.ipa}/</span>
+                {s.nucleus && (
+                  <span className="text-zinc-500 text-[9px]">/{s.nucleus}/</span>
                 )}
                 <span className="text-zinc-600 text-[9px] tabular-nums">
                   {Math.round(s.score * 100)}
