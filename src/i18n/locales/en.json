@@ -439,7 +439,11 @@
     "openLeftPanel": "Open lyrics generation panel",
     "closeLeftPanel": "Close lyrics generation panel",
     "detectLanguage": "Detect song language",
-    "redetectLanguage": "Detected: {langs} — click to re-detect"
+    "redetectLanguage": "Detected: {langs} — click to re-detect",
+    "moodPresets": "Choose a preset mood for your song",
+    "rhymeScheme": "Select the default rhyme pattern for all sections",
+    "targetSyllables": "Set the target number of syllables per line",
+    "viewMode": "Switch between different lyrics editor views"
   },
   "sections": {
     "intro": "Intro",

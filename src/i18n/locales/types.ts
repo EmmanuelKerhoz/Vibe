@@ -498,6 +498,14 @@ export interface Translations {
     /** Tooltip for the detect-language button when languages are already detected.
      *  Use `{langs}` as a placeholder for the comma-separated language list. */
     redetectLanguage?: string;
+    /** Tooltip for the preset moods dropdown */
+    moodPresets?: string;
+    /** Tooltip for the default rhyme scheme dropdown */
+    rhymeScheme?: string;
+    /** Tooltip for the target syllables slider */
+    targetSyllables?: string;
+    /** Tooltip for the view mode selector dropdown */
+    viewMode?: string;
   };
 
   sections: {
