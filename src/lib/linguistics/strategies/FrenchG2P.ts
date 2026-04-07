@@ -29,21 +29,22 @@
 const NASAL_MAP: Array<[vowelRe: RegExp, nasal: string]> = [
   // an / am / en / em → /ɑ̃/
   // Includes accented variants: à, â, è, é, ê, ë
-  [/[aàâ](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɑ̃_pre'], // placeholder — replaced below
-  [/[eéèêë](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɑ̃_pre'],
+  [/[aàâ](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɑ\u0303_\u00a7'],
+  [/[eéèêë](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɑ\u0303_\u00a7'],
   // in / im / yn / ym → /ɛ̃/
-  [/[iîïy](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɛ̃_pre'],
+  [/[iîïy](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɛ\u0303_\u00a7'],
   // on / om → /ɔ̃/
-  [/o(?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɔ̃_pre'],
+  [/o(?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɔ\u0303_\u00a7'],
   // un / um → /œ̃/
-  [/[uùûü](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'œ̃_pre'],
+  [/[uùûü](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'œ\u0303_\u00a7'],
 ];
 
 // After flagging the vowel, strip the following n/m (absorbed into nasal token).
-const NASAL_STRIP_RE = /([ɑɛɔœ]̃_pre)[nm]/g;
+// Marker _§ (U+00A7) contains no vowel characters, preventing re-nasalisation.
+const NASAL_STRIP_RE = /([ɑɛɔœ]\u0303_\u00a7)[nm]/g;
 
-// Remove the _pre suffix marker.
-const NASAL_FINALISE_RE = /_pre/g;
+// Remove the _§ suffix marker.
+const NASAL_FINALISE_RE = /_\u00a7/g;
 
 // ─── Vocalic digraphs ─────────────────────────────────────────────────────────
 

@@ -174,6 +174,17 @@ export class RomanceStrategy extends PhonologicalStrategy {
         wordSyllables[wordSyllables.length - 1]!.coda += cluster;
       }
 
+      // Absorb leading combining diacritics (e.g. U+0303 combining tilde) from
+      // each syllable's coda into its nucleus, so that nasal vowels like ɑ̃
+      // stay together as one nucleus token rather than being split.
+      for (const syl of wordSyllables) {
+        const combiningMarks = syl.coda.match(/^\p{M}+/u);
+        if (combiningMarks) {
+          syl.nucleus += combiningMarks[0];
+          syl.coda = syl.coda.slice(combiningMarks[0].length);
+        }
+      }
+
       syllables.push(...wordSyllables);
     }
 
@@ -200,13 +211,31 @@ export class RomanceStrategy extends PhonologicalStrategy {
     return syllables;
   }
 
-  extractRN(syllables: Syllable[], _lang: string): RhymeNucleus {
+  /**
+   * Extract the rhyme nucleus from the stressed syllable through end of word.
+   *
+   * For French (lang === 'fr'), IPA nasal vowels produced by FrenchG2P are
+   * mapped back to their orthographic base vowel categories for rhyme
+   * comparison: ɑ̃→a, ɛ̃→e, ɔ̃→o, œ̃→e. This ensures that words like
+   * "chante" and "plante" share the same rhyme nucleus 'a', matching the
+   * orthographic convention used in French song-lyric analysis.
+   */
+  extractRN(syllables: Syllable[], lang: string): RhymeNucleus {
     const stressIdx = syllables.findIndex(s => s.stressed);
     const idx = stressIdx >= 0 ? stressIdx : Math.max(0, syllables.length - 1);
     const tail = syllables.slice(idx);
     const primary = tail[0];
 
-    const nucleus = primary?.nucleus ?? '';
+    // Map IPA nasal vowels to their orthographic base for rhyme comparison.
+    // e.g. ɑ̃ → a, ɛ̃ → e, ɔ̃ → o, œ̃ → e so that "chante" and "plante" share 'a'.
+    let nucleus = primary?.nucleus ?? '';
+    if (lang === 'fr') {
+      nucleus = nucleus
+        .replace(/ɑ\u0303/g, 'a')
+        .replace(/ɛ\u0303/g, 'e')
+        .replace(/ɔ\u0303/g, 'o')
+        .replace(/œ\u0303/g, 'e');
+    }
     const coda = primary?.coda ?? '';
 
     const raw = [nucleus + coda, ...tail.slice(1).map(s => `${s.nucleus}${s.coda}`)].join('');
