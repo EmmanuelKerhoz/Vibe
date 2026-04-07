@@ -3,18 +3,22 @@
  * Rule-based grapheme-to-phoneme transform for French (FR).
  *
  * Processing order:
- *   1. Lowercase + NFC normalisation.
- *   2. Initial-h: aspirate h marked, mute h stripped.
- *   3. Internal silent h stripped — excludes h after c/p to preserve ch/ph.
- *   4. Nasal vowel sequences.
- *   5. Consonant digraphs (ch, gn, ph).
- *   6. j → ʒ  (jour, jardin, jeu…)
- *   7. Hard c → k.
- *   8. Glide ui → ɥi.
- *   9. Vocalic digraphs (ue→ɥɛ first, then eau/au/ou/eu/…).
- *  10. Terminal -eure → ø  (heure, demeure — eu→ø already consumed, strip mute -re).
- *  11. Mute final e stripped.
- *  12. Silent final consonants + final-r → ʁ.
+ *   1.  Lowercase + NFC normalisation.
+ *   1b. Accented vowel normalisation: é→e  è/ê/ë→ɛ  (orthographic accents
+ *       are not IPA; they must be mapped to their phonemic IPA equivalents
+ *       before any downstream rule fires, so that rnKey matches the lexicon
+ *       which stores entries under 'e' / 'ɛ' — not 'é' / 'è').
+ *   2.  Initial-h: aspirate h marked, mute h stripped.
+ *   3.  Internal silent h stripped — excludes h after c/p to preserve ch/ph.
+ *   4.  Nasal vowel sequences.
+ *   5.  Consonant digraphs (ch, gn, ph).
+ *   6.  j → ʒ  (jour, jardin, jeu…)
+ *   7.  Hard c → k.
+ *   8.  Glide ui → ɥi.
+ *   9.  Vocalic digraphs (ue→ɥɛ first, then eau/au/ou/eu/…).
+ *  10.  Terminal -eure → ø  (heure, demeure — eu→ø already consumed, strip mute -re).
+ *  11.  Mute final e stripped.
+ *  12.  Silent final consonants + final-r → ʁ.
  */
 
 // ─── Nasal vowel map ────────────────────────────────────────────────────────────
@@ -104,6 +108,15 @@ function stripSilentFinalConsonants(w: string): string {
 
 export function frenchG2P(word: string): string {
   let w = word.normalize('NFC').toLowerCase();
+
+  // 1b. Accented vowel normalisation — map orthographic accents to IPA.
+  //     Must run BEFORE nasal-vowel rules so that 'é' in 'chanté' becomes
+  //     'e' (phonemic) rather than being left as the Unicode letter U+00E9
+  //     which would produce rnKey 'é' instead of 'e', mismatching the lexicon.
+  //     NOTE: NASAL_MAP step 3 already handles nasalised [eéèêë] patterns;
+  //     this step normalises non-nasalised accented vowels in the remainder.
+  w = w.replace(/é/g, 'e');      // é (U+00E9) → e
+  w = w.replace(/[èêë]/g, 'ɛ'); // è ê ë      → ɛ
 
   // 1. Initial h
   w = processInitialH(w);

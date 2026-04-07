@@ -22,6 +22,12 @@
  *   and extractRN returns 'ɥi' as the rhyming nucleus (onset-glide preserved).
  *   Concretely: when the char-loop encounters ɥ, it is pushed onto the
  *   cluster (onset buffer) rather than treated as a syllable nucleus.
+ *
+ * Glide w handling:
+ *   frenchG2P emits 'wa' (from oi→wa). 'w' is treated as a GLIDE (onset),
+ *   mirroring ɥ, so that 'swaʁ' → syllable {onset:'sw', nucleus:'a', coda:'ʁ'}
+ *   and extractRN prepends the 'w' onset-glide → nucleus='wa', raw='waʁ'.
+ *   This matches lexicon rnKeys like 'waʁ', 'wa', 'waz', 'wat'.
  */
 
 import { PhonologicalStrategy } from '../core/PhonologicalStrategy';
@@ -82,12 +88,12 @@ function denasalise(nucleus: string): string {
   return nucleus;
 }
 
-// ─── Glide ɥ — treated as onset consonant, not nucleus ───────────────────────
-// U+0265 ɥ is the IPA labio-palatal approximant emitted by frenchG2P for
-// 'ui'→'ɥi' and 'ue'→'ɥɛ'. In the syllable model it functions as a glide
-// (onset), not a vocalic nucleus. Excluding it from vowelPattern forces the
-// char-loop to accumulate it into the onset cluster instead.
-const GLIDE_CHARS = new Set(['\u0265']); // ɥ
+// ─── Glide chars — treated as onset consonant, not nucleus ───────────────────
+// U+0265 ɥ : labio-palatal approximant (frenchG2P ui→ɥi, ue→ɥɛ)
+// U+0077 w : labio-velar approximant  (frenchG2P oi→wa)
+// Both are accumulated into the onset cluster rather than treated as vowel
+// nuclei. extractRN then prepends them from onset → rhyming nucleus.
+const GLIDE_CHARS = new Set(['\u0265', '\u0077']); // ɥ  w
 
 // ─── Strategy ───────────────────────────────────────────────────────────────
 
@@ -142,16 +148,17 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * NOTE: for French, frenchG2P() has already stripped mute final 'e' and
    * silent final consonants before this method is called. The vowel pattern
    * must still include IPA nasal bases (\u0251 \u025b \u0254 \u0153) and
-   * glide \u0265 (ɥ) — but ɥ is treated as onset (GLIDE_CHARS), so it is
-   * excluded from vowelPattern and accumulated in the cluster buffer instead.
+   * glides \u0265 (ɥ) and \u0077 (w) — but both are treated as onset via
+   * GLIDE_CHARS, so they are excluded from vowelPattern and accumulated in
+   * the cluster buffer instead.
    */
   syllabify(ipa: string, lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
     const syllables: Syllable[] = [];
 
     // Extended vowel pattern: orthographic + IPA tokens from FrenchG2P.
-    // ɥ (U+0265) is intentionally EXCLUDED — it is handled as a glide onset
-    // via GLIDE_CHARS so that 'nɥi' → one syllable {onset:'nɥ', nucleus:'i'}.
+    // ɥ (U+0265) and w (U+0077) are intentionally EXCLUDED — they are handled
+    // as glide onsets via GLIDE_CHARS.
     const vowelPattern = /[aeiouyàâæéèêëïîôœùûüÿáíóúãõɛɔɑɪʊɵəɐɯɤɶøɨ]/i;
 
     for (const word of words) {
@@ -159,7 +166,7 @@ export class RomanceStrategy extends PhonologicalStrategy {
       let cluster = '';
 
       for (const ch of word) {
-        // Glide ɥ: treat as onset consonant, accumulate in cluster
+        // Glides ɥ and w: treat as onset consonant, accumulate in cluster
         if (GLIDE_CHARS.has(ch)) {
           cluster += ch;
           continue;
@@ -235,16 +242,12 @@ export class RomanceStrategy extends PhonologicalStrategy {
       syllables.push(...wordSyllables);
     }
 
-    // ── Stress assignment ──────────────────────────────────────────────────────────────
+    // ── Stress assignment ─────────────────────────────────────────────────────
     if (lang === 'fr') {
-      // Post-G2P: frenchG2P has already stripped mute final 'e' and silent
-      // final consonants. The last syllable in `syllables` IS the phonological
-      // final syllable — always stressed in French (phrase-final accent).
       if (syllables.length > 0) {
         syllables[syllables.length - 1]!.stressed = true;
       }
     } else {
-      // ES / IT / PT / RO / CA: penultimate stress (default)
       if (syllables.length >= 2) {
         syllables[syllables.length - 2]!.stressed = true;
       } else if (syllables.length === 1) {
@@ -258,13 +261,20 @@ export class RomanceStrategy extends PhonologicalStrategy {
   /**
    * Extract the rhyme nucleus from the stressed syllable through end of word.
    *
-   * For French, IPA nasal vowels produced by FrenchG2P (base + U+0303) are
-   * denasalised to their bare IPA base for rhyme comparison:
-   *   ɑ̃ → ɑ   ɛ̃ → ɛ   ɔ̃ → ɔ   œ̃ → œ
+   * NASAL PRESERVATION:
+   *   raw is built from the nasal nucleus AS-IS (with tilde U+0303) so that
+   *   the rnKey matches lexicon entries like 'ɑ̃', 'ɔ̃', 'ɛ̃'.
+   *   The nucleus field on RhymeNucleus also preserves the nasal form.
+   *   denasalise() is NOT called here; featureWeightedScore() handles
+   *   nasal/base equivalence internally during scoring.
    *
-   * Glide ɥ is stored in the syllable onset (not nucleus) by syllabify().
-   * extractRN prepends the onset-glide to the nucleus so that "nuit" and
-   * "fuite" both yield nucleus 'ɥi', and "muet"/"fluet" yield 'ɥɛ'.
+   * GLIDE PRESERVATION (ɥ and w):
+   *   Both glides are stored in syllable.onset by syllabify().
+   *   extractRN prepends the trailing glide from onset so that:
+   *     nuit  → nucleus='ɥi', raw='ɥi'
+   *     fuite → nucleus='ɥi', raw='ɥi'
+   *     soir  → nucleus='wa', raw='waʁ'   (was 'aʁ' before w glide fix)
+   *     avoir → nucleus='wa', raw='waʁ'
    */
   extractRN(syllables: Syllable[], lang: string): RhymeNucleus {
     const stressIdx = syllables.findIndex(s => s.stressed);
@@ -272,19 +282,21 @@ export class RomanceStrategy extends PhonologicalStrategy {
     const tail = syllables.slice(idx);
     const primary = tail[0];
 
-    let rawNucleus = primary?.nucleus ?? '';
-    if (lang === 'fr') {
-      rawNucleus = denasalise(rawNucleus);
-    }
+    // Raw nucleus — keep nasal tilde intact (do NOT denasalise here).
+    const rawNucleus = primary?.nucleus ?? '';
     const coda = primary?.coda ?? '';
 
-    // Prepend glide from onset if present (ɥ stored there by syllabify)
-    const onsetGlide = (primary?.onset ?? '').match(/[\u0265]$/u)?.[0] ?? '';
+    // Prepend glide from onset if present (ɥ or w stored there by syllabify)
+    const onsetGlide = (primary?.onset ?? '').match(/[\u0265\u0077]$/u)?.[0] ?? '';
     const nucleus = onsetGlide + rawNucleus;
 
+    // Build raw key: preserve nasal tilde in nucleus and tail syllables.
     const raw = [
       nucleus + coda,
-      ...tail.slice(1).map(s => `${denasalise(s.nucleus)}${s.coda}`),
+      ...tail.slice(1).map(s => {
+        const tGlide = s.onset.match(/[\u0265\u0077]$/u)?.[0] ?? '';
+        return `${tGlide}${s.nucleus}${s.coda}`;
+      }),
     ].join('');
 
     return {
@@ -306,9 +318,6 @@ export class RomanceStrategy extends PhonologicalStrategy {
 function classifyCoda(coda: string): 'nasal' | 'liquid' | 'obstruent' | null {
   if (!coda) return null;
   if (/[mnŋɲ]/.test(coda)) return 'nasal';
-  // ʁ (U+0281) added: IPA uvular fricative emitted by frenchG2P for final 'r'.
-  // Without it, /uʁ/ codas were classified 'obstruent' instead of 'liquid',
-  // penalising near-rhyme pairs like amour/valeur on codaClass weight.
   if (/[lrɾɹ\u0281]/.test(coda)) return 'liquid';
   return 'obstruent';
 }
