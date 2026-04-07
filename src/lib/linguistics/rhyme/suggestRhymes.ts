@@ -19,6 +19,7 @@
 import { PhonologicalRegistry } from '../core/Registry';
 import { categorizeScore } from '../core/PhonologicalStrategy';
 import type { RhymeType } from '../core/types';
+import { resolveLang } from '../lid/detectLanguage';
 
 // ─── Public types ────────────────────────────────────────────────────────────
 
@@ -38,6 +39,8 @@ export interface SuggestRhymesResult {
   usedFallback: boolean;
   /** Input word's RN key (for transparency). */
   inputNucleus: string;
+  /** Resolved language code (useful when lang was 'auto'). */
+  detectedLang: string;
 }
 
 export interface SuggestRhymesOptions {
@@ -102,15 +105,18 @@ export function getLexiconSize(lang: string): number {
  * Suggest words that rhyme with `word` in `lang`.
  *
  * @param word      Input word (orthographic).
- * @param lang      ISO 639-1/3 language code.
+ * @param lang      ISO 639-1/3 language code, or 'auto' for automatic detection.
+ *                  Defaults to 'auto'.
  * @param options   Optional tuning parameters.
  * @returns         Sorted suggestions (score DESC) + metadata.
  */
 export function suggestRhymes(
   word: string,
-  lang: string,
+  lang: string = 'auto',
   options: SuggestRhymesOptions = {},
 ): SuggestRhymesResult {
+  const resolvedLang = resolveLang(word, lang);
+
   const {
     n = 10,
     minScore = 0.65,
@@ -122,12 +128,13 @@ export function suggestRhymes(
     suggestions: [],
     usedFallback: true,
     inputNucleus: '',
+    detectedLang: resolvedLang,
   };
 
   // ── Step 1: analyse the input word ──────────────────────────────────────
   let inputResult;
   try {
-    inputResult = PhonologicalRegistry.analyze(word.trim(), lang);
+    inputResult = PhonologicalRegistry.analyze(word.trim(), resolvedLang);
   } catch {
     return EMPTY;
   }
@@ -137,7 +144,7 @@ export function suggestRhymes(
   const inputKey = inputRN.raw.toLowerCase();
 
   // ── Step 2: check lexicon availability ───────────────────────────────────
-  const index = phonemeIndex.get(lang);
+  const index = phonemeIndex.get(resolvedLang);
   if (!index || index.size === 0) {
     return { ...EMPTY, inputNucleus: inputKey };
   }
@@ -175,7 +182,7 @@ export function suggestRhymes(
 
       let pairScore = 0;
       try {
-        const pairResult = PhonologicalRegistry.compare(candidate, word, lang);
+        const pairResult = PhonologicalRegistry.compare(candidate, word, resolvedLang);
         pairScore = pairResult?.score ?? 0;
       } catch {
         continue;
@@ -202,6 +209,7 @@ export function suggestRhymes(
     suggestions: suggestions.slice(0, n),
     usedFallback: false,
     inputNucleus: inputKey,
+    detectedLang: resolvedLang,
   };
 }
 

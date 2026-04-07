@@ -18,6 +18,7 @@
 import type { DetectedSchema, StanzaSchema } from '../core/types';
 import { PhonologicalRegistry } from '../core/Registry';
 import { splitLyricIntoLines, extractLineTail } from './lyricSegmenter';
+import { resolveLang } from '../lid/detectLanguage';
 
 /** Minimum similarity score to consider two lines as rhyming. */
 const RHYME_THRESHOLD = 0.65;
@@ -105,14 +106,16 @@ function scoreLines(
  * Detect the rhyme scheme of a lyric block, with per-stanza resolution.
  *
  * @param text  - Raw lyric text (may include section markers and blank lines).
- * @param lang  - ISO 639-3 language code routed through PhonologicalRegistry.
+ * @param lang  - ISO 639-3 language code routed through PhonologicalRegistry,
+ *               or 'auto' for automatic language detection. Defaults to 'auto'.
  * @returns DetectedSchema with full-block summary + optional stanzas[] breakdown.
  */
 export function detectRhymeScheme(
   text: string,
-  lang: string,
+  lang: string = 'auto',
 ): DetectedSchema {
-  const allLines = splitLyricIntoLines(text, lang);
+  const resolvedLang = resolveLang(text, lang);
+  const allLines = splitLyricIntoLines(text, resolvedLang);
 
   // Only keep rhyme-bearing lines (non-blank, non-annotation)
   const bearingLines = allLines.filter(l => !l.isBlank && !l.isAnnotation);
@@ -144,7 +147,7 @@ export function detectRhymeScheme(
   const stanzas: StanzaSchema[] = [];
   for (const idx of stanzaIndices) {
     const tails = stanzaMap.get(idx)!;
-    const { pattern, confidence } = scoreLines(tails, lang);
+    const { pattern, confidence } = scoreLines(tails, resolvedLang);
     stanzas.push({
       stanzaIndex: idx,
       pattern,
@@ -154,13 +157,10 @@ export function detectRhymeScheme(
   }
 
   // ── Full-block summary (backward-compatible) ──────────────────────────
-  // Run the scorer once on the full flat list so that .pattern reflects
-  // the entire block (as before). This is a deliberate duplicate pass
-  // — cheap since it reuses the same O(n²) matrix logic.
   const allTails = bearingLines.map(l => extractLineTail(l.text));
   const { pattern: blockPattern, confidence: blockConfidence } = scoreLines(
     allTails,
-    lang,
+    resolvedLang,
   );
 
   return {
