@@ -1,12 +1,14 @@
 import React, { useMemo } from 'react';
 import { LyricInput } from './LyricInput';
 import { MetaLine } from './MetaLine';
+import { RhymeSuggestPanel } from './RhymeSuggestPanel';
 import { getRhymeColor, getSchemaLabelForLine, getSchemeLetterForLine } from '../../utils/songUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { useDrag } from '../../contexts/DragContext';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSongMutation } from '../../contexts/SongMutationContext';
+import { useRhymeSuggestions } from '../../hooks/useRhymeSuggestions';
 import type { Section } from '../../types';
 
 type MetaGroup = { kind: 'meta'; lines: Section['lines'] };
@@ -53,6 +55,36 @@ interface SectionLineListProps {
   onLineBlur?: () => void;
 }
 
+// ─── Inner: rhyme panel wired to a single line ────────────────────────────────
+
+interface LinePanelProps {
+  line: Section['lines'][number];
+  lang: string;
+  updateLineText: (sectionId: string, lineId: string, text: string) => void;
+  sectionId: string;
+  onClose: () => void;
+}
+
+function LineRhymePanel({ line, lang, updateLineText, sectionId, onClose }: LinePanelProps) {
+  const { suggestions, query, isLoading } = useRhymeSuggestions(
+    line.text,
+    lang,
+    true,
+  );
+  return (
+    <RhymeSuggestPanel
+      query={query}
+      suggestions={suggestions}
+      isLoading={isLoading}
+      lineText={line.text}
+      onAccept={(newText) => updateLineText(sectionId, line.id, newText)}
+      onClose={onClose}
+    />
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export const SectionLineList = React.memo(function SectionLineList({
   section, hasApiKey,
   lineNumberOffset = 0,
@@ -66,6 +98,24 @@ export const SectionLineList = React.memo(function SectionLineList({
 
   const renderItems = useMemo(() => buildRenderItems(section.lines), [section.lines]);
   const effectiveRhymeScheme = section.rhymeScheme || rhymeScheme;
+
+  // Resolve lang for the selected line (falls back to section target language)
+  const selectedLine = useMemo(() => {
+    if (!selectedLineId) return null;
+    const item = renderItems.find(
+      (it): it is LyricItem => it.kind === 'lyric' && it.line.id === selectedLineId,
+    );
+    return item?.line ?? null;
+  }, [selectedLineId, renderItems]);
+
+  const panelLang = selectedLine
+    ? (lineLanguages[selectedLine.id] ?? sectionTargetLanguage ?? 'auto')
+    : 'auto';
+
+  const handlePanelClose = () => {
+    // Deselect line to hide the panel (re-uses existing blur flow)
+    if (onLineBlur) onLineBlur();
+  };
 
   return (
     <div className="flex flex-col gap-0.5">
@@ -81,6 +131,7 @@ export const SectionLineList = React.memo(function SectionLineList({
           );
         }
         const { line, index: lyricIndex } = item;
+        const isActive = selectedLineId === line.id;
         const rhymeFamily = getSchemeLetterForLine(section, lyricIndex, effectiveRhymeScheme);
         const schemeLabel = getSchemaLabelForLine(section, lyricIndex, effectiveRhymeScheme);
         const rhymeColor = getRhymeColor(schemeLabel);
@@ -96,35 +147,45 @@ export const SectionLineList = React.memo(function SectionLineList({
         const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo?.lineId === line.id;
         const isDragOverLine = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo?.lineId === line.id;
         return (
-          <LyricInput
-            key={line.id}
-            line={line}
-            lineIndex={lyricIndex}
-            globalLineNumber={globalLineNumber}
-            sectionId={section.id}
-            sectionLinesCount={section.lines.filter(l => !l.isMeta).length}
-            rhymePeerTexts={rhymePeerTexts}
-            selectedLineId={selectedLineId}
-            schemeLabel={schemeLabel}
-            rhymeColor={rhymeColor}
-            isGenerating={isGenerating}
-            hasApiKey={hasApiKey}
-            isDraggedLine={isDraggedLine}
-            isDragOverLine={isDragOverLine}
-            lineLanguage={lineLanguages[line.id]}
-            handleLineClick={handleLineClick}
-            updateLineText={updateLineText}
-            handleLineKeyDown={handleLineKeyDown}
-            moveLineUp={moveLineUp}
-            moveLineDown={moveLineDown}
-            addLineToSection={addLineToSection}
-            deleteLineFromSection={deleteLineFromSection}
-            playAudioFeedback={playAudioFeedback}
-            adaptLineLanguage={adaptLineLanguage}
-            sectionTargetLanguage={sectionTargetLanguage}
-            isAdaptingLine={adaptingLineIds?.has(line.id)}
-            onLineBlur={onLineBlur}
-          />
+          <React.Fragment key={line.id}>
+            <LyricInput
+              line={line}
+              lineIndex={lyricIndex}
+              globalLineNumber={globalLineNumber}
+              sectionId={section.id}
+              sectionLinesCount={section.lines.filter(l => !l.isMeta).length}
+              rhymePeerTexts={rhymePeerTexts}
+              selectedLineId={selectedLineId}
+              schemeLabel={schemeLabel}
+              rhymeColor={rhymeColor}
+              isGenerating={isGenerating}
+              hasApiKey={hasApiKey}
+              isDraggedLine={isDraggedLine}
+              isDragOverLine={isDragOverLine}
+              lineLanguage={lineLanguages[line.id]}
+              handleLineClick={handleLineClick}
+              updateLineText={updateLineText}
+              handleLineKeyDown={handleLineKeyDown}
+              moveLineUp={moveLineUp}
+              moveLineDown={moveLineDown}
+              addLineToSection={addLineToSection}
+              deleteLineFromSection={deleteLineFromSection}
+              playAudioFeedback={playAudioFeedback}
+              adaptLineLanguage={adaptLineLanguage}
+              sectionTargetLanguage={sectionTargetLanguage}
+              isAdaptingLine={adaptingLineIds?.has(line.id)}
+              onLineBlur={onLineBlur}
+            />
+            {isActive && selectedLine && (
+              <LineRhymePanel
+                line={selectedLine}
+                lang={panelLang}
+                updateLineText={updateLineText}
+                sectionId={section.id}
+                onClose={handlePanelClose}
+              />
+            )}
+          </React.Fragment>
         );
       })}
     </div>
