@@ -15,6 +15,30 @@ type UseBackgroundThemeAnalysisParams = {
   hasApiKey: boolean;
 };
 
+/**
+ * djb2 hash — fast non-cryptographic string hash.
+ * Mirrors the implementation in useLinguisticsWorker for consistency.
+ */
+function djb2(str: string): number {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h >>> 0;
+  }
+  return h;
+}
+
+/** Lightweight song fingerprint: XOR of per-line (lineId + length + content hash). */
+function songFingerprint(song: Section[]): number {
+  let fp = 0;
+  for (const s of song) {
+    for (const l of s.lines) {
+      fp ^= djb2(l.id + l.text.length.toString(16) + djb2(l.text).toString(16));
+    }
+  }
+  return fp;
+}
+
 export const useBackgroundThemeAnalysis = ({
   song,
   topic,
@@ -25,10 +49,24 @@ export const useBackgroundThemeAnalysis = ({
   hasApiKey,
 }: UseBackgroundThemeAnalysisParams): { isAnalyzingTheme: boolean } => {
   const [isAnalyzingTheme, setIsAnalyzingTheme] = useState(false);
-  const lastAnalyzedSongRef = useRef('');
+
+  // Stores the last hash that triggered an analysis — avoids re-analyzing unchanged content.
+  const lastAnalyzedHashRef = useRef<number | null>(null);
   const backoffUntilRef = useRef(0);
   const bgAbortControllerRef = useRef<AbortController | null>(null);
   const isAnalyzingThemeRef = useRef(false);
+
+  // Stable refs for values used inside the async callback but not needed as triggers.
+  const topicRef = useRef(topic);
+  topicRef.current = topic;
+  const moodRef = useRef(mood);
+  moodRef.current = mood;
+  const uiLanguageRef = useRef(uiLanguage);
+  uiLanguageRef.current = uiLanguage;
+  const setTopicRef = useRef(setTopic);
+  setTopicRef.current = setTopic;
+  const setMoodRef = useRef(setMood);
+  setMoodRef.current = setMood;
 
   useEffect(() => {
     return () => {
@@ -40,14 +78,14 @@ export const useBackgroundThemeAnalysis = ({
     if (!hasApiKey) return;
     if (song.length === 0) return;
 
-    const currentSongStr = JSON.stringify(song);
-    if (currentSongStr === lastAnalyzedSongRef.current) return;
+    const hash = songFingerprint(song);
+    if (hash === lastAnalyzedHashRef.current) return;
 
     const timer = setTimeout(async () => {
       if (Date.now() < backoffUntilRef.current) return;
       if (isAnalyzingThemeRef.current) return;
 
-      lastAnalyzedSongRef.current = currentSongStr;
+      lastAnalyzedHashRef.current = hash;
       isAnalyzingThemeRef.current = true;
       setIsAnalyzingTheme(true);
 
@@ -56,9 +94,9 @@ export const useBackgroundThemeAnalysis = ({
         await withAbort(bgAbortControllerRef, async (nextSignal) => {
           const prompt = buildThemeAnalysisPrompt({
             song,
-            topic,
-            mood,
-            uiLanguage: uiLanguage || 'English',
+            topic: topicRef.current,
+            mood: moodRef.current,
+            uiLanguage: uiLanguageRef.current || 'English',
           });
           const response = await generateContentWithRetry({
             model: AI_MODEL_NAME,
@@ -82,8 +120,8 @@ export const useBackgroundThemeAnalysis = ({
           }
 
           const data = safeJsonParse<{ topic?: string; mood?: string }>(response.text || '{}', {});
-          if (data.topic && data.topic !== topic) setTopic(data.topic);
-          if (data.mood && data.mood !== mood) setMood(data.mood);
+          if (data.topic && data.topic !== topicRef.current) setTopicRef.current(data.topic);
+          if (data.mood && data.mood !== moodRef.current) setMoodRef.current(data.mood);
         });
       } catch (e) {
         if (isAbortError(e)) {
@@ -105,7 +143,7 @@ export const useBackgroundThemeAnalysis = ({
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [hasApiKey, song, topic, mood, uiLanguage, setTopic, setMood]);
+  }, [hasApiKey, song]);
 
   return { isAnalyzingTheme };
 };
