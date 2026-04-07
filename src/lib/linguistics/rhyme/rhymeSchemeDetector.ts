@@ -3,15 +3,21 @@
  * Detects the rhyme scheme of a lyric block (AABB, ABAB, ABCABC, FREE, etc.)
  * by cross-scoring the RhymeNuclei of line-ending words.
  *
+ * Operates stanza-by-stanza: blank-line boundaries in the source text
+ * delimit independent stanzas, each receiving its own label sequence
+ * (A/B/C… restarted per stanza). The full-block summary in
+ * DetectedSchema.pattern / .confidence / .lineCount is preserved for
+ * backward-compatible consumers.
+ *
  * Does NOT reimplement scoring — delegates to featureWeightedScore via
  * the PhonologicalRegistry (same path as existing compare() calls).
  *
  * docs_fusion_optimal.md §4 (RN extraction) + §5 (similarity).
  */
 
-import type { DetectedSchema } from '../core/types';
+import type { DetectedSchema, StanzaSchema } from '../core/types';
 import { PhonologicalRegistry } from '../core/Registry';
-import { splitIntoRhymingLines, extractLineTail } from './lyricSegmenter';
+import { splitLyricIntoLines, extractLineTail } from './lyricSegmenter';
 
 /** Minimum similarity score to consider two lines as rhyming. */
 const RHYME_THRESHOLD = 0.65;
@@ -20,9 +26,9 @@ const RHYME_THRESHOLD = 0.65;
  * Generate a label for a given 0-based label index.
  *
  * For indices 0–25: single uppercase letter A–Z.
- * For indices ≥ 26: two-letter compound AA, AB, … AZ, BA, …
- * This avoids the non-alphabetic characters that
- * String.fromCharCode(65 + n) produces for n ≥ 26.
+ * For indices ≥26: two-letter compound AA, AB, … AZ, BA, …
+ * This avoids non-alphabetic characters that
+ * String.fromCharCode(65 + n) produces for n ≥26.
  */
 function labelForIndex(index: number): string {
   if (index < 26) return String.fromCharCode(65 + index);
@@ -31,47 +37,41 @@ function labelForIndex(index: number): string {
   return String.fromCharCode(65 + hi) + String.fromCharCode(65 + lo);
 }
 
+// ─── Internal: score a flat list of line-tail strings ──────────────────────
+
 /**
- * Detect the rhyme scheme of a lyric block.
+ * Given an ordered array of line-tail strings, compute a rhyme-labelled
+ * pattern (e.g. "AABB") and a mean confidence score.
  *
- * @param text  - Raw lyric text (may include section markers).
- * @param lang  - ISO 639-3 language code routed through PhonologicalRegistry.
- * @returns DetectedSchema with pattern string + confidence.
+ * Label sequence is always restarted from A (index 0) — callers that
+ * want globally unique labels across stanzas must handle remapping.
  */
-export function detectRhymeScheme(
-  text: string,
+function scoreLines(
+  tails: string[],
   lang: string,
-): DetectedSchema {
-  const lines = splitIntoRhymingLines(text);
-  if (lines.length < 2) {
-    return { pattern: 'FREE', confidence: 1.0, lineCount: lines.length };
-  }
-
-  const tails = lines.map(extractLineTail);
+): { pattern: string; confidence: number } {
   const n = tails.length;
+  if (n === 0) return { pattern: '', confidence: 0 };
+  if (n === 1) return { pattern: 'A', confidence: 1.0 };
 
-  // ── Similarity matrix ────────────────────────────────────────────────────
-  // Build an n×n upper-triangle matrix of rhyme scores between line tails.
-  const matrix: number[][] = Array.from({ length: n }, () => new Array(n).fill(0) as number[]);
+  // Build upper-triangle similarity matrix
+  const matrix: number[][] = Array.from({ length: n }, () =>
+    new Array(n).fill(0) as number[],
+  );
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       try {
         const result = PhonologicalRegistry.compare(tails[i]!, tails[j]!, lang);
         matrix[i]![j] = result?.score ?? 0;
       } catch {
-        // Strategy not found for lang — use exact-string fallback
         matrix[i]![j] = tails[i] === tails[j] ? 1.0 : 0.0;
       }
     }
   }
 
-  // ── Label assignment ─────────────────────────────────────────────────────
-  // Assign letter labels (A, B, C… AA, AB…) greedily by first rhyme match
-  // ≥ threshold. labelForIndex() produces safe alphabetic labels for any
-  // number of lines without falling back to non-letter codepoints.
+  // Greedy label assignment
   const labels: string[] = new Array(n).fill('') as string[];
   let nextIndex = 0;
-
   for (let i = 0; i < n; i++) {
     if (labels[i] !== '') continue;
     labels[i] = labelForIndex(nextIndex++);
@@ -82,35 +82,104 @@ export function detectRhymeScheme(
     }
   }
 
-  // ── Pattern string ───────────────────────────────────────────────────────
-  const pattern = labels.join('');
-
-  // ── Confidence = mean similarity among rhyming pairs ────────────────────
-  const rhymingPairs: number[] = [];
+  // Confidence = mean similarity among rhyming pairs
+  const rhymingScores: number[] = [];
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       if (labels[i] === labels[j]) {
-        rhymingPairs.push(matrix[i]![j] ?? 0);
+        rhymingScores.push(matrix[i]![j] ?? 0);
       }
     }
   }
   const confidence =
-    rhymingPairs.length > 0
-      ? rhymingPairs.reduce((s, v) => s + v, 0) / rhymingPairs.length
+    rhymingScores.length > 0
+      ? rhymingScores.reduce((s, v) => s + v, 0) / rhymingScores.length
       : 0;
 
-  return { pattern, confidence, lineCount: n };
+  return { pattern: labels.join(''), confidence };
+}
+
+// ─── Public API ────────────────────────────────────────────────────────────
+
+/**
+ * Detect the rhyme scheme of a lyric block, with per-stanza resolution.
+ *
+ * @param text  - Raw lyric text (may include section markers and blank lines).
+ * @param lang  - ISO 639-3 language code routed through PhonologicalRegistry.
+ * @returns DetectedSchema with full-block summary + optional stanzas[] breakdown.
+ */
+export function detectRhymeScheme(
+  text: string,
+  lang: string,
+): DetectedSchema {
+  const allLines = splitLyricIntoLines(text, lang);
+
+  // Only keep rhyme-bearing lines (non-blank, non-annotation)
+  const bearingLines = allLines.filter(l => !l.isBlank && !l.isAnnotation);
+
+  if (bearingLines.length < 2) {
+    return {
+      pattern: 'FREE',
+      confidence: 1.0,
+      lineCount: bearingLines.length,
+    };
+  }
+
+  // ── Group by stanza ─────────────────────────────────────────────────────
+  const stanzaMap = new Map<number, string[]>();
+  for (const line of bearingLines) {
+    const bucket = stanzaMap.get(line.stanzaIndex);
+    const tail = extractLineTail(line.text);
+    if (bucket) {
+      bucket.push(tail);
+    } else {
+      stanzaMap.set(line.stanzaIndex, [tail]);
+    }
+  }
+
+  const stanzaIndices = [...stanzaMap.keys()].sort((a, b) => a - b);
+  const multiStanza = stanzaIndices.length > 1;
+
+  // ── Per-stanza scoring ─────────────────────────────────────────────────
+  const stanzas: StanzaSchema[] = [];
+  for (const idx of stanzaIndices) {
+    const tails = stanzaMap.get(idx)!;
+    const { pattern, confidence } = scoreLines(tails, lang);
+    stanzas.push({
+      stanzaIndex: idx,
+      pattern,
+      confidence,
+      lineCount: tails.length,
+    });
+  }
+
+  // ── Full-block summary (backward-compatible) ──────────────────────────
+  // Run the scorer once on the full flat list so that .pattern reflects
+  // the entire block (as before). This is a deliberate duplicate pass
+  // — cheap since it reuses the same O(n²) matrix logic.
+  const allTails = bearingLines.map(l => extractLineTail(l.text));
+  const { pattern: blockPattern, confidence: blockConfidence } = scoreLines(
+    allTails,
+    lang,
+  );
+
+  return {
+    pattern: blockPattern,
+    confidence: blockConfidence,
+    lineCount: bearingLines.length,
+    stanzas: multiStanza ? stanzas : undefined,
+  };
 }
 
 /**
  * Normalise a raw pattern to a canonical scheme label.
- * AABB, ABAB, ABBA, ABCABC, AAAA → kept as-is.
- * Anything else → 'CUSTOM'.
+ * Known patterns are kept as-is; anything else returns 'CUSTOM'.
  */
 export function canonicalizeScheme(pattern: string): string {
   const canonical = new Set([
     'AABB', 'ABAB', 'ABBA', 'ABCABC', 'AAAA',
     'ABCB', 'AAAB', 'AABA', 'ABAC',
+    'ABABCC', 'AAABAB',
   ]);
   return canonical.has(pattern) ? pattern : 'CUSTOM';
 }
