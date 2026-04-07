@@ -8,6 +8,13 @@
  *
  * All tests go through the public PhonologicalRegistry API so they exercise
  * the full pipeline (normalize → g2p → syllabify → extractRN → score).
+ *
+ * NOTE — FR nucleus values:
+ *   RomanceStrategy.g2p() calls frenchG2P() for lang='fr'.
+ *   frenchG2P('chante') → 'ʃɑ̃'  (nasal ɑ̃, U+0251 + U+0303)
+ *   extractRN.denasalise() strips the combining tilde → nucleus = 'ɑ' (U+0251)
+ *   NOT 'a' (U+0061) — 'a' is the orthographic Latin letter, 'ɑ' is the IPA
+ *   open back unrounded vowel produced by the G2P pipeline.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -280,9 +287,10 @@ describe('RomanceStrategy (ALGO-ROM)', () => {
   it('FR: "chante" and "plante" share the same rhyme nucleus', () => {
     const chante = PhonologicalRegistry.analyze('chante', 'fr');
     const plante = PhonologicalRegistry.analyze('plante', 'fr');
-    // Both end in silent -e; stressed nucleus is 'a'
-    expect(chante?.rhymeNucleus.nucleus).toBe('a');
-    expect(plante?.rhymeNucleus.nucleus).toBe('a');
+    // frenchG2P: chante → ʃɑ̃  /  plante → plɑ̃
+    // extractRN.denasalise(ɑ̃) → ɑ  (U+0251, IPA open back unrounded)
+    expect(chante?.rhymeNucleus.nucleus).toBe('\u0251');
+    expect(plante?.rhymeNucleus.nucleus).toBe('\u0251');
   });
 
   it('compare("chante", "plante") FR → score 1.0', () => {
@@ -315,7 +323,7 @@ describe('RomanceStrategy (ALGO-ROM)', () => {
     expect(r?.score).toBeGreaterThanOrEqual(0.8);
   });
 
-  it('FR: compare("chante", "porte") → score < 0.5 (different nucleus a vs o)', () => {
+  it('FR: compare("chante", "porte") → score < 0.5 (different nucleus ɑ vs o)', () => {
     const r = PhonologicalRegistry.compare('chante', 'porte', 'fr');
     expect(r?.score).toBeLessThan(0.5);
   });
