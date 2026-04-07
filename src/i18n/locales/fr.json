@@ -423,7 +423,11 @@
     "generateTitle": "Générer un titre à partir des paroles",
     "aiGeneratedTitle": "Titre généré par IA",
     "userEnteredTitle": "Titre saisi par l’utilisateur",
-    "openSearch": "Rechercher et remplacer dans les paroles (Ctrl+F)"
+    "openSearch": "Rechercher et remplacer dans les paroles (Ctrl+F)",
+    "moodPresets": "Choisir une ambiance prédéfinie pour votre chanson",
+    "rhymeScheme": "Sélectionner le schéma de rime par défaut pour toutes les sections",
+    "targetSyllables": "Définir le nombre cible de syllabes par ligne",
+    "viewMode": "Basculer entre les différents modes d'édition des paroles"
   },
   "sections": {
     "intro": "Intro",

@@ -186,6 +186,8 @@ export function SongMetaForm({
                   placeholder={t.leftPanel.songMoodPresets}
                   options={Object.entries(t.moods).map(([, moodOption]) => ({ value: moodOption, label: moodOption }))}
                   accentColor="var(--lcars-violet)"
+                  buttonTitle={t.tooltips.moodPresets}
+                  style={{ textTransform: 'uppercase' }}
                 />
               </div>
               <datalist id="mood-suggestions">
@@ -213,20 +215,23 @@ export function SongMetaForm({
                 value,
                 label: t.rhymeSchemes[value],
               }))}
+              buttonTitle={t.tooltips.rhymeScheme}
             />
           </div>
           <div>
             <Label>{t.leftPanel.targetSyllables}</Label>
-            <div className="flex items-center gap-3">
-              <input
-                type="range" min="4" max="20" value={targetSyllables}
-                onChange={e => setTargetSyllables(parseInt(e.target.value))}
-                className="flex-1 accent-[var(--accent-color)] h-1.5 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
-              />
-              <span className="text-xs telemetry-text text-[var(--accent-color)] w-5 text-center">
-                {targetSyllables}
-              </span>
-            </div>
+            <Tooltip title={t.tooltips.targetSyllables ?? ''}>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range" min="4" max="20" value={targetSyllables}
+                  onChange={e => setTargetSyllables(parseInt(e.target.value))}
+                  className="flex-1 accent-[var(--accent-color)] h-1.5 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
+                />
+                <span className="text-xs telemetry-text text-[var(--accent-color)] w-5 text-center">
+                  {targetSyllables}
+                </span>
+              </div>
+            </Tooltip>
           </div>
           <Tooltip title={t.tooltips.quantize}>
             <Button

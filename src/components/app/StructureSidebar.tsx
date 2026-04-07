@@ -290,7 +290,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     onOpenChange={setIsSectionDropdownOpen}
                     accentColor="var(--lcars-cyan)"
                     buttonTitle={t.tooltips.addSection}
-                    style={{ fontSize: '11px' }}
+                    style={{ fontSize: '11px', textTransform: 'uppercase' }}
                   />
                 </div>
 
