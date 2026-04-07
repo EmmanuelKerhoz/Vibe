@@ -11,6 +11,10 @@ epitran==1.27
 # Note: espeak-ng is a system dependency - must be installed on deployment platform
 # For Vercel, this may require a custom build or Docker-based deployment
 
+# Phonological feature analysis (used by feature-weighted scoring)
+# v4.2: added for panphon-based feature distance in scoring layer
+panphon>=0.20
+
 # Optional: Additional language support
 # cmudict for English (can be added later)
-# panphon for feature-based phonological analysis
+# byt5-g2p for low-resource KWA/CRV languages (planned v5.x)
