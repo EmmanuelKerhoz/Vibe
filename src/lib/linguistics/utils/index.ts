@@ -29,3 +29,6 @@ export {
   isKana,
   katakanaToHiragana,
 } from './scriptUtils';
+
+export type { DetectLanguageResult, LangCandidate } from './detectLanguage';
+export { detectLanguage } from './detectLanguage';
