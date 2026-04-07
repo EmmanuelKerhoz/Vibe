@@ -24,6 +24,7 @@ import type {
   RhymeNucleus,
   RhymeResult,
   RhymeType,
+  RhymePairResult,
 } from '../linguistics/core/types';
 
 import { PhonologicalStrategy, categorizeScore } from '../linguistics/core/PhonologicalStrategy';
@@ -48,7 +49,7 @@ import { VietStrategy } from '../linguistics/strategies/VietStrategy';
 import { CreoleStrategy } from '../linguistics/strategies/CreoleStrategy';
 import { FallbackStrategy } from '../linguistics/strategies/FallbackStrategy';
 
-// ─── Bootstrap the registry inside the worker context ──────────────────────
+// ─── Bootstrap the registry inside the worker context ──────────────────
 
 PhonologicalRegistry.register('ALGO-ROM',    new RomanceStrategy());
 PhonologicalRegistry.register('ALGO-GER',    new GermanicStrategy());
@@ -72,7 +73,7 @@ PhonologicalRegistry.register('ALGO-CRE',    new CreoleStrategy());
 // this.fallback, which is returned by resolve() for any unknown langcode.
 PhonologicalRegistry.register('ALGO-ROBUST', new FallbackStrategy());
 
-// ─── Utility functions ─────────────────────────────────────────────────────
+// ─── Utility functions ───────────────────────────────────────────────────────
 
 function countSyllables(text: string): number {
   const vowelGroups = text.toLowerCase().match(/[aeiouyàâäéèêëïîôùûüÿœæáíóúãõ]+/gi);
@@ -117,6 +118,31 @@ function computeAlliterationDensity(lines: string[]): number {
   }
   const repeating = [...counts.values()].filter(c => c > 1).reduce((s, c) => s + c, 0);
   return repeating / nonEmpty.length;
+}
+
+/**
+ * Build a RhymePairResult from two cached RhymeResult objects and a
+ * pre-computed score. Avoids calling strategy.compare() which would
+ * re-run the full phonological pipeline on already-analyzed lines.
+ */
+function buildPairResult(
+  a: RhymeResult,
+  b: RhymeResult,
+  score: number,
+  rhymeType: RhymeType,
+  langCode: string,
+): RhymePairResult {
+  return {
+    familyId: a.algoId,
+    lang: langCode,
+    text1: a.input,
+    text2: b.input,
+    rn1: a.rhymeNucleus,
+    rn2: b.rhymeNucleus,
+    score,
+    rhymeType,
+    method: a.similarityMethod,
+  };
 }
 
 /**
@@ -234,15 +260,17 @@ function runAnalysis(payload: AnalyzePayload): AnalysisResult {
       rhymeTypes = result.rhymeTypes;
       detectedPattern = labels.join('');
 
-      // Build similarity pairs (cross-section, score > 0.3)
+      // Build similarity pairs using cached analyses — no strategy.compare() calls.
+      // score() was already computed in assignRhymeLabels; we recompute it here
+      // (pure arithmetic, cheap) rather than storing a full score matrix.
       for (let i = 0; i < analyses.length; i++) {
         for (let j = i + 1; j < analyses.length; j++) {
           const a = analyses[i];
           const b = analyses[j];
           if (!a || !b) continue;
           const pairScore = strategy.score(a.rhymeNucleus, b.rhymeNucleus);
-          const rhymeType = categorizeScore(pairScore);
           if (pairScore > 0.3) {
+            const rhymeType = categorizeScore(pairScore);
             allSimilarityPairs.push({
               lineIdA: nonMetaLines[i]!.lineId,
               lineIdB: nonMetaLines[j]!.lineId,
@@ -250,11 +278,7 @@ function runAnalysis(payload: AnalyzePayload): AnalysisResult {
               textB: nonMetaLines[j]!.text,
               score: pairScore,
               rhymeType,
-              pairResult: strategy.compare(
-                nonMetaLines[i]!.text.trim(),
-                nonMetaLines[j]!.text.trim(),
-                langCode,
-              ),
+              pairResult: buildPairResult(a, b, pairScore, rhymeType, langCode),
             });
           }
         }
@@ -310,7 +334,7 @@ function runAnalysis(payload: AnalyzePayload): AnalysisResult {
   };
 }
 
-// ─── Message handler ────────────────────────────────────────────────────────
+// ─── Message handler ──────────────────────────────────────────────────────────
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   const request = event.data;
