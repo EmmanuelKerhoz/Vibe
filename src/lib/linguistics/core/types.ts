@@ -64,6 +64,12 @@ export interface RhymeResult {
   input: string;
   ipa: string;
   syllables: Syllable[];
+  /**
+   * Raw IPA nucleus of the stressed syllable, before any language-specific
+   * mapping. E.g. 'ɑ̃' for French nasal words, as opposed to
+   * `rhymeNucleus.nucleus` which may be mapped to an orthographic category.
+   */
+  nucleus: string;
   rhymeNucleus: RhymeNucleus;
   /** Undefined for single-verse analysis; defined only via compare(). */
   score: number | undefined;
