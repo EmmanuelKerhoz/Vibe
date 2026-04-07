@@ -2,19 +2,57 @@
  * suggestRhymes.test.ts
  * Integration tests: full pipeline word → G2P → RN → PhonemeIndex → candidates.
  *
- * The lexicon is bootstrapped via the linguistics barrel import,
- * which triggers initLexicons() as a side-effect.
+ * NOTE: initLexicons() is called explicitly in beforeAll() to ensure the
+ * phonemeIndex is populated in this Vitest module instance.
+ * (Vitest isolates modules by default — the side-effect in the barrel
+ * index.ts populates a *different* Map instance than the one read here.)
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import '..'; // side-effect: registers strategies + initLexicons()
+import { initLexicons, getLexiconHealth } from '../lexicons/initLexicons';
 import { suggestRhymes, getLexiconSize } from './suggestRhymes';
-import { getLexiconHealth } from '../lexicons/initLexicons';
+import { PhonologicalRegistry } from '../core/Registry';
+import {
+  RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy,
+  SlavicStrategy, BantuStrategy, SemiticStrategy, SiniticStrategy,
+  TaiStrategy, VietStrategy, TurkicStrategy, UralicStrategy,
+  DravidianStrategy, IndoIranianStrategy, JapaneseStrategy,
+  KoreanStrategy, AustronesianStrategy, CreoleStrategy, FallbackStrategy,
+} from '../strategies';
+
+// ─── Bootstrap (once per test file) ──────────────────────────────────────────
+// Register strategies + lexicons in this module's singleton instances.
+
+beforeAll(() => {
+  // Strategies — idempotent (Registry guards duplicate registration)
+  PhonologicalRegistry.register('ALGO-ROM',    new RomanceStrategy());
+  PhonologicalRegistry.register('ALGO-GER',    new GermanicStrategy());
+  PhonologicalRegistry.register('ALGO-KWA',    new KwaStrategy());
+  PhonologicalRegistry.register('ALGO-CRV',    new CrvStrategy());
+  PhonologicalRegistry.register('ALGO-SLV',    new SlavicStrategy());
+  PhonologicalRegistry.register('ALGO-BNT',    new BantuStrategy());
+  PhonologicalRegistry.register('ALGO-SEM',    new SemiticStrategy());
+  PhonologicalRegistry.register('ALGO-SIN',    new SiniticStrategy());
+  PhonologicalRegistry.register('ALGO-TAI',    new TaiStrategy());
+  PhonologicalRegistry.register('ALGO-VIET',   new VietStrategy());
+  PhonologicalRegistry.register('ALGO-TRK',    new TurkicStrategy());
+  PhonologicalRegistry.register('ALGO-FIN',    new UralicStrategy());
+  PhonologicalRegistry.register('ALGO-DRV',    new DravidianStrategy());
+  PhonologicalRegistry.register('ALGO-IIR',    new IndoIranianStrategy());
+  PhonologicalRegistry.register('ALGO-JAP',    new JapaneseStrategy());
+  PhonologicalRegistry.register('ALGO-KOR',    new KoreanStrategy());
+  PhonologicalRegistry.register('ALGO-AUS',    new AustronesianStrategy());
+  PhonologicalRegistry.register('ALGO-CRE',    new CreoleStrategy());
+  PhonologicalRegistry.register('ALGO-ROBUST', new FallbackStrategy());
+
+  // Lexicons — populates THIS module's phonemeIndex Map
+  initLexicons();
+});
 
 // ─── Sanity: lexicon loaded ───────────────────────────────────────────────────
 
 describe('initLexicons / health', () => {
-  it('fr lexicon is non-empty after barrel import', () => {
+  it('fr lexicon is non-empty after explicit init', () => {
     expect(getLexiconSize('fr')).toBeGreaterThan(100);
   });
 
@@ -97,7 +135,6 @@ describe('suggestRhymes — options', () => {
 
   it('allowNearRhyme=false suppresses near-rhyme path', () => {
     const { suggestions } = suggestRhymes('son', 'fr', { allowNearRhyme: false });
-    // All returned suggestions must be exact (score 1.0)
     suggestions.forEach(s => expect(s.score).toBe(1.0));
   });
 });
