@@ -33,6 +33,19 @@ export interface LinguisticsWorkerState {
 
 const DEBOUNCE_MS = 300;
 
+/**
+ * djb2 hash — fast non-cryptographic string hash.
+ * Pure arithmetic, no allocations, safe for fingerprinting lyric text.
+ */
+function djb2(str: string): number {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h >>> 0; // keep as unsigned 32-bit
+  }
+  return h;
+}
+
 export function useLinguisticsWorker(
   song: Section[],
   songLanguage?: string,
@@ -141,14 +154,19 @@ export function useLinguisticsWorker(
     worker.postMessage(message);
   }, []);
 
-  // ─── Debounced auto-analysis on song/language changes ──────────────────────
+  // ─── Song fingerprint — lightweight djb2 hash, no string encoding ──────────
 
   const songFingerprint = useMemo(() => {
-    // Deterministic fingerprint: use \x00 as separator (never appears in lyrics)
-    // to avoid collisions when line text contains '|' or ';;'.
-    return song
-      .map(s => `${s.id}\x01${s.lines.map(l => encodeURIComponent(l.text)).join('\x00')}`)
-      .join('\x02');
+    // Per-line: lineId (structurally unique) + text length + djb2(text).
+    // djb2 is O(n) chars but purely arithmetic — no URI encoding overhead.
+    // Collision probability negligible given lineId prefix per line.
+    let fp = 0;
+    for (const s of song) {
+      for (const l of s.lines) {
+        fp ^= djb2(l.id + l.text.length.toString(16) + djb2(l.text).toString(16));
+      }
+    }
+    return fp;
   }, [song]);
 
   useEffect(() => {
