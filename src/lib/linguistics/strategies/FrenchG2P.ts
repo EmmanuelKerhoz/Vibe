@@ -18,12 +18,22 @@
  *      NOTE: 'ue' → 'ɥɛ' must precede 'eu' to avoid overlap (muet → mɥɛ).
  *   8. Mute final e: bare 'e' at word-end stripped BEFORE consonant strip,
  *      so that the newly exposed final consonant is then stripped in step 9.
- *   9. Silent final consonants: d, t, g, r, s, x, z, p stripped at word-end.
+ *   9. Silent final consonants + final-r normalisation:
+ *      - -er / -ier at word-end → 'e'  (infinitifs, noms; r is mute there)
+ *      - orthographic final 'r' elsewhere → IPA 'ʁ' (U+0281)  (preserved,
+ *        pronounced in careful/lyrical FR: amour, soir, mourir…)
+ *      - d, t, g, s, x, z, p stripped at word-end after vowel
  *
  * IMPORTANT: mute-e strip (8) MUST precede final-consonant strip (9).
  * Rationale: "vente" → nasals → "vɑ̃te" → strip mute-e → "vɑ̃t" → strip t → "vɑ̃".
- * Previous order (consonants first) left the 't' after "vɑ̃te"→"vɑ̃t" unreachable
- * because the vowel before 't' was \u0303 (combining tilde), not in the charset.
+ *
+ * Final-r rule (9) rationale:
+ *   Orthographic 'r' is PRONOUNCED in lyrical/careful French at word end:
+ *     amour /amuʁ/, jour /ʒuʁ/, soir /swaʁ/, mourir /muʁiʁ/.
+ *   Exception: infinitif -er and -ier endings are mute (chanter → /ʃɑ̃te/).
+ *   The lexicon (fr.ts) encodes rnKeys with ʁ (e.g. ['amour','uʁ']).
+ *   frenchG2P must therefore emit 'ʁ' for final r so that extractRN.raw
+ *   matches the lexicon key — enabling exact-match lookup in suggestRhymes().
  *
  * docs_fusion_optimal.md §10.1 — Romance G2P (FR).
  */
@@ -96,30 +106,43 @@ function stripMuteE(w: string): string {
   return stem;
 }
 
-// ─── Silent final consonants ───────────────────────────────────────────────────────────
+// ─── Silent final consonants + final-r normalisation ──────────────────────────
 
 /**
- * Strip typical silent final consonants in French.
+ * Strip typical silent final consonants in French, and normalise final 'r'.
  * Called AFTER stripMuteE so that "vente"→"vɑ̃t" correctly loses its 't'.
  *
- * The vowel-before-consonant charset includes \u0303 (combining tilde)
- * so that nasal tokens like ɑ̃ (\u0251 + \u0303) correctly anchor the strip.
- *
- * Rules:
- *   -ent (3pp) → strip 'nt' after vowel/nasal (chantent → ʃɑ̃tɑ̃)
- *   -et        → ɛ
- *   -er / -ez  → kept (map to /e/ via digraph, no strip needed)
- *   d, t, g, r, s, x, z, p at word-end after vowel → strip
+ * Rules (in order):
+ *   1. -ent (3pp) → strip 'nt' after vowel/nasal
+ *   2. -et        → ɛ
+ *   3. -ier / -er at word-end → 'e'  (mute r in infinitifs / noms en -er)
+ *   4. Final orthographic 'r' → IPA 'ʁ' (U+0281)  — pronounced in lyrical FR
+ *   5. d, t, g, s, x, z, p at word-end after vowel → strip
+ *      NOTE: 'r' is intentionally ABSENT from rule 5 — handled by rules 3 & 4.
  */
 function stripSilentFinalConsonants(w: string): string {
-  // -ent verbal 3pp: strip trailing 'nt' after vowel or combining tilde
+  // 1. -ent verbal 3pp: strip trailing 'nt' after vowel or combining tilde
   w = w.replace(/([aeiouyɑɛɔœøɥwa\u0303])nt$/u, '$1');
 
-  // -et → ɛ
+  // 2. -et → ɛ
   w = w.replace(/et$/, 'ɛ');
 
-  // Bare final d, t, g, r, s, x, z, p after vowel or combining tilde
-  w = w.replace(/([aeiouyɑɛɔœøɥwa\u0303])[dtgrpszx]$/u, '$1');
+  // 3. -ier / -er → e  (mute r: chanter→ʃɑ̃te, cahier→kaje, premier→pʁəmje)
+  //    IPA vowels may precede 'r' here (e.g. after digraph transforms).
+  //    We match orthographic 'er' and 'ier' only (not IPA tokens).
+  w = w.replace(/ier$/, 'e');
+  w = w.replace(/er$/, 'e');
+
+  // 4. Bare final orthographic 'r' → IPA ʁ  (amour, soir, mourir, venir…)
+  //    Anchored after any vowel-like char (incl. IPA vowels + combining tilde).
+  w = w.replace(/([aeiouyɑɛɔœøɥwa\u0303ʁ])r$/u, '$1\u0281');
+  // Also handle word-final 'r' after a consonant cluster (e.g. 'vibre' stripped
+  // to 'vibr' is out of scope; we only normalise 'r' after a vowel anchor).
+  // Bare final 'r' not preceded by vowel is an edge-case left unchanged.
+
+  // 5. Bare final d, t, g, s, x, z, p after vowel or combining tilde
+  //    'r' deliberately excluded — handled above.
+  w = w.replace(/([aeiouyɑɛɔœøɥwa\u0303])[dtgpszx]$/u, '$1');
 
   return w;
 }
@@ -140,6 +163,10 @@ function stripSilentFinalConsonants(w: string): string {
  * frenchG2P('nuit')     // → 'nɥi'
  * frenchG2P('muet')     // → 'mɥɛ'  (ue→ɥɛ, silent t stripped)
  * frenchG2P('le')       // → 'le'   (monosyllabic guard)
+ * frenchG2P('amour')    // → 'amuʁ' (final r → ʁ, preserved)
+ * frenchG2P('chanter')  // → 'ʃɑ̃te' (-er mute, r stripped → e, then mute-e stripped)
+ * frenchG2P('soir')     // → 'swaʁ' (oi→wa, final r → ʁ)
+ * frenchG2P('venir')    // → 'vəniʁ' ... output: 'veniʁ' (final r → ʁ)
  */
 export function frenchG2P(word: string): string {
   let w = word.normalize('NFC').toLowerCase();
@@ -175,7 +202,7 @@ export function frenchG2P(word: string): string {
   // 7. Mute final e (BEFORE consonant strip — see module header)
   w = stripMuteE(w);
 
-  // 8. Silent final consonants
+  // 8. Silent final consonants + final-r → ʁ
   w = stripSilentFinalConsonants(w);
 
   return w;
