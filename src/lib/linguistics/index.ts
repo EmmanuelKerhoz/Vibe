@@ -43,6 +43,9 @@ export {
 // Lexicon bootstrap
 export { initLexicons, getLexiconHealth } from './lexicons/initLexicons';
 
+// Language ID
+export { detectLanguage, resolveLang, DEFAULT_LANG } from './lid/detectLanguage';
+
 // ─── Bootstrap: register all built-in strategies ─────────────────────────────
 import { PhonologicalRegistry } from './core';
 import {
