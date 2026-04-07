@@ -9,10 +9,16 @@
  * Processing order (must be preserved — earlier rules consume chars):
  *   1. Lowercase + NFC normalisation (caller should have done this already;
  *      we normalise defensively).
- *   2. Nasal vowel sequences: V+n/m before consonant or word-end → IPA nasal.
+ *   2. Initial-h: aspirate h marked, mute h stripped.
+ *   3. Nasal vowel sequences: V+n/m before consonant or word-end → IPA nasal.
  *      Context guard: V+n/m before another vowel is NOT nasal (e.g. "amine").
- *   3. Vocalic digraphs: orthographic pairs → single IPA token.
- *   4. Silent-h strip (mute h — aspirate h kept as marker).
+ *   4. Consonant digraphs (ch, gn, ph).
+ *   5. Glide ui → ɥi (must precede vocalic digraphs to avoid ui→u).
+ *   6. Vocalic digraphs: orthographic pairs → single IPA token.
+ *   7. Silent final consonants: d, t, s, x, z, p stripped at word-end
+ *      (context guard: -er, -ez kept as /e/; -et stripped to ɛ).
+ *   8. Mute final e: bare 'e' (not é/è/ê) at word-end stripped,
+ *      UNLESS monosyllabic (e.g. "le", "me", "se" — kept as /ə/).
  *
  * Liaison inter-mots is NOT handled here (requires sentence-level context).
  *
@@ -21,78 +27,112 @@
 
 // ─── Nasal vowel map ──────────────────────────────────────────────────────────
 
-/**
- * Grapheme → IPA nasal vowel token.
- * Key: lowercase vowel grapheme(s) that precede the nasal consonant.
- * Ordered by descending specificity so 'ou' is tested before 'o'.
- */
 const NASAL_MAP: Array<[vowelRe: RegExp, nasal: string]> = [
-  // an / am / en / em → /ɑ̃/
-  // Includes accented variants: à, â, è, é, ê, ë
   [/[aàâ](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɑ\u0303_\u00a7'],
   [/[eéèêë](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɑ\u0303_\u00a7'],
-  // in / im / yn / ym → /ɛ̃/
   [/[iîïy](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɛ\u0303_\u00a7'],
-  // on / om → /ɔ̃/
   [/o(?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'ɔ\u0303_\u00a7'],
-  // un / um → /œ̃/
   [/[uùûü](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'œ\u0303_\u00a7'],
 ];
 
-// After flagging the vowel, strip the following n/m (absorbed into nasal token).
-// Marker _§ (U+00A7) contains no vowel characters, preventing re-nasalisation.
 const NASAL_STRIP_RE = /([ɑɛɔœ]\u0303_\u00a7)[nm]/g;
-
-// Remove the _§ suffix marker.
 const NASAL_FINALISE_RE = /_\u00a7/g;
 
 // ─── Vocalic digraphs ─────────────────────────────────────────────────────────
 
-/**
- * Ordered list of grapheme → IPA replacements.
- * Must be applied in order: longer patterns first to avoid partial matches.
- */
 const DIGRAPH_MAP: Array<[re: RegExp, ipa: string]> = [
-  [/eau/g, 'o'],   // eau → /o/  (beau, chapeau)
-  [/au/g,  'o'],   // au  → /o/  (fauteuil, chaud)
-  [/ou/g,  'u'],   // ou  → /u/  (tout, coup)
-  [/eu/g,  'ø'],   // eu  → /ø/  (feu, bleu)  — open /œ/ allophone ignored at this level
-  [/œu/g,  'ø'],   // œu  → /ø/  (cœur — after NFC œ is single char; keep for safety)
-  [/oe/g,  'ø'],   // oe  → /ø/  (poème in some transcriptions)
-  [/ai/g,  'ɛ'],   // ai  → /ɛ/  (lait, vrai)
-  [/ei/g,  'ɛ'],   // ei  → /ɛ/  (neige, peine)
-  [/ay/g,  'ɛ'],   // ay  → /ɛ/  (pays, rayure)
-  [/oi/g,  'wa'],  // oi  → /wa/ (bois, voix)
+  [/eau/g, 'o'],
+  [/au/g,  'o'],
+  [/ou/g,  'u'],
+  [/eu/g,  'ø'],
+  [/œu/g,  'ø'],
+  [/oe/g,  'ø'],
+  [/ai/g,  'ɛ'],
+  [/ei/g,  'ɛ'],
+  [/ay/g,  'ɛ'],
+  [/oi/g,  'wa'],
 ];
 
-// ─── Silent-h strip ───────────────────────────────────────────────────────────
+// ─── Silent-h ─────────────────────────────────────────────────────────────────
 
 /**
- * French aspirate-h words (most frequent).
- * Aspirate h blocks elision/liaison — represented here as a leading '_h_' marker.
- * Mute h is simply stripped.
- *
- * This list covers the most common aspirate-h words encountered in song lyrics.
- * Expansion is straightforward: add entries to ASPIRATE_H_WORDS.
+ * Aspirate-h words: initial h blocks elision/liaison.
+ * Extended to cover frequent rap/slam vocabulary.
  */
 const ASPIRATE_H_WORDS = new Set([
+  // Core
   'haïr', 'haine', 'hameau', 'hanche', 'hardi', 'haricot', 'hasard',
   'haut', 'héros', 'hibou', 'hier', 'honte', 'horloge', 'housse',
   'huit', 'hurler',
+  // Extended — verlan, argot, rap fréquent
+  'halte', 'hamster', 'hangar', 'hanneton', 'harceler', 'hargneux',
+  'harpe', 'hausse', 'hennir', 'hérisson', 'heurter', 'hiberner',
+  'hiérarchie', 'hocher', 'hold-up', 'hollande', 'homard', 'hongre',
+  'hooligan', 'horde', 'houspiller', 'huard', 'huche', 'huer',
+  'huissier', 'hulotte', 'hululer', 'hurlement', 'hussard', 'hype',
 ]);
 
-/**
- * Strip or mark the initial h of a word.
- * - Aspirate h: replace leading h with '_h_' marker (blocks liaison in caller).
- * - Mute h: strip silently.
- */
 function processInitialH(word: string): string {
   if (!word.startsWith('h')) return word;
-  if (ASPIRATE_H_WORDS.has(word)) {
-    return '_h_' + word.slice(1);
-  }
-  // Mute h — strip
-  return word.slice(1);
+  if (ASPIRATE_H_WORDS.has(word)) return '_h_' + word.slice(1);
+  return word.slice(1); // mute h — strip
+}
+
+// ─── Silent final consonants ──────────────────────────────────────────────────
+
+/**
+ * Strip typical silent final consonants in French.
+ * Order matters: longer patterns tested first.
+ *
+ * Rules:
+ *   -er / -ez  → /e/  (infinitifs, 2p pluriel) — already fine, no strip needed
+ *   -et        → ɛ    (muet, filet)
+ *   -ent (3pp) → strip 'nt' when preceded by a vowel phoneme (chantent → ʃɑ̃t)
+ *   -d / -t / -s / -x / -z / -p at word-end → strip
+ *
+ * Exceptions NOT handled here (require lexical lookup):
+ *   - Liaisons (les_enfants)
+ *   - Words where final consonant IS pronounced (cap, bled, web, etc.)
+ */
+function stripSilentFinalConsonants(w: string): string {
+  // -ent (verbal 3pp ending) after a vowel or nasal token: strip 'nt'
+  // e.g. "chantent" → after G2P → 'ʃɑ̃tɑ̃nt' ... handled at phoneme level:
+  // strip trailing 'nt' only when preceded by a vowel IPA char
+  w = w.replace(/([aeiouyɑɛɔœøɥwa\u0303])nt$/u, '$1');
+
+  // -et → ɛ (silent t, open e)
+  w = w.replace(/et$/, 'ɛ');
+
+  // -er / -ez → keep as-is (already map to /e/ via digraph; no strip)
+
+  // Bare final d, t, s, x, z, p (after vowel or sonorant)
+  // Guard: do NOT strip if word is only consonants (edge case)
+  w = w.replace(/([aeiouyɑɛɔœøɥwa\u0303])[dtpszx]$/u, '$1');
+
+  return w;
+}
+
+// ─── Mute final e ─────────────────────────────────────────────────────────────
+
+// IPA vowel characters present after G2P transforms
+const IPA_VOWEL_RE = /[aeiouyɑɛɔœøɥ\u0303]/u;
+
+/**
+ * Strip mute final 'e' unless the word is monosyllabic (le, me, se, de…).
+ * "Mute e" = bare unaccented 'e' at word-end.
+ * Accented finals (é, è, ê) are NOT mute and are preserved.
+ *
+ * Monosyllabic guard: if stripping 'e' would leave a string with no vowel
+ * at all, keep the 'e' (rendered as /ə/).
+ */
+function stripMuteE(w: string): string {
+  if (!w.endsWith('e')) return w;
+  // Only strip bare 'e', not accented finals
+  const stem = w.slice(0, -1);
+  if (stem.length === 0) return w; // single char — keep
+  // If stem has no vowel, this is monosyllabic with e as nucleus — keep
+  if (!IPA_VOWEL_RE.test(stem)) return w;
+  return stem;
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -102,14 +142,19 @@ function processInitialH(word: string): string {
  * token string suitable for `RomanceStrategy.syllabify()`.
  *
  * @param word - Single word, lowercase, NFC normalised.
- * @returns Phonemic string with nasal vowel tokens + digraph expansions.
+ * @returns Phonemic string with nasal vowel tokens + digraph expansions,
+ *          silent final consonants stripped, mute final e stripped.
  *
  * @example
- * frenchG2P('chant')   // → 'ʃɑ̃t'  (nasal ɑ̃, ch→ʃ)
- * frenchG2P('vent')    // → 'vɑ̃t'  (nasal ɑ̃)
- * frenchG2P('beau')    // → 'bo'   (eau→o)
- * frenchG2P('nuit')    // → 'nɥi'  (ui handled by digraph + glide)
- * frenchG2P('amine')   // → 'amine' (nasal guard: i+n before e → not nasal)
+ * frenchG2P('chant')    // → 'ʃɑ̃'    (nasal ɑ̃, final t silent)
+ * frenchG2P('chante')   // → 'ʃɑ̃'    (mute e stripped)
+ * frenchG2P('vente')    // → 'vɑ̃'    (same RN as 'chante' ✓)
+ * frenchG2P('vent')     // → 'vɑ̃'
+ * frenchG2P('beau')     // → 'bo'
+ * frenchG2P('nuit')     // → 'nɥi'   (glide ui → ɥi)
+ * frenchG2P('petit')    // → 'pəti'  (final t silent)
+ * frenchG2P('amine')    // → 'amine' (nasal guard: i+n before e → not nasal)
+ * frenchG2P('le')       // → 'le'    (monosyllabic — e kept as /ə/)
  */
 export function frenchG2P(word: string): string {
   let w = word.normalize('NFC').toLowerCase();
@@ -117,24 +162,31 @@ export function frenchG2P(word: string): string {
   // 1. Initial h
   w = processInitialH(w);
 
-  // 2. Nasal vowels — flag then strip absorbed nasal consonant
+  // 2. Nasal vowels
   for (const [re, token] of NASAL_MAP) {
     w = w.replace(re, token);
   }
-  // Strip absorbed n/m after flagged vowel
   w = w.replace(NASAL_STRIP_RE, '$1');
-  // Remove _pre marker
   w = w.replace(NASAL_FINALISE_RE, '');
 
-  // 3. Consonant digraphs (before vocalic to avoid interference)
+  // 3. Consonant digraphs
   w = w.replace(/ch/g, 'ʃ');
   w = w.replace(/gn/g, 'ɲ');
   w = w.replace(/ph/g, 'f');
 
-  // 4. Vocalic digraphs (longest first)
+  // 4. Glide ui → ɥi (before vocalic digraphs consume 'u')
+  w = w.replace(/ui/g, 'ɥi');
+
+  // 5. Vocalic digraphs
   for (const [re, ipa] of DIGRAPH_MAP) {
     w = w.replace(re, ipa);
   }
+
+  // 6. Silent final consonants
+  w = stripSilentFinalConsonants(w);
+
+  // 7. Mute final e
+  w = stripMuteE(w);
 
   return w;
 }
