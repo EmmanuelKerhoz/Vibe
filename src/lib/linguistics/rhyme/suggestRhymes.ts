@@ -17,6 +17,7 @@
  */
 
 import { PhonologicalRegistry } from '../core/Registry';
+import { categorizeScore } from '../core/PhonologicalStrategy';
 import type { RhymeType } from '../core/types';
 
 // ─── Public types ────────────────────────────────────────────────────────────
@@ -166,27 +167,29 @@ export function suggestRhymes(
     // Only attempt if RN keys share at least the nucleus vowel (cheap guard)
     if (!shareNucleusVowel(inputKey, rnKey)) continue;
 
-    let pairScore = 0;
-    try {
-      const pairResult = PhonologicalRegistry.compare(
-        words[0] ?? '',
-        word,
-        lang,
-      );
-      pairScore = pairResult?.score ?? 0;
-    } catch {
-      continue;
-    }
-
-    if (pairScore < minScore) continue;
-
-    const rhymeType = classifyScore(pairScore);
+    // Score each candidate individually — avoids propagating a proxy score
+    // from words[0] to every word in the bucket (words may have distinct RNs
+    // that landed in the same bucket only due to key normalisation rounding).
     for (const candidate of words) {
       if (excludeInput && candidate.toLowerCase() === normalizedInput) continue;
+
+      let pairScore = 0;
+      try {
+        const pairResult = PhonologicalRegistry.compare(candidate, word, lang);
+        pairScore = pairResult?.score ?? 0;
+      } catch {
+        continue;
+      }
+
+      if (pairScore < minScore) continue;
+
       suggestions.push({
         word: candidate,
         score: pairScore,
-        rhymeType,
+        // categorizeScore is the canonical classifier — used everywhere else
+        // in the pipeline (PhonologicalStrategy.compare, detectRhymeScheme).
+        // Default threshold 0.75 aligns with per-family defaultWeights.
+        rhymeType: categorizeScore(pairScore),
         rhymeNucleus: rnKey,
       });
     }
@@ -212,13 +215,4 @@ function shareNucleusVowel(a: string, b: string): boolean {
   const IPA_VOWELS = 'aeiouɑɛɔɪʊəɐɵæœøɯɤɶãẽĩõũ';
   const aVowels = new Set([...a].filter(c => IPA_VOWELS.includes(c)));
   return [...b].some(c => aVowels.has(c));
-}
-
-/** Map a similarity score to a RhymeType. */
-function classifyScore(score: number): RhymeType {
-  if (score >= 0.95) return 'rich';
-  if (score >= 0.75) return 'sufficient';
-  if (score >= 0.50) return 'assonance';
-  if (score >= 0.25) return 'weak';
-  return 'none';
 }
