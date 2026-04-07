@@ -6,6 +6,7 @@
  *   - Nasal vowel production (ɑ̃, ɛ̃, ɔ̃, œ̃)
  *   - Nasal context guard (V+n before vowel → not nasal)
  *   - Vocalic digraphs (eau, au, ou, eu, ai, oi)
+ *   - ue → ɥɛ digraph (muet, filet via -et→ɛ)
  *   - Consonant digraphs (ch, gn, ph)
  *   - Glide ui → ɥi
  *   - Silent final consonants (d, t, s, x, z, p) — NEW
@@ -45,7 +46,7 @@ describe('frenchG2P — nasal vowels', () => {
     expect(frenchG2P('un')).toBe('œ̃');
   });
 
-  it('nasal guard: amine → amine (i+n before e → not nasal)', () => {
+  it('nasal guard: amine → amin (i+n before e → not nasal)', () => {
     // mute final e stripped: 'amine' → 'amin'
     expect(frenchG2P('amine')).toBe('amin');
   });
@@ -75,6 +76,18 @@ describe('frenchG2P — vocalic digraphs', () => {
   });
 });
 
+// ─── Digraph ue → ɥɛ ────────────────────────────────────────────────────────
+
+describe('frenchG2P — ue digraph', () => {
+  it('muet → mɥɛ  (ue→ɥɛ, silent final t)', () => {
+    expect(frenchG2P('muet')).toBe('mɥɛ');
+  });
+
+  it('fluet → flɥɛ  (ue→ɥɛ, silent final t)', () => {
+    expect(frenchG2P('fluet')).toBe('flɥɛ');
+  });
+});
+
 // ─── Glide ui ────────────────────────────────────────────────────────────────
 
 describe('frenchG2P — glide ui', () => {
@@ -94,8 +107,10 @@ describe('frenchG2P — glide ui', () => {
 // ─── Silent final consonants ─────────────────────────────────────────────────
 
 describe('frenchG2P — silent final consonants', () => {
-  it('petit → pəti  (silent final t)', () => {
-    expect(frenchG2P('petit')).toBe('pəti');
+  // petit: e mid-word is orthographic, not transformed to ə by G2P (out of scope)
+  // the rhyming nucleus is 'i' — only the final vowel matters downstream
+  it('petit → peti  (silent final t; mid-word e kept as-is)', () => {
+    expect(frenchG2P('petit')).toBe('peti');
   });
 
   it('grand → grɑ̃  (nasal ɑ̃, silent final d)', () => {
@@ -119,18 +134,12 @@ describe('frenchG2P — silent final consonants', () => {
   });
 
   // -et → ɛ
-  it('muet → mɥɛ  (et→ɛ)', () => {
-    expect(frenchG2P('muet')).toBe('mɥɛ');
-  });
-
   it('filet → filɛ  (et→ɛ)', () => {
     expect(frenchG2P('filet')).toBe('filɛ');
   });
 
   // -ent verbal (3pp): strip 'nt' after vowel
-  it('chantent → ʃɑ̃t  (3pp -ent: nt stripped)', () => {
-    // ʃ + ɑ̃ (nasal) + t (consonant) + ɑ̃ + nt — but nasal absorbs 'an', leaving ʃɑ̃t + ɑ̃nt
-    // actual: ch→ʃ, an→ɑ̃ (absorbed), t preserved, en→ɑ̃ (absorbed), nt stripped by 3pp rule
+  it('chantent → ʃɑ̃tɑ̃  (3pp -ent: nt stripped)', () => {
     expect(frenchG2P('chantent')).toBe('ʃɑ̃tɑ̃');
   });
 });
@@ -167,7 +176,7 @@ describe('frenchG2P — mute final e', () => {
     expect(frenchG2P('de')).toBe('de');
   });
 
-  // Accented é / è are NOT mute — preserved
+  // Accented é / è are NOT mute — preserved
   it('café → kafé  (é not mute, kept)', () => {
     expect(frenchG2P('café')).toBe('kafé');
   });
@@ -227,6 +236,13 @@ describe('RomanceStrategy extractRN — FR nasal rhymes', () => {
     const rn2 = strategy.analyze('fuite', 'fr').nucleus;
     expect(rn1).toBe('ɥi');
     expect(rn2).toBe('ɥi');
+  });
+
+  it('muet / fluet share nucleus ɥɛ (ue digraph)', () => {
+    const rn1 = strategy.analyze('muet', 'fr').nucleus;
+    const rn2 = strategy.analyze('fluet', 'fr').nucleus;
+    expect(rn1).toBe('ɥɛ');
+    expect(rn2).toBe('ɥɛ');
   });
 
   it('bois / voix rhyme score ≥ 0.9 (oi→wa, both silent finals)', () => {

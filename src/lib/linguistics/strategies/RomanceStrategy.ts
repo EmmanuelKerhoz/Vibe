@@ -14,6 +14,14 @@
  *   syllabify() will never see a trailing bare-e syllable for French.
  *   The stress rule must reflect this: always accent the final syllable
  *   (post-strip), not the penultimate.
+ *
+ * Glide ɥ handling:
+ *   frenchG2P emits 'ɥi' (from ui→ɥi) and 'ɥɛ' (from ue→ɥɛ).
+ *   In syllabify(), ɥ is treated as a GLIDE (onset consonant), not a nucleus,
+ *   so that 'nɥi' produces one syllable with nucleus 'i' and onset 'nɥ',
+ *   and extractRN returns 'ɥi' as the rhyming nucleus (onset-glide preserved).
+ *   Concretely: when the char-loop encounters ɥ, it is pushed onto the
+ *   cluster (onset buffer) rather than treated as a syllable nucleus.
  */
 
 import { PhonologicalStrategy } from '../core/PhonologicalStrategy';
@@ -35,6 +43,8 @@ const LEGAL_ONSETS_2 = new Set([
   'tr',
   'vr',
   'tl', 'dl',
+  // glide clusters
+  'ɥi', 'ɥɛ', 'nɥ', 'fɥ', 'sɥ', 'lɥ',
 ]);
 
 function mopSplit(cluster: string): [onset: string, prevCoda: string] {
@@ -71,6 +81,13 @@ function denasalise(nucleus: string): string {
   }
   return nucleus;
 }
+
+// ─── Glide ɥ — treated as onset consonant, not nucleus ───────────────────────
+// U+0265 ɥ is the IPA labio-palatal approximant emitted by frenchG2P for
+// 'ui'→'ɥi' and 'ue'→'ɥɛ'. In the syllable model it functions as a glide
+// (onset), not a vocalic nucleus. Excluding it from vowelPattern forces the
+// char-loop to accumulate it into the onset cluster instead.
+const GLIDE_CHARS = new Set(['\u0265']); // ɥ
 
 // ─── Strategy ───────────────────────────────────────────────────────────────
 
@@ -125,21 +142,29 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * NOTE: for French, frenchG2P() has already stripped mute final 'e' and
    * silent final consonants before this method is called. The vowel pattern
    * must still include IPA nasal bases (\u0251 \u025b \u0254 \u0153) and
-   * glide \u0265 (ɥ) so they are treated as syllable nuclei.
+   * glide \u0265 (ɥ) — but ɥ is treated as onset (GLIDE_CHARS), so it is
+   * excluded from vowelPattern and accumulated in the cluster buffer instead.
    */
   syllabify(ipa: string, lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
     const syllables: Syllable[] = [];
 
     // Extended vowel pattern: orthographic + IPA tokens from FrenchG2P.
-    // Includes: ɥ (glide from ui→ɥi), ɑ ɛ ɔ œ (nasal bases), ø (eu/œu).
-    const vowelPattern = /[aeiouyàâæéèêëïîôœùûüÿáíóúãõɛɔɑɪʊɵəɐɯɤɶøɨɥ]/i;
+    // ɥ (U+0265) is intentionally EXCLUDED — it is handled as a glide onset
+    // via GLIDE_CHARS so that 'nɥi' → one syllable {onset:'nɥ', nucleus:'i'}.
+    const vowelPattern = /[aeiouyàâæéèêëïîôœùûüÿáíóúãõɛɔɑɪʊɵəɐɯɤɶøɨ]/i;
 
     for (const word of words) {
       const wordSyllables: Syllable[] = [];
       let cluster = '';
 
       for (const ch of word) {
+        // Glide ɥ: treat as onset consonant, accumulate in cluster
+        if (GLIDE_CHARS.has(ch)) {
+          cluster += ch;
+          continue;
+        }
+
         if (!vowelPattern.test(ch)) {
           cluster += ch;
           continue;
@@ -215,8 +240,6 @@ export class RomanceStrategy extends PhonologicalStrategy {
       // Post-G2P: frenchG2P has already stripped mute final 'e' and silent
       // final consonants. The last syllable in `syllables` IS the phonological
       // final syllable — always stressed in French (phrase-final accent).
-      // The legacy penultimate rule ("if last nucleus === 'e', stress n-2")
-      // no longer applies because 'e' will have been stripped upstream.
       if (syllables.length > 0) {
         syllables[syllables.length - 1]!.stressed = true;
       }
@@ -239,11 +262,9 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * denasalised to their bare IPA base for rhyme comparison:
    *   ɑ̃ → ɑ   ɛ̃ → ɛ   ɔ̃ → ɔ   œ̃ → œ
    *
-   * This ensures that "chant" (ʃɑ̃), "vent" (vɑ̃), "chante" (ʃɑ̃) and
-   * "vente" (vɑ̃) all share nucleus ɑ and rhyme perfectly.
-   *
-   * Glide ɥ (from ui→ɥi) is preserved as-is in the nucleus: "nuit" and
-   * "fuite" share nucleus ɥi.
+   * Glide ɥ is stored in the syllable onset (not nucleus) by syllabify().
+   * extractRN prepends the onset-glide to the nucleus so that "nuit" and
+   * "fuite" both yield nucleus 'ɥi', and "muet"/"fluet" yield 'ɥɛ'.
    */
   extractRN(syllables: Syllable[], lang: string): RhymeNucleus {
     const stressIdx = syllables.findIndex(s => s.stressed);
@@ -251,11 +272,15 @@ export class RomanceStrategy extends PhonologicalStrategy {
     const tail = syllables.slice(idx);
     const primary = tail[0];
 
-    let nucleus = primary?.nucleus ?? '';
+    let rawNucleus = primary?.nucleus ?? '';
     if (lang === 'fr') {
-      nucleus = denasalise(nucleus);
+      rawNucleus = denasalise(rawNucleus);
     }
     const coda = primary?.coda ?? '';
+
+    // Prepend glide from onset if present (ɥ stored there by syllabify)
+    const onsetGlide = (primary?.onset ?? '').match(/[\u0265]$/u)?.[0] ?? '';
+    const nucleus = onsetGlide + rawNucleus;
 
     const raw = [
       nucleus + coda,

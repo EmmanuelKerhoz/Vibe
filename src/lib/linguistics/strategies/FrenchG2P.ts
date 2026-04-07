@@ -15,6 +15,7 @@
  *   5. c → k before a/o/u/consonant (hard c).
  *   6. Glide ui → ɥi (must precede vocalic digraphs to avoid ui→u).
  *   7. Vocalic digraphs: orthographic pairs → single IPA token.
+ *      NOTE: 'ue' → 'ɥɛ' must precede 'eu' to avoid overlap (muet → mɥɛ).
  *   8. Mute final e: bare 'e' at word-end stripped BEFORE consonant strip,
  *      so that the newly exposed final consonant is then stripped in step 9.
  *   9. Silent final consonants: d, t, g, r, s, x, z, p stripped at word-end.
@@ -41,8 +42,11 @@ const NASAL_STRIP_RE = /([\u0251\u025b\u0254\u0153]\u0303_\u00a7)[nm]/g;
 const NASAL_FINALISE_RE = /_\u00a7/g;
 
 // ─── Vocalic digraphs ───────────────────────────────────────────────────────────
+// NOTE: 'ue'→'ɥɛ' MUST appear before 'eu'→'ø' to prevent overlap.
+// 'ue' occurs in muet, fluet, duet, nuée — all yield /ɥɛ/ nucleus.
 
 const DIGRAPH_MAP: Array<[re: RegExp, ipa: string]> = [
+  [/ue/g,  'ɥɛ'],   // muet→mɥɛt, fluet→flɥɛt  — BEFORE eu
   [/eau/g, 'o'],
   [/au/g,  'o'],
   [/ou/g,  'u'],
@@ -134,6 +138,7 @@ function stripSilentFinalConsonants(w: string): string {
  * frenchG2P('heure')    // → 'ø'
  * frenchG2P('café')     // → 'kafé'
  * frenchG2P('nuit')     // → 'nɥi'
+ * frenchG2P('muet')     // → 'mɥɛ'  (ue→ɥɛ, silent t stripped)
  * frenchG2P('le')       // → 'le'   (monosyllabic guard)
  */
 export function frenchG2P(word: string): string {
@@ -162,7 +167,7 @@ export function frenchG2P(word: string): string {
   // 5. Glide ui → ɥi
   w = w.replace(/ui/g, 'ɥi');
 
-  // 6. Vocalic digraphs
+  // 6. Vocalic digraphs (ue→ɥɛ first, then eau/au/ou/eu/…)
   for (const [re, ipa] of DIGRAPH_MAP) {
     w = w.replace(re, ipa);
   }
