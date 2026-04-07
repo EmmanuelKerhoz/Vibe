@@ -5,7 +5,7 @@
  * Processing order:
  *   1. Lowercase + NFC normalisation.
  *   2. Initial-h: aspirate h marked, mute h stripped.
- *   3. Internal silent h stripped (e.g. cahier → caier).
+ *   3. Internal silent h stripped — excludes h after c/p to preserve ch/ph.
  *   4. Nasal vowel sequences.
  *   5. Consonant digraphs (ch, gn, ph).
  *   6. j → ʒ  (jour, jardin, jeu…)
@@ -27,7 +27,7 @@ const NASAL_MAP: Array<[vowelRe: RegExp, nasal: string]> = [
   [/[uùûü](?=[nm](?![aeiouyàâéèêëîïôùûœæ]))/g, 'œ\u0303_\u00a7'],
 ];
 
-const NASAL_STRIP_RE = /([\u0251\u025b\u0254\u0153]\u0303_\u00a7)[nm]/g;
+const NASAL_STRIP_RE = /([ɑɛɔœ]\u0303_\u00a7)[nm]/g;
 const NASAL_FINALISE_RE = /_\u00a7/g;
 
 // ─── Vocalic digraphs ───────────────────────────────────────────────────────────
@@ -108,10 +108,12 @@ export function frenchG2P(word: string): string {
   // 1. Initial h
   w = processInitialH(w);
 
-  // 2. Internal silent h (e.g. cahier → caier, trahir → trair)
-  //    Must NOT strip the aspirate-h marker '_h_' produced by processInitialH.
-  //    Only strip bare 'h' that survived step 1 (i.e. not at start after marker).
-  w = w.replace(/(?<!_)h(?!_)/g, '');
+  // 2. Internal silent h.
+  //    CRITICAL: exclude h preceded by 'c' or 'p' to preserve the digraphs
+  //    'ch' and 'ph' for step 4. Without this guard, 'chant'→'cant' and
+  //    'photo'→'poto' before the digraph rules can fire.
+  //    cahier: 'h' is preceded by 'a' (not c/p) → still stripped → 'caier'. ✓
+  w = w.replace(/(?<![cp_])h(?!_)/g, '');
 
   // 3. Nasal vowels
   for (const [re, token] of NASAL_MAP) {
@@ -143,7 +145,7 @@ export function frenchG2P(word: string): string {
 
   // 9. Terminal -eure → ø  (heure, demeure, meilleure…)
   //    After eu→ø (step 8), 'heure' is already 'øre' — the 're' suffix is mute.
-  //    Strip it directly to avoid the final-r→ʁ rule turning 'øre'→'øre'→'øʁ'.
+  //    Strip it directly to avoid the final-r→ʁ rule turning 'øre'→'øʁ'.
   w = w.replace(/ør(e?)$/, 'ø');
 
   // 10. Mute final e
