@@ -306,6 +306,9 @@ export class RomanceStrategy extends PhonologicalStrategy {
 function classifyCoda(coda: string): 'nasal' | 'liquid' | 'obstruent' | null {
   if (!coda) return null;
   if (/[mnŋɲ]/.test(coda)) return 'nasal';
-  if (/[lrɾɹ]/.test(coda)) return 'liquid';
+  // ʁ (U+0281) added: IPA uvular fricative emitted by frenchG2P for final 'r'.
+  // Without it, /uʁ/ codas were classified 'obstruent' instead of 'liquid',
+  // penalising near-rhyme pairs like amour/valeur on codaClass weight.
+  if (/[lrɾɹ\u0281]/.test(coda)) return 'liquid';
   return 'obstruent';
 }
