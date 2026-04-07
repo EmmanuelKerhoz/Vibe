@@ -58,12 +58,14 @@ export abstract class PhonologicalStrategy {
     const ipa = this.g2p(normalized, lang);
     const syllables = this.syllabify(ipa, lang);
     const rn = this.extractRN(syllables, lang);
+    const stressedSyl = syllables.find(s => s.stressed) ?? syllables[syllables.length - 1];
     return {
       algoId: this.familyId,
       lang,
       input: text,
       ipa,
       syllables,
+      nucleus: stressedSyl?.nucleus ?? '',
       rhymeNucleus: rn,
       score: undefined,
       rhymeType: undefined,
