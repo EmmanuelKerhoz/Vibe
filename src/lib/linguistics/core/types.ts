@@ -5,7 +5,7 @@
 
 import type { AlgoFamily } from '../../../constants/langFamilyMap';
 
-// ─── Syllable model (§4.1) ───────────────────────────────────────────────────────
+// ─── Syllable model (§4.1) ────────────────────────────────────────────────
 
 /** Tone class normalised to binary HIGH/LOW for cross-family comparison. */
 export type ToneClass = 'H' | 'L' | 'HL' | 'LH' | 'M' | 'MH' | 'ML' | null;
@@ -25,7 +25,7 @@ export interface Syllable {
   template?: string;
 }
 
-// ─── Rhyme Nucleus (§4.2) ────────────────────────────────────────────
+// ─── Rhyme Nucleus (§4.2) ──────────────────────────────────
 
 /** Rhyme Nucleus extracted from the last stressed syllable through end of verse. */
 export interface RhymeNucleus {
@@ -49,7 +49,7 @@ export interface RhymeNucleus {
   lowResourceFallback?: boolean;
 }
 
-// ─── Scoring (§5–6) ───────────────────────────────────────────────────
+// ─── Scoring (§5–6) ─────────────────────────────────────────
 
 export type SimilarityMethod = 'exact' | 'edit' | 'feature' | 'embedding';
 
@@ -94,29 +94,57 @@ export interface RhymePairResult {
   debug?: Record<string, unknown>;
 }
 
-// ─── Rhyme schema ──────────────────────────────────────────────────────────
+// ─── Rhyme schema ──────────────────────────────────────────────────────
 
 /**
- * targetSchema — user’s intended rhyme pattern (e.g. "AABB").
+ * targetSchema — user's intended rhyme pattern (e.g. "AABB").
  * Tracked in the UNDO/REDO history because it is a user-driven mutation.
  */
 export type TargetSchema = string;
 
 /**
- * DetectedSchema — phonologically computed rhyme pattern from lyric block analysis.
- * Produced by `detectRhymeScheme()` in rhyme/rhymeSchemeDetector.ts.
- * Pure derived state: MUST NOT be stored in history stack.
+ * Per-stanza rhyme scheme result.
+ * Produced internally by `detectRhymeScheme()` and aggregated into
+ * `DetectedSchema.stanzas`.
  */
-export interface DetectedSchema {
-  /** Letter-label pattern e.g. "AABB", "ABAB", "ABCA". */
+export interface StanzaSchema {
+  /** 0-based stanza index within the lyric block. */
+  stanzaIndex: number;
+  /** Letter-label pattern for this stanza e.g. "AABB", "ABAB". */
   pattern: string;
-  /** Mean similarity score among rhyming pairs (0–1). */
+  /** Mean similarity score among rhyming pairs in this stanza (0–1). */
   confidence: number;
-  /** Number of rhyme-bearing lines analysed. */
+  /** Number of rhyme-bearing lines in this stanza. */
   lineCount: number;
 }
 
-// ─── LyricAnalysis ──────────────────────────────────────────────────────────
+/**
+ * DetectedSchema — phonologically computed rhyme pattern from lyric block analysis.
+ * Produced by `detectRhymeScheme()` in rhyme/rhymeSchemeDetector.ts.
+ * Pure derived state: MUST NOT be stored in history stack.
+ *
+ * `pattern`, `confidence`, and `lineCount` summarise the full block
+ * (backward-compatible with existing consumers).
+ * `stanzas` carries the per-stanza breakdown — undefined when the text
+ * contains only one stanza or no blank-line boundaries.
+ */
+export interface DetectedSchema {
+  /** Letter-label pattern for the full block e.g. "AABB", "ABAB", "ABCA". */
+  pattern: string;
+  /** Mean similarity score among rhyming pairs across the full block (0–1). */
+  confidence: number;
+  /** Total number of rhyme-bearing lines analysed. */
+  lineCount: number;
+  /**
+   * Per-stanza breakdown. Present when the lyric block contains ≥2 stanzas
+   * separated by blank lines. Each entry uses independent label sequences
+   * (stanza 0: A/B/C…, stanza 1: A/B/C…) so patterns are comparable
+   * across stanzas without cross-contamination.
+   */
+  stanzas?: StanzaSchema[];
+}
+
+// ─── LyricAnalysis ────────────────────────────────────────────────────────
 
 /**
  * Full analysis of a lyric block: per-line RhymeResult + detected schema + syllable counts.
@@ -133,7 +161,7 @@ export interface LyricAnalysis {
   hasLowResourceLines: boolean;
 }
 
-// ─── Matching weights (per-family configurable) ───────────────────────────
+// ─── Matching weights (per-family configurable) ───────────────────────
 
 export interface MatchingWeights {
   nucleus: number;
