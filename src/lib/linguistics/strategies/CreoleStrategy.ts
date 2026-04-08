@@ -43,6 +43,28 @@ const EN_VOWEL_MAP: Record<string, string> = {
   'a': 'æ', 'e': 'ɛ', 'i': 'ɪ', 'o': 'ɒ', 'u': 'ʌ',
 };
 
+/**
+ * EN inflectional/derivational suffixes that are purely functional
+ * (no lexical vowel of their own that should anchor the rime).
+ * Stripped from the stem before the digraph scan so that the scan
+ * lands on the lexical syllable nucleus, not the suffix consonants.
+ *
+ * Order matters: longer suffixes must be listed before shorter ones
+ * to avoid partial stripping (e.g. 'ness' before 'ess').
+ * Guard: stripped stem must be ≥ 2 chars to avoid over-stripping
+ * monosyllabic roots.
+ */
+const EN_FUNCTIONAL_SUFFIXES = ['ness', 'ful', 'less', 'ing', 'th'] as const;
+
+function stripEnSuffix(token: string): string {
+  for (const suffix of EN_FUNCTIONAL_SUFFIXES) {
+    if (token.endsWith(suffix) && token.length - suffix.length >= 2) {
+      return token.slice(0, -suffix.length);
+    }
+  }
+  return token;
+}
+
 /** Token-level lexifier heuristic. Returns 'fr' | 'en' | 'local'. */
 function detectTokenLexifier(token: string): 'fr' | 'en' | 'local' {
   if (/[éèêàùâîôûç]/.test(token)) return 'fr';
@@ -53,23 +75,24 @@ function detectTokenLexifier(token: string): 'fr' | 'en' | 'local' {
 }
 
 /**
- * Resolve the IPA nucleus of a token using a full left-to-right digraph scan.
+ * Resolve the IPA nucleus of a token via a full left-to-right digraph scan.
  *
- * Scans the whole string left→right, longest match first at each position.
- * Tracks lastMatch AND lastMatchLen: a new hit replaces the current best
- * only when its length ≥ lastMatchLen. This ensures that a short single-char
- * match (e.g. 'i'→'ɪ' in 'feel-i-ng') never silently overwrites a longer
- * digraph already found ('ee'→'iː'), which is the correct rime anchor for
- * digraph-heavy lexifiers (EN 'ee', 'oo', 'ou'; FR 'ou', 'eau', 'ai', …).
+ * For EN tokens: functional suffixes are stripped first so the scan anchors
+ * on the lexical syllable ('feeling' → 'feel' → 'ee'→'iː').
  *
- * Fallback: last vowel character, 'y' excluded (semivowel —
- * e.g. 'dey' should resolve to 'e', not 'y').
+ * Last-match-wins: the scan always overwrites with the latest hit, so the
+ * rime anchors on the rightmost (final-syllable) nucleus. This is correct
+ * for both FR (terminal 'é' overrides internal digraphs) and EN (once
+ * the consonantal functional suffix is stripped).
+ *
+ * Fallback: last vowel character, 'y' excluded (semivowel).
  */
 function resolveNucleus(token: string, lexifier: 'fr' | 'en' | 'local'): string {
   const map = lexifier === 'fr' ? FR_VOWEL_MAP : lexifier === 'en' ? EN_VOWEL_MAP : {};
-  const lower = token.toLowerCase();
+  // Strip EN functional suffixes so the scan hits the lexical nucleus.
+  const stem = lexifier === 'en' ? stripEnSuffix(token) : token;
+  const lower = stem.toLowerCase();
   let lastMatch = '';
-  let lastMatchLen = 0;
 
   let i = 0;
   while (i < lower.length) {
@@ -77,13 +100,7 @@ function resolveNucleus(token: string, lexifier: 'fr' | 'en' | 'local'): string 
     for (let len = 3; len >= 1; len--) {
       const slice = lower.slice(i, i + len);
       if (map[slice] !== undefined) {
-        // Only update the best if this match is at least as long as the
-        // previous best. Shorter subsequent matches (e.g. single 'i' after
-        // digraph 'ee') must not replace a more specific nucleus already found.
-        if (len >= lastMatchLen) {
-          lastMatch = map[slice]!;
-          lastMatchLen = len;
-        }
+        lastMatch = map[slice]!;  // last-match-wins: anchors on final syllable
         i += len;
         matched = true;
         break;
