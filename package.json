@@ -1,7 +1,7 @@
 {
   "name": "vibe",
   "private": true,
-  "version": "1.11.0.1",
+  "version": "1.11.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,15 +15,14 @@
     "@fluentui/react-components": "^9.62.0",
     "@fluentui/react-icons": "^2.0.277",
     "@google/genai": "^0.7.0",
-    "@tailwindcss/vite": "^4.0.0",
     "fflate": "^0.8.2",
     "motion": "^11.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwindcss": "^4.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
@@ -39,6 +38,7 @@
     "eslint-plugin-react-refresh": "^0.4.14",
     "jsdom": "^29.0.1",
     "postcss": "^8.4.49",
+    "tailwindcss": "^4.0.0",
     "typescript": "^5.6.3",
     "vite": "^6.0.3",
     "vite-plugin-pwa": "^0.21.0",
