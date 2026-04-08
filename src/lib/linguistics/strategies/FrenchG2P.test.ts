@@ -281,15 +281,15 @@ describe('frenchG2P — consonant digraphs + h', () => {
 
 describe('RomanceStrategy extractRN — FR nasal rhymes', () => {
   it('chant and vent share nucleus ɑ̃', () => {
-    const rn1 = strategy.analyze('chant', 'fr').nucleus;
-    const rn2 = strategy.analyze('vent', 'fr').nucleus;
+    const rn1 = strategy.analyze('chant', 'fr').rhymeNucleus.raw;
+    const rn2 = strategy.analyze('vent', 'fr').rhymeNucleus.raw;
     expect(rn1).toBe('ɑ̃');
     expect(rn2).toBe('ɑ̃');
   });
 
   it('chante and vente share nucleus ɑ̃ (mute e stripped)', () => {
-    const rn1 = strategy.analyze('chante', 'fr').nucleus;
-    const rn2 = strategy.analyze('vente', 'fr').nucleus;
+    const rn1 = strategy.analyze('chante', 'fr').rhymeNucleus.raw;
+    const rn2 = strategy.analyze('vente', 'fr').rhymeNucleus.raw;
     expect(rn1).toBe('ɑ̃');
     expect(rn2).toBe('ɑ̃');
   });
@@ -300,8 +300,8 @@ describe('RomanceStrategy extractRN — FR nasal rhymes', () => {
   });
 
   it('talent / serpent share nucleus ɑ̃', () => {
-    const rn1 = strategy.analyze('talent', 'fr').nucleus;
-    const rn2 = strategy.analyze('serpent', 'fr').nucleus;
+    const rn1 = strategy.analyze('talent', 'fr').rhymeNucleus.raw;
+    const rn2 = strategy.analyze('serpent', 'fr').rhymeNucleus.raw;
     expect(rn1).toBe('ɑ̃');
     expect(rn2).toBe('ɑ̃');
   });
