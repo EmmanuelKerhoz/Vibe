@@ -3,30 +3,31 @@
  * Bootstrap: registers all built-in lexicons into the PhonemeIndex
  * used by suggestRhymes().
  *
- * Call ONCE at application startup, after the linguistics engine
+ * Call at application startup, after the linguistics engine
  * has been imported (which auto-registers all strategies via
  * src/lib/linguistics/index.ts side-effects).
  *
  * Usage:
  *   import { initLexicons } from 'lib/linguistics/lexicons/initLexicons';
- *   initLexicons(); // idempotent — safe to call multiple times
+ *   initLexicons();
  *
- * Pattern: same bootstrap shape as PhonologicalRegistry.register() calls
- * in src/lib/linguistics/index.ts.
+ * IMPORTANT (Vitest / module isolation):
+ *   Do not guard registration behind a module-level `_initialized` flag.
+ *   Vitest may load multiple isolated module instances; a flag can become
+ *   true in one instance while the test reads a different `phonemeIndex`
+ *   singleton in another instance. Re-registering is safe because
+ *   registerLexicon() overwrites the language bucket atomically.
  */
 
 import { registerLexicon, getLexiconSize } from '../rhyme/suggestRhymes';
 import { frLexicon } from './fr';
 
-let _initialized = false;
-
 /**
  * Register all built-in lexicons.
- * Idempotent: subsequent calls are no-ops.
+ * Idempotent by replacement: registerLexicon() rebuilds and overwrites the
+ * per-language bucket, so repeated calls are safe in app code and tests.
  */
 export function initLexicons(): void {
-  if (_initialized) return;
-
   registerLexicon('fr', frLexicon);
 
   // Future languages — uncomment as lexicons are onboarded:
@@ -36,8 +37,6 @@ export function initLexicons(): void {
   // registerLexicon('yo', yoLexicon);
   // registerLexicon('sw', swLexicon);
   // registerLexicon('ar', arLexicon);
-
-  _initialized = true;
 }
 
 /**
@@ -52,9 +51,10 @@ export function getLexiconHealth(): Record<string, number> {
 }
 
 /**
- * Reset for testing — allows re-registration between test suites.
+ * Reset hook kept for test compatibility.
+ * Registration is now stateless, so this is intentionally a no-op.
  * NEVER call in production code.
  */
 export function _resetLexicons_TEST_ONLY(): void {
-  _initialized = false;
+  // no-op by design
 }
