@@ -72,6 +72,13 @@ function mopSplit(cluster: string): [onset: string, prevCoda: string] {
 // nuclei. extractRN then prepends them from onset → rhyming nucleus.
 const GLIDE_CHARS = new Set(['\u0265', '\u0077']); // ɥ  w
 
+// ─── Combining mark detector ──────────────────────────────────────────────────
+// Matches any Unicode combining character (Unicode category M).
+// Used to absorb diacritics (e.g. U+0303 COMBINING TILDE from frenchG2P nasal
+// vowels: ɑ̃, ɛ̃, ɔ̃, œ̃) directly into the preceding syllable's nucleus
+// rather than letting them fall into the cluster / coda buffer.
+const COMBINING_MARK_RE = /^\p{M}/u;
+
 // ─── Denasalise helper ────────────────────────────────────────────────────────
 // Strips U+0303 COMBINING TILDE from a nucleus string.
 // Used to expose the base IPA vowel in `nucleus` for scoring/test assertions
@@ -136,6 +143,14 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * glides \u0265 (ɥ) and \u0077 (w) — but both are treated as onset via
    * GLIDE_CHARS, so they are excluded from vowelPattern and accumulated in
    * the cluster buffer instead.
+   *
+   * COMBINING MARKS (U+0303 etc.):
+   *   frenchG2P emits nasal vowels as base-IPA + U+0303 combining tilde
+   *   (e.g. ɑ̃ = U+0251 + U+0303). When for...of iterates code-points, U+0303
+   *   arrives as a separate character AFTER the nucleus vowel. It must be
+   *   absorbed directly into the current syllable's nucleus — NOT pushed onto
+   *   the cluster — otherwise extractRN.raw loses the tilde and rnKey lookup
+   *   against the lexicon (which stores 'ɑ̃', 'ɔ̃', etc.) fails silently.
    */
   syllabify(ipa: string, lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
@@ -151,6 +166,18 @@ export class RomanceStrategy extends PhonologicalStrategy {
       let cluster = '';
 
       for (const ch of word) {
+        // ── Combining marks (U+0303 tilde, accents, etc.) ──────────────────
+        // Absorb directly into the current syllable's nucleus so that nasal
+        // vowels emitted by frenchG2P (ɑ̃ ɛ̃ ɔ̃ œ̃) are kept intact.
+        if (COMBINING_MARK_RE.test(ch)) {
+          if (wordSyllables.length > 0) {
+            wordSyllables[wordSyllables.length - 1]!.nucleus += ch;
+          }
+          // If no syllable yet (combining mark at word start — pathological),
+          // silently discard; it will be unreachable in normal G2P output.
+          continue;
+        }
+
         // Glides ɥ and w: treat as onset consonant, accumulate in cluster
         if (GLIDE_CHARS.has(ch)) {
           cluster += ch;
@@ -212,16 +239,6 @@ export class RomanceStrategy extends PhonologicalStrategy {
 
       if (cluster && wordSyllables.length > 0) {
         wordSyllables[wordSyllables.length - 1]!.coda += cluster;
-      }
-
-      // Absorb leading combining diacritics (U+0303 etc.) from each
-      // syllable's coda into its nucleus — keeps nasal vowels intact.
-      for (const syl of wordSyllables) {
-        const combiningMarks = syl.coda.match(/^\p{M}+/u);
-        if (combiningMarks) {
-          syl.nucleus += combiningMarks[0];
-          syl.coda = syl.coda.slice(combiningMarks[0].length);
-        }
       }
 
       syllables.push(...wordSyllables);
