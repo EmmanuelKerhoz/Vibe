@@ -103,7 +103,7 @@ describe('suggestRhymes — /e/ family', () => {
   });
 
   it('"liberté" returns /e/ rhymes', () => {
-    const { suggestions } = suggestRhymes('liberté', 'fr');
+    const { suggestions } = suggestRhymes('liberté', 'fr', { n: 50 });
     const words = suggestions.map(s => s.word);
     expect(words).toEqual(expect.arrayContaining(['beauté', 'vérité']));
   });
@@ -113,7 +113,7 @@ describe('suggestRhymes — /e/ family', () => {
 
 describe('suggestRhymes — /iʁ/ family', () => {
   it('"venir" returns other -ir verbs', () => {
-    const { suggestions, inputNucleus } = suggestRhymes('venir', 'fr');
+    const { suggestions, inputNucleus } = suggestRhymes('venir', 'fr', { n: 50 });
     expect(inputNucleus).toBe('iʁ');
     const words = suggestions.map(s => s.word);
     expect(words).toEqual(expect.arrayContaining(['finir', 'choisir', 'mourir']));
