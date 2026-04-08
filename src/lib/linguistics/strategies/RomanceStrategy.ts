@@ -72,6 +72,14 @@ function mopSplit(cluster: string): [onset: string, prevCoda: string] {
 // nuclei. extractRN then prepends them from onset → rhyming nucleus.
 const GLIDE_CHARS = new Set(['\u0265', '\u0077']); // ɥ  w
 
+// ─── Denasalise helper ────────────────────────────────────────────────────────
+// Strips U+0303 COMBINING TILDE from a nucleus string.
+// Used to expose the base IPA vowel in `nucleus` for scoring/test assertions
+// (ɑ̃→ɑ, ɛ̃→ɛ, ɔ̃→ɔ, œ̃→œ) while `raw` retains the nasal form for rnKey lookup.
+function denasalise(s: string): string {
+  return s.replace(/\u0303/g, '');
+}
+
 // ─── Strategy ──────────────────────────────────────────────────────────────
 
 export class RomanceStrategy extends PhonologicalStrategy {
@@ -239,9 +247,10 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * Extract the rhyme nucleus from the stressed syllable through end of word.
    *
    * NASAL HANDLING:
-   *   Both nucleus and raw preserve the nasal form (e.g. \u0251\u0303 = ɑ̃).
-   *   This matches test assertions (nucleus==='ɑ̃') and lexicon rnKeys
-   *   ('ɑ̃', 'ɔ̃', 'ɛ̃', 'œ̃').
+   *   nucleus: dénasalisé (ɑ̃→ɑ, ɛ̃→ɛ, ɔ̃→ɔ, œ̃→œ) — base IPA vowel for
+   *            scoring and test assertions (phonemicStrategies.test).
+   *   raw:     nasal form preserved (ɑ̃, ɛ̃, ɔ̃, œ̃) — used as rnKey for
+   *            lexicon lookup in suggestRhymes (suggestRhymes.test).
    *
    * GLIDE PRESERVATION (ɥ and w):
    *   Both glides are stored in syllable.onset by syllabify().
@@ -257,17 +266,16 @@ export class RomanceStrategy extends PhonologicalStrategy {
     const tail = syllables.slice(idx);
     const primary = tail[0];
 
-    // Nucleus — keep nasal tilde intact (ɑ̃, ɛ̃, ɔ̃, œ̃ preserved as-is).
     const rawNucleus = primary?.nucleus ?? '';
     const coda = primary?.coda ?? '';
 
     // Prepend glide from onset if present (ɥ or w stored there by syllabify)
     const onsetGlide = (primary?.onset ?? '').match(/[\u0265\u0077]$/u)?.[0] ?? '';
 
-    // nucleus: nasal form preserved (matches test assertions and rnKey lookups).
-    const nucleus = onsetGlide + rawNucleus;
+    // nucleus: dénasalisé — base IPA vowel for scoring/assertions.
+    const nucleus = onsetGlide + denasalise(rawNucleus);
 
-    // Build raw key — nasal tilde preserved for lexicon rnKey lookup.
+    // raw: nasal form preserved — matches rnKeys in lexicon (ɑ̃, ɛ̃, ɔ̃, œ̃, …).
     const raw = [
       onsetGlide + rawNucleus + coda,
       ...tail.slice(1).map(s => {
