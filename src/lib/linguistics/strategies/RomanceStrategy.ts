@@ -35,7 +35,7 @@ import { featureWeightedScore } from '../scoring';
 import type { MatchingWeights, RhymeNucleus, Syllable } from '../core/types';
 import { frenchG2P } from './FrenchG2P';
 
-// ─── MOP onset table ────────────────────────────────────────────────────────────
+// ─── MOP onset table ────────────────────────────────────────────────────────
 
 const LEGAL_ONSETS_2 = new Set([
   'bl', 'br',
@@ -50,7 +50,7 @@ const LEGAL_ONSETS_2 = new Set([
   'vr',
   'tl', 'dl',
   // glide clusters
-  'ɥi', 'ɥɛ', 'nɥ', 'fɥ', 'sɥ', 'lɥ',
+  '\u0265i', '\u0265\u025b', 'n\u0265', 'f\u0265', 's\u0265', 'l\u0265',
 ]);
 
 function mopSplit(cluster: string): [onset: string, prevCoda: string] {
@@ -65,37 +65,29 @@ function mopSplit(cluster: string): [onset: string, prevCoda: string] {
   return [cluster.slice(-1), cluster.slice(0, -1)];
 }
 
-// ─── IPA nasal-vowel NFC codepoints ───────────────────────────────────────────
-// FrenchG2P emits: base vowel + U+0303 (combining tilde).
-// Keep as constants to avoid source-file encoding drift.
-const TILDE = '\u0303';
-const FR_NASAL_TO_BASE: [nasal: string, base: string][] = [
-  ['\u0251' + TILDE, '\u0251'],  // ɑ̃ → ɑ  (an/en family)
-  ['\u025b' + TILDE, '\u025b'],  // ɛ̃ → ɛ  (in/im family)
-  ['\u0254' + TILDE, '\u0254'],  // ɔ̃ → ɔ  (on/om family)
-  ['\u0153' + TILDE, '\u0153'],  // œ̃ → œ  (un/um family)
-];
-
-/**
- * Strip the combining tilde from a nasal nucleus so that the bare IPA
- * vowel can be used for rhyme comparison.
- * e.g. \u0251\u0303 (\u0251 + combining-tilde) → \u0251
- */
-function denasalise(nucleus: string): string {
-  for (const [nasal, base] of FR_NASAL_TO_BASE) {
-    if (nucleus === nasal) return base;
-  }
-  return nucleus;
-}
-
-// ─── Glide chars — treated as onset consonant, not nucleus ───────────────────
+// ─── Glide chars — treated as onset consonant, not nucleus ───────────────────────
 // U+0265 ɥ : labio-palatal approximant (frenchG2P ui→ɥi, ue→ɥɛ)
 // U+0077 w : labio-velar approximant  (frenchG2P oi→wa)
 // Both are accumulated into the onset cluster rather than treated as vowel
 // nuclei. extractRN then prepends them from onset → rhyming nucleus.
 const GLIDE_CHARS = new Set(['\u0265', '\u0077']); // ɥ  w
 
-// ─── Strategy ───────────────────────────────────────────────────────────────
+// ─── Combining mark detector ──────────────────────────────────────────────────
+// Matches any Unicode combining character (Unicode category M).
+// Used to absorb diacritics (e.g. U+0303 COMBINING TILDE from frenchG2P nasal
+// vowels: ɑ̃, ɛ̃, ɔ̃, œ̃) directly into the preceding syllable's nucleus
+// rather than letting them fall into the cluster / coda buffer.
+const COMBINING_MARK_RE = /^\p{M}/u;
+
+// ─── Denasalise helper ────────────────────────────────────────────────────────
+// Strips U+0303 COMBINING TILDE from a nucleus string.
+// Used to expose the base IPA vowel in `nucleus` for scoring/test assertions
+// (ɑ̃→ɑ, ɛ̃→ɛ, ɔ̃→ɔ, œ̃→œ) while `raw` retains the nasal form for rnKey lookup.
+function denasalise(s: string): string {
+  return s.replace(/\u0303/g, '');
+}
+
+// ─── Strategy ──────────────────────────────────────────────────────────────
 
 export class RomanceStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-ROM' as const;
@@ -151,6 +143,14 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * glides \u0265 (ɥ) and \u0077 (w) — but both are treated as onset via
    * GLIDE_CHARS, so they are excluded from vowelPattern and accumulated in
    * the cluster buffer instead.
+   *
+   * COMBINING MARKS (U+0303 etc.):
+   *   frenchG2P emits nasal vowels as base-IPA + U+0303 combining tilde
+   *   (e.g. ɑ̃ = U+0251 + U+0303). When for...of iterates code-points, U+0303
+   *   arrives as a separate character AFTER the nucleus vowel. It must be
+   *   absorbed directly into the current syllable's nucleus — NOT pushed onto
+   *   the cluster — otherwise extractRN.raw loses the tilde and rnKey lookup
+   *   against the lexicon (which stores 'ɑ̃', 'ɔ̃', etc.) fails silently.
    */
   syllabify(ipa: string, lang: string): Syllable[] {
     const words = ipa.split(/\s+/).filter(Boolean);
@@ -166,6 +166,18 @@ export class RomanceStrategy extends PhonologicalStrategy {
       let cluster = '';
 
       for (const ch of word) {
+        // ── Combining marks (U+0303 tilde, accents, etc.) ──────────────────
+        // Absorb directly into the current syllable's nucleus so that nasal
+        // vowels emitted by frenchG2P (ɑ̃ ɛ̃ ɔ̃ œ̃) are kept intact.
+        if (COMBINING_MARK_RE.test(ch)) {
+          if (wordSyllables.length > 0) {
+            wordSyllables[wordSyllables.length - 1]!.nucleus += ch;
+          }
+          // If no syllable yet (combining mark at word start — pathological),
+          // silently discard; it will be unreachable in normal G2P output.
+          continue;
+        }
+
         // Glides ɥ and w: treat as onset consonant, accumulate in cluster
         if (GLIDE_CHARS.has(ch)) {
           cluster += ch;
@@ -229,20 +241,10 @@ export class RomanceStrategy extends PhonologicalStrategy {
         wordSyllables[wordSyllables.length - 1]!.coda += cluster;
       }
 
-      // Absorb leading combining diacritics (U+0303 etc.) from each
-      // syllable's coda into its nucleus — keeps nasal vowels intact.
-      for (const syl of wordSyllables) {
-        const combiningMarks = syl.coda.match(/^\p{M}+/u);
-        if (combiningMarks) {
-          syl.nucleus += combiningMarks[0];
-          syl.coda = syl.coda.slice(combiningMarks[0].length);
-        }
-      }
-
       syllables.push(...wordSyllables);
     }
 
-    // ── Stress assignment ─────────────────────────────────────────────────────
+    // ── Stress assignment ───────────────────────────────────────────────────────────────────
     if (lang === 'fr') {
       if (syllables.length > 0) {
         syllables[syllables.length - 1]!.stressed = true;
@@ -261,19 +263,18 @@ export class RomanceStrategy extends PhonologicalStrategy {
   /**
    * Extract the rhyme nucleus from the stressed syllable through end of word.
    *
-   * NASAL PRESERVATION:
-   *   raw is built from the nasal nucleus AS-IS (with tilde U+0303) so that
-   *   the rnKey matches lexicon entries like 'ɑ̃', 'ɔ̃', 'ɛ̃'.
-   *   The nucleus field on RhymeNucleus also preserves the nasal form.
-   *   denasalise() is NOT called here; featureWeightedScore() handles
-   *   nasal/base equivalence internally during scoring.
+   * NASAL HANDLING:
+   *   nucleus: dénasalisé (ɑ̃→ɑ, ɛ̃→ɛ, ɔ̃→ɔ, œ̃→œ) — base IPA vowel for
+   *            scoring and test assertions (phonemicStrategies.test).
+   *   raw:     nasal form preserved (ɑ̃, ɛ̃, ɔ̃, œ̃) — used as rnKey for
+   *            lexicon lookup in suggestRhymes (suggestRhymes.test).
    *
    * GLIDE PRESERVATION (ɥ and w):
    *   Both glides are stored in syllable.onset by syllabify().
    *   extractRN prepends the trailing glide from onset so that:
    *     nuit  → nucleus='ɥi', raw='ɥi'
    *     fuite → nucleus='ɥi', raw='ɥi'
-   *     soir  → nucleus='wa', raw='waʁ'   (was 'aʁ' before w glide fix)
+   *     soir  → nucleus='wa', raw='waʁ'
    *     avoir → nucleus='wa', raw='waʁ'
    */
   extractRN(syllables: Syllable[], lang: string): RhymeNucleus {
@@ -282,17 +283,18 @@ export class RomanceStrategy extends PhonologicalStrategy {
     const tail = syllables.slice(idx);
     const primary = tail[0];
 
-    // Raw nucleus — keep nasal tilde intact (do NOT denasalise here).
     const rawNucleus = primary?.nucleus ?? '';
     const coda = primary?.coda ?? '';
 
     // Prepend glide from onset if present (ɥ or w stored there by syllabify)
     const onsetGlide = (primary?.onset ?? '').match(/[\u0265\u0077]$/u)?.[0] ?? '';
-    const nucleus = onsetGlide + rawNucleus;
 
-    // Build raw key: preserve nasal tilde in nucleus and tail syllables.
+    // nucleus: dénasalisé — base IPA vowel for scoring/assertions.
+    const nucleus = onsetGlide + denasalise(rawNucleus);
+
+    // raw: nasal form preserved — matches rnKeys in lexicon (ɑ̃, ɛ̃, ɔ̃, œ̃, …).
     const raw = [
-      nucleus + coda,
+      onsetGlide + rawNucleus + coda,
       ...tail.slice(1).map(s => {
         const tGlide = s.onset.match(/[\u0265\u0077]$/u)?.[0] ?? '';
         return `${tGlide}${s.nucleus}${s.coda}`;

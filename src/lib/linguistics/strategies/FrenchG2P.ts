@@ -4,21 +4,25 @@
  *
  * Processing order:
  *   1.  Lowercase + NFC normalisation.
- *   1b. Accented vowel normalisation: é→e  è/ê/ë→ɛ  (orthographic accents
- *       are not IPA; they must be mapped to their phonemic IPA equivalents
- *       before any downstream rule fires, so that rnKey matches the lexicon
- *       which stores entries under 'e' / 'ɛ' — not 'é' / 'è').
- *   2.  Initial-h: aspirate h marked, mute h stripped.
- *   3.  Internal silent h stripped — excludes h after c/p to preserve ch/ph.
- *   4.  Nasal vowel sequences.
- *   5.  Consonant digraphs (ch, gn, ph).
- *   6.  j → ʒ  (jour, jardin, jeu…)
- *   7.  Hard c → k.
- *   8.  Glide ui → ɥi.
- *   9.  Vocalic digraphs (ue→ɥɛ first, then eau/au/ou/eu/…).
- *  10.  Terminal -eure → ø  (heure, demeure — eu→ø already consumed, strip mute -re).
- *  11.  Mute final e stripped.
- *  12.  Silent final consonants + final-r → ʁ.
+ *   1b. Initial-h: aspirate h marked, mute h stripped.
+ *       MUST run before accent normalisation so that ASPIRATE_H_WORDS lookup
+ *       matches the NFC-lowercased form with accents intact (e.g. 'héros').
+ *   1c-a. Accented vowel normalisation (non-final): é not in final position → e.
+ *         è/ê/ë → ɛ (all positions).
+ *         Running before nasal/digraph rules so rnKey matches the lexicon.
+ *   2.  Internal silent h stripped — excludes h after c/p to preserve ch/ph.
+ *   3.  Nasal vowel sequences.
+ *   4.  Consonant digraphs (ch, gn, ph).
+ *   5.  j → ʒ  (jour, jardin, jeu…)
+ *   6.  Hard c → k.
+ *   7.  Glide ui → ɥi.
+ *   8.  Vocalic digraphs (ue→ɥɛ first, then eau/au/ou/eu/…).
+ *   9.  Terminal -eure → ø  (heure, demeure — eu→ø already consumed, strip mute -re).
+ *  10.  Mute final e stripped.
+ *  1c-b. Residual final é → e  (deferred so the tonic é in 'café' is not
+ *        consumed by stripMuteE: café→kafe, stripMuteE would strip 'e',
+ *        but here 'é' survives as a marker and is normalised only after strip).
+ *  11.  Silent final consonants + final-r → ʁ.
  */
 
 // ─── Nasal vowel map ────────────────────────────────────────────────────────────
@@ -64,6 +68,11 @@ const ASPIRATE_H_WORDS = new Set([
   'huissier', 'hulotte', 'hululer', 'hurlement', 'hussard', 'hype',
 ]);
 
+/**
+ * processInitialH must receive the NFC-lowercased word WITH accents intact
+ * (i.e. before step 1c accent normalisation), so that ASPIRATE_H_WORDS lookup
+ * correctly matches entries like 'héros'.
+ */
 function processInitialH(word: string): string {
   if (!word.startsWith('h')) return word;
   if (ASPIRATE_H_WORDS.has(word)) return '_h_' + word.slice(1);
@@ -109,17 +118,17 @@ function stripSilentFinalConsonants(w: string): string {
 export function frenchG2P(word: string): string {
   let w = word.normalize('NFC').toLowerCase();
 
-  // 1b. Accented vowel normalisation — map orthographic accents to IPA.
-  //     Must run BEFORE nasal-vowel rules so that 'é' in 'chanté' becomes
-  //     'e' (phonemic) rather than being left as the Unicode letter U+00E9
-  //     which would produce rnKey 'é' instead of 'e', mismatching the lexicon.
-  //     NOTE: NASAL_MAP step 3 already handles nasalised [eéèêë] patterns;
-  //     this step normalises non-nasalised accented vowels in the remainder.
-  w = w.replace(/é/g, 'e');      // é (U+00E9) → e
-  w = w.replace(/[èêë]/g, 'ɛ'); // è ê ë      → ɛ
-
-  // 1. Initial h
+  // 1b. Initial h — MUST run before accent normalisation (step 1c).
+  //     ASPIRATE_H_WORDS contains accented forms (e.g. 'héros'); the lookup
+  //     must see the accented lowercase form to match correctly.
   w = processInitialH(w);
+
+  // 1c-a. Accented vowel normalisation — non-final é → e.
+  //       Final é is intentionally deferred to step 1c-b (after stripMuteE)
+  //       to prevent café→kafe→kaf (the tonic final é must not be stripped).
+  //       è/ê/ë: always normalised here (they are never tonic-final markers).
+  w = w.replace(/é(?!$)/g, 'e'); // é not at end → e
+  w = w.replace(/[èêë]/g, 'ɛ'); // è ê ë → ɛ (all positions)
 
   // 2. Internal silent h.
   //    CRITICAL: exclude h preceded by 'c' or 'p' to preserve the digraphs
@@ -163,6 +172,12 @@ export function frenchG2P(word: string): string {
 
   // 10. Mute final e
   w = stripMuteE(w);
+
+  // 1c-b. Deferred final é → e  (tonic marker, normalised after stripMuteE).
+  //       Example: café → kafé (after 1c-a é→e non-final pass + all rules)
+  //       → stripMuteE sees 'kafé' ending in 'é', not 'e' → no strip
+  //       → here: kafé → kafe. ✓
+  w = w.replace(/é$/, 'e');
 
   // 11. Silent final consonants + final-r → ʁ
   w = stripSilentFinalConsonants(w);

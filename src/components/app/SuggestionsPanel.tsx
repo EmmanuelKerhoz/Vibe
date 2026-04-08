@@ -58,19 +58,6 @@ export function SuggestionsPanel({
       className={panelClassName}
       style={{ overflow: 'visible', position: 'relative' }}
     >
-      {/* LCARS accent rail */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        width: '2px',
-        background: 'linear-gradient(180deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-        opacity: 0.85,
-        pointerEvents: 'none',
-        zIndex: 10,
-      }} />
-
       <div className="w-[280px] flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div

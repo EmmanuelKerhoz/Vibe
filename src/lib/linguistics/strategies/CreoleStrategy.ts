@@ -43,33 +43,76 @@ const EN_VOWEL_MAP: Record<string, string> = {
   'a': 'æ', 'e': 'ɛ', 'i': 'ɪ', 'o': 'ɒ', 'u': 'ʌ',
 };
 
+/**
+ * EN inflectional/derivational suffixes that are purely functional
+ * (no lexical vowel of their own that should anchor the rime).
+ * Stripped from the stem before the digraph scan so that the scan
+ * lands on the lexical syllable nucleus, not the suffix consonants.
+ *
+ * Order matters: longer suffixes must be listed before shorter ones
+ * to avoid partial stripping (e.g. 'ness' before 'ess').
+ * Guard: stripped stem must be ≥ 2 chars to avoid over-stripping
+ * monosyllabic roots.
+ */
+const EN_FUNCTIONAL_SUFFIXES = ['ness', 'ful', 'less', 'ing', 'th'] as const;
+
+function stripEnSuffix(token: string): string {
+  for (const suffix of EN_FUNCTIONAL_SUFFIXES) {
+    if (token.endsWith(suffix) && token.length - suffix.length >= 2) {
+      return token.slice(0, -suffix.length);
+    }
+  }
+  return token;
+}
+
 /** Token-level lexifier heuristic. Returns 'fr' | 'en' | 'local'. */
 function detectTokenLexifier(token: string): 'fr' | 'en' | 'local' {
-  // French markers: silent final consonants, accented vowels, nasal digraphs
   if (/[éèêàùâîôûç]/.test(token)) return 'fr';
-  if (/(tion|ment|eau|eux|eux|oir|ais|ait)$/i.test(token)) return 'fr';
-  // English markers: th, -ing, -tion, common English endings
-  if (/(th|ing|tion|ness|ment|ful|less)$/i.test(token)) return 'en';
+  if (/(tion|ment|eau|eux|oir|ais|ait)$/i.test(token)) return 'fr';
+  if (/(th|ing|ness|ful|less)$/i.test(token)) return 'en';
   if (/^(the|a|an|is|are|was|were|you|my|we|they|it|this|that)$/i.test(token)) return 'en';
-  // Default: treat as local (CV-dominant Niger-Congo substrate)
   return 'local';
 }
 
-/** Resolve last nucleus from a token string using lexifier-aware map. */
+/**
+ * Resolve the IPA nucleus of a token via a full left-to-right digraph scan.
+ *
+ * For EN tokens: functional suffixes are stripped first so the scan anchors
+ * on the lexical syllable ('feeling' → 'feel' → 'ee'→'iː').
+ *
+ * Last-match-wins: the scan always overwrites with the latest hit, so the
+ * rime anchors on the rightmost (final-syllable) nucleus. This is correct
+ * for both FR (terminal 'é' overrides internal digraphs) and EN (once
+ * the consonantal functional suffix is stripped).
+ *
+ * Fallback: last vowel character, 'y' excluded (semivowel).
+ */
 function resolveNucleus(token: string, lexifier: 'fr' | 'en' | 'local'): string {
   const map = lexifier === 'fr' ? FR_VOWEL_MAP : lexifier === 'en' ? EN_VOWEL_MAP : {};
-  const lower = token.toLowerCase();
+  // Strip EN functional suffixes so the scan hits the lexical nucleus.
+  const stem = lexifier === 'en' ? stripEnSuffix(token) : token;
+  const lower = stem.toLowerCase();
+  let lastMatch = '';
 
-  // Try digraphs first (length 3, then 2)
-  for (let len = 3; len >= 1; len--) {
-    for (let i = lower.length - len; i >= Math.max(0, lower.length - 4); i--) {
+  let i = 0;
+  while (i < lower.length) {
+    let matched = false;
+    for (let len = 3; len >= 1; len--) {
       const slice = lower.slice(i, i + len);
-      if (map[slice]) return map[slice]!;
+      if (map[slice] !== undefined) {
+        lastMatch = map[slice]!;  // last-match-wins: anchors on final syllable
+        i += len;
+        matched = true;
+        break;
+      }
     }
+    if (!matched) i++;
   }
 
-  // Fallback: last vowel character
-  const vowelMatch = lower.match(/[aeiouyéèêàùâîôûœ]/g);
+  if (lastMatch) return lastMatch;
+
+  // Fallback: last vowel character, 'y' excluded (semivowel).
+  const vowelMatch = lower.match(/[aeiouéèêàùâîôûœɛɔø]/g);
   if (vowelMatch) return vowelMatch[vowelMatch.length - 1]!;
 
   return lower.slice(-1);
@@ -84,7 +127,7 @@ export class CreoleStrategy extends PhonologicalStrategy {
    */
   readonly defaultWeights: MatchingWeights = {
     nucleus: 1.0,
-    tone: 0.0,     // tones not contrastive in Nouchi/PCM/Camfranglais
+    tone: 0.0,
     weight: 0.0,
     codaClass: 0.3,
     threshold: 0.70,
@@ -103,8 +146,6 @@ export class CreoleStrategy extends PhonologicalStrategy {
   // ─── Step 2 — G2P (span-level lexifier routing) ───────────────────────────
 
   g2p(normalized: string, _lang: string): string {
-    // Split into tokens, detect lexifier per token, return last token's nucleus
-    // as a pseudo-IPA representation sufficient for rhyme matching.
     const tokens = normalized.split(/\s+/).filter(Boolean);
     if (tokens.length === 0) return '';
     const lastToken = tokens[tokens.length - 1]!;
@@ -125,22 +166,18 @@ export class CreoleStrategy extends PhonologicalStrategy {
       let nucleus = '';
       let coda = '';
 
-      // Onset consonants
       while (i < chars.length && !vowelRe.test(chars[i]!)) {
         onset += chars[i];
         i++;
       }
-      // Nucleus
       if (i < chars.length && vowelRe.test(chars[i]!)) {
         nucleus = chars[i]!;
         i++;
-        // Long vowel marker
         if (i < chars.length && chars[i] === 'ː') {
           nucleus += 'ː';
           i++;
         }
       }
-      // Optional single coda consonant (low relevance)
       if (
         i < chars.length &&
         !vowelRe.test(chars[i]!) &&

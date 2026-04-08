@@ -20,6 +20,10 @@ import { PhonologicalRegistry } from '../core/Registry';
 import { categorizeScore } from '../core/PhonologicalStrategy';
 import type { RhymeType } from '../core/types';
 import { resolveLang } from '../lid/detectLanguage';
+import { registerLexicon, getLexiconSize, getLexiconIndex } from './PhonemeStore';
+
+// Re-export so existing call-sites (initLexicons, tests) keep working.
+export { registerLexicon, getLexiconSize };
 
 // ─── Public types ────────────────────────────────────────────────────────────
 
@@ -52,51 +56,6 @@ export interface SuggestRhymesOptions {
   allowNearRhyme?: boolean;
   /** Exclude the input word itself from results. Default: true. */
   excludeInput?: boolean;
-}
-
-// ─── PhonemeIndex ─────────────────────────────────────────────────────────────
-
-/**
- * In-memory inverted index: lang → rnKey → word[]
- *
- * Populated by registerLexicon() at app startup (or lazily per lang).
- * The rnKey is the `raw` field of RhymeNucleus — the full trailing IPA string
- * normalised to lowercase, which provides the best cross-word grouping.
- */
-const phonemeIndex = new Map<string, Map<string, string[]>>();
-
-/**
- * Register a lexicon for a language.
- * Call once per language at app startup before any suggestRhymes() call.
- *
- * @param lang    ISO 639-1/3 language code.
- * @param entries Array of [word, rnKey] pairs.
- *
- * @example
- *   registerLexicon('fr', frLexicon);
- *   // where frLexicon: Array<[word: string, rnKey: string]>
- */
-export function registerLexicon(
-  lang: string,
-  entries: ReadonlyArray<readonly [string, string]>,
-): void {
-  const index = new Map<string, string[]>();
-  for (const [word, rnKey] of entries) {
-    const bucket = index.get(rnKey);
-    if (bucket) {
-      bucket.push(word);
-    } else {
-      index.set(rnKey, [word]);
-    }
-  }
-  phonemeIndex.set(lang, index);
-}
-
-/**
- * Expose the index size for a language — useful for health checks.
- */
-export function getLexiconSize(lang: string): number {
-  return phonemeIndex.get(lang)?.size ?? 0;
 }
 
 // ─── Core function ────────────────────────────────────────────────────────────
@@ -144,7 +103,7 @@ export function suggestRhymes(
   const inputKey = inputRN.raw.toLowerCase();
 
   // ── Step 2: check lexicon availability ───────────────────────────────────
-  const index = phonemeIndex.get(resolvedLang);
+  const index = getLexiconIndex(resolvedLang);
   if (!index || index.size === 0) {
     return { ...EMPTY, inputNucleus: inputKey };
   }
@@ -174,9 +133,6 @@ export function suggestRhymes(
     // Only attempt if RN keys share at least the nucleus vowel (cheap guard)
     if (!shareNucleusVowel(inputKey, rnKey)) continue;
 
-    // Score each candidate individually — avoids propagating a proxy score
-    // from words[0] to every word in the bucket (words may have distinct RNs
-    // that landed in the same bucket only due to key normalisation rounding).
     for (const candidate of words) {
       if (excludeInput && candidate.toLowerCase() === normalizedInput) continue;
 
@@ -193,9 +149,6 @@ export function suggestRhymes(
       suggestions.push({
         word: candidate,
         score: pairScore,
-        // categorizeScore is the canonical classifier — used everywhere else
-        // in the pipeline (PhonologicalStrategy.compare, detectRhymeScheme).
-        // Default threshold 0.75 aligns with per-family defaultWeights.
         rhymeType: categorizeScore(pairScore),
         rhymeNucleus: rnKey,
       });
@@ -215,10 +168,6 @@ export function suggestRhymes(
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-/**
- * Cheap guard: two RN keys share a nucleus vowel character.
- * Avoids running Registry.compare() on unrelated RN pairs.
- */
 function shareNucleusVowel(a: string, b: string): boolean {
   const IPA_VOWELS = 'aeiouɑɛɔɪʊəɐɵæœøɯɤɶãẽĩõũ';
   const aVowels = new Set([...a].filter(c => IPA_VOWELS.includes(c)));
