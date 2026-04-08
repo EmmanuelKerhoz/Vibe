@@ -55,16 +55,21 @@ function detectTokenLexifier(token: string): 'fr' | 'en' | 'local' {
 /**
  * Resolve the IPA nucleus of a token using a full left-to-right digraph scan.
  *
- * Scans the whole string left→right, prefers longest match at each position,
- * keeps the LAST matched vowel/nucleus as the rime anchor.
+ * Scans the whole string left→right, longest match first at each position.
+ * Tracks lastMatch AND lastMatchLen: a new hit replaces the current best
+ * only when its length ≥ lastMatchLen. This ensures that a short single-char
+ * match (e.g. 'i'→'ɪ' in 'feel-i-ng') never silently overwrites a longer
+ * digraph already found ('ee'→'iː'), which is the correct rime anchor for
+ * digraph-heavy lexifiers (EN 'ee', 'oo', 'ou'; FR 'ou', 'eau', 'ai', …).
  *
- * Fallback: last vowel character, excluding 'y' (semivowel — e.g. 'dey'
- * should resolve to 'e', not 'y').
+ * Fallback: last vowel character, 'y' excluded (semivowel —
+ * e.g. 'dey' should resolve to 'e', not 'y').
  */
 function resolveNucleus(token: string, lexifier: 'fr' | 'en' | 'local'): string {
   const map = lexifier === 'fr' ? FR_VOWEL_MAP : lexifier === 'en' ? EN_VOWEL_MAP : {};
   const lower = token.toLowerCase();
   let lastMatch = '';
+  let lastMatchLen = 0;
 
   let i = 0;
   while (i < lower.length) {
@@ -72,7 +77,13 @@ function resolveNucleus(token: string, lexifier: 'fr' | 'en' | 'local'): string 
     for (let len = 3; len >= 1; len--) {
       const slice = lower.slice(i, i + len);
       if (map[slice] !== undefined) {
-        lastMatch = map[slice]!;
+        // Only update the best if this match is at least as long as the
+        // previous best. Shorter subsequent matches (e.g. single 'i' after
+        // digraph 'ee') must not replace a more specific nucleus already found.
+        if (len >= lastMatchLen) {
+          lastMatch = map[slice]!;
+          lastMatchLen = len;
+        }
         i += len;
         matched = true;
         break;
@@ -84,7 +95,6 @@ function resolveNucleus(token: string, lexifier: 'fr' | 'en' | 'local'): string 
   if (lastMatch) return lastMatch;
 
   // Fallback: last vowel character, 'y' excluded (semivowel).
-  // No spaces or duplicate chars in the character class.
   const vowelMatch = lower.match(/[aeiouéèêàùâîôûœɛɔø]/g);
   if (vowelMatch) return vowelMatch[vowelMatch.length - 1]!;
 
