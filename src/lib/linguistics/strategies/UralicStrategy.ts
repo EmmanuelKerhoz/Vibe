@@ -6,7 +6,9 @@ import { classifyCoda, stripAgglutinativeSuffixes } from '../utils';
 const FRONT_VOWELS = new Set(['ä', 'ö', 'y', 'ü', 'ő', 'ű']);
 const BACK_VOWELS = new Set(['a', 'o', 'u']);
 const NEUTRAL_VOWELS = new Set(['e', 'i']);
-const VOWEL_RE = /[aeiouyäöüőű]/i;
+// Hungarian accented vowels (á é í ó ú and long ő ű) added to base set.
+// Without them, words like 'szép' (é) produce no syllables → score 0.
+const VOWEL_RE = /[aeiouyäöüőűáéíóú]/i;
 
 export class UralicStrategy extends PhonologicalStrategy {
   readonly familyId = 'ALGO-FIN' as const;

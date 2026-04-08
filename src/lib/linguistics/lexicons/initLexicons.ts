@@ -12,14 +12,13 @@
  *   initLexicons();
  *
  * IMPORTANT (Vitest / module isolation):
- *   Do not guard registration behind a module-level `_initialized` flag.
- *   Vitest may load multiple isolated module instances; a flag can become
- *   true in one instance while the test reads a different `phonemeIndex`
- *   singleton in another instance. Re-registering is safe because
- *   registerLexicon() overwrites the language bucket atomically.
+ *   registerLexicon and getLexiconSize are imported from PhonemeStore —
+ *   the canonical singleton that owns the phonemeIndex Map.
+ *   Both this file and suggestRhymes.ts resolve to the SAME Map instance
+ *   regardless of how Vitest isolates module graphs.
  */
 
-import { registerLexicon, getLexiconSize } from '../rhyme/suggestRhymes';
+import { registerLexicon, getLexiconSize } from '../rhyme/PhonemeStore';
 import { frLexicon } from './fr';
 
 /**
@@ -52,7 +51,7 @@ export function getLexiconHealth(): Record<string, number> {
 
 /**
  * Reset hook kept for test compatibility.
- * Registration is now stateless, so this is intentionally a no-op.
+ * Registration is stateless (PhonemeStore owns the Map), so this is a no-op.
  * NEVER call in production code.
  */
 export function _resetLexicons_TEST_ONLY(): void {

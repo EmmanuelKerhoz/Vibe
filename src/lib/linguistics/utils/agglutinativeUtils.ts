@@ -4,8 +4,11 @@ const AGGLUTINATIVE_SUFFIXES: Record<string, readonly string[]> = {
     'lerde', 'larda', 'lerin', 'ların', 'leri', 'ları', 'imiz', 'ımız', 'umuz', 'ümüz',
     'iniz', 'ınız', 'unuz', 'ünüz', 'iyor', 'ıyor', 'uyor', 'üyor', 'miş', 'mış', 'muş',
     'müş', 'dir', 'dır', 'dur', 'dür', 'tir', 'tır', 'tur', 'tür', 'dan', 'den', 'tan',
-    'ten', 'lik', 'lık', 'luk', 'lük', 'siz', 'sız', 'suz', 'süz', 'lar', 'ler', 'mak',
-    'mek', 'da', 'de', 'ta', 'te', 'na', 'ne', 'ni', 'nı', 'nu', 'nü', 'sa', 'se', 'di',
+    'ten', 'lik', 'lık', 'luk', 'lük', 'siz', 'sız', 'suz', 'süz', 'lar', 'ler',
+    // NOTE: 'mak'/'mek' (infinitive) intentionally excluded — the infinitive
+    // IS the citation form; stripping it corrupts the rhyme nucleus.
+    // e.g. 'gelmek' → coda 'k' (obstruent) must be preserved.
+    'da', 'de', 'ta', 'te', 'na', 'ne', 'ni', 'nı', 'nu', 'nü', 'sa', 'se', 'di',
     'dı', 'du', 'dü', 'ti', 'tı', 'tu', 'tü', 'im', 'ım', 'um', 'üm', 'in', 'ın', 'un', 'ün',
   ]),
   uz: normalizeSuffixes([
@@ -79,6 +82,10 @@ const CORE_VOWEL_RE = /[aeiouyäöüıəāīūēōæøœáéíóúàèìòùâê
  * Iteratively remove common agglutinative suffix chains from a normalized word stem.
  * `langCode` selects the suffix inventory, and three passes allow plural/case/tense stacks
  * to be peeled back without over-stripping short stems.
+ *
+ * Guard: the stripped stem must be ≥ 3 chars AND contain a vowel.
+ * This prevents over-stripping compounds and short roots (e.g. 'ev' from 'evlerde')
+ * which would corrupt the rhyme nucleus used for comparison.
  */
 export function stripAgglutinativeSuffixes(word: string, langCode: string): string {
   const normalizedWord = word.normalize('NFC').toLowerCase();
@@ -90,7 +97,9 @@ export function stripAgglutinativeSuffixes(word: string, langCode: string): stri
     const suffix = suffixes.find(candidate => {
       if (!stem.endsWith(candidate)) return false;
       const stripped = stem.slice(0, -candidate.length);
-      return stripped.length >= 2 && CORE_VOWEL_RE.test(stripped);
+      // Raised from 2 to 3: prevents monosyllabic stubs like 'ev', 'el'
+      // that would make coda comparison unreliable across near-rhyme pairs.
+      return stripped.length >= 3 && CORE_VOWEL_RE.test(stripped);
     });
 
     if (!suffix) {
