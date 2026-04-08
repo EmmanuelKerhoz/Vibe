@@ -29,12 +29,15 @@ describe('SuggestionsPanel', () => {
 
     const panel = container.querySelector('[data-suggestions-panel]');
     expect(panel).not.toBeNull();
-    expect(panel?.children).toHaveLength(1);
+    // The absolute-positioned LCARS rail must have been removed
+    const absoluteRail = panel?.querySelector('div[style*="position: absolute"][style*="width: 2px"]');
+    expect(absoluteRail).toBeNull();
   });
 
   it('clears the selected line when closing the panel', () => {
     const { setSelectedLineId } = renderSuggestionsPanel();
 
+    // isMobileOverlay defaults to false → aria-label is 'Clear line suggestions'
     fireEvent.click(screen.getByRole('button', { name: 'Clear line suggestions' }));
 
     expect(setSelectedLineId).toHaveBeenCalledWith(null);
