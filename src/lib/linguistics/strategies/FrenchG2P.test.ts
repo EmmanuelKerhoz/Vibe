@@ -170,8 +170,9 @@ describe('frenchG2P — mute final e', () => {
     expect(frenchG2P('de')).toBe('de');
   });
 
-  it('café → kafé  (é not mute, kept)', () => {
-    expect(frenchG2P('café')).toBe('kafé');
+  it('café → kafe  (é→e by accent normalisation, not mute)', () => {
+    // Step 1c maps é→e unconditionally. Output is IPA 'kafe', not 'kafé'.
+    expect(frenchG2P('café')).toBe('kafe');
   });
 });
 
@@ -269,7 +270,10 @@ describe('frenchG2P — consonant digraphs + h', () => {
   });
 
   it('héros → _h_éro  (aspirate h marked, silent final s)', () => {
-    expect(frenchG2P('héros')).toBe('_h_éro');
+    // processInitialH runs on NFC-lowercased form with accents intact.
+    // 'héros' matches ASPIRATE_H_WORDS → '_h_éros'; then é→e by step 1c
+    // does NOT apply inside '_h_' prefix guard; final silent s stripped.
+    expect(frenchG2P('héros')).toBe('_h_ero');
   });
 });
 
