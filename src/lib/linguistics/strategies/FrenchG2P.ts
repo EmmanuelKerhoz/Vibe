@@ -7,10 +7,9 @@
  *   1b. Initial-h: aspirate h marked, mute h stripped.
  *       MUST run before accent normalisation so that ASPIRATE_H_WORDS lookup
  *       matches the NFC-lowercased form with accents intact (e.g. 'héros').
- *   1c. Accented vowel normalisation: é→e  è/ê/ë→ɛ  (orthographic accents
- *       are not IPA; they must be mapped to their phonemic IPA equivalents
- *       before any downstream rule fires, so that rnKey matches the lexicon
- *       which stores entries under 'e' / 'ɛ' — not 'é' / 'è').
+ *   1c-a. Accented vowel normalisation (non-final): é not in final position → e.
+ *         è/ê/ë → ɛ (all positions).
+ *         Running before nasal/digraph rules so rnKey matches the lexicon.
  *   2.  Internal silent h stripped — excludes h after c/p to preserve ch/ph.
  *   3.  Nasal vowel sequences.
  *   4.  Consonant digraphs (ch, gn, ph).
@@ -20,6 +19,9 @@
  *   8.  Vocalic digraphs (ue→ɥɛ first, then eau/au/ou/eu/…).
  *   9.  Terminal -eure → ø  (heure, demeure — eu→ø already consumed, strip mute -re).
  *  10.  Mute final e stripped.
+ *  1c-b. Residual final é → e  (deferred so the tonic é in 'café' is not
+ *        consumed by stripMuteE: café→kafe, stripMuteE would strip 'e',
+ *        but here 'é' survives as a marker and is normalised only after strip).
  *  11.  Silent final consonants + final-r → ʁ.
  */
 
@@ -121,13 +123,12 @@ export function frenchG2P(word: string): string {
   //     must see the accented lowercase form to match correctly.
   w = processInitialH(w);
 
-  // 1c. Accented vowel normalisation — map orthographic accents to IPA.
-  //     Runs AFTER processInitialH so the Set lookup is not broken by
-  //     early é→e normalisation.
-  //     NOTE: NASAL_MAP step 3 already handles nasalised [eéèêë] patterns;
-  //     this step normalises non-nasalised accented vowels in the remainder.
-  w = w.replace(/é/g, 'e');      // é (U+00E9) → e
-  w = w.replace(/[èêë]/g, 'ɛ'); // è ê ë      → ɛ
+  // 1c-a. Accented vowel normalisation — non-final é → e.
+  //       Final é is intentionally deferred to step 1c-b (after stripMuteE)
+  //       to prevent café→kafe→kaf (the tonic final é must not be stripped).
+  //       è/ê/ë: always normalised here (they are never tonic-final markers).
+  w = w.replace(/é(?!$)/g, 'e'); // é not at end → e
+  w = w.replace(/[èêë]/g, 'ɛ'); // è ê ë → ɛ (all positions)
 
   // 2. Internal silent h.
   //    CRITICAL: exclude h preceded by 'c' or 'p' to preserve the digraphs
@@ -171,6 +172,12 @@ export function frenchG2P(word: string): string {
 
   // 10. Mute final e
   w = stripMuteE(w);
+
+  // 1c-b. Deferred final é → e  (tonic marker, normalised after stripMuteE).
+  //       Example: café → kafé (after 1c-a é→e non-final pass + all rules)
+  //       → stripMuteE sees 'kafé' ending in 'é', not 'e' → no strip
+  //       → here: kafé → kafe. ✓
+  w = w.replace(/é$/, 'e');
 
   // 11. Silent final consonants + final-r → ʁ
   w = stripSilentFinalConsonants(w);
