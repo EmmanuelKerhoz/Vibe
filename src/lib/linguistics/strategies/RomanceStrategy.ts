@@ -65,30 +65,6 @@ function mopSplit(cluster: string): [onset: string, prevCoda: string] {
   return [cluster.slice(-1), cluster.slice(0, -1)];
 }
 
-// ─── IPA nasal-vowel NFC codepoints ───────────────────────────────────────────────
-// FrenchG2P emits: base vowel + U+0303 (combining tilde).
-// Keep as constants to avoid source-file encoding drift.
-const TILDE = '\u0303';
-const FR_NASAL_TO_BASE: [nasal: string, base: string][] = [
-  ['\u0251' + TILDE, '\u0251'],  // ɑ̃ → ɑ  (an/en family)
-  ['\u025b' + TILDE, '\u025b'],  // ɛ̃ → ɛ  (in/im family)
-  ['\u0254' + TILDE, '\u0254'],  // ɔ̃ → ɔ  (on/om family)
-  ['\u0153' + TILDE, '\u0153'],  // œ̃ → œ  (un/um family)
-];
-
-/**
- * Strip the combining tilde from a nasal nucleus so that the bare IPA
- * vowel is exposed for rhyme comparison and test assertions.
- * e.g. \u0251\u0303 (ɑ + combining-tilde) → \u0251
- * Non-nasal nuclei are returned unchanged.
- */
-function denasalise(nucleus: string): string {
-  for (const [nasal, base] of FR_NASAL_TO_BASE) {
-    if (nucleus === nasal) return base;
-  }
-  return nucleus;
-}
-
 // ─── Glide chars — treated as onset consonant, not nucleus ───────────────────────
 // U+0265 ɥ : labio-palatal approximant (frenchG2P ui→ɥi, ue→ɥɛ)
 // U+0077 w : labio-velar approximant  (frenchG2P oi→wa)
@@ -263,11 +239,9 @@ export class RomanceStrategy extends PhonologicalStrategy {
    * Extract the rhyme nucleus from the stressed syllable through end of word.
    *
    * NASAL HANDLING:
-   *   rawNucleus preserves the nasal form (e.g. \u0251\u0303 = ɑ̃) so that
-   *   raw is built with the nasal tilde intact and matches lexicon rnKeys
-   *   like 'ɑ̃', 'ɔ̃', 'ɛ̃'.
-   *   nucleus is denasalised (\u0251\u0303 → \u0251) for scoring and test assertions:
-   *   the base IPA vowel is what rhyme comparison operates on.
+   *   Both nucleus and raw preserve the nasal form (e.g. \u0251\u0303 = ɑ̃).
+   *   This matches test assertions (nucleus==='ɑ̃') and lexicon rnKeys
+   *   ('ɑ̃', 'ɔ̃', 'ɛ̃', 'œ̃').
    *
    * GLIDE PRESERVATION (ɥ and w):
    *   Both glides are stored in syllable.onset by syllabify().
@@ -283,18 +257,17 @@ export class RomanceStrategy extends PhonologicalStrategy {
     const tail = syllables.slice(idx);
     const primary = tail[0];
 
-    // Raw nucleus — keep nasal tilde intact for lexicon rnKey matching.
+    // Nucleus — keep nasal tilde intact (ɑ̃, ɛ̃, ɔ̃, œ̃ preserved as-is).
     const rawNucleus = primary?.nucleus ?? '';
     const coda = primary?.coda ?? '';
 
     // Prepend glide from onset if present (ɥ or w stored there by syllabify)
     const onsetGlide = (primary?.onset ?? '').match(/[\u0265\u0077]$/u)?.[0] ?? '';
 
-    // nucleus: denasalised base vowel (+ glide) for scoring and assertions.
-    // raw: nasal form preserved for lexicon rnKey lookup.
-    const nucleus = onsetGlide + denasalise(rawNucleus);
+    // nucleus: nasal form preserved (matches test assertions and rnKey lookups).
+    const nucleus = onsetGlide + rawNucleus;
 
-    // Build raw key using rawNucleus (nasal tilde preserved).
+    // Build raw key — nasal tilde preserved for lexicon rnKey lookup.
     const raw = [
       onsetGlide + rawNucleus + coda,
       ...tail.slice(1).map(s => {
