@@ -55,20 +55,17 @@ function detectTokenLexifier(token: string): 'fr' | 'en' | 'local' {
 /**
  * Resolve the IPA nucleus of a token using a full left-to-right digraph scan.
  *
- * Previous implementation used a windowed scan anchored to the last 4 chars,
- * which missed digraphs (e.g. 'ee' in 'feeling') sitting further left.
- * New approach: scan the whole string left→right, prefer longest match,
- * keep the LAST matched vowel/nucleus as the rime anchor.
+ * Scans the whole string left→right, prefers longest match at each position,
+ * keeps the LAST matched vowel/nucleus as the rime anchor.
  *
- * Fallback: last vowel character, excluding 'y' (semivowel, not a rime vowel
- * in coda position — e.g. 'dey' should resolve to 'e', not 'y').
+ * Fallback: last vowel character, excluding 'y' (semivowel — e.g. 'dey'
+ * should resolve to 'e', not 'y').
  */
 function resolveNucleus(token: string, lexifier: 'fr' | 'en' | 'local'): string {
   const map = lexifier === 'fr' ? FR_VOWEL_MAP : lexifier === 'en' ? EN_VOWEL_MAP : {};
   const lower = token.toLowerCase();
   let lastMatch = '';
 
-  // Full left→right scan, longest match first at each position.
   let i = 0;
   while (i < lower.length) {
     let matched = false;
@@ -87,7 +84,8 @@ function resolveNucleus(token: string, lexifier: 'fr' | 'en' | 'local'): string 
   if (lastMatch) return lastMatch;
 
   // Fallback: last vowel character, 'y' excluded (semivowel).
-  const vowelMatch = lower.match(/[aeioué èêàùâîôûœɛɔøœ]/g);
+  // No spaces or duplicate chars in the character class.
+  const vowelMatch = lower.match(/[aeiouéèêàùâîôûœɛɔø]/g);
   if (vowelMatch) return vowelMatch[vowelMatch.length - 1]!;
 
   return lower.slice(-1);
