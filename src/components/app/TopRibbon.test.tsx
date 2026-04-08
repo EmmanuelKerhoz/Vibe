@@ -3,7 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TopRibbon } from './TopRibbon';
 
-// ── Context mocks ────────────────────────────────────────────────────────────
+// ── Mutable state refs — mutated per-test, read by the mock factory ──────────
+let mockPast: unknown[] = [];
+let mockFuture: unknown[] = [];
+let mockIsGenerating = false;
+let mockIsAnalyzing = false;
+let mockIsLeftPanelOpen = false;
+let mockIsStructureOpen = false;
+
 const mockUndo = vi.fn();
 const mockRedo = vi.fn();
 const mockClearSelection = vi.fn();
@@ -14,8 +21,8 @@ const mockOpenKeyboardShortcuts = vi.fn();
 
 vi.mock('../../contexts/SongContext', () => ({
   useSongHistoryContext: () => ({
-    past: [],
-    future: [],
+    past: mockPast,
+    future: mockFuture,
     undo: mockUndo,
     redo: mockRedo,
   }),
@@ -23,28 +30,26 @@ vi.mock('../../contexts/SongContext', () => ({
 
 vi.mock('../../contexts/ComposerContext', () => ({
   useComposerContext: () => ({
-    isGenerating: false,
+    isGenerating: mockIsGenerating,
     clearSelection: mockClearSelection,
   }),
 }));
 
-const navState = {
-  activeTab: 'lyrics' as const,
-  setActiveTab: mockSetActiveTab,
-  isLeftPanelOpen: false,
-  setIsLeftPanelOpen: mockSetIsLeftPanelOpen,
-  isStructureOpen: false,
-  setIsStructureOpen: mockSetIsStructureOpen,
-};
-
 vi.mock('../../contexts/AppStateContext', () => ({
-  useAppNavigationContext: () => navState,
+  useAppNavigationContext: () => ({
+    activeTab: 'lyrics' as const,
+    setActiveTab: mockSetActiveTab,
+    isLeftPanelOpen: mockIsLeftPanelOpen,
+    setIsLeftPanelOpen: mockSetIsLeftPanelOpen,
+    isStructureOpen: mockIsStructureOpen,
+    setIsStructureOpen: mockSetIsStructureOpen,
+  }),
 }));
 
 vi.mock('../../hooks/useTopRibbonActions', () => ({
   useTopRibbonActions: () => ({
     openKeyboardShortcuts: mockOpenKeyboardShortcuts,
-    isAnalyzing: false,
+    isAnalyzing: mockIsAnalyzing,
   }),
 }));
 
@@ -54,7 +59,7 @@ vi.mock('../../i18n', () => ({
       tooltips: {
         undo: 'Undo',
         redo: 'Redo',
-        processing: 'Processing…',
+        processing: 'Processing\u2026',
         aiUnavailableHelp: 'Configure API key',
         keyboardShortcuts: 'Keyboard shortcuts',
         closeLeftPanel: 'Close panel',
@@ -67,7 +72,6 @@ vi.mock('../../i18n', () => ({
   }),
 }));
 
-// Stub heavy sub-components so tests stay unit-scoped
 vi.mock('./RibbonMenuPanel', () => ({
   RibbonMenuPanel: () => <div data-testid="ribbon-menu-panel" />,
 }));
@@ -83,13 +87,21 @@ const defaultProps = {
   onOpenNewEmpty: vi.fn(),
 };
 
-function renderRibbon(props = {}) {
+function renderRibbon(props: Partial<typeof defaultProps> = {}) {
   return render(<TopRibbon {...defaultProps} {...props} />);
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 describe('TopRibbon', () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPast = [];
+    mockFuture = [];
+    mockIsGenerating = false;
+    mockIsAnalyzing = false;
+    mockIsLeftPanelOpen = false;
+    mockIsStructureOpen = false;
+  });
 
   it('renders without crashing', () => {
     renderRibbon();
@@ -98,23 +110,24 @@ describe('TopRibbon', () => {
 
   it('undo button is disabled when no past', () => {
     renderRibbon();
-    const undoBtn = screen.getByRole('button', { name: 'Undo' });
-    expect(undoBtn).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('redo button is disabled when no future', () => {
     renderRibbon();
-    const redoBtn = screen.getByRole('button', { name: 'Redo' });
-    expect(redoBtn).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Redo' })).toHaveAttribute('aria-disabled', 'true');
   });
 
-  it('undo / redo fire their callbacks when enabled', () => {
-    vi.mocked(await import('../../contexts/SongContext')).useSongHistoryContext
-      // @ts-expect-error — vi.mock override
-      .mockReturnValueOnce({ past: [{}], future: [{}], undo: mockUndo, redo: mockRedo });
+  it('undo fires callback when past is non-empty', () => {
+    mockPast = [{}];
     renderRibbon();
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(mockUndo).toHaveBeenCalledOnce();
+  });
+
+  it('redo fires callback when future is non-empty', () => {
+    mockFuture = [{}];
+    renderRibbon();
     fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
     expect(mockRedo).toHaveBeenCalledOnce();
   });
@@ -171,9 +184,13 @@ describe('TopRibbon', () => {
   });
 
   it('shows processing indicator when isGenerating=true', () => {
-    vi.mocked(await import('../../contexts/ComposerContext')).useComposerContext
-      // @ts-expect-error — vi.mock override
-      .mockReturnValueOnce({ isGenerating: true, clearSelection: mockClearSelection });
+    mockIsGenerating = true;
+    renderRibbon();
+    expect(screen.getByLabelText('Processing')).toBeDefined();
+  });
+
+  it('shows processing indicator when isAnalyzing=true', () => {
+    mockIsAnalyzing = true;
     renderRibbon();
     expect(screen.getByLabelText('Processing')).toBeDefined();
   });
