@@ -99,7 +99,6 @@ export const SectionLineList = React.memo(function SectionLineList({
   const renderItems = useMemo(() => buildRenderItems(section.lines), [section.lines]);
   const effectiveRhymeScheme = section.rhymeScheme || rhymeScheme;
 
-  // Resolve lang for the selected line (falls back to section target language)
   const selectedLine = useMemo(() => {
     if (!selectedLineId) return null;
     const item = renderItems.find(
@@ -113,7 +112,6 @@ export const SectionLineList = React.memo(function SectionLineList({
     : 'auto';
 
   const handlePanelClose = () => {
-    // Deselect line to hide the panel (re-uses existing blur flow)
     if (onLineBlur) onLineBlur();
   };
 
@@ -146,6 +144,14 @@ export const SectionLineList = React.memo(function SectionLineList({
           : [];
         const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo?.lineId === line.id;
         const isDragOverLine = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo?.lineId === line.id;
+
+        // exactOptionalPropertyTypes: only spread optional props when value is defined
+        const lineOptional = {
+          ...(lineLanguages[line.id] !== undefined ? { lineLanguage: lineLanguages[line.id] as string } : {}),
+          ...(adaptLineLanguage ? { adaptLineLanguage } : {}),
+          ...(onLineBlur ? { onLineBlur } : {}),
+        };
+
         return (
           <React.Fragment key={line.id}>
             <LyricInput
@@ -162,7 +168,6 @@ export const SectionLineList = React.memo(function SectionLineList({
               hasApiKey={hasApiKey}
               isDraggedLine={isDraggedLine}
               isDragOverLine={isDragOverLine}
-              lineLanguage={lineLanguages[line.id]}
               handleLineClick={handleLineClick}
               updateLineText={updateLineText}
               handleLineKeyDown={handleLineKeyDown}
@@ -171,10 +176,9 @@ export const SectionLineList = React.memo(function SectionLineList({
               addLineToSection={addLineToSection}
               deleteLineFromSection={deleteLineFromSection}
               playAudioFeedback={playAudioFeedback}
-              adaptLineLanguage={adaptLineLanguage}
               sectionTargetLanguage={sectionTargetLanguage}
               isAdaptingLine={adaptingLineIds?.has(line.id)}
-              onLineBlur={onLineBlur}
+              {...lineOptional}
             />
             {isActive && selectedLine && (
               <LineRhymePanel

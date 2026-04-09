@@ -72,6 +72,18 @@ export const SectionEditor = React.memo(function SectionEditor({
     handleDrop(sectionIndex);
   }, [handleDrop, sectionIndex]);
 
+  // exactOptionalPropertyTypes: only spread optional callbacks when defined
+  const adaptControlOptional = {
+    ...(onSectionTargetLanguageChange ? { onSectionTargetLanguageChange } : {}),
+    ...(adaptSectionLanguage ? { adaptSectionLanguage } : {}),
+  };
+
+  const lineListOptional = {
+    ...(adaptLineLanguage ? { adaptLineLanguage } : {}),
+    ...(adaptingLineIds ? { adaptingLineIds } : {}),
+    ...(onLineBlur ? { onLineBlur } : {}),
+  };
+
   return (
     <section
       id={`section-${section.id}`}
@@ -102,8 +114,7 @@ export const SectionEditor = React.memo(function SectionEditor({
             isGenerating={isGenerating}
             isAnalyzing={isAnalyzing}
             isAdaptingLanguage={isAdaptingLanguage}
-            onSectionTargetLanguageChange={onSectionTargetLanguageChange}
-            adaptSectionLanguage={adaptSectionLanguage}
+            {...adaptControlOptional}
           />
         </div>
 
@@ -126,11 +137,9 @@ export const SectionEditor = React.memo(function SectionEditor({
           section={section}
           hasApiKey={hasApiKey}
           lineNumberOffset={lineNumberOffset}
-          adaptLineLanguage={adaptLineLanguage}
-          adaptingLineIds={adaptingLineIds}
           sectionTargetLanguage={sectionTargetLanguage}
           playAudioFeedback={playAudioFeedback}
-          onLineBlur={onLineBlur}
+          {...lineListOptional}
         />
 
         <SectionFooter

@@ -51,11 +51,13 @@ export const Button = ({
   ].filter(Boolean).join(' ');
 
   const normalizedSize = size === 'small' ? 'small' : size === 'large' ? 'large' : 'medium';
+  // Fluent UI icon slot rejects `undefined` with exactOptionalPropertyTypes — use null instead
+  const iconSlot = startIcon ?? null;
 
   if (component === 'label') {
     return (
       <label style={{ display: 'inline-flex', cursor: 'pointer', ...fluentStyle }} className={className}>
-        <FluentButton appearance={appearance} size={normalizedSize} icon={startIcon} className={fluentClass} {...props}>
+        <FluentButton appearance={appearance} size={normalizedSize} icon={iconSlot} className={fluentClass} {...props}>
           {children}
         </FluentButton>
       </label>
@@ -63,7 +65,7 @@ export const Button = ({
   }
 
   return (
-    <FluentButton appearance={appearance} size={normalizedSize} icon={startIcon} style={fluentStyle} className={fluentClass} {...props}>
+    <FluentButton appearance={appearance} size={normalizedSize} icon={iconSlot} style={fluentStyle} className={fluentClass} {...props}>
       {children}
     </FluentButton>
   );

@@ -18,7 +18,7 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null, errorInfo: null };
+  override state: State = { error: null, errorInfo: null };
 
   /**
    * getDerivedStateFromError ensures the error state is committed during the
