@@ -9,7 +9,6 @@ export type { LyricLine, LineEndingUnit } from './lyricSegmenter';
 export {
   splitLyricIntoLines,
   splitIntoRhymingLines,
-  extractLineTail,
   extractLineEndingUnit,
 } from './lyricSegmenter';
 
