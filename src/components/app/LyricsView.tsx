@@ -53,7 +53,7 @@ export const LyricsView = memo(function LyricsView({
     song,
     sectionTargetLanguages,
     songLanguage,
-    targetLanguage,
+    ...(targetLanguage !== undefined ? { targetLanguage } : {}),
     isActive: editMode === 'phonetic',
   });
 
@@ -119,7 +119,7 @@ export const LyricsView = memo(function LyricsView({
                 section={section}
                 sectionIndex={sectionIndex}
                 songLength={song.length}
-                lineNumberOffset={sectionLineOffsets[sectionIndex]}
+                lineNumberOffset={sectionLineOffsets[sectionIndex] ?? 0}
                 isAnalyzing={isAnalyzing}
                 hasApiKey={hasApiKey}
                 isAdaptingLanguage={showTranslationFeatures ? isAdaptingLanguage : false}

@@ -19,8 +19,8 @@ export interface EditorPanelState {
   setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   isLeftPanelOpen: boolean;
   setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab: 'lyrics' | 'musical';
+  setActiveTab: (tab: 'lyrics' | 'musical') => void;
   isSuggestionsOpen: boolean;
   setIsStructureOpenAndClearLine: (value: boolean | ((prev: boolean) => boolean)) => void;
   showBackdrop: (isMobileOrTablet: boolean) => boolean;

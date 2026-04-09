@@ -25,16 +25,16 @@ export class ErrorBoundary extends Component<Props, State> {
    * render phase itself, so React never attempts to re-render the crashing
    * subtree before switching to the fallback UI.
    */
-  static getDerivedStateFromError(error: Error): Partial<State> {
+  override static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
     console.error('[ErrorBoundary] Uncaught error:', error, errorInfo);
   }
 
-  render() {
+  override render() {
     const { error, errorInfo } = this.state;
     const { label, fallback } = this.props;
     if (!error) return this.props.children;

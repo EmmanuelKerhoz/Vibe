@@ -46,12 +46,14 @@ export function LeftSettingsPanel({
   const handleClose = () => setIsLeftPanelOpen(false);
   useFocusTrap(panelRef, !!(isMobileOverlay && isLeftPanelOpen), handleClose);
 
+  // Build formProps without props absent from SongMetaFormProps.
+  // onRegenerateSong is optional — only spread it when defined to satisfy
+  // exactOptionalPropertyTypes (passing `undefined` explicitly is an error).
   const formProps = {
     onGenerateSong,
-    onRegenerateSong,
     setIsLeftPanelOpen,
     headingId,
-    isMobileOverlay,
+    ...(onRegenerateSong !== undefined ? { onRegenerateSong } : {}),
   };
 
   // ── Mobile/tablet: fixed overlay ──────────────────────────────────────────
