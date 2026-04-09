@@ -1,0 +1,21 @@
+{
+  // TypeScript config for test files only.
+  // Inherits all prod compiler options EXCEPT exactOptionalPropertyTypes
+  // (test mocks often pass partial objects that would fail that check).
+  // noImplicitAny, strictNullChecks, and all other strict flags are ON.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": false,
+    "noEmit": true
+  },
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx"
+  ],
+  "exclude": [
+    "sauvegardes",
+    "api"
+  ]
+}

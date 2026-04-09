@@ -147,6 +147,9 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     setupFiles: [],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    typecheck: {
+      tsconfig: './tsconfig.test.json',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
