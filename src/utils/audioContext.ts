@@ -30,9 +30,18 @@ export function createAudioContext(): AudioContext | null {
 /**
  * Resumes a suspended AudioContext (required after user-gesture policy
  * on Safari mobile and some desktop browsers).
+ *
+ * Returns true if the context is running after the call, false if it
+ * could not be resumed (Permissions Policy, gesture guard, etc.).
+ * Never throws — callers can safely fire-and-forget.
  */
-export async function resumeAudioContext(ctx: AudioContext): Promise<void> {
-  if (ctx.state === 'suspended') {
+export async function resumeAudioContext(ctx: AudioContext): Promise<boolean> {
+  if (ctx.state !== 'suspended') return ctx.state === 'running';
+  try {
     await ctx.resume();
+    return ctx.state === 'running';
+  } catch (e) {
+    console.warn('[audioContext] Failed to resume AudioContext:', e);
+    return false;
   }
 }
