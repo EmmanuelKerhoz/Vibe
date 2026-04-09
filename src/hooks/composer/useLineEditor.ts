@@ -83,7 +83,7 @@ export const useLineEditor = ({
           });
           const updatedSection: Section = { ...section, lines: updatedLines };
           const newScheme = redetectScheme(updatedSection);
-          return newScheme !== section.rhymeScheme
+          return newScheme !== undefined && newScheme !== section.rhymeScheme
             ? { ...updatedSection, rhymeScheme: newScheme }
             : updatedSection;
         }), sectionId),
@@ -121,7 +121,7 @@ export const useLineEditor = ({
             newLines.splice(lineIndex + 1, 1);
             const updatedSection: Section = { ...s, lines: newLines };
             const newScheme = redetectScheme(updatedSection);
-            return newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
+            return newScheme !== undefined && newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
           }), sectionId),
         );
         setTimeout(() => {
@@ -154,7 +154,7 @@ export const useLineEditor = ({
             newLines.splice(lineIndex, 1);
             const updatedSection: Section = { ...s, lines: newLines };
             const newScheme = redetectScheme(updatedSection);
-            return newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
+            return newScheme !== undefined && newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
           }), sectionId),
         );
         setSelectedLineId(prevLineId);
@@ -196,7 +196,7 @@ export const useLineEditor = ({
             });
             const updatedSection: Section = { ...s, lines: newLines };
             const newScheme = redetectScheme(updatedSection);
-            return newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
+            return newScheme !== undefined && newScheme !== s.rhymeScheme ? { ...updatedSection, rhymeScheme: newScheme } : updatedSection;
           }), sectionId),
         );
         setSelectedLineId(newLineId);

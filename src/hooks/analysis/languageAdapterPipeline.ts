@@ -98,7 +98,7 @@ export const detectSongLanguage = async (song: Section[], signal?: AbortSignal):
   const response = await generateContentWithRetry({
     model: AI_MODEL_NAME,
     contents: buildDetectLanguagePrompt(songText),
-    signal,
+    ...(signal ? { signal } : {}),
   });
 
   const text = response.text?.trim() || '';

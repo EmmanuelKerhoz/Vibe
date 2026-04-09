@@ -136,7 +136,7 @@ export function useLinguisticsWorker(
         text: l.text,
         isMeta: l.isMeta ?? false,
       })),
-      targetSchema: s.targetSchema,
+      ...(s.targetSchema !== undefined ? { targetSchema: s.targetSchema } : {}),
     }));
 
     requestIdRef.current += 1;
