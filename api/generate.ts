@@ -17,11 +17,9 @@ const ALLOWED_MODEL_PREFIXES = ['gemini-'];
  * permitted to set. Any key not in this list is silently dropped before
  * the config object is forwarded to the Gemini SDK.
  *
- * Rationale: the `config` field is an open Record<string, unknown> on the
- * wire. Without filtering, a caller could inject SDK-level overrides such as
- * `systemInstruction`, `safetySettings`, `tools`, `toolConfig`, or
- * `cachedContent` — bypassing the prompt-level constraints enforced by the
- * server and potentially altering model behaviour in unintended ways.
+ * responseSchema is intentionally excluded: it is an open Record<string,unknown>
+ * with no runtime validation boundary — passing it through would allow
+ * clients to inject arbitrary SDK-level overrides.
  */
 const ALLOWED_CONFIG_KEYS = new Set([
   'temperature',
@@ -34,7 +32,6 @@ const ALLOWED_CONFIG_KEYS = new Set([
   'frequencyPenalty',
   'seed',
   'responseMimeType',
-  'responseSchema',
 ] as const);
 
 type SanitizedConfig = {
@@ -48,7 +45,6 @@ type SanitizedConfig = {
   frequencyPenalty?: number;
   seed?: number;
   responseMimeType?: string;
-  responseSchema?: unknown;
 };
 
 /**
@@ -86,9 +82,6 @@ function sanitizeConfig(raw: Record<string, unknown>): SanitizedConfig {
         if (typeof val === 'string') {
           out.responseMimeType = val;
         }
-        break;
-      case 'responseSchema':
-        out.responseSchema = val;
         break;
     }
   }
@@ -185,8 +178,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Extract human-readable message from @google/genai SDK errors.
-    // The SDK sets error.message to the raw JSON response body; parse it
-    // to surface the nested human-readable message when available.
     let message = 'Unknown server error';
     if (error instanceof Error) {
       let parsed = false;
@@ -200,9 +191,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!parsed) message = error.message;
     }
 
-    // The @google/genai SDK exposes the HTTP status on error.status
-    // (not error.code).  Prefer status, fall back to code for other
-    // error types that may use that convention.
     const httpCode = (() => {
       if (!(error instanceof Error)) return 500;
       const e = error as unknown as Record<string, unknown>;
