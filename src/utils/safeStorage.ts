@@ -41,22 +41,7 @@ export const safeRemoveItem = (key: string): void => {
 };
 
 /**
- * @deprecated Prefer `safeJsonParse(key, schema)` for structured payloads.
- * Use `safeJsonGet` only when the caller needs no type guarantee
- * (e.g. Array.isArray check on unknown[]).
- */
-export const safeJsonGet = <T>(key: string): T | null => {
-  const raw = safeGetItem(key);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
-};
-
-/**
- * Type-safe alternative to `safeJsonGet`.
+ * Type-safe localStorage reader.
  * Parses the stored JSON and validates it against the provided Zod schema.
  * Returns `null` on missing key, JSON parse error, or schema validation failure.
  *

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import { z } from 'zod';
 import type { Section } from '../types';
 import type { SimilarityMatch } from '../utils/similarityUtils';
 import {
@@ -11,7 +12,7 @@ import {
   loadAssetIntoEditor,
   type LibraryAsset,
 } from '../utils/libraryUtils';
-import { safeJsonGet } from '../utils/safeStorage';
+import { safeJsonParse } from '../utils/safeStorage';
 import { useSongContext } from '../contexts/SongContext';
 
 const lyricalKey = (song: Section[]): string => {
@@ -19,6 +20,9 @@ const lyricalKey = (song: Section[]): string => {
     .map(section => section.lines.filter(line => !line.isMeta).map(line => line.text).join('|'))
     .join('//');
 };
+
+/** Minimal schema for the library count initialisation — validates array shape only. */
+const LibraryRawArraySchema = z.array(z.unknown());
 
 type UseLibraryActionsParams = {
   song: Section[];
@@ -93,8 +97,8 @@ export const useLibraryActions = ({
   }, [currentLyricalKey, song, setSimilarityMatches]);
 
   useEffect(() => {
-    const assets = safeJsonGet<unknown[]>('lyricist_library');
-    if (Array.isArray(assets)) setLibraryCount(assets.length);
+    const assets = safeJsonParse('lyricist_library', LibraryRawArraySchema);
+    if (assets !== null) setLibraryCount(assets.length);
   }, [setLibraryCount]);
 
   const handleSaveToLibrary = useCallback(async () => {
