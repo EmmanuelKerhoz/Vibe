@@ -1,8 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
+import { z } from 'zod';
 import type { Section } from '../../types';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { getSongText } from '../../utils/songUtils';
 import { withAbort, isAbortError } from '../../utils/withAbort';
+
+const MusicalAnalysisSchema = z.object({
+  genre: z.string().optional(),
+  tempo: z.string().optional(),
+  instrumentation: z.string().optional(),
+  rhythm: z.string().optional(),
+  narrative: z.string().optional(),
+});
+type MusicalAnalysis = z.infer<typeof MusicalAnalysisSchema>;
 
 type UseMusicalPromptParams = {
   song: Section[];
@@ -151,13 +161,7 @@ Return only valid JSON, no markdown, no explanations.`,
           wasAborted = true;
           return;
         }
-        const parsed = safeJsonParse<{
-          genre?: string;
-          tempo?: string;
-          instrumentation?: string;
-          rhythm?: string;
-          narrative?: string;
-        }>(response.text || '{}', {});
+        const parsed = safeJsonParse<MusicalAnalysis>(response.text || '{}', {}, MusicalAnalysisSchema);
         if (parsed.genre) setGenre(parsed.genre);
         if (parsed.tempo) setTempo(parseInt(parsed.tempo, 10) || 120);
         if (parsed.instrumentation) setInstrumentation(parsed.instrumentation);

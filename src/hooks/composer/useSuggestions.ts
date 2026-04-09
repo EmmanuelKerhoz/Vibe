@@ -1,10 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Type } from '@google/genai';
+import { z } from 'zod';
 import type { Line, Section } from '../../types';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
 import { countSyllables } from '../../utils/syllableUtils';
 import { withAbort, isAbortError } from '../../utils/withAbort';
+
+const SuggestionsSchema = z.array(z.string());
+const SynonymsSchema = z.record(z.array(z.string()));
 
 const computeSyllables = (text: string) =>
   text
@@ -146,7 +150,7 @@ ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Provid
             wasAborted = true;
             return;
           }
-          setSuggestions(safeJsonParse(response.text || '[]', []));
+          setSuggestions(safeJsonParse(response.text || '[]', [], SuggestionsSchema));
         });
       } catch (error) {
         if (isAbortError(error)) {
@@ -253,7 +257,7 @@ Return ONLY the JSON object, no markdown.`;
             signal,
           });
           if (signal.aborted) { wasAborted = true; return; }
-          const parsed = safeJsonParse<Record<string, string[]>>(response.text || '{}', {});
+          const parsed = safeJsonParse<Record<string, string[]>>(response.text || '{}', {}, SynonymsSchema);
           setSynonyms(Object.keys(parsed).length ? parsed : null);
         });
       } catch (error) {
