@@ -20,17 +20,38 @@ import { PhonologicalRegistry } from '../core/Registry';
 import { splitLyricIntoLines, extractLineEndingUnit } from './lyricSegmenter';
 import { resolveLang } from '../lid/detectLanguage';
 
-/** Minimum similarity score to consider two lines as rhyming. */
-const RHYME_THRESHOLD = 0.65;
+// ─── Adaptive threshold by language family ───────────────────────────────────
 
 /**
- * Generate a label for a given 0-based label index.
+ * Per-family similarity floor for two lines to be considered rhyming.
  *
- * For indices 0–25: single uppercase letter A–Z.
- * For indices ≥26: two-letter compound AA, AB, … AZ, BA, …
- * This avoids non-alphabetic characters that
- * String.fromCharCode(65 + n) produces for n ≥26.
+ * Rationale:
+ *  - CJK / tonal-CJK (zh, ja, ko): tight phoneme inventory, high precision
+ *    expected → raise to 0.72 to reduce false positives.
+ *  - Tonal Latin (vi, yo, tw, ewe, ln): tone diacritics encoded in RN,
+ *    near-rhyme is semantically loaded → 0.68.
+ *  - Semitic (ar, he): trilateral root overlap inflates scores → raise to 0.70.
+ *  - Germanic (en, de, nl, sv…): consonant clusters → loosen to 0.62.
+ *  - Romance (fr, es, it, pt, ca): rich vowel matching → 0.67.
+ *  - Default: 0.65 (original constant, unchanged for unclassified langs).
  */
+function getLangThreshold(lang: string): number {
+  const l = lang.toLowerCase();
+  // CJK / East Asian
+  if (['zh', 'zh-cn', 'zh-tw', 'yue', 'ja', 'ko'].includes(l)) return 0.72;
+  // Tonal Latin
+  if (['vi', 'yo', 'tw', 'ewe', 'ln', 'ibo', 'ba'].includes(l)) return 0.68;
+  // Semitic
+  if (['ar', 'he', 'fa', 'ur'].includes(l)) return 0.70;
+  // Germanic
+  if (['en', 'de', 'nl', 'sv', 'da', 'no', 'af', 'is'].includes(l)) return 0.62;
+  // Romance
+  if (['fr', 'es', 'it', 'pt', 'ca', 'ro'].includes(l)) return 0.67;
+  return 0.65;
+}
+
+// ─── Label helper ─────────────────────────────────────────────────────────────
+
 function labelForIndex(index: number): string {
   if (index < 26) return String.fromCharCode(65 + index);
   const hi = Math.floor(index / 26) - 1;
@@ -38,15 +59,8 @@ function labelForIndex(index: number): string {
   return String.fromCharCode(65 + hi) + String.fromCharCode(65 + lo);
 }
 
-// ─── Internal: score a flat list of line-tail strings ──────────────────────
+// ─── Internal scorer ──────────────────────────────────────────────────────────
 
-/**
- * Given an ordered array of line-tail strings, compute a rhyme-labelled
- * pattern (e.g. "AABB") and a mean confidence score.
- *
- * Label sequence is always restarted from A (index 0) — callers that
- * want globally unique labels across stanzas must handle remapping.
- */
 function scoreLines(
   tails: string[],
   lang: string,
@@ -55,7 +69,8 @@ function scoreLines(
   if (n === 0) return { pattern: '', confidence: 0 };
   if (n === 1) return { pattern: 'A', confidence: 1.0 };
 
-  // Build upper-triangle similarity matrix
+  const threshold = getLangThreshold(lang);
+
   const matrix: number[][] = Array.from({ length: n }, () =>
     new Array(n).fill(0) as number[],
   );
@@ -70,20 +85,18 @@ function scoreLines(
     }
   }
 
-  // Greedy label assignment
   const labels: string[] = new Array(n).fill('') as string[];
   let nextIndex = 0;
   for (let i = 0; i < n; i++) {
     if (labels[i] !== '') continue;
     labels[i] = labelForIndex(nextIndex++);
     for (let j = i + 1; j < n; j++) {
-      if (labels[j] === '' && (matrix[i]![j] ?? 0) >= RHYME_THRESHOLD) {
+      if (labels[j] === '' && (matrix[i]![j] ?? 0) >= threshold) {
         labels[j] = labels[i]!;
       }
     }
   }
 
-  // Confidence = mean similarity among rhyming pairs
   const rhymingScores: number[] = [];
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
@@ -100,16 +113,8 @@ function scoreLines(
   return { pattern: labels.join(''), confidence };
 }
 
-// ─── Public API ─────────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────
 
-/**
- * Detect the rhyme scheme of a lyric block, with per-stanza resolution.
- *
- * @param text  - Raw lyric text (may include section markers and blank lines).
- * @param lang  - ISO 639-3 language code routed through PhonologicalRegistry,
- *               or 'auto' for automatic language detection. Defaults to 'auto'.
- * @returns DetectedSchema with full-block summary + optional stanzas[] breakdown.
- */
 export function detectRhymeScheme(
   text: string,
   lang: string = 'auto',
@@ -117,7 +122,6 @@ export function detectRhymeScheme(
   const resolvedLang = resolveLang(text, lang);
   const allLines = splitLyricIntoLines(text, resolvedLang);
 
-  // Only keep rhyme-bearing lines (non-blank, non-annotation)
   const bearingLines = allLines.filter(l => !l.isBlank && !l.isAnnotation);
 
   if (bearingLines.length < 2) {
@@ -128,12 +132,9 @@ export function detectRhymeScheme(
     };
   }
 
-  // ── Group by stanza ──────────────────────────────────────────────────────
   const stanzaMap = new Map<number, string[]>();
   for (const line of bearingLines) {
     const bucket = stanzaMap.get(line.stanzaIndex);
-    // Use extractLineEndingUnit with the resolved language so script routing
-    // (CJK grapheme-cluster, RTL logical split, tonal-safe strip) is active.
     const tail = extractLineEndingUnit(line.text, resolvedLang).normalized;
     if (bucket) {
       bucket.push(tail);
@@ -145,20 +146,13 @@ export function detectRhymeScheme(
   const stanzaIndices = [...stanzaMap.keys()].sort((a, b) => a - b);
   const multiStanza = stanzaIndices.length > 1;
 
-  // ── Per-stanza scoring ──────────────────────────────────────────────────
   const stanzas: StanzaSchema[] = [];
   for (const idx of stanzaIndices) {
     const tails = stanzaMap.get(idx)!;
     const { pattern, confidence } = scoreLines(tails, resolvedLang);
-    stanzas.push({
-      stanzaIndex: idx,
-      pattern,
-      confidence,
-      lineCount: tails.length,
-    });
+    stanzas.push({ stanzaIndex: idx, pattern, confidence, lineCount: tails.length });
   }
 
-  // ── Full-block summary (backward-compatible) ───────────────────────
   const allTails = bearingLines.map(
     l => extractLineEndingUnit(l.text, resolvedLang).normalized,
   );
@@ -175,10 +169,6 @@ export function detectRhymeScheme(
   };
 }
 
-/**
- * Normalise a raw pattern to a canonical scheme label.
- * Known patterns are kept as-is; anything else returns 'CUSTOM'.
- */
 export function canonicalizeScheme(pattern: string): string {
   const canonical = new Set([
     'AABB', 'ABAB', 'ABBA', 'ABCABC', 'AAAA',

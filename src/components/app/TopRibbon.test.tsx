@@ -72,6 +72,11 @@ vi.mock('../../i18n', () => ({
   }),
 }));
 
+// Tooltip: transparent passthrough so aria-label on inner buttons is reachable
+vi.mock('../ui/Tooltip', () => ({
+  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 vi.mock('./RibbonMenuPanel', () => ({
   RibbonMenuPanel: () => <div data-testid="ribbon-menu-panel" />,
 }));

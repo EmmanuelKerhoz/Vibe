@@ -1,12 +1,17 @@
 /**
- * rhyme/ barrel export  v2
+ * rhyme/ barrel export  v3
  * Phase 1 — lyricSegmenter + rhymeSchemeDetector + syllableCounter
  * Phase 2 — frNormalizer + suggestRhymes
  */
 
-// Segmenter (v2 structured + legacy compat)
-export type { LyricLine } from './lyricSegmenter';
-export { splitLyricIntoLines, splitIntoRhymingLines, extractLineTail } from './lyricSegmenter';
+// Segmenter (v3 structured + legacy compat)
+export type { LyricLine, LineEndingUnit } from './lyricSegmenter';
+export {
+  splitLyricIntoLines,
+  splitIntoRhymingLines,
+  extractLineTail,
+  extractLineEndingUnit,
+} from './lyricSegmenter';
 
 // Scheme detector
 export { detectRhymeScheme, canonicalizeScheme } from './rhymeSchemeDetector';
