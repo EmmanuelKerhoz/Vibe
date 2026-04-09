@@ -72,7 +72,10 @@ const readStore = (): LibraryStore => {
       );
       return { version: 0, assets: [] };
     }
-    return result.data;
+    // Zod passthrough on SectionSchema produces objectOutputType which diverges
+    // from Section (missing rhymingSyllables, concept). Cast via unknown at this
+    // storage boundary — normalizeLoadedSection re-validates fields downstream.
+    return result.data as unknown as LibraryStore;
   } catch {
     return { version: 0, assets: [] };
   }
@@ -340,7 +343,10 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
         for (let idx = 0; idx < parsed.length; idx++) {
           const result = LibraryAssetSchema.safeParse(parsed[idx]);
           if (result.success) {
-            assets.push(result.data as LibraryAsset);
+            // Zod passthrough on SectionSchema produces objectOutputType which
+            // diverges from LibraryAsset.sections (Section[]). Cast via unknown
+            // at the import boundary — normalizeLoadedSection re-validates downstream.
+            assets.push(result.data as unknown as LibraryAsset);
           } else {
             console.warn(
               `[libraryUtils] importAssetsFromFile: item ${idx} failed validation, skipping.`,
