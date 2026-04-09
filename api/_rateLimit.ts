@@ -1,22 +1,23 @@
 /**
- * Shared in-memory sliding-window rate limiter for Vercel serverless functions.
+ * Shared sliding-window rate limiter for Vercel serverless functions.
  *
- * Limits are per-IP. The Map is module-level: it persists across requests
- * within the same warm function instance, which is the intended behaviour.
+ * Strategy (layered, fail-open):
+ *   1. If UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN are set,
+ *      use @upstash/ratelimit (distributed, shared across all instances).
+ *   2. Otherwise fall back to the in-memory Map (original behaviour,
+ *      acceptable for low-traffic deployments).
  *
- * ⚠️  State is NOT shared across multiple warm instances — rate limiting is
- * per-instance. This is acceptable for the current traffic profile but means
- * the effective limit is MAX × (number of warm instances).
+ * checkRateLimit() and resolveIp() public interfaces are unchanged.
  *
- * Env overrides (optional):
- *   RATE_LIMIT_MAX         — max requests per window   (default: 20)
- *   RATE_LIMIT_WINDOW_MS   — window size in ms         (default: 60_000)
+ * Env:
+ *   RATE_LIMIT_MAX             — max requests per window (default: 20)
+ *   RATE_LIMIT_WINDOW_MS       — window in ms           (default: 60_000)
+ *   UPSTASH_REDIS_REST_URL     — Upstash Redis REST URL  (optional)
+ *   UPSTASH_REDIS_REST_TOKEN   — Upstash Redis REST token (optional)
  */
 
 const DEFAULT_MAX = 20;
 const DEFAULT_WINDOW_MS = 60_000;
-
-/** Maximum length (chars) accepted for a resolved IP string. Covers IPv6 (45). */
 const MAX_IP_LENGTH = 45;
 
 const MAX = (() => {
@@ -29,35 +30,22 @@ const WINDOW_MS = (() => {
   return Number.isFinite(v) && v > 0 ? v : DEFAULT_WINDOW_MS;
 })();
 
-/** Timestamps of recent requests, keyed by resolved IP. */
+// ─── In-memory fallback ───────────────────────────────────────────────────────
+
 const buckets = new Map<string, number[]>();
 
-/**
- * Check whether the given IP is within the rate limit.
- * Mutates the bucket (records this request).
- * Empty buckets are evicted to prevent unbounded Map growth.
- *
- * @returns `{ allowed: true }` or `{ allowed: false, retryAfterSec: number }`
- */
-export function checkRateLimit(
-  ip: string
+function inMemoryCheck(
+  ip: string,
 ): { allowed: true } | { allowed: false; retryAfterSec: number } {
   const now = Date.now();
   const cutoff = now - WINDOW_MS;
-
-  // Retrieve or create bucket, prune stale entries.
   const timestamps = (buckets.get(ip) ?? []).filter(t => t > cutoff);
 
-  if (timestamps.length === 0) {
-    // Evict empty bucket — no stale entry to keep.
-    buckets.delete(ip);
-  }
+  if (timestamps.length === 0) buckets.delete(ip);
 
   if (timestamps.length >= MAX) {
-    // Oldest timestamp in the current window; client may retry once it expires.
     const oldest = timestamps[0]!;
-    const retryAfterMs = oldest + WINDOW_MS - now;
-    const retryAfterSec = Math.ceil(retryAfterMs / 1000);
+    const retryAfterSec = Math.ceil((oldest + WINDOW_MS - now) / 1000);
     buckets.set(ip, timestamps);
     return { allowed: false, retryAfterSec };
   }
@@ -67,17 +55,59 @@ export function checkRateLimit(
   return { allowed: true };
 }
 
+// ─── Distributed path (Upstash) ──────────────────────────────────────────────
+
 /**
- * Resolve the client IP from a Vercel/Node request.
- * Priority: x-forwarded-for (set by Vercel edge) > socket.remoteAddress > 'unknown'
- *
- * The resolved value is truncated to MAX_IP_LENGTH chars to prevent
- * oversized strings from being used as Map keys (x-forwarded-for is
- * client-controlled and could contain arbitrary content).
+ * Attempt a distributed rate-limit check via Upstash Redis.
+ * Returns null when the KV store is not configured or unreachable
+ * (fail-open: caller falls back to in-memory).
  */
+async function tryDistributedRateLimit(
+  ip: string,
+): Promise<{ allowed: true } | { allowed: false; retryAfterSec: number } | null> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+
+  try {
+    // Dynamic import so the package is only resolved when env vars are present.
+    // Avoids a hard dependency for deployments that don't use Upstash.
+    const [{ Ratelimit }, { Redis }] = await Promise.all([
+      import('@upstash/ratelimit') as Promise<typeof import('@upstash/ratelimit')>,
+      import('@upstash/redis') as Promise<typeof import('@upstash/redis')>,
+    ]);
+
+    const ratelimit = new Ratelimit({
+      redis: new Redis({ url, token }),
+      limiter: Ratelimit.slidingWindow(MAX, `${Math.round(WINDOW_MS / 1000)} s`),
+      analytics: false,
+      prefix: 'vibe_rl',
+    });
+
+    const { success, reset } = await ratelimit.limit(ip);
+    if (success) return { allowed: true };
+    const retryAfterSec = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+    return { allowed: false, retryAfterSec };
+  } catch (err) {
+    // Fail-open: log and fall through to in-memory.
+    console.warn('[rateLimit] Upstash unavailable, falling back to in-memory:', err);
+    return null;
+  }
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+export async function checkRateLimit(
+  ip: string,
+): Promise<{ allowed: true } | { allowed: false; retryAfterSec: number }> {
+  const distributed = await tryDistributedRateLimit(ip);
+  if (distributed !== null) return distributed;
+  return inMemoryCheck(ip);
+}
+
 export function resolveIp(
   headers: Record<string, string | string[] | undefined>,
-  socketAddress?: string
+  socketAddress?: string,
 ): string {
   const forwarded = headers['x-forwarded-for'];
   if (forwarded) {

@@ -1,57 +1,16 @@
-import { GoogleGenAI } from '@google/genai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkRateLimit, resolveIp } from './_rateLimit';
+import {
+  providerGenerate,
+  getAllowedModelPrefixes,
+  ALLOWED_CONFIG_KEYS,
+  getProviderInfo,
+} from './_aiProvider';
 
-// M5 fix: internal timeout 55s (under Vercel's 60s maxDuration).
-// AbortController abort is now checked synchronously before accessing response.
-const GEMINI_TIMEOUT_MS = 55_000;
-
-/** Maximum allowed characters for the prompt contents field. */
 const MAX_CONTENTS_LENGTH = 100_000;
 
-/** Models the proxy is allowed to forward to. */
-const ALLOWED_MODEL_PREFIXES = ['gemini-'];
+type SanitizedConfig = Record<string, unknown>;
 
-/**
- * Exhaustive allowlist of SDK GenerateContentConfig keys the client is
- * permitted to set. Any key not in this list is silently dropped before
- * the config object is forwarded to the Gemini SDK.
- *
- * responseSchema is intentionally excluded: it is an open Record<string,unknown>
- * with no runtime validation boundary — passing it through would allow
- * clients to inject arbitrary SDK-level overrides.
- */
-const ALLOWED_CONFIG_KEYS = new Set([
-  'temperature',
-  'topP',
-  'topK',
-  'maxOutputTokens',
-  'stopSequences',
-  'candidateCount',
-  'presencePenalty',
-  'frequencyPenalty',
-  'seed',
-  'responseMimeType',
-] as const);
-
-type SanitizedConfig = {
-  temperature?: number;
-  topP?: number;
-  topK?: number;
-  maxOutputTokens?: number;
-  stopSequences?: string[];
-  candidateCount?: number;
-  presencePenalty?: number;
-  frequencyPenalty?: number;
-  seed?: number;
-  responseMimeType?: string;
-};
-
-/**
- * Strips any key not in ALLOWED_CONFIG_KEYS and validates primitive types.
- * Non-conforming values are dropped silently — we never reflect raw
- * client-supplied error details back in the response.
- */
 function sanitizeConfig(raw: Record<string, unknown>): SanitizedConfig {
   const out: SanitizedConfig = {};
   for (const key of ALLOWED_CONFIG_KEYS) {
@@ -66,33 +25,19 @@ function sanitizeConfig(raw: Record<string, unknown>): SanitizedConfig {
       case 'presencePenalty':
       case 'frequencyPenalty':
       case 'seed':
-        if (typeof val === 'number' && isFinite(val)) {
-          (out as Record<string, unknown>)[key] = val;
-        }
+        if (typeof val === 'number' && isFinite(val)) out[key] = val;
         break;
       case 'stopSequences':
-        if (
-          Array.isArray(val) &&
-          val.every((s): s is string => typeof s === 'string')
-        ) {
-          out.stopSequences = val;
-        }
+        if (Array.isArray(val) && val.every((s): s is string => typeof s === 'string')) out[key] = val;
         break;
       case 'responseMimeType':
-        if (typeof val === 'string') {
-          out.responseMimeType = val;
-        }
+        if (typeof val === 'string') out[key] = val;
         break;
     }
   }
   return out;
 }
 
-/**
- * Sanitise an error message before surfacing it to the client.
- * Strips stack-frame tokens ("at Module.foo") and caps length at 200 chars
- * to prevent accidental internal-path / infrastructure disclosure.
- */
 function sanitiseErrorMessage(msg: string): string {
   return msg.replace(/\bat\s+\S+/g, '').trim().slice(0, 200);
 }
@@ -103,21 +48,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  // --- Rate limiting ---
   const ip = resolveIp(
     req.headers as Record<string, string | string[] | undefined>,
-    req.socket?.remoteAddress
+    req.socket?.remoteAddress,
   );
-  const rl = checkRateLimit(ip);
+  const rl = await checkRateLimit(ip);
   if (!rl.allowed) {
     res.setHeader('Retry-After', String(rl.retryAfterSec));
     res.status(429).json({ error: `Rate limit exceeded. Retry after ${rl.retryAfterSec}s.` });
     return;
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({ error: 'GEMINI_API_KEY is not configured on the server.' });
+  const { available } = getProviderInfo();
+  if (!available) {
+    res.status(500).json({ error: 'AI provider API key is not configured on the server.' });
     return;
   }
 
@@ -138,8 +82,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    if (!ALLOWED_MODEL_PREFIXES.some(prefix => model.startsWith(prefix))) {
-      res.status(400).json({ error: `Model "${model}" is not allowed` });
+    const allowedPrefixes = getAllowedModelPrefixes();
+    if (!allowedPrefixes.some(p => model.startsWith(p))) {
+      res.status(400).json({ error: `Model "${model}" is not allowed for the active provider.` });
       return;
     }
 
@@ -148,35 +93,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    // Sanitize the config object: only allowed keys with validated types pass
-    // through. abortSignal is injected server-side and must never come from
-    // the client.
     const sanitizedConfig = config != null && typeof config === 'object'
       ? sanitizeConfig(config)
       : {};
 
-    const ai = new GoogleGenAI({ apiKey });
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+    const text = await providerGenerate({ model, contents, config: sanitizedConfig });
+    res.status(200).json({ text });
 
-    let response;
-    try {
-      response = await ai.models.generateContent({
-        model,
-        contents,
-        config: { ...sanitizedConfig, abortSignal: controller.signal },
-      });
-    } finally {
-      clearTimeout(timer);
-    }
-
-    // Check abort status synchronously after await resolves
-    if (controller.signal.aborted) {
-      res.status(504).json({ error: 'AI generation timed out. Please try again.' });
-      return;
-    }
-
-    res.status(200).json({ text: response.text ?? '' });
   } catch (error: unknown) {
     const isAbort =
       (error instanceof DOMException && error.name === 'AbortError') ||
@@ -186,18 +109,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    // Extract human-readable message from @google/genai SDK errors.
     let message = 'Unknown server error';
     if (error instanceof Error) {
       let parsed = false;
       try {
         const body = JSON.parse(error.message) as { error?: { message?: string } };
-        if (typeof body?.error?.message === 'string') {
-          message = body.error.message;
-          parsed = true;
-        }
-      } catch { /* not JSON — fall through */ }
-      // Sanitise before sending: strip stack-frame tokens, cap at 200 chars.
+        if (typeof body?.error?.message === 'string') { message = body.error.message; parsed = true; }
+      } catch { /* not JSON */ }
       if (!parsed) message = sanitiseErrorMessage(error.message) || 'Unknown server error';
     }
 

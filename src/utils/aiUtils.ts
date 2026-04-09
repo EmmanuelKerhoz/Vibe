@@ -2,9 +2,7 @@ import { withRetry, type RetryOptions } from './withRetry';
 import { z } from 'zod';
 
 const getErrorMessage = (error: unknown) => {
-  if (error && typeof error === 'object' && 'message' in error) {
-    return String((error as { message?: unknown }).message ?? '');
-  }
+  if (error && typeof error === 'object' && 'message' in error) return String((error as { message?: unknown }).message ?? '');
   if (typeof error === 'string') return error;
   return '';
 };
@@ -17,11 +15,6 @@ const getErrorCode = (error: unknown) => {
   return undefined;
 };
 
-/**
- * Sanitise an error message before surfacing it to the UI.
- * Strips stack traces and internal paths; keeps only human-readable text
- * (max 200 chars to prevent accidental info disclosure).
- */
 const sanitiseErrorMessage = (msg: string): string =>
   msg.replace(/\bat\s+\S+/g, '').trim().slice(0, 200);
 
@@ -32,18 +25,101 @@ export type GenerateContentParams = {
   signal?: AbortSignal;
 };
 
-export const AI_PROVIDER_NAME = 'Google Gemini';
-export const AI_MODEL_NAME = 'gemini-2.5-flash';
-export const AI_KEY_ENV_VAR = 'GEMINI_API_KEY';
-
-export type GenerateContentResponse = {
-  text: string;
-};
+export type GenerateContentResponse = { text: string };
 
 /** Zod schema validating the /api/generate proxy response shape. */
-const GenerateContentResponseSchema = z.object({
-  text: z.string(),
+const GenerateContentResponseSchema = z.object({ text: z.string() });
+
+/** Zod schema for /api/status response. */
+const StatusResponseSchema = z.object({
+  available: z.boolean(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
 });
+
+// ─── Runtime provider info (fetched once, cached) ────────────────────────────
+
+interface ProviderInfo {
+  available: boolean;
+  provider: string;
+  model: string;
+}
+
+let _providerInfoCache: ProviderInfo | null = null;
+let _providerInfoPromise: Promise<ProviderInfo> | null = null;
+
+async function fetchProviderInfo(): Promise<ProviderInfo> {
+  if (_providerInfoCache) return _providerInfoCache;
+  if (_providerInfoPromise) return _providerInfoPromise;
+
+  _providerInfoPromise = fetch('/api/status')
+    .then(r => r.json())
+    .then((raw: unknown) => {
+      const parsed = StatusResponseSchema.safeParse(raw);
+      const info: ProviderInfo = parsed.success
+        ? {
+            available: parsed.data.available,
+            provider: parsed.data.provider ?? 'gemini',
+            model: parsed.data.model ?? 'gemini-2.5-flash',
+          }
+        : { available: false, provider: 'gemini', model: 'gemini-2.5-flash' };
+      _providerInfoCache = info;
+      return info;
+    })
+    .catch(() => {
+      const fallback: ProviderInfo = { available: false, provider: 'gemini', model: 'gemini-2.5-flash' };
+      _providerInfoCache = fallback;
+      return fallback;
+    });
+
+  return _providerInfoPromise;
+}
+
+/** Prefetch at module load (non-blocking). */
+void fetchProviderInfo();
+
+/**
+ * Returns human-readable provider name for UI display.
+ * Falls back to 'Google Gemini' synchronously until cache is populated.
+ */
+export function getAiProviderName(): string {
+  if (_providerInfoCache) {
+    const map: Record<string, string> = {
+      gemini: 'Google Gemini',
+      openai: 'OpenAI',
+      anthropic: 'Anthropic Claude',
+    };
+    return map[_providerInfoCache.provider] ?? _providerInfoCache.provider;
+  }
+  return 'Google Gemini';
+}
+
+/**
+ * Returns the active model name. Falls back synchronously.
+ */
+export function getAiModelName(): string {
+  return _providerInfoCache?.model ?? 'gemini-2.5-flash';
+}
+
+/**
+ * Returns whether the AI provider is available.
+ * Triggers a fetch if the cache is cold; returns false until resolved.
+ */
+export async function isAiAvailable(): Promise<boolean> {
+  const info = await fetchProviderInfo();
+  return info.available;
+}
+
+// ─── Legacy exports (backward compat — keep for existing consumers) ──────────
+
+/** @deprecated Use getAiProviderName() */
+export const AI_PROVIDER_NAME = 'Google Gemini';
+/** @deprecated Use getAiModelName() */
+export const AI_MODEL_NAME = 'gemini-2.5-flash';
+/** @deprecated */
+export const AI_KEY_ENV_VAR = 'GEMINI_API_KEY';
+
+// ─── Core AI call ─────────────────────────────────────────────────────────────
 
 const proxyGenerateContent = async (params: GenerateContentParams): Promise<GenerateContentResponse> => {
   const { signal, ...body } = params;
@@ -58,45 +134,27 @@ const proxyGenerateContent = async (params: GenerateContentParams): Promise<Gene
     try {
       const errBody = await response.json() as { error?: string };
       if (errBody.error) errMsg = errBody.error;
-    } catch {
-      // ignore JSON parse failure
-    }
+    } catch { /* ignore */ }
     const err = new Error(errMsg) as Error & { code?: number };
     err.code = response.status;
     throw err;
   }
   let raw: unknown;
-  try {
-    raw = await response.json();
-  } catch {
-    throw new Error('Failed to parse server response as JSON');
-  }
+  try { raw = await response.json(); } catch { throw new Error('Failed to parse server response as JSON'); }
   const parsed = GenerateContentResponseSchema.safeParse(raw);
-  if (!parsed.success) {
-    console.warn('[proxyGenerateContent] Unexpected response shape:', parsed.error);
-    throw new Error('Unexpected response shape from /api/generate');
-  }
+  if (!parsed.success) throw new Error('Unexpected response shape from /api/generate');
   return parsed.data;
 };
 
-export const getAi = () => ({
-  models: {
-    generateContent: proxyGenerateContent,
-  },
-});
+export const getAi = () => ({ models: { generateContent: proxyGenerateContent } });
 
 export const generateContentWithRetry = (
   params: GenerateContentParams,
   retryOptions?: RetryOptions,
 ) => withRetry(() => getAi().models.generateContent(params), retryOptions);
 
-/**
- * Safe JSON parser with optional Zod validation.
- *
- * When `schema` is omitted the raw value is returned only if it is a
- * non-null object or array — preventing the silent `as T` cast on
- * primitive/unknown payloads.
- */
+// ─── JSON utils ───────────────────────────────────────────────────────────────
+
 export const safeJsonParse = <T>(
   text: string,
   fallback: T,
@@ -106,13 +164,9 @@ export const safeJsonParse = <T>(
     const raw: unknown = JSON.parse(text);
     if (schema) {
       const result = schema.safeParse(raw);
-      if (!result.success) {
-        console.warn('[safeJsonParse] Zod validation failed:', result.error);
-        return fallback;
-      }
+      if (!result.success) { console.warn('[safeJsonParse] Zod validation failed:', result.error); return fallback; }
       return result.data;
     }
-    // Without a schema: only accept objects/arrays to avoid unsafe primitive casts.
     if (raw === null || (typeof raw !== 'object' && !Array.isArray(raw))) {
       console.warn('[safeJsonParse] Unexpected primitive payload — returning fallback.');
       return fallback;
@@ -126,26 +180,18 @@ export const safeJsonParse = <T>(
 
 export const handleApiError = (error: unknown, defaultMessage: string) => {
   console.error(defaultMessage, error);
-
   const errorMessage = getErrorMessage(error);
   const errorCode = getErrorCode(error);
-
   let message: string;
   if (
-    errorCode === 429 ||
-    errorCode === 'RESOURCE_EXHAUSTED' ||
-    errorMessage.includes('429') ||
-    errorMessage.includes('quota')
+    errorCode === 429 || errorCode === 'RESOURCE_EXHAUSTED' ||
+    errorMessage.includes('429') || errorMessage.includes('quota')
   ) {
-    message = `You've exceeded your current ${AI_PROVIDER_NAME} API quota. Please verify your plan/billing and API key in your local environment.`;
+    message = `You've exceeded your current ${getAiProviderName()} API quota. Please verify your plan/billing and API key in your local environment.`;
   } else if (errorMessage.includes('Requested entity was not found')) {
-    message = `API key error. Please check ${AI_KEY_ENV_VAR} in your server environment.`;
+    message = `API key error. Please check your provider API key in your server environment.`;
   } else {
-    // Sanitise before dispatching: strip stack frames, cap length.
     message = sanitiseErrorMessage(errorMessage) || defaultMessage;
   }
-
-  window.dispatchEvent(
-    new CustomEvent('vibe:apierror', { detail: { message } })
-  );
+  window.dispatchEvent(new CustomEvent('vibe:apierror', { detail: { message } }));
 };
