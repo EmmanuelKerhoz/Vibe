@@ -1,7 +1,7 @@
 import { languageNameToCode } from '../constants/langFamilyMap';
 import type { Section } from '../types';
 import { compareTextsWithIPA } from './ipaPipeline';
-import { detectRhymeSchemeLocally } from './rhymeSchemeUtils';
+import { detectRhymeSchemeFromIPAPairs, detectRhymeSchemeLocally } from './rhymeSchemeUtils';
 
 /**
  * Local rhyme comparison for a pair of lyric lines.
@@ -43,6 +43,10 @@ const toPairConfidenceScore = (similarity: { score?: number; isApproximated?: bo
  * It uses IPA comparison when the section language is supported and falls back
  * to graphemic scheme detection whenever the language is unsupported or the IPA
  * comparison fails, without throwing to the caller.
+ *
+ * When IPA pairs are successfully computed, the returned `detectedScheme` is
+ * derived from those pairs (phonemic ground truth). The graphemic scheme serves
+ * as fallback only.
  */
 export const analyzeSongRhymes = async (song: Section[]): Promise<LocalRhymeSectionAnalysis[]> => {
   return Promise.all(song.map(async section => {
@@ -52,14 +56,14 @@ export const analyzeSongRhymes = async (song: Section[]): Promise<LocalRhymeSect
       .filter(Boolean);
 
     const langCode = languageNameToCode(section.language ?? '');
-    const detectedScheme = detectRhymeSchemeLocally(lyricLines, langCode);
+    const graphemicScheme = detectRhymeSchemeLocally(lyricLines, langCode);
 
     if (!langCode || lyricLines.length < 2) {
       return {
         sectionId: section.id,
         sectionName: section.name,
         langCode,
-        detectedScheme,
+        detectedScheme: graphemicScheme,
         mode: 'graphemic' as const,
         pairs: [],
       };
@@ -91,11 +95,15 @@ export const analyzeSongRhymes = async (song: Section[]): Promise<LocalRhymeSect
         }
       }
 
+      // Schéma IPA prioritaire — reconstruit depuis les paires déjà calculées,
+      // sans second appel pipeline. Fallback graphémique si IPA ne converge pas.
+      const ipaScheme = detectRhymeSchemeFromIPAPairs(lyricLines.length, pairs);
+
       return {
         sectionId: section.id,
         sectionName: section.name,
         langCode,
-        detectedScheme,
+        detectedScheme: ipaScheme ?? graphemicScheme,
         mode: 'ipa' as const,
         pairs,
       };
@@ -104,7 +112,7 @@ export const analyzeSongRhymes = async (song: Section[]): Promise<LocalRhymeSect
         sectionId: section.id,
         sectionName: section.name,
         langCode,
-        detectedScheme,
+        detectedScheme: graphemicScheme,
         mode: 'graphemic' as const,
         pairs: [],
       };
