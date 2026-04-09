@@ -4,7 +4,7 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks';
 
 export default [
   {
-    ignores: ['api/**', 'vite.config.ts', 'tailwind.config.ts', 'dist/**'],
+    ignores: ['vite.config.ts', 'tailwind.config.ts', 'dist/**'],
   },
   {
     files: ['src/**/*.{ts,tsx}'],
@@ -22,6 +22,24 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       '@typescript-eslint/no-shadow': 'error',
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+    },
+  },
+  {
+    files: ['api/**/*.ts'],
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    languageOptions: {
+      parser: tsParser,
+    },
+    rules: {
+      '@typescript-eslint/no-shadow': 'error',
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
     },
   },
 ];
