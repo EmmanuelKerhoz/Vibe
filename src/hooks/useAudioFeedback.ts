@@ -9,6 +9,11 @@ type WindowWithWebkitAudio = Window & typeof globalThis & {
 
 export const useAudioFeedback = (audioFeedback: boolean) => {
   const audioCtxRef = useRef<AudioContext | null>(null);
+  // Guard: prevents concurrent oscillator pile-up on rapid-fire taps.
+  // A new sound of the same type will be silently skipped if the previous
+  // one has not yet finished (typical duration: 50–200ms). This avoids
+  // audio destination saturation on low-end mobile devices.
+  const isPlayingRef = useRef<Set<string>>(new Set());
 
   const getAudioContext = useCallback((): AudioContext | null => {
     if (!audioCtxRef.current) {
@@ -40,6 +45,8 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
 
   const playAudioFeedback = useCallback(async (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => {
     if (!audioFeedback) return;
+    // Concurrency guard: skip if this sound type is already playing.
+    if (isPlayingRef.current.has(type)) return;
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -54,48 +61,63 @@ export const useAudioFeedback = (audioFeedback: boolean) => {
       // skip rather than produce silence.
       if (ctx.state !== 'running') return;
 
+      isPlayingRef.current.add(type);
+
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
+
+      let duration = 0.1;
 
       if (type === 'click') {
         osc.frequency.setValueAtTime(600, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.05);
         gain.gain.setValueAtTime(0.1, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+        duration = 0.05;
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.05);
+        osc.stop(ctx.currentTime + duration);
       } else if (type === 'success') {
         osc.frequency.setValueAtTime(400, ctx.currentTime);
         osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
         gain.gain.setValueAtTime(0.1, ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
+        duration = 0.2;
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.2);
+        osc.stop(ctx.currentTime + duration);
       } else if (type === 'error') {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(200, ctx.currentTime);
         osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.2);
         gain.gain.setValueAtTime(0.1, ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
+        duration = 0.2;
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.2);
+        osc.stop(ctx.currentTime + duration);
       } else if (type === 'drag') {
         osc.frequency.setValueAtTime(300, ctx.currentTime);
         gain.gain.setValueAtTime(0.05, ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+        duration = 0.1;
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.1);
+        osc.stop(ctx.currentTime + duration);
       } else if (type === 'drop') {
         osc.frequency.setValueAtTime(200, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.1);
         gain.gain.setValueAtTime(0.05, ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+        duration = 0.1;
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.1);
+        osc.stop(ctx.currentTime + duration);
       }
+
+      // Release the concurrency lock after the oscillator has finished.
+      osc.onended = () => { isPlayingRef.current.delete(type); };
     } catch {
+      // Release lock on any unexpected error so subsequent calls are not
+      // permanently blocked.
+      isPlayingRef.current.delete(type);
       // Ignore audio context errors silently — non-critical UX feature.
     }
   }, [audioFeedback, getAudioContext]);

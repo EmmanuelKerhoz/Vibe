@@ -29,9 +29,26 @@ const waitWithAbort = (delayMs: number, signal: AbortSignal): Promise<void> =>
     signal.addEventListener('abort', handleAbort, { once: true });
   });
 
+/**
+ * Type-guard for the /api/status response shape.
+ * Guards against malformed 200 responses (e.g. Nginx HTML error pages or
+ * unexpected JSON shapes) that would cause r.json() to resolve to a non-object
+ * or an object without the expected `available` boolean field.
+ */
+const parseApiStatusResponse = (raw: unknown): { available: boolean } => {
+  if (
+    raw !== null &&
+    typeof raw === 'object' &&
+    'available' in (raw as Record<string, unknown>)
+  ) {
+    return { available: (raw as Record<string, unknown>).available === true };
+  }
+  return { available: false };
+};
+
 const fetchApiStatusWithTimeout = async (
   signal: AbortSignal,
-): Promise<{ available?: boolean }> => {
+): Promise<{ available: boolean }> => {
   const attemptController = new AbortController();
   const abortAttempt = () => attemptController.abort();
   let timeoutId: number | undefined;
@@ -46,7 +63,12 @@ const fetchApiStatusWithTimeout = async (
   try {
     return await Promise.race([
       fetch('/api/status', { signal: attemptController.signal })
-        .then(r => r.json() as Promise<{ available?: boolean }>)
+        .then(async (r) => {
+          // Defensive: parse JSON safely, fall back to { available: false } on
+          // parse error (e.g. HTML error page returned with 200 status).
+          const raw: unknown = await r.json().catch(() => null);
+          return parseApiStatusResponse(raw);
+        })
         .finally(() => {
           if (timeoutId !== undefined) window.clearTimeout(timeoutId);
         }),
@@ -76,7 +98,7 @@ export function useApiStatus() {
       for (let attempt = 0; attempt <= API_STATUS_RETRY_DELAYS_MS.length; attempt += 1) {
         try {
           const data = await fetchApiStatusWithTimeout(controller.signal);
-          setHasApiKey(data.available === true);
+          setHasApiKey(data.available);
           return;
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') return;

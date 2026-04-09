@@ -101,7 +101,10 @@ export function useLinguisticsWorker(
 
     worker.onerror = (event) => {
       if (unmountedRef.current) return;
-      setError(event.message ?? 'Worker error');
+      // event.message can be an empty string in Firefox sandboxed workers
+      // (cross-origin isolation suppresses the error detail). Fall back to a
+      // meaningful default so the UI always surfaces a non-empty error string.
+      setError(event.message || 'Worker crashed unexpectedly');
       setIsComputing(false);
     };
 
@@ -159,37 +162,24 @@ export function useLinguisticsWorker(
   const songFingerprint = useMemo(() => {
     // Per-line: lineId (structurally unique) + text length + djb2(text).
     // djb2 is O(n) chars but purely arithmetic — no URI encoding overhead.
-    // Collision probability negligible given lineId prefix per line.
-    let fp = 0;
-    for (const s of song) {
-      for (const l of s.lines) {
-        fp ^= djb2(l.id + l.text.length.toString(16) + djb2(l.text).toString(16));
-      }
-    }
-    return fp;
+    return song
+      .flatMap(s => s.lines)
+      .map(l => `${l.id}:${l.text.length}:${djb2(l.text)}`)
+      .join('|');
   }, [song]);
 
-  useEffect(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    debounceTimerRef.current = setTimeout(() => {
-      dispatch();
-    }, DEBOUNCE_MS);
+  // ─── Debounced analysis trigger ────────────────────────────────────────────
 
+  useEffect(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(dispatch, DEBOUNCE_MS);
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
   }, [songFingerprint, songLanguage, dispatch]);
 
-  // ─── Force-analyze (bypass debounce) ───────────────────────────────────────
-
   const analyzeNow = useCallback(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     dispatch();
   }, [dispatch]);
 

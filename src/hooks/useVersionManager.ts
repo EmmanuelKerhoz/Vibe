@@ -45,6 +45,20 @@ const fingerprintSnapshot = (song: Section[], structure: string[]): string => {
   return `${structure.join('-')}__${songPrint}`;
 };
 
+/**
+ * Deep-clones a Section array via JSON round-trip.
+ * Returns null if the payload contains non-serialisable values (undefined in
+ * arrays, Date objects, circular refs, etc.) to prevent corrupting the
+ * version history with a partially-cloned or broken snapshot.
+ */
+const deepCloneSong = (song: Section[]): Section[] | null => {
+  try {
+    return JSON.parse(JSON.stringify(song)) as Section[];
+  } catch {
+    return null;
+  }
+};
+
 export function useVersionManager(params: UseVersionManagerParams) {
   const {
     updateSongAndStructureWithHistory,
@@ -87,10 +101,17 @@ export function useVersionManager(params: UseVersionManagerParams) {
       });
       if (normalizedLatest === normalizedSnapshot) return previousVersions;
     }
+
+    // Guard: refuse to create a version if the song cannot be safely cloned.
+    // Non-serialisable values (undefined in arrays, Date, circular refs) would
+    // silently corrupt the stored snapshot and break rollback.
+    const clonedSong = deepCloneSong(snapshot.song);
+    if (clonedSong === null) return previousVersions;
+
     const next = [
       {
         id: generateId(), timestamp: Date.now(),
-        song: JSON.parse(JSON.stringify(snapshot.song)),
+        song: clonedSong,
         structure: [...snapshot.structure],
         title: snapshot.title, titleOrigin: snapshot.titleOrigin,
         topic: snapshot.topic, mood: snapshot.mood, name,
