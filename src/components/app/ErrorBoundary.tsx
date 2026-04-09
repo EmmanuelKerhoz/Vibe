@@ -24,8 +24,10 @@ export class ErrorBoundary extends Component<Props, State> {
    * getDerivedStateFromError ensures the error state is committed during the
    * render phase itself, so React never attempts to re-render the crashing
    * subtree before switching to the fallback UI.
+   * Note: `override` is omitted here — @types/react does not declare this
+   * static method on the Component base class, causing TS4113.
    */
-  static override getDerivedStateFromError(error: Error): Partial<State> {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 

@@ -11,10 +11,9 @@ export const IconButton = ({ children, style, color, ...props }: IconButtonProps
   <Button
     {...props}
     variant="text"
-    color={color}
+    {...(color !== undefined ? { color } : {})}
     style={{ minWidth: 'auto', padding: '4px', ...style }}
   >
     {children}
   </Button>
 );
-

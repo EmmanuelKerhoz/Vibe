@@ -124,10 +124,18 @@ export const LyricsView = memo(function LyricsView({
                 hasApiKey={hasApiKey}
                 isAdaptingLanguage={showTranslationFeatures ? isAdaptingLanguage : false}
                 sectionTargetLanguage={sectionTargetLanguages[section.id] ?? (songLanguage || 'English')}
-                onSectionTargetLanguageChange={showTranslationFeatures ? onSectionTargetLanguageChange : undefined}
-                adaptSectionLanguage={showTranslationFeatures ? adaptSectionLanguage : undefined}
-                adaptLineLanguage={showTranslationFeatures ? adaptLineLanguage : undefined}
-                adaptingLineIds={showTranslationFeatures ? adaptingLineIds : undefined}
+                {...(showTranslationFeatures && onSectionTargetLanguageChange !== undefined
+                  ? { onSectionTargetLanguageChange }
+                  : {})}
+                {...(showTranslationFeatures && adaptSectionLanguage !== undefined
+                  ? { adaptSectionLanguage }
+                  : {})}
+                {...(showTranslationFeatures && adaptLineLanguage !== undefined
+                  ? { adaptLineLanguage }
+                  : {})}
+                {...(showTranslationFeatures && adaptingLineIds !== undefined
+                  ? { adaptingLineIds }
+                  : {})}
                 playAudioFeedback={playAudioFeedback}
                 onLineBlur={clearSelection}
               />

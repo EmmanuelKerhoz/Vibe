@@ -177,7 +177,7 @@ export const SectionLineList = React.memo(function SectionLineList({
               deleteLineFromSection={deleteLineFromSection}
               playAudioFeedback={playAudioFeedback}
               sectionTargetLanguage={sectionTargetLanguage}
-              isAdaptingLine={adaptingLineIds?.has(line.id)}
+              isAdaptingLine={adaptingLineIds?.has(line.id) ?? false}
               {...lineOptional}
             />
             {isActive && selectedLine && (
