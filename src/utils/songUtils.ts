@@ -3,6 +3,7 @@ import { getSectionFamily } from '../constants/sections';
 import { isPureMetaLine, unwrapBracketToken } from './metaUtils';
 import { countSyllables } from './syllableUtils';
 import { detectRhymeSchemeLocally } from './rhymeSchemeUtils';
+import { generateId } from './idUtils';
 
 export const getSectionText = (section: Section): string =>
   section.lines.map(l => l.text).join('\n');
@@ -147,8 +148,12 @@ export const normalizeLoadedLine = (line: Record<string, unknown>, langCode?: st
     ? rawSyllables
     : (!isMeta && text.trim().length > 0 ? computeLineSyllables(text, langCode) : 0);
 
+  // Guard: empty or missing id → generate a fresh one to prevent React key
+  // collisions and fingerprint corruption in useSongHistoryState.
+  const rawLineId = typeof line['id'] === 'string' ? line['id'] : '';
+
   return {
-    id: typeof line['id'] === 'string' ? line['id'] : '',
+    id: rawLineId.length > 0 ? rawLineId : generateId(),
     text,
     rhymingSyllables: typeof line['rhymingSyllables'] === 'string' ? line['rhymingSyllables'] : '',
     rhyme: typeof line['rhyme'] === 'string' ? line['rhyme'] : '',
@@ -173,8 +178,12 @@ export const normalizeLoadedSection = (section: Record<string, unknown>): Sectio
   const resolvedScheme = detectedScheme ?? (storedScheme || undefined);
   const resolvedTargetSyllables = typeof section['targetSyllables'] === 'number' ? section['targetSyllables'] : undefined;
 
+  // Guard: empty or missing id → generate a fresh one to prevent deduplication
+  // failures in useSongHistoryState and React key collisions.
+  const rawSectionId = typeof section['id'] === 'string' ? section['id'] : '';
+
   return {
-    id: typeof section['id'] === 'string' ? section['id'] : '',
+    id: rawSectionId.length > 0 ? rawSectionId : generateId(),
     name: cleanSectionName(typeof section['name'] === 'string' ? section['name'] : ''),
     mood: typeof section['mood'] === 'string' ? section['mood'] : '',
     preInstructions: Array.isArray(section['preInstructions']) ? (section['preInstructions'] as string[]) : [],
