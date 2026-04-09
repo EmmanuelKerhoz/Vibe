@@ -30,6 +30,13 @@ export const abortCurrent = (
   ref.current?.abort();
 };
 
-/** True if the error is an intentional abort */
+/**
+ * True if the error is an intentional abort.
+ *
+ * Covers both DOMException (browser fetch/AbortSignal) and plain Error
+ * (some Node/SDK environments set name='AbortError' on a base Error).
+ * Single source of truth — import from here, never redefine locally.
+ */
 export const isAbortError = (err: unknown): boolean =>
-  err instanceof DOMException && err.name === 'AbortError';
+  (err instanceof DOMException && err.name === 'AbortError') ||
+  (err instanceof Error && err.name === 'AbortError');

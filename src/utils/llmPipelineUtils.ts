@@ -1,4 +1,5 @@
 import { Type } from '@google/genai';
+import { z } from 'zod';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from './aiUtils';
 
 const buildReverseTranslatePrompt = (
@@ -37,6 +38,17 @@ const buildFidelityReviewPrompt = (
   JSON.stringify(reversedLines),
 ].join('\n');
 
+// ─── Zod schemas for safeJsonParse validation ────────────────────────────────
+
+const ReverseTranslateSchema = z.array(z.string());
+
+const FidelityReviewSchema = z.object({
+  score: z.number().int().min(0).max(100),
+  warnings: z.array(z.string()),
+});
+
+// ─── Pipeline functions ───────────────────────────────────────────────────────
+
 export const reverseTranslateLines = async (
   lines: string[],
   fromLanguage: string,
@@ -59,7 +71,7 @@ export const reverseTranslateLines = async (
     ...(signal !== undefined && { signal }),
   });
 
-  return safeJsonParse<string[]>(response.text || '[]', []);
+  return safeJsonParse<string[]>(response.text || '[]', [], ReverseTranslateSchema);
 };
 
 export const reviewTranslationFidelity = async (
@@ -90,6 +102,7 @@ export const reviewTranslationFidelity = async (
   return safeJsonParse<{ score: number; warnings: string[] }>(
     response.text || '{"score":0,"warnings":["Review failed: empty or invalid AI response"]}',
     { score: 0, warnings: ['Review failed: could not parse AI response'] },
+    FidelityReviewSchema,
   );
 };
 

@@ -88,6 +88,15 @@ function sanitizeConfig(raw: Record<string, unknown>): SanitizedConfig {
   return out;
 }
 
+/**
+ * Sanitise an error message before surfacing it to the client.
+ * Strips stack-frame tokens ("at Module.foo") and caps length at 200 chars
+ * to prevent accidental internal-path / infrastructure disclosure.
+ */
+function sanitiseErrorMessage(msg: string): string {
+  return msg.replace(/\bat\s+\S+/g, '').trim().slice(0, 200);
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
@@ -188,7 +197,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           parsed = true;
         }
       } catch { /* not JSON — fall through */ }
-      if (!parsed) message = error.message;
+      // Sanitise before sending: strip stack-frame tokens, cap at 200 chars.
+      if (!parsed) message = sanitiseErrorMessage(error.message) || 'Unknown server error';
     }
 
     const httpCode = (() => {

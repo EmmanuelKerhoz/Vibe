@@ -2,6 +2,7 @@
  * Client for G2P phonemization microservice
  */
 import { z } from 'zod';
+import { isAbortError } from './withAbort';
 
 export interface PhonemeRequest {
   text: string;
@@ -42,9 +43,6 @@ export type PhonemeResponse = z.infer<typeof PhonemeResponseSchema>;
 const HEALTH_CHECK_TIMEOUT_MS = 3_000;
 
 const isPhonemizeEnabled = () => import.meta.env.VITE_PHONEMIZE_ENABLED !== 'false';
-const isAbortError = (error: unknown) =>
-  (error instanceof DOMException && error.name === 'AbortError')
-  || (error instanceof Error && error.name === 'AbortError');
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 
