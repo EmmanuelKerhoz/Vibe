@@ -170,15 +170,19 @@ export const normalizeLoadedSection = (section: Record<string, unknown>): Sectio
     ? detectRhymeSchemeLocally(lyricTexts, langCode) ?? undefined
     : undefined;
 
+  const resolvedScheme = detectedScheme ?? (storedScheme || undefined);
+  const resolvedTargetSyllables = typeof section['targetSyllables'] === 'number' ? section['targetSyllables'] : undefined;
+
   return {
     id: typeof section['id'] === 'string' ? section['id'] : '',
     name: cleanSectionName(typeof section['name'] === 'string' ? section['name'] : ''),
-    rhymeScheme: detectedScheme ?? (storedScheme || undefined),
-    targetSyllables: typeof section['targetSyllables'] === 'number' ? section['targetSyllables'] : undefined,
     mood: typeof section['mood'] === 'string' ? section['mood'] : '',
     preInstructions: Array.isArray(section['preInstructions']) ? (section['preInstructions'] as string[]) : [],
     postInstructions: Array.isArray(section['postInstructions']) ? (section['postInstructions'] as string[]) : [],
-    language: langCode,
     lines,
+    // Conditional spreads: exactOptionalPropertyTypes forbids passing `undefined` to optional props.
+    ...(resolvedScheme !== undefined && { rhymeScheme: resolvedScheme }),
+    ...(resolvedTargetSyllables !== undefined && { targetSyllables: resolvedTargetSyllables }),
+    ...(langCode !== undefined && { language: langCode }),
   };
 };

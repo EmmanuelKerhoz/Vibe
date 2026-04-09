@@ -309,15 +309,17 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
       if (Array.isArray(parsed)) {
         return parsed.map((item, idx): LibraryAsset => {
           const it = item as Record<string, unknown>;
+          const rawArtist = it['artist'];
+          const rawMetadata = it['metadata'];
           return {
             id: (it['id'] as string) || `import_${Date.now()}_${idx}`,
             title: (it['title'] as string) || `Imported ${idx + 1}`,
             timestamp: (it['timestamp'] as number) || Date.now(),
             type: (it['type'] as LibraryAsset['type']) || 'lyrics',
             sections: (it['sections'] as Section[]) || [],
-            // Conditional spread: omit optional props when undefined (exactOptionalPropertyTypes).
-            ...(it['artist'] !== undefined && { artist: it['artist'] as string }),
-            ...(it['metadata'] !== undefined && { metadata: it['metadata'] as LibraryAsset['metadata'] }),
+            // Conditional spreads: exactOptionalPropertyTypes forbids `T | undefined` on optional props.
+            ...(rawArtist !== undefined && { artist: rawArtist as string }),
+            ...(rawMetadata !== undefined && { metadata: rawMetadata as LibraryAsset['metadata'] }),
           };
         });
       }
