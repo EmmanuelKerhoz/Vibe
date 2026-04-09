@@ -5,6 +5,7 @@ import { DEFAULT_MOOD, DEFAULT_TOPIC } from './songDefaults';
 import { safeGetItem, safeSetItem } from './safeStorage';
 import { normalizeLoadedSection } from './songUtils';
 import { SectionSchema } from '../schemas/sessionSchema';
+import { LibraryAssetSchema, LibraryStoreSchema } from '../schemas/librarySchema';
 
 export type LibraryAsset = {
   id: string;
@@ -60,11 +61,18 @@ const readStore = (): LibraryStore => {
   try {
     const raw = safeGetItem(LIBRARY_KEY);
     if (!raw) return { version: 0, assets: [] };
-    const parsed = JSON.parse(raw) as unknown;
-    // Legacy format: plain array (before M2). Migrate transparently.
-    if (Array.isArray(parsed)) return { version: 0, assets: parsed as LibraryAsset[] };
-    const store = parsed as LibraryStore;
-    return { version: store.version ?? 0, assets: store.assets ?? [] };
+    const json = JSON.parse(raw) as unknown;
+    // P4: validate through Zod — catches corrupt / migrated payloads at the
+    // storage boundary so the rest of the app always receives typed data.
+    const result = LibraryStoreSchema.safeParse(json);
+    if (!result.success) {
+      console.warn(
+        '[libraryUtils] readStore: invalid library payload, resetting to empty store.\n',
+        result.error.format(),
+      );
+      return { version: 0, assets: [] };
+    }
+    return result.data;
   } catch {
     return { version: 0, assets: [] };
   }
@@ -325,24 +333,22 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
   try {
     if (file.name.endsWith('.json')) {
       const text = await file.text();
-      const parsed = JSON.parse(text) as unknown[];
+      const parsed = JSON.parse(text) as unknown;
       if (Array.isArray(parsed)) {
-        return parsed.map((item, idx): LibraryAsset => {
-          const it = item as Record<string, unknown>;
-          const rawArtist = it['artist'];
-          const rawMetadata = it['metadata'];
-          // exactOptionalPropertyTypes: cast to NonNullable to prevent `T | undefined` injection.
-          const safeMetadata = rawMetadata as LibraryAsset_Metadata;
-          return {
-            id: (it['id'] as string) || `import_${Date.now()}_${idx}`,
-            title: (it['title'] as string) || `Imported ${idx + 1}`,
-            timestamp: (it['timestamp'] as number) || Date.now(),
-            type: (it['type'] as LibraryAsset['type']) || 'lyrics',
-            sections: (it['sections'] as Section[]) || [],
-            ...(rawArtist !== undefined && { artist: rawArtist as string }),
-            ...(rawMetadata !== undefined && { metadata: safeMetadata }),
-          };
-        });
+        // P4: validate each item through LibraryAssetSchema instead of casting.
+        // Invalid entries are skipped with a warning — no crash, no garbage data.
+        for (let idx = 0; idx < parsed.length; idx++) {
+          const result = LibraryAssetSchema.safeParse(parsed[idx]);
+          if (result.success) {
+            assets.push(result.data as LibraryAsset);
+          } else {
+            console.warn(
+              `[libraryUtils] importAssetsFromFile: item ${idx} failed validation, skipping.`,
+              result.error.format(),
+            );
+          }
+        }
+        return assets;
       }
     } else if (file.name.endsWith('.docx')) {
       const text = await extractTextFromDocx(file);
