@@ -16,7 +16,7 @@ export function useUiPreferences() {
   // ── UI Scale ──────────────────────────────────────────────────────────────
   const [uiScale, setUiScaleRaw] = useState<'small' | 'medium' | 'large'>(() => {
     const stored = safeGetItem(UI_SCALE_KEY);
-    if (stored === 'small' || stored === 'medium') return stored as 'small' | 'medium';
+    if (stored === 'small' || stored === 'medium' || stored === 'large') return stored;
     return 'large';
   });
 
@@ -28,7 +28,7 @@ export function useUiPreferences() {
   // ── Default Edit Mode ─────────────────────────────────────────────────────
   const [defaultEditMode, setDefaultEditModeRaw] = useState<'text' | 'section' | 'markdown' | 'phonetic'>(() => {
     const stored = safeGetItem(DEFAULT_EDIT_MODE_KEY);
-    if (stored === 'section' || stored === 'text' || stored === 'phonetic') return stored;
+    if (stored === 'section' || stored === 'text' || stored === 'markdown' || stored === 'phonetic') return stored;
     return 'markdown';
   });
 
