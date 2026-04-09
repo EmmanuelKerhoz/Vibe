@@ -109,11 +109,13 @@ const LANGUAGE_DISPLAY_INDEX = new Map<string, LanguageDisplay>(
 );
 
 for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
-  const adaptationDisplay = {
+  // Conditional spread: omit optional keys when value is undefined to satisfy
+  // exactOptionalPropertyTypes (LanguageDisplay.region?: string excludes undefined).
+  const adaptationDisplay: LanguageDisplay = {
     label: lang.aiName,
     sign: lang.sign,
-    region: lang.region,
-    isEthnical: lang.isEthnical,
+    ...(lang.region !== undefined && { region: lang.region }),
+    ...(lang.isEthnical !== undefined && { isEthnical: lang.isEthnical }),
   };
   const normalizedCode = normalizeLanguageKey(lang.code);
   // UI locale codes and adaptation codes can overlap (for example `ko` vs `KO`).

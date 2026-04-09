@@ -163,11 +163,13 @@ export function detectRhymeScheme(
     resolvedLang,
   );
 
+  // Conditional spread: omit stanzas key entirely when single-stanza to satisfy
+  // exactOptionalPropertyTypes (DetectedSchema.stanzas?: StanzaSchema[] excludes undefined).
   return {
     pattern: blockPattern,
     confidence: blockConfidence,
     lineCount: bearingLines.length,
-    stanzas: multiStanza ? stanzas : undefined,
+    ...(multiStanza && { stanzas }),
   };
 }
 

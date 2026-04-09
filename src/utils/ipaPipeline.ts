@@ -99,14 +99,16 @@ export const runIPAPipeline = async (
       method = 'service';
       lowResource = serviceResult.low_resource;
 
-      // Convert service syllables to IPASyllable format
+      // Convert service syllables to IPASyllable format.
+      // Conditional spread for optional props (tone, stress) to satisfy
+      // exactOptionalPropertyTypes: IPASyllable.tone?: string excludes undefined.
       if (serviceResult.syllables && serviceResult.syllables.length > 0) {
         syllables = serviceResult.syllables.map(s => ({
           onset: s.onset,
           nucleus: s.nucleus,
           coda: s.coda,
-          tone: s.tone,
-          stress: s.stress,
+          ...(s.tone !== undefined && { tone: s.tone }),
+          ...(s.stress !== undefined && { stress: s.stress }),
         }));
       }
     }

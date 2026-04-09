@@ -234,13 +234,20 @@ const syllabifyKwa = (ipa: string): IPASyllable[] => {
     const nucleus = chars.slice(cursor, nucleusEnd).join('');
     cursor = nucleusEnd;
 
-    const tone = extractTone(nucleus, onset);
+    const toneValue = extractTone(nucleus, onset);
 
     const codaEnd = nextNucleusStart ?? chars.length;
     const coda = chars.slice(cursor, codaEnd).join('');
     cursor = codaEnd;
 
-    syllables.push({ onset, nucleus, coda, tone });
+    // Conditional spread: omit tone key when undefined to satisfy
+    // exactOptionalPropertyTypes (IPASyllable.tone?: string excludes undefined).
+    syllables.push({
+      onset,
+      nucleus,
+      coda,
+      ...(toneValue !== undefined && { tone: toneValue }),
+    });
   }
 
   return syllables;
@@ -286,10 +293,18 @@ const syllabifyCRV = (ipa: string): IPASyllable[] => {
     const hasLongVowel = nucleus.includes('\u02d0');
     const weight = coda.length > 0 || hasLongVowel || nucleus.length > 1 ? 'heavy' : 'light';
 
-    let tone = extractTone(nucleus, onset);
-    if (tone === 'H' && weight === 'heavy') tone = 'HL';
+    let toneValue = extractTone(nucleus, onset);
+    if (toneValue === 'H' && weight === 'heavy') toneValue = 'HL';
 
-    syllables.push({ onset, nucleus, coda, tone, weight });
+    // Conditional spread: omit tone key when undefined to satisfy
+    // exactOptionalPropertyTypes (IPASyllable.tone?: string excludes undefined).
+    syllables.push({
+      onset,
+      nucleus,
+      coda,
+      weight,
+      ...(toneValue !== undefined && { tone: toneValue }),
+    });
   }
 
   return syllables;

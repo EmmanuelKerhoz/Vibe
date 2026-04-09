@@ -38,7 +38,7 @@ const proxyGenerateContent = async (params: GenerateContentParams): Promise<Gene
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-    signal, // ♥ abort réel du fetch
+    signal: signal ?? null, // RequestInit.signal: AbortSignal | null (not undefined)
   });
   if (!response.ok) {
     let errMsg = `Server error ${response.status}`;
