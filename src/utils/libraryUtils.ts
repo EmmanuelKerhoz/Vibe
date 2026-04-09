@@ -28,6 +28,8 @@ export type LibraryAsset = {
   };
 };
 
+export type LibraryAsset_Metadata = NonNullable<LibraryAsset['metadata']>;
+
 export type LibrarySearchResult = SimilarityMatch & {
   assetType: 'song' | 'poem' | 'lyrics';
   artist?: string;
@@ -311,15 +313,16 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
           const it = item as Record<string, unknown>;
           const rawArtist = it['artist'];
           const rawMetadata = it['metadata'];
+          // exactOptionalPropertyTypes: cast to NonNullable to prevent `T | undefined` injection.
+          const safeMetadata = rawMetadata as LibraryAsset_Metadata;
           return {
             id: (it['id'] as string) || `import_${Date.now()}_${idx}`,
             title: (it['title'] as string) || `Imported ${idx + 1}`,
             timestamp: (it['timestamp'] as number) || Date.now(),
             type: (it['type'] as LibraryAsset['type']) || 'lyrics',
             sections: (it['sections'] as Section[]) || [],
-            // Conditional spreads: exactOptionalPropertyTypes forbids `T | undefined` on optional props.
             ...(rawArtist !== undefined && { artist: rawArtist as string }),
-            ...(rawMetadata !== undefined && { metadata: rawMetadata as LibraryAsset['metadata'] }),
+            ...(rawMetadata !== undefined && { metadata: safeMetadata }),
           };
         });
       }
