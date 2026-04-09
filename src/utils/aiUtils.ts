@@ -29,7 +29,7 @@ export type GenerateContentParams = {
   model: string;
   contents: string;
   config?: Record<string, unknown>;
-  signal?: AbortSignal; // ♥ transmis au fetch sous-jacent
+  signal?: AbortSignal;
 };
 
 export const AI_PROVIDER_NAME = 'Google Gemini';
@@ -39,6 +39,11 @@ export const AI_KEY_ENV_VAR = 'GEMINI_API_KEY';
 export type GenerateContentResponse = {
   text: string;
 };
+
+/** Zod schema validating the /api/generate proxy response shape. */
+const GenerateContentResponseSchema = z.object({
+  text: z.string(),
+});
 
 const proxyGenerateContent = async (params: GenerateContentParams): Promise<GenerateContentResponse> => {
   const { signal, ...body } = params;
@@ -60,11 +65,18 @@ const proxyGenerateContent = async (params: GenerateContentParams): Promise<Gene
     err.code = response.status;
     throw err;
   }
+  let raw: unknown;
   try {
-    return await response.json() as GenerateContentResponse;
+    raw = await response.json();
   } catch {
     throw new Error('Failed to parse server response as JSON');
   }
+  const parsed = GenerateContentResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.warn('[proxyGenerateContent] Unexpected response shape:', parsed.error);
+    throw new Error('Unexpected response shape from /api/generate');
+  }
+  return parsed.data;
 };
 
 export const getAi = () => ({

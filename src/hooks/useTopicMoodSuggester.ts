@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { z } from 'zod';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../utils/aiUtils';
 import { withAbort, isAbortError } from '../utils/withAbort';
 import { useSongContext } from '../contexts/SongContext';
@@ -9,6 +10,13 @@ interface TopicMoodSuggestion {
   mood: string;
   title: string;
 }
+
+/** Zod schema — validates that all three AI-generated fields are non-empty strings. */
+const TopicMoodSuggestionSchema = z.object({
+  topic: z.string().min(1),
+  mood: z.string().min(1),
+  title: z.string().min(1),
+});
 
 export function useTopicMoodSuggester({ hasApiKey }: { hasApiKey: boolean }) {
   const {
@@ -50,7 +58,11 @@ export function useTopicMoodSuggester({ hasApiKey }: { hasApiKey: boolean }) {
           wasAborted = true;
           return null;
         }
-        const suggestion = safeJsonParse<TopicMoodSuggestion | null>(response.text?.trim() || '{}', null);
+        const suggestion = safeJsonParse<TopicMoodSuggestion | null>(
+          response.text?.trim() || '{}',
+          null,
+          TopicMoodSuggestionSchema as z.ZodType<TopicMoodSuggestion | null, z.ZodTypeDef, unknown>,
+        );
         if (suggestion && (!currentTitle || currentTitle === DEFAULT_TITLE) && suggestion.title) {
           setTitle(suggestion.title);
           setTitleOrigin('ai');

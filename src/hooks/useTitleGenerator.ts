@@ -51,7 +51,11 @@ ${languageInstruction}Return ONLY the title as plain text, no quotes, no explana
           wasAborted = true;
           return null;
         }
-        return response.text?.trim() || null;
+        // Guard: response.text must be a non-empty string (already guaranteed by
+        // GenerateContentResponseSchema in proxyGenerateContent, but defensive here
+        // in case the call path is mocked or the schema is relaxed in future).
+        const title = typeof response.text === 'string' ? response.text.trim() : '';
+        return title.length > 0 ? title : null;
       });
     } catch (error) {
       if (isAbortError(error)) {
