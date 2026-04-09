@@ -104,13 +104,24 @@ export type LoadedLibraryAssetState = {
   musicalPrompt: string;
 };
 
+/**
+ * Safely coerce an unknown value to Record<string, unknown>.
+ * If the value is already a plain object, return it directly.
+ * Otherwise return an empty record — normalizeLoadedSection handles
+ * all missing fields with safe defaults.
+ */
+const toRecord = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+
 export const loadAssetIntoEditor = (asset: LibraryAsset): LoadedLibraryAssetState => {
-  // Parse each section through SectionSchema to get a validated Record<string, unknown>
-  // before normalizeLoadedSection — eliminates the unsafe double cast.
+  // P2a fix: validate each section through SectionSchema.
+  // On parse failure, toRecord() provides a safe empty-record fallback
+  // — no cast, normalizeLoadedSection fills all missing fields with defaults.
   const song = asset.sections.map(section => {
     const parsed = SectionSchema.safeParse(section);
-    const raw: Record<string, unknown> = parsed.success ? parsed.data : (section as unknown as Record<string, unknown>);
-    return normalizeLoadedSection(raw);
+    return normalizeLoadedSection(parsed.success ? parsed.data : toRecord(section));
   });
   const firstSection = song[0];
   const metadata = asset.metadata;
