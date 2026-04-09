@@ -4,56 +4,56 @@
 
 import type { RhymeCategory, RhymeNucleus } from './types';
 
-// ─── Phoneme Edit Distance (PED) ─────────────────────────────────────────────
+// ─── Phoneme Edit Distance ──────────────────────────────────────────────────
 
-/**
- * Levenshtein distance normalized to [0, 1].
- * 0 = identical, 1 = completely different.
- */
 export function phonemeEditDistance(a: string, b: string): number {
   if (a === b) return 0;
   if (!a || !b) return 1;
 
   const la = a.length;
   const lb = b.length;
-  const dp: number[][] = Array.from({ length: la + 1 }, (_, i) =>
-    Array.from({ length: lb + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-  );
+
+  // Build dp table with explicit initialization
+  const dp: number[][] = [];
+  for (let i = 0; i <= la; i++) {
+    dp[i] = [];
+    for (let j = 0; j <= lb; j++) {
+      if (i === 0) { dp[i][j] = j; }
+      else if (j === 0) { dp[i][j] = i; }
+      else { dp[i][j] = 0; }
+    }
+  }
 
   for (let i = 1; i <= la; i++) {
     for (let j = 1; j <= lb; j++) {
-      if (a[i - 1] === b[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1];
+      const ai = a[i - 1] ?? '';
+      const bj = b[j - 1] ?? '';
+      if (ai === bj) {
+        dp[i][j] = dp[i - 1]?.[j - 1] ?? 0;
       } else {
-        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        const del  = dp[i - 1]?.[j]     ?? Infinity;
+        const ins  = dp[i]?.[j - 1]     ?? Infinity;
+        const sub  = dp[i - 1]?.[j - 1] ?? Infinity;
+        dp[i][j] = 1 + Math.min(del, ins, sub);
       }
     }
   }
 
-  return dp[la][lb] / Math.max(la, lb);
+  const result = dp[la]?.[lb] ?? 0;
+  return result / Math.max(la, lb);
 }
 
-// ─── KWA tonal scoring ───────────────────────────────────────────────────────
+// ─── KWA tonal scoring ──────────────────────────────────────────────────────
 
-/**
- * KWA: vowel nucleus + binary HL tone match.
- * Tone weight: 40% of total score.
- */
 export function scoreKWANormalized(a: RhymeNucleus, b: RhymeNucleus): number {
   const vowelSim = 1 - phonemeEditDistance(a.vowels, b.vowels);
   const codaSim  = 1 - phonemeEditDistance(a.coda, b.coda);
   const toneMatch = (a.tone && b.tone) ? (a.tone === b.tone ? 1 : 0) : 0.5;
-
-  // vowel 40% + coda 20% + tone 40%
   return 0.4 * vowelSim + 0.2 * codaSim + 0.4 * toneMatch;
 }
 
-// ─── CRV mora-weighted scoring ───────────────────────────────────────────────
+// ─── CRV mora-weighted scoring ──────────────────────────────────────────────
 
-/**
- * CRV: mora-weighted vowel similarity + coda.
- * Long vowels (2 morae) get a 1.3× bonus on vowel match.
- */
 export function scoreCRV(a: RhymeNucleus, b: RhymeNucleus): number {
   const vowelSim   = 1 - phonemeEditDistance(a.vowels, b.vowels);
   const codaSim    = 1 - phonemeEditDistance(a.coda, b.coda);
@@ -62,7 +62,7 @@ export function scoreCRV(a: RhymeNucleus, b: RhymeNucleus): number {
   return Math.min(raw, 1);
 }
 
-// ─── Category threshold mapping ──────────────────────────────────────────────
+// ─── Category threshold mapping ─────────────────────────────────────────────
 
 export function categorize(score: number): RhymeCategory {
   if (score >= 0.92) return 'perfect';
