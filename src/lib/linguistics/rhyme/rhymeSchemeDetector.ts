@@ -17,7 +17,7 @@
 
 import type { DetectedSchema, StanzaSchema } from '../core/types';
 import { PhonologicalRegistry } from '../core/Registry';
-import { splitLyricIntoLines, extractLineTail } from './lyricSegmenter';
+import { splitLyricIntoLines, extractLineEndingUnit } from './lyricSegmenter';
 import { resolveLang } from '../lid/detectLanguage';
 
 /** Minimum similarity score to consider two lines as rhyming. */
@@ -100,7 +100,7 @@ function scoreLines(
   return { pattern: labels.join(''), confidence };
 }
 
-// ─── Public API ────────────────────────────────────────────────────────────
+// ─── Public API ─────────────────────────────────────────────────────────
 
 /**
  * Detect the rhyme scheme of a lyric block, with per-stanza resolution.
@@ -128,11 +128,13 @@ export function detectRhymeScheme(
     };
   }
 
-  // ── Group by stanza ─────────────────────────────────────────────────────
+  // ── Group by stanza ──────────────────────────────────────────────────────
   const stanzaMap = new Map<number, string[]>();
   for (const line of bearingLines) {
     const bucket = stanzaMap.get(line.stanzaIndex);
-    const tail = extractLineTail(line.text);
+    // Use extractLineEndingUnit with the resolved language so script routing
+    // (CJK grapheme-cluster, RTL logical split, tonal-safe strip) is active.
+    const tail = extractLineEndingUnit(line.text, resolvedLang).normalized;
     if (bucket) {
       bucket.push(tail);
     } else {
@@ -143,7 +145,7 @@ export function detectRhymeScheme(
   const stanzaIndices = [...stanzaMap.keys()].sort((a, b) => a - b);
   const multiStanza = stanzaIndices.length > 1;
 
-  // ── Per-stanza scoring ─────────────────────────────────────────────────
+  // ── Per-stanza scoring ──────────────────────────────────────────────────
   const stanzas: StanzaSchema[] = [];
   for (const idx of stanzaIndices) {
     const tails = stanzaMap.get(idx)!;
@@ -156,15 +158,15 @@ export function detectRhymeScheme(
     });
   }
 
-  // ── Full-block summary (backward-compatible) ──────────────────────────
-  const allTails = bearingLines.map(l => extractLineTail(l.text));
+  // ── Full-block summary (backward-compatible) ───────────────────────
+  const allTails = bearingLines.map(
+    l => extractLineEndingUnit(l.text, resolvedLang).normalized,
+  );
   const { pattern: blockPattern, confidence: blockConfidence } = scoreLines(
     allTails,
     resolvedLang,
   );
 
-  // Conditional spread: omit stanzas key entirely when single-stanza to satisfy
-  // exactOptionalPropertyTypes (DetectedSchema.stanzas?: StanzaSchema[] excludes undefined).
   return {
     pattern: blockPattern,
     confidence: blockConfidence,
