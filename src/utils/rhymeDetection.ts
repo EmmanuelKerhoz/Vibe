@@ -1,4 +1,4 @@
-import { isTonalLanguage } from '../constants/langFamilyMap';
+import { getAlgoFamily, isTonalLanguage } from '../constants/langFamilyMap';
 import type { Section, SongVersion } from '../types';
 import type { SimilarityMatch, SimilaritySectionMatch } from './similarityUtils';
 import { normalizeText } from './similarityUtils';
@@ -83,17 +83,32 @@ const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
  * Keep short endings intact, but normalise common trailing plural markers on
  * longer endings so pairs like "certitudes"/"servitude" and
  * "possessifs"/"adjectif" can still converge on the same rime family.
+ *
+ * Canonical vowel-sequence substitutions (e.g. "an/en/am" → "an") are
+ * Romance-specific orthographic conventions and are therefore gated on
+ * ALGO-ROM. For all other families the raw suffix is returned as-is,
+ * letting the IPA pipeline handle phonemic equivalence.
+ *
+ * When langCode is absent the Romance rules apply as a safe default,
+ * preserving existing behaviour for callers that don't pass a language.
  */
-const canonicalizeRhymeSuffix = (suffix: string): string => {
+const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
   const s = suffix.length <= 3 ? suffix : suffix.replace(/[sx]$/, '');
-  if (/^oi/.test(s)) return 'oi';
-  if (/^(?:an|en|am|em)/.test(s)) return 'an';
-  if (/^(?:in|ain|ein|im|yn|ym)/.test(s)) return 'in';
-  if (/^(?:on|om)/.test(s)) return 'on';
-  if (/^(?:un|um)/.test(s)) return 'un';
-  if (/^(?:eu|oeu|oe)/.test(s)) return 'eu';
-  if (/^ou/.test(s)) return 'ou';
-  if (/^(?:au|eau)/.test(s)) return 'au';
+
+  const family = langCode ? getAlgoFamily(langCode) : undefined;
+  const isRomance = !family || family === 'ALGO-ROM';
+
+  if (isRomance) {
+    if (/^oi/.test(s)) return 'oi';
+    if (/^(?:an|en|am|em)/.test(s)) return 'an';
+    if (/^(?:in|ain|ein|im|yn|ym)/.test(s)) return 'in';
+    if (/^(?:on|om)/.test(s)) return 'on';
+    if (/^(?:un|um)/.test(s)) return 'un';
+    if (/^(?:eu|oeu|oe)/.test(s)) return 'eu';
+    if (/^ou/.test(s)) return 'ou';
+    if (/^(?:au|eau)/.test(s)) return 'au';
+  }
+
   return s;
 };
 
@@ -104,12 +119,12 @@ const getRhymeCandidates = (text: string, langCode?: string): RhymeCandidate[] =
   const vowelGroups = getVowelGroups(word.normalizedWord);
   if (vowelGroups.length === 0) {
     return [{
-      normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord),
+      normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord, langCode),
     }];
   }
 
   return vowelGroups.map(({ start }) => ({
-    normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord.slice(start)),
+    normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord.slice(start), langCode),
   }));
 };
 
