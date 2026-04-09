@@ -50,6 +50,41 @@ export interface IPAPipelineResult {
 }
 
 /**
+ * Seuils de similarité IPA différenciés par famille phonologique.
+ *
+ * Familles tonales (KWA, SIN, VIET, TAI) : seuil relevé — les tons sont
+ * discriminants, une légère variation de noyau vocalique ne constitue pas
+ * une rime.
+ *
+ * Familles à coda haute pertinence (GER, SLV, KOR, VIET) : seuil légèrement
+ * abaissé — la richesse consonantique de coda compense une correspondance
+ * vocalique moins stricte.
+ *
+ * Toutes les familles non listées héritent du seuil par défaut (0.75).
+ */
+const FAMILY_RHYME_THRESHOLDS: Partial<Record<AlgoFamily, number>> = {
+  'ALGO-KWA':  0.80,
+  'ALGO-SIN':  0.82,
+  'ALGO-VIET': 0.82,
+  'ALGO-TAI':  0.80,
+  'ALGO-BNT':  0.78,
+  'ALGO-CRV':  0.78,
+  'ALGO-GER':  0.72,
+  'ALGO-SLV':  0.72,
+  'ALGO-KOR':  0.72,
+};
+
+/**
+ * Retourne le seuil IPA adapté à la famille phonologique du langCode.
+ * @param langCode - Code ISO 639
+ * @param base - Seuil par défaut si la famille n'est pas listée (default 0.75)
+ */
+export const getThresholdForLangCode = (langCode: string, base = 0.75): number => {
+  const family = getAlgoFamily(langCode);
+  return (family && FAMILY_RHYME_THRESHOLDS[family]) ?? base;
+};
+
+/**
  * Run the complete IPA pipeline for a text segment
  * Step 1-4 implementation
  *
@@ -252,16 +287,20 @@ export const compareMultipleTexts = async (
 
 /**
  * Enhanced rhyme detection for songUtils integration
- * Returns whether two lines rhyme based on IPA similarity
+ * Returns whether two lines rhyme based on IPA similarity.
+ *
+ * Quand threshold n'est pas fourni, le seuil est dérivé automatiquement
+ * de la famille phonologique du langCode via FAMILY_RHYME_THRESHOLDS.
  */
 export const doLinesRhymeIPA = async (
   line1: string,
   line2: string,
   langCode: string,
-  threshold = 0.75
+  threshold?: number
 ): Promise<boolean> => {
+  const effectiveThreshold = threshold ?? getThresholdForLangCode(langCode);
   const similarity = await compareTextsWithIPA(line1, line2, langCode);
-  return similarity.score >= threshold;
+  return similarity.score >= effectiveThreshold;
 };
 
 /**
@@ -277,17 +316,22 @@ export const getRhymeQualityForLines = async (
 
 /**
  * IPA-based rhyme scheme detector (experimental)
- * Uses phonemic similarity instead of graphemic matching
+ * Uses phonemic similarity instead of graphemic matching.
+ *
+ * Quand threshold n'est pas fourni, le seuil est dérivé automatiquement
+ * de la famille phonologique du langCode via FAMILY_RHYME_THRESHOLDS.
+ *
  * @param lines - Array of line texts to analyze
  * @param langCode - Language code (required for IPA processing)
- * @param threshold - Similarity threshold (default 0.75)
+ * @param threshold - Similarity threshold (auto si absent)
  * @returns Promise<string | null> - The detected rhyme scheme
  */
 export const detectRhymeSchemeLocallyIPA = async (
   lines: string[],
   langCode: string,
-  threshold = 0.75
+  threshold?: number
 ): Promise<string | null> => {
+  const effectiveThreshold = threshold ?? getThresholdForLangCode(langCode);
   const lyricLines = lines.filter(line => line.trim().length > 0);
   const n = lyricLines.length;
   if (n < 2) return null;
@@ -299,7 +343,7 @@ export const detectRhymeSchemeLocallyIPA = async (
     if (letters[i] !== null) continue;
     let matchedLetter: string | null = null;
     for (let j = 0; j < i; j++) {
-      if (await doLinesRhymeIPA(lyricLines[i]!, lyricLines[j]!, langCode, threshold)) {
+      if (await doLinesRhymeIPA(lyricLines[i]!, lyricLines[j]!, langCode, effectiveThreshold)) {
         matchedLetter = letters[j]!;
         break;
       }
@@ -311,7 +355,7 @@ export const detectRhymeSchemeLocallyIPA = async (
       nextLetter++;
     }
     for (let k = i + 1; k < n; k++) {
-      if (letters[k] === null && await doLinesRhymeIPA(lyricLines[i]!, lyricLines[k]!, langCode, threshold)) {
+      if (letters[k] === null && await doLinesRhymeIPA(lyricLines[i]!, lyricLines[k]!, langCode, effectiveThreshold)) {
         letters[k] = letters[i]!;
       }
     }
