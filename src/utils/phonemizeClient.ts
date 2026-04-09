@@ -2,6 +2,7 @@
  * Client for G2P phonemization microservice
  * This is a stub implementation - service needs to be deployed first
  */
+import { z } from 'zod';
 
 export interface PhonemeRequest {
   text: string;
@@ -28,6 +29,29 @@ export interface PhonemeResponse {
   metadata?: Record<string, unknown>;
 }
 
+const SyllableSchema = z.object({
+  onset: z.string(),
+  nucleus: z.string(),
+  coda: z.string(),
+  tone: z.string().optional(),
+  stress: z.boolean().optional(),
+});
+
+const PhonemeResponseSchema = z.object({
+  algo_id: z.string(),
+  lang: z.string(),
+  input: z.string(),
+  ipa: z.string(),
+  syllables: z.array(SyllableSchema),
+  rhyme_nucleus: z.string(),
+  method: z.string(),
+  low_resource: z.boolean(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+/** Timeout (ms) for the health-check probe — avoids indefinite hang. */
+const HEALTH_CHECK_TIMEOUT_MS = 3_000;
+
 const isPhonemizeEnabled = () => import.meta.env.VITE_PHONEMIZE_ENABLED !== 'false';
 const isAbortError = (error: unknown) =>
   (error instanceof DOMException && error.name === 'AbortError')
@@ -47,7 +71,6 @@ export const phonemizeText = async (
       return null;
     }
 
-    // Check if PHONEMIZE_API_URL is configured
     const apiUrl = import.meta.env.VITE_PHONEMIZE_API_URL;
     if (!apiUrl) {
       console.warn('PHONEMIZE_API_URL not configured - G2P service unavailable');
@@ -56,12 +79,8 @@ export const phonemizeText = async (
 
     const response = await fetch(`${apiUrl}/api/phonemize`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, lang } satisfies PhonemeRequest),
-      // RequestInit.signal expects AbortSignal | null, not undefined.
-      // Convert undefined → null to satisfy exactOptionalPropertyTypes.
       signal: signal ?? null,
     });
 
@@ -70,8 +89,13 @@ export const phonemizeText = async (
       return null;
     }
 
-    const result = await response.json() as PhonemeResponse;
-    return result;
+    const raw: unknown = await response.json();
+    const parsed = PhonemeResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.warn('[phonemizeText] Unexpected response shape:', parsed.error);
+      return null;
+    }
+    return parsed.data;
   } catch (error) {
     if (signal?.aborted || isAbortError(error)) {
       throw error;
@@ -82,7 +106,8 @@ export const phonemizeText = async (
 };
 
 /**
- * Check if phonemization service is available
+ * Check if phonemization service is available.
+ * Uses a 3-second AbortSignal timeout to prevent indefinite hangs.
  */
 export const isPhonemizeServiceAvailable = async (): Promise<boolean> => {
   try {
@@ -91,7 +116,10 @@ export const isPhonemizeServiceAvailable = async (): Promise<boolean> => {
     const apiUrl = import.meta.env.VITE_PHONEMIZE_API_URL;
     if (!apiUrl) return false;
 
-    const response = await fetch(`${apiUrl}/health`, { method: 'GET' });
+    const response = await fetch(`${apiUrl}/health`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS),
+    });
     return response.ok;
   } catch {
     return false;
