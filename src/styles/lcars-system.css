@@ -336,14 +336,14 @@
   border: 1px solid var(--border-color);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
 }
-.dark .ui-fluent .fluent-card {
+:is(.dark .ui-fluent, .dark.ui-fluent) .fluent-card {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 .ui-fluent .fluent-card:hover {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
   transform: translateY(-1px);
 }
-.dark .ui-fluent .fluent-card:hover {
+:is(.dark .ui-fluent, .dark.ui-fluent) .fluent-card:hover {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
@@ -371,7 +371,7 @@
   position: relative;
   overflow: hidden;
 }
-.dark .ui-fluent .lcars-panel {
+:is(.dark .ui-fluent, .dark.ui-fluent) .lcars-panel {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
@@ -474,7 +474,7 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
-.dark .ui-fluent .lcars-hud-chip {
+:is(.dark .ui-fluent, .dark.ui-fluent) .lcars-hud-chip {
   background-color: rgba(22, 22, 22, 0.50);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
