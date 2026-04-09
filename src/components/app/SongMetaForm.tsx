@@ -64,6 +64,15 @@ export function SongMetaForm({
       ? <RefreshCw className="w-3.5 h-3.5" />
       : <Sparkles className="w-3.5 h-3.5" />;
 
+  // Conditional buttonTitle spreads — satisfies exactOptionalPropertyTypes:
+  // never pass `string | undefined` to `buttonTitle?: string`.
+  const moodPresetsButtonTitle = t.tooltips.moodPresets
+    ? { buttonTitle: t.tooltips.moodPresets }
+    : {};
+  const rhymeSchemeButtonTitle = t.tooltips.rhymeScheme
+    ? { buttonTitle: t.tooltips.rhymeScheme }
+    : {};
+
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
 
@@ -186,7 +195,7 @@ export function SongMetaForm({
                   placeholder={t.leftPanel.songMoodPresets}
                   options={Object.entries(t.moods).map(([, moodOption]) => ({ value: moodOption, label: moodOption }))}
                   accentColor="var(--lcars-violet)"
-                  buttonTitle={t.tooltips.moodPresets}
+                  {...moodPresetsButtonTitle}
                   style={{ textTransform: 'uppercase' }}
                 />
               </div>
@@ -215,7 +224,7 @@ export function SongMetaForm({
                 value,
                 label: t.rhymeSchemes[value],
               }))}
-              buttonTitle={t.tooltips.rhymeScheme}
+              {...rhymeSchemeButtonTitle}
             />
           </div>
           <div>

@@ -210,6 +210,13 @@ export function AppEditorLayout({
     isAnalysisPanelOpen, hasApiKey,
   ]);
 
+  // Mobile overlay className — only provided when truthy to satisfy
+  // exactOptionalPropertyTypes (avoids passing `string | undefined` to
+  // a `className?: string` prop).
+  const mobileOverlayClass = isMobileOrTablet
+    ? { className: 'structure-sidebar-mobile-overlay' as const }
+    : {};
+
   return (
     <ComposerParamsProvider>
       <InsightsBarProvider value={insightsBarValue}>
@@ -302,7 +309,7 @@ export function AppEditorLayout({
               >
                 <SuggestionsPanel
                   isMobileOverlay={isMobileOrTablet}
-                  className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+                  {...mobileOverlayClass}
                   selectedLineId={selectedLineId}
                   setSelectedLineId={setSelectedLineId}
                   suggestions={suggestions}
@@ -320,7 +327,7 @@ export function AppEditorLayout({
               >
                 <StructureSidebar
                   isMobileOverlay={isMobileOrTablet}
-                  className={isMobileOrTablet ? 'structure-sidebar-mobile-overlay' : undefined}
+                  {...mobileOverlayClass}
                   isStructureOpen={isStructureOpen}
                   setIsStructureOpen={setIsStructureOpenAndClearLine}
                   isSectionDropdownOpen={isSectionDropdownOpen}

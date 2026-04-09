@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
    * render phase itself, so React never attempts to re-render the crashing
    * subtree before switching to the fallback UI.
    */
-  override static getDerivedStateFromError(error: Error): Partial<State> {
+  static override getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 
