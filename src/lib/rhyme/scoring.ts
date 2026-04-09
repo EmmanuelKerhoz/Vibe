@@ -5,42 +5,35 @@
 import type { RhymeCategory, RhymeNucleus } from './types';
 
 // ─── Phoneme Edit Distance ──────────────────────────────────────────────────
+//
+// Use a flat Int32Array to avoid all dp[i][j] optional-chain issues.
+// idx(i, j) = i * (lb+1) + j
 
 export function phonemeEditDistance(a: string, b: string): number {
   if (a === b) return 0;
-  if (!a || !b) return 1;
+  if (!a.length || !b.length) return 1;
 
   const la = a.length;
   const lb = b.length;
+  const cols = lb + 1;
+  const dp = new Int32Array((la + 1) * cols);
 
-  // Build dp table with explicit initialization
-  const dp: number[][] = [];
-  for (let i = 0; i <= la; i++) {
-    dp[i] = [];
-    for (let j = 0; j <= lb; j++) {
-      if (i === 0) { dp[i][j] = j; }
-      else if (j === 0) { dp[i][j] = i; }
-      else { dp[i][j] = 0; }
-    }
-  }
+  // Base row
+  for (let j = 0; j <= lb; j++) dp[j] = j;
+  // Base column
+  for (let i = 1; i <= la; i++) dp[i * cols] = i;
 
   for (let i = 1; i <= la; i++) {
     for (let j = 1; j <= lb; j++) {
-      const ai = a[i - 1] ?? '';
-      const bj = b[j - 1] ?? '';
-      if (ai === bj) {
-        dp[i][j] = dp[i - 1]?.[j - 1] ?? 0;
-      } else {
-        const del  = dp[i - 1]?.[j]     ?? Infinity;
-        const ins  = dp[i]?.[j - 1]     ?? Infinity;
-        const sub  = dp[i - 1]?.[j - 1] ?? Infinity;
-        dp[i][j] = 1 + Math.min(del, ins, sub);
-      }
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      const del = dp[(i - 1) * cols + j] + 1;
+      const ins = dp[i * cols + (j - 1)] + 1;
+      const sub = dp[(i - 1) * cols + (j - 1)] + cost;
+      dp[i * cols + j] = Math.min(del, ins, sub);
     }
   }
 
-  const result = dp[la]?.[lb] ?? 0;
-  return result / Math.max(la, lb);
+  return dp[la * cols + lb] / Math.max(la, lb);
 }
 
 // ─── KWA tonal scoring ──────────────────────────────────────────────────────
