@@ -1,6 +1,5 @@
 /**
  * Client for G2P phonemization microservice
- * This is a stub implementation - service needs to be deployed first
  */
 import { z } from 'zod';
 
@@ -9,25 +8,10 @@ export interface PhonemeRequest {
   lang: string;
 }
 
-export interface Syllable {
-  onset: string;
-  nucleus: string;
-  coda: string;
-  tone?: string;
-  stress?: boolean;
-}
-
-export interface PhonemeResponse {
-  algo_id: string;
-  lang: string;
-  input: string;
-  ipa: string;
-  syllables: Syllable[];
-  rhyme_nucleus: string;
-  method: string;
-  low_resource: boolean;
-  metadata?: Record<string, unknown>;
-}
+// ─── Zod schemas ──────────────────────────────────────────────────────────────
+// Types are DERIVED from Zod to stay compatible with exactOptionalPropertyTypes.
+// Do NOT define separate interfaces for Syllable / PhonemeResponse — they would
+// diverge from the inferred Zod types and trigger TS2375.
 
 const SyllableSchema = z.object({
   onset: z.string(),
@@ -49,6 +33,11 @@ const PhonemeResponseSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 
+export type Syllable = z.infer<typeof SyllableSchema>;
+export type PhonemeResponse = z.infer<typeof PhonemeResponseSchema>;
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 /** Timeout (ms) for the health-check probe — avoids indefinite hang. */
 const HEALTH_CHECK_TIMEOUT_MS = 3_000;
 
@@ -57,9 +46,11 @@ const isAbortError = (error: unknown) =>
   (error instanceof DOMException && error.name === 'AbortError')
   || (error instanceof Error && error.name === 'AbortError');
 
+// ─── API ──────────────────────────────────────────────────────────────────────
+
 /**
- * Call the phonemization microservice
- * Returns null if service is unavailable or request fails
+ * Call the phonemization microservice.
+ * Returns null if service is unavailable or request fails.
  */
 export const phonemizeText = async (
   text: string,
@@ -67,9 +58,7 @@ export const phonemizeText = async (
   signal?: AbortSignal,
 ): Promise<PhonemeResponse | null> => {
   try {
-    if (!isPhonemizeEnabled()) {
-      return null;
-    }
+    if (!isPhonemizeEnabled()) return null;
 
     const apiUrl = import.meta.env.VITE_PHONEMIZE_API_URL;
     if (!apiUrl) {
@@ -97,9 +86,7 @@ export const phonemizeText = async (
     }
     return parsed.data;
   } catch (error) {
-    if (signal?.aborted || isAbortError(error)) {
-      throw error;
-    }
+    if (signal?.aborted || isAbortError(error)) throw error;
     console.warn('Failed to call phonemization service:', error);
     return null;
   }
