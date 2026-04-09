@@ -33,6 +33,7 @@
   "exclude": [
     "sauvegardes",
     "api",
+    "__mocks__",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
