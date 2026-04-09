@@ -8,6 +8,9 @@ import type { RhymeCategory, RhymeNucleus } from './types';
 //
 // Use a flat Int32Array to avoid all dp[i][j] optional-chain issues.
 // idx(i, j) = i * (lb+1) + j
+// Int32Array[n] is `number | undefined` under noUncheckedIndexedAccess —
+// use non-null assertion (!) which is safe here because all indices are
+// computed within bounds.
 
 export function phonemeEditDistance(a: string, b: string): number {
   if (a === b) return 0;
@@ -26,14 +29,18 @@ export function phonemeEditDistance(a: string, b: string): number {
   for (let i = 1; i <= la; i++) {
     for (let j = 1; j <= lb; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      const del = dp[(i - 1) * cols + j] + 1;
-      const ins = dp[i * cols + (j - 1)] + 1;
-      const sub = dp[(i - 1) * cols + (j - 1)] + cost;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const del = dp[(i - 1) * cols + j]! + 1;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const ins = dp[i * cols + (j - 1)]! + 1;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const sub = dp[(i - 1) * cols + (j - 1)]! + cost;
       dp[i * cols + j] = Math.min(del, ins, sub);
     }
   }
 
-  return dp[la * cols + lb] / Math.max(la, lb);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return dp[la * cols + lb]! / Math.max(la, lb);
 }
 
 // ─── KWA tonal scoring ──────────────────────────────────────────────────────
