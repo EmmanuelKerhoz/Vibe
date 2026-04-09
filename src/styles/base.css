@@ -1,0 +1,83 @@
+/* ===========================================================================
+   BASE — reset, body, scrollbars, utilitaires globaux
+   =========================================================================== */
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overscroll-behavior: none;
+}
+
+html, body, #root {
+  height: 100%;
+  height: 100dvh;
+  overflow: clip;
+  touch-action: pan-y;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-clip: padding-box;
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.3); }
+@media (pointer: coarse) {
+  ::-webkit-scrollbar { width: 0; height: 0; }
+}
+
+/* Telemetry / status bar typography */
+.telemetry-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.micro-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+/* Interactive helpers */
+.fluent-button { transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+.fluent-button:active { transform: scale(0.98); }
+
+.ux-interactive {
+  transition:
+    transform     0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow    0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.22s ease,
+    border-color  0.22s ease,
+    color         0.22s ease,
+    opacity       0.22s ease;
+  will-change: transform, box-shadow;
+}
+.ux-interactive:hover:not(:disabled)  { transform: translateY(-1px); }
+.ux-interactive:active:not(:disabled) { transform: translateY(0) scale(0.985); }
+@media (pointer: coarse) {
+  .ux-interactive { min-height: 44px; min-width: 44px; }
+  .ux-interactive:hover:not(:disabled)  { transform: none; }
+  .ux-interactive:active:not(:disabled) { transform: scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:        0.01ms !important;
+    transition-duration:       0.01ms !important;
+  }
+  .ui-fluent .fluent-animate-in,
+  .ui-fluent .fluent-fade-in,
+  .ui-fluent .fluent-animate-panel { animation: none; opacity: 1; transform: none; }
+  .ui-fluent .fluent-animate-pressable,
+  .ui-fluent .fluent-animate-pressable:hover:not(:disabled),
+  .ui-fluent .fluent-animate-pressable:active:not(:disabled) { transform: none; }
+}

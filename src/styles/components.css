@@ -1,0 +1,193 @@
+/* ===========================================================================
+   COMPONENTS — lyric editor, mobile nav, modals, lyrics area
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   LYRIC EDITOR
+   --------------------------------------------------------------------------- */
+
+.lyric-row {
+  display: grid;
+  grid-template-columns: 20px 16px 20px 32px 1fr 80px 48px 40px 28px;
+  align-items: center;
+  min-height: 40px;
+  gap: 0 6px;
+  width: 100%;
+}
+
+.lyric-col-aux {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lcars-lyrics-area {
+  background-color: #e8e6e3;
+  background-image:
+    repeating-linear-gradient(62deg,  transparent 0px, transparent 3px, rgba(0,0,0,0.022)   3px, rgba(0,0,0,0.022)   4px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 3px, rgba(0,0,0,0.022)   3px, rgba(0,0,0,0.022)   4px),
+    repeating-linear-gradient(62deg,  transparent 0px, transparent 7px, rgba(0,0,0,0.014)   7px, rgba(0,0,0,0.014)   8px, transparent 8px, transparent 15px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, rgba(255,255,255,0.55) 7px, rgba(255,255,255,0.55) 8px, transparent 8px, transparent 15px),
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.6) 0%, transparent 70%);
+  background-attachment: scroll;
+  touch-action: pan-y;
+}
+.dark .lcars-lyrics-area {
+  background-color: #080808;
+  background-image:
+    repeating-linear-gradient(62deg,  transparent 0px, transparent 3px, rgba(255,255,255,0.018) 3px, rgba(255,255,255,0.018) 4px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 3px, rgba(255,255,255,0.018) 3px, rgba(255,255,255,0.018) 4px),
+    repeating-linear-gradient(62deg,  transparent 0px, transparent 7px, rgba(255,255,255,0.012) 7px, rgba(255,255,255,0.012) 8px, transparent 8px, transparent 15px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, rgba(0,0,0,0.25)       7px, rgba(0,0,0,0.25)       8px, transparent 8px, transparent 15px),
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+
+/* ---------------------------------------------------------------------------
+   MOBILE BOTTOM NAV
+   --------------------------------------------------------------------------- */
+
+.mobile-bottom-nav {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  height: calc(var(--mobile-nav-h) + var(--sab));
+  padding-bottom: var(--sab);
+  background: var(--acrylic-bg);
+  backdrop-filter: blur(4px) saturate(180%);
+  -webkit-backdrop-filter: blur(4px) saturate(180%);
+  border-top: 1px solid var(--border-color);
+  position: relative;
+  z-index: 50;
+}
+
+.mobile-bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 4px;
+  min-height: 44px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.mobile-bottom-nav-btn.active { color: var(--accent-color); }
+.mobile-bottom-nav-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: rgba(128, 128, 128, 0.08);
+}
+.mobile-bottom-nav-generate { color: var(--accent-color); }
+.mobile-bottom-nav-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.mobile-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  border: 0; padding: 0; margin: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 30;
+  backdrop-filter: blur(1px);
+  cursor: pointer;
+  appearance: none;
+}
+
+/* ---------------------------------------------------------------------------
+   ABOUT MODAL
+   --------------------------------------------------------------------------- */
+
+.about-dialog-shimmer::after { display: none; }
+
+.about-sweep-item {
+  position: relative;
+  overflow: hidden;
+}
+.about-sweep-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%, transparent 35%,
+    rgba(0,0,0,0.04) 45%, rgba(0,0,0,0.07) 50%, rgba(0,0,0,0.04) 55%,
+    transparent 65%, transparent 100%
+  );
+  background-size: 300% 300%;
+  background-position: 200% 200%;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+  animation: about-item-shimmer 800ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-play-state: paused;
+}
+.dark .about-sweep-item::before {
+  background: linear-gradient(
+    135deg,
+    transparent 0%, transparent 35%,
+    rgba(255,255,255,0.07) 45%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.07) 55%,
+    transparent 65%, transparent 100%
+  );
+  background-size: 300% 300%;
+  background-position: 200% 200%;
+}
+.about-sweep-item.sweep-active::before { animation-play-state: running; }
+
+.about-sweep-item:nth-child(1)::before  { animation-delay: 0.30s; }
+.about-sweep-item:nth-child(2)::before  { animation-delay: 0.45s; }
+.about-sweep-item:nth-child(3)::before  { animation-delay: 0.60s; }
+.about-sweep-item:nth-child(4)::before  { animation-delay: 0.75s; }
+.about-sweep-item:nth-child(5)::before  { animation-delay: 0.90s; }
+.about-sweep-item:nth-child(6)::before  { animation-delay: 1.05s; }
+.about-sweep-item:nth-child(7)::before  { animation-delay: 1.20s; }
+.about-sweep-item:nth-child(8)::before  { animation-delay: 1.35s; }
+.about-sweep-item:nth-child(9)::before  { animation-delay: 1.50s; }
+.about-sweep-item:nth-child(10)::before { animation-delay: 1.65s; }
+
+/* ---------------------------------------------------------------------------
+   ADAPTATION MODAL
+   --------------------------------------------------------------------------- */
+
+.adaptation-particles::before,
+.adaptation-particles::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+}
+.adaptation-particles::before {
+  width: 6px; height: 6px;
+  top: 55%; left: 30%;
+  background: var(--accent-color, #06b6d4);
+  box-shadow:
+     40px  20px 0 0 rgba(245, 158, 11, 0.5),
+    -30px -40px 0 0 rgba(167, 139, 250, 0.5),
+     80px -10px 0 0 rgba(16, 185, 129, 0.4),
+    -60px  30px 0 0 rgba(59, 130, 246, 0.4);
+  animation: adaptation-particle-float 3s ease-in-out infinite;
+}
+.adaptation-particles::after {
+  width: 4px; height: 4px;
+  top: 60%; left: 65%;
+  background: rgba(167, 139, 250, 0.6);
+  box-shadow:
+    -20px -30px 0 0 rgba(6, 182, 212, 0.5),
+     50px  10px 0 0 rgba(245, 158, 11, 0.4),
+    -40px  20px 0 0 rgba(16, 185, 129, 0.5);
+  animation: adaptation-particle-float 4s ease-in-out 1s infinite;
+}
+
+.adaptation-modal-glow {
+  box-shadow:
+    0 0  40px rgba(var(--accent-color-rgb, 6, 182, 212), 0.15),
+    0 0  80px rgba(var(--accent-color-rgb, 6, 182, 212), 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.3);
+}

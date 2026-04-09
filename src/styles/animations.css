@@ -1,0 +1,52 @@
+/* ===========================================================================
+   ANIMATIONS — @keyframes uniquement
+   =========================================================================== */
+
+@keyframes fluentSlideIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes fluentFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fluentPanelFloatIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes about-item-shimmer {
+  0%   { background-position: 200% 200%; opacity: 0; }
+  10%  { opacity: 1; }
+  100% { background-position: -100% -100%; opacity: 1; }
+}
+
+@keyframes adaptation-particle-float {
+  0%   { transform: translateY(0)     translateX(0)   scale(1);   opacity: 0; }
+  20%  { opacity: 0.8; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateY(-120px) translateX(40px) scale(0.3); opacity: 0; }
+}
+
+@keyframes lcars-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes lcars-pulse-anim {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
+@property --lcars-gradient-angle {
+  syntax: '<angle>';
+  initial-value: 135deg;
+  inherits: false;
+}
+
+@keyframes lcars-border-spin {
+  from { --lcars-gradient-angle: 0deg; }
+  to   { --lcars-gradient-angle: 360deg; }
+}
