@@ -13,7 +13,7 @@
  */
 import { z } from 'zod';
 
-const SectionLineSchema = z.object({
+export const SectionLineSchema = z.object({
   id: z.string().optional(),
   text: z.string().optional(),
   rhyme: z.string().optional(),
@@ -21,7 +21,7 @@ const SectionLineSchema = z.object({
   phonemes: z.array(z.string()).optional(),
 }).passthrough(); // allow extra fields — normalizeLoadedSection will handle them
 
-const SectionSchema = z.object({
+export const SectionSchema = z.object({
   name: z.string().optional(),
   lines: z.array(SectionLineSchema).optional(),
   id: z.string().optional(),
@@ -46,3 +46,4 @@ export const SessionSchema = z.object({
 });
 
 export type SessionData = z.infer<typeof SessionSchema>;
+export type SessionSection = z.infer<typeof SectionSchema>;

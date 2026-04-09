@@ -4,6 +4,7 @@ import { calculateSimilarityWithMetadata } from './rhymeDetection';
 import { DEFAULT_MOOD, DEFAULT_TOPIC } from './songDefaults';
 import { safeGetItem, safeSetItem } from './safeStorage';
 import { normalizeLoadedSection } from './songUtils';
+import { SectionSchema } from '../schemas/sessionSchema';
 
 export type LibraryAsset = {
   id: string;
@@ -104,7 +105,13 @@ export type LoadedLibraryAssetState = {
 };
 
 export const loadAssetIntoEditor = (asset: LibraryAsset): LoadedLibraryAssetState => {
-  const song = asset.sections.map(section => normalizeLoadedSection(section as unknown as Record<string, unknown>));
+  // Parse each section through SectionSchema to get a validated Record<string, unknown>
+  // before normalizeLoadedSection — eliminates the unsafe double cast.
+  const song = asset.sections.map(section => {
+    const parsed = SectionSchema.safeParse(section);
+    const raw: Record<string, unknown> = parsed.success ? parsed.data : (section as unknown as Record<string, unknown>);
+    return normalizeLoadedSection(raw);
+  });
   const firstSection = song[0];
   const metadata = asset.metadata;
 
