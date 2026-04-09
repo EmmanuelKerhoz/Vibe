@@ -33,8 +33,17 @@ interface UseSessionPersistenceParams {
   clearHistory: () => void;
 }
 
-/** Normalize a raw section read from storage — ensures no field is undefined. */
-const normalizeStoredSection = (s: Record<string, unknown>): Section => normalizeLoadedSection(s);
+/**
+ * Normalize a raw section from Zod passthrough output to Section.
+ * SectionSchema uses .passthrough() so its inferred type is objectOutputType,
+ * not Section — toRecord bridges the gap without an unsafe cast.
+ */
+const toRecord = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+
+const normalizeStoredSection = (s: unknown): Section => normalizeLoadedSection(toRecord(s));
 
 export function useSessionPersistence(params: UseSessionPersistenceParams): void {
   const {
@@ -69,7 +78,9 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
           // Guard: parsed.song must be a non-empty array before mapping.
           if (Array.isArray(parsed.song) && parsed.song.length > 0) {
             setHasSavedSession(true);
-            const cleanedSong: Section[] = (parsed.song as Record<string, unknown>[]).map(normalizeStoredSection);
+            // P5: normalizeStoredSection accepts unknown (Zod passthrough output)
+            // via toRecord — no unsafe cast needed.
+            const cleanedSong: Section[] = parsed.song.map(normalizeStoredSection);
             const nextStructure = cleanedSong.length > 0
               ? cleanedSong.map((s: Section) => s.name)
               : (parsed.structure
