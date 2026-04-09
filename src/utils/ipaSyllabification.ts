@@ -345,13 +345,15 @@ export const syllabifyIPA = (ipa: string, family: AlgoFamily): IPASyllable[] => 
 
 /**
  * Convert IPASyllable to Syllable (phonemizeClient format)
+ * Uses conditional spread to satisfy exactOptionalPropertyTypes:
+ * optional props (tone, stress) are omitted entirely when undefined.
  */
 export const convertToPhonemeClientSyllable = (ipaSyllable: IPASyllable): Syllable => ({
   onset: ipaSyllable.onset,
   nucleus: ipaSyllable.nucleus,
   coda: ipaSyllable.coda,
-  tone: ipaSyllable.tone,
-  stress: ipaSyllable.stress,
+  ...(ipaSyllable.tone !== undefined && { tone: ipaSyllable.tone }),
+  ...(ipaSyllable.stress !== undefined && { stress: ipaSyllable.stress }),
 });
 
 /**

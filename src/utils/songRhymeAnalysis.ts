@@ -59,10 +59,11 @@ export const analyzeSongRhymes = async (song: Section[]): Promise<LocalRhymeSect
     const graphemicScheme = detectRhymeSchemeLocally(lyricLines, langCode);
 
     if (!langCode || lyricLines.length < 2) {
+      // Conditional spread: omit langCode when undefined (exactOptionalPropertyTypes).
       return {
         sectionId: section.id,
         sectionName: section.name,
-        langCode,
+        ...(langCode !== undefined && { langCode }),
         detectedScheme: graphemicScheme,
         mode: 'graphemic' as const,
         pairs: [],

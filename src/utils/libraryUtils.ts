@@ -181,7 +181,7 @@ export const findSimilarAssetsInLibrary = async (
   if (library.length === 0) return [];
   return library
     .filter(asset => asset.sections.length > 0)
-    .map((asset) => {
+    .map((asset): LibrarySearchResult => {
       const similarityData = calculateSimilarityWithMetadata(currentSong, asset.sections);
       return {
         ...similarityData,
@@ -190,8 +190,9 @@ export const findSimilarAssetsInLibrary = async (
         title: asset.title,
         timestamp: asset.timestamp,
         assetType: asset.type,
-        artist: asset.artist,
-        metadata: asset.metadata,
+        // Conditional spread: omit optional props when undefined (exactOptionalPropertyTypes).
+        ...(asset.artist !== undefined && { artist: asset.artist }),
+        ...(asset.metadata !== undefined && { metadata: asset.metadata }),
       };
     })
     .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp)
@@ -306,7 +307,7 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
       const text = await file.text();
       const parsed = JSON.parse(text) as unknown[];
       if (Array.isArray(parsed)) {
-        return parsed.map((item, idx) => {
+        return parsed.map((item, idx): LibraryAsset => {
           const it = item as Record<string, unknown>;
           return {
             id: (it['id'] as string) || `import_${Date.now()}_${idx}`,
@@ -314,8 +315,9 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
             timestamp: (it['timestamp'] as number) || Date.now(),
             type: (it['type'] as LibraryAsset['type']) || 'lyrics',
             sections: (it['sections'] as Section[]) || [],
-            artist: it['artist'] as string | undefined,
-            metadata: it['metadata'] as LibraryAsset['metadata'],
+            // Conditional spread: omit optional props when undefined (exactOptionalPropertyTypes).
+            ...(it['artist'] !== undefined && { artist: it['artist'] as string }),
+            ...(it['metadata'] !== undefined && { metadata: it['metadata'] as LibraryAsset['metadata'] }),
           };
         });
       }

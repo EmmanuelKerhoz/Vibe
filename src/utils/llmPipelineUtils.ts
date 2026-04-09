@@ -55,7 +55,8 @@ export const reverseTranslateLines = async (
         items: { type: Type.STRING },
       },
     },
-    signal,
+    // Conditional spread: omit signal when undefined (exactOptionalPropertyTypes).
+    ...(signal !== undefined && { signal }),
   });
 
   return safeJsonParse<string[]>(response.text || '[]', []);
@@ -82,7 +83,8 @@ export const reviewTranslationFidelity = async (
         required: ['score', 'warnings'],
       },
     },
-    signal,
+    // Conditional spread: omit signal when undefined (exactOptionalPropertyTypes).
+    ...(signal !== undefined && { signal }),
   });
 
   return safeJsonParse<{ score: number; warnings: string[] }>(

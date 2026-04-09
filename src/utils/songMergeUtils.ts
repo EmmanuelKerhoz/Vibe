@@ -34,6 +34,10 @@ export const mergeAiSectionIntoCurrent = (
   language?: string,
 ): Section => {
   const mergedName = cleanSectionName(aiSection?.name ?? currentSection.name);
+  // Use nullish coalescing: aiSection.rhymeScheme may be undefined when AI
+  // omits it; fall back to currentSection.rhymeScheme which is string | undefined.
+  // Conditional spread ensures the key is omitted entirely when both are undefined
+  // (exactOptionalPropertyTypes compliance).
   const mergedRhymeScheme = aiSection?.rhymeScheme ?? currentSection.rhymeScheme;
   const mergedLines: AiLine[] = Array.isArray(aiSection?.lines)
     ? aiSection.lines
@@ -44,7 +48,7 @@ export const mergeAiSectionIntoCurrent = (
     ...aiSection,
     id: currentSection.id,
     name: mergedName,
-    rhymeScheme: mergedRhymeScheme,
+    ...(mergedRhymeScheme !== undefined ? { rhymeScheme: mergedRhymeScheme } : {}),
     ...(language !== undefined ? { language } : {}),
     lines: mergedLines.map((line, index) => ({
       ...(currentSection.lines[index] ?? {}),

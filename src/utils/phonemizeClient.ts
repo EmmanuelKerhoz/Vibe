@@ -60,7 +60,9 @@ export const phonemizeText = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text, lang } satisfies PhonemeRequest),
-      signal,
+      // RequestInit.signal expects AbortSignal | null, not undefined.
+      // Convert undefined → null to satisfy exactOptionalPropertyTypes.
+      signal: signal ?? null,
     });
 
     if (!response.ok) {

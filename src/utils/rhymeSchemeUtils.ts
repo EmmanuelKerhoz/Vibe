@@ -57,7 +57,9 @@ export const detectRhymeSchemeFromIPAPairs = (
     let matchedLetter: string | null = null;
     for (let j = 0; j < i; j++) {
       if (rhymes(j, i)) {
-        matchedLetter = letters[j];
+        // letters[j] is string | null here; null cannot match since we only
+        // enter rhymes() when a prior letter was assigned. Safe to assert.
+        matchedLetter = letters[j] ?? null;
         break;
       }
     }
@@ -69,7 +71,7 @@ export const detectRhymeSchemeFromIPAPairs = (
     }
     for (let k = i + 1; k < lineCount; k++) {
       if (letters[k] === null && rhymes(i, k)) {
-        letters[k] = letters[i];
+        letters[k] = letters[i] ?? null;
       }
     }
   }
@@ -96,7 +98,7 @@ export const detectRhymeSchemeLocally = (lines: string[], langCode?: string): st
     let matchedLetter: string | null = null;
     for (let j = 0; j < i; j++) {
       if (doLinesRhymeGraphemic(lyricLines[i]!, lyricLines[j]!, langCode)) {
-        matchedLetter = letters[j]!;
+        matchedLetter = letters[j] ?? null;
         break;
       }
     }
@@ -108,7 +110,7 @@ export const detectRhymeSchemeLocally = (lines: string[], langCode?: string): st
     }
     for (let k = i + 1; k < n; k++) {
       if (letters[k] === null && doLinesRhymeGraphemic(lyricLines[i]!, lyricLines[k]!, langCode)) {
-        letters[k] = letters[i]!;
+        letters[k] = letters[i] ?? null;
       }
     }
   }
