@@ -17,6 +17,14 @@ const getErrorCode = (error: unknown) => {
   return undefined;
 };
 
+/**
+ * Sanitise an error message before surfacing it to the UI.
+ * Strips stack traces and internal paths; keeps only human-readable text
+ * (max 200 chars to prevent accidental info disclosure).
+ */
+const sanitiseErrorMessage = (msg: string): string =>
+  msg.replace(/\bat\s+\S+/g, '').trim().slice(0, 200);
+
 export type GenerateContentParams = {
   model: string;
   contents: string;
@@ -38,7 +46,7 @@ const proxyGenerateContent = async (params: GenerateContentParams): Promise<Gene
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-    signal: signal ?? null, // RequestInit.signal: AbortSignal | null (not undefined)
+    signal: signal ?? null,
   });
   if (!response.ok) {
     let errMsg = `Server error ${response.status}`;
@@ -70,13 +78,20 @@ export const generateContentWithRetry = (
   retryOptions?: RetryOptions,
 ) => withRetry(() => getAi().models.generateContent(params), retryOptions);
 
+/**
+ * Safe JSON parser with optional Zod validation.
+ *
+ * When `schema` is omitted the raw value is returned only if it is a
+ * non-null object or array — preventing the silent `as T` cast on
+ * primitive/unknown payloads.
+ */
 export const safeJsonParse = <T>(
   text: string,
   fallback: T,
   schema?: z.ZodType<T, z.ZodTypeDef, unknown>,
 ): T => {
   try {
-    const raw = JSON.parse(text);
+    const raw: unknown = JSON.parse(text);
     if (schema) {
       const result = schema.safeParse(raw);
       if (!result.success) {
@@ -84,6 +99,11 @@ export const safeJsonParse = <T>(
         return fallback;
       }
       return result.data;
+    }
+    // Without a schema: only accept objects/arrays to avoid unsafe primitive casts.
+    if (raw === null || (typeof raw !== 'object' && !Array.isArray(raw))) {
+      console.warn('[safeJsonParse] Unexpected primitive payload — returning fallback.');
+      return fallback;
     }
     return raw as T;
   } catch (e) {
@@ -109,7 +129,8 @@ export const handleApiError = (error: unknown, defaultMessage: string) => {
   } else if (errorMessage.includes('Requested entity was not found')) {
     message = `API key error. Please check ${AI_KEY_ENV_VAR} in your server environment.`;
   } else {
-    message = errorMessage || defaultMessage;
+    // Sanitise before dispatching: strip stack frames, cap length.
+    message = sanitiseErrorMessage(errorMessage) || defaultMessage;
   }
 
   window.dispatchEvent(
