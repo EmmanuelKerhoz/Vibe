@@ -86,7 +86,8 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: 'ddg-api-cache',
               expiration: { maxEntries: 50, maxAgeSeconds: 60 },
-              networkTimeoutSeconds: 10
+              networkTimeoutSeconds: 10,
+              cacheableResponse: { statuses: [200] }
             }
           },
           {
@@ -95,7 +96,8 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: 'api-cache',
               expiration: { maxEntries: 50, maxAgeSeconds: 60 * 5 },
-              networkTimeoutSeconds: 10
+              networkTimeoutSeconds: 10,
+              cacheableResponse: { statuses: [200] }
             }
           }
         ]
