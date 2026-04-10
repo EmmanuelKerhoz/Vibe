@@ -94,8 +94,9 @@ export const LANG_TO_FAMILY: Record<string, AlgoFamily> = {
   'th': 'ALGO-TAI', 'lo': 'ALGO-TAI',
   // Austroasiatic
   'vi': 'ALGO-VIET', 'km': 'ALGO-VIET',
-  // Austronesian
-  'id': 'ALGO-AUS', 'ms': 'ALGO-AUS', 'tl': 'ALGO-AUS', 'jv': 'ALGO-AUS',
+  // Austronesian — ISO 639-1 + BCP-47 region variants
+  'id': 'ALGO-AUS', 'id-id': 'ALGO-AUS', 'ms': 'ALGO-AUS', 'ms-my': 'ALGO-AUS',
+  'tl': 'ALGO-AUS', 'jv': 'ALGO-AUS',
   // Creole / Pidgin
   'nou': 'ALGO-CRE', 'pcm': 'ALGO-CRE', 'cfg': 'ALGO-CRE',
 };
