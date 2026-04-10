@@ -37,6 +37,11 @@ import { jaLexicon } from './ja';
 import { koLexicon } from './ko';
 import { hiLexicon } from './hi';
 import { trLexicon } from './tr';
+import { haLexicon } from './ha';
+import { baLexicon } from './ba';
+import { ewLexicon } from './ew';
+import { miLexicon } from './mi';
+import { diLexicon } from './di';
 
 /**
  * Register all built-in lexicons.
@@ -72,6 +77,13 @@ export function initLexicons(): void {
   // — Bantu / Niger-Congo
   registerLexicon('yo', yoLexicon);
   registerLexicon('sw', swLexicon);
+  // — Afro-Asiatic (Chadic)
+  registerLexicon('ha', haLexicon);
+  // — KWA (Côte d'Ivoire / Ghana / Togo)
+  registerLexicon('ba', baLexicon);
+  registerLexicon('ew', ewLexicon);
+  registerLexicon('mi', miLexicon);
+  registerLexicon('di', diLexicon);
 }
 
 /**
@@ -108,6 +120,13 @@ export function getLexiconHealth(): Record<string, number> {
     // Bantu / Niger-Congo
     yo: getLexiconSize('yo'),
     sw: getLexiconSize('sw'),
+    // Afro-Asiatic (Chadic)
+    ha: getLexiconSize('ha'),
+    // KWA (Côte d'Ivoire / Ghana / Togo)
+    ba: getLexiconSize('ba'),
+    ew: getLexiconSize('ew'),
+    mi: getLexiconSize('mi'),
+    di: getLexiconSize('di'),
   };
 }
 
