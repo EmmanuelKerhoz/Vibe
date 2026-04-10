@@ -69,7 +69,21 @@ export function SongProvider({ children }: { children: ReactNode }) {
   // This prevents the memo from invalidating on every SongProvider render and
   // cascading re-renders to all useSongContext() consumers.
   const value = useMemo<SongContextValue>(
-    () => ({ ...history, ...meta }),
+    () => ({
+      song: history.song,
+      structure: history.structure,
+      past: history.past,
+      future: history.future,
+      updateState: history.updateState,
+      updateSongWithHistory: history.updateSongWithHistory,
+      updateStructureWithHistory: history.updateStructureWithHistory,
+      updateSongAndStructureWithHistory: history.updateSongAndStructureWithHistory,
+      replaceStateWithoutHistory: history.replaceStateWithoutHistory,
+      clearHistory: history.clearHistory,
+      undo: history.undo,
+      redo: history.redo,
+      ...meta,
+    }),
     [
       // State slices — change only when song data mutates
       history.song,
