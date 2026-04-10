@@ -5,29 +5,28 @@
 import type { FamilyId, LangCode } from './types';
 
 const LANG_FAMILY_MAP: Record<string, FamilyId> = {
-  // KWA family (Kwa branch, Niger-Congo)
-  ba: 'KWA', di: 'KWA', ew: 'KWA', mi: 'KWA',
-  // Yoruboïde (Niger-Congo, tonale, isolante) — phonologiquement proche de KWA
-  // NB: yo N'EST PAS Bantu. BNT (Bantu) ≠ Niger-Congo broad.
-  yo: 'KWA',
-  // CRV family
-  bk: 'CRV', cb: 'CRV', og: 'CRV', ha: 'CRV',
   // Romance
   fr: 'ROM', es: 'ROM', it: 'ROM', pt: 'ROM',
   // Germanic
   en: 'GER', de: 'GER', nl: 'GER',
-  // Bantu (true Bantu: agglutinant, harmonie vocalique ATR)
-  sw: 'BNT',
-  // Agglutinative → FALLBACK (no dedicated algo yet)
+  // KWA (Kwa branch, Niger-Congo)
+  ba: 'KWA', di: 'KWA', ew: 'KWA', mi: 'KWA',
+  // CRV (Volta-Congo residual)
+  bk: 'CRV', cb: 'CRV', og: 'CRV', ha: 'CRV',
+  // Bantu (agglutinant, ATR vowel harmony)
+  sw: 'BNT', lg: 'BNT', rw: 'BNT', sn: 'BNT', zu: 'BNT', xh: 'BNT', ny: 'BNT',
+  // Yoruboid — NOT Bantu, NOT KWA; strictly tonal, open-syllable
+  yo: 'YRB',
+  // Slavic
+  ru: 'SLV', pl: 'SLV', cs: 'SLV',
+  // Semitic
+  ar: 'SEM', he: 'SEM',
+  // Southeast Asia (tonal)
+  th: 'SEA', vi: 'SEA', km: 'SEA',
+  // CJK (character-level graphemic proxy)
+  zh: 'CJK', ja: 'CJK', ko: 'CJK',
+  // Agglutinative → FALLBACK (no phonological model yet)
   tr: 'FALLBACK', fi: 'FALLBACK', hu: 'FALLBACK',
-  // Slavic → FALLBACK
-  ru: 'FALLBACK', pl: 'FALLBACK', cs: 'FALLBACK',
-  // CJK → FALLBACK
-  zh: 'FALLBACK', ja: 'FALLBACK', ko: 'FALLBACK',
-  // SEA → FALLBACK
-  th: 'FALLBACK', vi: 'FALLBACK', km: 'FALLBACK',
-  // Semitic → FALLBACK
-  ar: 'FALLBACK', he: 'FALLBACK',
 };
 
 /**

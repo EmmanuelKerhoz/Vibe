@@ -8,14 +8,26 @@ export type LangCode =
   | 'ar' | 'he'                           // Semitic
   | 'zh' | 'ja' | 'ko'                   // CJK
   | 'th' | 'vi' | 'km'                   // Southeast Asia
-  | 'sw' | 'yo'                           // Bantu/Niger-Congo
+  | 'sw' | 'lg' | 'rw' | 'sn' | 'zu' | 'xh' | 'ny'  // Bantu
+  | 'yo'                                  // Yoruboid
   | 'ba' | 'di' | 'ew' | 'mi'           // KWA
   | 'bk' | 'cb' | 'og' | 'ha'           // CRV
   | 'ru' | 'pl' | 'cs'                   // Slavic
-  | 'tr' | 'fi' | 'hu'                   // Agglutinative
+  | 'tr' | 'fi' | 'hu'                   // Agglutinative (FALLBACK)
   | '__unknown__';
 
-export type FamilyId = 'KWA' | 'CRV' | 'ROM' | 'GER' | 'BNT' | 'FALLBACK';
+export type FamilyId =
+  | 'KWA'      // Kwa (Akan, Ewe, Mina…)
+  | 'CRV'      // Crioulo / Volta-Congo residual (Baoule, Ciofi, Gun…)
+  | 'ROM'      // Romance
+  | 'GER'      // Germanic
+  | 'BNT'      // Bantu
+  | 'YRB'      // Yoruboid (Yoruba)
+  | 'SLV'      // Slavic
+  | 'SEM'      // Semitic
+  | 'SEA'      // Southeast Asia (tonal)
+  | 'CJK'      // Chinese-Japanese-Korean
+  | 'FALLBACK';
 
 export type SegmentationMode =
   | 'whitespace'      // standard space-delimited
@@ -55,7 +67,7 @@ export interface RhymeNucleus {
   vowels: string;
   /** Coda consonants (IPA string, may be empty) */
   coda: string;
-  /** Tone class for tonal languages: H / M / L / R / F or '' */
+  /** Tone class for tonal languages: H / MH / M / ML / L / F or '' */
   tone: string;
   /** Onset consonants kept for identity check only */
   onset: string;
@@ -88,9 +100,6 @@ export type RhymeCategory =
   | 'none';         // score < 0.35
 
 // ─── Scheme detection types ───────────────────────────────────────────────────
-// Defined here so all consumers (useRhymeScheme, SectionLineList, SectionFooter)
-// can import from a single canonical location without a circular dependency on
-// rhymeSchemeDetector.ts.
 
 export type SchemeLabel =
   | 'AABB'         // couplets

@@ -12,6 +12,10 @@ import { extractNucleusCRV } from './algo-crv';
 import { extractNucleusROM } from './algo-rom';
 import { extractNucleusGER, scoreGER } from './algo-ger';
 import { extractNucleusBNT, scoreBNT } from './algo-bnt';
+import { extractNucleusYRB, scoreYRB, type YRBNucleus } from './algo-yrb';
+import { extractNucleusSLV, scoreSLV } from './algo-slv';
+import { extractNucleusSEM, scoreSEM } from './algo-sem';
+import { extractNucleusSEA, extractNucleusCJK, scoreSEA, scoreCJK } from './algo-sea';
 
 // ─── Main entry point ────────────────────────────────────────────────────────
 
@@ -23,7 +27,7 @@ export function rhymeScore(
 ): RhymeResult {
   const warnings: string[] = [];
 
-  // Step 1 — Extract line ending units (langHint activates tone-mark mode)
+  // Step 1 — Extract line ending units
   const unitA = extractLineEndingUnit(lineA, langA);
   const unitB = extractLineEndingUnit(lineB, langB);
 
@@ -34,13 +38,11 @@ export function rhymeScore(
   const { family, lowResource } = routeToFamily(langA);
   const familyB = routeToFamily(langB).family;
 
-  // Cross-family: compute real nuclei then fall back to graphemic score
+  // Cross-family: graphemic tail fallback
   if (family !== familyB) {
     warnings.push('cross-family-fallback');
-    // Extract real nuclei for each side so callers can inspect what was compared
     const nucleusA = extractBestNucleus(unitA, family, langA, lowResource);
     const nucleusB = extractBestNucleus(unitB, familyB, langB, routeToFamily(langB).lowResource);
-    // Score on normalised graphemic tail (NFC, no trailing punct)
     const tailA = normalizeInput(unitA.surface).slice(-4).toLowerCase();
     const tailB = normalizeInput(unitB.surface).slice(-4).toLowerCase();
     const scoreRaw = 1 - phonemeEditDistance(tailA, tailB);
@@ -92,6 +94,37 @@ export function rhymeScore(
       const score = scoreBNT(nA, nB, langA);
       return build(score, family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
     }
+    case 'YRB': {
+      const nA = extractNucleusYRB(unitA) as YRBNucleus;
+      const nB = extractNucleusYRB(unitB) as YRBNucleus;
+      const score = scoreYRB(nA, nB);
+      return build(score, family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
+    case 'SLV': {
+      const nA = extractNucleusSLV(unitA, langA);
+      const nB = extractNucleusSLV(unitB, langB);
+      const score = scoreSLV(nA, nB);
+      return build(score, family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
+    case 'SEM': {
+      const nA = extractNucleusSEM(unitA, langA);
+      const nB = extractNucleusSEM(unitB, langB);
+      const score = scoreSEM(nA, nB);
+      return build(score, family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
+    case 'SEA': {
+      const nA = extractNucleusSEA(unitA, langA);
+      const nB = extractNucleusSEA(unitB, langB);
+      const score = scoreSEA(nA, nB);
+      return build(score, family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
+    case 'CJK': {
+      const nA = extractNucleusCJK(unitA, langA);
+      const nB = extractNucleusCJK(unitB, langB);
+      const score = scoreCJK(nA, nB);
+      warnings.push('cjk-graphemic-proxy');
+      return build(score, family, langA, langB, unitA, unitB, nA, nB, true, warnings);
+    }
     default: {
       // FALLBACK: normalised graphemic tail PED
       const tailA = normalizeInput(unitA.surface).slice(-4).toLowerCase();
@@ -118,6 +151,11 @@ function extractBestNucleus(
     case 'ROM':  return extractNucleusROM(unit, lang);
     case 'GER':  return extractNucleusGER(unit, lang);
     case 'BNT':  return extractNucleusBNT(unit, lang);
+    case 'YRB':  return extractNucleusYRB(unit);
+    case 'SLV':  return extractNucleusSLV(unit, lang);
+    case 'SEM':  return extractNucleusSEM(unit, lang);
+    case 'SEA':  return extractNucleusSEA(unit, lang);
+    case 'CJK':  return extractNucleusCJK(unit, lang);
     default:     return { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
   }
 }
