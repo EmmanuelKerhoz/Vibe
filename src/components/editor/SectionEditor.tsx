@@ -9,6 +9,7 @@ import { useTranslation } from '../../i18n';
 import { useDrag } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useRhymeProxyContext } from '../../contexts/RhymeProxyContext';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { useRhymeScheme } from '../../hooks/useRhymeScheme';
 
@@ -46,6 +47,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   const { isGenerating } = useComposerContext();
   const { handleDrop } = useDragHandlersContext();
   const { draggedItemIndex, dragOverIndex, setDragOverIndex } = useDrag();
+  const { isProxiedForSection } = useRhymeProxyContext();
 
   const sectionName: string = section.name ?? '';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
@@ -70,7 +72,10 @@ export const SectionEditor = React.memo(function SectionEditor({
     handleDrop(sectionIndex);
   }, [handleDrop, sectionIndex]);
 
-  // ── Single useRhymeScheme instance for the whole section ───────────────────
+  // ── isProxied from song-level map ─────────────────────────────────────────
+  const isProxied = isProxiedForSection(section.id);
+
+  // ── Single useRhymeScheme instance for the whole section ────────────────
   const lyricTexts = useMemo(
     () => section.lines
       .filter(l => !(l.isMeta ?? isPureMetaLine(l.text)))
@@ -78,8 +83,8 @@ export const SectionEditor = React.memo(function SectionEditor({
     [section.lines],
   );
 
-  const schemeResult = useRhymeScheme(lyricTexts, sectionTargetLanguage);
-  // ──────────────────────────────────────────────────────────────────────────
+  const schemeResult = useRhymeScheme(lyricTexts, sectionTargetLanguage, isProxied);
+  // ────────────────────────────────────────────────────────────────────────────
 
   const adaptControlOptional = {
     ...(onSectionTargetLanguageChange ? { onSectionTargetLanguageChange } : {}),
@@ -157,6 +162,7 @@ export const SectionEditor = React.memo(function SectionEditor({
           postInstructions={section.postInstructions ?? []}
           playAudioFeedback={playAudioFeedback}
           schemeResult={schemeResult}
+          isProxied={isProxied}
         />
       </div>
     </section>
