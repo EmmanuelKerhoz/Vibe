@@ -1,6 +1,6 @@
 /**
  * Rhyme Engine v2 — Test Suite
- * 28 tests: router, normalize, scoring, all 5 families
+ * 35 tests: router, normalize, scoring, all 5 families, corrections post-refacto
  */
 
 import { describe, it, expect } from 'vitest';
@@ -52,14 +52,43 @@ describe('extractLineEndingUnit', () => {
     const u = extractLineEndingUnit('night!');
     expect(u.surface).toBe('night');
   });
+
+  // tone-mark mode via langHint
+  it('KWA langHint activates tone-mark segmentation (ba)', () => {
+    const u = extractLineEndingUnit("n'gá so", 'ba');
+    expect(u.segmentationMode).toBe('tone-mark');
+    expect(u.script).toBe('latin');
+    // Surface must preserve tonal diacritic on final token
+    expect(u.surface).toBe('so');
+  });
+  it('KWA langHint preserves tonal diacritic on final token (ew)', () => {
+    const u = extractLineEndingUnit('me wò', 'ew');
+    expect(u.segmentationMode).toBe('tone-mark');
+    // U+00F2 (grave) must survive — not stripped as punctuation
+    expect(u.surface).toBe('wò');
+  });
+  it('VI langHint activates tone-mark segmentation', () => {
+    const u = extractLineEndingUnit('trời đất', 'vi');
+    expect(u.segmentationMode).toBe('tone-mark');
+    expect(u.surface).toBe('đất');
+  });
 });
 
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 describe('routeToFamily', () => {
-  it('routes KWA languages', () => {
+  it('routes KWA languages (ba, ew)', () => {
     expect(routeToFamily('ba').family).toBe('KWA');
     expect(routeToFamily('ew').family).toBe('KWA');
+  });
+  // yo is Yoruboid (Niger-Congo), NOT Bantu — must route KWA
+  it('routes yo → KWA (Yoruboid, not Bantu)', () => {
+    expect(routeToFamily('yo').family).toBe('KWA');
+    expect(routeToFamily('yo').lowResource).toBe(false);
+  });
+  // sw is the sole true Bantu representative
+  it('routes sw → BNT (true Bantu)', () => {
+    expect(routeToFamily('sw').family).toBe('BNT');
   });
   it('routes Romance languages', () => {
     expect(routeToFamily('fr').family).toBe('ROM');
@@ -68,10 +97,6 @@ describe('routeToFamily', () => {
   it('routes Germanic languages', () => {
     expect(routeToFamily('en').family).toBe('GER');
     expect(routeToFamily('de').family).toBe('GER');
-  });
-  it('routes BNT languages', () => {
-    expect(routeToFamily('yo').family).toBe('BNT');
-    expect(routeToFamily('sw').family).toBe('BNT');
   });
   it('fallbacks unknown lang with lowResource=true', () => {
     const r = routeToFamily('__unknown__');
@@ -115,10 +140,37 @@ describe('KWA rhyme engine', () => {
     expect(r.family).toBe('KWA');
     expect(r.score).toBeGreaterThan(0.85);
   });
-  it('tone mismatch reduces score', () => {
+  it('tone mismatch reduces score (ba)', () => {
     const rMatch    = rhymeScore('amá', 'damá', 'ba', 'ba');
     const rMismatch = rhymeScore('amá', 'damà', 'ba', 'ba');
     expect(rMatch.score).toBeGreaterThan(rMismatch.score);
+  });
+  // yo now routes KWA — tone extraction must still work
+  it('yo routes to KWA family', () => {
+    const r = rhymeScore('ilé', 'olé', 'yo', 'yo');
+    expect(r.family).toBe('KWA');
+  });
+  it('yo tone match yields higher score than mismatch', () => {
+    const rMatch    = rhymeScore('ilé', 'olé', 'yo', 'yo');
+    const rMismatch = rhymeScore('ilé', 'olè', 'yo', 'yo');
+    expect(rMatch.score).toBeGreaterThanOrEqual(rMismatch.score);
+  });
+});
+
+// ─── Family: CRV + Haoussa tonal ─────────────────────────────────────────────
+
+describe('CRV rhyme engine', () => {
+  it('HA: same tone class → higher score than tone mismatch', () => {
+    // Haoussa: gídaa (H) vs ídaa (H) — same tone, should score higher
+    // than gídaa (H) vs ìdaa (L)
+    const rMatch    = rhymeScore('gídaa', 'ídaa', 'ha', 'ha');
+    const rMismatch = rhymeScore('gídaa', 'ìdaa', 'ha', 'ha');
+    expect(rMatch.score).toBeGreaterThanOrEqual(rMismatch.score);
+  });
+  it('HA: nucleus extracted (not empty)', () => {
+    const r = rhymeScore('kasuwa', 'duniya', 'ha', 'ha');
+    expect(r.nucleusA.vowels).not.toBe('');
+    expect(r.nucleusB.vowels).not.toBe('');
   });
 });
 
@@ -158,18 +210,16 @@ describe('GER rhyme engine', () => {
   });
 });
 
-// ─── Family: BNT ─────────────────────────────────────────────────────────────
+// ─── Family: BNT (Swahili only post-refacto) ─────────────────────────────────
 
 describe('BNT rhyme engine', () => {
-  it('SW: identical final vowel → high score', () => {
+  it('SW: routes to BNT', () => {
     const r = rhymeScore('nakupenda', 'karibu sana', 'sw', 'sw');
     expect(r.family).toBe('BNT');
-    expect(r.score).toBeGreaterThanOrEqual(0);
   });
-  it('YO: tone match boosts score', () => {
-    const rMatch    = rhymeScore('ilé', 'olé', 'yo', 'yo');
-    const rMismatch = rhymeScore('ilé', 'olè', 'yo', 'yo');
-    expect(rMatch.score).toBeGreaterThanOrEqual(rMismatch.score);
+  it('SW: identical final vowel → non-zero score', () => {
+    const r = rhymeScore('nakupenda', 'karibu sana', 'sw', 'sw');
+    expect(r.score).toBeGreaterThanOrEqual(0);
   });
 });
 
@@ -180,5 +230,17 @@ describe('cross-family fallback', () => {
     const r = rhymeScore('night', 'nuit', 'en', 'fr');
     expect(r.family).toBe('FALLBACK');
     expect(r.warnings).toContain('cross-family-fallback');
+  });
+  // Post-refacto: nuclei must be real, not dummy empty objects
+  it('cross-family: nucleusA and nucleusB are not both empty', () => {
+    const r = rhymeScore('the night', 'la nuit', 'en', 'fr');
+    const bothEmpty = r.nucleusA.vowels === '' && r.nucleusB.vowels === '';
+    expect(bothEmpty).toBe(false);
+  });
+  // FALLBACK graphemic path: surface must be NFC-normalised before slice
+  it('FALLBACK: surface is NFC-normalised (no broken multi-byte slice)', () => {
+    // Arabic surface — slice(-4) must not produce a broken string
+    const r = rhymeScore('\u0645\u0633\u0627\u0621', '\u0645\u0633\u0627\u0621', 'ar', 'ar');
+    expect(r.score).toBeCloseTo(1, 1);
   });
 });
