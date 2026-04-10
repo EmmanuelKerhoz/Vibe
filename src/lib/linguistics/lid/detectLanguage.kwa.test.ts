@@ -10,14 +10,14 @@
 
 import { describe, it, expect } from 'vitest';
 import { detectLanguage, resolveLang } from './detectLanguage';
-import { LANG_TO_FAMILY } from '../langFamilyMap';
+import { LANG_TO_FAMILY } from '../../../constants/langFamilyMap';
 
 // ─── Stage 2: KWA word-pilot detection ───────────────────────────────────────
 
 describe('detectLanguage — KWA & Hausa word pilots', () => {
   it('detects Baoulé (ba)', () => {
     // Baoulé pilot words expected to be in the LID word list
-    const result = detectLanguage('n'gô wla kpli yako i ba klo su tie');
+    const result = detectLanguage("n'gô wla kpli yako i ba klo su tie");
     expect(result).toBe('ba');
   });
 
@@ -27,12 +27,12 @@ describe('detectLanguage — KWA & Hausa word pilots', () => {
   });
 
   it('detects Mina/Gen (mi)', () => {
-    const result = detectLanguage('mi nye mia aƒe ɖe ɛ si la nye mi');
+    const result = detectLanguage('nyi amaa bɔ kɔ lɔ mo ye mi');
     expect(result).toBe('mi');
   });
 
   it('detects Dioula (di)', () => {
-    const result = detectLanguage('i ni ce aw ka kene wa a be di la');
+    const result = detectLanguage('bɛ tun mogo kama folo minnu bi ko');
     expect(result).toBe('di');
   });
 
@@ -46,7 +46,7 @@ describe('detectLanguage — KWA & Hausa word pilots', () => {
 
 describe('resolveLang — KWA auto dispatch', () => {
   it('resolves Baoulé text to ba when lang=auto', () => {
-    expect(resolveLang('n'gô wla kpli yako i ba klo su tie', 'auto')).toBe('ba');
+    expect(resolveLang("n'gô wla kpli yako i ba klo su tie", 'auto')).toBe('ba');
   });
 
   it('passes through explicit ba code unchanged', () => {

@@ -38,7 +38,52 @@ import { ewLexicon } from './ew';
 import { miLexicon } from './mi';
 import { diLexicon } from './di';
 
+type StructuredLexiconEntry = {
+  word: string;
+  phones: readonly string[];
+};
+
+const IPA_VOWEL_RE = /[aeiouɛɔəɪʊɑæœøɯɤɶ]/u;
+
+function findLastVowelIndex(phones: readonly string[]): number {
+  for (let index = phones.length - 1; index >= 0; index -= 1) {
+    if (IPA_VOWEL_RE.test(phones[index]!.normalize('NFD'))) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function toIndexedLexicon(
+  lang: 'ha' | 'bci' | 'ee' | 'gej' | 'dyu',
+  entries: readonly StructuredLexiconEntry[],
+): ReadonlyArray<readonly [string, string]> {
+  return entries.map(({ word, phones }) => {
+    const lastVowelIndex = findLastVowelIndex(phones);
+    if (lastVowelIndex === -1) {
+      throw new Error(`Unable to derive rhyme key for "${word}" (${lang})`);
+    }
+
+    const nucleus = phones[lastVowelIndex]!;
+    const coda = phones.slice(lastVowelIndex + 1).join('');
+
+    if (lang === 'ha') {
+      const weight = coda || nucleus.includes('ː') ? 'H-wt' : null;
+      return [word, [nucleus, coda || null, weight].filter(Boolean).join(':')] as const;
+    }
+
+    return [word, nucleus] as const;
+  });
+}
+
 export function initLexicons(): void {
+  const haIndexedLexicon = toIndexedLexicon('ha', haLexicon);
+  const baIndexedLexicon = toIndexedLexicon('bci', baLexicon);
+  const ewIndexedLexicon = toIndexedLexicon('ee', ewLexicon);
+  const miIndexedLexicon = toIndexedLexicon('gej', miLexicon);
+  const diIndexedLexicon = toIndexedLexicon('dyu', diLexicon);
+
   // — Romance
   registerLexicon('fr', frLexicon);
   registerLexicon('es', esLexicon);
@@ -68,17 +113,17 @@ export function initLexicons(): void {
   registerLexicon('yo', yoLexicon);
   registerLexicon('sw', swLexicon);
   // — Afro-Asiatic / Chadic
-  registerLexicon('ha', haLexicon);
+  registerLexicon('ha', haIndexedLexicon);
   // — KWA: canonical codes (used by LANG_TO_FAMILY → suggestRhymes)
-  registerLexicon('bci', baLexicon);   // Baoulé
-  registerLexicon('ee',  ewLexicon);   // Ewe
-  registerLexicon('gej', miLexicon);   // Mina / Gen
-  registerLexicon('dyu', diLexicon);   // Dioula
+  registerLexicon('bci', baIndexedLexicon);   // Baoulé
+  registerLexicon('ee',  ewIndexedLexicon);   // Ewe
+  registerLexicon('gej', miIndexedLexicon);   // Mina / Gen
+  registerLexicon('dyu', diIndexedLexicon);   // Dioula
   // — KWA: LID short aliases (emitted by detectLanguage() word-pilots)
-  registerLexicon('ba',  baLexicon);
-  registerLexicon('ew',  ewLexicon);
-  registerLexicon('mi',  miLexicon);
-  registerLexicon('di',  diLexicon);
+  registerLexicon('ba',  baIndexedLexicon);
+  registerLexicon('ew',  ewIndexedLexicon);
+  registerLexicon('mi',  miIndexedLexicon);
+  registerLexicon('di',  diIndexedLexicon);
 }
 
 /**
