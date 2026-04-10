@@ -11,7 +11,8 @@
  *   Stage 2 — Word-pilot detector
  *     For Latin-script text, a small set of high-frequency, language-exclusive
  *     words scores each candidate language. Highest score wins.
- *     Covered: fr, en, es, it, pt, de, nl, sw, yo, ha, id, tr, fi, hu, vi, th.
+ *     Covered: fr, en, es, it, pt, de, nl, sw, yo, ha, id, tr, fi, hu, vi, th,
+ *              ba, ew, mi, di (KWA non-standard codes).
  *
  * @param text  Raw text (lyric, word, or sentence). May be mixed-script.
  * @returns     ISO 639-1/3 language code, or DEFAULT_LANG if detection fails.
@@ -20,7 +21,7 @@
  * a code and use it; the Registry's ALGO-ROBUST fallback handles residual errors.
  */
 
-// ─── Constants ──────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 /** Returned when detection fails or text is too short. */
 export const DEFAULT_LANG = 'fr';
@@ -77,7 +78,7 @@ function detectByScript(text: string): string | undefined {
   return undefined;
 }
 
-// ─── Stage 2: Word-Pilot Detector ────────────────────────────────────────────
+// ─── Stage 2: Word-Pilot Detector ────────────────────────────────────────────────
 
 /**
  * Pilot word lists — high-frequency, exclusive to the target language.
@@ -89,6 +90,13 @@ function detectByScript(text: string): string | undefined {
  *
  * Scores: each matched word adds +2. Multi-word match adds +3.
  * Tie: DEFAULT_LANG wins.
+ *
+ * KWA codes used:
+ *   yo = Yoruba (ISO 639-1)
+ *   ba = Baoulé (private/SIL bci)
+ *   ew = Ewe   (ISO 639-1)
+ *   mi = Mina / Gengèbé (SIL gej, mapped as mi here)
+ *   di = Dioula (ISO 639-3 dyu, mapped as di here)
  */
 const WORD_PILOTS: Record<string, string[]> = {
   fr: [
@@ -133,7 +141,7 @@ const WORD_PILOTS: Record<string, string[]> = {
   ],
   yo: [
     'ti', 'ni', 'naa', 'ati', 'fun', 'lati', 'ojo', 'omo',
-    'ilu', 'ile', 'agba',
+    'ilu', 'ile', 'agba', 'bı', 'àwa', 'jẹ',
   ],
   ha: [
     'da', 'ne', 'ce', 'na', 'kuma', 'amma', 'don', 'daga',
@@ -158,6 +166,26 @@ const WORD_PILOTS: Record<string, string[]> = {
   vi: [
     'và', 'của', 'có', 'là', 'cho', 'trong', 'đó', 'với',
     'được', 'không', 'này', 'một',
+  ],
+  // ─── KWA languages (Latin-script, tonal) ─────────────────────────────────
+  ba: [
+    // Baoulé (bci) — high-frequency grammatical words
+    'n', 'a', 'be', 'blɔ', 'klo', 'suə', 'kun', 'man',
+    'nguɛ', 'wa', 'tra', 'yapi',
+  ],
+  ew: [
+    // Ewe
+    'le', 'kple', 'ne', 'si', 'hafi', 'megbe', 'nuɖoviwo',
+    'deke', 'eye', 'loo', 'nku',
+  ],
+  mi: [
+    // Mina/Gengèbé (mapped as mi)
+    'mi', 'ye', 'bɔ', 'kɔ', 'lɔ', 'mo', 'nyi', 'amaa',
+  ],
+  di: [
+    // Dioula (dyu)
+    'a', 'ka', 'ko', 'bɛ', 'tun', 'bi', 'don', 'mogo',
+    'kama', 'folo', 'minnu',
   ],
 };
 
@@ -197,7 +225,7 @@ function detectByWordPilots(tokens: string[]): string | undefined {
   return sorted[0]![0];
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
  * Detect the language of a text snippet.
