@@ -4,7 +4,7 @@
 
 import type { RhymeCategory, RhymeNucleus } from './types';
 
-// ─── Phoneme Edit Distance ──────────────────────────────────────────────────
+// ─── Phoneme Edit Distance ─────────────────────────────────────────────────────
 //
 // Use a flat Int32Array to avoid all dp[i][j] optional-chain issues.
 // idx(i, j) = i * (lb+1) + j
@@ -39,16 +39,48 @@ export function phonemeEditDistance(a: string, b: string): number {
   return dp[la * cols + lb]! / Math.max(la, lb);
 }
 
-// ─── KWA tonal scoring ──────────────────────────────────────────────────────
+// ─── KWA tonal scoring ────────────────────────────────────────────────────────
+
+/**
+ * Tone distance table for 3-level tonal systems (H / M / L).
+ *
+ * Rationale:
+ * - H ≠ L : maximal distance (adjacent levels skipped)  → 0.0
+ * - H ≠ M : one step apart                              → 0.5
+ * - M ≠ L : one step apart                              → 0.5
+ * - any = any                                            → 1.0
+ * - one tone absent (undefined)                          → 0.4
+ *   (uncertainty — lower than a confirmed partial match,
+ *    higher than a confirmed full mismatch)
+ *
+ * Exported for unit tests.
+ */
+export function toneDistance(a: string | undefined, b: string | undefined): number {
+  if (!a || !b) return 0.4;       // at least one tone undetected — uncertain
+  if (a === b)  return 1.0;       // exact match
+
+  const aU = a.toUpperCase();
+  const bU = b.toUpperCase();
+
+  // Adjacent steps: H↔M or M↔L
+  if ((aU === 'H' && bU === 'M') || (aU === 'M' && bU === 'H')) return 0.5;
+  if ((aU === 'M' && bU === 'L') || (aU === 'L' && bU === 'M')) return 0.5;
+
+  // Maximum distance: H↔L
+  if ((aU === 'H' && bU === 'L') || (aU === 'L' && bU === 'H')) return 0.0;
+
+  // Numeric tones or unrecognised labels: treat as binary
+  return 0.0;
+}
 
 export function scoreKWANormalized(a: RhymeNucleus, b: RhymeNucleus): number {
   const vowelSim = 1 - phonemeEditDistance(a.vowels, b.vowels);
-  const codaSim  = 1 - phonemeEditDistance(a.coda, b.coda);
-  const toneMatch = (a.tone && b.tone) ? (a.tone === b.tone ? 1 : 0) : 0.5;
-  return 0.4 * vowelSim + 0.2 * codaSim + 0.4 * toneMatch;
+  const codaSim  = 1 - phonemeEditDistance(a.coda,   b.coda);
+  const toneSim  = toneDistance(a.tone, b.tone);
+  return 0.4 * vowelSim + 0.2 * codaSim + 0.4 * toneSim;
 }
 
-// ─── CRV mora-weighted scoring ──────────────────────────────────────────────
+// ─── CRV mora-weighted scoring ───────────────────────────────────────────────
 
 export function scoreCRV(a: RhymeNucleus, b: RhymeNucleus): number {
   const vowelSim   = 1 - phonemeEditDistance(a.vowels, b.vowels);
@@ -58,7 +90,7 @@ export function scoreCRV(a: RhymeNucleus, b: RhymeNucleus): number {
   return Math.min(raw, 1);
 }
 
-// ─── Category threshold mapping ─────────────────────────────────────────────
+// ─── Category threshold mapping ───────────────────────────────────────────────
 
 export function categorize(score: number): RhymeCategory {
   if (score >= 0.92) return 'perfect';
