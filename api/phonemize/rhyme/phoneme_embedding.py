@@ -1,126 +1,153 @@
-"""
-phoneme_embedding.py — Lyricist v4.1 Remediation #5
-Scoring niveau 4 : cosine similarity sur embeddings phonémiques.
-
-Priorité d'activation : ALGO-KWA, ALGO-CRV, ALGO-SIN, ALGO-TAI, ALGO-VIET.
-
-Embeddings statiques PHOIBLE-lite (dim=5) :
-  [voisement, lieu_articulation, mode_articulation, nasalité, hauteur_tonale]
-Hook ouvert pour encodeur neural (passer un NeuralEncoder).
-"""
+# phoneme_embedding.py  v2.0
+# Scoring niveau 4 : PHOIBLE-lite dim=6 + contours HL Hausa/CRV
 from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Literal, Optional, Protocol
+from dataclasses import dataclass
+from typing import Optional
 import math
 
-# ─── PHOIBLE-lite feature vectors (dim=5) ────────────────────────────────────
-# [voicing, place, manner, nasality, tone_height]
-# All values normalised to [0.0, 1.0]
+@dataclass
+class ToneVector:
+    """Représentation vectorielle du ton : scalaire pour niveaux, 2D pour contours."""
+    onset: float    # H=1.0, M=0.5, L=0.0
+    offset: float   # = onset si ton niveau ; ≠ onset si contour HL/LH
+    is_contour: bool = False
 
-_PHONEME_VECTORS: Dict[str, List[float]] = {
-    # Vowels
-    "a":    [0.0, 0.50, 0.80, 0.0, 0.00],
-    "a\u02d0": [0.0, 0.50, 0.80, 0.0, 0.10],
-    "e":    [0.0, 0.80, 0.60, 0.0, 0.00],
-    "\u025b":    [0.0, 0.70, 0.65, 0.0, 0.00],
-    "i":    [0.0, 1.00, 0.30, 0.0, 0.00],
-    "i\u02d0": [0.0, 1.00, 0.30, 0.0, 0.10],
-    "o":    [0.0, 0.30, 0.60, 0.0, 0.50],
-    "\u0254":    [0.0, 0.20, 0.70, 0.0, 0.50],
-    "u":    [0.0, 0.10, 0.30, 0.0, 1.00],
-    "u\u02d0": [0.0, 0.10, 0.30, 0.0, 1.00],
-    # Stops
-    "p":    [0.0, 0.00, 0.00, 0.0, 0.00],
-    "b":    [1.0, 0.00, 0.00, 0.0, 0.00],
-    "t":    [0.0, 0.30, 0.00, 0.0, 0.00],
-    "d":    [1.0, 0.30, 0.00, 0.0, 0.00],
-    "k":    [0.0, 0.70, 0.00, 0.0, 0.00],
-    "g":    [1.0, 0.70, 0.00, 0.0, 0.00],
-    # Nasals
-    "m":    [1.0, 0.00, 0.00, 1.0, 0.00],
-    "n":    [1.0, 0.30, 0.00, 1.0, 0.00],
-    "\u014b":    [1.0, 0.70, 0.00, 1.0, 0.00],
-    # Fricatives
-    "s":    [0.0, 0.35, 0.50, 0.0, 0.00],
-    "z":    [1.0, 0.35, 0.50, 0.0, 0.00],
-    "f":    [0.0, 0.10, 0.45, 0.0, 0.00],
-    "v":    [1.0, 0.10, 0.45, 0.0, 0.00],
-    # Sonorants
-    "l":    [1.0, 0.30, 0.90, 0.0, 0.00],
-    "r":    [1.0, 0.35, 0.85, 0.0, 0.00],
-    # Tone markers (KWA/CRV — binary H/L after normalize_tone)
-    "H":    [0.0, 0.00, 0.00, 0.0, 1.00],
-    "M":    [0.0, 0.00, 0.00, 0.0, 0.50],
-    "L":    [0.0, 0.00, 0.00, 0.0, 0.00],
-    "HL":   [0.0, 0.00, 0.00, 0.0, 0.70],
-    "LH":   [0.0, 0.00, 0.00, 0.0, 0.30],
+    @classmethod
+    def from_label(cls, label: str) -> "ToneVector":
+        """
+        Accepte : "H", "L", "M", "MH", "ML", "HL", "LH"
+        CRV Hausa : "HL" → contour onset=1.0, offset=0.0
+        """
+        label = label.upper()
+        MAP = {"H": 1.0, "M": 0.5, "L": 0.0, "MH": 0.75, "ML": 0.25}
+        if label in MAP:
+            v = MAP[label]
+            return cls(onset=v, offset=v, is_contour=False)
+        if label == "HL":
+            return cls(onset=1.0, offset=0.0, is_contour=True)
+        if label == "LH":
+            return cls(onset=0.0, offset=1.0, is_contour=True)
+        return cls(onset=0.5, offset=0.5, is_contour=False)
+
+    def similarity(self, other: "ToneVector") -> float:
+        """
+        Cosine 2D normalisé sur [0,1].
+        Ton niveau vs contour : pénalité via match partiel sur onset.
+        """
+        if self.is_contour != other.is_contour:
+            return 0.5 * (1.0 - abs(self.onset - other.onset))
+        dot = self.onset * other.onset + self.offset * other.offset
+        mag_a = math.sqrt(self.onset**2 + self.offset**2) or 1e-9
+        mag_b = math.sqrt(other.onset**2 + other.offset**2) or 1e-9
+        return dot / (mag_a * mag_b)
+
+
+# ── Vecteurs PHOIBLE-lite (dim=6) ───────────────────────────────────────────
+# [voicing, place, manner, nasality, tone_onset, tone_offset]
+
+_PHOIBLE_VECTORS: dict[str, list[float]] = {
+    "p": [0.0, 0.3, 0.1, 0.0, 0.0, 0.0],
+    "b": [1.0, 0.3, 0.1, 0.0, 0.0, 0.0],
+    "t": [0.0, 0.5, 0.1, 0.0, 0.0, 0.0],
+    "d": [1.0, 0.5, 0.1, 0.0, 0.0, 0.0],
+    "k": [0.0, 0.8, 0.1, 0.0, 0.0, 0.0],
+    "g": [1.0, 0.8, 0.1, 0.0, 0.0, 0.0],
+    "m": [1.0, 0.3, 0.2, 1.0, 0.0, 0.0],
+    "n": [1.0, 0.5, 0.2, 1.0, 0.0, 0.0],
+    "l": [1.0, 0.5, 0.5, 0.0, 0.0, 0.0],
+    "r": [1.0, 0.5, 0.6, 0.0, 0.0, 0.0],
+    "s": [0.0, 0.5, 0.3, 0.0, 0.0, 0.0],
+    "z": [1.0, 0.5, 0.3, 0.0, 0.0, 0.0],
+    "f": [0.0, 0.4, 0.3, 0.0, 0.0, 0.0],
+    "v": [1.0, 0.4, 0.3, 0.0, 0.0, 0.0],
+    "a": [1.0, 0.5, 0.1, 0.0, 0.0, 0.0],
+    "e": [1.0, 0.2, 0.7, 0.0, 0.0, 0.0],
+    "i": [1.0, 0.1, 1.0, 0.0, 0.0, 0.0],
+    "o": [1.0, 0.7, 0.7, 0.0, 0.0, 0.0],
+    "u": [1.0, 0.9, 1.0, 0.0, 0.0, 0.0],
+    "ɛ": [1.0, 0.2, 0.5, 0.0, 0.0, 0.0],
+    "ɔ": [1.0, 0.7, 0.5, 0.0, 0.0, 0.0],
+    "ɪ": [1.0, 0.15, 0.85, 0.0, 0.0, 0.0],
+    "ʊ": [1.0, 0.85, 0.85, 0.0, 0.0, 0.0],
 }
 
-_DIM = 5
-_ZERO_VEC: List[float] = [0.0] * _DIM
+def _get_vector(phone: str) -> list[float]:
+    return _PHOIBLE_VECTORS.get(phone, [0.5] * 6)
 
+def _cosine(v1: list[float], v2: list[float]) -> float:
+    dot = sum(a * b for a, b in zip(v1, v2))
+    m1 = math.sqrt(sum(a**2 for a in v1)) or 1e-9
+    m2 = math.sqrt(sum(b**2 for b in v2)) or 1e-9
+    return dot / (m1 * m2)
 
-class NeuralEncoder(Protocol):
-    """Protocol for optional neural phoneme encoder."""
-    def encode(self, phones: List[str]) -> List[float]: ...
+def _inject_tone(vec: list[float], tone: ToneVector) -> list[float]:
+    """Injecte le vecteur tonal dans les dimensions 4-5."""
+    return vec[:4] + [tone.onset, tone.offset]
 
 
 @dataclass
 class EmbeddingScore:
     score: float
-    method: Literal["embedding-static", "embedding-neural"]
-    embedding_rn1: List[float] = field(default_factory=list)
-    embedding_rn2: List[float] = field(default_factory=list)
-
-
-def _phoneme_to_vector(phone: str) -> List[float]:
-    return list(_PHONEME_VECTORS.get(phone, _ZERO_VEC))
-
-
-def rn_to_embedding(rn_phones: List[str]) -> List[float]:
-    """Average PHOIBLE-lite vectors over the rhyme nucleus phone sequence."""
-    if not rn_phones:
-        return list(_ZERO_VEC)
-    vecs = [_phoneme_to_vector(p) for p in rn_phones]
-    return [sum(v[i] for v in vecs) / len(vecs) for i in range(_DIM)]
-
-
-def _cosine(v1: List[float], v2: List[float]) -> float:
-    dot = sum(a * b for a, b in zip(v1, v2))
-    n1 = math.sqrt(sum(a * a for a in v1))
-    n2 = math.sqrt(sum(b * b for b in v2))
-    if n1 == 0.0 or n2 == 0.0:
-        return 0.0
-    return round(dot / (n1 * n2), 6)
+    tone_similarity: float
+    phoneme_similarity: float
+    method: str
+    notes: list[str]
 
 
 def score_embedding(
-    rn1: List[str],
-    rn2: List[str],
-    neural_model: Optional[NeuralEncoder] = None,
+    rn1_phones: list[str],
+    rn2_phones: list[str],
+    tone1: Optional[str] = None,
+    tone2: Optional[str] = None,
+    lang: str = "",
+    neural_model=None,
 ) -> EmbeddingScore:
-    """Compute embedding similarity between two rhyme nucleus phone sequences.
-
-    Args:
-        rn1:          Phone list for rhyme nucleus 1.
-        rn2:          Phone list for rhyme nucleus 2.
-        neural_model: Optional NeuralEncoder — overrides static PHOIBLE-lite.
-
-    Returns:
-        EmbeddingScore with cosine similarity and method tag.
+    """
+    Scoring niveau 4 (embedding).
+    - neural_model fourni → délègue (hook ouvert).
+    - Sinon : PHOIBLE-lite dim=6 avec contours HL Hausa/CRV.
+    Activation prioritaire : KWA (EW/MI), CRV (HA/CB), SIN, TAI, VIET.
     """
     if neural_model is not None:
-        emb1 = neural_model.encode(rn1)
-        emb2 = neural_model.encode(rn2)
-        method: Literal["embedding-static", "embedding-neural"] = "embedding-neural"
-    else:
-        emb1 = rn_to_embedding(rn1)
-        emb2 = rn_to_embedding(rn2)
-        method = "embedding-static"
+        raw = neural_model.score(rn1_phones, rn2_phones)
+        return EmbeddingScore(
+            score=float(raw),
+            tone_similarity=0.0,
+            phoneme_similarity=float(raw),
+            method="neural",
+            notes=["neural_model delegate"],
+        )
+
+    phones1 = rn1_phones if rn1_phones else ["a"]
+    phones2 = rn2_phones if rn2_phones else ["a"]
+    pairs = list(zip(phones1, phones2))
+    if not pairs:
+        return EmbeddingScore(0.0, 0.0, 0.0, "phoible_lite", ["empty phones"])
+
+    phon_scores = [_cosine(_get_vector(p1), _get_vector(p2)) for p1, p2 in pairs]
+    phon_sim = sum(phon_scores) / len(phon_scores)
+
+    tone_sim = 1.0
+    notes = []
+    if tone1 and tone2:
+        tv1 = ToneVector.from_label(tone1)
+        tv2 = ToneVector.from_label(tone2)
+        tone_sim = tv1.similarity(tv2)
+        if tv1.is_contour or tv2.is_contour:
+            notes.append(
+                f"contour_tone: {tone1}↔{tone2} → tone_sim={tone_sim:.3f} "
+                f"(lang={lang or 'unspecified'})"
+            )
+
+    tonal_langs = {"EW", "MI", "BA", "DI", "HA", "CB", "ZH", "YUE", "TH", "LO", "VI"}
+    w_phon, w_tone = (0.6, 0.4) if lang.upper() in tonal_langs else (0.8, 0.2)
+
+    final = w_phon * phon_sim + w_tone * tone_sim
 
     return EmbeddingScore(
-        score=_cosine(emb1, emb2),
-        method=method,
-        embedding_rn1=emb1,
-        embedding_rn2=emb2,
+        score=round(final, 4),
+        tone_similarity=round(tone_sim, 4),
+        phoneme_similarity=round(phon_sim, 4),
+        method="phoible_lite_v2",
+        notes=notes or [f"weights: phon={w_phon} tone={w_tone}"],
     )

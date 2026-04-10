@@ -1,106 +1,190 @@
-"""
-morpho_strip.py — Lyricist v4.1 Remediation #4
-Strip morphologique pré-extraction du RN.
-
-Familles couvertes :
-  BNT  — strip préfixes de classes nominales (SW/ZU)
-  TRK  — strip suffixes agglutinants (TR/UZ)
-  DRV  — strip suffixes dravidiens (TA/TE)
-KWA non concerné (phonologie analytique, pas d'agglutination nominale).
-"""
+# morpho_strip.py  v2.0
+# Stripping pré-extractRN : affixes BNT/TRK/DRV + clitiques KWA (Ewe/Mina)
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
-
-# Bantu nominal class prefixes to strip before RN extraction
-_BANTU_PREFIXES: Dict[str, List[str]] = {
-    "sw": ["watu", "mtu", "kitu", "vitu", "mwa", "wa", "ki", "vi", "ma", "ny", "mu", "mi", "pa", "ku", "n"],
-    "zu": ["ama", "ulu", "izi", "imi", "um", "is", "iz", "in"],
-    "ln": ["ba", "mo", "lo", "ma", "bo", "ko"],
-}
-
-# Turkic case/plural suffixes to strip (longest-match first at runtime)
-_TURKIC_SUFFIXES: Dict[str, List[str]] = {
-    "tr": ["lar", "ler", "dan", "den", "tan", "ten", "da", "de", "ta", "te",
-           "\u0131n", "in", "un", "\u00fcn", "\u0131", "i", "u", "\u00fc", "a", "e"],
-    "uz": ["lar", "lar", "da", "ga"],
-}
-
-# Dravidian case suffixes (Unicode)
-_DRAVIDIAN_SUFFIXES: Dict[str, List[str]] = {
-    "ta": ["\u0b95\u0bb3\u0bcd", "\u0b87\u0bb2\u0bcd", "\u0b87\u0ba9\u0bcd",
-           "\u0b89\u0bae\u0bcd", "\u0b90", "\u0b95\u0bc1"],
-    "te": ["\u0c32\u0c41", "\u0c32\u0c4b", "\u0c15\u0c41", "\u0c28\u0c41"],
-}
-
+from dataclasses import dataclass, field
+from typing import Optional
 
 @dataclass
 class StripResult:
-    original: str
-    stripped: str
-    affix_removed: str
-    morpho_strip_applied: bool
+    token: str                      # token IPA après strip
+    stem_nucleus: Optional[str]     # nucleus du stem avant clitique
+    stem_tone: Optional[str]        # ton base du stem
+    morpho_strip_applied: str       # tag audit
+    harmonic_variant: bool = False  # True si harmonie Ewe appliquée
+    notes: list[str] = field(default_factory=list)
 
+# ── clitiques Ewe/Mina ──────────────────────────────────────────────────────
 
-def strip_morphology(token: str, lang: str) -> Tuple[str, str]:
-    """Strip agglutinative affixes from token for BNT, TRK, DRV families.
+_EWE_HIGH_VOWELS = {"i", "e", "ɪ"}          # height=high, front
+_EWE_MID_LOW_VOWELS = {"ɛ", "a", "ɔ", "o", "u", "ʊ"}
 
-    Returns:
-        (stripped_token, affix_removed) — affix is '' when no strip occurred.
+_EWE_CLITICS = {
+    "-e":  {"gloss": "3SG",     "surface_vowel": "e"},
+    "-é":  {"gloss": "3SG.H",   "surface_vowel": "e"},
+    "-a":  {"gloss": "FOCUS",   "surface_vowel": "a"},
+    "-wo": {"gloss": "PL",      "surface_vowel": "o"},
+}
+
+def _apply_ewe_height_harmony(stem_nucleus: str, clitic_vowel: str) -> tuple[str, bool]:
     """
-    lang = lang.lower()
-
-    # BNT — prefix strip
-    prefixes = _BANTU_PREFIXES.get(lang)
-    if prefixes:
-        for prefix in sorted(prefixes, key=len, reverse=True):
-            if token.lower().startswith(prefix) and len(token) > len(prefix) + 2:
-                return token[len(prefix):], prefix
-
-    # TRK — suffix strip (longest match)
-    suffixes = _TURKIC_SUFFIXES.get(lang)
-    if suffixes:
-        for suffix in sorted(suffixes, key=len, reverse=True):
-            if token.lower().endswith(suffix) and len(token) > len(suffix) + 2:
-                return token[: -len(suffix)], suffix
-
-    # DRV — suffix strip (Unicode, longest match)
-    drv_suffixes = _DRAVIDIAN_SUFFIXES.get(lang)
-    if drv_suffixes:
-        for suffix in sorted(drv_suffixes, key=len, reverse=True):
-            if token.endswith(suffix) and len(token) > len(suffix) + 1:
-                return token[: -len(suffix)], suffix
-
-    return token, ""
-
-
-def strip_before_rn_extraction(
-    ipa_token: str,
-    lang: str,
-    apply_strip: bool = True,
-) -> StripResult:
-    """Entry point for the pipeline — called before extractRN.
-
-    Args:
-        ipa_token:   IPA transcription of the token (post G2P).
-        lang:        BCP-47 language code.
-        apply_strip: Set False to bypass (e.g. KWA, ROM families).
-
-    Returns:
-        StripResult with audit fields for metadata logging.
+    Harmonie de hauteur Ewe Northern :
+    le clitic assimile le trait [high] du stem.
+    Retourne (vowel_harmonisée, harmony_applied).
     """
-    if not apply_strip:
-        return StripResult(
-            original=ipa_token,
-            stripped=ipa_token,
-            affix_removed="",
-            morpho_strip_applied=False,
-        )
+    if stem_nucleus in _EWE_HIGH_VOWELS and clitic_vowel in ("e", "a"):
+        return clitic_vowel, False
+    if stem_nucleus in _EWE_MID_LOW_VOWELS and clitic_vowel == "e":
+        return "ɛ", True
+    return clitic_vowel, False
 
-    stripped, affix = strip_morphology(ipa_token, lang)
+def _strip_ewe_clitic(ipa_token: str) -> StripResult:
+    """
+    Détache le clitique Ewe/Mina, applique l'harmonie de hauteur,
+    retourne le stem net + métadonnées.
+    """
+    for suffix, meta in _EWE_CLITICS.items():
+        if ipa_token.endswith(suffix):
+            stem = ipa_token[: -len(suffix)]
+            if not stem:
+                break
+            stem_nucleus = _guess_nucleus(stem)
+            cv_clitic, harmony_applied = _apply_ewe_height_harmony(
+                stem_nucleus or "", meta["surface_vowel"]
+            )
+            notes = []
+            if harmony_applied:
+                notes.append(
+                    f"height_harmony: stem_nucleus={stem_nucleus} "
+                    f"→ clitic_vowel {meta['surface_vowel']}→{cv_clitic}"
+                )
+            return StripResult(
+                token=stem,
+                stem_nucleus=stem_nucleus,
+                stem_tone=None,
+                morpho_strip_applied="ewe_clitic",
+                harmonic_variant=harmony_applied,
+                notes=notes or [f"clitic={suffix} ({meta['gloss']}) détaché"],
+            )
     return StripResult(
-        original=ipa_token,
-        stripped=stripped,
-        affix_removed=affix,
-        morpho_strip_applied=bool(affix),
+        token=ipa_token,
+        stem_nucleus=_guess_nucleus(ipa_token),
+        stem_tone=None,
+        morpho_strip_applied="none",
+    )
+
+def _guess_nucleus(ipa: str) -> Optional[str]:
+    """Heuristique : dernière voyelle IPA du token."""
+    vowels = "aeiouɛɔɪʊæɑøœ"
+    for ch in reversed(ipa):
+        if ch in vowels:
+            return ch
+    return None
+
+# ── affixes bantou (SW/ZU/LN) ───────────────────────────────────────────────
+
+_BNT_PREFIXES = {
+    "SW": ["m-", "wa-", "ki-", "vi-", "n-", "ji-", "u-", "ma-", "ku-", "pa-"],
+    "ZU": ["um-", "aba-", "i-", "ama-", "in-", "izin-", "ulu-", "ubu-", "uku-"],
+    "LN": ["mu-", "ba-", "ki-", "bi-", "n-", "bu-", "ku-", "pa-"],
+}
+
+def _strip_bnt(ipa_token: str, lang: str) -> StripResult:
+    for pfx in _BNT_PREFIXES.get(lang, []):
+        if ipa_token.startswith(pfx):
+            stem = ipa_token[len(pfx):]
+            return StripResult(
+                token=stem,
+                stem_nucleus=_guess_nucleus(stem),
+                stem_tone=None,
+                morpho_strip_applied=f"bnt_prefix:{pfx}",
+            )
+    return StripResult(
+        token=ipa_token,
+        stem_nucleus=_guess_nucleus(ipa_token),
+        stem_tone=None,
+        morpho_strip_applied="none",
+    )
+
+# ── suffixes turciques ───────────────────────────────────────────────────────
+
+_TRK_SUFFIXES = {
+    "TR": ["-lar", "-ler", "-dan", "-den", "-da", "-de", "-ın", "-in", "-un", "-ün"],
+    "UZ": ["-lar", "-lar", "-dan", "-ning", "-ga", "-da"],
+}
+
+def _strip_trk(ipa_token: str, lang: str) -> StripResult:
+    for sfx in _TRK_SUFFIXES.get(lang, []):
+        if ipa_token.endswith(sfx):
+            stem = ipa_token[: -len(sfx)]
+            return StripResult(
+                token=stem,
+                stem_nucleus=_guess_nucleus(stem),
+                stem_tone=None,
+                morpho_strip_applied=f"trk_suffix:{sfx}",
+            )
+    return StripResult(
+        token=ipa_token,
+        stem_nucleus=_guess_nucleus(ipa_token),
+        stem_tone=None,
+        morpho_strip_applied="none",
+    )
+
+# ── suffixes dravidiens ──────────────────────────────────────────────────────
+
+_DRV_SUFFIXES = {
+    "TA": ["-kaḷ", "-iṉ", "-ukku", "-il", "-āl", "-ōḍu"],
+    "TE": ["-lu", "-ki", "-lo", "-tō", "-ku"],
+}
+
+def _strip_drv(ipa_token: str, lang: str) -> StripResult:
+    for sfx in _DRV_SUFFIXES.get(lang, []):
+        if ipa_token.endswith(sfx):
+            stem = ipa_token[: -len(sfx)]
+            return StripResult(
+                token=stem,
+                stem_nucleus=_guess_nucleus(stem),
+                stem_tone=None,
+                morpho_strip_applied=f"drv_suffix:{sfx}",
+            )
+    return StripResult(
+        token=ipa_token,
+        stem_nucleus=_guess_nucleus(ipa_token),
+        stem_tone=None,
+        morpho_strip_applied="none",
+    )
+
+# ── dispatcher principal ─────────────────────────────────────────────────────
+
+_LANG_TO_HANDLER = {
+    "EW": _strip_ewe_clitic,
+    "MI": _strip_ewe_clitic,   # Mina dérivé Ewe, même règles clitiques
+    "BA": lambda t: StripResult(t, _guess_nucleus(t), None, "none"),
+    "DI": lambda t: StripResult(t, _guess_nucleus(t), None, "none"),
+    "SW": lambda t: _strip_bnt(t, "SW"),
+    "ZU": lambda t: _strip_bnt(t, "ZU"),
+    "LN": lambda t: _strip_bnt(t, "LN"),
+    "TR": lambda t: _strip_trk(t, "TR"),
+    "UZ": lambda t: _strip_trk(t, "UZ"),
+    "TA": lambda t: _strip_drv(t, "TA"),
+    "TE": lambda t: _strip_drv(t, "TE"),
+}
+
+def strip_before_rn_extraction(ipa_token: str, lang: str) -> StripResult:
+    """
+    Point d'entrée unique.
+    KWA analytique (BA/DI) : pass-through.
+    EW/MI : détachement clitique + harmonie hauteur.
+    BNT   : strip préfixe classe nominale.
+    TRK   : strip suffixe agglutinant.
+    DRV   : strip suffixe dravidien.
+    """
+    handler = _LANG_TO_HANDLER.get(lang)
+    if handler:
+        return handler(ipa_token)
+    return StripResult(
+        token=ipa_token,
+        stem_nucleus=_guess_nucleus(ipa_token),
+        stem_tone=None,
+        morpho_strip_applied="none",
+        notes=[f"lang={lang} non mappé, pass-through"],
     )
