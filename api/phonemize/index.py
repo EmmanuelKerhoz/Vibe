@@ -2,12 +2,13 @@
 G2P Phonemization Microservice for Lyricist Pro
 FastAPI implementation with epitran for proper IPA conversion
 
-v4.4 — Remediation Étape B:
-  - verse_segmenter wired: /api/analyze accepts full verse
-  - lid_span_router wired: LID fallback + optional predictor hook
-  - /api/analyze returns per-span phonemization + rhyme nuclei
+v4.5 — Remediation Étape C:
+  - rhyme_scheme_detector wired: /api/scheme
+  - Accepts a block of N verses, returns AABB/ABAB/ABBA/ABCB/AAAA/ABCC
+  - Scorer: morpheme embedding (if available) else Levenshtein on RN
 
-v4.3 — morpho_strip + phoneme_embedding + /api/score
+v4.4 — /api/analyze (verse_segmenter + lid_span_router)
+v4.3 — morpho_strip + /api/score
 v4.2 — C2/C3/C4/C5 corrections
 """
 
@@ -58,7 +59,14 @@ except ImportError:
     LID_ROUTER_AVAILABLE = False
     logger.warning("lid_span_router not available")
 
-app = FastAPI(title="G2P Phonemization Service", version="1.4.0")
+try:
+    from rhyme.rhyme_scheme_detector import detect_scheme, SchemeResult
+    SCHEME_DETECTOR_AVAILABLE = True
+except ImportError:
+    SCHEME_DETECTOR_AVAILABLE = False
+    logger.warning("rhyme_scheme_detector not available")
+
+app = FastAPI(title="G2P Phonemization Service", version="1.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -256,16 +264,16 @@ class PhonemizeResponse(BaseModel):
     ipa:                  str
     syllables:            List[SyllableModel]
     rhyme_nucleus:        str
-    rhyme_type:           Optional[str]          = None
-    similarity_method:    str                    = "feature_weighted_levenshtein"
+    rhyme_type:           Optional[str]            = None
+    similarity_method:    str                      = "feature_weighted_levenshtein"
     method:               str
     low_resource:         bool
-    fallback_used:        bool                   = False
-    fallback_reason:      Optional[str]          = None
-    g2p_confidence:       str                    = "high"
-    morpho_strip_applied: bool                   = False
+    fallback_used:        bool                     = False
+    fallback_reason:      Optional[str]            = None
+    g2p_confidence:       str                      = "high"
+    morpho_strip_applied: bool                     = False
     morpho_strip_detail:  Optional[Dict[str, Any]] = None
-    metadata:             Dict[str, Any]         = {}
+    metadata:             Dict[str, Any]           = {}
 
 
 class ScoreRequest(BaseModel):
@@ -288,43 +296,74 @@ class ScoreResponse(BaseModel):
 
 
 class AnalyzeRequest(BaseModel):
-    """Request for /api/analyze — full verse analysis."""
-    verse:        str
-    lang:         str
-    mode:         str              = "end"   # 'end' | 'internal' | 'all'
-    verse_index:  int              = 0
+    verse:       str
+    lang:        str
+    mode:        str = "end"
+    verse_index: int = 0
 
 
 class SpanPhonemization(BaseModel):
-    """Per-span phonemization result within a verse analysis."""
-    span_text:     str
-    span_lang:     str
-    span_family:   str
-    span_position: str              # 'end' | 'internal' | 'start'
-    token_span:    List[int]        # [start, end]
-    low_resource:  bool
-    lid_confidence: float
-    ipa:           str
-    syllables:     List[SyllableModel]
-    rhyme_nucleus: str
-    g2p_method:    str
-    g2p_confidence: str
-    morpho_strip_applied: bool      = False
+    span_text:            str
+    span_lang:            str
+    span_family:          str
+    span_position:        str
+    token_span:           List[int]
+    low_resource:         bool
+    lid_confidence:       float
+    ipa:                  str
+    syllables:            List[SyllableModel]
+    rhyme_nucleus:        str
+    g2p_method:           str
+    g2p_confidence:       str
+    morpho_strip_applied: bool                     = False
     morpho_strip_detail:  Optional[Dict[str, Any]] = None
 
 
 class AnalyzeResponse(BaseModel):
-    """Response from /api/analyze."""
-    verse:         str
-    lang:          str
-    mode:          str
-    verse_index:   int
-    spans:         List[SpanPhonemization]
-    # Convenience: rhyme nuclei of end-position spans only
-    end_nuclei:    List[str]
-    lid_used:      bool
-    segmenter_available: bool
+    verse:                str
+    lang:                 str
+    mode:                 str
+    verse_index:          int
+    spans:                List[SpanPhonemization]
+    end_nuclei:           List[str]
+    lid_used:             bool
+    segmenter_available:  bool
     lid_router_available: bool
+
+
+class SchemeRequest(BaseModel):
+    """Request for /api/scheme — rhyme scheme detection on a verse block.
+
+    verses:    List of verse strings (full lines or end-tokens).
+    lang:      Language code (applied to all verses; mixed-lang to be handled by /api/analyze).
+    threshold: Minimum similarity score to consider two verses rhyming (default 0.75).
+    use_rn:    When True (default), extract rhyme nuclei via full pipeline before scoring.
+               When False, score raw verse strings directly (faster, less accurate).
+    """
+    verses:    List[str]
+    lang:      str
+    threshold: float = 0.75
+    use_rn:    bool  = True
+
+
+class SchemePair(BaseModel):
+    i:     int
+    j:     int
+    score: float
+    rhyme_type: str
+
+
+class SchemeResponse(BaseModel):
+    """Response from /api/scheme."""
+    verses:       List[str]
+    lang:         str
+    scheme:       str               # e.g. 'AABB', 'ABAB', 'ABBA', 'ABCB', 'AAAA', 'ABCC'
+    confidence:   float
+    labels:       List[str]         # e.g. ['A','B','A','B']
+    pairs:        List[SchemePair]  # all pairs above threshold
+    nuclei:       List[str]         # RN extracted per verse (empty if use_rn=False)
+    scorer_used:  str               # 'embedding' | 'levenshtein_rn' | 'levenshtein_raw'
+    scheme_detector_available: bool
 
 
 # ─── Internal helpers ───────────────────────────────────────────────────────────
@@ -365,8 +404,9 @@ def simple_syllabify(ipa: str, family: AlgoFamily) -> List[SyllableModel]:
     return syllables
 
 
-def _run_g2p(text: str, lang_code: str, family: AlgoFamily) -> tuple[str, str, bool, bool, Optional[str], str, Dict]:
-    """Run G2P for a single text+lang. Returns (ipa, method, low_resource, fallback_used, fallback_reason, confidence, metadata)."""
+def _run_g2p(
+    text: str, lang_code: str, family: AlgoFamily
+) -> tuple[str, str, bool, bool, Optional[str], str, Dict]:
     reg = G2P_REGISTRY.get(lang_code, {})
     backend = reg.get('backend', 'graphemic_fallback')
     g2p_confidence: str = reg.get('confidence', 'low')
@@ -413,11 +453,8 @@ def _run_g2p(text: str, lang_code: str, family: AlgoFamily) -> tuple[str, str, b
 
 
 def extract_rhyme_nucleus(
-    syllables: List[SyllableModel],
-    family: AlgoFamily,
-    lang: str,
+    syllables: List[SyllableModel], family: AlgoFamily, lang: str,
 ) -> tuple[str, bool, Optional[Dict[str, Any]]]:
-    """Extract RN with optional morpho_strip. Returns (rn, applied, detail)."""
     if not syllables:
         return "", False, None
     idx = find_stressed_syllable_index(syllables, family)
@@ -447,27 +484,50 @@ def extract_rhyme_nucleus(
         if syll.tone:
             rn += normalize_tone(syll.tone) or syll.tone
         return rn, morpho_applied, morpho_detail
-
     if family == AlgoFamily.ALGO_CRV:
         rn = syll.nucleus
         if syll.tone:
             rn += normalize_tone(syll.tone) or syll.tone
         rn += syll.coda
         return rn, morpho_applied, morpho_detail
-
     return syll.nucleus + syll.coda, morpho_applied, morpho_detail
 
 
-def _phonemize_span(text: str, lang_code: str, family: AlgoFamily) -> tuple[
-    str, List[SyllableModel], str, str, bool, bool, Optional[Dict]
-]:
-    """Full G2P + syllabify + RN extraction for a single text span.
-    Returns (ipa, syllables, rhyme_nucleus, method, g2p_conf, morpho_applied, morpho_detail).
-    """
+def _phonemize_span(
+    text: str, lang_code: str, family: AlgoFamily
+) -> tuple[str, List[SyllableModel], str, str, str, bool, Optional[Dict]]:
     ipa, method, _, _, _, g2p_conf, _ = _run_g2p(text, lang_code, family)
     syllables = simple_syllabify(ipa, family)
     rn, morpho_applied, morpho_detail = extract_rhyme_nucleus(syllables, family, lang_code)
     return ipa, syllables, rn, method, g2p_conf, morpho_applied, morpho_detail
+
+
+def _extract_end_rn(verse_text: str, lang_code: str) -> str:
+    """Extract end RN from a verse string (used by /api/scheme scorer)."""
+    family = LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM)
+    # Take last token as the rhyming word
+    tokens = verse_text.strip().split()
+    end_token = tokens[-1] if tokens else verse_text
+    ipa, method, *_ = _run_g2p(end_token, lang_code, family)
+    syllables = simple_syllabify(ipa, family)
+    rn, _, _ = extract_rhyme_nucleus(syllables, family, lang_code)
+    return rn or end_token
+
+
+def _levenshtein_similarity(a: str, b: str) -> float:
+    """Normalised Levenshtein similarity in [0, 1]."""
+    if not a and not b:
+        return 1.0
+    if not a or not b:
+        return 0.0
+    la, lb = len(a), len(b)
+    dp = list(range(lb + 1))
+    for i, ca in enumerate(a, 1):
+        prev = dp.copy()
+        dp[0] = i
+        for j, cb in enumerate(b, 1):
+            dp[j] = min(dp[j] + 1, dp[j - 1] + 1, prev[j - 1] + (0 if ca == cb else 1))
+    return 1.0 - dp[lb] / max(la, lb)
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
@@ -475,63 +535,51 @@ def _phonemize_span(text: str, lang_code: str, family: AlgoFamily) -> tuple[
 @app.get("/health")
 async def health_check():
     return {
-        "status": "healthy",
-        "version": "1.4.0",
-        "epitran_available":           EPITRAN_AVAILABLE,
-        "morpho_strip_available":      MORPHO_STRIP_AVAILABLE,
-        "phoneme_embedding_available": PHONEME_EMBEDDING_AVAILABLE,
-        "verse_segmenter_available":   VERSE_SEGMENTER_AVAILABLE,
-        "lid_router_available":        LID_ROUTER_AVAILABLE,
+        "status":  "healthy",
+        "version": "1.5.0",
+        "epitran_available":            EPITRAN_AVAILABLE,
+        "morpho_strip_available":       MORPHO_STRIP_AVAILABLE,
+        "phoneme_embedding_available":  PHONEME_EMBEDDING_AVAILABLE,
+        "verse_segmenter_available":    VERSE_SEGMENTER_AVAILABLE,
+        "lid_router_available":         LID_ROUTER_AVAILABLE,
+        "scheme_detector_available":    SCHEME_DETECTOR_AVAILABLE,
     }
 
 
 @app.get("/api/health")
 async def api_health_check():
     return {
-        "status": "healthy",
-        "version": "1.4.0",
-        "epitran_available":           EPITRAN_AVAILABLE,
-        "morpho_strip_available":      MORPHO_STRIP_AVAILABLE,
-        "phoneme_embedding_available": PHONEME_EMBEDDING_AVAILABLE,
-        "verse_segmenter_available":   VERSE_SEGMENTER_AVAILABLE,
-        "lid_router_available":        LID_ROUTER_AVAILABLE,
+        "status":  "healthy",
+        "version": "1.5.0",
+        "epitran_available":            EPITRAN_AVAILABLE,
+        "morpho_strip_available":       MORPHO_STRIP_AVAILABLE,
+        "phoneme_embedding_available":  PHONEME_EMBEDDING_AVAILABLE,
+        "verse_segmenter_available":    VERSE_SEGMENTER_AVAILABLE,
+        "lid_router_available":         LID_ROUTER_AVAILABLE,
+        "scheme_detector_available":    SCHEME_DETECTOR_AVAILABLE,
     }
 
 
 @app.post("/api/phonemize", response_model=PhonemizeResponse)
 async def phonemize(request: PhonemizeRequest) -> PhonemizeResponse:
-    """Single token/word phonemization — v4.4 (unchanged interface, refactored internals)"""
+    """Single token/word phonemization."""
     try:
         lang_code = request.lang.lower()
         text = request.text.strip()
         if not text:
             raise HTTPException(status_code=400, detail="Empty text provided")
-
         family = LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM)
         ipa, method, low_resource, fallback_used, fallback_reason, g2p_confidence, metadata = \
             _run_g2p(text, lang_code, family)
-
         syllables = simple_syllabify(ipa, family)
-        rhyme_nucleus, morpho_applied, morpho_detail = extract_rhyme_nucleus(
-            syllables, family, lang_code
-        )
-
+        rhyme_nucleus, morpho_applied, morpho_detail = extract_rhyme_nucleus(syllables, family, lang_code)
         return PhonemizeResponse(
-            algo_id              = family.value,
-            lang                 = lang_code,
-            input                = text,
-            ipa                  = ipa,
-            syllables            = syllables,
-            rhyme_nucleus        = rhyme_nucleus,
-            rhyme_type           = None,
-            method               = method,
-            low_resource         = low_resource,
-            fallback_used        = fallback_used,
-            fallback_reason      = fallback_reason,
-            g2p_confidence       = g2p_confidence,
-            morpho_strip_applied = morpho_applied,
-            morpho_strip_detail  = morpho_detail,
-            metadata             = metadata,
+            algo_id=family.value, lang=lang_code, input=text, ipa=ipa,
+            syllables=syllables, rhyme_nucleus=rhyme_nucleus, rhyme_type=None,
+            method=method, low_resource=low_resource, fallback_used=fallback_used,
+            fallback_reason=fallback_reason, g2p_confidence=g2p_confidence,
+            morpho_strip_applied=morpho_applied, morpho_strip_detail=morpho_detail,
+            metadata=metadata,
         )
     except HTTPException:
         raise
@@ -545,73 +593,47 @@ async def score_rhymes(request: ScoreRequest) -> ScoreResponse:
     """Phoneme embedding similarity — niveau 4 scoring."""
     if not PHONEME_EMBEDDING_AVAILABLE:
         raise HTTPException(status_code=503, detail="phoneme_embedding module not available")
-
     lang_code = request.lang.lower()
     family    = LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM)
-
     def _to_phones(s: str) -> List[str]:
         phones = s.split()
         return phones if len(phones) > 1 else list(s)
-
     try:
         result: EmbeddingScore = score_embedding(_to_phones(request.rn1), _to_phones(request.rn2))
     except Exception as e:
         logger.error(f"phoneme_embedding error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Embedding scoring failed: {str(e)}")
-
     score = result.score
     tonal_match: Optional[bool] = None
     if family in _EMBEDDING_PRIORITY_FAMILIES:
         tonal_re = re.compile(r'[HL˥˦˧˨˩\u0301\u0300\u0302\u0304\u030c]')
-        t1 = tonal_re.findall(request.rn1)
-        t2 = tonal_re.findall(request.rn2)
+        t1, t2 = tonal_re.findall(request.rn1), tonal_re.findall(request.rn2)
         tonal_match = (t1 == t2) if (t1 or t2) else None
-
     return ScoreResponse(
-        rn1        = request.rn1,
-        rn2        = request.rn2,
-        lang       = lang_code,
-        algo_id    = family.value,
-        score      = score,
-        rhyme_type = _categorize(score),
-        tonal_match = tonal_match,
-        detail     = result.detail if hasattr(result, 'detail') else {},
+        rn1=request.rn1, rn2=request.rn2, lang=lang_code,
+        algo_id=family.value, score=score, rhyme_type=_categorize(score),
+        tonal_match=tonal_match,
+        detail=result.detail if hasattr(result, 'detail') else {},
     )
 
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)
 async def analyze_verse(request: AnalyzeRequest) -> AnalyzeResponse:
-    """Full verse analysis — Étape B.
-
-    Pipeline:
-      1. lid_span_router  → detect language spans (code-switch aware)
-      2. verse_segmenter  → extract rhyming units per span (end/internal/all)
-      3. _phonemize_span  → G2P + morpho_strip + RN extraction per unit
-
-    Returns per-span phonemization + convenience end_nuclei list.
-    """
+    """Full verse analysis — lid_span_router + verse_segmenter + G2P + morpho_strip."""
     try:
         lang_code   = request.lang.lower()
         verse       = request.verse.strip()
         mode        = request.mode
         verse_index = request.verse_index
-
         if not verse:
             raise HTTPException(status_code=400, detail="Empty verse")
-
         if mode not in ("end", "internal", "all"):
-            raise HTTPException(status_code=400, detail=f"Invalid mode '{mode}'. Use end|internal|all.")
+            raise HTTPException(status_code=400, detail=f"Invalid mode '{mode}'.")
 
-        # ── Step 1: LID span detection ──────────────────────────────────────────
         lid_used = LID_ROUTER_AVAILABLE
         if LID_ROUTER_AVAILABLE:
-            lang_spans: List[LangSpan] = detect_spans(
-                verse,
-                doc_lang=lang_code,
-                lid_predictor=None,   # no model wired yet → safe fallback on doc_lang
-            )
+            lang_spans: List[LangSpan] = detect_spans(verse, doc_lang=lang_code, lid_predictor=None)
         else:
-            # Manual fallback: single span for the full verse
             lang_spans = [type('_S', (), {
                 'text': verse, 'lang': lang_code,
                 'family': LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM).value,
@@ -619,76 +641,150 @@ async def analyze_verse(request: AnalyzeRequest) -> AnalyzeResponse:
                 'low_resource': False,
             })()]
 
-        # ── Step 2+3: segment each span, phonemize each unit ──────────────────
         result_spans: List[SpanPhonemization] = []
-
         for ls in lang_spans:
             span_lang   = ls.lang
             span_family = LANG_TO_FAMILY.get(span_lang, AlgoFamily.ALGO_ROM)
-
             if VERSE_SEGMENTER_AVAILABLE:
-                units: List[RhymingUnit] = segment_verse(
-                    ls.text,
-                    lang=span_lang,
-                    mode=mode,
-                    verse_index=verse_index,
-                )
+                units: List[RhymingUnit] = segment_verse(ls.text, lang=span_lang, mode=mode, verse_index=verse_index)
             else:
-                # Minimal fallback: treat full span as single end unit
                 units = [type('_U', (), {
-                    'tokens': ls.text.split(),
-                    'position': 'end',
-                    'verse_index': verse_index,
-                    'token_span': (0, len(ls.text.split())),
+                    'tokens': ls.text.split(), 'position': 'end',
+                    'verse_index': verse_index, 'token_span': (0, len(ls.text.split())),
                 })()]
-
             for unit in units:
                 unit_text = " ".join(unit.tokens)
                 if not unit_text.strip():
                     continue
-
                 ipa, syllables, rn, g2p_method, g2p_conf, morpho_applied, morpho_detail = \
                     _phonemize_span(unit_text, span_lang, span_family)
-
                 result_spans.append(SpanPhonemization(
-                    span_text            = unit_text,
-                    span_lang            = span_lang,
-                    span_family          = span_family.value,
-                    span_position        = unit.position,
-                    token_span           = list(unit.token_span),
-                    low_resource         = ls.low_resource,
-                    lid_confidence       = ls.confidence,
-                    ipa                  = ipa,
-                    syllables            = syllables,
-                    rhyme_nucleus        = rn,
-                    g2p_method           = g2p_method,
-                    g2p_confidence       = g2p_conf,
-                    morpho_strip_applied = morpho_applied,
-                    morpho_strip_detail  = morpho_detail,
+                    span_text=unit_text, span_lang=span_lang, span_family=span_family.value,
+                    span_position=unit.position, token_span=list(unit.token_span),
+                    low_resource=ls.low_resource, lid_confidence=ls.confidence,
+                    ipa=ipa, syllables=syllables, rhyme_nucleus=rn,
+                    g2p_method=g2p_method, g2p_confidence=g2p_conf,
+                    morpho_strip_applied=morpho_applied, morpho_strip_detail=morpho_detail,
                 ))
 
-        end_nuclei = [
-            sp.rhyme_nucleus for sp in result_spans
-            if sp.span_position == "end"
-        ]
-
         return AnalyzeResponse(
-            verse                = verse,
-            lang                 = lang_code,
-            mode                 = mode,
-            verse_index          = verse_index,
-            spans                = result_spans,
-            end_nuclei           = end_nuclei,
-            lid_used             = lid_used,
-            segmenter_available  = VERSE_SEGMENTER_AVAILABLE,
-            lid_router_available = LID_ROUTER_AVAILABLE,
+            verse=verse, lang=lang_code, mode=mode, verse_index=verse_index,
+            spans=result_spans,
+            end_nuclei=[sp.rhyme_nucleus for sp in result_spans if sp.span_position == "end"],
+            lid_used=lid_used,
+            segmenter_available=VERSE_SEGMENTER_AVAILABLE,
+            lid_router_available=LID_ROUTER_AVAILABLE,
         )
-
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"analyze_verse error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Verse analysis failed: {str(e)}")
+
+
+@app.post("/api/scheme", response_model=SchemeResponse)
+async def detect_rhyme_scheme(request: SchemeRequest) -> SchemeResponse:
+    """Rhyme scheme detection on a verse block — Étape C.
+
+    Scorer priority:
+      1. phoneme_embedding (if available): cosine on PHOIBLE-lite RN vectors
+      2. levenshtein_rn: normalised Levenshtein on extracted RN strings
+      3. levenshtein_raw: normalised Levenshtein on raw verse strings (use_rn=False)
+
+    Returns scheme (AABB/ABAB/ABBA/ABCB/AAAA/ABCC), confidence, labels, pairs.
+    """
+    try:
+        lang_code = request.lang.lower()
+        verses    = [v.strip() for v in request.verses if v.strip()]
+
+        if len(verses) < 2:
+            raise HTTPException(status_code=400, detail="At least 2 non-empty verses required.")
+        if len(verses) > 16:
+            raise HTTPException(status_code=400, detail="Maximum 16 verses per request.")
+
+        # ── Extract RN per verse (or use raw strings) ─────────────────────────────
+        if request.use_rn:
+            scoring_tokens = [_extract_end_rn(v, lang_code) for v in verses]
+            scorer_used    = "levenshtein_rn"
+        else:
+            scoring_tokens = verses
+            scorer_used    = "levenshtein_raw"
+
+        # ── Build scorer function ──────────────────────────────────────────────
+        family = LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM)
+
+        if PHONEME_EMBEDDING_AVAILABLE and request.use_rn:
+            def _scorer(t1: str, t2: str, _lang: str) -> float:
+                phones1 = t1.split() if len(t1.split()) > 1 else list(t1)
+                phones2 = t2.split() if len(t2.split()) > 1 else list(t2)
+                try:
+                    res = score_embedding(phones1, phones2)
+                    return res.score
+                except Exception:
+                    return _levenshtein_similarity(t1, t2)
+            scorer_used = "embedding"
+        else:
+            def _scorer(t1: str, t2: str, _lang: str) -> float:
+                return _levenshtein_similarity(t1, t2)
+
+        # ── Detect scheme ────────────────────────────────────────────────────────
+        if SCHEME_DETECTOR_AVAILABLE:
+            result: SchemeResult = detect_scheme(
+                scoring_tokens,
+                scorer=_scorer,
+                lang=lang_code,
+                threshold=request.threshold,
+            )
+            scheme     = result.scheme
+            confidence = result.confidence
+            labels     = result.labels
+            raw_pairs  = result.pairs
+        else:
+            # Inline minimal fallback: build labels + scheme from scorer directly
+            n = len(scoring_tokens)
+            matrix: Dict[tuple, float] = {}
+            for i in range(n):
+                for j in range(i + 1, n):
+                    matrix[(i, j)] = _scorer(scoring_tokens[i], scoring_tokens[j], lang_code)
+
+            labels_list = ["?"] * n
+            code = ord("A")
+            for i in range(n):
+                if labels_list[i] != "?":
+                    continue
+                labels_list[i] = chr(code)
+                for j in range(i + 1, n):
+                    if labels_list[j] == "?" and matrix.get((i, j), 0.0) >= request.threshold:
+                        labels_list[j] = chr(code)
+                code += 1
+
+            scheme     = "".join(labels_list[:4])
+            confidence = sum(matrix.values()) / max(len(matrix), 1)
+            labels     = labels_list
+            raw_pairs  = [(i, j, s) for (i, j), s in matrix.items() if s >= request.threshold]
+
+        pairs_out = [
+            SchemePair(i=i, j=j, score=round(s, 4), rhyme_type=_categorize(s))
+            for (i, j, s) in raw_pairs
+        ]
+
+        return SchemeResponse(
+            verses    = verses,
+            lang      = lang_code,
+            scheme    = scheme,
+            confidence = round(confidence, 4),
+            labels    = labels,
+            pairs     = pairs_out,
+            nuclei    = scoring_tokens if request.use_rn else [],
+            scorer_used = scorer_used,
+            scheme_detector_available = SCHEME_DETECTOR_AVAILABLE,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"detect_rhyme_scheme error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Scheme detection failed: {str(e)}")
 
 
 if __name__ == "__main__":
