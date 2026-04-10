@@ -5,16 +5,19 @@
 import type { FamilyId, LangCode } from './types';
 
 const LANG_FAMILY_MAP: Record<string, FamilyId> = {
-  // KWA family
+  // KWA family (Kwa branch, Niger-Congo)
   ba: 'KWA', di: 'KWA', ew: 'KWA', mi: 'KWA',
+  // Yoruboïde (Niger-Congo, tonale, isolante) — phonologiquement proche de KWA
+  // NB: yo N'EST PAS Bantu. BNT (Bantu) ≠ Niger-Congo broad.
+  yo: 'KWA',
   // CRV family
   bk: 'CRV', cb: 'CRV', og: 'CRV', ha: 'CRV',
   // Romance
   fr: 'ROM', es: 'ROM', it: 'ROM', pt: 'ROM',
   // Germanic
   en: 'GER', de: 'GER', nl: 'GER',
-  // Bantu / Niger-Congo
-  sw: 'BNT', yo: 'BNT',
+  // Bantu (true Bantu: agglutinant, harmonie vocalique ATR)
+  sw: 'BNT',
   // Agglutinative → FALLBACK (no dedicated algo yet)
   tr: 'FALLBACK', fi: 'FALLBACK', hu: 'FALLBACK',
   // Slavic → FALLBACK

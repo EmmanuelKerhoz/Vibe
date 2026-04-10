@@ -5,6 +5,10 @@
 
 import type { LineEndingUnit, ScriptClass, SegmentationMode } from './types';
 
+// ─── Languages that require tone-mark segmentation despite latin script ──────
+// Vietnamese and KWA languages: tone diacritics are phonemic, not decorative.
+const TONE_MARK_LANGS = new Set(['vi', 'ba', 'ew', 'mi', 'di']);
+
 // ─── Script detection ────────────────────────────────────────────────────────
 
 const SCRIPT_RANGES: Array<[RegExp, ScriptClass]> = [
@@ -25,7 +29,8 @@ function detectScript(text: string): ScriptClass {
   return 'other';
 }
 
-// ─── Segmentation mode by script ─────────────────────────────────────────────
+// ─── Segmentation mode resolution ────────────────────────────────────────────
+// langHint overrides script-derived mode for tonal latin languages.
 
 function segmentationModeForScript(script: ScriptClass): SegmentationMode {
   switch (script) {
@@ -38,11 +43,24 @@ function segmentationModeForScript(script: ScriptClass): SegmentationMode {
   }
 }
 
+function resolveSegmentationMode(
+  script: ScriptClass,
+  langHint?: string
+): SegmentationMode {
+  // Override: tonal latin languages need tone-aware token extraction.
+  // Without this, KWA/VI tone diacritics are treated as mere decoration
+  // and the surface token passes to G2P without tonal context flag.
+  if (langHint && TONE_MARK_LANGS.has(langHint) && script === 'latin') {
+    return 'tone-mark';
+  }
+  return segmentationModeForScript(script);
+}
+
 // ─── Unicode normalization safe for tonal diacritics ─────────────────────────
 
 /**
  * NFC normalization — preserves all combining diacritics (tones, accents).
- * Does NOT strip diacritics. stripping is left to language-specific G2P.
+ * Does NOT strip diacritics. Stripping is left to language-specific G2P.
  */
 export function normalizeInput(raw: string): string {
   return raw.normalize('NFC').trim();
@@ -50,7 +68,6 @@ export function normalizeInput(raw: string): string {
 
 // ─── Punctuation stripping (script-aware) ────────────────────────────────────
 
-// Punctuation to strip varies by script family
 const LATIN_PUNCT    = /[.,;:!?¡¿"'«»()\[\]{}…–—]+$/u;
 const ARABIC_PUNCT   = /[،؛؟\u06D4\.!"'()\[\]{}…]+$/u;
 const CJK_PUNCT      = /[。、！？「」『』【】〔〕…・]+$/u;
@@ -80,17 +97,24 @@ function extractFinalToken(
       return chars.at(-1) ?? normalized.at(-1) ?? '';
     }
     case 'rtl': {
-      // Arabic/Hebrew: first token in logical order = last displayed
-      // Text is stored LTR in JS strings despite RTL display
+      // Arabic/Hebrew: stored LTR in JS strings despite RTL display
       const tokens = normalized.split(/\s+/).filter(Boolean);
       const raw = tokens.at(-1) ?? '';
       return stripTrailingPunctuation(raw, script);
     }
     case 'tonal-syllable': {
-      // Thai/Khmer: last whitespace-or-ZW-delimited unit
+      // Thai/Khmer: last ZW-or-space-delimited unit
       const tokens = normalized.split(/[\s\u200B]+/).filter(Boolean);
       const raw = tokens.at(-1) ?? '';
       return stripTrailingPunctuation(raw, script);
+    }
+    case 'tone-mark': {
+      // KWA/VI: standard whitespace split but preserve ALL combining diacritics.
+      // normalizeInput already ran NFC so diacritics are composed.
+      const tokens = normalized.split(/\s+/).filter(Boolean);
+      const raw = tokens.at(-1) ?? '';
+      // Only strip non-tonal punctuation (latin set); never strip U+0300-U+036F
+      return raw.replace(LATIN_PUNCT, '');
     }
     case 'whitespace':
     default: {
@@ -106,8 +130,11 @@ function extractFinalToken(
 /**
  * Replaces the legacy extractLineTail().
  * Returns a structured LineEndingUnit suitable for G2P → RhymeNucleus pipeline.
+ *
+ * @param line     Raw input line
+ * @param langHint BCP-47 language code (e.g. 'vi', 'ba', 'fr')
  */
-export function extractLineEndingUnit(line: string, _langHint?: string): LineEndingUnit {
+export function extractLineEndingUnit(line: string, langHint?: string): LineEndingUnit {
   const warnings: string[] = [];
   const normalized = normalizeInput(line);
 
@@ -123,7 +150,7 @@ export function extractLineEndingUnit(line: string, _langHint?: string): LineEnd
   }
 
   const script = detectScript(normalized);
-  const segmentationMode = segmentationModeForScript(script);
+  const segmentationMode = resolveSegmentationMode(script, langHint);
   const surface = extractFinalToken(normalized, segmentationMode, script);
 
   if (!surface) {

@@ -1,9 +1,30 @@
 /**
  * Rhyme Engine v2 — CRV Family Algorithm
  * Languages: BK, CB, OG, HA
+ *
+ * HA (Haoussa) is a Chadic language with lexical tones (H/L/falling).
+ * Tonal extraction is applied for HA; other CRV langs remain atonal.
  */
 
 import type { LineEndingUnit, RhymeNucleus } from './types';
+
+// ─── Haoussa tone extraction ──────────────────────────────────────────────────
+// Haoussa tone notation: acute = H, grave = L, circumflex/macron = falling/low
+const HA_TONE_MAP: Array<[RegExp, string]> = [
+  [/[\u0301]/u, 'H'],   // combining acute
+  [/[\u0300]/u, 'L'],   // combining grave
+  [/[\u0302\u0304]/u, 'F'], // circumflex / macron → falling
+];
+
+function extractHATone(token: string): string {
+  const nfd = token.normalize('NFD');
+  for (const [re, tone] of HA_TONE_MAP) {
+    if (re.test(nfd)) return tone;
+  }
+  return 'M'; // mid / unmarked
+}
+
+// ─── Sonority ladder ─────────────────────────────────────────────────────────
 
 const SONORITY: Record<string, number> = {
   a: 7, e: 7, i: 6, o: 7, u: 6,
@@ -36,9 +57,9 @@ function extractCVCNucleus(token: string): { vowels: string; coda: string; onset
     vowels += chars[i++] ?? '';
   }
   while (i < chars.length) {
-    const cur  = sonority(chars[i] ?? '');
+    const cur      = sonority(chars[i] ?? '');
     const nextChar = chars[i + 1];
-    const next = nextChar !== undefined ? sonority(nextChar) : -1;
+    const next     = nextChar !== undefined ? sonority(nextChar) : -1;
     if (next > cur) break;
     coda += chars[i++] ?? '';
   }
@@ -54,14 +75,22 @@ function moraCount(vowels: string): number {
   return 1;
 }
 
+// ─── Public API ───────────────────────────────────────────────────────────────
+
 export function extractNucleusCRV(
   unit: LineEndingUnit,
-  lowResource = false
+  lowResource = false,
+  lang = ''
 ): RhymeNucleus {
   if (lowResource || !unit.surface) {
     const tail = unit.surface.slice(-3).toLowerCase();
     return { vowels: tail, coda: '', tone: '', onset: '', moraCount: 1 };
   }
+
   const { vowels, coda, onset } = extractCVCNucleus(unit.surface);
-  return { vowels, coda, tone: '', onset, moraCount: moraCount(vowels) };
+
+  // Haoussa: extract tonal class from the surface form (NFD diacritics)
+  const tone = lang === 'ha' ? extractHATone(unit.surface) : '';
+
+  return { vowels, coda, tone, onset, moraCount: moraCount(vowels) };
 }
