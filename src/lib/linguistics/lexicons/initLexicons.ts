@@ -20,6 +20,12 @@
 
 import { registerLexicon, getLexiconSize } from '../rhyme/PhonemeStore';
 import { frLexicon } from './fr';
+import { enLexicon } from './en';
+import { esLexicon } from './es';
+import { ptLexicon } from './pt';
+import { yoLexicon } from './yo';
+import { swLexicon } from './sw';
+import { arLexicon } from './ar';
 
 /**
  * Register all built-in lexicons.
@@ -28,14 +34,12 @@ import { frLexicon } from './fr';
  */
 export function initLexicons(): void {
   registerLexicon('fr', frLexicon);
-
-  // Future languages — uncomment as lexicons are onboarded:
-  // registerLexicon('en', enLexicon);
-  // registerLexicon('es', esLexicon);
-  // registerLexicon('pt', ptLexicon);
-  // registerLexicon('yo', yoLexicon);
-  // registerLexicon('sw', swLexicon);
-  // registerLexicon('ar', arLexicon);
+  registerLexicon('en', enLexicon);
+  registerLexicon('es', esLexicon);
+  registerLexicon('pt', ptLexicon);
+  registerLexicon('yo', yoLexicon);
+  registerLexicon('sw', swLexicon);
+  registerLexicon('ar', arLexicon);
 }
 
 /**
@@ -45,7 +49,12 @@ export function initLexicons(): void {
 export function getLexiconHealth(): Record<string, number> {
   return {
     fr: getLexiconSize('fr'),
-    // en: getLexiconSize('en'),
+    en: getLexiconSize('en'),
+    es: getLexiconSize('es'),
+    pt: getLexiconSize('pt'),
+    yo: getLexiconSize('yo'),
+    sw: getLexiconSize('sw'),
+    ar: getLexiconSize('ar'),
   };
 }
 
