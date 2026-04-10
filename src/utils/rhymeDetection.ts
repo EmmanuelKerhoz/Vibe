@@ -15,9 +15,28 @@ type RhymeCandidate = {
   normalizedSuffix: string;
 };
 
-const VOWELS = 'aeiouy';
+/**
+ * Full IPA vowel inventory covering Latin, Germanic umlauts, Slavic, Uralic,
+ * Austronesian, Dravidian and Sinitic vowel characters encountered after NFD
+ * normalization. Extending beyond 'aeiouy' fixes getVowelGroups for
+ * ALGO-GER, ALGO-FIN, ALGO-DRV, ALGO-AUS, ALGO-SLV, ALGO-SIN, ALGO-KOR.
+ */
+const VOWELS = new Set([
+  // Basic Latin
+  'a', 'e', 'i', 'o', 'u', 'y',
+  // IPA close / mid vowels
+  'ɑ', 'ɒ', 'ɔ', 'ɛ', 'œ', 'ø', 'ɪ', 'ʊ', 'ʌ', 'ə', 'ɨ', 'ɵ', 'ɜ', 'ɞ', 'ɐ', 'ʉ', 'ɯ', 'ɤ',
+  // Germanic / Uralic umlauts (post-NFD base chars)
+  'ä', 'ö', 'ü', 'å',
+  // Scandinavian / Uralic
+  'æ', 'ø',
+  // Slavic / IIR
+  'ы', 'э', 'я', 'ю', 'е', 'ё', 'и',
+  // Dravidian vowel letters (Tamil, Kannada, Malayalam — post-transliteration)
+  'ā', 'ī', 'ū', 'ṛ', 'ḷ', 'ē', 'ō', 'ai', 'au',
+]);
 
-const isVowel = (ch: string) => VOWELS.includes(ch);
+const isVowel = (ch: string) => VOWELS.has(ch);
 
 /**
  * Strip Unicode accents and lowercase — with optional tonal preservation.
@@ -63,14 +82,17 @@ const extractLastWord = (text: string, langCode?: string): WordMatch | null => {
 /**
  * Identify contiguous vowel groups inside a normalized word. These spans act
  * as the candidate starting points for rime comparisons and fallback splits.
+ * Uses the extended IPA VOWELS set to correctly handle non-Latin families.
  */
 const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
   const vowelGroups: VowelSpan[] = [];
+  // Iterate over Unicode code points (handles multi-char IPA glyphs if any)
+  const chars = [...normalizedWord];
   let i = 0;
-  while (i < normalizedWord.length) {
-    if (isVowel(normalizedWord[i]!)) {
+  while (i < chars.length) {
+    if (isVowel(chars[i]!)) {
       const start = i;
-      while (i < normalizedWord.length && isVowel(normalizedWord[i]!)) i++;
+      while (i < chars.length && isVowel(chars[i]!)) i++;
       vowelGroups.push({ start, end: i });
     } else {
       i++;
@@ -150,7 +172,7 @@ const getLongestCommonSuffix = (a: string, b: string): string => {
  * discard valid monosyllabic vowel rhymes.
  */
 const isSharedRhymeStrongEnough = (suffix: string, exactMatch: boolean): boolean =>
-  suffix.length >= 2 || (exactMatch && suffix.length === 1 && /^[aeiouy]$/.test(suffix));
+  suffix.length >= 2 || (exactMatch && suffix.length === 1 && isVowel(suffix));
 
 /**
  * Compare every vowel-group-based candidate suffix from two lines and keep the
