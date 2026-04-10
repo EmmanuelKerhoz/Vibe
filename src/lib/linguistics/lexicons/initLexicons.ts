@@ -23,6 +23,8 @@
  *   nou (Nouchi)   registered under 'nou' → ALGO-CRE.
  *   pcm (Nigerian Pidgin) registered under 'pcm' → ALGO-CRE.
  *   cfg (Camfranglais)    registered under 'cfg' → ALGO-CRE.
+ *
+ *   ta (Tamil)     registered under 'ta'  → ALGO-DRV.
  */
 
 import { registerLexicon, getLexiconSize } from '../rhyme/PhonemeStore';
@@ -43,6 +45,7 @@ import { zhLexicon } from './zh';
 import { jaLexicon } from './ja';
 import { koLexicon } from './ko';
 import { hiLexicon } from './hi';
+import { taLexicon } from './ta';
 import { trLexicon } from './tr';
 import { haLexicon } from './ha';
 import { baLexicon } from './ba';
@@ -125,6 +128,8 @@ export function initLexicons(): void {
   registerLexicon('he', heLexicon);
   // — Indo-Iranian
   registerLexicon('hi', hiLexicon);
+  // — Dravidian
+  registerLexicon('ta', taLexicon);
   // — Turkic
   registerLexicon('tr', trLexicon);
   // — Uralic
@@ -183,6 +188,7 @@ export function getLexiconHealth(): Record<string, number> {
     ar:  getLexiconSize('ar'),
     he:  getLexiconSize('he'),
     hi:  getLexiconSize('hi'),
+    ta:  getLexiconSize('ta'),
     tr:  getLexiconSize('tr'),
     fi:  getLexiconSize('fi'),
     hu:  getLexiconSize('hu'),
