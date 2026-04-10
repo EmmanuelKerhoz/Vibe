@@ -7,7 +7,8 @@ import type { LineEndingUnit, ScriptClass, SegmentationMode } from './types';
 
 // ─── Languages that require tone-mark segmentation despite latin script ──────
 // Vietnamese and KWA languages: tone diacritics are phonemic, not decorative.
-const TONE_MARK_LANGS = new Set(['vi', 'ba', 'ew', 'mi', 'di']);
+// yo (Yoruba) added — tonal KWA language; was missing from original set.
+const TONE_MARK_LANGS = new Set(['vi', 'ba', 'ew', 'mi', 'di', 'yo']);
 
 // ─── Script detection ────────────────────────────────────────────────────────
 
@@ -132,7 +133,7 @@ function extractFinalToken(
  * Returns a structured LineEndingUnit suitable for G2P → RhymeNucleus pipeline.
  *
  * @param line     Raw input line
- * @param langHint BCP-47 language code (e.g. 'vi', 'ba', 'fr')
+ * @param langHint BCP-47 language code (e.g. 'vi', 'ba', 'fr', 'yo')
  */
 export function extractLineEndingUnit(line: string, langHint?: string): LineEndingUnit {
   const warnings: string[] = [];
