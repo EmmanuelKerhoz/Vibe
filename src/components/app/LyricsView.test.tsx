@@ -55,6 +55,14 @@ vi.mock('../../contexts/ComposerContext', () => ({
   }),
 }));
 
+vi.mock('../../contexts/RhymeProxyContext', () => ({
+  useRhymeProxyContext: () => ({
+    isProxied: false,
+    proxyLanguage: null,
+    setProxyLanguage: vi.fn(),
+  }),
+}));
+
 // EditorContext: LyricsView now sources editor state from this context.
 // Each test that needs a specific editMode can override via this mock.
 let mockEditMode: 'section' | 'markdown' | 'text' | 'phonetic' = 'section';
