@@ -13,33 +13,8 @@
  * so callers only need to pass raw lines.
  */
 
-import type { LangCode, RhymeCategory, RhymeResult } from './types';
+import type { LangCode, RhymeCategory, RhymeResult, SchemeLabel, SchemeResult } from './types';
 import { rhymeScore } from './engine';
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export type SchemeLabel =
-  | 'AABB'         // couplets
-  | 'ABAB'         // alternate
-  | 'ABBA'         // embrace / petrarchan quatrain
-  | 'ABCABC'       // sestain
-  | 'TERZA_RIMA'   // ABA BCB CDC …
-  | 'MONORHYME'    // AAAA…
-  | 'FREE_VERSE'   // no detectable pattern
-  | 'CUSTOM';      // other detected pattern
-
-export interface SchemeResult {
-  /** Per-line letter assignment, e.g. ['A','B','A','B'] */
-  letters: string[];
-  /** Detected scheme label */
-  label: SchemeLabel;
-  /** Confidence 0–1: fraction of expected rhyme pairs that score ≥ threshold */
-  confidence: number;
-  /** All pairwise scores (i,j) where j > i, for debugging */
-  pairScores: Array<{ i: number; j: number; result: RhymeResult }>;
-  /** Warnings from underlying rhymeScore calls */
-  warnings: string[];
-}
 
 // ─── Threshold ───────────────────────────────────────────────────────────────
 
@@ -228,8 +203,8 @@ export function detectRhymeScheme(
     rhymeMatrix.get(`${Math.min(i,j)},${Math.max(i,j)}`) ?? false;
 
   // Assign letters and detect label
-  const letters   = assignLetters(lines, rhymes);
-  const label     = detectLabel(letters, n);
+  const letters    = assignLetters(lines, rhymes);
+  const label      = detectLabel(letters, n);
   const confidence = computeConfidence(letters, pairScores);
 
   return { letters, label, confidence, pairScores, warnings };
