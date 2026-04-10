@@ -10,6 +10,7 @@ import { useDrag } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { isPureMetaLine } from '../../utils/metaUtils';
+import { useRhymeScheme } from '../../hooks/useRhymeScheme';
 
 interface SectionEditorProps {
   section: Section;
@@ -44,11 +45,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   const { t } = useTranslation();
   const { isGenerating } = useComposerContext();
   const { handleDrop } = useDragHandlersContext();
-  const {
-    draggedItemIndex,
-    dragOverIndex,
-    setDragOverIndex,
-  } = useDrag();
+  const { draggedItemIndex, dragOverIndex, setDragOverIndex } = useDrag();
 
   const sectionName: string = section.name ?? '';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
@@ -73,7 +70,7 @@ export const SectionEditor = React.memo(function SectionEditor({
     handleDrop(sectionIndex);
   }, [handleDrop, sectionIndex]);
 
-  // Lyric texts for scheme detection: exclude meta lines
+  // ── Single useRhymeScheme instance for the whole section ───────────────────
   const lyricTexts = useMemo(
     () => section.lines
       .filter(l => !(l.isMeta ?? isPureMetaLine(l.text)))
@@ -81,7 +78,9 @@ export const SectionEditor = React.memo(function SectionEditor({
     [section.lines],
   );
 
-  // exactOptionalPropertyTypes: only spread optional callbacks when defined
+  const schemeResult = useRhymeScheme(lyricTexts, sectionTargetLanguage);
+  // ──────────────────────────────────────────────────────────────────────────
+
   const adaptControlOptional = {
     ...(onSectionTargetLanguageChange ? { onSectionTargetLanguageChange } : {}),
     ...(adaptSectionLanguage ? { adaptSectionLanguage } : {}),
@@ -147,6 +146,7 @@ export const SectionEditor = React.memo(function SectionEditor({
           hasApiKey={hasApiKey}
           lineNumberOffset={lineNumberOffset}
           sectionTargetLanguage={sectionTargetLanguage}
+          schemeResult={schemeResult}
           playAudioFeedback={playAudioFeedback}
           {...lineListOptional}
         />
@@ -156,8 +156,7 @@ export const SectionEditor = React.memo(function SectionEditor({
           preInstructions={section.preInstructions ?? []}
           postInstructions={section.postInstructions ?? []}
           playAudioFeedback={playAudioFeedback}
-          lineTexts={lyricTexts}
-          lang={sectionTargetLanguage}
+          schemeResult={schemeResult}
         />
       </div>
     </section>

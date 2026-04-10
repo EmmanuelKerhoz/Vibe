@@ -9,8 +9,8 @@ import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSongMutation } from '../../contexts/SongMutationContext';
 import { useRhymeSuggestions } from '../../hooks/useRhymeSuggestions';
-import { useRhymeScheme } from '../../hooks/useRhymeScheme';
 import type { Section } from '../../types';
+import type { SchemeResult } from '../../lib/rhyme/types';
 
 type MetaGroup = { kind: 'meta'; lines: Section['lines'] };
 type LyricItem = { kind: 'lyric'; line: Section['lines'][number]; index: number };
@@ -52,6 +52,8 @@ interface SectionLineListProps {
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
   adaptingLineIds?: Set<string>;
   sectionTargetLanguage: string;
+  /** Pre-computed scheme result from parent SectionEditor (single hook instance). */
+  schemeResult: SchemeResult | null;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   onLineBlur?: () => void;
 }
@@ -67,11 +69,7 @@ interface LinePanelProps {
 }
 
 function LineRhymePanel({ line, lang, updateLineText, sectionId, onClose }: LinePanelProps) {
-  const { suggestions, query, isLoading } = useRhymeSuggestions(
-    line.text,
-    lang,
-    true,
-  );
+  const { suggestions, query, isLoading } = useRhymeSuggestions(line.text, lang, true);
   return (
     <RhymeSuggestPanel
       query={query}
@@ -90,6 +88,7 @@ export const SectionLineList = React.memo(function SectionLineList({
   section, hasApiKey,
   lineNumberOffset = 0,
   adaptLineLanguage, adaptingLineIds, sectionTargetLanguage,
+  schemeResult,
   playAudioFeedback, onLineBlur,
 }: SectionLineListProps) {
   const { rhymeScheme, lineLanguages } = useSongContext();
@@ -100,28 +99,14 @@ export const SectionLineList = React.memo(function SectionLineList({
   const renderItems = useMemo(() => buildRenderItems(section.lines), [section.lines]);
   const effectiveRhymeScheme = section.rhymeScheme || rhymeScheme;
 
-  // ── Dynamic scheme via useRhymeScheme hook ──────────────────────────────────
-  // Extract lyric texts in lyricIndex order, filtering meta lines.
-  const lyricTexts = useMemo(
-    () => renderItems
-      .filter((it): it is LyricItem => it.kind === 'lyric')
-      .map(it => it.line.text),
-    [renderItems],
-  );
-
-  const dynamicScheme = useRhymeScheme(lyricTexts, sectionTargetLanguage);
-
-  // Map lyricIndex → scheme letter from dynamic detection.
-  // Falls back to static scheme when hook returns null (< 2 lines, error).
+  // Derive per-lyric-index letters from the hoisted schemeResult prop.
+  // Falls back to static scheme when schemeResult is null (< 2 lines, error).
   const dynamicLetters = useMemo<string[]>(() => {
-    if (dynamicScheme) return dynamicScheme.letters;
-    // Fallback: compute static labels for each lyric index
+    if (schemeResult) return schemeResult.letters;
     return renderItems
       .filter((it): it is LyricItem => it.kind === 'lyric')
       .map(it => getSchemeLetterForLine(section, it.index, effectiveRhymeScheme) ?? '');
-  }, [dynamicScheme, renderItems, section, effectiveRhymeScheme]);
-
-  // ────────────────────────────────────────────────────────────────────────────
+  }, [schemeResult, renderItems, section, effectiveRhymeScheme]);
 
   const selectedLine = useMemo(() => {
     if (!selectedLineId) return null;
@@ -135,9 +120,7 @@ export const SectionLineList = React.memo(function SectionLineList({
     ? (lineLanguages[selectedLine.id] ?? sectionTargetLanguage ?? 'auto')
     : 'auto';
 
-  const handlePanelClose = () => {
-    if (onLineBlur) onLineBlur();
-  };
+  const handlePanelClose = () => { if (onLineBlur) onLineBlur(); };
 
   return (
     <div className="flex flex-col gap-0.5">
@@ -155,12 +138,11 @@ export const SectionLineList = React.memo(function SectionLineList({
         const { line, index: lyricIndex } = item;
         const isActive = selectedLineId === line.id;
 
-        // Use dynamic letter from hook; fall back to static getter if out of bounds
         const dynamicLetter = dynamicLetters[lyricIndex] ?? null;
         const schemeLabel = dynamicLetter || getSchemaLabelForLine(section, lyricIndex, effectiveRhymeScheme);
         const rhymeFamily = dynamicLetter || getSchemeLetterForLine(section, lyricIndex, effectiveRhymeScheme);
-
         const rhymeColor = getRhymeColor(schemeLabel);
+
         const rhymePeerTexts = rhymeFamily
           ? renderItems
             .filter((candidate): candidate is LyricItem =>
@@ -170,10 +152,10 @@ export const SectionLineList = React.memo(function SectionLineList({
             )
             .map(candidate => candidate.line.text)
           : [];
+
         const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo?.lineId === line.id;
         const isDragOverLine = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo?.lineId === line.id;
 
-        // exactOptionalPropertyTypes: only spread optional props when value is defined
         const lineOptional = {
           ...(lineLanguages[line.id] !== undefined ? { lineLanguage: lineLanguages[line.id] as string } : {}),
           ...(adaptLineLanguage ? { adaptLineLanguage } : {}),

@@ -5,21 +5,17 @@ import { InstructionEditor } from './InstructionEditor';
 import { useTranslation } from '../../i18n';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSongMutation } from '../../contexts/SongMutationContext';
-import { useRhymeScheme } from '../../hooks/useRhymeScheme';
+import type { SchemeResult } from '../../lib/rhyme/types';
 
 // ─── Scheme badge ─────────────────────────────────────────────────────────────
 
-/** Maps confidence [0..1] to a Tailwind colour class triplet. */
 function confidenceClass(confidence: number): string {
   if (confidence >= 0.70) return 'text-[var(--accent-color)] border-[var(--accent-color)]/40 bg-[var(--accent-color)]/8';
   if (confidence >= 0.45) return 'text-zinc-500 dark:text-zinc-400 border-zinc-400/30 bg-zinc-400/8';
   return 'text-zinc-400 dark:text-zinc-600 border-zinc-300/30 bg-transparent';
 }
 
-interface SchemeBadgeProps {
-  label: string;
-  confidence: number;
-}
+interface SchemeBadgeProps { label: string; confidence: number; }
 
 function SchemeBadge({ label, confidence }: SchemeBadgeProps) {
   const colourCls = confidenceClass(confidence);
@@ -49,28 +45,21 @@ interface SectionFooterProps {
   preInstructions: string[];
   postInstructions: string[];
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
-  /** Lyric line texts for scheme detection (filtered from section.lines). */
-  lineTexts: string[];
-  /** Active language for this section (ISO code or 'auto'). */
-  lang: string;
+  /** Pre-computed scheme result from parent SectionEditor (single hook instance). */
+  schemeResult: SchemeResult | null;
 }
 
 export const SectionFooter = React.memo(function SectionFooter({
   sectionId,
   preInstructions, postInstructions,
   playAudioFeedback,
-  lineTexts,
-  lang,
+  schemeResult,
 }: SectionFooterProps) {
   const { t } = useTranslation();
   const { isGenerating, isRegeneratingSection, handleInstructionChange, addInstruction, removeInstruction, regenerateSection } = useComposerContext();
   const { addLineToSection } = useSongMutation();
 
-  const scheme = useRhymeScheme(lineTexts, lang);
-
-  // Only show the badge when a scheme was detected and is not pure free verse
-  // with very low confidence (would just add noise).
-  const showBadge = scheme !== null && !(scheme.label === 'FREE_VERSE' && scheme.confidence < 0.25);
+  const showBadge = schemeResult !== null && !(schemeResult.label === 'FREE_VERSE' && schemeResult.confidence < 0.25);
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -100,10 +89,9 @@ export const SectionFooter = React.memo(function SectionFooter({
         onRemove={removeInstruction}
       />
 
-      {/* Rhyme scheme badge — pushed right, before regenerate */}
-      {showBadge && scheme && (
+      {showBadge && schemeResult && (
         <span className="ml-auto">
-          <SchemeBadge label={scheme.label} confidence={scheme.confidence} />
+          <SchemeBadge label={schemeResult.label} confidence={schemeResult.confidence} />
         </span>
       )}
 
