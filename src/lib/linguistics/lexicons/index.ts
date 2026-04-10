@@ -1,13 +1,25 @@
-/**
- * lexicons/index.ts
- * Barrel — re-exports all per-language lexicons.
- * Add new languages here as they are onboarded.
- */
-
 export { frLexicon } from './fr';
 export { enLexicon } from './en';
 export { esLexicon } from './es';
 export { ptLexicon } from './pt';
+export { itLexicon } from './it';
+export { roLexicon } from './ro';
+export { deLexicon } from './de';
+export { nlLexicon } from './nl';
+export { plLexicon } from './pl';
+export { ruLexicon } from './ru';
+export { arLexicon } from './ar';
+export { hiLexicon } from './hi';
+export { trLexicon } from './tr';
+export { zhLexicon } from './zh';
+export { jaLexicon } from './ja';
+export { koLexicon } from './ko';
 export { yoLexicon } from './yo';
 export { swLexicon } from './sw';
-export { arLexicon } from './ar';
+export { haLexicon } from './ha';
+export { baLexicon } from './ba';
+export { ewLexicon } from './ew';
+export { miLexicon } from './mi';
+export { diLexicon } from './di';
+export { idLexicon } from './id';
+export { initLexicons, getLexiconHealth, _resetLexicons_TEST_ONLY } from './initLexicons';

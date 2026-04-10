@@ -11,6 +11,8 @@
  *
  *   ha is registered under a single code ('ha') — consistent across LID,
  *   LANG_TO_FAMILY, and lexicon.
+ *
+ *   id (Indonesian) registered under 'id'; also aliased as 'id-ID'.
  */
 
 import { registerLexicon, getLexiconSize } from '../rhyme/PhonemeStore';
@@ -37,6 +39,7 @@ import { baLexicon } from './ba';
 import { ewLexicon } from './ew';
 import { miLexicon } from './mi';
 import { diLexicon } from './di';
+import { idLexicon } from './id';
 
 type StructuredLexiconEntry = {
   word: string;
@@ -114,6 +117,9 @@ export function initLexicons(): void {
   registerLexicon('sw', swLexicon);
   // — Afro-Asiatic / Chadic
   registerLexicon('ha', haIndexedLexicon);
+  // — Austronesian
+  registerLexicon('id', idLexicon);
+  registerLexicon('id-ID', idLexicon);  // BCP-47 alias
   // — KWA: canonical codes (used by LANG_TO_FAMILY → suggestRhymes)
   registerLexicon('bci', baIndexedLexicon);   // Baoulé
   registerLexicon('ee',  ewIndexedLexicon);   // Ewe
@@ -132,25 +138,26 @@ export function initLexicons(): void {
  */
 export function getLexiconHealth(): Record<string, number> {
   return {
-    fr: getLexiconSize('fr'),
-    es: getLexiconSize('es'),
-    pt: getLexiconSize('pt'),
-    it: getLexiconSize('it'),
-    ro: getLexiconSize('ro'),
-    en: getLexiconSize('en'),
-    de: getLexiconSize('de'),
-    nl: getLexiconSize('nl'),
-    pl: getLexiconSize('pl'),
-    ru: getLexiconSize('ru'),
-    ar: getLexiconSize('ar'),
-    hi: getLexiconSize('hi'),
-    tr: getLexiconSize('tr'),
-    zh: getLexiconSize('zh'),
-    ja: getLexiconSize('ja'),
-    ko: getLexiconSize('ko'),
-    yo: getLexiconSize('yo'),
-    sw: getLexiconSize('sw'),
-    ha: getLexiconSize('ha'),
+    fr:  getLexiconSize('fr'),
+    es:  getLexiconSize('es'),
+    pt:  getLexiconSize('pt'),
+    it:  getLexiconSize('it'),
+    ro:  getLexiconSize('ro'),
+    en:  getLexiconSize('en'),
+    de:  getLexiconSize('de'),
+    nl:  getLexiconSize('nl'),
+    pl:  getLexiconSize('pl'),
+    ru:  getLexiconSize('ru'),
+    ar:  getLexiconSize('ar'),
+    hi:  getLexiconSize('hi'),
+    tr:  getLexiconSize('tr'),
+    zh:  getLexiconSize('zh'),
+    ja:  getLexiconSize('ja'),
+    ko:  getLexiconSize('ko'),
+    yo:  getLexiconSize('yo'),
+    sw:  getLexiconSize('sw'),
+    ha:  getLexiconSize('ha'),
+    id:  getLexiconSize('id'),
     bci: getLexiconSize('bci'),
     ee:  getLexiconSize('ee'),
     gej: getLexiconSize('gej'),

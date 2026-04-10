@@ -12,7 +12,7 @@
  *     For Latin-script text, a small set of high-frequency, language-exclusive
  *     words scores each candidate language. Highest score wins.
  *     Covered: fr, en, es, it, pt, de, nl, sw, yo, ha, id, tr, fi, hu, vi, th,
- *              ba, ew, mi, di (KWA non-standard codes).
+ *              ba, ew, mi, di (KWA non-standard codes), pl, ro.
  *
  * @param text  Raw text (lyric, word, or sentence). May be mixed-script.
  * @returns     ISO 639-1/3 language code, or DEFAULT_LANG if detection fails.
@@ -84,11 +84,11 @@ function detectByScript(text: string): string | undefined {
  * Pilot word lists — high-frequency, exclusive to the target language.
  * Selection criteria:
  *   - Top-100 most frequent words in the language
- *   - NOT shared with other languages in this list (no 'de', 'la', 'le')
+ *   - NOT shared with other languages in this list
  *   - Short (≤6 chars) for fast matching
  *   - Grammatical words (articles, prepositions, pronouns) preferred
  *
- * Scores: each matched word adds +2. Multi-word match adds +3.
+ * Scores: each matched word adds +2.
  * Tie: DEFAULT_LANG wins.
  *
  * KWA codes used:
@@ -135,6 +135,18 @@ const WORD_PILOTS: Record<string, string[]> = {
     'het', 'een', 'niet', 'van', 'zijn', 'ook', 'dat', 'met',
     'voor', 'door', 'bij', 'maar', 'nog', 'wel', 'wordt',
   ],
+  pl: [
+    'się', 'nie', 'jest', 'jak', 'ale', 'czy', 'już', 'tak',
+    'przez', 'jego', 'jej', 'ich', 'tego', 'tej', 'tym',
+    'będzie', 'były', 'który', 'która', 'które', 'gdzie',
+    'jestem', 'jesteś', 'mnie', 'tobie', 'sobie',
+  ],
+  ro: [
+    'că', 'cu', 'din', 'este', 'sunt', 'mai', 'care', 'când',
+    'dacă', 'unde', 'acum', 'doar', 'către', 'prin', 'între',
+    'pentru', 'după', 'înainte', 'atunci', 'deci', 'astfel',
+    'meu', 'tău', 'său', 'nostru', 'lor', 'ești', 'eram',
+  ],
   sw: [
     'na', 'ya', 'wa', 'kwa', 'ni', 'hii', 'hilo', 'hiyo',
     'sana', 'pia', 'bali', 'lakini', 'kwamba',
@@ -169,21 +181,17 @@ const WORD_PILOTS: Record<string, string[]> = {
   ],
   // ─── KWA languages (Latin-script, tonal) ─────────────────────────────────
   ba: [
-    // Baoulé (bci) — high-frequency grammatical words
     'n', 'a', 'be', 'blɔ', 'klo', 'suə', 'kun', 'man',
     'nguɛ', 'wa', 'tra', 'yapi',
   ],
   ew: [
-    // Ewe
     'le', 'kple', 'ne', 'si', 'hafi', 'megbe', 'nuɖoviwo',
     'deke', 'eye', 'loo', 'nku',
   ],
   mi: [
-    // Mina/Gengèbé (mapped as mi)
     'mi', 'ye', 'bɔ', 'kɔ', 'lɔ', 'mo', 'nyi', 'amaa',
   ],
   di: [
-    // Dioula (dyu)
     'a', 'ka', 'ko', 'bɛ', 'tun', 'bi', 'don', 'mogo',
     'kama', 'folo', 'minnu',
   ],
