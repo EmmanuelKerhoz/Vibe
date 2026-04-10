@@ -86,3 +86,31 @@ export type RhymeCategory =
   | 'sufficient'    // score ≥ 0.60
   | 'weak'          // score ≥ 0.35
   | 'none';         // score < 0.35
+
+// ─── Scheme detection types ───────────────────────────────────────────────────
+// Defined here so all consumers (useRhymeScheme, SectionLineList, SectionFooter)
+// can import from a single canonical location without a circular dependency on
+// rhymeSchemeDetector.ts.
+
+export type SchemeLabel =
+  | 'AABB'         // couplets
+  | 'ABAB'         // alternate
+  | 'ABBA'         // embrace / petrarchan quatrain
+  | 'ABCABC'       // sestain
+  | 'TERZA_RIMA'   // ABA BCB CDC …
+  | 'MONORHYME'    // AAAA…
+  | 'FREE_VERSE'   // no detectable pattern
+  | 'CUSTOM';      // other detected pattern
+
+export interface SchemeResult {
+  /** Per-line letter assignment, e.g. ['A','B','A','B'] */
+  letters: string[];
+  /** Detected scheme label */
+  label: SchemeLabel;
+  /** Confidence 0–1: fraction of expected rhyme pairs that score ≥ threshold */
+  confidence: number;
+  /** All pairwise scores (i,j) where j > i, for debugging */
+  pairScores: Array<{ i: number; j: number; result: RhymeResult }>;
+  /** Warnings from underlying rhymeScore calls */
+  warnings: string[];
+}
