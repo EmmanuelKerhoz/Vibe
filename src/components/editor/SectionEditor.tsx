@@ -11,6 +11,8 @@ import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { useRhymeScheme } from '../../hooks/useRhymeScheme';
+import { languageNameToCode } from '../../constants/langFamilyMap';
+import type { LangCode } from '../../lib/rhyme/types';
 
 interface SectionEditorProps {
   section: Section;
@@ -78,7 +80,8 @@ export const SectionEditor = React.memo(function SectionEditor({
     [section.lines],
   );
 
-  const schemeResult = useRhymeScheme(lyricTexts, sectionTargetLanguage);
+  const sectionLangCode = (languageNameToCode(sectionTargetLanguage) ?? '__unknown__') as LangCode;
+  const schemeResult = useRhymeScheme(lyricTexts, sectionLangCode);
   // ──────────────────────────────────────────────────────────────────────────
 
   const adaptControlOptional = {
