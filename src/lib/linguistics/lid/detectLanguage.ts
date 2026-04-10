@@ -12,7 +12,8 @@
  *     For Latin-script text, a small set of high-frequency, language-exclusive
  *     words scores each candidate language. Highest score wins.
  *     Covered: fr, en, es, it, pt, de, nl, sw, yo, ha, id, tr, fi, hu, vi, th,
- *              ba, ew, mi, di (KWA non-standard codes), pl, ro.
+ *              ba, ew, mi, di (KWA non-standard codes), pl, ro,
+ *              nou (Nouchi CI), pcm (Nigerian Pidgin), cfg (Camfranglais).
  *
  * @param text  Raw text (lyric, word, or sentence). May be mixed-script.
  * @returns     ISO 639-1/3 language code, or DEFAULT_LANG if detection fails.
@@ -85,7 +86,7 @@ function detectByScript(text: string): string | undefined {
  * Selection criteria:
  *   - Top-100 most frequent words in the language
  *   - NOT shared with other languages in this list
- *   - Short (≤6 chars) for fast matching
+ *   - Short (≤8 chars) for fast matching
  *   - Grammatical words (articles, prepositions, pronouns) preferred
  *
  * Scores: each matched word adds +2.
@@ -97,6 +98,11 @@ function detectByScript(text: string): string | undefined {
  *   ew = Ewe   (ISO 639-1)
  *   mi = Mina / Gengèbé (SIL gej, mapped as mi here)
  *   di = Dioula (ISO 639-3 dyu, mapped as di here)
+ *
+ * Creole codes:
+ *   nou = Nouchi (Côte d'Ivoire)
+ *   pcm = Nigerian Pidgin English
+ *   cfg = Camfranglais (Cameroun)
  */
 const WORD_PILOTS: Record<string, string[]> = {
   fr: [
@@ -194,6 +200,30 @@ const WORD_PILOTS: Record<string, string[]> = {
   di: [
     'a', 'ka', 'ko', 'bɛ', 'tun', 'bi', 'don', 'mogo',
     'kama', 'folo', 'minnu',
+  ],
+  // ─── Creole / Pidgin languages (Latin-script) ────────────────────────────
+  // Nouchi — Côte d'Ivoire urban creole. Exclusive markers vs. FR/DYU/BCI.
+  // Key: gnaman, yako, warra, tchamba are uniquely Nouchi; gnaman ≠ any FR word.
+  nou: [
+    'gnaman', 'yako', 'warra', 'tchamba', 'blaka', 'sawa',
+    'kpoto', 'gbrou', 'drogbo', 'mboki', 'ndoki', 'broki',
+    'gnamankoudji', 'fottoh', 'kraka', 'yalla',
+    'blèkè', 'gbèlè', 'tchèkè', 'lèlè',
+  ],
+  // Nigerian Pidgin — Lagos/Niger Delta. Exclusive markers vs. EN/YO.
+  // abeg, wahala, wetin, naija are canonical PCM markers, not found in EN.
+  pcm: [
+    'abeg', 'wahala', 'wetin', 'naija', 'palava', 'kasala',
+    'katakata', 'yawa', 'gbege', 'oga',
+    'waka', 'dey', 'bele', 'belle', 'pele',
+  ],
+  // Camfranglais — Yaoundé / Douala. Exclusive markers vs. FR/EN.
+  // mboa (=pays/home), feymania (=arnaque), kanda (=quartier) uniquely CFG.
+  cfg: [
+    'mboa', 'feymania', 'kanda', 'makossa', 'mbamba', 'ngola',
+    'manawa', 'arnaka', 'bikutsi', 'gbaka',
+    'nda', 'bangangté', 'sawa',
+    'tchamba', 'blèkè', 'ndè',
   ],
 };
 
