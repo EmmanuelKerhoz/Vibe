@@ -13,7 +13,8 @@
  *     words scores each candidate language. Highest score wins.
  *     Covered: fr, en, es, it, pt, de, nl, sw, yo, ha, id, ms, tr, fi, hu, vi, th,
  *              ba, ew, mi, di (KWA non-standard codes), pl, ro,
- *              nou (Nouchi CI), pcm (Nigerian Pidgin), cfg (Camfranglais).
+ *              nou (Nouchi CI), pcm (Nigerian Pidgin), cfg (Camfranglais),
+ *              ur (Urdu romanisé).
  *
  * @param text  Raw text (lyric, word, or sentence). May be mixed-script.
  * @returns     ISO 639-1/3 language code, or DEFAULT_LANG if detection fails.
@@ -40,7 +41,7 @@ const MIN_TOKENS = 3;
 const SCRIPT_RULES: Array<{ pattern: RegExp; lang: string }> = [
   // Cyrillic
   { pattern: /[\u0400-\u04FF]/, lang: 'ru' },
-  // Arabic / Farsi
+  // Arabic / Farsi / Urdu (native script)
   { pattern: /[\u0600-\u06FF]/, lang: 'ar' },
   // Hebrew
   { pattern: /[\u0590-\u05FF]/, lang: 'he' },
@@ -108,6 +109,13 @@ function detectByScript(text: string): string | undefined {
  *   Key exclusive MY markers: kerana, kepada, boleh, awak, encik, sahaja,
  *   manakala, walau, bahawa, mengikut.
  *   These do NOT appear in standard Indonesian, allowing reliable separation.
+ *
+ * Urdu romanisé (ur):
+ *   High-frequency function words in Urdu romanisation (Nastaliq → Latin).
+ *   Selected for exclusivity vs. fr/en/hi — none appear in those pilot lists.
+ *   Native Nastaliq script is handled by Stage 1 (Arabic range → 'ar');
+ *   these pilots cover romanised lyrics only, routing them to ALGO-IIR
+ *   instead of the fr fallback.
  */
 const WORD_PILOTS: Record<string, string[]> = {
   fr: [
@@ -197,6 +205,14 @@ const WORD_PILOTS: Record<string, string[]> = {
   vi: [
     'và', 'của', 'có', 'là', 'cho', 'trong', 'đó', 'với',
     'được', 'không', 'này', 'một',
+  ],
+  // Urdu romanisé — covers Latin-script Urdu lyrics (Nastaliq → Latin).
+  // Native Urdu script (Nastaliq/Arabic range) is captured by Stage 1.
+  // These pilots are exclusive vs fr/en/hi and route to ALGO-IIR.
+  ur: [
+    'hai', 'mein', 'tera', 'yaar', 'dil', 'aaj', 'kya',
+    'nahi', 'tujhe', 'pyar', 'mere', 'tere', 'hum', 'tum',
+    'woh', 'kyun', 'bhi', 'abhi', 'kuch', 'phir',
   ],
   // ─── KWA languages (Latin-script, tonal) ─────────────────────────────────
   ba: [
