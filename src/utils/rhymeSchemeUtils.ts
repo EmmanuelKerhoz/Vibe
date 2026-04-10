@@ -57,8 +57,6 @@ export const detectRhymeSchemeFromIPAPairs = (
     let matchedLetter: string | null = null;
     for (let j = 0; j < i; j++) {
       if (rhymes(j, i)) {
-        // letters[j] is string | null here; null cannot match since we only
-        // enter rhymes() when a prior letter was assigned. Safe to assert.
         matchedLetter = letters[j] ?? null;
         break;
       }
@@ -80,10 +78,19 @@ export const detectRhymeSchemeFromIPAPairs = (
 };
 
 /**
- * Client-side rhyme scheme detector — fallback when the AI returns FREE.
+ * Client-side rhyme scheme detector — permanent graphemic safety net.
+ *
+ * Used in two scenarios:
+ * 1. Primary path when the section language is unknown / unsupported by IPA.
+ * 2. Fallback when the IPA pipeline throws or returns no pairs.
+ *
+ * This is NOT deprecated: it is a deliberate, lightweight fallback that
+ * intentionally stays graphemic so it works offline and for languages not
+ * yet covered by a native G2P family. It should be maintained alongside
+ * the IPA path, not removed.
+ *
  * @param lines - Array of line texts to analyze
  * @param langCode - Optional language code for tonal preservation
- * @deprecated Use ipaPipeline.ts for async IPA-based rhyme scheme detection.
  */
 export const detectRhymeSchemeLocally = (lines: string[], langCode?: string): string | null => {
   const lyricLines = lines.filter(line => line.trim().length > 0);
