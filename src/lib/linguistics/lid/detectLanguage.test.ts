@@ -5,6 +5,7 @@
  * Coverage:
  *   - Stage 1: script detection (Cyrillic, Arabic, CJK, Devanagari, Thai, Hangul)
  *   - Stage 2: word-pilot detection (fr, en, es, de, it, pt, sw)
+ *   - KWA languages: ba, ew, mi, di — collision-safe pilot sentences
  *   - Edge cases: empty string, single word, short text, fallback
  *   - resolveLang() helper
  */
@@ -85,6 +86,47 @@ describe('detectLanguage — Stage 2: word pilots', () => {
   it('detects Indonesian', () => {
     const result = detectLanguage('yang dan ini itu dari dengan untuk tidak');
     expect(result).toBe('id');
+  });
+});
+
+// ─── Stage 2: KWA languages ───────────────────────────────────────────────────
+//
+// Pilot sentences are built around tokens that carry diacritics or are
+// structurally exclusive to the target language, avoiding short ambiguous
+// tokens ('a', 'wa', 'ka') that collide with sw/di/ha pilots.
+//
+// Scoring floor: ≥ +8 for the target, ≤ +2 for the nearest competitor.
+
+describe('detectLanguage — KWA languages', () => {
+  it('detects Baoulé (ba) — collision-safe via diacritic-exclusive pilots', () => {
+    // blɔ +2, nguɛ +2, yapi +2, klo +2, kun +2 = ba:+10 — sw:'wa' +2 at most
+    const result = detectLanguage('blɔ nguɛ yapi klo kun man tra be');
+    expect(result).toBe('ba');
+  });
+
+  it('detects Ewe (ew) — exclusive diacritic pilots', () => {
+    // nuɖoviwo +2, eye +2, hafi +2, megbe +2, kple +2 = ew:+10
+    const result = detectLanguage('nuɖoviwo eye hafi megbe kple ne loo');
+    expect(result).toBe('ew');
+  });
+
+  it('detects Mina/Gengèbé (mi) — exclusive pilots', () => {
+    // nyi +2, amaa +2, bɔ +2, kɔ +2, lɔ +2 = mi:+10
+    const result = detectLanguage('nyi amaa bɔ kɔ lɔ mo ye mi');
+    expect(result).toBe('mi');
+  });
+
+  it('detects Dioula (di) — exclusive pilots avoiding ha collision', () => {
+    // bɛ +2, tun +2, mogo +2, kama +2, folo +2, minnu +2 = di:+12
+    // 'don' intentionally excluded to avoid ha:+2 collision
+    const result = detectLanguage('bɛ tun mogo kama folo minnu bi ko');
+    expect(result).toBe('di');
+  });
+
+  it('does not confuse Dioula with Hausa on shared token "don"', () => {
+    // Even with 'don' present, di-exclusive tokens must dominate
+    const result = detectLanguage('bɛ tun mogo kama folo don bi');
+    expect(result).toBe('di');
   });
 });
 
