@@ -15,24 +15,27 @@ function confidenceClass(confidence: number): string {
   return 'text-zinc-400 dark:text-zinc-600 border-zinc-300/30 bg-transparent';
 }
 
-interface SchemeBadgeProps { label: string; confidence: number; }
+interface SchemeBadgeProps { label: string; confidence: number; isProxied?: boolean; }
 
-function SchemeBadge({ label, confidence }: SchemeBadgeProps) {
+function SchemeBadge({ label, confidence, isProxied }: SchemeBadgeProps) {
   const colourCls = confidenceClass(confidence);
   const pct = Math.round(confidence * 100);
+  const displayLabel = isProxied ? `~${label}` : label;
+  const tooltipSuffix = isProxied ? ' (graphemic approximation)' : '';
   return (
-    <Tooltip title={`Rhyme scheme \u2014 confidence ${pct}%`}>
+    <Tooltip title={`Rhyme scheme \u2014 confidence ${pct}%${tooltipSuffix}`}>
       <span
-        aria-label={`Rhyme scheme: ${label}, confidence ${pct}%`}
+        aria-label={`Rhyme scheme: ${displayLabel}, confidence ${pct}%${tooltipSuffix}`}
         className={`
           inline-flex items-center gap-0.5 select-none
           rounded border px-1.5 py-0.5
           font-mono text-[9px] uppercase tracking-[0.18em]
           transition-colors duration-200
           ${colourCls}
+          ${isProxied ? 'opacity-70 italic' : ''}
         `}
       >
-        {label}
+        {displayLabel}
       </span>
     </Tooltip>
   );
@@ -47,6 +50,13 @@ interface SectionFooterProps {
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   /** Pre-computed scheme result from parent SectionEditor (single hook instance). */
   schemeResult: SchemeResult | null;
+  /**
+   * When true, the scheme badge displays a "~" prefix and italic style to
+   * indicate that the analysis relied on a graphemic proxy rather than a
+   * native G2P strategy.
+   * Typically forwarded from `SchemeResult.isProxied`.
+   */
+  isProxied?: boolean;
 }
 
 export const SectionFooter = React.memo(function SectionFooter({
@@ -54,12 +64,15 @@ export const SectionFooter = React.memo(function SectionFooter({
   preInstructions, postInstructions,
   playAudioFeedback,
   schemeResult,
+  isProxied,
 }: SectionFooterProps) {
   const { t } = useTranslation();
   const { isGenerating, isRegeneratingSection, handleInstructionChange, addInstruction, removeInstruction, regenerateSection } = useComposerContext();
   const { addLineToSection } = useSongMutation();
 
   const showBadge = schemeResult !== null && !(schemeResult.label === 'FREE_VERSE' && schemeResult.confidence < 0.25);
+  // Resolve isProxied: explicit prop takes precedence, then SchemeResult field.
+  const proxied = isProxied ?? schemeResult?.isProxied;
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -91,7 +104,11 @@ export const SectionFooter = React.memo(function SectionFooter({
 
       {showBadge && schemeResult && (
         <span className="ml-auto">
-          <SchemeBadge label={schemeResult.label} confidence={schemeResult.confidence} />
+          <SchemeBadge
+            label={schemeResult.label}
+            confidence={schemeResult.confidence}
+            isProxied={proxied}
+          />
         </span>
       )}
 

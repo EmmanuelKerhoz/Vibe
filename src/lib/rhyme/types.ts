@@ -113,4 +113,10 @@ export interface SchemeResult {
   pairScores: Array<{ i: number; j: number; result: RhymeResult }>;
   /** Warnings from underlying rhymeScore calls */
   warnings: string[];
+  /**
+   * True when the underlying analysis relied on the graphemic proxy layer
+   * rather than a native phonological G2P strategy.
+   * Consumers should surface a visual degradation indicator (e.g. "~" prefix).
+   */
+  isProxied?: boolean;
 }

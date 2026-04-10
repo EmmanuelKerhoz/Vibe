@@ -40,6 +40,8 @@ function toLangCode(lang: string): LangCode {
  * - Filters out empty lines and meta lines (starting with '[') before detection.
  * - Returns null when fewer than 2 usable lines are available.
  * - Never throws: errors are caught and logged, returning null.
+ * - `isProxied` is stamped onto the result when provided (comes from the
+ *   song-level `analyzeSongRhymes` caller, not computed here).
  *
  * `lang` accepts any free-form string (language name or code);
  * it is normalised to a `LangCode` internally.
@@ -47,6 +49,7 @@ function toLangCode(lang: string): LangCode {
 export function useRhymeScheme(
   lineTexts: string[],
   lang: string,
+  isProxied?: boolean,
 ): SchemeResult | null {
   // Stable reference check: only re-run when actual content changes
   const filteredRef = useRef<string[]>([]);
@@ -63,14 +66,20 @@ export function useRhymeScheme(
   const result = useMemo(() => {
     if (filtered.length < 2) return null;
     try {
-      return detectRhymeScheme(filtered, langCode);
+      const raw = detectRhymeScheme(filtered, langCode);
+      if (raw === null) return null;
+      // Stamp isProxied from the caller — the graphemic detector itself
+      // has no visibility into whether a proxy was used upstream.
+      return isProxied !== undefined ? { ...raw, isProxied } : raw;
     } catch (err) {
       if (process.env.NODE_ENV !== 'production') {
         console.warn('[useRhymeScheme] detection failed:', err);
       }
       return null;
     }
-  }, [filtered, langCode]);
+  // isProxied intentionally included: changing it should re-stamp the result.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, langCode, isProxied]);
 
   // Keep refs current for external consumers if needed later
   filteredRef.current = filtered;
