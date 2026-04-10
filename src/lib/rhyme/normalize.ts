@@ -7,8 +7,9 @@ import type { LineEndingUnit, ScriptClass, SegmentationMode } from './types';
 
 // ─── Languages that require tone-mark segmentation despite latin script ──────
 // Vietnamese and KWA languages: tone diacritics are phonemic, not decorative.
-// yo (Yoruba) added — tonal KWA language; was missing from original set.
-const TONE_MARK_LANGS = new Set(['vi', 'ba', 'ew', 'mi', 'di', 'yo']);
+// yo (Yoruba) intentionally excluded: it routes KWA/YRB and receives
+// tonal extraction inside the algo pipeline, not at the segmentation stage.
+const TONE_MARK_LANGS = new Set(['vi', 'ba', 'ew', 'mi', 'di']);
 
 // ─── Script detection ────────────────────────────────────────────────────────
 
@@ -48,9 +49,6 @@ function resolveSegmentationMode(
   script: ScriptClass,
   langHint?: string
 ): SegmentationMode {
-  // Override: tonal latin languages need tone-aware token extraction.
-  // Without this, KWA/VI tone diacritics are treated as mere decoration
-  // and the surface token passes to G2P without tonal context flag.
   if (langHint && TONE_MARK_LANGS.has(langHint) && script === 'latin') {
     return 'tone-mark';
   }
@@ -93,28 +91,22 @@ function extractFinalToken(
 ): string {
   switch (mode) {
     case 'character': {
-      // CJK: last non-punctuation character
       const chars = [...normalized].filter(c => !/[\p{P}\p{S}]/u.test(c));
       return chars.at(-1) ?? normalized.at(-1) ?? '';
     }
     case 'rtl': {
-      // Arabic/Hebrew: stored LTR in JS strings despite RTL display
       const tokens = normalized.split(/\s+/).filter(Boolean);
       const raw = tokens.at(-1) ?? '';
       return stripTrailingPunctuation(raw, script);
     }
     case 'tonal-syllable': {
-      // Thai/Khmer: last ZW-or-space-delimited unit
       const tokens = normalized.split(/[\s\u200B]+/).filter(Boolean);
       const raw = tokens.at(-1) ?? '';
       return stripTrailingPunctuation(raw, script);
     }
     case 'tone-mark': {
-      // KWA/VI: standard whitespace split but preserve ALL combining diacritics.
-      // normalizeInput already ran NFC so diacritics are composed.
       const tokens = normalized.split(/\s+/).filter(Boolean);
       const raw = tokens.at(-1) ?? '';
-      // Only strip non-tonal punctuation (latin set); never strip U+0300-U+036F
       return raw.replace(LATIN_PUNCT, '');
     }
     case 'whitespace':

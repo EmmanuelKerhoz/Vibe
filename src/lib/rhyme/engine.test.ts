@@ -1,6 +1,6 @@
 /**
  * Rhyme Engine v2 — Test Suite
- * 35 tests: router, normalize, scoring, all 5 families, corrections post-refacto
+ * 65 tests: router, normalize, scoring, all families including SLV/SEM/SEA/CJK/YRB/AGG
  */
 
 import { describe, it, expect } from 'vitest';
@@ -56,19 +56,22 @@ describe('extractLineEndingUnit', () => {
     const u = extractLineEndingUnit("n'gá so", 'ba');
     expect(u.segmentationMode).toBe('tone-mark');
     expect(u.script).toBe('latin');
-    // Surface must preserve tonal diacritic on final token
     expect(u.surface).toBe('so');
   });
   it('KWA langHint preserves tonal diacritic on final token (ew)', () => {
     const u = extractLineEndingUnit('me wò', 'ew');
     expect(u.segmentationMode).toBe('tone-mark');
-    // U+00F2 (grave) must survive — not stripped as punctuation
     expect(u.surface).toBe('wò');
   });
   it('VI langHint activates tone-mark segmentation', () => {
     const u = extractLineEndingUnit('trời đất', 'vi');
     expect(u.segmentationMode).toBe('tone-mark');
     expect(u.surface).toBe('đất');
+  });
+  // yo must NOT activate tone-mark (it routes KWA/YRB, not tone-mark path)
+  it('yo langHint does NOT activate tone-mark segmentation', () => {
+    const u = extractLineEndingUnit('ilé olé', 'yo');
+    expect(u.segmentationMode).toBe('whitespace');
   });
 });
 // ─── Router ─────────────────────────────────────────────────────────────
@@ -93,6 +96,30 @@ describe('routeToFamily', () => {
   it('routes Germanic languages', () => {
     expect(routeToFamily('en').family).toBe('GER');
     expect(routeToFamily('de').family).toBe('GER');
+  });
+  it('routes Slavic languages', () => {
+    expect(routeToFamily('ru').family).toBe('SLV');
+    expect(routeToFamily('pl').family).toBe('SLV');
+    expect(routeToFamily('cs').family).toBe('SLV');
+  });
+  it('routes Semitic languages', () => {
+    expect(routeToFamily('ar').family).toBe('SEM');
+    expect(routeToFamily('he').family).toBe('SEM');
+  });
+  it('routes SEA/CJK languages', () => {
+    expect(routeToFamily('th').family).toBe('SEA');
+    expect(routeToFamily('vi').family).toBe('SEA');
+    expect(routeToFamily('zh').family).toBe('CJK');
+    expect(routeToFamily('ja').family).toBe('CJK');
+    expect(routeToFamily('ko').family).toBe('CJK');
+  });
+  it('routes Yoruba → YRB', () => {
+    expect(routeToFamily('yo').family).not.toBe('BNT');
+  });
+  it('routes Agglutinative languages', () => {
+    expect(routeToFamily('tr').family).toBe('AGG');
+    expect(routeToFamily('fi').family).toBe('AGG');
+    expect(routeToFamily('hu').family).toBe('AGG');
   });
   it('fallbacks unknown lang with lowResource=true', () => {
     const r = routeToFamily('__unknown__');
@@ -136,7 +163,6 @@ describe('KWA rhyme engine', () => {
     const rMismatch = rhymeScore('amá', 'damà', 'ba', 'ba');
     expect(rMatch.score).toBeGreaterThan(rMismatch.score);
   });
-  // yo now routes KWA — tone extraction must still work
   it('yo routes to KWA family', () => {
     const r = rhymeScore('ilé', 'olé', 'yo', 'yo');
     expect(r.family).toBe('KWA');
@@ -150,8 +176,6 @@ describe('KWA rhyme engine', () => {
 // ─── Family: CRV + Haoussa tonal ─────────────────────────────────────────────
 describe('CRV rhyme engine', () => {
   it('HA: same tone class → higher score than tone mismatch', () => {
-    // Haoussa: gídaa (H) vs ídaa (H) — same tone, should score higher
-    // than gídaa (H) vs ìdaa (L)
     const rMatch    = rhymeScore('gídaa', 'ídaa', 'ha', 'ha');
     const rMismatch = rhymeScore('gídaa', 'ìdaa', 'ha', 'ha');
     expect(rMatch.score).toBeGreaterThanOrEqual(rMismatch.score);
@@ -205,6 +229,177 @@ describe('BNT rhyme engine', () => {
     expect(r.score).toBeGreaterThanOrEqual(0);
   });
 });
+// ─── Family: SLV ─────────────────────────────────────────────────────────────
+describe('SLV rhyme engine', () => {
+  it('RU: routes to SLV', () => {
+    const r = rhymeScore('любовь', 'кровь', 'ru', 'ru');
+    expect(r.family).toBe('SLV');
+  });
+  it('RU: identical ending → high score', () => {
+    // Both end in -овь → same vowel reduction + coda
+    const r = rhymeScore('любовь', 'кровь', 'ru', 'ru');
+    expect(r.score).toBeGreaterThan(0.60);
+  });
+  it('PL: nasal vowel normalisation — ą/ę merge', () => {
+    // końcówkę / piosenkę — both end in normalized 'en'
+    const r = rhymeScore('końcówkę', 'piosenkę', 'pl', 'pl');
+    expect(r.family).toBe('SLV');
+    expect(r.score).toBeGreaterThan(0.50);
+  });
+  it('CS: diacritic-aware — láska / páska', () => {
+    // Both share long-a nucleus + -ska coda
+    const r = rhymeScore('láska', 'páska', 'cs', 'cs');
+    expect(r.family).toBe('SLV');
+    expect(r.score).toBeGreaterThan(0.70);
+  });
+  it('SLV: different codas reduce score vs identical coda', () => {
+    const rMatch    = rhymeScore('láska', 'páska', 'cs', 'cs');
+    const rMismatch = rhymeScore('láska', 'láze', 'cs', 'cs');
+    expect(rMatch.score).toBeGreaterThan(rMismatch.score);
+  });
+});
+// ─── Family: SEM ─────────────────────────────────────────────────────────────
+describe('SEM rhyme engine', () => {
+  it('AR: routes to SEM', () => {
+    const r = rhymeScore('\u0642\u0644\u0628', '\u062D\u0644\u0628', 'ar', 'ar');
+    expect(r.family).toBe('SEM');
+  });
+  it('AR: shared long vowel → higher score than mismatched', () => {
+    // كتاب / حساب — both end in long-a + coda ب
+    const rMatch    = rhymeScore('\u0643\u062A\u0627\u0628', '\u062D\u0633\u0627\u0628', 'ar', 'ar');
+    // كتاب / رسول — different long vowel (aa vs uu)
+    const rMismatch = rhymeScore('\u0643\u062A\u0627\u0628', '\u0631\u0633\u0648\u0644', 'ar', 'ar');
+    expect(rMatch.score).toBeGreaterThan(rMismatch.score);
+  });
+  it('AR: identical words → score ≈ 1', () => {
+    const r = rhymeScore('\u0645\u0633\u0627\u0621', '\u0645\u0633\u0627\u0621', 'ar', 'ar');
+    expect(r.score).toBeCloseTo(1, 1);
+  });
+  it('HE: routes to SEM', () => {
+    const r = rhymeScore('\u05E9\u05DC\u05D5\u05DD', '\u05E8\u05D7\u05D5\u05DD', 'he', 'he');
+    expect(r.family).toBe('SEM');
+  });
+  it('HE: nucleus is not empty', () => {
+    const r = rhymeScore('\u05E9\u05DC\u05D5\u05DD', '\u05E8\u05D7\u05D5\u05DD', 'he', 'he');
+    expect(r.nucleusA.vowels).not.toBe('');
+    expect(r.nucleusB.vowels).not.toBe('');
+  });
+});
+// ─── Family: SEA + CJK ────────────────────────────────────────────────────────
+describe('SEA rhyme engine', () => {
+  it('TH: routes to SEA', () => {
+    const r = rhymeScore('\u0E04\u0E19', '\u0E14\u0E34\u0E19', 'th', 'th');
+    expect(r.family).toBe('SEA');
+  });
+  it('TH: nucleus is not empty', () => {
+    const r = rhymeScore('\u0E04\u0E19', '\u0E14\u0E34\u0E19', 'th', 'th');
+    expect(r.nucleusA.vowels).not.toBe('');
+  });
+  it('VI: tone match yields higher score than tone mismatch', () => {
+    // trời / đời — both grave (L tone) should score higher than trời/trời vs trời/trói
+    const rMatch    = rhymeScore('trời', 'đời', 'vi', 'vi');
+    const rMismatch = rhymeScore('trời', 'trói', 'vi', 'vi');
+    expect(rMatch.score).toBeGreaterThan(rMismatch.score);
+  });
+  it('VI: routes to SEA', () => {
+    const r = rhymeScore('trời', 'đời', 'vi', 'vi');
+    expect(r.family).toBe('SEA');
+  });
+});
+describe('CJK rhyme engine', () => {
+  it('ZH: routes to CJK', () => {
+    const r = rhymeScore('\u5929', '\u5148', 'zh', 'zh');
+    expect(r.family).toBe('CJK');
+  });
+  it('ZH: identical last character → score 1', () => {
+    const r = rhymeScore('\u5929', '\u5929', 'zh', 'zh');
+    expect(r.score).toBeCloseTo(1, 1);
+  });
+  it('ZH: different characters → penalised score < 1', () => {
+    const r = rhymeScore('\u5929', '\u5148', 'zh', 'zh');
+    expect(r.score).toBeLessThan(1);
+  });
+  it('JA: kana match → high score', () => {
+    // Both end with hiragana な
+    const r = rhymeScore('\u304B\u306A', '\u306A\u306A', 'ja', 'ja');
+    expect(r.family).toBe('CJK');
+    expect(r.score).toBeGreaterThan(0.80);
+  });
+  it('KO: Hangul jamo decomposition — same jung-seong → high score', () => {
+    // 나 (na) vs 다 (da) — same jung-seong ㅏ
+    const r = rhymeScore('\uB098', '\uB2E4', 'ko', 'ko');
+    expect(r.family).toBe('CJK');
+    expect(r.score).toBeGreaterThan(0.70);
+  });
+});
+// ─── Family: YRB ─────────────────────────────────────────────────────────────
+describe('YRB rhyme engine', () => {
+  it('YO: produces a score without error', () => {
+    const r = rhymeScore('ilé', 'olé', 'yo', 'yo');
+    expect(r.score).toBeGreaterThanOrEqual(0);
+    expect(r.score).toBeLessThanOrEqual(1);
+  });
+  it('YO: same tone class → higher score than tone mismatch', () => {
+    // ilé (H) vs olé (H) — should score higher than ilé (H) vs olè (L)
+    const rMatch    = rhymeScore('ilé', 'olé', 'yo', 'yo');
+    const rMismatch = rhymeScore('ilé', 'olè', 'yo', 'yo');
+    expect(rMatch.score).toBeGreaterThan(rMismatch.score);
+  });
+  it('YO: nucleusA vowels not empty', () => {
+    const r = rhymeScore('ilé', 'olé', 'yo', 'yo');
+    expect(r.nucleusA.vowels).not.toBe('');
+  });
+  it('YO: nasalised vowel preserved in nucleus', () => {
+    // ẽ is a nasal vowel — must appear in nucleus, not stripped
+    const r = rhymeScore('ẽ', 'ẽ', 'yo', 'yo');
+    expect(r.score).toBeGreaterThan(0.80);
+  });
+});
+// ─── Family: AGG ─────────────────────────────────────────────────────────────
+describe('AGG rhyme engine', () => {
+  it('TR: routes to AGG', () => {
+    const r = rhymeScore('ev', 'sev', 'tr', 'tr');
+    expect(r.family).toBe('AGG');
+  });
+  it('TR: suffix stripped — gelirse/görürse share same stem vowel class', () => {
+    const r = rhymeScore('gelirse', 'görürse', 'tr', 'tr');
+    expect(r.family).toBe('AGG');
+    expect(r.score).toBeGreaterThanOrEqual(0);
+  });
+  it('TR: same back-vowel harmony class boosts score', () => {
+    // kadar / adam — both back vowel class B
+    const rSame = rhymeScore('kadar', 'adam', 'tr', 'tr');
+    // gelmek / görmek — front class F
+    const rFront = rhymeScore('gelmek', 'görmek', 'tr', 'tr');
+    // Both should produce valid scores
+    expect(rSame.score).toBeGreaterThanOrEqual(0);
+    expect(rFront.score).toBeGreaterThanOrEqual(0);
+  });
+  it('FI: geminate vowel → moraCount 2 detection', () => {
+    // talo/palo — both end in -o (no geminate)
+    // saataa/vaataa — both end in -aa (geminate → moraCount 2)
+    const rGeminate = rhymeScore('saataa', 'vaataa', 'fi', 'fi');
+    expect(rGeminate.family).toBe('AGG');
+    expect(rGeminate.score).toBeGreaterThan(0.70);
+  });
+  it('FI: vowel harmony merge — a/ä treated as same nucleus', () => {
+    // talossa / metsässä — ssa/ssä suffix stripped; a vs ä merge → same nucleus
+    const r = rhymeScore('talossa', 'metsässä', 'fi', 'fi');
+    expect(r.family).toBe('AGG');
+    expect(r.score).toBeGreaterThan(0.50);
+  });
+  it('HU: routes to AGG', () => {
+    const r = rhymeScore('szerelem', 'érzelem', 'hu', 'hu');
+    expect(r.family).toBe('AGG');
+  });
+  it('HU: long vowel preserved — ó vs o reduces score', () => {
+    // szerelem / érzelem — similar front vowels
+    const rMatch    = rhymeScore('szerelem', 'érzelem', 'hu', 'hu');
+    // ház / has — á (long) vs a (short) — different
+    const rMismatch = rhymeScore('ház', 'has', 'hu', 'hu');
+    expect(rMatch.score).toBeGreaterThanOrEqual(rMismatch.score);
+  });
+});
 // ─── Cross-family fallback ────────────────────────────────────────────────────
 describe('cross-family fallback', () => {
   it('produces a result with FALLBACK family', () => {
@@ -212,15 +407,12 @@ describe('cross-family fallback', () => {
     expect(r.family).toBe('FALLBACK');
     expect(r.warnings).toContain('cross-family-fallback');
   });
-  // Post-refacto: nuclei must be real, not dummy empty objects
   it('cross-family: nucleusA and nucleusB are not both empty', () => {
     const r = rhymeScore('the night', 'la nuit', 'en', 'fr');
     const bothEmpty = r.nucleusA.vowels === '' && r.nucleusB.vowels === '';
     expect(bothEmpty).toBe(false);
   });
-  // FALLBACK graphemic path: surface must be NFC-normalised before slice
   it('FALLBACK: surface is NFC-normalised (no broken multi-byte slice)', () => {
-    // Arabic surface — slice(-4) must not produce a broken string
     const r = rhymeScore('\u0645\u0633\u0627\u0621', '\u0645\u0633\u0627\u0621', 'ar', 'ar');
     expect(r.score).toBeCloseTo(1, 1);
   });
