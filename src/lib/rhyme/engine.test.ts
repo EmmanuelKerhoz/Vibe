@@ -111,7 +111,7 @@ describe('categorize', () => {
 
 describe('KWA rhyme engine', () => {
   it('perfect score for identical Baoulé endings', () => {
-    const r = rhymeScore('n'gá', 'ka gá', 'ba', 'ba');
+    const r = rhymeScore("n'gá", 'ka gá', 'ba', 'ba');
     expect(r.family).toBe('KWA');
     expect(r.score).toBeGreaterThan(0.85);
   });
