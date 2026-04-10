@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Section } from '../../types';
 import { getSectionDotColor } from '../../utils/songUtils';
 import { SectionHeader } from './SectionHeader';
@@ -9,6 +9,7 @@ import { useTranslation } from '../../i18n';
 import { useDrag } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { isPureMetaLine } from '../../utils/metaUtils';
 
 interface SectionEditorProps {
   section: Section;
@@ -71,6 +72,14 @@ export const SectionEditor = React.memo(function SectionEditor({
     e.preventDefault(); e.stopPropagation();
     handleDrop(sectionIndex);
   }, [handleDrop, sectionIndex]);
+
+  // Lyric texts for scheme detection: exclude meta lines
+  const lyricTexts = useMemo(
+    () => section.lines
+      .filter(l => !(l.isMeta ?? isPureMetaLine(l.text)))
+      .map(l => l.text),
+    [section.lines],
+  );
 
   // exactOptionalPropertyTypes: only spread optional callbacks when defined
   const adaptControlOptional = {
@@ -147,6 +156,8 @@ export const SectionEditor = React.memo(function SectionEditor({
           preInstructions={section.preInstructions ?? []}
           postInstructions={section.postInstructions ?? []}
           playAudioFeedback={playAudioFeedback}
+          lineTexts={lyricTexts}
+          lang={sectionTargetLanguage}
         />
       </div>
     </section>
