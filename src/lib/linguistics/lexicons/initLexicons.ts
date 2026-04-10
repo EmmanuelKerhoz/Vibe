@@ -18,6 +18,11 @@
  *   fi (Finnish) registered under 'fi'.
  *   hu (Hungarian) registered under 'hu'.
  *   th (Thai) registered under 'th'.
+ *
+ *   he (Hebrew)    registered under 'he'  → ALGO-SEM.
+ *   nou (Nouchi)   registered under 'nou' → ALGO-CRE.
+ *   pcm (Nigerian Pidgin) registered under 'pcm' → ALGO-CRE.
+ *   cfg (Camfranglais)    registered under 'cfg' → ALGO-CRE.
  */
 
 import { registerLexicon, getLexiconSize } from '../rhyme/PhonemeStore';
@@ -49,6 +54,12 @@ import { viLexicon } from './vi';
 import { fiLexicon } from './fi';
 import { huLexicon } from './hu';
 import { thLexicon } from './th';
+// — Semitic (Hebrew)
+import { heLexicon } from './he';
+// — Creole / Pidgin
+import { nouLexicon } from './nou';
+import { pcmLexicon } from './pcm';
+import { cfgLexicon } from './cfg';
 
 type StructuredLexiconEntry = {
   word: string;
@@ -111,6 +122,7 @@ export function initLexicons(): void {
   registerLexicon('ru', ruLexicon);
   // — Semitic
   registerLexicon('ar', arLexicon);
+  registerLexicon('he', heLexicon);
   // — Indo-Iranian
   registerLexicon('hi', hiLexicon);
   // — Turkic
@@ -146,6 +158,10 @@ export function initLexicons(): void {
   registerLexicon('ew',  ewIndexedLexicon);
   registerLexicon('mi',  miIndexedLexicon);
   registerLexicon('di',  diIndexedLexicon);
+  // — Creole / Pidgin
+  registerLexicon('nou', nouLexicon);   // Nouchi (CI)
+  registerLexicon('pcm', pcmLexicon);  // Nigerian Pidgin
+  registerLexicon('cfg', cfgLexicon);  // Camfranglais
 }
 
 /**
@@ -165,6 +181,7 @@ export function getLexiconHealth(): Record<string, number> {
     pl:  getLexiconSize('pl'),
     ru:  getLexiconSize('ru'),
     ar:  getLexiconSize('ar'),
+    he:  getLexiconSize('he'),
     hi:  getLexiconSize('hi'),
     tr:  getLexiconSize('tr'),
     fi:  getLexiconSize('fi'),
@@ -182,6 +199,9 @@ export function getLexiconHealth(): Record<string, number> {
     ee:  getLexiconSize('ee'),
     gej: getLexiconSize('gej'),
     dyu: getLexiconSize('dyu'),
+    nou: getLexiconSize('nou'),
+    pcm: getLexiconSize('pcm'),
+    cfg: getLexiconSize('cfg'),
   };
 }
 
