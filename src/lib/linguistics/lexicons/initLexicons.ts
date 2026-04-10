@@ -26,6 +26,17 @@ import { ptLexicon } from './pt';
 import { yoLexicon } from './yo';
 import { swLexicon } from './sw';
 import { arLexicon } from './ar';
+import { deLexicon } from './de';
+import { itLexicon } from './it';
+import { roLexicon } from './ro';
+import { nlLexicon } from './nl';
+import { plLexicon } from './pl';
+import { ruLexicon } from './ru';
+import { zhLexicon } from './zh';
+import { jaLexicon } from './ja';
+import { koLexicon } from './ko';
+import { hiLexicon } from './hi';
+import { trLexicon } from './tr';
 
 /**
  * Register all built-in lexicons.
@@ -33,13 +44,34 @@ import { arLexicon } from './ar';
  * per-language bucket, so repeated calls are safe in app code and tests.
  */
 export function initLexicons(): void {
+  // — Romance
   registerLexicon('fr', frLexicon);
-  registerLexicon('en', enLexicon);
   registerLexicon('es', esLexicon);
   registerLexicon('pt', ptLexicon);
+  registerLexicon('it', itLexicon);
+  registerLexicon('ro', roLexicon);
+  // — Germanic
+  registerLexicon('en', enLexicon);
+  registerLexicon('de', deLexicon);
+  registerLexicon('nl', nlLexicon);
+  // — Slavic
+  registerLexicon('pl', plLexicon);
+  registerLexicon('ru', ruLexicon);
+  // — Semitic
+  registerLexicon('ar', arLexicon);
+  // — Indo-Iranian
+  registerLexicon('hi', hiLexicon);
+  // — Turkic
+  registerLexicon('tr', trLexicon);
+  // — Sinitic
+  registerLexicon('zh', zhLexicon);
+  // — Japanese
+  registerLexicon('ja', jaLexicon);
+  // — Korean
+  registerLexicon('ko', koLexicon);
+  // — Bantu / Niger-Congo
   registerLexicon('yo', yoLexicon);
   registerLexicon('sw', swLexicon);
-  registerLexicon('ar', arLexicon);
 }
 
 /**
@@ -48,13 +80,34 @@ export function initLexicons(): void {
  */
 export function getLexiconHealth(): Record<string, number> {
   return {
+    // Romance
     fr: getLexiconSize('fr'),
-    en: getLexiconSize('en'),
     es: getLexiconSize('es'),
     pt: getLexiconSize('pt'),
+    it: getLexiconSize('it'),
+    ro: getLexiconSize('ro'),
+    // Germanic
+    en: getLexiconSize('en'),
+    de: getLexiconSize('de'),
+    nl: getLexiconSize('nl'),
+    // Slavic
+    pl: getLexiconSize('pl'),
+    ru: getLexiconSize('ru'),
+    // Semitic
+    ar: getLexiconSize('ar'),
+    // Indo-Iranian
+    hi: getLexiconSize('hi'),
+    // Turkic
+    tr: getLexiconSize('tr'),
+    // Sinitic
+    zh: getLexiconSize('zh'),
+    // Japanese
+    ja: getLexiconSize('ja'),
+    // Korean
+    ko: getLexiconSize('ko'),
+    // Bantu / Niger-Congo
     yo: getLexiconSize('yo'),
     sw: getLexiconSize('sw'),
-    ar: getLexiconSize('ar'),
   };
 }
 
