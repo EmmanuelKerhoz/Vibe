@@ -31,9 +31,10 @@ export {
 export { exactMatch, phonemeEditDistance, featureWeightedScore } from './scoring';
 
 // Rhyme utilities
-export type { LyricLine, RhymeSuggestion, SuggestRhymesResult, SuggestRhymesOptions } from './rhyme';
+export type { LyricLine, LineEndingUnit, RhymeSuggestion, SuggestRhymesResult, SuggestRhymesOptions } from './rhyme';
 export {
-  splitLyricIntoLines, splitIntoRhymingLines, extractLineTail,
+  splitLyricIntoLines, splitIntoRhymingLines,
+  extractLineEndingUnit,
   detectRhymeScheme, canonicalizeScheme,
   countSyllables, countSyllablesFromIPA, countSyllablesHeuristic,
   normalizeFrenchForRhyme, normalizeFrenchLine,
