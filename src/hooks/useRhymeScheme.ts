@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { detectRhymeScheme } from '../lib/rhyme/rhymeSchemeDetector';
-import type { SchemeResult } from '../lib/rhyme/types';
+import type { LangCode, SchemeResult } from '../lib/rhyme/types';
 
 /**
  * Derives the rhyme scheme for a stanza (array of line texts) and a language.
@@ -12,7 +12,7 @@ import type { SchemeResult } from '../lib/rhyme/types';
  */
 export function useRhymeScheme(
   lineTexts: string[],
-  lang: string,
+  lang: LangCode,
 ): SchemeResult | null {
   // Stable reference check: only re-run when actual content changes
   const filteredRef = useRef<string[]>([]);
