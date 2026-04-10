@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { TopRibbon } from './TopRibbon';
 
 // ── Mutable state refs — mutated per-test, read by the mock factory ──────────
