@@ -9,30 +9,26 @@ const LANG_FAMILY_MAP: Record<string, FamilyId> = {
   fr: 'ROM', es: 'ROM', it: 'ROM', pt: 'ROM',
   // Germanic
   en: 'GER', de: 'GER', nl: 'GER',
-  // KWA (Kwa branch, Niger-Congo)
+  // KWA
   ba: 'KWA', di: 'KWA', ew: 'KWA', mi: 'KWA',
-  // CRV (Volta-Congo residual)
+  // CRV
   bk: 'CRV', cb: 'CRV', og: 'CRV', ha: 'CRV',
-  // Bantu (agglutinant, ATR vowel harmony)
+  // Bantu
   sw: 'BNT', lg: 'BNT', rw: 'BNT', sn: 'BNT', zu: 'BNT', xh: 'BNT', ny: 'BNT',
-  // Yoruboid — NOT Bantu, NOT KWA; strictly tonal, open-syllable
+  // Yoruboid
   yo: 'YRB',
   // Slavic
   ru: 'SLV', pl: 'SLV', cs: 'SLV',
   // Semitic
   ar: 'SEM', he: 'SEM',
-  // Southeast Asia (tonal)
+  // Southeast Asia
   th: 'SEA', vi: 'SEA', km: 'SEA',
-  // CJK (character-level graphemic proxy)
+  // CJK
   zh: 'CJK', ja: 'CJK', ko: 'CJK',
-  // Agglutinative → FALLBACK (no phonological model yet)
-  tr: 'FALLBACK', fi: 'FALLBACK', hu: 'FALLBACK',
+  // Agglutinative
+  tr: 'AGG', fi: 'AGG', hu: 'AGG',
 };
 
-/**
- * Returns the processing family for a given language code.
- * Unknown codes route to FALLBACK with a warning.
- */
 export function routeToFamily(
   lang: LangCode
 ): { family: FamilyId; lowResource: boolean } {
@@ -40,6 +36,5 @@ export function routeToFamily(
   if (!family) {
     return { family: 'FALLBACK', lowResource: true };
   }
-  const lowResource = family === 'FALLBACK';
-  return { family, lowResource };
+  return { family, lowResource: false };
 }
