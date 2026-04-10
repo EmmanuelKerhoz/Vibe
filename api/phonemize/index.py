@@ -2,17 +2,13 @@
 G2P Phonemization Microservice for Lyricist Pro
 FastAPI implementation with epitran for proper IPA conversion
 
-v4.3 — Remediation wiring:
-  - morpho_strip integrated into extract_rhyme_nucleus() pipeline
-  - phoneme_embedding wired as scoring layer (niveau 4)
-  - New endpoint POST /api/score → EmbeddingScoreResponse
-  - verse_segmenter + lid_span_router available (Étape B)
+v4.4 — Remediation Étape B:
+  - verse_segmenter wired: /api/analyze accepts full verse
+  - lid_span_router wired: LID fallback + optional predictor hook
+  - /api/analyze returns per-span phonemization + rhyme nuclei
 
-v4.2 corrections applied (SPEC_CORRECTIONS_v4.2.md):
-  C2 — Définition normative de Sₖ : accent prosodique par famille
-  C3 — Hiérarchie des seuils corrigée (plage morte supprimée)
-  C4 — ALGO-KWA : politique initial_dominant pour contours tonaux
-  C5 — Schéma JSON : fallback_used, fallback_reason, g2p_confidence
+v4.3 — morpho_strip + phoneme_embedding + /api/score
+v4.2 — C2/C3/C4/C5 corrections
 """
 
 from fastapi import FastAPI, HTTPException
@@ -29,7 +25,6 @@ logger = logging.getLogger(__name__)
 try:
     import epitran
     EPITRAN_AVAILABLE = True
-    logger.info("epitran loaded successfully")
 except ImportError:
     EPITRAN_AVAILABLE = False
     logger.warning("epitran not available - using fallback mode")
@@ -38,20 +33,32 @@ except ImportError:
 try:
     from rhyme.morpho_strip import strip_before_rn_extraction
     MORPHO_STRIP_AVAILABLE = True
-    logger.info("morpho_strip loaded")
 except ImportError:
     MORPHO_STRIP_AVAILABLE = False
-    logger.warning("morpho_strip not available — skipping affix stripping")
+    logger.warning("morpho_strip not available")
 
 try:
     from rhyme.phoneme_embedding import score_embedding, EmbeddingScore
     PHONEME_EMBEDDING_AVAILABLE = True
-    logger.info("phoneme_embedding loaded")
 except ImportError:
     PHONEME_EMBEDDING_AVAILABLE = False
-    logger.warning("phoneme_embedding not available — /api/score will return 503")
+    logger.warning("phoneme_embedding not available")
 
-app = FastAPI(title="G2P Phonemization Service", version="1.3.0")
+try:
+    from rhyme.verse_segmenter import segment_verse, RhymingUnit, SegmentMode
+    VERSE_SEGMENTER_AVAILABLE = True
+except ImportError:
+    VERSE_SEGMENTER_AVAILABLE = False
+    logger.warning("verse_segmenter not available")
+
+try:
+    from rhyme.lid_span_router import detect_spans, LangSpan
+    LID_ROUTER_AVAILABLE = True
+except ImportError:
+    LID_ROUTER_AVAILABLE = False
+    logger.warning("lid_span_router not available")
+
+app = FastAPI(title="G2P Phonemization Service", version="1.4.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -65,7 +72,6 @@ app.add_middleware(
 # ─── Language families ────────────────────────────────────────────────────────
 
 class AlgoFamily(str, Enum):
-    """Language family identifiers matching TypeScript constants"""
     ALGO_ROM  = "ALGO-ROM"
     ALGO_GER  = "ALGO-GER"
     ALGO_SLV  = "ALGO-SLV"
@@ -86,28 +92,18 @@ class AlgoFamily(str, Enum):
 
 
 LANG_TO_FAMILY: Dict[str, AlgoFamily] = {
-    # Romance
     'fr': AlgoFamily.ALGO_ROM, 'es': AlgoFamily.ALGO_ROM,
     'it': AlgoFamily.ALGO_ROM, 'pt': AlgoFamily.ALGO_ROM,
     'ro': AlgoFamily.ALGO_ROM, 'ca': AlgoFamily.ALGO_ROM,
-    # Germanic
     'en': AlgoFamily.ALGO_GER, 'de': AlgoFamily.ALGO_GER,
     'nl': AlgoFamily.ALGO_GER, 'sv': AlgoFamily.ALGO_GER,
     'da': AlgoFamily.ALGO_GER, 'no': AlgoFamily.ALGO_GER,
-    # Kwa
-    'bci': AlgoFamily.ALGO_KWA,  # Baoulé
-    'dyu': AlgoFamily.ALGO_KWA,  # Dioula
-    'ee':  AlgoFamily.ALGO_KWA,  # Ewe
-    'gej': AlgoFamily.ALGO_KWA,  # Mina
-    # Cross River / Chadic
-    'bkv': AlgoFamily.ALGO_CRV,  # Bekwarra
-    'ijn': AlgoFamily.ALGO_CRV,  # Calabari (Ijo)
-    'iko': AlgoFamily.ALGO_CRV,  # Ogoja
-    'ha':  AlgoFamily.ALGO_CRV,  # Hausa
-    # Slavic
+    'bci': AlgoFamily.ALGO_KWA, 'dyu': AlgoFamily.ALGO_KWA,
+    'ee':  AlgoFamily.ALGO_KWA, 'gej': AlgoFamily.ALGO_KWA,
+    'bkv': AlgoFamily.ALGO_CRV, 'ijn': AlgoFamily.ALGO_CRV,
+    'iko': AlgoFamily.ALGO_CRV, 'ha':  AlgoFamily.ALGO_CRV,
     'ru': AlgoFamily.ALGO_SLV, 'pl': AlgoFamily.ALGO_SLV,
     'uk': AlgoFamily.ALGO_SLV, 'cs': AlgoFamily.ALGO_SLV,
-    # Others
     'ar': AlgoFamily.ALGO_SEM, 'he': AlgoFamily.ALGO_SEM,
     'zh': AlgoFamily.ALGO_SIN,
     'ja': AlgoFamily.ALGO_JAP,
@@ -120,22 +116,14 @@ LANG_TO_FAMILY: Dict[str, AlgoFamily] = {
     'vi': AlgoFamily.ALGO_VIET,
 }
 
-# Families that benefit from morpho_strip (affix-heavy morphology)
 _MORPHO_STRIP_FAMILIES = {
-    AlgoFamily.ALGO_BNT,
-    AlgoFamily.ALGO_TRK,
-    AlgoFamily.ALGO_DRV,
-    AlgoFamily.ALGO_FIN,
-    AlgoFamily.ALGO_IIR,
+    AlgoFamily.ALGO_BNT, AlgoFamily.ALGO_TRK,
+    AlgoFamily.ALGO_DRV, AlgoFamily.ALGO_FIN, AlgoFamily.ALGO_IIR,
 }
 
-# Families that benefit from phoneme_embedding scoring (tonal/non-concatenative)
 _EMBEDDING_PRIORITY_FAMILIES = {
-    AlgoFamily.ALGO_KWA,
-    AlgoFamily.ALGO_CRV,
-    AlgoFamily.ALGO_SIN,
-    AlgoFamily.ALGO_TAI,
-    AlgoFamily.ALGO_VIET,
+    AlgoFamily.ALGO_KWA, AlgoFamily.ALGO_CRV,
+    AlgoFamily.ALGO_SIN, AlgoFamily.ALGO_TAI, AlgoFamily.ALGO_VIET,
 }
 
 
@@ -182,24 +170,18 @@ def get_epitran(lang_code: str) -> Optional[Any]:
     if epitran_code not in _epitran_cache:
         try:
             _epitran_cache[epitran_code] = epitran.Epitran(epitran_code)
-            logger.info(f"Created epitran instance for {epitran_code}")
         except Exception as e:
             logger.error(f"Failed to create epitran for {epitran_code}: {e}")
             return None
     return _epitran_cache[epitran_code]
 
 
-# ─── C4 — Tone contour normalisation (ALGO-KWA) ──────────────────────────────
-
+# ─── Tone normalisation (C4) ─────────────────────────────────────────────────────
 TONE_CONTOUR_POLICY = "initial_dominant"
-
 _TONE_TO_BINARY: Dict[str, str] = {
-    'H': 'H', 'MH': 'H',
-    'L': 'L', 'M': 'L', 'ML': 'L',
-    'HL':  'H', 'HML': 'H',
-    'LH':  'L', 'LHL': 'L',
+    'H': 'H', 'MH': 'H', 'L': 'L', 'M': 'L', 'ML': 'L',
+    'HL': 'H', 'HML': 'H', 'LH': 'L', 'LHL': 'L',
 }
-
 
 def normalize_tone(raw_tone: Optional[str]) -> Optional[str]:
     if raw_tone is None:
@@ -207,48 +189,32 @@ def normalize_tone(raw_tone: Optional[str]) -> Optional[str]:
     return _TONE_TO_BINARY.get(raw_tone.upper(), raw_tone)
 
 
-# ─── C3 — Rhyme type classification ──────────────────────────────────────────
-
+# ─── Rhyme classification (C3) ──────────────────────────────────────────────────
 RHYME_THRESHOLD_RICH       = 0.95
 RHYME_THRESHOLD_SUFFICIENT = 0.85
 RHYME_THRESHOLD_ASSONANCE  = 0.75
 RHYME_THRESHOLD_WEAK       = 0.40
 
-
 def _categorize(score: float) -> str:
-    if score >= RHYME_THRESHOLD_RICH:
-        return "rich"
-    if score >= RHYME_THRESHOLD_SUFFICIENT:
-        return "sufficient"
-    if score >= RHYME_THRESHOLD_ASSONANCE:
-        return "assonance"
-    if score >= RHYME_THRESHOLD_WEAK:
-        return "weak"
+    if score >= RHYME_THRESHOLD_RICH:       return "rich"
+    if score >= RHYME_THRESHOLD_SUFFICIENT: return "sufficient"
+    if score >= RHYME_THRESHOLD_ASSONANCE:  return "assonance"
+    if score >= RHYME_THRESHOLD_WEAK:       return "weak"
     return "none"
 
 
-# ─── C2 — Sₖ identification: prosodic accent by family ───────────────────────
-
+# ─── Sₖ identification (C2) ─────────────────────────────────────────────────────
 FAMILY_ACCENT_POLICY: Dict[AlgoFamily, str] = {
-    AlgoFamily.ALGO_ROM:  "final",
-    AlgoFamily.ALGO_TRK:  "final",
-    AlgoFamily.ALGO_KOR:  "final",
-    AlgoFamily.ALGO_VIET: "final",
-    AlgoFamily.ALGO_TAI:  "final",
-    AlgoFamily.ALGO_FIN:  "initial",
-    AlgoFamily.ALGO_AUS:  "initial",
-    AlgoFamily.ALGO_SLV:  "mobile",
-    AlgoFamily.ALGO_IIR:  "mobile",
-    AlgoFamily.ALGO_GER:  "mobile",
-    AlgoFamily.ALGO_SEM:  "mobile",
-    AlgoFamily.ALGO_JAP:  "mora",
-    AlgoFamily.ALGO_SIN:  "mora",
-    AlgoFamily.ALGO_KWA:  "tonal_last",
-    AlgoFamily.ALGO_CRV:  "tonal_last",
-    AlgoFamily.ALGO_BNT:  "tonal_last",
-    AlgoFamily.ALGO_DRV:  "final",
+    AlgoFamily.ALGO_ROM: "final",   AlgoFamily.ALGO_TRK: "final",
+    AlgoFamily.ALGO_KOR: "final",   AlgoFamily.ALGO_VIET: "final",
+    AlgoFamily.ALGO_TAI: "final",   AlgoFamily.ALGO_FIN: "initial",
+    AlgoFamily.ALGO_AUS: "initial", AlgoFamily.ALGO_SLV: "mobile",
+    AlgoFamily.ALGO_IIR: "mobile",  AlgoFamily.ALGO_GER: "mobile",
+    AlgoFamily.ALGO_SEM: "mobile",  AlgoFamily.ALGO_JAP: "mora",
+    AlgoFamily.ALGO_SIN: "mora",    AlgoFamily.ALGO_KWA: "tonal_last",
+    AlgoFamily.ALGO_CRV: "tonal_last", AlgoFamily.ALGO_BNT: "tonal_last",
+    AlgoFamily.ALGO_DRV: "final",
 }
-
 SCHWA_PATTERN = re.compile(r'^[əɨ]+$')
 
 
@@ -268,7 +234,7 @@ def find_stressed_syllable_index(syllables: List['SyllableModel'], family: AlgoF
     return len(syllables) - 1
 
 
-# ─── Models ───────────────────────────────────────────────────────────────────
+# ─── Pydantic models ───────────────────────────────────────────────────────────
 
 class SyllableModel(BaseModel):
     onset:   str
@@ -284,48 +250,84 @@ class PhonemizeRequest(BaseModel):
 
 
 class PhonemizeResponse(BaseModel):
-    """Phonemization response — v4.3 schema."""
-    algo_id:           str
-    lang:              str
-    input:             str
-    ipa:               str
-    syllables:         List[SyllableModel]
-    rhyme_nucleus:     str
-    rhyme_type:        Optional[str]     = None
-    similarity_method: str               = "feature_weighted_levenshtein"
-    method:            str
-    low_resource:      bool
-    fallback_used:     bool              = False
-    fallback_reason:   Optional[str]     = None
-    g2p_confidence:    str               = "high"
-    # v4.3 — morpho_strip audit
-    morpho_strip_applied: bool           = False
+    algo_id:              str
+    lang:                 str
+    input:                str
+    ipa:                  str
+    syllables:            List[SyllableModel]
+    rhyme_nucleus:        str
+    rhyme_type:           Optional[str]          = None
+    similarity_method:    str                    = "feature_weighted_levenshtein"
+    method:               str
+    low_resource:         bool
+    fallback_used:        bool                   = False
+    fallback_reason:      Optional[str]          = None
+    g2p_confidence:       str                    = "high"
+    morpho_strip_applied: bool                   = False
     morpho_strip_detail:  Optional[Dict[str, Any]] = None
-    metadata:          Dict[str, Any]    = {}
+    metadata:             Dict[str, Any]         = {}
 
 
 class ScoreRequest(BaseModel):
-    """Request for /api/score — phoneme embedding similarity."""
-    rn1:  str          # rhyme nucleus 1 (IPA phones, space-separated or string)
-    rn2:  str          # rhyme nucleus 2
+    rn1:  str
+    rn2:  str
     lang: str
 
 
 class ScoreResponse(BaseModel):
-    """Response from /api/score."""
     rn1:              str
     rn2:              str
     lang:             str
     algo_id:          str
     score:            float
     rhyme_type:       str
-    method:           str               = "phoneme_embedding_phoible_lite"
-    embedding_method: str               = "phoible_lite_dim5"
-    tonal_match:      Optional[bool]    = None
-    detail:           Dict[str, Any]    = {}
+    method:           str            = "phoneme_embedding_phoible_lite"
+    embedding_method: str            = "phoible_lite_dim5"
+    tonal_match:      Optional[bool] = None
+    detail:           Dict[str, Any] = {}
 
 
-# ─── G2P helpers ─────────────────────────────────────────────────────────────
+class AnalyzeRequest(BaseModel):
+    """Request for /api/analyze — full verse analysis."""
+    verse:        str
+    lang:         str
+    mode:         str              = "end"   # 'end' | 'internal' | 'all'
+    verse_index:  int              = 0
+
+
+class SpanPhonemization(BaseModel):
+    """Per-span phonemization result within a verse analysis."""
+    span_text:     str
+    span_lang:     str
+    span_family:   str
+    span_position: str              # 'end' | 'internal' | 'start'
+    token_span:    List[int]        # [start, end]
+    low_resource:  bool
+    lid_confidence: float
+    ipa:           str
+    syllables:     List[SyllableModel]
+    rhyme_nucleus: str
+    g2p_method:    str
+    g2p_confidence: str
+    morpho_strip_applied: bool      = False
+    morpho_strip_detail:  Optional[Dict[str, Any]] = None
+
+
+class AnalyzeResponse(BaseModel):
+    """Response from /api/analyze."""
+    verse:         str
+    lang:          str
+    mode:          str
+    verse_index:   int
+    spans:         List[SpanPhonemization]
+    # Convenience: rhyme nuclei of end-position spans only
+    end_nuclei:    List[str]
+    lid_used:      bool
+    segmenter_available: bool
+    lid_router_available: bool
+
+
+# ─── Internal helpers ───────────────────────────────────────────────────────────
 
 def _g2p_kwa_rules(text: str, lang: str) -> str:
     cleaned = text.lower().strip()
@@ -346,7 +348,6 @@ def simple_syllabify(ipa: str, family: AlgoFamily) -> List[SyllableModel]:
     parts = re.split(f'({vowel_pattern}+)', ipa_clean)
     syllables: List[SyllableModel] = []
     current: Dict[str, str] = {"onset": "", "nucleus": "", "coda": ""}
-
     for part in parts:
         if not part:
             continue
@@ -359,11 +360,56 @@ def simple_syllabify(ipa: str, family: AlgoFamily) -> List[SyllableModel]:
             if current["nucleus"]:
                 syllables.append(SyllableModel(**current))
             current = {"onset": "", "nucleus": "", "coda": ""}
-
     if current["nucleus"]:
         syllables.append(SyllableModel(**current))
-
     return syllables
+
+
+def _run_g2p(text: str, lang_code: str, family: AlgoFamily) -> tuple[str, str, bool, bool, Optional[str], str, Dict]:
+    """Run G2P for a single text+lang. Returns (ipa, method, low_resource, fallback_used, fallback_reason, confidence, metadata)."""
+    reg = G2P_REGISTRY.get(lang_code, {})
+    backend = reg.get('backend', 'graphemic_fallback')
+    g2p_confidence: str = reg.get('confidence', 'low')
+    ipa_text: Optional[str] = None
+    method = "graphemic_fallback"
+    low_resource = True
+    fallback_used = False
+    fallback_reason: Optional[str] = None
+    metadata: Dict[str, Any] = {}
+
+    if backend == 'epitran' and EPITRAN_AVAILABLE:
+        epi = get_epitran(lang_code)
+        if epi:
+            try:
+                ipa_text     = epi.transliterate(text)
+                method       = "epitran"
+                low_resource = False
+                metadata['epitran_code'] = reg.get('epitran_code')
+            except Exception as e:
+                logger.warning(f"Epitran failed for {lang_code}: {e}")
+    elif backend == 'rules_cv_tonal':
+        ipa_text       = _g2p_kwa_rules(text, lang_code)
+        method         = "rules_cv_tonal"
+        low_resource   = True
+        metadata['tone_contour_policy'] = TONE_CONTOUR_POLICY
+    elif backend == 'byt5_bytelevel':
+        ipa_text       = graphemic_fallback_g2p(text, family)
+        method         = "graphemic_fallback"
+        low_resource   = True
+        fallback_used  = True
+        fallback_reason = "low_resource_g2p"
+        g2p_confidence  = "low"
+        metadata['note'] = "ByT5-G2P not yet wired"
+
+    if ipa_text is None:
+        ipa_text = graphemic_fallback_g2p(text, family)
+        method   = "graphemic_fallback"
+        low_resource    = True
+        fallback_used   = True
+        fallback_reason = "unknown_language" if lang_code not in LANG_TO_FAMILY else "low_resource_g2p"
+        g2p_confidence  = "low"
+
+    return ipa_text, method, low_resource, fallback_used, fallback_reason, g2p_confidence, metadata
 
 
 def extract_rhyme_nucleus(
@@ -371,26 +417,16 @@ def extract_rhyme_nucleus(
     family: AlgoFamily,
     lang: str,
 ) -> tuple[str, bool, Optional[Dict[str, Any]]]:
-    """Extract rhyme nucleus from Sₖ, applying morpho_strip when relevant.
-
-    Returns (rhyme_nucleus, morpho_strip_applied, morpho_strip_detail).
-
-    v4.3: morpho_strip is applied on the IPA token of Sₖ before nucleus
-    extraction when the family is in _MORPHO_STRIP_FAMILIES and the module
-    is available.
-    """
+    """Extract RN with optional morpho_strip. Returns (rn, applied, detail)."""
     if not syllables:
         return "", False, None
-
     idx = find_stressed_syllable_index(syllables, family)
     if idx < 0:
         return "", False, None
     syll = syllables[idx]
-
     morpho_applied = False
     morpho_detail: Optional[Dict[str, Any]] = None
 
-    # ── morpho_strip: reconstruct token from Sₖ, strip, re-decompose ─────────
     if MORPHO_STRIP_AVAILABLE and family in _MORPHO_STRIP_FAMILIES:
         token_ipa = syll.onset + syll.nucleus + syll.coda
         if token_ipa.strip():
@@ -399,18 +435,13 @@ def extract_rhyme_nucleus(
                 stripped = result.get("stripped_ipa", token_ipa)
                 if stripped != token_ipa:
                     morpho_applied = True
-                    morpho_detail = result
-                    # Re-syllabify the stripped token to get clean nucleus/coda
-                    stripped_sylls = simple_syllabify(f"/{stripped}/", family)
-                    if stripped_sylls:
-                        syll = stripped_sylls[-1]
-                    logger.info(
-                        f"morpho_strip [{lang}]: {token_ipa!r} → {stripped!r}"
-                    )
+                    morpho_detail  = result
+                    new_sylls = simple_syllabify(f"/{stripped}/", family)
+                    if new_sylls:
+                        syll = new_sylls[-1]
             except Exception as e:
                 logger.warning(f"morpho_strip failed for {lang}: {e}")
 
-    # ── nucleus extraction per family policy ──────────────────────────────────
     if family in (AlgoFamily.ALGO_KWA, AlgoFamily.ALGO_BNT):
         rn = syll.nucleus
         if syll.tone:
@@ -427,16 +458,30 @@ def extract_rhyme_nucleus(
     return syll.nucleus + syll.coda, morpho_applied, morpho_detail
 
 
+def _phonemize_span(text: str, lang_code: str, family: AlgoFamily) -> tuple[
+    str, List[SyllableModel], str, str, bool, bool, Optional[Dict]
+]:
+    """Full G2P + syllabify + RN extraction for a single text span.
+    Returns (ipa, syllables, rhyme_nucleus, method, g2p_conf, morpho_applied, morpho_detail).
+    """
+    ipa, method, _, _, _, g2p_conf, _ = _run_g2p(text, lang_code, family)
+    syllables = simple_syllabify(ipa, family)
+    rn, morpho_applied, morpho_detail = extract_rhyme_nucleus(syllables, family, lang_code)
+    return ipa, syllables, rn, method, g2p_conf, morpho_applied, morpho_detail
+
+
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @app.get("/health")
 async def health_check():
     return {
         "status": "healthy",
-        "epitran_available": EPITRAN_AVAILABLE,
-        "morpho_strip_available": MORPHO_STRIP_AVAILABLE,
+        "version": "1.4.0",
+        "epitran_available":           EPITRAN_AVAILABLE,
+        "morpho_strip_available":      MORPHO_STRIP_AVAILABLE,
         "phoneme_embedding_available": PHONEME_EMBEDDING_AVAILABLE,
-        "version": "1.3.0",
+        "verse_segmenter_available":   VERSE_SEGMENTER_AVAILABLE,
+        "lid_router_available":        LID_ROUTER_AVAILABLE,
     }
 
 
@@ -444,107 +489,50 @@ async def health_check():
 async def api_health_check():
     return {
         "status": "healthy",
-        "epitran_available": EPITRAN_AVAILABLE,
-        "morpho_strip_available": MORPHO_STRIP_AVAILABLE,
+        "version": "1.4.0",
+        "epitran_available":           EPITRAN_AVAILABLE,
+        "morpho_strip_available":      MORPHO_STRIP_AVAILABLE,
         "phoneme_embedding_available": PHONEME_EMBEDDING_AVAILABLE,
-        "version": "1.3.0",
+        "verse_segmenter_available":   VERSE_SEGMENTER_AVAILABLE,
+        "lid_router_available":        LID_ROUTER_AVAILABLE,
     }
 
 
 @app.post("/api/phonemize", response_model=PhonemizeResponse)
 async def phonemize(request: PhonemizeRequest) -> PhonemizeResponse:
-    """Main phonemization endpoint — v4.3"""
+    """Single token/word phonemization — v4.4 (unchanged interface, refactored internals)"""
     try:
         lang_code = request.lang.lower()
         text = request.text.strip()
-
         if not text:
             raise HTTPException(status_code=400, detail="Empty text provided")
 
-        family  = LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM)
-        reg     = G2P_REGISTRY.get(lang_code, {})
-        backend = reg.get('backend', 'graphemic_fallback')
-        g2p_confidence: str = reg.get('confidence', 'low')
+        family = LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM)
+        ipa, method, low_resource, fallback_used, fallback_reason, g2p_confidence, metadata = \
+            _run_g2p(text, lang_code, family)
 
-        ipa_text: Optional[str] = None
-        method        = "graphemic_fallback"
-        low_resource  = True
-        fallback_used = False
-        fallback_reason: Optional[str] = None
-        metadata: Dict[str, Any] = {}
-
-        # ── Epitran ───────────────────────────────────────────────────────────
-        if backend == 'epitran' and EPITRAN_AVAILABLE:
-            epi = get_epitran(lang_code)
-            if epi:
-                try:
-                    ipa_text      = epi.transliterate(text)
-                    method        = "epitran"
-                    low_resource  = False
-                    metadata['epitran_code'] = reg.get('epitran_code')
-                except Exception as e:
-                    logger.warning(f"Epitran failed for {lang_code}: {e}")
-                    ipa_text = None
-
-        # ── KWA manual CV-tonal rules ─────────────────────────────────────────
-        elif backend == 'rules_cv_tonal':
-            ipa_text        = _g2p_kwa_rules(text, lang_code)
-            method          = "rules_cv_tonal"
-            low_resource    = True
-            fallback_used   = False
-            fallback_reason = None
-            metadata['tone_contour_policy'] = TONE_CONTOUR_POLICY
-
-        # ── ByT5 byte-level (stub) ────────────────────────────────────────────
-        elif backend == 'byt5_bytelevel':
-            ipa_text        = graphemic_fallback_g2p(text, family)
-            method          = "graphemic_fallback"
-            low_resource    = True
-            fallback_used   = True
-            fallback_reason = "low_resource_g2p"
-            g2p_confidence  = "low"
-            metadata['note'] = "ByT5-G2P not yet wired — graphemic fallback active"
-
-        # ── Graphemic fallback ────────────────────────────────────────────────
-        if ipa_text is None:
-            ipa_text = graphemic_fallback_g2p(text, family)
-            method   = "graphemic_fallback"
-            low_resource    = True
-            fallback_used   = True
-            fallback_reason = (
-                "unknown_language"
-                if lang_code not in LANG_TO_FAMILY
-                else "low_resource_g2p"
-            )
-            g2p_confidence = "low"
-            metadata['note'] = "Graphemic fallback — epitran unavailable or unsupported language"
-
-        syllables = simple_syllabify(ipa_text, family)
-
-        # v4.3: morpho_strip integrated into RN extraction
+        syllables = simple_syllabify(ipa, family)
         rhyme_nucleus, morpho_applied, morpho_detail = extract_rhyme_nucleus(
             syllables, family, lang_code
         )
 
         return PhonemizeResponse(
-            algo_id               = family.value,
-            lang                  = lang_code,
-            input                 = text,
-            ipa                   = ipa_text,
-            syllables             = syllables,
-            rhyme_nucleus         = rhyme_nucleus,
-            rhyme_type            = None,
-            similarity_method     = "feature_weighted_levenshtein",
-            method                = method,
-            low_resource          = low_resource,
-            fallback_used         = fallback_used,
-            fallback_reason       = fallback_reason,
-            g2p_confidence        = g2p_confidence,
-            morpho_strip_applied  = morpho_applied,
-            morpho_strip_detail   = morpho_detail,
-            metadata              = metadata,
+            algo_id              = family.value,
+            lang                 = lang_code,
+            input                = text,
+            ipa                  = ipa,
+            syllables            = syllables,
+            rhyme_nucleus        = rhyme_nucleus,
+            rhyme_type           = None,
+            method               = method,
+            low_resource         = low_resource,
+            fallback_used        = fallback_used,
+            fallback_reason      = fallback_reason,
+            g2p_confidence       = g2p_confidence,
+            morpho_strip_applied = morpho_applied,
+            morpho_strip_detail  = morpho_detail,
+            metadata             = metadata,
         )
-
     except HTTPException:
         raise
     except Exception as e:
@@ -554,59 +542,153 @@ async def phonemize(request: PhonemizeRequest) -> PhonemizeResponse:
 
 @app.post("/api/score", response_model=ScoreResponse)
 async def score_rhymes(request: ScoreRequest) -> ScoreResponse:
-    """Phoneme embedding similarity endpoint — niveau 4 scoring.
-
-    Accepts two rhyme nuclei (IPA string) and returns cosine similarity
-    via phoneme_embedding (PHOIBLE-lite dim=5 static vectors).
-    Priority families: KWA, CRV, SIN, TAI, VIET (tonal awareness).
-
-    v4.3 — wired from rhyme/phoneme_embedding.py
-    """
+    """Phoneme embedding similarity — niveau 4 scoring."""
     if not PHONEME_EMBEDDING_AVAILABLE:
-        raise HTTPException(
-            status_code=503,
-            detail="phoneme_embedding module not available",
-        )
+        raise HTTPException(status_code=503, detail="phoneme_embedding module not available")
 
     lang_code = request.lang.lower()
-    family = LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM)
+    family    = LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM)
 
-    # Split nucleus strings into phone lists (space-sep or char-by-char fallback)
     def _to_phones(s: str) -> List[str]:
         phones = s.split()
         return phones if len(phones) > 1 else list(s)
 
-    rn1_phones = _to_phones(request.rn1)
-    rn2_phones = _to_phones(request.rn2)
-
     try:
-        result: EmbeddingScore = score_embedding(rn1_phones, rn2_phones)
+        result: EmbeddingScore = score_embedding(_to_phones(request.rn1), _to_phones(request.rn2))
     except Exception as e:
         logger.error(f"phoneme_embedding error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Embedding scoring failed: {str(e)}")
 
     score = result.score
-    rhyme_type = _categorize(score)
-
-    # Tonal match flag for tonal families
     tonal_match: Optional[bool] = None
     if family in _EMBEDDING_PRIORITY_FAMILIES:
-        # Tone markers: H, L, ˥˦˧˨˩ and combining diacritics
         tonal_re = re.compile(r'[HL˥˦˧˨˩\u0301\u0300\u0302\u0304\u030c]')
         t1 = tonal_re.findall(request.rn1)
         t2 = tonal_re.findall(request.rn2)
         tonal_match = (t1 == t2) if (t1 or t2) else None
 
     return ScoreResponse(
-        rn1          = request.rn1,
-        rn2          = request.rn2,
-        lang         = lang_code,
-        algo_id      = family.value,
-        score        = score,
-        rhyme_type   = rhyme_type,
-        tonal_match  = tonal_match,
-        detail       = result.detail if hasattr(result, 'detail') else {},
+        rn1        = request.rn1,
+        rn2        = request.rn2,
+        lang       = lang_code,
+        algo_id    = family.value,
+        score      = score,
+        rhyme_type = _categorize(score),
+        tonal_match = tonal_match,
+        detail     = result.detail if hasattr(result, 'detail') else {},
     )
+
+
+@app.post("/api/analyze", response_model=AnalyzeResponse)
+async def analyze_verse(request: AnalyzeRequest) -> AnalyzeResponse:
+    """Full verse analysis — Étape B.
+
+    Pipeline:
+      1. lid_span_router  → detect language spans (code-switch aware)
+      2. verse_segmenter  → extract rhyming units per span (end/internal/all)
+      3. _phonemize_span  → G2P + morpho_strip + RN extraction per unit
+
+    Returns per-span phonemization + convenience end_nuclei list.
+    """
+    try:
+        lang_code   = request.lang.lower()
+        verse       = request.verse.strip()
+        mode        = request.mode
+        verse_index = request.verse_index
+
+        if not verse:
+            raise HTTPException(status_code=400, detail="Empty verse")
+
+        if mode not in ("end", "internal", "all"):
+            raise HTTPException(status_code=400, detail=f"Invalid mode '{mode}'. Use end|internal|all.")
+
+        # ── Step 1: LID span detection ──────────────────────────────────────────
+        lid_used = LID_ROUTER_AVAILABLE
+        if LID_ROUTER_AVAILABLE:
+            lang_spans: List[LangSpan] = detect_spans(
+                verse,
+                doc_lang=lang_code,
+                lid_predictor=None,   # no model wired yet → safe fallback on doc_lang
+            )
+        else:
+            # Manual fallback: single span for the full verse
+            lang_spans = [type('_S', (), {
+                'text': verse, 'lang': lang_code,
+                'family': LANG_TO_FAMILY.get(lang_code, AlgoFamily.ALGO_ROM).value,
+                'confidence': 1.0, 'start': 0, 'end': len(verse.split()),
+                'low_resource': False,
+            })()]
+
+        # ── Step 2+3: segment each span, phonemize each unit ──────────────────
+        result_spans: List[SpanPhonemization] = []
+
+        for ls in lang_spans:
+            span_lang   = ls.lang
+            span_family = LANG_TO_FAMILY.get(span_lang, AlgoFamily.ALGO_ROM)
+
+            if VERSE_SEGMENTER_AVAILABLE:
+                units: List[RhymingUnit] = segment_verse(
+                    ls.text,
+                    lang=span_lang,
+                    mode=mode,
+                    verse_index=verse_index,
+                )
+            else:
+                # Minimal fallback: treat full span as single end unit
+                units = [type('_U', (), {
+                    'tokens': ls.text.split(),
+                    'position': 'end',
+                    'verse_index': verse_index,
+                    'token_span': (0, len(ls.text.split())),
+                })()]
+
+            for unit in units:
+                unit_text = " ".join(unit.tokens)
+                if not unit_text.strip():
+                    continue
+
+                ipa, syllables, rn, g2p_method, g2p_conf, morpho_applied, morpho_detail = \
+                    _phonemize_span(unit_text, span_lang, span_family)
+
+                result_spans.append(SpanPhonemization(
+                    span_text            = unit_text,
+                    span_lang            = span_lang,
+                    span_family          = span_family.value,
+                    span_position        = unit.position,
+                    token_span           = list(unit.token_span),
+                    low_resource         = ls.low_resource,
+                    lid_confidence       = ls.confidence,
+                    ipa                  = ipa,
+                    syllables            = syllables,
+                    rhyme_nucleus        = rn,
+                    g2p_method           = g2p_method,
+                    g2p_confidence       = g2p_conf,
+                    morpho_strip_applied = morpho_applied,
+                    morpho_strip_detail  = morpho_detail,
+                ))
+
+        end_nuclei = [
+            sp.rhyme_nucleus for sp in result_spans
+            if sp.span_position == "end"
+        ]
+
+        return AnalyzeResponse(
+            verse                = verse,
+            lang                 = lang_code,
+            mode                 = mode,
+            verse_index          = verse_index,
+            spans                = result_spans,
+            end_nuclei           = end_nuclei,
+            lid_used             = lid_used,
+            segmenter_available  = VERSE_SEGMENTER_AVAILABLE,
+            lid_router_available = LID_ROUTER_AVAILABLE,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"analyze_verse error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Verse analysis failed: {str(e)}")
 
 
 if __name__ == "__main__":
