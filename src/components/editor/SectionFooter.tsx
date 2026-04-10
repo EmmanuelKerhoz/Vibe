@@ -15,7 +15,7 @@ function confidenceClass(confidence: number): string {
   return 'text-zinc-400 dark:text-zinc-600 border-zinc-300/30 bg-transparent';
 }
 
-interface SchemeBadgeProps { label: string; confidence: number; isProxied?: boolean; }
+interface SchemeBadgeProps { label: string; confidence: number; isProxied: boolean; }
 
 function SchemeBadge({ label, confidence, isProxied }: SchemeBadgeProps) {
   const colourCls = confidenceClass(confidence);
@@ -72,7 +72,9 @@ export const SectionFooter = React.memo(function SectionFooter({
 
   const showBadge = schemeResult !== null && !(schemeResult.label === 'FREE_VERSE' && schemeResult.confidence < 0.25);
   // Resolve isProxied: explicit prop takes precedence, then SchemeResult field.
-  const proxied = isProxied ?? schemeResult?.isProxied;
+  // Always coerce to boolean so SchemeBadgeProps (non-optional) is satisfied
+  // under exactOptionalPropertyTypes: true.
+  const proxied: boolean = (isProxied ?? schemeResult?.isProxied) === true;
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-3">
