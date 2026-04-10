@@ -25,6 +25,8 @@
  *   cfg (Camfranglais)    registered under 'cfg' → ALGO-CRE.
  *
  *   ta (Tamil)     registered under 'ta'  → ALGO-DRV.
+ *   ur (Urdu)      registered under 'ur'  → ALGO-IIR.
+ *   bn (Bengali)   registered under 'bn'  → ALGO-IIR.
  */
 
 import { registerLexicon, getLexiconSize } from '../rhyme/PhonemeStore';
@@ -46,6 +48,8 @@ import { jaLexicon } from './ja';
 import { koLexicon } from './ko';
 import { hiLexicon } from './hi';
 import { taLexicon } from './ta';
+import { urLexicon } from './ur';
+import { bnLexicon } from './bn';
 import { trLexicon } from './tr';
 import { haLexicon } from './ha';
 import { baLexicon } from './ba';
@@ -128,6 +132,8 @@ export function initLexicons(): void {
   registerLexicon('he', heLexicon);
   // — Indo-Iranian
   registerLexicon('hi', hiLexicon);
+  registerLexicon('ur', urLexicon);
+  registerLexicon('bn', bnLexicon);
   // — Dravidian
   registerLexicon('ta', taLexicon);
   // — Turkic
@@ -188,6 +194,8 @@ export function getLexiconHealth(): Record<string, number> {
     ar:  getLexiconSize('ar'),
     he:  getLexiconSize('he'),
     hi:  getLexiconSize('hi'),
+    ur:  getLexiconSize('ur'),
+    bn:  getLexiconSize('bn'),
     ta:  getLexiconSize('ta'),
     tr:  getLexiconSize('tr'),
     fi:  getLexiconSize('fi'),
