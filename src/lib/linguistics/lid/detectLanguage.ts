@@ -11,7 +11,7 @@
  *   Stage 2 — Word-pilot detector
  *     For Latin-script text, a small set of high-frequency, language-exclusive
  *     words scores each candidate language. Highest score wins.
- *     Covered: fr, en, es, it, pt, de, nl, sw, yo, ha, id, tr, fi, hu, vi, th,
+ *     Covered: fr, en, es, it, pt, de, nl, sw, yo, ha, id, ms, tr, fi, hu, vi, th,
  *              ba, ew, mi, di (KWA non-standard codes), pl, ro,
  *              nou (Nouchi CI), pcm (Nigerian Pidgin), cfg (Camfranglais).
  *
@@ -103,6 +103,11 @@ function detectByScript(text: string): string | undefined {
  *   nou = Nouchi (Côte d'Ivoire)
  *   pcm = Nigerian Pidgin English
  *   cfg = Camfranglais (Cameroun)
+ *
+ * Malay (ms) vs Indonesian (id) disambiguation:
+ *   Key exclusive MY markers: kerana, kepada, boleh, awak, encik, sahaja,
+ *   manakala, walau, bahawa, mengikut.
+ *   These do NOT appear in standard Indonesian, allowing reliable separation.
  */
 const WORD_PILOTS: Record<string, string[]> = {
   fr: [
@@ -168,6 +173,14 @@ const WORD_PILOTS: Record<string, string[]> = {
   id: [
     'yang', 'dan', 'ini', 'itu', 'dari', 'dengan', 'untuk', 'tidak',
     'ada', 'juga', 'bisa', 'akan',
+  ],
+  // Malay (ms) — exclusive markers vs Indonesian (id)
+  // kerana / kepada / boleh / awak / sahaja / manakala are standard MY,
+  // not found in formal Indonesian.
+  ms: [
+    'kerana', 'kepada', 'boleh', 'awak', 'sahaja', 'manakala',
+    'walau', 'bahawa', 'mengikut', 'encik', 'puan', 'mereka',
+    'ialah', 'iaitu', 'selain', 'semasa', 'daripada', 'sehingga',
   ],
   tr: [
     'bir', 'bu', 'ile', 'için', 'olan', 'ben', 'sen', 'biz',

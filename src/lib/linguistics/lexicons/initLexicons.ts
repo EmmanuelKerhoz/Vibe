@@ -13,6 +13,7 @@
  *   LANG_TO_FAMILY, and lexicon.
  *
  *   id (Indonesian) registered under 'id'; also aliased as 'id-ID'.
+ *   ms (Malay)      registered under 'ms'; also aliased as 'ms-MY'.
  *
  *   vi (Vietnamese) registered under 'vi'.
  *   fi (Finnish) registered under 'fi'.
@@ -57,6 +58,7 @@ import { ewLexicon } from './ew';
 import { miLexicon } from './mi';
 import { diLexicon } from './di';
 import { idLexicon } from './id';
+import { msLexicon } from './ms';
 import { viLexicon } from './vi';
 import { fiLexicon } from './fi';
 import { huLexicon } from './hu';
@@ -159,6 +161,8 @@ export function initLexicons(): void {
   // — Austronesian
   registerLexicon('id', idLexicon);
   registerLexicon('id-ID', idLexicon);  // BCP-47 alias
+  registerLexicon('ms', msLexicon);
+  registerLexicon('ms-MY', msLexicon); // BCP-47 alias
   // — KWA: canonical codes (used by LANG_TO_FAMILY → suggestRhymes)
   registerLexicon('bci', baIndexedLexicon);   // Baoulé
   registerLexicon('ee',  ewIndexedLexicon);   // Ewe
@@ -209,6 +213,7 @@ export function getLexiconHealth(): Record<string, number> {
     sw:  getLexiconSize('sw'),
     ha:  getLexiconSize('ha'),
     id:  getLexiconSize('id'),
+    ms:  getLexiconSize('ms'),
     bci: getLexiconSize('bci'),
     ee:  getLexiconSize('ee'),
     gej: getLexiconSize('gej'),
