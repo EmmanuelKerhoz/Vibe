@@ -1,75 +1,55 @@
 /**
- * mi.ts — Lexique phonémique Mina / Gengèbé (SIL: gej)
- * ~180 entrées [word, rnKey] pour le PhonemeIndex de suggestRhymes().
- * Le Mina est une langue gbe tonale, proche de l'Ewe, parlée au Togo/Bénin.
- * Code interne du LID : 'mi'.
- * rnKey = noyau vocalique final + coda.
+ * mi.ts — Mina / Gen (Gbe branch, Togo / Bénin)
+ *
+ * Mina (also called Gɛn) is closely related to Ewe but treated as
+ * a distinct sociolinguistic variety for Vibe's rhyme routing.
+ * IPA conventions follow the Ewe lexicon (ew.ts).
  */
 
-export const miLexicon: ReadonlyArray<readonly [string, string]> = [
-  // ─── /a/ ─────────────────────────────────────────────────────────────────
-  ['ama', 'a'], ['ana', 'a'], ['ada', 'a'], ['aka', 'a'],
-  ['ala', 'a'], ['awa', 'a'], ['aba', 'a'], ['afa', 'a'],
-  ['aga', 'a'], ['aha', 'a'], ['aja', 'a'], ['ama', 'a'],
-  ['bla', 'a'], ['kla', 'a'], ['tra', 'a'], ['mla', 'a'],
-  ['fla', 'a'], ['wla', 'a'], ['gba', 'a'], ['kpa', 'a'],
-  ['dza', 'a'], ['tsa', 'a'], ['vla', 'a'], ['zla', 'a'],
+export interface LexiconEntry {
+  word: string;
+  phones: string[];
+}
 
-  // ─── /e/ ─────────────────────────────────────────────────────────────────
-  ['abe', 'e'], ['ade', 'e'], ['afe', 'e'], ['age', 'e'],
-  ['ake', 'e'], ['ale', 'e'], ['ame', 'e'], ['ane', 'e'],
-  ['are', 'e'], ['ate', 'e'], ['awe', 'e'], ['aye', 'e'],
-  ['ble', 'e'], ['kle', 'e'], ['tre', 'e'], ['mle', 'e'],
-  ['fle', 'e'], ['wle', 'e'], ['gbe', 'e'], ['kpe', 'e'],
-
-  // ─── /ɛ/ ─────────────────────────────────────────────────────────────────
-  ['dɛ', 'ɛ'], ['fɛ', 'ɛ'], ['gɛ', 'ɛ'], ['kɛ', 'ɛ'],
-  ['lɛ', 'ɛ'], ['mɛ', 'ɛ'], ['nɛ', 'ɛ'], ['tɛ', 'ɛ'],
-  ['wɛ', 'ɛ'], ['yɛ', 'ɛ'], ['blɛ', 'ɛ'], ['klɛ', 'ɛ'],
-  ['trɛ', 'ɛ'], ['mlɛ', 'ɛ'], ['flɛ', 'ɛ'], ['gbɛ', 'ɛ'],
-  ['kpɛ', 'ɛ'], ['dzɛ', 'ɛ'], ['tsɛ', 'ɛ'], ['vlɛ', 'ɛ'],
-
-  // ─── /i/ ─────────────────────────────────────────────────────────────────
-  ['abi', 'i'], ['adi', 'i'], ['afi', 'i'], ['agi', 'i'],
-  ['aki', 'i'], ['ali', 'i'], ['ami', 'i'], ['ani', 'i'],
-  ['ari', 'i'], ['ati', 'i'], ['awi', 'i'], ['ayi', 'i'],
-  ['bri', 'i'], ['kri', 'i'], ['tri', 'i'], ['mri', 'i'],
-  ['fri', 'i'], ['wri', 'i'], ['gbi', 'i'], ['kpi', 'i'],
-  ['dzi', 'i'], ['tsi', 'i'], ['vri', 'i'], ['zri', 'i'],
-
-  // ─── /o/ ─────────────────────────────────────────────────────────────────
-  ['abo', 'o'], ['ado', 'o'], ['afo', 'o'], ['ago', 'o'],
-  ['ako', 'o'], ['alo', 'o'], ['amo', 'o'], ['ano', 'o'],
-  ['aro', 'o'], ['ato', 'o'], ['awo', 'o'], ['ayo', 'o'],
-  ['blo', 'o'], ['klo', 'o'], ['tro', 'o'], ['mlo', 'o'],
-  ['flo', 'o'], ['wlo', 'o'], ['gbo', 'o'], ['kpo', 'o'],
-
-  // ─── /ɔ/ ─────────────────────────────────────────────────────────────────
-  ['bɔ', 'ɔ'], ['dɔ', 'ɔ'], ['fɔ', 'ɔ'], ['gɔ', 'ɔ'],
-  ['kɔ', 'ɔ'], ['lɔ', 'ɔ'], ['mɔ', 'ɔ'], ['nɔ', 'ɔ'],
-  ['tɔ', 'ɔ'], ['wɔ', 'ɔ'], ['yɔ', 'ɔ'], ['blɔ', 'ɔ'],
-  ['klɔ', 'ɔ'], ['trɔ', 'ɔ'], ['mlɔ', 'ɔ'], ['flɔ', 'ɔ'],
-  ['gbɔ', 'ɔ'], ['kpɔ', 'ɔ'], ['dzɔ', 'ɔ'], ['tsɔ', 'ɔ'],
-
-  // ─── /u/ ─────────────────────────────────────────────────────────────────
-  ['abu', 'u'], ['adu', 'u'], ['afu', 'u'], ['agu', 'u'],
-  ['aku', 'u'], ['alu', 'u'], ['amu', 'u'], ['anu', 'u'],
-  ['aru', 'u'], ['atu', 'u'], ['awu', 'u'], ['ayu', 'u'],
-  ['bru', 'u'], ['kru', 'u'], ['tru', 'u'], ['mru', 'u'],
-  ['fru', 'u'], ['wru', 'u'], ['gbu', 'u'], ['kpu', 'u'],
-
-  // ─── Mots courants — lexique lyrique mina ────────────────────────────────
-  ['mi', 'i'], ['ye', 'e'], ['bɔ', 'ɔ'], ['kɔ', 'ɔ'],
-  ['lɔ', 'ɔ'], ['mo', 'o'], ['nyi', 'i'], ['amaa', 'a'],
-  ['noo', 'o'], ['lee', 'e'], ['kee', 'e'], ['mee', 'e'],
-  ['tuu', 'u'], ['fuu', 'u'], ['kuu', 'u'], ['luu', 'u'],
-  ['tɛ', 'ɛ'], ['mɛ', 'ɛ'], ['lɛ', 'ɛ'], ['nɛ', 'ɛ'],
-
-  // ─── Terminaisons fréquentes en chant mina ───────────────────────────────
-  ['la', 'a'], ['na', 'a'], ['ta', 'a'], ['ma', 'a'],
-  ['da', 'a'], ['ga', 'a'], ['fa', 'a'], ['ka', 'a'],
-  ['li', 'i'], ['ni', 'i'], ['ti', 'i'], ['mi', 'i'],
-  ['lɔ', 'ɔ'], ['nɔ', 'ɔ'], ['tɔ', 'ɔ'], ['mɔ', 'ɔ'],
-  ['lu', 'u'], ['nu', 'u'], ['tu', 'u'], ['mu', 'u'],
-  ['lɛ', 'ɛ'], ['nɛ', 'ɛ'], ['tɛ', 'ɛ'], ['mɛ', 'ɛ'],
+export const miLexicon: LexiconEntry[] = [
+  { word: 'mɔ',       phones: ['m', 'ɔ'] },                    // road
+  { word: 'xɔ',       phones: ['x', 'ɔ'] },                    // house
+  { word: 'tsi',      phones: ['t', 's', 'i'] },               // water
+  { word: 'afi',      phones: ['a', 'f', 'i'] },               // fire
+  { word: 'amé',      phones: ['a', 'm', 'e'] },               // person
+  { word: 'ati',      phones: ['a', 't', 'i'] },               // tree
+  { word: 'dze',      phones: ['dz', 'e'] },                   // day
+  { word: 'zã',       phones: ['z', 'a'] },                    // night
+  { word: 'ta',       phones: ['t', 'a'] },                    // head
+  { word: 'nu',       phones: ['n', 'u'] },                    // thing
+  { word: 'nɔvi',     phones: ['n', 'ɔ', 'v', 'i'] },          // sibling
+  { word: 'ŋku',      phones: ['ŋ', 'k', 'u'] },               // eye
+  { word: 'to',       phones: ['t', 'o'] },                    // ear
+  { word: 'lã',       phones: ['l', 'a'] },                    // tongue
+  { word: 'yi',       phones: ['j', 'i'] },                    // go
+  { word: 'va',       phones: ['v', 'a'] },                    // come
+  { word: 'hã',       phones: ['h', 'a'] },                    // sing
+  { word: 'ha',       phones: ['h', 'a'] },                    // song
+  { word: 'wɔ',       phones: ['w', 'ɔ'] },                    // do
+  { word: 'kpɔ',      phones: ['kp', 'ɔ'] },                   // see
+  { word: 'se',       phones: ['s', 'e'] },                    // hear
+  { word: 'nya',      phones: ['n', 'j', 'a'] },               // know
+  { word: 'gbɔ',      phones: ['gb', 'ɔ'] },                   // voice
+  { word: 'lɔlɔ̃',    phones: ['l', 'ɔ', 'l', 'ɔ'] },          // love
+  { word: 'taɖo',     phones: ['t', 'a', 'd', 'o'] },          // truth
+  { word: 'ŋutɔ',     phones: ['ŋ', 'u', 't', 'ɔ'] },          // self
+  { word: 'kuku',     phones: ['k', 'u', 'k', 'u'] },          // death
+  { word: 'anyigba',  phones: ['a', 'n', 'j', 'i', 'g', 'b', 'a'] }, // earth
+  { word: 'dziƒe',    phones: ['dz', 'i', 'f', 'e'] },         // sky
+  { word: 'agble',    phones: ['a', 'g', 'b', 'l', 'e'] },     // farm
+  { word: 'sika',     phones: ['s', 'i', 'k', 'a'] },          // money
+  { word: 'ƒu',       phones: ['f', 'u'] },                    // body
+  { word: 'da',       phones: ['d', 'a'] },                    // snake
+  { word: 'gblɔ',     phones: ['gb', 'l', 'ɔ'] },              // say
+  { word: 'dzo',      phones: ['dz', 'o'] },                   // fire
+  { word: 'fɔ',       phones: ['f', 'ɔ'] },                    // beat
+  { word: 'agbadza',  phones: ['a', 'gb', 'a', 'dz', 'a'] },   // dance
+  { word: 'xexe',     phones: ['x', 'e', 'x', 'e'] },         // big
+  { word: 'klõ',      phones: ['k', 'l', 'o'] },               // write
+  { word: 'ŋlɔ',      phones: ['ŋ', 'l', 'ɔ'] },              // open
 ];

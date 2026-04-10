@@ -1,89 +1,57 @@
 /**
- * ba.ts — Lexique phonémique Baoulé (bci)
- * ~200 entrées [word, rnKey] pour le PhonemeIndex de suggestRhymes().
- * Le Baoulé est une langue kwa tonale (langue nationale de Côte d'Ivoire).
- * rnKey = noyau vocalique final + coda.
- * Orthographe SIL/Baoulé standard avec caractères spéciaux (ɛ ɔ ə ŋ).
+ * ba.ts — Baoulé lexicon (Kwa, Akan branch, Côte d'Ivoire)
+ *
+ * Entry format: { word: string; phones: string[] }
+ * Baoulé is tonal (H/L/M) — tones not encoded as phone tokens;
+ * rhyme matching operates on vowel/consonant skeleton.
+ * ATR vowel harmony: +ATR set i e o u / -ATR set ɪ ɛ ɔ ʊ.
+ * Nasals are syllabic in some positions (encoded as 'm'/'n'/'ŋ').
  */
 
-export const baLexicon: ReadonlyArray<readonly [string, string]> = [
-  // ─── /a/ ─────────────────────────────────────────────────────────────────
-  ['bla', 'a'], ['kla', 'a'], ['tra', 'a'], ['nda', 'a'],
-  ['wla', 'a'], ['fla', 'a'], ['yra', 'a'], ['mla', 'a'],
-  ['aba', 'a'], ['aka', 'a'], ['ama', 'a'], ['ana', 'a'],
-  ['awa', 'a'], ['afa', 'a'], ['aga', 'a'], ['aha', 'a'],
-  ['kama', 'a'], ['nana', 'a'], ['baka', 'a'], ['tata', 'a'],
-  ['wawa', 'a'], ['dada', 'a'], ['fafa', 'a'], ['lala', 'a'],
-  ['kaka', 'a'], ['mama', 'a'], ['papa', 'a'], ['sara', 'a'],
-  ['yapi', 'a'], ['yala', 'a'], ['bala', 'a'], ['kala', 'a'],
+export interface LexiconEntry {
+  word: string;
+  phones: string[];
+}
 
-  // ─── /an/ ────────────────────────────────────────────────────────────────
-  ['man', 'an'], ['kan', 'an'], ['ban', 'an'], ['nan', 'an'],
-  ['dan', 'an'], ['fan', 'an'], ['jan', 'an'], ['san', 'an'],
-  ['wran', 'an'], ['klɔn', 'an'],
-
-  // ─── /e/ ─────────────────────────────────────────────────────────────────
-  ['be', 'e'], ['ke', 'e'], ['me', 'e'], ['ne', 'e'],
-  ['de', 'e'], ['fe', 'e'], ['ge', 'e'], ['he', 'e'],
-  ['le', 'e'], ['se', 'e'], ['te', 'e'], ['we', 'e'],
-  ['abe', 'e'], ['ake', 'e'], ['ame', 'e'], ['ane', 'e'],
-  ['awe', 'e'], ['afe', 'e'], ['age', 'e'], ['ale', 'e'],
-
-  // ─── /ɛ/ ─────────────────────────────────────────────────────────────────
-  ['blɛ', 'ɛ'], ['klɛ', 'ɛ'], ['trɛ', 'ɛ'], ['ndɛ', 'ɛ'],
-  ['wlɛ', 'ɛ'], ['flɛ', 'ɛ'], ['mlɛ', 'ɛ'], ['slɛ', 'ɛ'],
-  ['abɛ', 'ɛ'], ['akɛ', 'ɛ'], ['amɛ', 'ɛ'], ['anɛ', 'ɛ'],
-  ['awɛ', 'ɛ'], ['afɛ', 'ɛ'], ['agɛ', 'ɛ'], ['alɛ', 'ɛ'],
-
-  // ─── /i/ ─────────────────────────────────────────────────────────────────
-  ['bi', 'i'], ['ki', 'i'], ['mi', 'i'], ['ni', 'i'],
-  ['di', 'i'], ['fi', 'i'], ['gi', 'i'], ['li', 'i'],
-  ['si', 'i'], ['ti', 'i'], ['wi', 'i'], ['yi', 'i'],
-  ['abi', 'i'], ['aki', 'i'], ['ami', 'i'], ['ani', 'i'],
-  ['awi', 'i'], ['afi', 'i'], ['agi', 'i'], ['ali', 'i'],
-  ['bri', 'i'], ['kri', 'i'], ['tri', 'i'], ['ndi', 'i'],
-  ['wri', 'i'], ['fri', 'i'], ['mri', 'i'], ['sri', 'i'],
-
-  // ─── /o/ ─────────────────────────────────────────────────────────────────
-  ['bo', 'o'], ['ko', 'o'], ['mo', 'o'], ['no', 'o'],
-  ['do', 'o'], ['fo', 'o'], ['go', 'o'], ['lo', 'o'],
-  ['so', 'o'], ['to', 'o'], ['wo', 'o'], ['yo', 'o'],
-  ['abo', 'o'], ['ako', 'o'], ['amo', 'o'], ['ano', 'o'],
-  ['awo', 'o'], ['afo', 'o'], ['ago', 'o'], ['alo', 'o'],
-
-  // ─── /ɔ/ ─────────────────────────────────────────────────────────────────
-  ['blɔ', 'ɔ'], ['klɔ', 'ɔ'], ['trɔ', 'ɔ'], ['ndɔ', 'ɔ'],
-  ['wlɔ', 'ɔ'], ['flɔ', 'ɔ'], ['mlɔ', 'ɔ'], ['slɔ', 'ɔ'],
-  ['abɔ', 'ɔ'], ['akɔ', 'ɔ'], ['amɔ', 'ɔ'], ['anɔ', 'ɔ'],
-  ['awɔ', 'ɔ'], ['afɔ', 'ɔ'], ['agɔ', 'ɔ'], ['alɔ', 'ɔ'],
-
-  // ─── /u/ ─────────────────────────────────────────────────────────────────
-  ['bu', 'u'], ['ku', 'u'], ['mu', 'u'], ['nu', 'u'],
-  ['du', 'u'], ['fu', 'u'], ['gu', 'u'], ['lu', 'u'],
-  ['su', 'u'], ['tu', 'u'], ['wu', 'u'], ['yu', 'u'],
-  ['abu', 'u'], ['aku', 'u'], ['amu', 'u'], ['anu', 'u'],
-  ['awu', 'u'], ['afu', 'u'], ['agu', 'u'], ['alu', 'u'],
-  ['bru', 'u'], ['kru', 'u'], ['tru', 'u'], ['ndu', 'u'],
-  ['wru', 'u'], ['fru', 'u'], ['mru', 'u'], ['sru', 'u'],
-
-  // ─── /ə/ ─────────────────────────────────────────────────────────────────
-  ['suə', 'ə'], ['kuə', 'ə'], ['buə', 'ə'], ['nuə', 'ə'],
-  ['duə', 'ə'], ['fuə', 'ə'], ['guə', 'ə'], ['luə', 'ə'],
-
-  // ─── Mots courants — lexique lyrique baoulé ──────────────────────────────
-  ['man', 'an'], ['wa', 'a'], ['tra', 'a'], ['yapi', 'i'],
-  ['nguɛ', 'ɛ'], ['blɔ', 'ɔ'], ['klo', 'o'], ['suə', 'ə'],
-  ['kun', 'un'], ['fɛn', 'ɛn'], ['yɛn', 'ɛn'], ['bɛn', 'ɛn'],
-  ['sran', 'an'], ['nian', 'an'], ['kpan', 'an'],
-  ['dɛ', 'ɛ'], ['nzɛ', 'ɛ'], ['klakla', 'a'],
-  ['mɔ', 'ɔ'], ['bɔ', 'ɔ'], ['tɔ', 'ɔ'], ['nɔ', 'ɔ'],
-  ['ti', 'i'], ['si', 'i'], ['di', 'i'], ['li', 'i'],
-
-  // ─── Terminaisons fréquentes en chant baoulé ─────────────────────────────
-  ['na', 'a'], ['ka', 'a'], ['ta', 'a'], ['ma', 'a'],
-  ['da', 'a'], ['ba', 'a'], ['fa', 'a'], ['la', 'a'],
-  ['ni', 'i'], ['ki', 'i'], ['ti', 'i'], ['mi', 'i'],
-  ['nɔ', 'ɔ'], ['kɔ', 'ɔ'], ['tɔ', 'ɔ'], ['mɔ', 'ɔ'],
-  ['nu', 'u'], ['ku', 'u'], ['su', 'u'], ['mu', 'u'],
-  ['nɛ', 'ɛ'], ['kɛ', 'ɛ'], ['tɛ', 'ɛ'], ['mɛ', 'ɛ'],
+export const baLexicon: LexiconEntry[] = [
+  { word: 'akwaa',    phones: ['a', 'k', 'w', 'a'] },          // water
+  { word: 'awie',     phones: ['a', 'w', 'i', 'e'] },           // house
+  { word: 'alua',     phones: ['a', 'l', 'u', 'a'] },           // fire
+  { word: 'obi',      phones: ['o', 'b', 'i'] },                // person
+  { word: 'ba',       phones: ['b', 'a'] },                     // child
+  { word: 'ni',       phones: ['n', 'i'] },                     // mother
+  { word: 'si',       phones: ['s', 'i'] },                     // father
+  { word: 'yako',     phones: ['j', 'a', 'k', 'o'] },          // man
+  { word: 'baa',      phones: ['b', 'a'] },                     // woman
+  { word: 'su',       phones: ['s', 'u'] },                     // name
+  { word: 'klo',      phones: ['k', 'l', 'o'] },               // heart
+  { word: 'like',     phones: ['l', 'i', 'k', 'e'] },          // eye
+  { word: 'djwe',     phones: ['dʒ', 'w', 'e'] },              // tree
+  { word: 'anwɛ',     phones: ['a', 'n', 'w', 'ɛ'] },          // leaf
+  { word: 'kpata',    phones: ['k', 'p', 'a', 't', 'a'] },     // ground
+  { word: 'sran',     phones: ['s', 'r', 'a', 'n'] },          // body
+  { word: 'mɔ',       phones: ['m', 'ɔ'] },                    // thing
+  { word: 'kan',      phones: ['k', 'a', 'n'] },               // word / language
+  { word: 'wla',      phones: ['w', 'l', 'a'] },               // song
+  { word: 'liké',     phones: ['l', 'i', 'k', 'e'] },          // light
+  { word: 'blɛ',      phones: ['b', 'l', 'ɛ'] },               // day
+  { word: 'bo',       phones: ['b', 'o'] },                     // night (context)
+  { word: 'kua',      phones: ['k', 'u', 'a'] },               // work
+  { word: 'mɔli',     phones: ['m', 'ɔ', 'l', 'i'] },          // road
+  { word: 'su wɛ',    phones: ['s', 'u', 'w', 'ɛ'] },          // happiness
+  { word: 'yakpa',    phones: ['j', 'a', 'k', 'p', 'a'] },     // power
+  { word: 'ngble',    phones: ['ŋ', 'g', 'b', 'l', 'e'] },     // grass
+  { word: 'dlɔ',      phones: ['d', 'l', 'ɔ'] },               // rain
+  { word: 'owe',      phones: ['o', 'w', 'e'] },               // river
+  { word: 'blu',      phones: ['b', 'l', 'u'] },               // sky
+  { word: 'fɛ',       phones: ['f', 'ɛ'] },                    // wind
+  { word: 'atin',     phones: ['a', 't', 'i', 'n'] },          // time
+  { word: 'sika',     phones: ['s', 'i', 'k', 'a'] },          // gold / money
+  { word: 'bia',      phones: ['b', 'i', 'a'] },               // pray
+  { word: 'kpe',      phones: ['k', 'p', 'e'] },               // stone
+  { word: 'ago',      phones: ['a', 'g', 'o'] },               // drum
+  { word: 'klama',    phones: ['k', 'l', 'a', 'm', 'a'] },     // dance
+  { word: 'wla wla',  phones: ['w', 'l', 'a', 'w', 'l', 'a'] }, // music
+  { word: 'anyin',    phones: ['a', 'n', 'j', 'i', 'n'] },     // heaven
+  { word: 'asye',     phones: ['a', 's', 'j', 'e'] },          // earth
 ];
