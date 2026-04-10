@@ -33,7 +33,14 @@ export { exactMatch, phonemeEditDistance, featureWeightedScore } from './scoring
 // Rhyme utilities
 export type { LyricLine, LineEndingUnit, RhymeSuggestion, SuggestRhymesResult, SuggestRhymesOptions } from './rhyme';
 export {
-  splitLyricIntoLines, splitIntoRhymingLines,
+  splitLyricIntoLines,
+  /**
+   * @deprecated Use splitLyricIntoLines() instead.
+   * splitIntoRhymingLines() drops stanza boundaries, ignores langCode,
+   * and does not return LyricLine metadata. Kept for backward compat only.
+   * Will be removed in a future major version.
+   */
+  splitIntoRhymingLines,
   extractLineEndingUnit,
   detectRhymeScheme, canonicalizeScheme,
   countSyllables, countSyllablesFromIPA, countSyllablesHeuristic,
@@ -47,7 +54,8 @@ export { initLexicons, getLexiconHealth } from './lexicons/initLexicons';
 // Language ID
 export { detectLanguage, resolveLang, DEFAULT_LANG } from './lid/detectLanguage';
 
-// ─── Bootstrap: register all built-in strategies ─────────────────────────────
+// ─── Bootstrap: register all built-in strategies ─────────────────────────────────────
+
 import { PhonologicalRegistry } from './core';
 import {
   RomanceStrategy, GermanicStrategy, KwaStrategy, CrvStrategy,
@@ -78,7 +86,7 @@ PhonologicalRegistry.register('ALGO-CRE',    new CreoleStrategy());
 // ALGO-ROBUST must be last: Registry captures it as this.fallback
 PhonologicalRegistry.register('ALGO-ROBUST', new FallbackStrategy());
 
-// ─── Bootstrap: register all built-in lexicons ───────────────────────────────
+// ─── Bootstrap: register all built-in lexicons ─────────────────────────────────
 // Must run AFTER strategies are registered (suggestRhymes calls Registry.analyze).
 import { initLexicons } from './lexicons/initLexicons';
 initLexicons();
