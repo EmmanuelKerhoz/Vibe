@@ -115,12 +115,12 @@ describe('TopRibbon', () => {
 
   it('undo button is disabled when no past', () => {
     renderRibbon();
-    expect(screen.getByRole('button', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Undo' }).getAttribute('aria-disabled')).toBe('true');
   });
 
   it('redo button is disabled when no future', () => {
     renderRibbon();
-    expect(screen.getByRole('button', { name: 'Redo' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Redo' }).getAttribute('aria-disabled')).toBe('true');
   });
 
   it('undo fires callback when past is non-empty', () => {

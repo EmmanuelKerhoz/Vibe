@@ -41,6 +41,7 @@ function ModalShortcutBindings({
 
 function AppInnerContent() {
   const { undo, redo } = useSongContext();
+  const { isGenerating } = useComposerContext();
   const { appState } = useAppStateContext();
   const { theme, setTheme, audioFeedback, setAudioFeedback, hasApiKey } = appState;
 
@@ -96,7 +97,7 @@ function AppInnerContent() {
           theme={theme}
           isMobileOrTablet={isMobileOrTablet}
           showBackdrop={showBackdrop(isMobileOrTablet)}
-          isGenerating={false}
+          isGenerating={isGenerating}
           onBackdropClick={closeMobilePanels}
         >
           <AppEditorLayout
