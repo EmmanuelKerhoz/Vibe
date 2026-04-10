@@ -13,6 +13,11 @@
  *   LANG_TO_FAMILY, and lexicon.
  *
  *   id (Indonesian) registered under 'id'; also aliased as 'id-ID'.
+ *
+ *   vi (Vietnamese) registered under 'vi'.
+ *   fi (Finnish) registered under 'fi'.
+ *   hu (Hungarian) registered under 'hu'.
+ *   th (Thai) registered under 'th'.
  */
 
 import { registerLexicon, getLexiconSize } from '../rhyme/PhonemeStore';
@@ -40,6 +45,10 @@ import { ewLexicon } from './ew';
 import { miLexicon } from './mi';
 import { diLexicon } from './di';
 import { idLexicon } from './id';
+import { viLexicon } from './vi';
+import { fiLexicon } from './fi';
+import { huLexicon } from './hu';
+import { thLexicon } from './th';
 
 type StructuredLexiconEntry = {
   word: string;
@@ -106,12 +115,19 @@ export function initLexicons(): void {
   registerLexicon('hi', hiLexicon);
   // — Turkic
   registerLexicon('tr', trLexicon);
+  // — Uralic
+  registerLexicon('fi', fiLexicon);
+  registerLexicon('hu', huLexicon);
   // — Sinitic
   registerLexicon('zh', zhLexicon);
   // — Japanese
   registerLexicon('ja', jaLexicon);
   // — Korean
   registerLexicon('ko', koLexicon);
+  // — Viet-Muong
+  registerLexicon('vi', viLexicon);
+  // — Tai-Kadai
+  registerLexicon('th', thLexicon);
   // — Bantu / Niger-Congo
   registerLexicon('yo', yoLexicon);
   registerLexicon('sw', swLexicon);
@@ -151,9 +167,13 @@ export function getLexiconHealth(): Record<string, number> {
     ar:  getLexiconSize('ar'),
     hi:  getLexiconSize('hi'),
     tr:  getLexiconSize('tr'),
+    fi:  getLexiconSize('fi'),
+    hu:  getLexiconSize('hu'),
     zh:  getLexiconSize('zh'),
     ja:  getLexiconSize('ja'),
     ko:  getLexiconSize('ko'),
+    vi:  getLexiconSize('vi'),
+    th:  getLexiconSize('th'),
     yo:  getLexiconSize('yo'),
     sw:  getLexiconSize('sw'),
     ha:  getLexiconSize('ha'),
