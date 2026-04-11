@@ -127,7 +127,8 @@
     "aiLine": "سطر مولّد بالذكاء الاصطناعي",
     "moveLineUp": "تحريك السطر لأعلى",
     "moveLineDown": "تحريك السطر لأسفل",
-    "deleteLine": "حذف السطر"
+    "deleteLine": "حذف السطر",
+    "lyricsEditors": "عرض"
   },
   "suggestions": {
     "title": "اقتراحات الذكاء الاصطناعي",
