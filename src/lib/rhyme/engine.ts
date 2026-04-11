@@ -23,6 +23,7 @@ import { extractNucleusFIN, scoreFIN, type FINNucleus } from './algo-fin';
 import { extractNucleusIIR, scoreIIR } from './algo-iir';
 import { extractNucleusAUS, scoreAUS } from './algo-aus';
 import { extractNucleusDRA, scoreDRA } from './algo-dra';
+import { extractNucleusCRE, scoreCRE } from './algo-cre';
 
 export function rhymeScore(
   lineA: string,
@@ -69,7 +70,6 @@ export function rhymeScore(
       const nA = extractNucleusCRV(unitA, lowResource, langA);
       const nB = extractNucleusCRV(unitB, lowResource, langB);
       if (lowResource) warnings.push('low-resource-fallback');
-      // Pass langA so scoreCRV activates HA tonal path when lang === 'ha'
       return build(scoreCRV(nA, nB, langA), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
     }
     case 'ROM': {
@@ -145,6 +145,11 @@ export function rhymeScore(
       const nB = extractNucleusDRA(unitB, langB);
       return build(scoreDRA(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
     }
+    case 'CRE': {
+      const nA = extractNucleusCRE(unitA, langA);
+      const nB = extractNucleusCRE(unitB, langB);
+      return build(scoreCRE(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
     default: {
       const tailA = normalizeInput(unitA.surface).slice(-4).toLowerCase();
       const tailB = normalizeInput(unitB.surface).slice(-4).toLowerCase();
@@ -179,6 +184,7 @@ function extractBestNucleus(
     case 'IIR':  return extractNucleusIIR(unit, lang);
     case 'AUS':  return extractNucleusAUS(unit, lang);
     case 'DRA':  return extractNucleusDRA(unit, lang);
+    case 'CRE':  return extractNucleusCRE(unit, lang);
     default:     return { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
   }
 }
