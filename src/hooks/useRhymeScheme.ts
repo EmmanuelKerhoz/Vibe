@@ -5,31 +5,95 @@ import type { LangCode, SchemeResult } from '../lib/rhyme/types';
 /**
  * Maps a free-form language string (name or code) to a LangCode.
  * Falls back to '__unknown__' when no match is found.
+ *
+ * VALID_CODES is exhaustively derived from the LangCode union in types.ts.
  */
 function toLangCode(lang: string): LangCode {
   const lower = lang.toLowerCase().trim();
 
-  // Already a valid LangCode literal?
   const VALID_CODES: readonly string[] = [
-    'fr','es','it','pt','en','de','nl','ar','he',
-    'zh','ja','ko','th','vi','km','sw','yo',
-    'ba','di','ew','mi','bk','cb','og','ha',
-    'ru','pl','cs','tr','fi','hu','__unknown__',
+    // Romance
+    'fr', 'es', 'it', 'pt', 'ro', 'ca',
+    // Germanic
+    'en', 'de', 'nl', 'sv', 'da', 'no', 'is',
+    // Semitic
+    'ar', 'he', 'am',
+    // CJK
+    'zh', 'yue', 'ja', 'ko',
+    // TAI
+    'th', 'lo',
+    // VIET
+    'vi', 'km',
+    // Bantu
+    'sw', 'lg', 'rw', 'sn', 'zu', 'xh', 'ny', 'bm', 'ff', 'jv',
+    // Yoruboid
+    'yo',
+    // KWA
+    'ba', 'di', 'ew', 'mi',
+    // CRV
+    'bk', 'cb', 'og', 'ha',
+    // Slavic
+    'ru', 'pl', 'cs', 'sk', 'uk', 'bg', 'sr', 'hr',
+    // TRK
+    'tr', 'az', 'uz', 'kk',
+    // FIN
+    'fi', 'hu', 'et',
+    // IIR
+    'hi', 'ur', 'bn', 'fa', 'pa',
+    // AUS
+    'id', 'ms', 'tl', 'mg',
+    // DRA
+    'ta', 'te', 'kn', 'ml',
+    // Creole / Pidgin
+    'nou', 'pcm', 'cfg',
+    // Fallback sentinel
+    '__unknown__',
   ];
+
   if ((VALID_CODES as string[]).includes(lower)) return lower as LangCode;
 
   // Common language-name → code mapping
   const NAME_MAP: Record<string, LangCode> = {
+    // Romance
     french: 'fr', spanish: 'es', italian: 'it', portuguese: 'pt',
-    english: 'en', german: 'de', dutch: 'nl',
-    arabic: 'ar', hebrew: 'he',
-    chinese: 'zh', mandarin: 'zh', japanese: 'ja', korean: 'ko',
-    thai: 'th', vietnamese: 'vi', khmer: 'km',
-    swahili: 'sw', yoruba: 'yo',
-    russian: 'ru', polish: 'pl', czech: 'cs',
-    turkish: 'tr', finnish: 'fi', hungarian: 'hu',
+    romanian: 'ro', catalan: 'ca',
+    // Germanic
+    english: 'en', german: 'de', dutch: 'nl', swedish: 'sv',
+    danish: 'da', norwegian: 'no', icelandic: 'is',
+    // Semitic
+    arabic: 'ar', hebrew: 'he', amharic: 'am',
+    // CJK
+    chinese: 'zh', mandarin: 'zh', cantonese: 'yue',
+    japanese: 'ja', korean: 'ko',
+    // TAI
+    thai: 'th', lao: 'lo',
+    // VIET
+    vietnamese: 'vi', khmer: 'km',
+    // Bantu
+    swahili: 'sw', luganda: 'lg', kinyarwanda: 'rw', shona: 'sn',
+    zulu: 'zu', xhosa: 'xh', chichewa: 'ny', bambara: 'bm',
+    fula: 'ff', fulani: 'ff', javanese: 'jv',
+    // Yoruboid
+    yoruba: 'yo',
+    // KWA
+    baoulé: 'ba', dioula: 'di', ewe: 'ew', mina: 'mi',
+    // CRV
     hausa: 'ha',
+    // Slavic
+    russian: 'ru', polish: 'pl', czech: 'cs', slovak: 'sk',
+    ukrainian: 'uk', bulgarian: 'bg', serbian: 'sr', croatian: 'hr',
+    // TRK
+    turkish: 'tr', azerbaijani: 'az', uzbek: 'uz', kazakh: 'kk',
+    // FIN
+    finnish: 'fi', hungarian: 'hu', estonian: 'et',
+    // IIR
+    hindi: 'hi', urdu: 'ur', bengali: 'bn', persian: 'fa', farsi: 'fa', punjabi: 'pa',
+    // AUS
+    indonesian: 'id', malay: 'ms', tagalog: 'tl', malagasy: 'mg',
+    // DRA
+    tamil: 'ta', telugu: 'te', kannada: 'kn', malayalam: 'ml',
   };
+
   return NAME_MAP[lower] ?? '__unknown__';
 }
 
@@ -51,7 +115,6 @@ export function useRhymeScheme(
   lang: string,
   isProxied?: boolean,
 ): SchemeResult | null {
-  // Stable reference check: only re-run when actual content changes
   const filteredRef = useRef<string[]>([]);
   const resultRef   = useRef<SchemeResult | null>(null);
 
@@ -68,8 +131,6 @@ export function useRhymeScheme(
     try {
       const raw = detectRhymeScheme(filtered, langCode);
       if (raw === null) return null;
-      // Stamp isProxied from the caller — the graphemic detector itself
-      // has no visibility into whether a proxy was used upstream.
       return isProxied !== undefined ? { ...raw, isProxied } : raw;
     } catch (err) {
       if (process.env.NODE_ENV !== 'production') {
@@ -79,7 +140,6 @@ export function useRhymeScheme(
     }
   }, [filtered, langCode, isProxied]);
 
-  // Keep refs current for external consumers if needed later
   filteredRef.current = filtered;
   resultRef.current   = result;
 
