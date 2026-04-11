@@ -10,5 +10,10 @@ export { useLinguisticsWorker } from '../useLinguisticsWorker';
 export { useDerivedPhonology } from '../useDerivedPhonology';
 export { usePhoneticTranscription } from '../usePhoneticTranscription';
 export { useRhymeSuggestions } from '../useRhymeSuggestions';
+export { useRhymeSchemeMultiLang } from '../useRhymeSchemeMultiLang';
 export { useAnalysisCounter } from '../useAnalysisCounter';
 export { useAppKpis } from '../useAppKpis';
+// Sub-folder hooks
+export { usePasteImport } from './usePasteImport';
+export { useBackgroundThemeAnalysis } from './useBackgroundThemeAnalysis';
+export { useLanguageAdapter } from './useLanguageAdapter';
