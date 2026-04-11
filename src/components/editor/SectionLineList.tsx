@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { LyricInput } from './LyricInput';
 import { MetaLine } from './MetaLine';
 import { RhymeSuggestPanel } from './RhymeSuggestPanel';
@@ -12,7 +12,7 @@ import { useRhymeSuggestions } from '../../hooks/useRhymeSuggestions';
 import type { Section } from '../../types';
 import type { SchemeResult } from '../../lib/rhyme/types';
 
-type MetaGroup = { kind: 'meta'; lines: Section['lines'] };
+type MetaGroup = { kind: 'meta'; lines: Section['lines']; physicalCount: number };
 type LyricItem = { kind: 'lyric'; line: Section['lines'][number]; index: number };
 type RenderItem = MetaGroup | LyricItem;
 
@@ -31,7 +31,7 @@ function buildRenderItems(lines: Section['lines']): RenderItem[] {
         if (!nextIsMeta) break;
         i++; group.push(lines[i]!);
       }
-      items.push({ kind: 'meta', lines: group });
+      items.push({ kind: 'meta', lines: group, physicalCount: group.length });
     } else {
       items.push({ kind: 'lyric', line, index: lyricIdx++ });
     }
@@ -92,9 +92,15 @@ export const SectionLineList = React.memo(function SectionLineList({
   playAudioFeedback, onLineBlur,
 }: SectionLineListProps) {
   const { rhymeScheme, lineLanguages } = useSongContext();
-  const { selectedLineId, isGenerating, handleLineClick, updateLineText, handleLineKeyDown } = useComposerContext();
+  const { selectedLineId, isGenerating, handleLineClick, updateLineText, handleLineKeyDown, clearSelection } = useComposerContext();
   const { moveLineUp, moveLineDown, addLineToSection, deleteLineFromSection } = useSongMutation();
   const { draggedLineInfo, dragOverLineInfo } = useDrag();
+
+  // Wrap delete to clear selection when the deleted line is active
+  const handleDeleteLine = useCallback((sectionId: string, lineId: string) => {
+    if (selectedLineId === lineId) clearSelection();
+    deleteLineFromSection(sectionId, lineId);
+  }, [selectedLineId, clearSelection, deleteLineFromSection]);
 
   const renderItems = useMemo(() => buildRenderItems(section.lines), [section.lines]);
   const effectiveRhymeScheme = section.rhymeScheme || rhymeScheme;
@@ -119,19 +125,24 @@ export const SectionLineList = React.memo(function SectionLineList({
   // panelLang: prefer the resolved line object; fall back to lineLanguages map
   // (keyed by ID, survives section mutations) so the rhyme panel keeps the
   // correct language when selectedLine temporarily becomes null.
+  // Use || (not ??) to guard against empty string sectionTargetLanguage.
   const panelLang = selectedLine
-    ? (lineLanguages[selectedLine.id] ?? sectionTargetLanguage ?? 'auto')
+    ? (lineLanguages[selectedLine.id] || sectionTargetLanguage || 'auto')
     : selectedLineId
-      ? (lineLanguages[selectedLineId] ?? sectionTargetLanguage ?? 'auto')
+      ? (lineLanguages[selectedLineId] || sectionTargetLanguage || 'auto')
       : 'auto';
 
   const handlePanelClose = () => { if (onLineBlur) onLineBlur(); };
 
+  // Track physical line count across render items for accurate globalLineNumber
+  let physicalLineCount = lineNumberOffset;
+
   return (
     <div className="flex flex-col gap-0.5">
-      {renderItems.map((item, renderIdx) => {
-        const globalLineNumber = lineNumberOffset + renderIdx + 1;
+      {renderItems.map((item) => {
         if (item.kind === 'meta') {
+          physicalLineCount += item.physicalCount;
+          const globalLineNumber = physicalLineCount - item.physicalCount + 1;
           return (
             <MetaLine
               key={item.lines.map(l => l.id).join('-')}
@@ -140,6 +151,9 @@ export const SectionLineList = React.memo(function SectionLineList({
             />
           );
         }
+
+        physicalLineCount += 1;
+        const globalLineNumber = physicalLineCount;
         const { line, index: lyricIndex } = item;
         const isActive = selectedLineId === line.id;
 
@@ -161,6 +175,9 @@ export const SectionLineList = React.memo(function SectionLineList({
         const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo?.lineId === line.id;
         const isDragOverLine = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo?.lineId === line.id;
 
+        // sectionLinesCount: exclude meta lines consistently using both flags
+        const sectionLinesCount = section.lines.filter(l => !(l.isMeta ?? isPureMetaLine(l.text))).length;
+
         const lineOptional = {
           ...(lineLanguages[line.id] !== undefined ? { lineLanguage: lineLanguages[line.id] as string } : {}),
           ...(adaptLineLanguage ? { adaptLineLanguage } : {}),
@@ -174,7 +191,7 @@ export const SectionLineList = React.memo(function SectionLineList({
               lineIndex={lyricIndex}
               globalLineNumber={globalLineNumber}
               sectionId={section.id}
-              sectionLinesCount={section.lines.filter(l => !l.isMeta).length}
+              sectionLinesCount={sectionLinesCount}
               rhymePeerTexts={rhymePeerTexts}
               selectedLineId={selectedLineId}
               schemeLabel={schemeLabel}
@@ -189,7 +206,7 @@ export const SectionLineList = React.memo(function SectionLineList({
               moveLineUp={moveLineUp}
               moveLineDown={moveLineDown}
               addLineToSection={addLineToSection}
-              deleteLineFromSection={deleteLineFromSection}
+              deleteLineFromSection={handleDeleteLine}
               playAudioFeedback={playAudioFeedback}
               sectionTargetLanguage={sectionTargetLanguage}
               isAdaptingLine={adaptingLineIds?.has(line.id) ?? false}
