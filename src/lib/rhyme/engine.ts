@@ -17,7 +17,7 @@ import { extractNucleusSLV, scoreSLV } from './algo-slv';
 import { extractNucleusSEM, scoreSEM } from './algo-sem';
 import { extractNucleusTAI, scoreTAI } from './algo-tai';
 import { extractNucleusVIET, scoreVIET } from './algo-viet';
-import { extractNucleusCJK, scoreCJK } from './algo-sea';
+import { extractNucleusCJK, scoreCJK } from './algo-cjk';
 import { extractNucleusTRK, scoreTRK, type TRKNucleus } from './algo-trk';
 import { extractNucleusFIN, scoreFIN, type FINNucleus } from './algo-fin';
 import { extractNucleusIIR, scoreIIR } from './algo-iir';
