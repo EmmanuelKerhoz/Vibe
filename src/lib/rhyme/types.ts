@@ -5,19 +5,19 @@
 export type LangCode =
   | 'fr' | 'es' | 'it' | 'pt' | 'ro' | 'ca'  // Romance
   | 'en' | 'de' | 'nl' | 'sv' | 'da' | 'no' | 'is'  // Germanic
-  | 'ar' | 'he' | 'am'                          // Semitic
+  | 'ar' | 'he' | 'am' | 'ha'                  // Semitic + Chadic (Afro-Asiatic)
   | 'zh' | 'yue' | 'ja' | 'ko'                  // CJK
   | 'th' | 'lo'                                  // TAI (Thai, Lao)
   | 'vi' | 'km'                                  // VIET (Vietnamese, Khmer)
-  | 'sw' | 'lg' | 'rw' | 'sn' | 'zu' | 'xh' | 'ny' | 'bm' | 'ff' | 'jv'  // Bantu
+  | 'sw' | 'lg' | 'rw' | 'sn' | 'zu' | 'xh' | 'ny' | 'bm' | 'ff'  // Bantu
   | 'yo'                                         // Yoruboid
   | 'ba' | 'di' | 'ew' | 'mi'                   // KWA
-  | 'bk' | 'cb' | 'og' | 'ha'                   // CRV
+  | 'bk' | 'cb' | 'og'                          // CRV
   | 'ru' | 'pl' | 'cs' | 'sk' | 'uk' | 'bg' | 'sr' | 'hr'  // Slavic
   | 'tr' | 'az' | 'uz' | 'kk'                   // TRK (Turkic)
   | 'fi' | 'hu' | 'et'                           // FIN (Finno-Ugric)
   | 'hi' | 'ur' | 'bn' | 'fa' | 'pa'            // Indo-Iranian
-  | 'id' | 'ms' | 'tl' | 'mg'                   // Austronesian
+  | 'id' | 'ms' | 'tl' | 'mg' | 'jv'            // Austronesian
   | 'ta' | 'te' | 'kn' | 'ml'                   // Dravidian
   | 'nou' | 'pcm' | 'cfg'                        // Creole / Pidgin
   | '__unknown__';
@@ -30,14 +30,14 @@ export type FamilyId =
   | 'BNT'      // Bantu
   | 'YRB'      // Yoruboid
   | 'SLV'      // Slavic
-  | 'SEM'      // Semitic
+  | 'SEM'      // Semitic + Chadic (Afro-Asiatic)
   | 'TAI'      // Tai-Kadai tonal (Thai, Lao)
   | 'VIET'     // Vietic + Khmer (Vietnamese, Khmer)
   | 'CJK'      // Chinese-Japanese-Korean
   | 'TRK'      // Turkic
   | 'FIN'      // Finno-Ugric (Finnish, Hungarian, Estonian)
   | 'IIR'      // Indo-Iranian (Hindi, Urdu, Bengali, Persian, Punjabi)
-  | 'AUS'      // Austronesian (Indonesian, Malay, Tagalog, Malagasy)
+  | 'AUS'      // Austronesian (Indonesian, Malay, Tagalog, Malagasy, Javanese)
   | 'DRA'      // Dravidian (Tamil, Telugu, Kannada, Malayalam)
   | 'CRE'      // Creole / Pidgin
   | 'FALLBACK';
