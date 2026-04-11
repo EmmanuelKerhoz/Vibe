@@ -77,8 +77,6 @@ export function useRhymeScheme(
       }
       return null;
     }
-  // isProxied intentionally included: changing it should re-stamp the result.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, langCode, isProxied]);
 
   // Keep refs current for external consumers if needed later
