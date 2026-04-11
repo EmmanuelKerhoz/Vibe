@@ -6,10 +6,18 @@ import { Tooltip } from './Tooltip';
 const EMOJI_FONT_STACK =
   '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif';
 
+interface LcarsSelectOption {
+  value: string;
+  label: React.ReactNode;
+  title?: string;
+  /** When true the item is rendered as a non-interactive separator/header. */
+  disabled?: boolean;
+}
+
 interface LcarsSelectProps {
   value: string;
   onChange: (value: string) => void;
-  options: { value: string; label: React.ReactNode; title?: string }[];
+  options: LcarsSelectOption[];
   placeholder?: string;
   className?: string;
   style?: CSSProperties;
@@ -68,6 +76,16 @@ export function LcarsSelect({
   useEffect(() => {
     if (!isOpen) setFocusedIndex(-1);
   }, [isOpen]);
+
+  // Helper: find next/prev non-disabled index
+  const nextEnabled = useCallback((from: number, direction: 1 | -1): number => {
+    let i = from + direction;
+    while (i >= 0 && i < options.length) {
+      if (!options[i].disabled) return i;
+      i += direction;
+    }
+    return from; // stay if nothing found
+  }, [options]);
 
   const updateDropdownPosition = useCallback(() => {
     if (!triggerRef.current) return;
@@ -146,11 +164,12 @@ export function LcarsSelect({
         e.preventDefault();
         if (isOpen && focusedIndex >= 0) {
           const opt = options[focusedIndex];
-          if (opt) handleSelect(opt.value);
+          // Guard: skip disabled items on keyboard confirm
+          if (opt && !opt.disabled) handleSelect(opt.value);
         } else {
           setOpen(true);
           const idx = options.findIndex((o) => o.value === value);
-          setFocusedIndex(idx >= 0 ? idx : 0);
+          setFocusedIndex(idx >= 0 ? idx : nextEnabled(-1, 1));
         }
         break;
       case 'Escape':
@@ -159,13 +178,13 @@ export function LcarsSelect({
         break;
       case 'ArrowDown':
         e.preventDefault();
-        if (!isOpen) { setOpen(true); setFocusedIndex(0); }
-        else setFocusedIndex((i) => Math.min(i + 1, options.length - 1));
+        if (!isOpen) { setOpen(true); setFocusedIndex(nextEnabled(-1, 1)); }
+        else setFocusedIndex((i) => nextEnabled(Math.min(i, options.length - 1), 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        if (!isOpen) { setOpen(true); setFocusedIndex(options.length - 1); }
-        else setFocusedIndex((i) => Math.max(i - 1, 0));
+        if (!isOpen) { setOpen(true); setFocusedIndex(nextEnabled(options.length, -1)); }
+        else setFocusedIndex((i) => nextEnabled(Math.max(i, 0), -1));
         break;
       default:
         break;
@@ -198,7 +217,6 @@ export function LcarsSelect({
             width: '100%',
             padding: '6px 10px',
             borderRadius: '6px 2px 6px 2px',
-            /* Light: solid border. Dark: transparent — gradient outline wrapper takes over. */
             border: '1px solid var(--border-color)',
             background: 'var(--bg-card)',
             color: 'var(--text-primary)',
@@ -269,7 +287,6 @@ export function LcarsSelect({
               maxHeight: 'inherit',
               fontFamily: EMOJI_FONT_STACK,
               borderRadius: '2px 6px 6px 2px',
-              /* Light: keep solid border. Dark: transparent — gradient outline wrapper takes over. */
               border: '1px solid var(--border-color)',
               background: 'var(--bg-card)',
               backdropFilter: 'blur(2px)',
@@ -285,29 +302,43 @@ export function LcarsSelect({
             {options.map((opt, idx) => {
               const isSelected = opt.value === value;
               const isFocused = idx === focusedIndex;
+              const isDisabled = opt.disabled === true;
               return (
                 <li
                   key={opt.value}
                   id={`${listboxId}-opt-${idx}`}
-                   role="option"
-                   aria-selected={isSelected}
-                   title={opt.title}
-                   onMouseDown={(e) => { e.preventDefault(); handleSelect(opt.value); }}
-                   onMouseEnter={() => setFocusedIndex(idx)}
-                   style={{
-                    padding: '10px 14px',
-                    cursor: 'pointer',
+                  role={isDisabled ? 'presentation' : 'option'}
+                  aria-selected={isDisabled ? undefined : isSelected}
+                  aria-disabled={isDisabled ? true : undefined}
+                  title={opt.title}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    if (!isDisabled) handleSelect(opt.value);
+                  }}
+                  onMouseEnter={() => { if (!isDisabled) setFocusedIndex(idx); }}
+                  style={{
+                    padding: isDisabled ? '6px 14px 2px' : '10px 14px',
+                    cursor: isDisabled ? 'default' : 'pointer',
                     fontFamily: EMOJI_FONT_STACK,
-                    color: isSelected || isFocused ? accent : 'var(--text-primary)',
-                    background: isFocused ? `color-mix(in srgb, ${accent} 15%, transparent)` : 'transparent',
-                    borderLeft: isSelected ? `3px solid ${accent}` : '3px solid transparent',
+                    color: isDisabled
+                      ? 'var(--text-muted, #888)'
+                      : isSelected || isFocused ? accent : 'var(--text-primary)',
+                    background: (!isDisabled && isFocused)
+                      ? `color-mix(in srgb, ${accent} 15%, transparent)`
+                      : 'transparent',
+                    borderLeft: (!isDisabled && isSelected)
+                      ? `3px solid ${accent}`
+                      : '3px solid transparent',
+                    opacity: isDisabled ? 0.5 : 1,
+                    pointerEvents: isDisabled ? 'none' : 'auto',
                     transition: 'background 0.1s, color 0.1s',
-                    fontSize: 'inherit',
+                    fontSize: isDisabled ? '0.7em' : 'inherit',
                     whiteSpace: 'normal',
                     overflow: 'visible',
                     textOverflow: 'clip',
                     lineHeight: 1.4,
                     textAlign: 'start',
+                    userSelect: 'none',
                   }}
                   dir="auto"
                 >
