@@ -81,7 +81,8 @@ export function LcarsSelect({
   const nextEnabled = useCallback((from: number, direction: 1 | -1): number => {
     let i = from + direction;
     while (i >= 0 && i < options.length) {
-      if (!options[i].disabled) return i;
+      const opt = options[i];
+      if (opt && !opt.disabled) return i;
       i += direction;
     }
     return from; // stay if nothing found

@@ -170,6 +170,8 @@ export interface Translations {
     lyricsInsights?: string;
     /** Short label on the detect-language button when no language has been detected yet */
     detect?: string;
+    /** Button label to apply the language adaptation */
+    adaptApply?: string;
   };
 
   suggestions: {
