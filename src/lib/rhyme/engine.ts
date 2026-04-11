@@ -69,7 +69,8 @@ export function rhymeScore(
       const nA = extractNucleusCRV(unitA, lowResource, langA);
       const nB = extractNucleusCRV(unitB, lowResource, langB);
       if (lowResource) warnings.push('low-resource-fallback');
-      return build(scoreCRV(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      // Pass langA so scoreCRV activates HA tonal path when lang === 'ha'
+      return build(scoreCRV(nA, nB, langA), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
     }
     case 'ROM': {
       const nA = extractNucleusROM(unitA, langA);

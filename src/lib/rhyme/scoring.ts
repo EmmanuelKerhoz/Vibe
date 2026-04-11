@@ -4,7 +4,7 @@
 
 import type { RhymeCategory, RhymeNucleus } from './types';
 
-// ─── Phoneme Edit Distance ─────────────────────────────────────────────────────
+// ─── Phoneme Edit Distance ───────────────────────────────────────────────────────
 //
 // Use a flat Int32Array to avoid all dp[i][j] optional-chain issues.
 // idx(i, j) = i * (lb+1) + j
@@ -39,7 +39,7 @@ export function phonemeEditDistance(a: string, b: string): number {
   return dp[la * cols + lb]! / Math.max(la, lb);
 }
 
-// ─── KWA tonal scoring ────────────────────────────────────────────────────────
+// ─── KWA tonal scoring ───────────────────────────────────────────────────────────────
 
 /**
  * Tone distance table for 3-level tonal systems (H / M / L).
@@ -69,6 +69,9 @@ export function toneDistance(a: string | undefined, b: string | undefined): numb
   // Maximum distance: H↔L
   if ((aU === 'H' && bU === 'L') || (aU === 'L' && bU === 'H')) return 0.0;
 
+  // Falling tone (F): partially compatible with both H and L
+  if (aU === 'F' || bU === 'F') return 0.5;
+
   // Numeric tones or unrecognised labels: treat as binary
   return 0.0;
 }
@@ -80,17 +83,36 @@ export function scoreKWANormalized(a: RhymeNucleus, b: RhymeNucleus): number {
   return 0.4 * vowelSim + 0.2 * codaSim + 0.4 * toneSim;
 }
 
-// ─── CRV mora-weighted scoring ───────────────────────────────────────────────
+// ─── CRV mora-weighted scoring ─────────────────────────────────────────────────────
 
-export function scoreCRV(a: RhymeNucleus, b: RhymeNucleus): number {
-  const vowelSim   = 1 - phonemeEditDistance(a.vowels, b.vowels);
-  const codaSim    = 1 - phonemeEditDistance(a.coda, b.coda);
-  const moraBonus  = (a.moraCount === 2 && b.moraCount === 2) ? 1.3 : 1.0;
-  const raw        = 0.55 * vowelSim * moraBonus + 0.45 * codaSim;
+/**
+ * CRV score.
+ * For HA (Haoussa): tonal class contributes 20% via toneDistance.
+ * Other CRV langs: atonal — vowel 55% + coda 45% + mora bonus.
+ *
+ * @param lang  Optional LangCode or string — 'ha' activates tonal path.
+ */
+export function scoreCRV(
+  a: RhymeNucleus,
+  b: RhymeNucleus,
+  lang = ''
+): number {
+  const vowelSim  = 1 - phonemeEditDistance(a.vowels, b.vowels);
+  const codaSim   = 1 - phonemeEditDistance(a.coda, b.coda);
+  const moraBonus = (a.moraCount === 2 && b.moraCount === 2) ? 1.3 : 1.0;
+
+  if (lang === 'ha') {
+    // Haoussa: tone 20%, vowel 50%, coda 30% — mora bonus still applies on vowel
+    const toneSim = toneDistance(a.tone, b.tone);
+    const raw = 0.50 * vowelSim * moraBonus + 0.30 * codaSim + 0.20 * toneSim;
+    return Math.min(raw, 1);
+  }
+
+  const raw = 0.55 * vowelSim * moraBonus + 0.45 * codaSim;
   return Math.min(raw, 1);
 }
 
-// ─── Category threshold mapping ───────────────────────────────────────────────
+// ─── Category threshold mapping ──────────────────────────────────────────────────────────
 
 export function categorize(score: number): RhymeCategory {
   if (score >= 0.92) return 'perfect';
