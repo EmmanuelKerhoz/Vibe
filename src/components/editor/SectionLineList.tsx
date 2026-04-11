@@ -116,9 +116,14 @@ export const SectionLineList = React.memo(function SectionLineList({
     return item?.line ?? null;
   }, [selectedLineId, renderItems]);
 
+  // panelLang: prefer the resolved line object; fall back to lineLanguages map
+  // (keyed by ID, survives section mutations) so the rhyme panel keeps the
+  // correct language when selectedLine temporarily becomes null.
   const panelLang = selectedLine
     ? (lineLanguages[selectedLine.id] ?? sectionTargetLanguage ?? 'auto')
-    : 'auto';
+    : selectedLineId
+      ? (lineLanguages[selectedLineId] ?? sectionTargetLanguage ?? 'auto')
+      : 'auto';
 
   const handlePanelClose = () => { if (onLineBlur) onLineBlur(); };
 
