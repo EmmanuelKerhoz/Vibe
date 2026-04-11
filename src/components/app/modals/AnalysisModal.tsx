@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   X, BarChart2, Sparkles, Loader2, BookOpen, Activity, CheckCircle2, Target,
-  Music, Plus, Check, Undo2, Zap, ChevronDown, ChevronUp
+  Music, Check, Undo2, Zap
 } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
+import { AnalysisLanguagePicker } from './AnalysisLanguagePicker';
 import type { SongVersion } from '../../../types';
 
 interface Props {
@@ -43,7 +44,6 @@ export function AnalysisModal({
   clearAppliedAnalysisItems, versions, rollbackToVersion,
 }: Props) {
   const { t } = useTranslation();
-  const [showExtra, setShowExtra] = useState(false);
 
   if (!isOpen) return null;
 
@@ -108,14 +108,17 @@ export function AnalysisModal({
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            disabled={isAnalyzing || isApplyingAnalysis !== null}
-            aria-label={t.analysis.close}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-3">
+            <AnalysisLanguagePicker />
+            <button
+              onClick={onClose}
+              disabled={isAnalyzing || isApplyingAnalysis !== null}
+              aria-label={t.analysis.close}
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -139,6 +142,7 @@ export function AnalysisModal({
             </div>
           ) : analysisReport ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <section className="space-y-3">
                 <h4 className="micro-label text-[var(--accent-color)] flex items-center gap-2">
                   <BookOpen className="w-3.5 h-3.5" />{t.analysis.theme}
@@ -151,6 +155,7 @@ export function AnalysisModal({
                 </h4>
                 <p className="text-[var(--text-secondary)] leading-relaxed bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5">{analysisReport.emotionalArc}</p>
               </section>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <section className="space-y-3">
                   <h4 className="micro-label text-emerald-500 flex items-center gap-2">
@@ -213,55 +218,19 @@ export function AnalysisModal({
                   </div>
                 </section>
               </div>
-              <div className="flex justify-center pt-2">
-                <button
-                  onClick={() => setShowExtra(v => !v)}
-                  aria-expanded={showExtra}
-                  aria-label={showExtra ? t.analysis.hideMusicalSuggestions : t.analysis.showMusicalSuggestions}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-color)]/40 hover:bg-[var(--accent-color)]/5 transition-colors"
-                >
-                  {showExtra ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  {showExtra ? t.analysis.hideMusicalSuggestions : t.analysis.showMusicalSuggestions}
-                </button>
-              </div>
-              {showExtra && (
-                <>
-                  <section className="space-y-3">
-                <h4 className="micro-label text-blue-500 flex items-center gap-2">
-                  <Music className="w-3.5 h-3.5" />{t.analysis.musicalSuggestions}
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {musicalSuggestions.map((s, i) => (
-                    <div key={i} onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)}
-                      className={`text-xs p-3 rounded-lg border transition-all cursor-pointer flex items-start gap-3 group ${
-                        appliedAnalysisItems.has(s)
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-[var(--text-secondary)]'
-                          : selectedAnalysisItems.has(s)
-                          ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/30 text-[var(--text-primary)]'
-                          : 'bg-blue-500/5 border-blue-500/10 text-[var(--text-secondary)] hover:bg-blue-500/10 hover:border-blue-500/30'
-                      }`}
-                    >
-                      <div className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center ${
-                        appliedAnalysisItems.has(s)
-                          ? 'bg-emerald-500 border-emerald-500 text-white'
-                          : selectedAnalysisItems.has(s)
-                          ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white'
-                          : 'border-[var(--border-color)] group-hover:border-blue-500/50'
-                      }`}>
-                        {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-2.5 h-2.5" /> : <Plus className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />}
-                      </div>
-                      <span className={appliedAnalysisItems.has(s) ? 'line-through' : ''}>{s}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-              <section className="pt-6 border-t border-black/5 dark:border-white/5">
+              {/* Summary — always visible */}
+              <section className="pt-2">
                 <div className="bg-[var(--accent-color)]/5 border border-[var(--accent-color)]/20 p-5 rounded-2xl">
                   <h4 className="text-sm font-medium text-[var(--accent-color)] mb-2">{t.analysis.summary}</h4>
                   <p className="text-sm text-[var(--text-secondary)] italic leading-relaxed">"{analysisReport.summary}"</p>
                 </div>
               </section>
-                </>
+              {/* Musical Suggestions are shown in the Musical tab */}
+              {musicalSuggestions.length > 0 && (
+                <p className="text-[10px] text-[var(--text-secondary)]/60 text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
+                  <Music className="w-3 h-3" />
+                  {t.analysis.musicalSuggestionsMovedHint}
+                </p>
               )}
             </div>
           ) : (

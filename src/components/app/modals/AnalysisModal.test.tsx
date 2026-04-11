@@ -3,6 +3,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AnalysisModal } from './AnalysisModal';
 
+// Mock the AnalysisLanguagePicker sub-component (requires its own context/i18n)
+vi.mock('./AnalysisLanguagePicker', () => ({
+  AnalysisLanguagePicker: () => <div data-testid="analysis-lang-picker" />,
+}));
+
 // Minimal i18n mock matching AnalysisModal usage
 vi.mock('../../../i18n', () => ({
   useTranslation: () => ({
@@ -22,6 +27,7 @@ vi.mock('../../../i18n', () => ({
         revert: 'Revert',
         showMusicalSuggestions: 'Show Musical Suggestions',
         hideMusicalSuggestions: 'Hide Musical Suggestions',
+        musicalSuggestionsMovedHint: 'Musical suggestions available in the Musical tab',
       },
       tooltips: {
         revertAnalysis: 'Revert analysis',
@@ -43,12 +49,9 @@ vi.mock('../../ui/icons', () => ({
   CheckCircle2: () => <svg data-testid="icon-check-circle" />, 
   Target: () => <svg data-testid="icon-target" />, 
   Music: () => <svg data-testid="icon-music" />, 
-  Plus: () => <svg data-testid="icon-plus" />, 
   Check: () => <svg data-testid="icon-check" />, 
   Undo2: () => <svg data-testid="icon-undo" />, 
   Zap: () => <svg data-testid="icon-zap" />,
-  ChevronDown: () => <svg data-testid="icon-chevron-down" />,
-  ChevronUp: () => <svg data-testid="icon-chevron-up" />,
 }));
 
 vi.mock('../../ui/Button', () => ({
@@ -116,6 +119,13 @@ describe('AnalysisModal', () => {
     asyncNoop.mockClear();
   });
 
+  describe('language picker in header', () => {
+    it('renders the analysis language picker in the header', () => {
+      renderModal();
+      expect(screen.getByTestId('analysis-lang-picker')).toBeTruthy();
+    });
+  });
+
   describe('isAnalyzingTheme indicator', () => {
     it('shows pulse indicator when isAnalyzingTheme=true and isAnalyzing=false', () => {
       renderModal({ isAnalyzingTheme: true });
@@ -179,37 +189,25 @@ describe('AnalysisModal', () => {
     });
   });
 
-  describe('musical suggestions toggle', () => {
-    it('hides musical suggestions section by default', () => {
+  describe('musical suggestions moved to Musical tab', () => {
+    it('does not show musical suggestions section in the modal', () => {
       renderModal();
       expect(screen.queryByText('Musical Suggestions')).toBeNull();
     });
 
-    it('shows a toggle button with the show label when collapsed', () => {
+    it('shows summary always visible', () => {
       renderModal();
-      expect(screen.getByLabelText('Show Musical Suggestions')).toBeTruthy();
-    });
-
-    it('reveals musical suggestions and summary when toggle is clicked', () => {
-      renderModal();
-      fireEvent.click(screen.getByLabelText('Show Musical Suggestions'));
-      expect(screen.getByText('Musical Suggestions')).toBeTruthy();
-      // The summary section content should now be visible
       expect(screen.getByText(/"A heartfelt song"/)).toBeTruthy();
     });
 
-    it('changes toggle button label to hide after expansion', () => {
+    it('shows hint about musical suggestions in Musical tab when suggestions exist', () => {
       renderModal();
-      fireEvent.click(screen.getByLabelText('Show Musical Suggestions'));
-      expect(screen.getByLabelText('Hide Musical Suggestions')).toBeTruthy();
+      expect(screen.getByText('Musical suggestions available in the Musical tab')).toBeTruthy();
     });
 
-    it('collapses the section again when toggle is clicked a second time', () => {
-      renderModal();
-      const btn = screen.getByLabelText('Show Musical Suggestions');
-      fireEvent.click(btn);
-      fireEvent.click(screen.getByLabelText('Hide Musical Suggestions'));
-      expect(screen.queryByText('Musical Suggestions')).toBeNull();
+    it('does not show hint when no musical suggestions', () => {
+      renderModal({ analysisReport: { ...baseReport, musicalSuggestions: [] } });
+      expect(screen.queryByText('Musical suggestions available in the Musical tab')).toBeNull();
     });
   });
 

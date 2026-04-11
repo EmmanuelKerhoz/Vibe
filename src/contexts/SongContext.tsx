@@ -55,7 +55,6 @@ export function SongProvider({ children }: { children: ReactNode }) {
   // history is a new object every render; we intentionally track its members
   // (past, future, undo, redo) as the actual invalidation drivers so that
   // keystroke mutations to song do NOT rebuild this context value.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const historyValue = useMemo<SongHistoryContextValue>(
     () => ({
       past: history.past,
@@ -67,9 +66,9 @@ export function SongProvider({ children }: { children: ReactNode }) {
   );
 
   // SongContext value — depends on primitive state slices and stable callbacks.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const value = useMemo<SongContextValue>(
     () => ({ ...history, ...meta }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       history.song,
       history.structure,

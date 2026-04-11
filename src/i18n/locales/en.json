@@ -206,7 +206,8 @@
     "close": "Close Report",
     "noData": "No analysis data available.",
     "showMusicalSuggestions": "Show Musical Suggestions",
-    "hideMusicalSuggestions": "Hide Musical Suggestions"
+    "hideMusicalSuggestions": "Hide Musical Suggestions",
+    "musicalSuggestionsMovedHint": "Musical suggestions available in the Musical tab"
   },
   "similarity": {
     "title": "Similarity Check",

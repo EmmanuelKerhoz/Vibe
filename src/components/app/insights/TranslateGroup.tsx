@@ -3,6 +3,7 @@ import { Loader2, Languages } from '../../ui/icons';
 import { LcarsSelect } from '../../ui/LcarsSelect';
 import { Tooltip } from '../../ui/Tooltip';
 import { EmojiSign } from '../../ui/EmojiSign';
+import { DialectGlobe } from '../../ui/DialectGlobe';
 import { useTranslation } from '../../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../../i18n';
 import type { Section } from '../../../types';
@@ -23,6 +24,9 @@ const LANGUAGE_SELECT_OPTIONS = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
     <span className="flex items-center gap-1.5 min-w-0 w-full">
       <EmojiSign sign={lang.sign} />
       <span className="truncate">{lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</span>
+      {lang.region && (
+        <DialectGlobe code={lang.code} region={lang.region} size={20} />
+      )}
     </span>
   ),
 }));

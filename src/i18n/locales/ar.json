@@ -191,7 +191,8 @@
     "close": "إغلاق التقرير",
     "noData": "لا توجد بيانات تحليل متاحة.",
     "showMusicalSuggestions": "عرض الاقتراحات الموسيقية",
-    "hideMusicalSuggestions": "إخفاء الاقتراحات الموسيقية"
+    "hideMusicalSuggestions": "إخفاء الاقتراحات الموسيقية",
+    "musicalSuggestionsMovedHint": "الاقتراحات الموسيقية متاحة في علامة التبويب الموسيقية"
   },
   "similarity": {
     "title": "فحص التشابه",
