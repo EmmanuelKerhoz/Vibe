@@ -1,7 +1,8 @@
 /**
  * Rhyme Engine v2 — Scheme Detector Test Suite
- * 16 tests: AABB, ABAB, ABBA, monorhyme, free verse, terza rima,
- *           Baoulé strophe, multilingual strophe, confidence range
+ * 26 tests: AABB, ABAB, ABBA, monorhyme, free verse, terza rima,
+ *           ABCABC, window clamp, Baoulé strophe,
+ *           multilingual strophe, confidence range
  */
 
 import { describe, it, expect } from 'vitest';
@@ -44,7 +45,7 @@ describe('detectRhymeScheme — FR AABB', () => {
 describe('detectRhymeScheme — EN ABAB', () => {
   const lines = [
     'I wandered lonely as a cloud',
-    'That floats on high o\'er vales and hills',
+    "That floats on high o'er vales and hills",
     'When all at once I saw a crowd',
     'A host of golden daffodils',
   ];
@@ -60,6 +61,60 @@ describe('detectRhymeScheme — EN ABAB', () => {
   it('lines 1 and 3 share letter', () => {
     const r = detectRhymeScheme(lines, 'en');
     expect(r.letters[1]).toBe(r.letters[3]);
+  });
+});
+
+// ─── English — ABBA ──────────────────────────────────────────────────────────
+
+describe('detectRhymeScheme — EN ABBA', () => {
+  const lines = [
+    'I hold you in the fading light',
+    'The silence wraps around the room',
+    'We breathe the darkness and the gloom',
+    'And wait together for the night',
+  ];
+
+  it('detects ABBA label', () => {
+    const r = detectRhymeScheme(lines, 'en');
+    expect(r.label).toBe('ABBA');
+  });
+  it('lines 0 and 3 share letter (A)', () => {
+    const r = detectRhymeScheme(lines, 'en');
+    expect(r.letters[0]).toBe(r.letters[3]);
+  });
+  it('lines 1 and 2 share letter (B)', () => {
+    const r = detectRhymeScheme(lines, 'en');
+    expect(r.letters[1]).toBe(r.letters[2]);
+  });
+  it('A ≠ B', () => {
+    const r = detectRhymeScheme(lines, 'en');
+    expect(r.letters[0]).not.toBe(r.letters[1]);
+  });
+});
+
+// ─── Terza rima ───────────────────────────────────────────────────────────────
+
+describe('detectRhymeScheme — FR TERZA_RIMA', () => {
+  // ABA BCB pattern
+  const lines = [
+    'Dans la forêt sombre',
+    'Le loup hurlait la nuit entière',
+    'Sous les arbres sans nombre',
+    'La lune éclairait la clairière',
+    'Et brillait parmi les ombres',
+    'Avec sa lumière',
+  ];
+
+  it('returns a SchemeResult without throwing', () => {
+    expect(() => detectRhymeScheme(lines, 'fr')).not.toThrow();
+  });
+  it('letters array has length 6', () => {
+    const r = detectRhymeScheme(lines, 'fr');
+    expect(r.letters).toHaveLength(6);
+  });
+  it('pairScores non-empty', () => {
+    const r = detectRhymeScheme(lines, 'fr');
+    expect(r.pairScores.length).toBeGreaterThan(0);
   });
 });
 
@@ -103,10 +158,23 @@ describe('detectRhymeScheme — free verse', () => {
   });
 });
 
+// ─── Window clamp ─────────────────────────────────────────────────────────────
+
+describe('detectRhymeScheme — window clamp', () => {
+  it('window=1 limits pairScores to adjacent pairs only', () => {
+    const lines = ['a', 'b', 'c', 'd'];
+    const r = detectRhymeScheme(lines, 'fr', 1);
+    // Only (0,1), (1,2), (2,3) = 3 pairs
+    expect(r.pairScores.length).toBe(3);
+    for (const { i, j } of r.pairScores) {
+      expect(j - i).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
 // ─── Baoulé strophe (KWA) ────────────────────────────────────────────────────
 
 describe('detectRhymeScheme — Baoulé KWA', () => {
-  // Two couplets sharing final tonal syllable
   const lines = [
     "n'gá so",
     'ka gá',
@@ -117,9 +185,8 @@ describe('detectRhymeScheme — Baoulé KWA', () => {
   it('returns a result without throwing', () => {
     expect(() => detectRhymeScheme(lines, 'ba')).not.toThrow();
   });
-  it('pairScores contains 4 pairs for window=6, n=4', () => {
+  it('pairScores contains 6 pairs for window=6, n=4', () => {
     const r = detectRhymeScheme(lines, 'ba');
-    // Pairs: (0,1),(0,2),(0,3),(1,2),(1,3),(2,3) = 6 pairs within window
     expect(r.pairScores.length).toBe(6);
   });
   it('nuclei for ba lines are not empty', () => {
