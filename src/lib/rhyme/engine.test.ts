@@ -104,17 +104,21 @@ describe('routeToFamily', () => {
     expect(routeToFamily('ar').family).toBe('SEM');
     expect(routeToFamily('he').family).toBe('SEM');
   });
-  it('routes SEA/CJK languages', () => {
-    expect(routeToFamily('th').family).toBe('SEA');
-    expect(routeToFamily('vi').family).toBe('SEA');
+  it('routes TAI/VIET languages', () => {
+    expect(routeToFamily('th').family).toBe('TAI');
+    expect(routeToFamily('lo').family).toBe('TAI');
+    expect(routeToFamily('vi').family).toBe('VIET');
+    expect(routeToFamily('km').family).toBe('VIET');
+  });
+  it('routes CJK languages', () => {
     expect(routeToFamily('zh').family).toBe('CJK');
     expect(routeToFamily('ja').family).toBe('CJK');
     expect(routeToFamily('ko').family).toBe('CJK');
   });
-  it('routes Agglutinative languages', () => {
-    expect(routeToFamily('tr').family).toBe('AGG');
-    expect(routeToFamily('fi').family).toBe('AGG');
-    expect(routeToFamily('hu').family).toBe('AGG');
+  it('routes Agglutinative languages (TRK / FIN)', () => {
+    expect(routeToFamily('tr').family).toBe('TRK');
+    expect(routeToFamily('fi').family).toBe('FIN');
+    expect(routeToFamily('hu').family).toBe('FIN');
   });
   // New families
   it('routes IIR languages (hi, ur, bn, fa, pa)', () => {
@@ -295,26 +299,34 @@ describe('SEM rhyme engine', () => {
     expect(r.nucleusB.vowels).not.toBe('');
   });
 });
-// ─── Family: SEA + CJK ────────────────────────────────────────────────────────
-describe('SEA rhyme engine', () => {
-  it('TH: routes to SEA', () => {
+// ─── Family: TAI ────────────────────────────────────────────────────────────
+describe('TAI rhyme engine', () => {
+  it('TH: routes to TAI', () => {
     const r = rhymeScore('\u0E04\u0E19', '\u0E14\u0E34\u0E19', 'th', 'th');
-    expect(r.family).toBe('SEA');
+    expect(r.family).toBe('TAI');
   });
   it('TH: nucleus is not empty', () => {
     const r = rhymeScore('\u0E04\u0E19', '\u0E14\u0E34\u0E19', 'th', 'th');
     expect(r.nucleusA.vowels).not.toBe('');
+  });
+  it('LO: routes to TAI', () => {
+    const r = rhymeScore('\u0E84\u0EB9\u0E99', '\u0E94\u0EB4\u0E99', 'lo', 'lo');
+    expect(r.family).toBe('TAI');
+  });
+});
+// ─── Family: VIET ────────────────────────────────────────────────────────────
+describe('VIET rhyme engine', () => {
+  it('VI: routes to VIET', () => {
+    const r = rhymeScore('trời', 'đời', 'vi', 'vi');
+    expect(r.family).toBe('VIET');
   });
   it('VI: tone match yields higher score than tone mismatch', () => {
     const rMatch    = rhymeScore('trời', 'đời', 'vi', 'vi');
     const rMismatch = rhymeScore('trời', 'trói', 'vi', 'vi');
     expect(rMatch.score).toBeGreaterThan(rMismatch.score);
   });
-  it('VI: routes to SEA', () => {
-    const r = rhymeScore('trời', 'đời', 'vi', 'vi');
-    expect(r.family).toBe('SEA');
-  });
 });
+// ─── Family: CJK ─────────────────────────────────────────────────────────────
 describe('CJK rhyme engine', () => {
   it('ZH: routes to CJK', () => {
     const r = rhymeScore('\u5929', '\u5148', 'zh', 'zh');
@@ -360,15 +372,15 @@ describe('YRB rhyme engine', () => {
     expect(r.score).toBeGreaterThan(0.80);
   });
 });
-// ─── Family: AGG ─────────────────────────────────────────────────────────────
-describe('AGG rhyme engine', () => {
-  it('TR: routes to AGG', () => {
+// ─── Family: TRK ─────────────────────────────────────────────────────────────
+describe('TRK rhyme engine', () => {
+  it('TR: routes to TRK', () => {
     const r = rhymeScore('ev', 'sev', 'tr', 'tr');
-    expect(r.family).toBe('AGG');
+    expect(r.family).toBe('TRK');
   });
   it('TR: suffix stripped — gelirse/görürse share same stem vowel class', () => {
     const r = rhymeScore('gelirse', 'görürse', 'tr', 'tr');
-    expect(r.family).toBe('AGG');
+    expect(r.family).toBe('TRK');
     expect(r.score).toBeGreaterThanOrEqual(0);
   });
   it('TR: same back-vowel harmony class boosts score', () => {
@@ -377,19 +389,22 @@ describe('AGG rhyme engine', () => {
     expect(rSame.score).toBeGreaterThanOrEqual(0);
     expect(rFront.score).toBeGreaterThanOrEqual(0);
   });
+});
+// ─── Family: FIN ─────────────────────────────────────────────────────────────
+describe('FIN rhyme engine', () => {
   it('FI: geminate vowel → moraCount 2 detection', () => {
     const rGeminate = rhymeScore('saataa', 'vaataa', 'fi', 'fi');
-    expect(rGeminate.family).toBe('AGG');
+    expect(rGeminate.family).toBe('FIN');
     expect(rGeminate.score).toBeGreaterThan(0.70);
   });
   it('FI: vowel harmony merge — a/ä treated as same nucleus', () => {
     const r = rhymeScore('maassa', 'metsässä', 'fi', 'fi');
-    expect(r.family).toBe('AGG');
+    expect(r.family).toBe('FIN');
     expect(r.score).toBeGreaterThan(0.50);
   });
-  it('HU: routes to AGG', () => {
+  it('HU: routes to FIN', () => {
     const r = rhymeScore('szerelem', 'érzelem', 'hu', 'hu');
-    expect(r.family).toBe('AGG');
+    expect(r.family).toBe('FIN');
   });
   it('HU: long vowel preserved — ó vs o reduces score', () => {
     const rMatch    = rhymeScore('szerelem', 'érzelem', 'hu', 'hu');
