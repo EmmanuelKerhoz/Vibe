@@ -27,6 +27,12 @@ const LANG_FAMILY_MAP: Record<string, FamilyId> = {
   zh: 'CJK', ja: 'CJK', ko: 'CJK',
   // Agglutinative
   tr: 'AGG', fi: 'AGG', hu: 'AGG',
+  // Indo-Iranian
+  hi: 'IIR', ur: 'IIR', bn: 'IIR', fa: 'IIR', pa: 'IIR',
+  // Austronesian
+  id: 'AUS', ms: 'AUS', tl: 'AUS', mg: 'AUS',
+  // Dravidian
+  ta: 'DRA', te: 'DRA', kn: 'DRA', ml: 'DRA',
 };
 
 export function routeToFamily(

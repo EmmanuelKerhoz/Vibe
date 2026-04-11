@@ -14,6 +14,9 @@ export type LangCode =
   | 'bk' | 'cb' | 'og' | 'ha'           // CRV
   | 'ru' | 'pl' | 'cs'                   // Slavic
   | 'tr' | 'fi' | 'hu'                   // Agglutinative
+  | 'hi' | 'ur' | 'bn' | 'fa' | 'pa'   // Indo-Iranian
+  | 'id' | 'ms' | 'tl' | 'mg'           // Austronesian
+  | 'ta' | 'te' | 'kn' | 'ml'           // Dravidian
   | '__unknown__';
 
 export type FamilyId =
@@ -28,6 +31,9 @@ export type FamilyId =
   | 'SEA'      // Southeast Asia (tonal)
   | 'CJK'      // Chinese-Japanese-Korean
   | 'AGG'      // Agglutinative (Turkish, Finnish, Hungarian)
+  | 'IIR'      // Indo-Iranian (Hindi, Urdu, Bengali, Persian, Punjabi)
+  | 'AUS'      // Austronesian (Indonesian, Malay, Tagalog, Malagasy)
+  | 'DRA'      // Dravidian (Tamil, Telugu, Kannada, Malayalam)
   | 'FALLBACK';
 
 export type SegmentationMode =

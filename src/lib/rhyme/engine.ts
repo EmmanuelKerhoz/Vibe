@@ -17,6 +17,9 @@ import { extractNucleusSLV, scoreSLV } from './algo-slv';
 import { extractNucleusSEM, scoreSEM } from './algo-sem';
 import { extractNucleusSEA, extractNucleusCJK, scoreSEA, scoreCJK } from './algo-sea';
 import { extractNucleusAGG, scoreAGG, type AGGNucleus } from './algo-agg';
+import { extractNucleusIIR, scoreIIR } from './algo-iir';
+import { extractNucleusAUS, scoreAUS } from './algo-aus';
+import { extractNucleusDRA, scoreDRA } from './algo-dra';
 
 export function rhymeScore(
   lineA: string,
@@ -113,6 +116,21 @@ export function rhymeScore(
       const nB = extractNucleusAGG(unitB, langB) as AGGNucleus;
       return build(scoreAGG(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
     }
+    case 'IIR': {
+      const nA = extractNucleusIIR(unitA, langA);
+      const nB = extractNucleusIIR(unitB, langB);
+      return build(scoreIIR(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
+    case 'AUS': {
+      const nA = extractNucleusAUS(unitA, langA);
+      const nB = extractNucleusAUS(unitB, langB);
+      return build(scoreAUS(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
+    case 'DRA': {
+      const nA = extractNucleusDRA(unitA, langA);
+      const nB = extractNucleusDRA(unitB, langB);
+      return build(scoreDRA(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
     default: {
       const tailA = normalizeInput(unitA.surface).slice(-4).toLowerCase();
       const tailB = normalizeInput(unitB.surface).slice(-4).toLowerCase();
@@ -142,6 +160,9 @@ function extractBestNucleus(
     case 'SEA':  return extractNucleusSEA(unit, lang);
     case 'CJK':  return extractNucleusCJK(unit, lang);
     case 'AGG':  return extractNucleusAGG(unit, lang);
+    case 'IIR':  return extractNucleusIIR(unit, lang);
+    case 'AUS':  return extractNucleusAUS(unit, lang);
+    case 'DRA':  return extractNucleusDRA(unit, lang);
     default:     return { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
   }
 }
