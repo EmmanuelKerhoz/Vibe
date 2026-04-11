@@ -1,5 +1,2 @@
-// Single source of truth: package.json → vite.config.ts → here.
-// Version bumps still flow from package.json into this module via VITE_APP_VERSION.
-const raw = import.meta.env.VITE_APP_VERSION ?? 'dev';
-export const APP_VERSION = `v${raw}`;
-export const APP_VERSION_LABEL = `β v${raw}`;
+// Auto-generated — do not edit manually
+export const APP_VERSION = '1.13.0.49';

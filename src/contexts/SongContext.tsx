@@ -61,7 +61,9 @@ export function SongProvider({ children }: { children: ReactNode }) {
     }),
     // history.past and history.future are new array references only when
     // applySnapshot/undo/redo fires — not on every song mutation.
-    [history.past, history.future, history.undo, history.redo],
+    // history is listed to satisfy exhaustive-deps; its member refs are
+    // the actual invalidation drivers above.
+    [history, history.past, history.future, history.undo, history.redo],
   );
 
   // SongContext value — depends on primitive state slices and stable callbacks,
