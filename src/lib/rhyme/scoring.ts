@@ -4,7 +4,7 @@
 
 import type { RhymeCategory, RhymeNucleus } from './types';
 
-// ─── Phoneme Edit Distance ───────────────────────────────────────────────────────
+// ─── Phoneme Edit Distance ────────────────────────────────────────────────────────
 //
 // Use a flat Int32Array to avoid all dp[i][j] optional-chain issues.
 // idx(i, j) = i * (lb+1) + j
@@ -39,7 +39,7 @@ export function phonemeEditDistance(a: string, b: string): number {
   return dp[la * cols + lb]! / Math.max(la, lb);
 }
 
-// ─── KWA tonal scoring ───────────────────────────────────────────────────────────────
+// ─── KWA tonal scoring ──────────────────────────────────────────────────────────────
 
 /**
  * Tone distance table for 3-level tonal systems (H / M / L).
@@ -57,10 +57,12 @@ export function phonemeEditDistance(a: string, b: string): number {
  */
 export function toneDistance(a: string | undefined, b: string | undefined): number {
   if (!a || !b) return 0.4;       // at least one tone undetected — uncertain
-  if (a === b)  return 1.0;       // exact match
+  if (a === b)  return 1.0;       // exact match (case-sensitive fast path)
 
   const aU = a.toUpperCase();
   const bU = b.toUpperCase();
+
+  if (aU === bU) return 1.0;      // case-insensitive match ('m' vs 'M')
 
   // Adjacent steps: H↔M or M↔L
   if ((aU === 'H' && bU === 'M') || (aU === 'M' && bU === 'H')) return 0.5;
@@ -83,7 +85,7 @@ export function scoreKWANormalized(a: RhymeNucleus, b: RhymeNucleus): number {
   return 0.4 * vowelSim + 0.2 * codaSim + 0.4 * toneSim;
 }
 
-// ─── CRV mora-weighted scoring ─────────────────────────────────────────────────────
+// ─── CRV mora-weighted scoring ────────────────────────────────────────────────────────────
 
 /**
  * CRV score.
@@ -112,7 +114,7 @@ export function scoreCRV(
   return Math.min(raw, 1);
 }
 
-// ─── Category threshold mapping ──────────────────────────────────────────────────────────
+// ─── Category threshold mapping ─────────────────────────────────────────────────────────────────
 
 export function categorize(score: number): RhymeCategory {
   if (score >= 0.92) return 'perfect';

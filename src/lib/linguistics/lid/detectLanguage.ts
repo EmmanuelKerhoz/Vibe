@@ -23,19 +23,19 @@
  * a code and use it; the Registry's ALGO-ROBUST fallback handles residual errors.
  *
  * Exclusivity rules (pilots must NOT appear in sibling language lists):
- *   pt vs es  : pt uses não/você/lhe/mesmo/nossa — absent from es.
+ *   pt vs es  : pt uses não/você/lhe/mesmo/nossa/também/tudo/tenho — absent from es.
  *               Shared tokens (que, por, para, como, quando) removed from pt.
  *   cfg vs nou: cfg tokens are CM-exclusive (mboa, feymania, mbenguiste, feyeur).
  *               Shared tokens (tchamba, blèkè, sawa) kept only in nou.
  *   sw vs ha  : 'na' removed from both — replaced by language-exclusive sets.
  *               sw: hapo/bado/tena/wewe/yeye/wao/mimi.
- *               ha: sun/wuri/zuwa/dare/gida/kai/shi/mu/ku/su.
+ *               ha: sun/wuri/zuwa/dare/gida/kai/shi/mu/ku/su + ina/son/yana/kyau/sosai.
  *   KWA noise : all mono/bichar tokens removed from ba/ew/mi/di.
  *               Replaced by multichar tokens with diacritics absent from
  *               fr/en/es/it, providing unambiguous signal.
  */
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────────────────────────
 
 /** Returned when detection fails or text is too short. */
 export const DEFAULT_LANG = 'fr';
@@ -43,7 +43,7 @@ export const DEFAULT_LANG = 'fr';
 /** Minimum token count for word-pilot scoring to be trusted. */
 const MIN_TOKENS = 3;
 
-// ─── Stage 1: Script Detector ───────────────────────────────────────────────
+// ─── Stage 1: Script Detector ──────────────────────────────────────────────────────
 
 /**
  * Unicode range → language code.
@@ -92,43 +92,8 @@ function detectByScript(text: string): string | undefined {
   return undefined;
 }
 
-// ─── Stage 2: Word-Pilot Detector ────────────────────────────────────────────────
+// ─── Stage 2: Word-Pilot Detector ──────────────────────────────────────────────────────────────
 
-/**
- * Pilot word lists — high-frequency, exclusive to the target language.
- * Selection criteria:
- *   - Top-100 most frequent words in the language
- *   - NOT shared with other languages in this list
- *   - Minimum 3 chars; diacritics outside FR/EN/ES/IT/DE/PT range preferred
- *   - Grammatical words (articles, prepositions, pronouns) preferred
- *
- * Scores: each matched word adds +2.
- * Tie: DEFAULT_LANG wins.
- *
- * KWA codes used:
- *   yo = Yoruba (ISO 639-1)
- *   ba = Baoulé (private/SIL bci)
- *   ew = Ewe   (ISO 639-1)
- *   mi = Mina / Gengèbé (SIL gej, mapped as mi here)
- *   di = Dioula (ISO 639-3 dyu, mapped as di here)
- *
- * Creole codes:
- *   nou = Nouchi (Côte d'Ivoire)
- *   pcm = Nigerian Pidgin English
- *   cfg = Camfranglais (Cameroun)
- *
- * Malay (ms) vs Indonesian (id) disambiguation:
- *   Key exclusive MY markers: kerana, kepada, boleh, awak, encik, sahaja,
- *   manakala, walau, bahawa, mengikut.
- *   These do NOT appear in standard Indonesian, allowing reliable separation.
- *
- * Urdu romanisé (ur):
- *   High-frequency function words in Urdu romanisation (Nastaliq → Latin).
- *   Selected for exclusivity vs. fr/en/hi — none appear in those pilot lists.
- *   Native Nastaliq script is handled by Stage 1 (Arabic range → 'ar');
- *   these pilots cover romanised lyrics only, routing them to ALGO-IIR
- *   instead of the fr fallback.
- */
 const WORD_PILOTS: Record<string, string[]> = {
   fr: [
     'je', 'tu', 'nous', 'vous', 'dans', 'avec', 'sur', 'cette',
@@ -154,12 +119,13 @@ const WORD_PILOTS: Record<string, string[]> = {
   ],
   // pt pilots are PT-exclusive vs es:
   //   não, você, lhe, mesmo, nossa, agora, ainda, embora, nunca, sempre,
-  //   aqui, isso, algo, nada, teu — none of these appear in standard es.
+  //   aqui, isso, algo, nada, teu, também, tudo, tenho — none in standard es.
   //   Shared tokens (que, por, uma, para, como, quando, porque) removed.
   pt: [
     'não', 'você', 'lhe', 'mesmo', 'nossa', 'agora', 'ainda',
     'embora', 'nunca', 'sempre', 'aqui', 'isso', 'algo', 'nada', 'teu',
     'são', 'está', 'esse', 'tudo', 'bem', 'mas',
+    'também', 'tenho',
   ],
   de: [
     'der', 'die', 'das', 'und', 'ist', 'ein', 'eine', 'nicht',
@@ -182,8 +148,6 @@ const WORD_PILOTS: Record<string, string[]> = {
     'pentru', 'după', 'înainte', 'atunci', 'deci', 'astfel',
     'meu', 'tău', 'său', 'nostru', 'lor', 'ești', 'eram',
   ],
-  // sw: 'na' removed (shared with ha) → replaced by sw-exclusive tokens.
-  // All selected tokens are ≥3 chars, absent from ha pilot list.
   sw: [
     'kwa', 'hii', 'hilo', 'hiyo', 'sana', 'pia', 'bali', 'lakini', 'kwamba',
     'hapo', 'bado', 'tena', 'wewe', 'yeye', 'wao', 'mimi', 'nini', 'lini',
@@ -194,17 +158,18 @@ const WORD_PILOTS: Record<string, string[]> = {
     'ilu', 'ile', 'agba', 'bı', 'àwa', 'jẹ',
   ],
   // ha: 'na' removed (shared with sw), 'da' removed (FR fragment noise).
-  // Replaced by ha-exclusive tokens: short common Hausa words absent elsewhere.
+  // Added: ina, son, yana, kyau, sosai — high-frequency Hausa words
+  // absent from all other pilot lists.
   ha: [
     'ne', 'ce', 'kuma', 'amma', 'don', 'daga', 'cikin', 'gare',
     'sun', 'wuri', 'zuwa', 'dare', 'gida', 'kai', 'shi',
     'mun', 'kun', 'sai', 'har', 'tun', 'karo',
+    'ina', 'son', 'yana', 'kyau', 'sosai',
   ],
   id: [
     'yang', 'dan', 'ini', 'itu', 'dari', 'dengan', 'untuk', 'tidak',
     'ada', 'juga', 'bisa', 'akan',
   ],
-  // Malay (ms) — exclusive markers vs Indonesian (id)
   ms: [
     'kerana', 'kepada', 'boleh', 'awak', 'sahaja', 'manakala',
     'walau', 'bahawa', 'mengikut', 'encik', 'puan', 'mereka',
@@ -231,33 +196,22 @@ const WORD_PILOTS: Record<string, string[]> = {
     'nahi', 'tujhe', 'pyar', 'mere', 'tere', 'hum', 'tum',
     'woh', 'kyun', 'bhi', 'abhi', 'kuch', 'phir',
   ],
-  // ─── KWA languages (Latin-script, tonal) ─────────────────────────────────
-  // All mono/bichar tokens removed — replaced by multichar tokens with
-  // diacritics (ɔ ɛ ɖ ƒ ŋ ɣ ʋ) that are absent from fr/en/es/it/de/pt.
-  // This guarantees near-zero false-positive on Latin-script fragments.
   ba: [
     'blɔ', 'suə', 'nguɛ', 'yapi', 'kpli', 'ɛman', 'ɔko', 'dja',
     'gblo', 'kpan', 'wari', 'nzuɛ', 'sran', 'klɔ',
   ],
-  // ew: 'le','ne' removed (FR collision) → ew-exclusive tokens with
-  // Ewe-specific chars (ŋ ɖ ƒ ɣ ʋ) or uncommon digraphs.
   ew: [
     'kple', 'hafi', 'megbe', 'nuɖoviwo', 'deke', 'eye', 'loo', 'nku',
     'ŋu', 'ame', 'dzo', 'xo', 'nɔ', 'ɖo', 'fia', 'gbɔ', 'ƒe',
   ],
-  // mi: 'mi','mo' removed (IT/ES/FR collision via 'mi amor', 'mi piace').
-  // Replaced by Mina/Gengèbé-exclusive tokens.
   mi: [
     'bɔ', 'kɔ', 'lɔ', 'nyi', 'amaa',
     'ɖoo', 'kɔla', 'ŋɔ', 'wɔ', 'ƒu', 'tsɔ', 'nɔla', 'ɣe',
   ],
-  // di: 'a','ka','ko','bi' removed (noise on FR/IT/ES fragments).
-  // Kept: multichar tokens only. Added Dioula-exclusive: dɔ, bolo, sigi, tɛ.
   di: [
     'bɛ', 'tun', 'mogo', 'kama', 'folo', 'minnu',
     'dɔ', 'bolo', 'sigi', 'tɛ', 'kɛ', 'nɔ', 'cɛ', 'fɛ',
   ],
-  // ─── Creole / Pidgin languages (Latin-script) ────────────────────────────
   nou: [
     'gnaman', 'yako', 'warra', 'tchamba', 'blaka', 'sawa',
     'kpoto', 'gbrou', 'drogbo', 'mboki', 'ndoki', 'broki',
@@ -272,7 +226,7 @@ const WORD_PILOTS: Record<string, string[]> = {
   cfg: [
     'mboa', 'feymania', 'kanda', 'makossa', 'mbamba', 'ngola',
     'manawa', 'arnaka', 'bikutsi', 'gbaka',
-    'nda', 'bangangté', 'ndè',
+    'nda', 'banganté', 'ndè',
     'mbenguiste', 'feyeur', 'couper', 'boulot', 'gbata',
   ],
 };
@@ -313,37 +267,20 @@ function detectByWordPilots(tokens: string[]): string | undefined {
   return sorted[0]![0];
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────────
 
-/**
- * Detect the language of a text snippet.
- *
- * @param text  Raw text (lyric line, block, or single word).
- * @returns     ISO 639-1/3 code (e.g. 'fr', 'en', 'ar').
- *              Falls back to DEFAULT_LANG ('fr') when detection is uncertain.
- */
 export function detectLanguage(text: string): string {
   if (!text || text.trim().length === 0) return DEFAULT_LANG;
 
-  // Stage 1: non-Latin scripts resolved immediately
   const byScript = detectByScript(text);
   if (byScript) return byScript;
 
-  // Stage 2: Latin-script word pilots
   const tokens = tokenize(text);
   if (tokens.length < MIN_TOKENS) return DEFAULT_LANG;
 
   return detectByWordPilots(tokens) ?? DEFAULT_LANG;
 }
 
-/**
- * Resolve 'auto' to a detected language code, or pass through any explicit code.
- * Convenience wrapper used by suggestRhymes() and detectRhymeScheme().
- *
- * @param text      Text to analyse if lang === 'auto'.
- * @param lang      Language code or 'auto'.
- * @returns         Resolved ISO 639-1/3 code.
- */
 export function resolveLang(text: string, lang: string): string {
   return lang === 'auto' ? detectLanguage(text) : lang;
 }

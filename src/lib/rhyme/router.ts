@@ -11,8 +11,8 @@ const LANG_FAMILY_MAP: Record<string, FamilyId> = {
   en: 'GER', de: 'GER', nl: 'GER', sv: 'GER', da: 'GER', no: 'GER', is: 'GER',
   // Slavic
   ru: 'SLV', pl: 'SLV', cs: 'SLV', sk: 'SLV', uk: 'SLV', bg: 'SLV', sr: 'SLV', hr: 'SLV',
-  // Semitic + Chadic (Afro-Asiatic)
-  ar: 'SEM', he: 'SEM', am: 'SEM', ha: 'SEM',
+  // Semitic (Afro-Asiatic, without Chadic)
+  ar: 'SEM', he: 'SEM', am: 'SEM',
   // CJK
   zh: 'CJK', yue: 'CJK', ja: 'CJK', ko: 'CJK',
   // TAI (Thai, Lao)
@@ -21,13 +21,13 @@ const LANG_FAMILY_MAP: Record<string, FamilyId> = {
   vi: 'VIET', km: 'VIET',
   // Bantu
   sw: 'BNT', lg: 'BNT', rw: 'BNT', sn: 'BNT', zu: 'BNT', xh: 'BNT', ny: 'BNT',
-  bm: 'BNT', ff: 'BNT',
+  bm: 'BNT', ff: 'BNT', jv: 'BNT',
   // Yoruboid
   yo: 'YRB',
   // KWA (internal codes: ba=Baoulé, di=Dioula, ew=Ewe, mi=Mina)
   ba: 'KWA', di: 'KWA', ew: 'KWA', mi: 'KWA',
-  // CRV
-  bk: 'CRV', cb: 'CRV', og: 'CRV',
+  // CRV (Chadic — Hausa + others)
+  bk: 'CRV', cb: 'CRV', og: 'CRV', ha: 'CRV',
   // TRK (Turkic)
   tr: 'TRK', az: 'TRK', uz: 'TRK', kk: 'TRK',
   // FIN (Finno-Ugric)
@@ -35,7 +35,7 @@ const LANG_FAMILY_MAP: Record<string, FamilyId> = {
   // Indo-Iranian
   hi: 'IIR', ur: 'IIR', bn: 'IIR', fa: 'IIR', pa: 'IIR',
   // Austronesian
-  id: 'AUS', ms: 'AUS', tl: 'AUS', mg: 'AUS', jv: 'AUS',
+  id: 'AUS', ms: 'AUS', tl: 'AUS', mg: 'AUS',
   // Dravidian
   ta: 'DRA', te: 'DRA', kn: 'DRA', ml: 'DRA',
   // Creole / Pidgin
