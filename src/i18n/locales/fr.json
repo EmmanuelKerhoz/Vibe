@@ -42,6 +42,16 @@
     "music": "Musique",
     "structure": "Structure"
   },
+  "menu": {
+    "create": "Créer",
+    "workspace": "Espace de travail",
+    "tools": "Outils",
+    "app": "Application",
+    "newLyricsGeneration": "Nouvelle génération de paroles",
+    "newSong": "Nouvelle chanson",
+    "about": "À propos",
+    "sponsor": "Sponsoriser"
+  },
   "leftPanel": {
     "title": "Lyricist Pro",
     "songTitle": "TITRE",
@@ -444,7 +454,14 @@
     "moodPresets": "Choisir une ambiance prédéfinie pour votre chanson",
     "rhymeScheme": "Sélectionner le schéma de rime par défaut pour toutes les sections",
     "targetSyllables": "Définir le nombre cible de syllabes par ligne",
-    "viewMode": "Basculer entre les différents modes d'édition des paroles"
+    "viewMode": "Basculer entre les différents modes d'édition des paroles",
+    "newLyricsGeneration": "Générer de nouvelles paroles avec l'IA",
+    "newSong": "Créer une nouvelle chanson vide",
+    "pasteAvailable": "Coller les paroles depuis le presse-papier",
+    "pasteUnavailable": "Aucune parole détectée dans le presse-papier",
+    "browseLibrary": "Enregistrer ou parcourir votre bibliothèque de chansons",
+    "openSettings": "Ouvrir les paramètres de l'application",
+    "sponsor": "Soutenir le développeur"
   },
   "sections": {
     "intro": "Intro",

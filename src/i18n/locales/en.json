@@ -42,6 +42,16 @@
     "music": "Music",
     "structure": "Structure"
   },
+  "menu": {
+    "create": "Create",
+    "workspace": "Workspace",
+    "tools": "Tools",
+    "app": "App",
+    "newLyricsGeneration": "New Lyrics Generation",
+    "newSong": "New Song",
+    "about": "About",
+    "sponsor": "Sponsor"
+  },
   "leftPanel": {
     "title": "Lyricist Pro",
     "songTitle": "TITLE",
@@ -444,7 +454,14 @@
     "moodPresets": "Choose a preset mood for your song",
     "rhymeScheme": "Select the default rhyme pattern for all sections",
     "targetSyllables": "Set the target number of syllables per line",
-    "viewMode": "Switch between different lyrics editor views"
+    "viewMode": "Switch between different lyrics editor views",
+    "newLyricsGeneration": "Generate new lyrics using AI",
+    "newSong": "Create a new empty song",
+    "pasteAvailable": "Paste lyrics from clipboard",
+    "pasteUnavailable": "No lyrics detected in clipboard",
+    "browseLibrary": "Save or browse your song library",
+    "openSettings": "Open application settings",
+    "sponsor": "Support the developer"
   },
   "sections": {
     "intro": "Intro",

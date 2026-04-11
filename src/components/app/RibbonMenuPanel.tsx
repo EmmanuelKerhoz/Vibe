@@ -113,32 +113,32 @@ export function RibbonMenuPanel({
       }}
     >
       {/* ── Create ─────────────────────────────────────────────────────── */}
-      <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Create</div>
-      <Tooltip title="Generate new lyrics using AI">
+      <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{t.menu?.create ?? 'Create'}</div>
+      <Tooltip title={t.tooltips.newLyricsGeneration ?? 'Generate new lyrics using AI'}>
         <button onClick={() => run(onOpenNewGeneration)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <WandSparkles className="w-4 h-4 text-[var(--text-secondary)]" />
-          New Lyrics Generation
+          {t.menu?.newLyricsGeneration ?? 'New Lyrics Generation'}
         </button>
       </Tooltip>
-      <Tooltip title="Create a new empty song">
+      <Tooltip title={t.tooltips.newSong ?? 'Create a new empty song'}>
         <button onClick={() => run(onOpenNewEmpty)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
-          New Song
+          {t.menu?.newSong ?? 'New Song'}
         </button>
       </Tooltip>
-      <Tooltip title="Import lyrics from a file">
+      <Tooltip title={t.tooltips.import}>
         <button onClick={() => run(openImport)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Upload className="w-4 h-4 text-[var(--accent-color)]" />
-          Load/Import
+          {t.ribbon.import}
         </button>
       </Tooltip>
-      <Tooltip title="Export your song to a file">
+      <Tooltip title={t.tooltips.export}>
         <button onClick={() => run(openExport)} disabled={song.length === 0} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 disabled:opacity-50`}>
           <Download className="w-4 h-4 text-[var(--text-secondary)]" />
-          Save/Export
+          {t.ribbon.export}
         </button>
       </Tooltip>
-      <Tooltip title={canPasteLyrics ? "Paste lyrics from clipboard" : "No lyrics detected in clipboard"}>
+      <Tooltip title={canPasteLyrics ? (t.tooltips.pasteAvailable ?? t.tooltips.pasteLyrics) : (t.tooltips.pasteUnavailable ?? 'No lyrics detected in clipboard')}>
         <button disabled={!canPasteLyrics} onClick={() => run(openPasteModal)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.editor.emptyState.pasteLyrics}
@@ -147,14 +147,14 @@ export function RibbonMenuPanel({
 
       {/* ── Workspace ──────────────────────────────────────────────────── */}
       <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
-      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Workspace</div>
-      <Tooltip title="Save or browse your song library">
+      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{t.menu?.workspace ?? 'Workspace'}</div>
+      <Tooltip title={t.tooltips.browseLibrary ?? 'Save or browse your song library'}>
         <button onClick={() => run(openLibrary)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Library className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.saveToLibrary.title}
         </button>
       </Tooltip>
-      <Tooltip title="Switch to the musical tab">
+      <Tooltip title={t.tooltips.musicalTab}>
         <button onClick={() => run(() => setActiveTab('musical'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Music className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.ribbon.musical}
@@ -163,20 +163,20 @@ export function RibbonMenuPanel({
 
       {/* ── Tools ──────────────────────────────────────────────────────── */}
       <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
-      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">Tools</div>
-      <Tooltip title="Browse and restore previous lyrics versions">
+      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{t.menu?.tools ?? 'Tools'}</div>
+      <Tooltip title={t.tooltips.versions}>
         <button onClick={() => run(openVersionsModal)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <History className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.ribbon.versions}
         </button>
       </Tooltip>
-      <Tooltip title="Open application settings">
+      <Tooltip title={t.tooltips.openSettings ?? t.tooltips.appInfo}>
         <button onClick={() => run(openSettings)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
-          Settings
+          {t.statusBar.settings}
         </button>
       </Tooltip>
-      <Tooltip title="Reset and clear the current song">
+      <Tooltip title={t.tooltips.reset}>
         <button onClick={() => run(openResetModal)} disabled={song.length === 0} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
           <Trash2 className="w-4 h-4" />
           {t.ribbon.reset}
@@ -185,26 +185,26 @@ export function RibbonMenuPanel({
 
       {/* ── App ────────────────────────────────────────────────────────── */}
       <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
-      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">App</div>
-      <Tooltip title="About this application">
+      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{t.menu?.app ?? 'App'}</div>
+      <Tooltip title={t.tooltips.appInfo}>
         <button onClick={() => run(openAbout)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Info className="w-4 h-4 text-[var(--text-secondary)]" />
-          About
+          {t.menu?.about ?? 'About'}
         </button>
       </Tooltip>
-      <Tooltip title="View keyboard shortcuts">
+      <Tooltip title={t.tooltips.keyboardShortcuts}>
         <button onClick={() => run(openKeyboardShortcuts)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <KeyboardRegular className="w-4 h-4 text-[var(--text-secondary)]" />
-          Keyboard shortcuts
+          {t.keyboardShortcuts.title}
         </button>
       </Tooltip>
-      <Tooltip title="Support the developer">
+      <Tooltip title={t.tooltips.sponsor ?? 'Support the developer'}>
         <button
           onClick={() => run(() => window.open('https://github.com/sponsors/EmmanuelKerhoz', '_blank', 'noopener,noreferrer'))}
           className={`${menuActionClass} text-pink-400 hover:bg-pink-500/10`}
         >
           <Heart className="w-4 h-4" />
-          Sponsor
+          {t.menu?.sponsor ?? 'Sponsor'}
         </button>
       </Tooltip>
     </div>
