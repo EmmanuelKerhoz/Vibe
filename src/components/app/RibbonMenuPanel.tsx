@@ -138,7 +138,7 @@ export function RibbonMenuPanel({
           {t.ribbon.export}
         </button>
       </Tooltip>
-      <Tooltip title={canPasteLyrics ? (t.tooltips.pasteAvailable ?? t.tooltips.pasteLyrics) : (t.tooltips.pasteUnavailable ?? 'No lyrics detected in clipboard')}>
+      <Tooltip title={canPasteLyrics ? (t.tooltips.pasteAvailable ?? 'Paste lyrics from clipboard') : (t.tooltips.pasteUnavailable ?? 'No lyrics detected in clipboard')}>
         <button disabled={!canPasteLyrics} onClick={() => run(openPasteModal)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.editor.emptyState.pasteLyrics}
@@ -170,7 +170,7 @@ export function RibbonMenuPanel({
           {t.ribbon.versions}
         </button>
       </Tooltip>
-      <Tooltip title={t.tooltips.openSettings ?? t.tooltips.appInfo}>
+      <Tooltip title={t.tooltips.openSettings ?? 'Open application settings'}>
         <button onClick={() => run(openSettings)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.statusBar.settings}
