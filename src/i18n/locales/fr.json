@@ -4,7 +4,7 @@
   },
   "app": {
     "name": "Lyricist Pro",
-    "tagline": "Un éditeur de paroles IA de niveau professionnel conçu pour les auteurs-compositeurs et les poètes. Créez votre chef-d’œuvre avec des suggestions en temps réel, la gestion de la structure et une quantification intelligente."
+    "tagline": "Un éditeur de paroles IA de niveau professionnel conçu pour les auteurs-compositeurs et les poètes. Créez votre chef-d'œuvre avec des suggestions en temps réel, la gestion de la structure et une quantification intelligente."
   },
   "statusBar": {
     "ready": "Système prêt",
@@ -20,7 +20,8 @@
     "theme": "Thème sombre/clair",
     "audioFeedback": "Retour audio",
     "language": "Changer de langue",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "settingsTooltip": "Ouvrir les paramètres"
   },
   "ribbon": {
     "lyrics": "PAROLES",
@@ -46,7 +47,7 @@
     "songTitle": "TITRE",
     "songTitlePlaceholder": "Entrez le titre de la chanson...",
     "songTopic": "SUJET",
-    "songTopicPlaceholder": "De quoi parle la chanson ?",
+    "songTopicPlaceholder": "De quoi parle la chanson ?",
     "songMood": "AMBIANCE",
     "songMoodPlaceholder": "ex. Mélancolique, Energique...",
     "songMoodPresets": "Ambiances prédéfinies",
@@ -63,7 +64,7 @@
   },
   "editor": {
     "emptyState": {
-      "title": "Prêt à écrire votre prochain chef-d’œuvre ?",
+      "title": "Prêt à écrire votre prochain chef-d'œuvre ?",
       "description": "Configurez les paramètres de votre chanson dans la barre latérale ou importez des paroles existantes pour commencer.",
       "loadSession": "Charger la dernière session",
       "pasteLyrics": "Coller les paroles",
@@ -71,8 +72,8 @@
     },
     "markupMode": {
       "title": "Mode Markdown",
-      "description": "Expérience d’édition en texte pur",
-      "hint": "Format : [Nom de la section] suivi des paroles. Séparez les sections par des doubles sauts de ligne.",
+      "description": "Expérience d'édition en texte pur",
+      "hint": "Format : [Nom de la section] suivi des paroles. Séparez les sections par des doubles sauts de ligne.",
       "placeholder": "[Couplet 1]\nLes paroles vont ici...\n\n[Refrain]\nLignes du refrain..."
     },
     "textMode": {
@@ -84,7 +85,7 @@
     "phoneticMode": {
       "title": "Mode Phonétique",
       "description": "Rendu IPA pur de vos paroles",
-      "hint": "Généré avec la langue ou le dialecte sélectionné : {lang}",
+      "hint": "Généré avec la langue ou le dialecte sélectionné : {lang}",
       "placeholder": "La transcription phonétique apparaît ici une fois les paroles disponibles.",
       "loading": "Génération de la vue phonétique…",
       "error": "Vue phonétique indisponible ({error})"
@@ -119,13 +120,13 @@
     "chars": "Caractères",
     "adapt": "ADAPTER",
     "moodPlaceholder": "Ambiance...",
-    "regenerateWarning": "Cela régénérera complètement les paroles actuelles. Voulez-vous continuer ?",
+    "regenerateWarning": "Cela régénérera complètement les paroles actuelles. Voulez-vous continuer ?",
     "addLine": "Ajouter une ligne",
     "addMusicalEffect": "Ajouter un effet musical / modulation",
     "moveSectionUp": "Déplacer la section vers le haut",
     "moveSectionDown": "Déplacer la section vers le bas",
     "dragToReorder": "Glisser pour réorganiser la section",
-    "anchoredSection": "L’intro et l’outro restent ancrées",
+    "anchoredSection": "L'intro et l'outro restent ancrées",
     "dragToReorderLine": "Glisser pour réorganiser la ligne",
     "humanLine": "Ligne humaine",
     "aiLine": "Ligne générée par IA",
@@ -134,13 +135,20 @@
     "addLineAfter": "Ajouter une ligne après",
     "deleteLine": "Supprimer la ligne",
     "linePlaceholder": "Écrivez une ligne de parole…",
-    "adaptLine": "Adapter cette ligne à la langue cible"
+    "adaptLine": "Adapter cette ligne à la langue cible",
+    "adaptingLabel": "Adaptation en cours…",
+    "detectingLanguageLabel": "Détection de la langue…",
+    "analyzingLabel": "Analyse en cours…",
+    "checkingSimilarityLabel": "Vérification de la similarité…",
+    "lyricsEditors": "Éditeurs de paroles",
+    "lyricsInsights": "Aperçus des paroles",
+    "detect": "Détecter"
   },
   "suggestions": {
     "title": "Suggestions IA",
-    "crafting": "Création d’alternatives...",
+    "crafting": "Création d'alternatives...",
     "clickToApply": "Cliquer pour appliquer",
-    "moreOptions": "Plus d’options",
+    "moreOptions": "Plus d'options",
     "empty": "Sélectionnez une ligne pour explorer des alternatives IA.",
     "spellCheckTitle": "Correcteur orthographique",
     "spellChecking": "Vérification en cours…",
@@ -172,20 +180,20 @@
     "promptStructureHint": "Gardez le prompt musical étiqueté (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) pour que les outils IA ne manquent pas de contexte critique.",
     "optimizedFor": "Optimisé pour Suno, Udio et Stable Audio",
     "copyPrompt": "Copier le prompt",
-    "copied": "Copié !",
-    "contextInfo": "Contexte : les paroles, le sujet et l’ambiance sont pris en compte",
+    "copied": "Copié !",
+    "contextInfo": "Contexte : les paroles, le sujet et l'ambiance sont pris en compte",
     "metronome": "Métronome",
     "metronomeStart": "Démarrer le métronome",
     "metronomeStop": "Arrêter le métronome",
     "instruments": "INSTRUMENTATION",
-    "instrumentsPlaceholder": "Sélectionner des familles d’instruments...",
+    "instrumentsPlaceholder": "Sélectionner des familles d'instruments...",
     "rhythmPresets": "PRÉRÉGLAGES DE RYTHME",
     "vibeBoard": "SÉLECTION DE GENRE",
     "vibeBoardDescription": "Sélectionnez votre genre pour définir automatiquement le BPM et les instruments",
     "subStyle": "SOUS-STYLE"
   },
   "analysis": {
-    "title": "Rapport d’analyse de chanson",
+    "title": "Rapport d'analyse de chanson",
     "deepAnalysis": "Analyse approfondie des paroles",
     "theme": "Thème et narration",
     "emotionalArc": "Arc émotionnel",
@@ -194,16 +202,16 @@
     "musicalSuggestions": "Suggestions musicales",
     "summary": "Résumé exécutif",
     "apply": "Appliquer la sélection",
-    "revert": "Annuler toutes les modifications d’analyse",
+    "revert": "Annuler toutes les modifications d'analyse",
     "close": "Fermer le rapport",
-    "noData": "Aucune donnée d’analyse disponible.",
+    "noData": "Aucune donnée d'analyse disponible.",
     "showMusicalSuggestions": "Afficher les suggestions musicales",
     "hideMusicalSuggestions": "Masquer les suggestions musicales"
   },
   "similarity": {
     "title": "Vérification de similarité",
     "subtitle": "3 meilleures chansons découvertes avec un score de similarité.",
-    "empty": "Aucune chanson sauvegardée n’a dépassé le seuil de 50% de similarité.",
+    "empty": "Aucune chanson sauvegardée n'a dépassé le seuil de 50% de similarité.",
     "noCandidates": "Sauvegardez ou générez au moins une version de chanson pour comparer les similarités.",
     "score": "Similarité",
     "sharedWords": "Mots partagés",
@@ -213,7 +221,7 @@
     "thresholdHint": "Les chansons sont ordonnées du plus au moins similaire, quel que soit le score.",
     "webTitle": "Similarité web",
     "webSubtitle": "Résultats de DuckDuckGo et Wikipédia",
-    "webIdle": "Aucune recherche effectuée. Le moteur se déclenche automatiquement après 30 s d’inactivité (≥ 20 % de changement de texte), ou cliquez sur Actualiser.",
+    "webIdle": "Aucune recherche effectuée. Le moteur se déclenche automatiquement après 30 s d'inactivité (≥ 20 % de changement de texte), ou cliquez sur Actualiser.",
     "webRunning": "Recherche sur DuckDuckGo + Wikipédia…",
     "webNoMatches": "✓ Aucune correspondance externe significative trouvée. Vos paroles semblent originales.",
     "webRefresh": "Actualiser",
@@ -224,20 +232,20 @@
     "title": "Bibliothèque",
     "save": "Enregistrer la chanson actuelle",
     "saving": "Enregistrement…",
-    "saved": "Enregistré !",
+    "saved": "Enregistré !",
     "saveDescription": "Ajouter cette chanson à votre bibliothèque personnelle",
     "browseDescription": "Ouvrir votre bibliothèque et gérer les chansons sauvegardées",
     "yourLibrary": "Votre bibliothèque",
     "empty": "Aucune chanson dans la bibliothèque. Enregistrez cette chanson pour commencer votre collection.",
     "load": "Charger",
-    "loadDescription": "Charger cette chanson dans l’éditeur",
+    "loadDescription": "Charger cette chanson dans l'éditeur",
     "close": "Fermer",
     "storageTitle": "Stockage du navigateur",
     "storageLibraryData": "Données de la bibliothèque",
     "storageUsed": "Utilisation du navigateur",
     "storageQuota": "Limite du navigateur",
     "storageSaturation": "Saturation",
-    "storageScopeLocal": "Les données de la bibliothèque ne couvrent que lyricist_library. L’utilisation et la limite du navigateur sont des estimations globales pour ce navigateur lorsqu’elles sont disponibles.",
+    "storageScopeLocal": "Les données de la bibliothèque ne couvrent que lyricist_library. L'utilisation et la limite du navigateur sont des estimations globales pour ce navigateur lorsqu'elles sont disponibles.",
     "libraryItems": "Éléments de la bibliothèque",
     "purge": "Purger toutes les données de la bibliothèque",
     "purgeWarning": "Cela supprimera définitivement toutes les chansons de votre bibliothèque. Cette action ne peut pas être annulée.",
@@ -246,7 +254,7 @@
   },
   "paste": {
     "title": "Coller les paroles",
-    "description": "Collez vos paroles existantes ci-dessous. Notre IA les analysera pour extraire la structure, le schéma de rime, le nombre de syllabes et les concepts clés pour les intégrer dans l’éditeur.",
+    "description": "Collez vos paroles existantes ci-dessous. Notre IA les analysera pour extraire la structure, le schéma de rime, le nombre de syllabes et les concepts clés pour les intégrer dans l'éditeur.",
     "placeholder": "Collez vos paroles ici...",
     "cancel": "Annuler",
     "analyze": "Analyser & Importer",
@@ -254,8 +262,8 @@
   },
   "importDialog": {
     "title": "Charger des paroles",
-    "emptyDescription": "Choisissez un fichier .txt ou .md à analyser et importer dans l’éditeur.",
-    "replaceDescription": "Les paroles importées remplaceront les paroles, la structure et le contexte d’analyse actuels.",
+    "emptyDescription": "Choisissez un fichier .txt ou .md à analyser et importer dans l'éditeur.",
+    "replaceDescription": "Les paroles importées remplaceront les paroles, la structure et le contexte d'analyse actuels.",
     "warning": "Votre travail actuel sera perdu une fois le fichier importé analysé.",
     "supportedFiles": "Prend en charge TXT, Markup, ODT, DOCX ou les paroles collées",
     "cancel": "Annuler",
@@ -291,8 +299,8 @@
       "redo": "Rétablir la dernière modification annulée en dehors des champs de texte.",
       "dismissReset": "Rejeter la boîte de dialogue de confirmation de réinitialisation.",
       "dismissNavigation": "Fermer les panneaux latéraux de paramètres, à propos, similarité ou mobile.",
-      "dismissFileDialogs": "Fermer les boîtes de dialogue d’importation, d’exportation, de versions ou de bibliothèque.",
-      "dismissAiDialogs": "Fermer les invites IA, les alertes API, les analyses ou les boîtes de dialogue d’importation de paroles collées.",
+      "dismissFileDialogs": "Fermer les boîtes de dialogue d'importation, d'exportation, de versions ou de bibliothèque.",
+      "dismissAiDialogs": "Fermer les invites IA, les alertes API, les analyses ou les boîtes de dialogue d'importation de paroles collées.",
       "openSearch": "Ouvrir le panneau de recherche et remplacement."
     }
   },
@@ -311,7 +319,7 @@
     "replacedCount": "{count} remplacement(s) effectué(s)"
   },
   "about": {
-    "description": "Un éditeur de paroles IA de niveau professionnel conçu pour les auteurs-compositeurs et les poètes. Créez votre chef-d’œuvre avec des suggestions en temps réel, la gestion de la structure et une quantification intelligente.",
+    "description": "Un éditeur de paroles IA de niveau professionnel conçu pour les auteurs-compositeurs et les poètes. Créez votre chef-d'œuvre avec des suggestions en temps réel, la gestion de la structure et une quantification intelligente.",
     "engine": "Google Gemini",
     "engineLabel": "Moteur",
     "modelLabel": "Modèle IA",
@@ -322,12 +330,12 @@
   },
   "aiAssistant": {
     "title": "Assistant IA",
-    "onboarding": "Que souhaitez-vous savoir ou faire ?",
+    "onboarding": "Que souhaitez-vous savoir ou faire ?",
     "placeholder": "Posez toute question sur vos paroles ou votre composition…",
     "send": "Envoyer",
-    "close": "Fermer l’assistant",
+    "close": "Fermer l'assistant",
     "thinking": "Réflexion…",
-    "error": "Impossible d’obtenir une réponse. Veuillez réessayer."
+    "error": "Impossible d'obtenir une réponse. Veuillez réessayer."
   },
   "settings": {
     "title": "Paramètres",
@@ -344,7 +352,7 @@
       "disable": "Désactiver"
     },
     "language": {
-      "label": "Langue de l’interface"
+      "label": "Langue de l'interface"
     },
     "scale": {
       "label": "Échelle UI",
@@ -370,7 +378,7 @@
       "close": "Fermer"
     },
     "about": {
-      "version": "Version de l’application",
+      "version": "Version de l'application",
       "github": "Dépôt GitHub",
       "docs": "Documentation"
     }
@@ -378,7 +386,7 @@
   "tooltips": {
     "hideSidebar": "Masquer la barre latérale",
     "showSidebar": "Afficher la barre latérale",
-    "lyricsTab": "Passer à l’éditeur de paroles",
+    "lyricsTab": "Passer à l'éditeur de paroles",
     "musicalTab": "Passer au générateur de prompt musical",
     "import": "Charger / Importer un fichier",
     "export": "Enregistrer / Exporter les paroles",
@@ -387,21 +395,21 @@
     "redo": "Rétablir",
     "reset": "Réinitialiser la chanson",
     "aiUnavailable": "Backend Gemini indisponible",
-    "aiUnavailableHelp": "Définissez GEMINI_API_KEY dans les variables d’environnement de votre projet Vercel (Paramètres → Variables d’environnement) et redéployez.",
+    "aiUnavailableHelp": "Définissez GEMINI_API_KEY dans les variables d'environnement de votre projet Vercel (Paramètres → Variables d'environnement) et redéployez.",
     "quantize": "Ajuster toutes les lignes pour correspondre au nombre cible de syllabes tout en maintenant le sens",
-    "analyzeTheme": "Analyser la structure de la chanson, la qualité des rimes et l’impact émotionnel",
+    "analyzeTheme": "Analyser la structure de la chanson, la qualité des rimes et l'impact émotionnel",
     "regenerate": "Réécrire toute la chanson en fonction des paramètres actuels et du sujet",
     "collapseLeft": "Réduire le panneau des paramètres",
     "collapseRight": "Réduire le panneau de structure",
     "theme": "Basculer entre le thème clair et sombre",
     "audioFeedback": "Activer/désactiver les sons de retour audio",
-    "appInfo": "Voir les informations et la version de l’application",
+    "appInfo": "Voir les informations et la version de l'application",
     "addSection": "Ajouter une section à la structure",
     "removeSection": "Supprimer une section de la structure",
     "normalizeStructure": "Réorganiser les sections selon la structure standard : Intro → Couplet/Pré-refrain/Refrain → Pont → Outro",
-    "loadSession": "Restaurer votre session d’édition précédente",
+    "loadSession": "Restaurer votre session d'édition précédente",
     "pasteLyrics": "Importer et analyser des paroles existantes",
-    "generateSong": "Générer une nouvelle chanson avec l’IA",
+    "generateSong": "Générer une nouvelle chanson avec l'IA",
     "regenerateSection": "Réécrire uniquement cette section",
     "quantizeSection": "Ajuster les lignes de cette section pour correspondre à la cible de syllabes",
     "adaptSong": "Traduire et adapter toute la chanson en {lang} (adaptation créative, pas une traduction littérale)",
@@ -409,10 +417,10 @@
     "markupMode": "Passer en mode texte pur",
     "phoneticMode": "Passer en mode phonétique",
     "textMode": "Passer en mode texte",
-    "editorMode": "Passer à l’éditeur structuré",
+    "editorMode": "Passer à l'éditeur structuré",
     "applyAnalysis": "Appliquer les améliorations sélectionnées à la chanson",
-    "revertAnalysis": "Annuler toutes les modifications d’analyse appliquées",
-    "closeAnalysis": "Fermer le rapport d’analyse",
+    "revertAnalysis": "Annuler toutes les modifications d'analyse appliquées",
+    "closeAnalysis": "Fermer le rapport d'analyse",
     "generateMusical": "Générer un prompt musical pour les outils IA musicaux",
     "keyboardShortcuts": "Afficher les raccourcis clavier",
     "closeAbout": "Fermer",
@@ -422,8 +430,16 @@
     "copyPrompt": "Copier dans le presse-papier",
     "generateTitle": "Générer un titre à partir des paroles",
     "aiGeneratedTitle": "Titre généré par IA",
-    "userEnteredTitle": "Titre saisi par l’utilisateur",
+    "userEnteredTitle": "Titre saisi par l'utilisateur",
     "openSearch": "Rechercher et remplacer dans les paroles (Ctrl+F)",
+    "closeDialog": "Fermer cette boîte de dialogue",
+    "processing": "Traitement en cours…",
+    "removeFromLibrary": "Supprimer de la bibliothèque",
+    "removeFromLibraryItem": "Supprimer cette chanson de la bibliothèque",
+    "openLeftPanel": "Ouvrir le panneau gauche",
+    "closeLeftPanel": "Fermer le panneau gauche",
+    "detectLanguage": "Détecter la langue des paroles",
+    "redetectLanguage": "Redétecter la langue des paroles",
     "moodPresets": "Choisir une ambiance prédéfinie pour votre chanson",
     "rhymeScheme": "Sélectionner le schéma de rime par défaut pour toutes les sections",
     "targetSyllables": "Définir le nombre cible de syllabes par ligne",
@@ -483,6 +499,20 @@
     "ABCABC": "ABCABC (Répétitif 6 lignes)",
     "FREE": "Vers libre"
   },
+  "apiError": {
+    "title": "Erreur API",
+    "close": "Fermer"
+  },
+  "adaptationProgress": {
+    "adapting": "Adaptation en cours…",
+    "reversing": "Inversion…",
+    "reviewing": "Révision…",
+    "done": "Adaptation terminée",
+    "fidelityScore": "Score de fidélité",
+    "reviewRecommended": "Relecture recommandée",
+    "pipelineFailed": "Échec du pipeline d'adaptation",
+    "dismissResult": "Ignorer le résultat"
+  },
   "confirmModal": {
     "regenerateTitle": "Régénérer la chanson",
     "regenerateConfirm": "Régénérer",
@@ -490,7 +520,7 @@
   },
   "promptModal": {
     "saveVersionTitle": "Enregistrer une version",
-    "saveVersionMessage": "Entrez un nom pour cette version :",
+    "saveVersionMessage": "Entrez un nom pour cette version :",
     "saveVersionPlaceholder": "Nom de la version",
     "saveVersionConfirm": "Enregistrer",
     "cancel": "Annuler"
