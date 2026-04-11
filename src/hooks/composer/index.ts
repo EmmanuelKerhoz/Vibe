@@ -5,3 +5,5 @@
  * are re-exported here for unified access alongside root-level hooks.
  */
 export { useSongComposer } from '../useSongComposer';
+export { useTitleGenerator } from '../useTitleGenerator';
+export { useTopicMoodSuggester } from '../useTopicMoodSuggester';

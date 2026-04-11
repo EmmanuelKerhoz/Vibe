@@ -8,3 +8,5 @@ export { useSessionPersistence } from '../useSessionPersistence';
 export { useImportHandlers } from '../useImportHandlers';
 export { useAppState } from '../useAppState';
 export { useDerivedAppState } from '../useDerivedAppState';
+export { useMobileSession } from '../useMobileSession';
+export { useVersionManager } from '../useVersionManager';

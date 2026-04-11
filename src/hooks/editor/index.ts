@@ -12,3 +12,4 @@ export { useStructureDragHandlers } from '../useStructureDragHandlers';
 export { useSectionManager } from '../useSectionManager';
 export { useSongMeta } from '../useSongMeta';
 export { useSongHistoryState } from '../useSongHistoryState';
+export { useEditorPanelState } from '../useEditorPanelState';
