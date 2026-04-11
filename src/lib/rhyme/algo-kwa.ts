@@ -96,8 +96,13 @@ export function extractNucleusKWA(
 }
 
 /**
- * KWA score: tone-sensitive (Kwa languages are lexically tonal).
- * tone 30% + vowel nucleus 50% + coda 20%.
+ * @deprecated Use `scoreKWANormalized` from `./scoring` instead.
+ * That function uses `phonemeEditDistance` + calibrated `toneDistance`
+ * and is the version called by `engine.ts`.
+ *
+ * Kept here for reference / possible unit comparison.
+ *
+ * KWA score: tone 30% + vowel nucleus 50% + coda 20%.
  * Falling tone (F) is compatible with either H or L for partial credit.
  */
 export function scoreKWA(
@@ -105,22 +110,18 @@ export function scoreKWA(
   b: RhymeNucleus,
   _lang?: LangCode
 ): number {
-  // Tonal similarity
   let tSim: number;
   if (a.tone === b.tone) {
     tSim = 1.0;
   } else if (a.tone === 'F' || b.tone === 'F') {
-    tSim = 0.5; // falling tone partially compatible
+    tSim = 0.5;
   } else if (a.tone === 'M' || b.tone === 'M') {
-    tSim = 0.4; // unmarked: uncertain
+    tSim = 0.4;
   } else {
-    tSim = 0.0; // H vs L: tonal mismatch
+    tSim = 0.0;
   }
 
-  // Vowel similarity (partial credit for shared chars)
   const vSim = vowelSimilarity(a.vowels, b.vowels);
-
-  // Coda similarity
   const cSim = a.coda === b.coda ? 1.0
     : a.coda && b.coda && a.coda[0] === b.coda[0] ? 0.5
     : 0.0;
@@ -128,16 +129,13 @@ export function scoreKWA(
   return 0.3 * tSim + 0.5 * vSim + 0.2 * cSim;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────────────────
 
-/** Simple vowel similarity: exact > shared prefix/suffix > length-based fallback */
 function vowelSimilarity(a: string, b: string): number {
   if (!a && !b) return 1.0;
   if (!a || !b) return 0.0;
   if (a === b) return 1.0;
-  // Shared final vowel (most important for rhyme)
   if (a.at(-1) === b.at(-1)) return 0.8;
-  // Shared first vowel
   if (a[0] === b[0]) return 0.4;
   return 0.0;
 }

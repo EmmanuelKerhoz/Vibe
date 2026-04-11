@@ -8,7 +8,7 @@
 
 import type { LineEndingUnit, LangCode, RhymeNucleus } from './types';
 
-// ─── Haoussa tone extraction ─────────────────────────────────────────────────────
+// ─── Haoussa tone extraction ───────────────────────────────────────────────────────────────
 // Haoussa tone notation: acute = H, grave = L, circumflex/macron = falling/low
 const HA_TONE_MAP: Array<[RegExp, string]> = [
   [/[\u0301]/u, 'H'],   // combining acute
@@ -24,7 +24,7 @@ function extractHATone(token: string): string {
   return 'M'; // mid / unmarked
 }
 
-// ─── Sonority ladder ───────────────────────────────────────────────────────────────────
+// ─── Sonority ladder ──────────────────────────────────────────────────────────────────────────────────
 
 const SONORITY: Record<string, number> = {
   a: 7, e: 7, i: 6, o: 7, u: 6,
@@ -75,7 +75,7 @@ function moraCount(vowels: string): number {
   return 1;
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// ─── Public API ─────────────────────────────────────────────────────────────────────────────
 
 export function extractNucleusCRV(
   unit: LineEndingUnit,
@@ -96,6 +96,12 @@ export function extractNucleusCRV(
 }
 
 /**
+ * @deprecated Use `scoreCRV` from `./scoring` instead.
+ * That function accepts an optional `lang` param and activates
+ * the HA tonal path via `toneDistance` (canonical, called by `engine.ts`).
+ *
+ * Kept here for reference / possible unit comparison.
+ *
  * CRV score.
  * For HA (Haoussa): tone participates (20%) given lexical tone significance.
  * For other CRV langs: atonal — vowel 55% + coda 45%.
@@ -106,17 +112,12 @@ export function scoreCRV(
   lang: LangCode | string = ''
 ): number {
   const isHA = lang === 'ha';
-
-  // Vowel similarity
   const vSim = vowelSimilarity(a.vowels, b.vowels);
-
-  // Coda similarity
   const cSim = a.coda === b.coda ? 1.0
     : a.coda && b.coda && a.coda[0] === b.coda[0] ? 0.5
     : 0.0;
 
   if (isHA) {
-    // Tonal score for Haoussa
     let tSim: number;
     if (a.tone === b.tone) {
       tSim = 1.0;
@@ -131,7 +132,7 @@ export function scoreCRV(
   return 0.55 * vSim + 0.45 * cSim;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────────────────────────
 
 function vowelSimilarity(a: string, b: string): number {
   if (!a && !b) return 1.0;
