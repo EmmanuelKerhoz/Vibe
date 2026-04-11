@@ -7,13 +7,15 @@ export type LangCode =
   | 'en' | 'de' | 'nl'                   // Germanic
   | 'ar' | 'he'                           // Semitic
   | 'zh' | 'ja' | 'ko'                   // CJK
-  | 'th' | 'vi' | 'km'                   // Southeast Asia
+  | 'th' | 'lo'                           // TAI (Thai, Lao)
+  | 'vi' | 'km'                           // VIET (Vietnamese, Khmer)
   | 'sw' | 'lg' | 'rw' | 'sn' | 'zu' | 'xh' | 'ny'  // Bantu
   | 'yo'                                  // Yoruboid
   | 'ba' | 'di' | 'ew' | 'mi'           // KWA
   | 'bk' | 'cb' | 'og' | 'ha'           // CRV
   | 'ru' | 'pl' | 'cs'                   // Slavic
-  | 'tr' | 'fi' | 'hu'                   // Agglutinative
+  | 'tr'                                  // TRK (Turkish)
+  | 'fi' | 'hu'                           // FIN (Finnish, Hungarian)
   | 'hi' | 'ur' | 'bn' | 'fa' | 'pa'   // Indo-Iranian
   | 'id' | 'ms' | 'tl' | 'mg'           // Austronesian
   | 'ta' | 'te' | 'kn' | 'ml'           // Dravidian
@@ -28,9 +30,11 @@ export type FamilyId =
   | 'YRB'      // Yoruboid
   | 'SLV'      // Slavic
   | 'SEM'      // Semitic
-  | 'SEA'      // Southeast Asia (tonal)
+  | 'TAI'      // Tai-Kadai tonal (Thai, Lao)
+  | 'VIET'     // Vietic + Khmer (Vietnamese, Khmer)
   | 'CJK'      // Chinese-Japanese-Korean
-  | 'AGG'      // Agglutinative (Turkish, Finnish, Hungarian)
+  | 'TRK'      // Turkic (Turkish)
+  | 'FIN'      // Finno-Ugric (Finnish, Hungarian)
   | 'IIR'      // Indo-Iranian (Hindi, Urdu, Bengali, Persian, Punjabi)
   | 'AUS'      // Austronesian (Indonesian, Malay, Tagalog, Malagasy)
   | 'DRA'      // Dravidian (Tamil, Telugu, Kannada, Malayalam)

@@ -21,12 +21,16 @@ const LANG_FAMILY_MAP: Record<string, FamilyId> = {
   ru: 'SLV', pl: 'SLV', cs: 'SLV',
   // Semitic
   ar: 'SEM', he: 'SEM',
-  // Southeast Asia
-  th: 'SEA', vi: 'SEA', km: 'SEA',
+  // TAI (Thai, Lao)
+  th: 'TAI', lo: 'TAI',
+  // VIET (Vietnamese, Khmer)
+  vi: 'VIET', km: 'VIET',
   // CJK
   zh: 'CJK', ja: 'CJK', ko: 'CJK',
-  // Agglutinative
-  tr: 'AGG', fi: 'AGG', hu: 'AGG',
+  // TRK (Turkish)
+  tr: 'TRK',
+  // FIN (Finnish, Hungarian)
+  fi: 'FIN', hu: 'FIN',
   // Indo-Iranian
   hi: 'IIR', ur: 'IIR', bn: 'IIR', fa: 'IIR', pa: 'IIR',
   // Austronesian

@@ -15,8 +15,11 @@ import { extractNucleusBNT, scoreBNT } from './algo-bnt';
 import { extractNucleusYRB, scoreYRB, type YRBNucleus } from './algo-yrb';
 import { extractNucleusSLV, scoreSLV } from './algo-slv';
 import { extractNucleusSEM, scoreSEM } from './algo-sem';
-import { extractNucleusSEA, extractNucleusCJK, scoreSEA, scoreCJK } from './algo-sea';
-import { extractNucleusAGG, scoreAGG, type AGGNucleus } from './algo-agg';
+import { extractNucleusTAI, scoreTAI } from './algo-tai';
+import { extractNucleusVIET, scoreVIET } from './algo-viet';
+import { extractNucleusCJK, scoreCJK } from './algo-sea';
+import { extractNucleusTRK, scoreTRK, type TRKNucleus } from './algo-trk';
+import { extractNucleusFIN, scoreFIN, type FINNucleus } from './algo-fin';
 import { extractNucleusIIR, scoreIIR } from './algo-iir';
 import { extractNucleusAUS, scoreAUS } from './algo-aus';
 import { extractNucleusDRA, scoreDRA } from './algo-dra';
@@ -100,10 +103,15 @@ export function rhymeScore(
       const nB = extractNucleusSEM(unitB, langB);
       return build(scoreSEM(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
     }
-    case 'SEA': {
-      const nA = extractNucleusSEA(unitA, langA);
-      const nB = extractNucleusSEA(unitB, langB);
-      return build(scoreSEA(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    case 'TAI': {
+      const nA = extractNucleusTAI(unitA, langA);
+      const nB = extractNucleusTAI(unitB, langB);
+      return build(scoreTAI(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
+    case 'VIET': {
+      const nA = extractNucleusVIET(unitA, langA);
+      const nB = extractNucleusVIET(unitB, langB);
+      return build(scoreVIET(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
     }
     case 'CJK': {
       const nA = extractNucleusCJK(unitA, langA);
@@ -111,10 +119,15 @@ export function rhymeScore(
       warnings.push('cjk-graphemic-proxy');
       return build(scoreCJK(nA, nB), family, langA, langB, unitA, unitB, nA, nB, true, warnings);
     }
-    case 'AGG': {
-      const nA = extractNucleusAGG(unitA, langA) as AGGNucleus;
-      const nB = extractNucleusAGG(unitB, langB) as AGGNucleus;
-      return build(scoreAGG(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    case 'TRK': {
+      const nA = extractNucleusTRK(unitA, langA) as TRKNucleus;
+      const nB = extractNucleusTRK(unitB, langB) as TRKNucleus;
+      return build(scoreTRK(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+    }
+    case 'FIN': {
+      const nA = extractNucleusFIN(unitA, langA) as FINNucleus;
+      const nB = extractNucleusFIN(unitB, langB) as FINNucleus;
+      return build(scoreFIN(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
     }
     case 'IIR': {
       const nA = extractNucleusIIR(unitA, langA);
@@ -157,9 +170,11 @@ function extractBestNucleus(
     case 'YRB':  return extractNucleusYRB(unit);
     case 'SLV':  return extractNucleusSLV(unit, lang);
     case 'SEM':  return extractNucleusSEM(unit, lang);
-    case 'SEA':  return extractNucleusSEA(unit, lang);
+    case 'TAI':  return extractNucleusTAI(unit, lang);
+    case 'VIET': return extractNucleusVIET(unit, lang);
     case 'CJK':  return extractNucleusCJK(unit, lang);
-    case 'AGG':  return extractNucleusAGG(unit, lang);
+    case 'TRK':  return extractNucleusTRK(unit, lang);
+    case 'FIN':  return extractNucleusFIN(unit, lang);
     case 'IIR':  return extractNucleusIIR(unit, lang);
     case 'AUS':  return extractNucleusAUS(unit, lang);
     case 'DRA':  return extractNucleusDRA(unit, lang);
