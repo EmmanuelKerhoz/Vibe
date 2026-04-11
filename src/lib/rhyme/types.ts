@@ -108,5 +108,5 @@ export interface SchemeResult {
   confidence: number;
   pairScores: Array<{ i: number; j: number; result: RhymeResult }>;
   warnings: string[];
-  isProxied?: boolean;
+  isProxied: boolean;
 }

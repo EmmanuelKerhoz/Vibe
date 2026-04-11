@@ -181,6 +181,7 @@ export function detectRhymeScheme(
       confidence: 0,
       pairScores: [],
       warnings: ['stanza-too-short'],
+      isProxied: false,
     };
   }
 
@@ -207,7 +208,7 @@ export function detectRhymeScheme(
   const label      = detectLabel(letters, n);
   const confidence = computeConfidence(letters, pairScores);
 
-  return { letters, label, confidence, pairScores, warnings };
+  return { letters, label, confidence, pairScores, warnings, isProxied: false };
 }
 
 /**
@@ -228,6 +229,7 @@ export function detectRhymeSchemeMultiLang(
       confidence: 0,
       pairScores: [],
       warnings: ['stanza-too-short'],
+      isProxied: false,
     };
   }
 
@@ -253,5 +255,5 @@ export function detectRhymeSchemeMultiLang(
   const label      = detectLabel(letters, n);
   const confidence = computeConfidence(letters, pairScores);
 
-  return { letters, label, confidence, pairScores, warnings };
+  return { letters, label, confidence, pairScores, warnings, isProxied: false };
 }
