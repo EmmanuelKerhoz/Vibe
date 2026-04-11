@@ -1,17 +1,18 @@
 /**
  * Rhyme Engine v2 — BNT Family Algorithm
- * Languages: SW (Swahili)
- * yo (Yoruba) was removed — it now routes to YRB (algo-yrb.ts).
+ * Languages: SW (Swahili), LG (Luganda), RW (Kinyarwanda), SN (Shona),
+ *            ZU (Zulu), XH (Xhosa), NY (Chichewa), BM (Bambara),
+ *            FF (Fula/Fulfulde), JV (Javanese)
  *
  * Strategy: vowel assonance on final nucleus
- * Scoring: vowel 70% + coda 30%
+ * Scoring: vowel similarity 65% + coda 25% + mora 10%
  */
 
 import type { LineEndingUnit, LangCode, RhymeNucleus } from './types';
 
-// ─── Vowel nucleus extraction ─────────────────────────────────────────────────
+// ─── Vowel nucleus extraction ─────────────────────────────────────────────────────
 
-const BANTU_VOWELS = /[aeiouáàâéèêíìîóòôúùûæœ]+/giu;
+const BANTU_VOWELS = /[aeiou\u00e1\u00e0\u00e2\u00e9\u00e8\u00ea\u00ed\u00ec\u00ee\u00f3\u00f2\u00f4\u00fa\u00f9\u00fb\u00e6\u0153]+/giu;
 
 function extractBantuVowels(token: string): string {
   const lower   = token.toLowerCase().normalize('NFC');
@@ -47,15 +48,35 @@ export function extractNucleusBNT(
 }
 
 /**
- * BNT score: vowel assonance dominant.
- * Swahili: vowel 70% + coda 30%.
+ * BNT score: vowel assonance dominant, with partial similarity support.
+ * Covers broader Bantu spread (not just Swahili strict-match).
+ * vowel similarity 65% + coda 25% + mora match 10%.
  */
 export function scoreBNT(
   a: RhymeNucleus,
   b: RhymeNucleus,
   _lang: LangCode
 ): number {
-  const vSim = a.vowels === b.vowels ? 1 : 0;
-  const cSim = a.coda   === b.coda   ? 1 : 0;
-  return 0.7 * vSim + 0.3 * cSim;
+  const vSim = vowelSimilarity(a.vowels, b.vowels);
+
+  const cSim = a.coda === b.coda ? 1.0
+    : a.coda && b.coda && a.coda[0] === b.coda[0] ? 0.5
+    : 0.0;
+
+  const mSim = a.moraCount === b.moraCount ? 1.0 : 0.0;
+
+  return 0.65 * vSim + 0.25 * cSim + 0.10 * mSim;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────────
+
+function vowelSimilarity(a: string, b: string): number {
+  if (!a && !b) return 1.0;
+  if (!a || !b) return 0.0;
+  if (a === b) return 1.0;
+  // Final vowel match (strongest rhyme signal in Bantu)
+  if (a.at(-1) === b.at(-1)) return 0.8;
+  // Opening vowel match
+  if (a[0] === b[0]) return 0.35;
+  return 0.0;
 }
