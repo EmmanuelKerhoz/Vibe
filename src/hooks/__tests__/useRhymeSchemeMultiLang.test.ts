@@ -3,8 +3,8 @@
  *
  * Coverage:
  * A. null when < 2 usable lines
- * B. single-language stanza → same result as detectRhymeScheme
- * C. cross-language stanza → non-null result with correct letter count
+ * B. single-language stanza -> same result as detectRhymeScheme
+ * C. cross-language stanza -> non-null result with correct letter count
  * D. meta lines filtered out
  * E. isProxied stamp forwarded
  * F. toLangCode name resolution (via lang name string)
@@ -13,13 +13,13 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useRhymeSchemeMultiLang } from './useRhymeSchemeMultiLang';
+import { useRhymeSchemeMultiLang } from '../useRhymeSchemeMultiLang';
 
-// ─── A: too few lines ────────────────────────────────────────────────────────
+// --- A: too few lines --------------------------------------------------------
 
-describe('useRhymeSchemeMultiLang — fewer than 2 usable lines', () => {
+describe('useRhymeSchemeMultiLang - fewer than 2 usable lines', () => {
   it('returns null for empty array', () => {
-    const { result } = renderHook(() => useRhymeSchemeMultiLang([]));</p>
+    const { result } = renderHook(() => useRhymeSchemeMultiLang([]));
     expect(result.current).toBeNull();
   });
 
@@ -42,9 +42,9 @@ describe('useRhymeSchemeMultiLang — fewer than 2 usable lines', () => {
   });
 });
 
-// ─── B: mono-language ────────────────────────────────────────────────────────
+// --- B: mono-language --------------------------------------------------------
 
-describe('useRhymeSchemeMultiLang — single-language stanza', () => {
+describe('useRhymeSchemeMultiLang - single-language stanza', () => {
   it('returns a SchemeResult for 4 English lines', () => {
     const lines = [
       { text: 'I walk the road alone', lang: 'en' },
@@ -63,7 +63,7 @@ describe('useRhymeSchemeMultiLang — single-language stanza', () => {
     const lines = [
       { text: 'Le vent souffle fort ce soir', lang: 'fr' },
       { text: 'La nuit tombe sans espoir', lang: 'fr' },
-      { text: 'Les étoiles brillent au ciel', lang: 'fr' },
+      { text: 'Les etoiles brillent au ciel', lang: 'fr' },
       { text: 'Comme un regard immortel', lang: 'fr' },
     ];
     const { result } = renderHook(() => useRhymeSchemeMultiLang(lines));
@@ -72,15 +72,15 @@ describe('useRhymeSchemeMultiLang — single-language stanza', () => {
   });
 });
 
-// ─── C: cross-language ───────────────────────────────────────────────────────
+// --- C: cross-language -------------------------------------------------------
 
-describe('useRhymeSchemeMultiLang — multilingual stanza', () => {
+describe('useRhymeSchemeMultiLang - multilingual stanza', () => {
   it('returns a result with correct letter count for EN/FR mix', () => {
     const lines = [
-      { text: 'On the road again tonight',   lang: 'en' },
-      { text: 'Sur la route encore ce soir',  lang: 'fr' },
-      { text: 'Back to the endless fight',    lang: 'en' },
-      { text: 'La lumière dans le noir',      lang: 'fr' },
+      { text: 'On the road again tonight',  lang: 'en' },
+      { text: 'Sur la route encore ce soir', lang: 'fr' },
+      { text: 'Back to the endless fight',   lang: 'en' },
+      { text: 'La lumiere dans le noir',     lang: 'fr' },
     ];
     const { result } = renderHook(() => useRhymeSchemeMultiLang(lines));
     expect(result.current).not.toBeNull();
@@ -90,10 +90,10 @@ describe('useRhymeSchemeMultiLang — multilingual stanza', () => {
 
   it('accepts language names (not just codes)', () => {
     const lines = [
-      { text: 'Amor eterno',   lang: 'Spanish' },
-      { text: 'Coeur sincère', lang: 'French' },
-      { text: 'Fuego interno', lang: 'Spanish' },
-      { text: 'Air de lumière', lang: 'French' },
+      { text: 'Amor eterno',    lang: 'Spanish' },
+      { text: 'Coeur sincere',  lang: 'French' },
+      { text: 'Fuego interno',  lang: 'Spanish' },
+      { text: 'Air de lumiere', lang: 'French' },
     ];
     const { result } = renderHook(() => useRhymeSchemeMultiLang(lines));
     expect(result.current).not.toBeNull();
@@ -101,27 +101,27 @@ describe('useRhymeSchemeMultiLang — multilingual stanza', () => {
   });
 });
 
-// ─── D: meta filtering ───────────────────────────────────────────────────────
+// --- D: meta filtering -------------------------------------------------------
 
-describe('useRhymeSchemeMultiLang — meta line filtering', () => {
+describe('useRhymeSchemeMultiLang - meta line filtering', () => {
   it('filters out [Tag] meta lines before detection', () => {
     const lines = [
-      { text: '[Verse 1]',     lang: 'en' },
+      { text: '[Verse 1]',      lang: 'en' },
       { text: 'Walk the night', lang: 'en' },
       { text: 'Take the flight', lang: 'en' },
-      { text: '[Bridge]',      lang: 'en' },
-      { text: 'Hold on tight', lang: 'en' },
+      { text: '[Bridge]',       lang: 'en' },
+      { text: 'Hold on tight',  lang: 'en' },
       { text: 'Shining bright', lang: 'en' },
     ];
     const { result } = renderHook(() => useRhymeSchemeMultiLang(lines));
-    // 4 lyric lines → letters array length == 4
+    // 4 lyric lines -> letters array length == 4
     expect(result.current?.letters).toHaveLength(4);
   });
 });
 
-// ─── E: isProxied stamp ──────────────────────────────────────────────────────
+// --- E: isProxied stamp ------------------------------------------------------
 
-describe('useRhymeSchemeMultiLang — isProxied forwarding', () => {
+describe('useRhymeSchemeMultiLang - isProxied forwarding', () => {
   it('stamps isProxied: true when passed', () => {
     const lines = [
       { text: 'Heart in the rain', lang: 'en' },
@@ -151,9 +151,9 @@ describe('useRhymeSchemeMultiLang — isProxied forwarding', () => {
   });
 });
 
-// ─── F: toLangCode name resolution ───────────────────────────────────────────
+// --- F: toLangCode resilience ------------------------------------------------
 
-describe('useRhymeSchemeMultiLang — toLangCode resilience', () => {
+describe('useRhymeSchemeMultiLang - toLangCode resilience', () => {
   it('does not throw on unknown lang string', () => {
     const lines = [
       { text: 'Gibberish florg', lang: 'klingon' },
