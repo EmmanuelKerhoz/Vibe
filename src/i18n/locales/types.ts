@@ -55,6 +55,18 @@ export interface Translations {
     structure: string;
   };
 
+  /** Labels for the burger-menu panel section headers and menu items */
+  menu?: {
+    create: string;
+    workspace: string;
+    tools: string;
+    app: string;
+    newLyricsGeneration: string;
+    newSong: string;
+    about: string;
+    sponsor: string;
+  };
+
   leftPanel: {
     title: string;
     songTitle: string;
@@ -509,6 +521,20 @@ export interface Translations {
     targetSyllables?: string;
     /** Tooltip for the view mode selector dropdown */
     viewMode?: string;
+    /** Tooltip for the "New Lyrics Generation" menu item */
+    newLyricsGeneration?: string;
+    /** Tooltip for the "New Song" menu item */
+    newSong?: string;
+    /** Tooltip for the paste button when lyrics are available in clipboard */
+    pasteAvailable?: string;
+    /** Tooltip for the paste button when no lyrics are detected in clipboard */
+    pasteUnavailable?: string;
+    /** Tooltip for the library menu item */
+    browseLibrary?: string;
+    /** Tooltip for the settings menu item */
+    openSettings?: string;
+    /** Tooltip for the sponsor menu item */
+    sponsor?: string;
   };
 
   sections: {
