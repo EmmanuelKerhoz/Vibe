@@ -61,7 +61,9 @@ export function getAllowedModelPrefixes(): string[] {
 
 export const ALLOWED_CONFIG_KEYS = new Set([
   'temperature', 'topP', 'topK', 'maxOutputTokens', 'stopSequences',
-  'candidateCount', 'presencePenalty', 'frequencyPenalty', 'seed', 'responseMimeType',
+  'candidateCount', 'presencePenalty', 'frequencyPenalty', 'seed',
+  'responseMimeType',
+  'responseSchema', // required for Gemini structured JSON output
 ] as const);
 
 // ─── Provider-specific generate implementations ──────────────────────────────
