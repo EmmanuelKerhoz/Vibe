@@ -129,7 +129,7 @@ function detectByScript(text: string): string | undefined {
  *   these pilots cover romanised lyrics only, routing them to ALGO-IIR
  *   instead of the fr fallback.
  */
-const WORD_PILOTS: Record<string, string[]> = [
+const WORD_PILOTS: Record<string, string[]> = {
   fr: [
     'je', 'tu', 'nous', 'vous', 'dans', 'avec', 'sur', 'cette',
     'mais', 'donc', 'quand', 'comme', 'très', 'plus', 'aussi',
@@ -275,7 +275,7 @@ const WORD_PILOTS: Record<string, string[]> = [
     'nda', 'bangangté', 'ndè',
     'mbenguiste', 'feyeur', 'couper', 'boulot', 'gbata',
   ],
-];
+};
 
 /** Tokenise to lowercase words, stripping punctuation. */
 function tokenize(text: string): string[] {
