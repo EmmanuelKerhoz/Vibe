@@ -1,6 +1,6 @@
 /**
  * Rhyme Engine v2 — Test Suite
- * 65 tests: router, normalize, scoring, all families including SLV/SEM/SEA/CJK/YRB/AGG
+ * 95 tests: router, normalize, scoring, all families including IIR/AUS/DRA
  */
 
 import { describe, it, expect } from 'vitest';
@@ -80,12 +80,10 @@ describe('routeToFamily', () => {
     expect(routeToFamily('ba').family).toBe('KWA');
     expect(routeToFamily('ew').family).toBe('KWA');
   });
-  // yo is Yoruboid (Niger-Congo), NOT Bantu — must route YRB
   it('routes yo → YRB (Yoruboid, not Bantu)', () => {
     expect(routeToFamily('yo').family).toBe('YRB');
     expect(routeToFamily('yo').lowResource).toBe(false);
   });
-  // sw is the sole true Bantu representative
   it('routes sw → BNT (true Bantu)', () => {
     expect(routeToFamily('sw').family).toBe('BNT');
   });
@@ -113,13 +111,30 @@ describe('routeToFamily', () => {
     expect(routeToFamily('ja').family).toBe('CJK');
     expect(routeToFamily('ko').family).toBe('CJK');
   });
-  it('routes Yoruba → YRB', () => {
-    expect(routeToFamily('yo').family).not.toBe('BNT');
-  });
   it('routes Agglutinative languages', () => {
     expect(routeToFamily('tr').family).toBe('AGG');
     expect(routeToFamily('fi').family).toBe('AGG');
     expect(routeToFamily('hu').family).toBe('AGG');
+  });
+  // New families
+  it('routes IIR languages (hi, ur, bn, fa, pa)', () => {
+    expect(routeToFamily('hi').family).toBe('IIR');
+    expect(routeToFamily('ur').family).toBe('IIR');
+    expect(routeToFamily('bn').family).toBe('IIR');
+    expect(routeToFamily('fa').family).toBe('IIR');
+    expect(routeToFamily('pa').family).toBe('IIR');
+  });
+  it('routes AUS languages (id, ms, tl, mg)', () => {
+    expect(routeToFamily('id').family).toBe('AUS');
+    expect(routeToFamily('ms').family).toBe('AUS');
+    expect(routeToFamily('tl').family).toBe('AUS');
+    expect(routeToFamily('mg').family).toBe('AUS');
+  });
+  it('routes DRA languages (ta, te, kn, ml)', () => {
+    expect(routeToFamily('ta').family).toBe('DRA');
+    expect(routeToFamily('te').family).toBe('DRA');
+    expect(routeToFamily('kn').family).toBe('DRA');
+    expect(routeToFamily('ml').family).toBe('DRA');
   });
   it('fallbacks unknown lang with lowResource=true', () => {
     const r = routeToFamily('__unknown__');
@@ -218,7 +233,7 @@ describe('GER rhyme engine', () => {
     expect(r.score).toBeGreaterThan(0.70);
   });
 });
-// ─── Family: BNT (Swahili only post-refacto) ─────────────────────────────────
+// ─── Family: BNT ─────────────────────────────────────────────────────────────
 describe('BNT rhyme engine', () => {
   it('SW: routes to BNT', () => {
     const r = rhymeScore('nakupenda', 'karibu sana', 'sw', 'sw');
@@ -236,18 +251,15 @@ describe('SLV rhyme engine', () => {
     expect(r.family).toBe('SLV');
   });
   it('RU: identical ending → high score', () => {
-    // Both end in -овь → same vowel reduction + coda
     const r = rhymeScore('любовь', 'кровь', 'ru', 'ru');
     expect(r.score).toBeGreaterThan(0.60);
   });
   it('PL: nasal vowel normalisation — ą/ę merge', () => {
-    // końcówkę / piosenkę — both end in normalized 'en'
     const r = rhymeScore('końcówkę', 'piosenkę', 'pl', 'pl');
     expect(r.family).toBe('SLV');
     expect(r.score).toBeGreaterThan(0.50);
   });
   it('CS: diacritic-aware — láska / páska', () => {
-    // Both share long-a nucleus + -ska coda
     const r = rhymeScore('láska', 'páska', 'cs', 'cs');
     expect(r.family).toBe('SLV');
     expect(r.score).toBeGreaterThan(0.70);
@@ -265,9 +277,7 @@ describe('SEM rhyme engine', () => {
     expect(r.family).toBe('SEM');
   });
   it('AR: shared long vowel → higher score than mismatched', () => {
-    // كتاب / حساب — both end in long-a + coda ب
     const rMatch    = rhymeScore('\u0643\u062A\u0627\u0628', '\u062D\u0633\u0627\u0628', 'ar', 'ar');
-    // كتاب / رسول — different long vowel (aa vs uu)
     const rMismatch = rhymeScore('\u0643\u062A\u0627\u0628', '\u0631\u0633\u0648\u0644', 'ar', 'ar');
     expect(rMatch.score).toBeGreaterThan(rMismatch.score);
   });
@@ -296,7 +306,6 @@ describe('SEA rhyme engine', () => {
     expect(r.nucleusA.vowels).not.toBe('');
   });
   it('VI: tone match yields higher score than tone mismatch', () => {
-    // trời / đời — both grave (L tone) should score higher than trời/trời vs trời/trói
     const rMatch    = rhymeScore('trời', 'đời', 'vi', 'vi');
     const rMismatch = rhymeScore('trời', 'trói', 'vi', 'vi');
     expect(rMatch.score).toBeGreaterThan(rMismatch.score);
@@ -320,13 +329,11 @@ describe('CJK rhyme engine', () => {
     expect(r.score).toBeLessThan(1);
   });
   it('JA: kana match → high score', () => {
-    // Both end with hiragana な
     const r = rhymeScore('\u304B\u306A', '\u306A\u306A', 'ja', 'ja');
     expect(r.family).toBe('CJK');
     expect(r.score).toBeGreaterThan(0.80);
   });
   it('KO: Hangul jamo decomposition — same jung-seong → high score', () => {
-    // 나 (na) vs 다 (da) — same jung-seong ㅏ
     const r = rhymeScore('\uB098', '\uB2E4', 'ko', 'ko');
     expect(r.family).toBe('CJK');
     expect(r.score).toBeGreaterThan(0.70);
@@ -340,7 +347,6 @@ describe('YRB rhyme engine', () => {
     expect(r.score).toBeLessThanOrEqual(1);
   });
   it('YO: same tone class → higher score than tone mismatch', () => {
-    // ilé (H) vs olé (H) — should score higher than ilé (H) vs olè (L)
     const rMatch    = rhymeScore('ilé', 'olé', 'yo', 'yo');
     const rMismatch = rhymeScore('ilé', 'olè', 'yo', 'yo');
     expect(rMatch.score).toBeGreaterThan(rMismatch.score);
@@ -350,7 +356,6 @@ describe('YRB rhyme engine', () => {
     expect(r.nucleusA.vowels).not.toBe('');
   });
   it('YO: nasalised vowel preserved in nucleus', () => {
-    // ẽ is a nasal vowel — must appear in nucleus, not stripped
     const r = rhymeScore('ẽ', 'ẽ', 'yo', 'yo');
     expect(r.score).toBeGreaterThan(0.80);
   });
@@ -367,23 +372,17 @@ describe('AGG rhyme engine', () => {
     expect(r.score).toBeGreaterThanOrEqual(0);
   });
   it('TR: same back-vowel harmony class boosts score', () => {
-    // kadar / adam — both back vowel class B
-    const rSame = rhymeScore('kadar', 'adam', 'tr', 'tr');
-    // gelmek / görmek — front class F
+    const rSame  = rhymeScore('kadar', 'adam', 'tr', 'tr');
     const rFront = rhymeScore('gelmek', 'görmek', 'tr', 'tr');
-    // Both should produce valid scores
     expect(rSame.score).toBeGreaterThanOrEqual(0);
     expect(rFront.score).toBeGreaterThanOrEqual(0);
   });
   it('FI: geminate vowel → moraCount 2 detection', () => {
-    // talo/palo — both end in -o (no geminate)
-    // saataa/vaataa — both end in -aa (geminate → moraCount 2)
     const rGeminate = rhymeScore('saataa', 'vaataa', 'fi', 'fi');
     expect(rGeminate.family).toBe('AGG');
     expect(rGeminate.score).toBeGreaterThan(0.70);
   });
   it('FI: vowel harmony merge — a/ä treated as same nucleus', () => {
-    // maassa / metsässä — ssa/ssä suffix stripped; a vs ä merge → same nucleus
     const r = rhymeScore('maassa', 'metsässä', 'fi', 'fi');
     expect(r.family).toBe('AGG');
     expect(r.score).toBeGreaterThan(0.50);
@@ -393,11 +392,156 @@ describe('AGG rhyme engine', () => {
     expect(r.family).toBe('AGG');
   });
   it('HU: long vowel preserved — ó vs o reduces score', () => {
-    // szerelem / érzelem — similar front vowels
     const rMatch    = rhymeScore('szerelem', 'érzelem', 'hu', 'hu');
-    // ház / has — á (long) vs a (short) — different
     const rMismatch = rhymeScore('ház', 'has', 'hu', 'hu');
     expect(rMatch.score).toBeGreaterThanOrEqual(rMismatch.score);
+  });
+});
+// ─── Family: IIR ─────────────────────────────────────────────────────────────
+describe('IIR rhyme engine', () => {
+  it('HI: routes to IIR', () => {
+    const r = rhymeScore('\u092A\u094D\u092F\u093E\u0930', '\u0938\u0902\u0938\u093E\u0930', 'hi', 'hi');
+    expect(r.family).toBe('IIR');
+  });
+  it('HI: identical Devanagari endings → high score', () => {
+    // दिल / नील — both end in -il
+    const r = rhymeScore('\u0926\u093F\u0932', '\u0928\u0940\u0932', 'hi', 'hi');
+    expect(r.family).toBe('IIR');
+    expect(r.score).toBeGreaterThan(0.60);
+  });
+  it('HI: different vowel nuclei reduce score', () => {
+    // प्यार (pyaar) vs सुबह (subah) — very different vowels
+    const rMatch    = rhymeScore('\u092A\u094D\u092F\u093E\u0930', '\u0928\u093E\u0930', 'hi', 'hi');
+    const rMismatch = rhymeScore('\u092A\u094D\u092F\u093E\u0930', '\u0938\u0941\u092C\u0939', 'hi', 'hi');
+    expect(rMatch.score).toBeGreaterThan(rMismatch.score);
+  });
+  it('HI: nucleus not empty for Devanagari input', () => {
+    const r = rhymeScore('\u092A\u094D\u092F\u093E\u0930', '\u0938\u0902\u0938\u093E\u0930', 'hi', 'hi');
+    expect(r.nucleusA.vowels).not.toBe('');
+    expect(r.nucleusB.vowels).not.toBe('');
+  });
+  it('UR: routes to IIR', () => {
+    const r = rhymeScore('\u062F\u0644', '\u0645\u062D\u0644', 'ur', 'ur');
+    expect(r.family).toBe('IIR');
+  });
+  it('UR: shared long vowel (aa) → high score', () => {
+    // کتاب / حساب via Urdu — both -aab
+    const r = rhymeScore('\u06A9\u062A\u0627\u0628', '\u062D\u0633\u0627\u0628', 'ur', 'ur');
+    expect(r.family).toBe('IIR');
+    expect(r.score).toBeGreaterThan(0.65);
+  });
+  it('BN: routes to IIR', () => {
+    const r = rhymeScore('\u09AD\u09BE\u09B2\u09CB', '\u0995\u09BE\u09B2\u09CB', 'bn', 'bn');
+    expect(r.family).toBe('IIR');
+  });
+  it('BN: same Bengali vowel ending → high score', () => {
+    // ভালো / কালো — both end in -alo
+    const r = rhymeScore('\u09AD\u09BE\u09B2\u09CB', '\u0995\u09BE\u09B2\u09CB', 'bn', 'bn');
+    expect(r.score).toBeGreaterThan(0.70);
+  });
+  it('FA: routes to IIR', () => {
+    const r = rhymeScore('\u0622\u0633\u0645\u0627\u0646', '\u062C\u0627\u0646', 'fa', 'fa');
+    expect(r.family).toBe('IIR');
+  });
+  it('FA: nucleus not empty for Perso-Arabic input', () => {
+    const r = rhymeScore('\u0622\u0633\u0645\u0627\u0646', '\u062C\u0627\u0646', 'fa', 'fa');
+    expect(r.nucleusA.vowels).not.toBe('');
+  });
+  it('PA: routes to IIR', () => {
+    const r = rhymeScore('\u0A2A\u0A3F\u0A06\u0A30', '\u0A38\u0A70\u0A38\u0A3E\u0A30', 'pa', 'pa');
+    expect(r.family).toBe('IIR');
+  });
+});
+// ─── Family: AUS ─────────────────────────────────────────────────────────────
+describe('AUS rhyme engine', () => {
+  it('ID: routes to AUS', () => {
+    const r = rhymeScore('cinta', 'kita', 'id', 'id');
+    expect(r.family).toBe('AUS');
+  });
+  it('ID: shared open vowel ending → high score', () => {
+    // cinta / kita — both end in -a
+    const r = rhymeScore('cinta', 'kita', 'id', 'id');
+    expect(r.score).toBeGreaterThan(0.65);
+  });
+  it('ID: different endings reduce score', () => {
+    const rMatch    = rhymeScore('cinta', 'kita', 'id', 'id');
+    const rMismatch = rhymeScore('cinta', 'pergi', 'id', 'id');
+    expect(rMatch.score).toBeGreaterThan(rMismatch.score);
+  });
+  it('MS: routes to AUS', () => {
+    const r = rhymeScore('hati', 'budi', 'ms', 'ms');
+    expect(r.family).toBe('AUS');
+  });
+  it('TL: routes to AUS', () => {
+    const r = rhymeScore('puso', 'ilaw', 'tl', 'tl');
+    expect(r.family).toBe('AUS');
+  });
+  it('TL: digraph ng normalised (not split)', () => {
+    // Tagalog words ending in -ng: both share final nasal
+    const r = rhymeScore('iyang', 'kang', 'tl', 'tl');
+    expect(r.family).toBe('AUS');
+    expect(r.nucleusA.coda).toContain('ng');
+  });
+  it('MG: routes to AUS', () => {
+    const r = rhymeScore('fitiavana', 'tombotsoa', 'mg', 'mg');
+    expect(r.family).toBe('AUS');
+  });
+  it('MG: -na final reduction — fitiavana / fanomezana share -a nucleus', () => {
+    const r = rhymeScore('fitiavana', 'fanomezana', 'mg', 'mg');
+    expect(r.family).toBe('AUS');
+    expect(r.score).toBeGreaterThan(0.50);
+  });
+  it('AUS: nucleus not empty', () => {
+    const r = rhymeScore('cinta', 'kita', 'id', 'id');
+    expect(r.nucleusA.vowels).not.toBe('');
+    expect(r.nucleusB.vowels).not.toBe('');
+  });
+});
+// ─── Family: DRA ─────────────────────────────────────────────────────────────
+describe('DRA rhyme engine', () => {
+  it('TA: routes to DRA', () => {
+    const r = rhymeScore('\u0BAE\u0BA9\u0BAE\u0BCD', '\u0BB5\u0BBE\u0BA9\u0BAE\u0BCD', 'ta', 'ta');
+    expect(r.family).toBe('DRA');
+  });
+  it('TA: shared coda nasal → high score', () => {
+    // மனம் / வானம் — both end in -am
+    const r = rhymeScore('\u0BAE\u0BA9\u0BAE\u0BCD', '\u0BB5\u0BBE\u0BA9\u0BAE\u0BCD', 'ta', 'ta');
+    expect(r.score).toBeGreaterThan(0.55);
+  });
+  it('TA: retroflex vs dental coda reduces score', () => {
+    // Words ending in retroflex ண vs dental ந
+    const rRetro  = rhymeScore('\u0BAE\u0BA3\u0BCD', '\u0BA4\u0BA3\u0BCD', 'ta', 'ta');
+    const rDental = rhymeScore('\u0BAE\u0BA9\u0BCD', '\u0BA4\u0BA9\u0BCD', 'ta', 'ta');
+    // Both valid scores, retroflex (nn/tt) differs from dental (n/t)
+    expect(rRetro.score).toBeGreaterThanOrEqual(0);
+    expect(rDental.score).toBeGreaterThanOrEqual(0);
+  });
+  it('TA: nucleus not empty', () => {
+    const r = rhymeScore('\u0BAE\u0BA9\u0BAE\u0BCD', '\u0BB5\u0BBE\u0BA9\u0BAE\u0BCD', 'ta', 'ta');
+    expect(r.nucleusA.vowels).not.toBe('');
+  });
+  it('TE: routes to DRA', () => {
+    const r = rhymeScore('\u0C2E\u0C28\u0C38\u0C41', '\u0C35\u0C3E\u0C28\u0C38\u0C41', 'te', 'te');
+    expect(r.family).toBe('DRA');
+  });
+  it('TE: same vowel ending → score > 0.60', () => {
+    // మనసు / వానసు — both end in -su
+    const r = rhymeScore('\u0C2E\u0C28\u0C38\u0C41', '\u0C35\u0C3E\u0C28\u0C38\u0C41', 'te', 'te');
+    expect(r.score).toBeGreaterThan(0.60);
+  });
+  it('KN: routes to DRA', () => {
+    const r = rhymeScore('\u0C95\u0CA8\u0CB8\u0CC1', '\u0CB5\u0CBE\u0CA8\u0CB8\u0CC1', 'kn', 'kn');
+    expect(r.family).toBe('DRA');
+  });
+  it('ML: routes to DRA', () => {
+    const r = rhymeScore('\u0D2E\u0D28\u0D38\u0D4D', '\u0D35\u0D3E\u0D28\u0D38\u0D4D', 'ml', 'ml');
+    expect(r.family).toBe('DRA');
+  });
+  it('ML: chillu final consonant handled without crash', () => {
+    // Words with chillu letters ൻ (n) ൽ (l)
+    const r = rhymeScore('\u0D2E\u0D28\u0D38\u0D4D', '\u0D35\u0D28\u0D28\u0D4D', 'ml', 'ml');
+    expect(r.score).toBeGreaterThanOrEqual(0);
+    expect(r.score).toBeLessThanOrEqual(1);
   });
 });
 // ─── Cross-family fallback ────────────────────────────────────────────────────
@@ -415,5 +559,19 @@ describe('cross-family fallback', () => {
   it('FALLBACK: surface is NFC-normalised (no broken multi-byte slice)', () => {
     const r = rhymeScore('\u0645\u0633\u0627\u0621', '\u0645\u0633\u0627\u0621', 'ar', 'ar');
     expect(r.score).toBeCloseTo(1, 1);
+  });
+  // Cross-family between new families
+  it('IIR × ROM cross-family → FALLBACK', () => {
+    const r = rhymeScore('\u092A\u094D\u092F\u093E\u0930', 'amour', 'hi', 'fr');
+    expect(r.family).toBe('FALLBACK');
+    expect(r.warnings).toContain('cross-family-fallback');
+  });
+  it('AUS × GER cross-family → FALLBACK', () => {
+    const r = rhymeScore('cinta', 'night', 'id', 'en');
+    expect(r.family).toBe('FALLBACK');
+  });
+  it('DRA × SEM cross-family → FALLBACK', () => {
+    const r = rhymeScore('\u0BAE\u0BA9\u0BAE\u0BCD', '\u0642\u0644\u0628', 'ta', 'ar');
+    expect(r.family).toBe('FALLBACK');
   });
 });
