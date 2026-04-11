@@ -122,9 +122,9 @@ export function AnalysisModal({
         </div>
 
         {/* Body */}
-        <div className="p-8 flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-app)]">
+        <div className="p-6 flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-app)]">
           {isAnalyzing ? (
-            <div className="h-full flex flex-col items-center justify-center space-y-8 py-20">
+            <div className="h-full flex flex-col items-center justify-center space-y-6 py-16">
               <div className="relative">
                 <div className="w-20 h-20 rounded-full border-4 border-[var(--accent-color)]/10 border-t-[var(--accent-color)] animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -132,56 +132,38 @@ export function AnalysisModal({
                 </div>
               </div>
               <div className="space-y-3 text-center">
-                <h4 className="text-xl font-medium text-[var(--text-primary)]">{t.analysis.deepAnalysis}</h4>
+                <h4 className="text-lg font-medium text-[var(--text-primary)]">{t.analysis.deepAnalysis}</h4>
                 <div className="flex flex-col items-center gap-2">
                   {analysisSteps.map((step, idx) => (
-                    <p key={idx} className={`text-sm transition-all duration-500 ${idx === analysisSteps.length - 1 ? 'text-[var(--accent-color)] font-medium scale-110' : 'text-[var(--text-secondary)] opacity-50'}`}>{step}</p>
+                    <p key={idx} className={`text-xs transition-all duration-500 ${idx === analysisSteps.length - 1 ? 'text-[var(--accent-color)] font-medium scale-110' : 'text-[var(--text-secondary)] opacity-50'}`}>{step}</p>
                   ))}
                 </div>
               </div>
             </div>
           ) : analysisReport ? (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <section className="space-y-3">
-                <h4 className="micro-label text-[var(--accent-color)] flex items-center gap-2">
-                  <BookOpen className="w-3.5 h-3.5" />{t.analysis.theme}
-                </h4>
-                <p className="text-[var(--text-secondary)] leading-relaxed bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5">{analysisReport.theme}</p>
-              </section>
-              <section className="space-y-3">
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {/* Emotional Arc — full width */}
+              <section className="space-y-2">
                 <h4 className="micro-label text-[var(--accent-color)] flex items-center gap-2">
                   <Activity className="w-3.5 h-3.5" />{t.analysis.emotionalArc}
                 </h4>
-                <p className="text-[var(--text-secondary)] leading-relaxed bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5">{analysisReport.emotionalArc}</p>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">{analysisReport.emotionalArc}</p>
               </section>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <section className="space-y-3">
-                  <h4 className="micro-label text-emerald-500 flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5" />{t.analysis.strengths}
-                  </h4>
-                  <div className="max-h-52 overflow-y-auto custom-scrollbar bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5">
-                    <ul className="space-y-2">
-                      {strengths.map((s, i) => (
-                        <li key={i} className="text-sm text-[var(--text-secondary)] flex gap-2"><span className="text-emerald-500 mt-1 flex-shrink-0">•</span>{s}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </section>
-                <section className="space-y-3">
+              {/* Improvements (left) | Theme + Strengths stacked (right) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <section className="space-y-2">
                   <h4 className="micro-label text-amber-500 flex items-center gap-2">
                     <Target className="w-3.5 h-3.5" />{t.analysis.improvements}
                   </h4>
-                  <div className="max-h-52 overflow-y-auto custom-scrollbar bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5">
-                    <ul className="space-y-3">
+                  <div className="max-h-52 overflow-y-auto custom-scrollbar bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
+                    <ul className="space-y-2">
                       {improvements.map((s, i) => (
-                        <li key={i} className="flex items-start gap-3 group">
+                        <li key={i} className="flex items-start gap-2 group">
                           <button
                             onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)}
                             disabled={isApplyingAnalysis !== null || appliedAnalysisItems.has(s)}
                             aria-label={appliedAnalysisItems.has(s) ? 'Applied' : selectedAnalysisItems.has(s) ? 'Deselect' : 'Select for batch apply'}
-                            className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                            className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all ${
                               appliedAnalysisItems.has(s)
                                 ? 'bg-emerald-500 border-emerald-500 text-white'
                                 : selectedAnalysisItems.has(s)
@@ -189,9 +171,9 @@ export function AnalysisModal({
                                 : 'border-[var(--border-color)] hover:border-amber-500/50 group-hover:bg-amber-500/10'
                             }`}
                           >
-                            {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-3 h-3" /> : <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/20 group-hover:bg-amber-500/50" />}
+                            {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-2.5 h-2.5" /> : <div className="w-1 h-1 rounded-full bg-[var(--text-secondary)]/20 group-hover:bg-amber-500/50" />}
                           </button>
-                          <span className={`flex-1 text-sm leading-relaxed transition-colors ${
+                          <span className={`flex-1 text-xs leading-relaxed transition-colors ${
                             appliedAnalysisItems.has(s) ? 'text-[var(--text-secondary)] line-through' : selectedAnalysisItems.has(s) ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
                           }`}>{s}</span>
                           {/* One-click apply button — visible on hover, hidden once applied */}
@@ -206,8 +188,8 @@ export function AnalysisModal({
                                 }`}
                               >
                                 {isApplyingAnalysis === s
-                                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  : <Zap className="w-3.5 h-3.5" />
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : <Zap className="w-3 h-3" />
                                 }
                               </button>
                             </Tooltip>
@@ -217,18 +199,38 @@ export function AnalysisModal({
                     </ul>
                   </div>
                 </section>
+                <div className="space-y-4">
+                  <section className="space-y-2">
+                    <h4 className="micro-label text-[var(--accent-color)] flex items-center gap-2">
+                      <BookOpen className="w-3.5 h-3.5" />{t.analysis.theme}
+                    </h4>
+                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">{analysisReport.theme}</p>
+                  </section>
+                  <section className="space-y-2">
+                    <h4 className="micro-label text-emerald-500 flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5" />{t.analysis.strengths}
+                    </h4>
+                    <div className="max-h-44 overflow-y-auto custom-scrollbar bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
+                      <ul className="space-y-1.5">
+                        {strengths.map((s, i) => (
+                          <li key={i} className="text-xs text-[var(--text-secondary)] flex gap-2"><span className="text-emerald-500 mt-0.5 flex-shrink-0">•</span>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </section>
+                </div>
               </div>
               {/* Summary — always visible */}
-              <section className="pt-2">
-                <div className="bg-[var(--accent-color)]/5 border border-[var(--accent-color)]/20 p-5 rounded-2xl">
-                  <h4 className="text-sm font-medium text-[var(--accent-color)] mb-2">{t.analysis.summary}</h4>
-                  <p className="text-sm text-[var(--text-secondary)] italic leading-relaxed">"{analysisReport.summary}"</p>
+              <section className="pt-1">
+                <div className="bg-[var(--accent-color)]/5 border border-[var(--accent-color)]/20 p-3 rounded-2xl">
+                  <h4 className="text-xs font-medium text-[var(--accent-color)] mb-1">{t.analysis.summary}</h4>
+                  <p className="text-xs text-[var(--text-secondary)] italic leading-relaxed">"{analysisReport.summary}"</p>
                 </div>
               </section>
               {/* Musical Suggestions are shown in the Musical tab */}
               {musicalSuggestions.length > 0 && (
-                <p className="text-[10px] text-[var(--text-secondary)]/60 text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
-                  <Music className="w-3 h-3" />
+                <p className="text-[9px] text-[var(--text-secondary)]/60 text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
+                  <Music className="w-2.5 h-2.5" />
                   {t.analysis.musicalSuggestionsMovedHint}
                 </p>
               )}
