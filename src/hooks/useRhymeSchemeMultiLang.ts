@@ -95,12 +95,10 @@ export function useRhymeSchemeMultiLang(
   const filteredRef = useRef<Array<{ text: string; lang: LangCode }>>([]);
   const resultRef   = useRef<SchemeResult | null>(null);
 
-  // Serialise for memo key — avoids deep-equality overhead
-  const cacheKey = useMemo(
-    () => lines.map(l => `${l.lang}\x01${l.text}`).join('\x00'),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lines.map(l => `${l.lang}\x01${l.text}`).join('\x00')],
-  );
+  // Serialise for stable memo key — avoids deep-equality overhead.
+  // Dependency is the inline expression so filtered re-evaluates whenever
+  // the serialised content changes, regardless of referential identity of `lines`.
+  const serialised = lines.map(l => `${l.lang}\x01${l.text}`).join('\x00');
 
   const filtered = useMemo(
     () =>
@@ -108,7 +106,7 @@ export function useRhymeSchemeMultiLang(
         .filter(l => l.text.trim() && !l.text.trim().startsWith('['))
         .map(l => ({ text: l.text, lang: toLangCode(l.lang) })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cacheKey],
+    [serialised],
   );
 
   const result = useMemo(() => {
