@@ -10,8 +10,9 @@ import { useDrag } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useRhymeProxyContext } from '../../contexts/RhymeProxyContext';
+import { useSongContext } from '../../contexts/SongContext';
 import { isPureMetaLine } from '../../utils/metaUtils';
-import { useRhymeScheme } from '../../hooks/useRhymeScheme';
+import { useRhymeSchemeMultiLang } from '../../hooks/useRhymeSchemeMultiLang';
 
 interface SectionEditorProps {
   section: Section;
@@ -48,6 +49,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   const { handleDrop } = useDragHandlersContext();
   const { draggedItemIndex, dragOverIndex, setDragOverIndex } = useDrag();
   const { isProxiedForSection } = useRhymeProxyContext();
+  const { lineLanguages } = useSongContext();
 
   const sectionName: string = section.name ?? '';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
@@ -72,18 +74,29 @@ export const SectionEditor = React.memo(function SectionEditor({
     handleDrop(sectionIndex);
   }, [handleDrop, sectionIndex]);
 
-  // ── isProxied from song-level map ─────────────────────────────────────────
+  // ── isProxied from song-level map ──────────────────────────────────────────────
   const isProxied = isProxiedForSection(section.id);
 
-  // ── Single useRhymeScheme instance for the whole section ────────────────
-  const lyricTexts = useMemo(
-    () => section.lines
-      .filter(l => !(l.isMeta ?? isPureMetaLine(l.text)))
-      .map(l => l.text),
-    [section.lines],
+  // ── Multi-lang lines: per-line lang from lineLanguages, fallback to section lang ──
+  const multiLangLines = useMemo(
+    () =>
+      section.lines
+        .filter(l => !(l.isMeta ?? isPureMetaLine(l.text)))
+        .map(l => ({
+          text: l.text,
+          lang: lineLanguages[l.id] ?? sectionTargetLanguage,
+        })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      section.lines,
+      sectionTargetLanguage,
+      // Serialise only the relevant slice of lineLanguages to avoid
+      // re-running on unrelated line language changes in other sections.
+      section.lines.map(l => lineLanguages[l.id] ?? '').join('\x00'),
+    ],
   );
 
-  const schemeResult = useRhymeScheme(lyricTexts, sectionTargetLanguage, isProxied);
+  const schemeResult = useRhymeSchemeMultiLang(multiLangLines, isProxied);
   // ────────────────────────────────────────────────────────────────────────────
 
   const adaptControlOptional = {
