@@ -11,7 +11,7 @@
  *   Stage 2 — Word-pilot detector
  *     For Latin-script text, a small set of high-frequency, language-exclusive
  *     words scores each candidate language. Highest score wins.
- *     Covered: fr, en, es, it, pt, de, nl, sw, yo, ha, id, ms, tr, fi, hu, vi, th,
+ *     Covered: fr, en, es, it, pt, de, nl, sw, yo, ha, id, ms, tr, fi, hu, vi,
  *              ba, ew, mi, di (KWA non-standard codes), pl, ro,
  *              nou (Nouchi CI), pcm (Nigerian Pidgin), cfg (Camfranglais),
  *              ur (Urdu romanisé).
@@ -23,10 +23,16 @@
  * a code and use it; the Registry's ALGO-ROBUST fallback handles residual errors.
  *
  * Exclusivity rules (pilots must NOT appear in sibling language lists):
- *   pt vs es: pt uses não/você/lhe/mesmo/nossa — absent from es.
- *             Shared tokens (que, por, para, como, quando) removed from pt.
+ *   pt vs es  : pt uses não/você/lhe/mesmo/nossa — absent from es.
+ *               Shared tokens (que, por, para, como, quando) removed from pt.
  *   cfg vs nou: cfg tokens are CM-exclusive (mboa, feymania, mbenguiste, feyeur).
  *               Shared tokens (tchamba, blèkè, sawa) kept only in nou.
+ *   sw vs ha  : 'na' removed from both — replaced by language-exclusive sets.
+ *               sw: hapo/bado/tena/wewe/yeye/wao/mimi.
+ *               ha: sun/wuri/zuwa/dare/gida/kai/shi/mu/ku/su.
+ *   KWA noise : all mono/bichar tokens removed from ba/ew/mi/di.
+ *               Replaced by multichar tokens with diacritics absent from
+ *               fr/en/es/it, providing unambiguous signal.
  */
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -93,7 +99,7 @@ function detectByScript(text: string): string | undefined {
  * Selection criteria:
  *   - Top-100 most frequent words in the language
  *   - NOT shared with other languages in this list
- *   - Short (≤8 chars) for fast matching
+ *   - Minimum 3 chars; diacritics outside FR/EN/ES/IT/DE/PT range preferred
  *   - Grammatical words (articles, prepositions, pronouns) preferred
  *
  * Scores: each matched word adds +2.
@@ -123,7 +129,7 @@ function detectByScript(text: string): string | undefined {
  *   these pilots cover romanised lyrics only, routing them to ALGO-IIR
  *   instead of the fr fallback.
  */
-const WORD_PILOTS: Record<string, string[]> = {
+const WORD_PILOTS: Record<string, string[]> = [
   fr: [
     'je', 'tu', 'nous', 'vous', 'dans', 'avec', 'sur', 'cette',
     'mais', 'donc', 'quand', 'comme', 'très', 'plus', 'aussi',
@@ -176,25 +182,29 @@ const WORD_PILOTS: Record<string, string[]> = {
     'pentru', 'după', 'înainte', 'atunci', 'deci', 'astfel',
     'meu', 'tău', 'său', 'nostru', 'lor', 'ești', 'eram',
   ],
+  // sw: 'na' removed (shared with ha) → replaced by sw-exclusive tokens.
+  // All selected tokens are ≥3 chars, absent from ha pilot list.
   sw: [
-    'na', 'ya', 'wa', 'kwa', 'ni', 'hii', 'hilo', 'hiyo',
-    'sana', 'pia', 'bali', 'lakini', 'kwamba',
+    'kwa', 'hii', 'hilo', 'hiyo', 'sana', 'pia', 'bali', 'lakini', 'kwamba',
+    'hapo', 'bado', 'tena', 'wewe', 'yeye', 'wao', 'mimi', 'nini', 'lini',
+    'wapi', 'pamoja', 'kati', 'mbele', 'nyuma', 'kabla', 'baada',
   ],
   yo: [
     'ti', 'ni', 'naa', 'ati', 'fun', 'lati', 'ojo', 'omo',
     'ilu', 'ile', 'agba', 'bı', 'àwa', 'jẹ',
   ],
+  // ha: 'na' removed (shared with sw), 'da' removed (FR fragment noise).
+  // Replaced by ha-exclusive tokens: short common Hausa words absent elsewhere.
   ha: [
-    'da', 'ne', 'ce', 'na', 'kuma', 'amma', 'don', 'daga',
-    'cikin', 'gare',
+    'ne', 'ce', 'kuma', 'amma', 'don', 'daga', 'cikin', 'gare',
+    'sun', 'wuri', 'zuwa', 'dare', 'gida', 'kai', 'shi',
+    'mun', 'kun', 'sai', 'har', 'tun', 'karo',
   ],
   id: [
     'yang', 'dan', 'ini', 'itu', 'dari', 'dengan', 'untuk', 'tidak',
     'ada', 'juga', 'bisa', 'akan',
   ],
   // Malay (ms) — exclusive markers vs Indonesian (id)
-  // kerana / kepada / boleh / awak / sahaja / manakala are standard MY,
-  // not found in formal Indonesian.
   ms: [
     'kerana', 'kepada', 'boleh', 'awak', 'sahaja', 'manakala',
     'walau', 'bahawa', 'mengikut', 'encik', 'puan', 'mereka',
@@ -216,58 +226,56 @@ const WORD_PILOTS: Record<string, string[]> = {
     'và', 'của', 'có', 'là', 'cho', 'trong', 'đó', 'với',
     'được', 'không', 'này', 'một',
   ],
-  // Urdu romanisé — covers Latin-script Urdu lyrics (Nastaliq → Latin).
-  // Native Urdu script (Nastaliq/Arabic range) is captured by Stage 1.
-  // These pilots are exclusive vs fr/en/hi and route to ALGO-IIR.
   ur: [
     'hai', 'mein', 'tera', 'yaar', 'dil', 'aaj', 'kya',
     'nahi', 'tujhe', 'pyar', 'mere', 'tere', 'hum', 'tum',
     'woh', 'kyun', 'bhi', 'abhi', 'kuch', 'phir',
   ],
   // ─── KWA languages (Latin-script, tonal) ─────────────────────────────────
+  // All mono/bichar tokens removed — replaced by multichar tokens with
+  // diacritics (ɔ ɛ ɖ ƒ ŋ ɣ ʋ) that are absent from fr/en/es/it/de/pt.
+  // This guarantees near-zero false-positive on Latin-script fragments.
   ba: [
-    'n', 'a', 'be', 'blɔ', 'klo', 'suə', 'kun', 'man',
-    'nguɛ', 'wa', 'tra', 'yapi',
+    'blɔ', 'suə', 'nguɛ', 'yapi', 'kpli', 'ɛman', 'ɔko', 'dja',
+    'gblo', 'kpan', 'wari', 'nzuɛ', 'sran', 'klɔ',
   ],
+  // ew: 'le','ne' removed (FR collision) → ew-exclusive tokens with
+  // Ewe-specific chars (ŋ ɖ ƒ ɣ ʋ) or uncommon digraphs.
   ew: [
-    'le', 'kple', 'ne', 'si', 'hafi', 'megbe', 'nuɖoviwo',
-    'deke', 'eye', 'loo', 'nku',
+    'kple', 'hafi', 'megbe', 'nuɖoviwo', 'deke', 'eye', 'loo', 'nku',
+    'ŋu', 'ame', 'dzo', 'xo', 'nɔ', 'ɖo', 'fia', 'gbɔ', 'ƒe',
   ],
+  // mi: 'mi','mo' removed (IT/ES/FR collision via 'mi amor', 'mi piace').
+  // Replaced by Mina/Gengèbé-exclusive tokens.
   mi: [
-    'mi', 'ye', 'bɔ', 'kɔ', 'lɔ', 'mo', 'nyi', 'amaa',
+    'bɔ', 'kɔ', 'lɔ', 'nyi', 'amaa',
+    'ɖoo', 'kɔla', 'ŋɔ', 'wɔ', 'ƒu', 'tsɔ', 'nɔla', 'ɣe',
   ],
+  // di: 'a','ka','ko','bi' removed (noise on FR/IT/ES fragments).
+  // Kept: multichar tokens only. Added Dioula-exclusive: dɔ, bolo, sigi, tɛ.
   di: [
-    'a', 'ka', 'ko', 'bɛ', 'tun', 'bi', 'don', 'mogo',
-    'kama', 'folo', 'minnu',
+    'bɛ', 'tun', 'mogo', 'kama', 'folo', 'minnu',
+    'dɔ', 'bolo', 'sigi', 'tɛ', 'kɛ', 'nɔ', 'cɛ', 'fɛ',
   ],
   // ─── Creole / Pidgin languages (Latin-script) ────────────────────────────
-  // Nouchi — Côte d'Ivoire urban creole. Exclusive markers vs. FR/DYU/BCI/CFG.
-  // tchamba, blèkè, sawa kept here (CI-exclusive); removed from cfg to avoid collision.
   nou: [
     'gnaman', 'yako', 'warra', 'tchamba', 'blaka', 'sawa',
     'kpoto', 'gbrou', 'drogbo', 'mboki', 'ndoki', 'broki',
     'gnamankoudji', 'fottoh', 'kraka', 'yalla',
     'blèkè', 'gbèlè', 'tchèkè', 'lèlè',
   ],
-  // Nigerian Pidgin — Lagos/Niger Delta. Exclusive markers vs. EN/YO.
-  // abeg, wahala, wetin, naija are canonical PCM markers, not found in EN.
   pcm: [
     'abeg', 'wahala', 'wetin', 'naija', 'palava', 'kasala',
     'katakata', 'yawa', 'gbege', 'oga',
     'waka', 'dey', 'bele', 'belle', 'pele',
   ],
-  // Camfranglais — Yaoundé / Douala. Exclusive markers vs. FR/EN/NOU.
-  // mboa (=pays/home), feymania (=arnaque), kanda (=quartier) uniquely CFG.
-  // Removed: tchamba, blèkè, sawa (shared with nou → collision risk).
-  // Added CM-exclusive: mbenguiste (=personne de Mbeng/Europe), feyeur (=arnaqueur),
-  //   couper (=partir vite), boulot (=argent, CM usage), gbata (=gifle, CM).
   cfg: [
     'mboa', 'feymania', 'kanda', 'makossa', 'mbamba', 'ngola',
     'manawa', 'arnaka', 'bikutsi', 'gbaka',
     'nda', 'bangangté', 'ndè',
     'mbenguiste', 'feyeur', 'couper', 'boulot', 'gbata',
   ],
-};
+];
 
 /** Tokenise to lowercase words, stripping punctuation. */
 function tokenize(text: string): string[] {
