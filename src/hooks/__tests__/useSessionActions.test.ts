@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Section } from '../types';
-import { useSessionActions } from './useSessionActions';
+import { useSessionActions } from '../useSessionActions';
 
 // --- Mocks ---
 
