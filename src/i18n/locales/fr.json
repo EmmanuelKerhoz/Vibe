@@ -134,7 +134,8 @@
     "addLineAfter": "Ajouter une ligne après",
     "deleteLine": "Supprimer la ligne",
     "linePlaceholder": "Écrivez une ligne de parole…",
-    "adaptLine": "Adapter cette ligne à la langue cible"
+    "adaptLine": "Adapter cette ligne à la langue cible",
+    "adaptApply": "Appliquer"
   },
   "suggestions": {
     "title": "Suggestions IA",

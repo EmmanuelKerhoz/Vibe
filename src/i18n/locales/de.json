@@ -127,7 +127,8 @@
     "aiLine": "KI-generierte Zeile",
     "moveLineUp": "Zeile nach oben",
     "moveLineDown": "Zeile nach unten",
-    "deleteLine": "Zeile löschen"
+    "deleteLine": "Zeile löschen",
+    "adaptApply": "Anwenden"
   },
   "suggestions": {
     "title": "KI-Vorschläge",

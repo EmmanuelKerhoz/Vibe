@@ -127,7 +127,8 @@
     "aiLine": "Línea generada por IA",
     "moveLineUp": "Subir línea",
     "moveLineDown": "Bajar línea",
-    "deleteLine": "Eliminar línea"
+    "deleteLine": "Eliminar línea",
+    "adaptApply": "Aplicar"
   },
   "suggestions": {
     "title": "Sugerencias IA",

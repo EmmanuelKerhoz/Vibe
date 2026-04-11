@@ -141,7 +141,8 @@
     "checkingSimilarityLabel": "Checking similarity…",
     "lyricsEditors": "View",
     "lyricsInsights": "INSIGHTS",
-    "detect": "Detect"
+    "detect": "Detect",
+    "adaptApply": "적용"
   },
   "suggestions": {
     "title": "AI 제안",

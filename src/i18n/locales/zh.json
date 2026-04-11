@@ -127,7 +127,8 @@
     "aiLine": "AI生成的行",
     "moveLineUp": "上移行",
     "moveLineDown": "下移行",
-    "deleteLine": "删除行"
+    "deleteLine": "删除行",
+    "adaptApply": "应用"
   },
   "suggestions": {
     "title": "AI 建议",
