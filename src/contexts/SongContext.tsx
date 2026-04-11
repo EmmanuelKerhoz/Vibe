@@ -52,6 +52,7 @@ export function SongProvider({ children }: { children: ReactNode }) {
   const meta = useSongMeta();
 
   // SongHistoryContext value — only changes on undo/redo, never on keystroke.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const historyValue = useMemo<SongHistoryContextValue>(
     () => ({
       past: history.past,
@@ -59,27 +60,21 @@ export function SongProvider({ children }: { children: ReactNode }) {
       undo: history.undo,
       redo: history.redo,
     }),
-    // history.past and history.future are new array references only when
-    // applySnapshot/undo/redo fires — not on every song mutation.
-    // history is listed to satisfy exhaustive-deps; its member refs are
-    // the actual invalidation drivers above.
-    [history, history.past, history.future, history.undo, history.redo],
+    // history is a new object every render; we intentionally track its members
+    // (past, future, undo, redo) as the actual invalidation drivers so that
+    // keystroke mutations to song do NOT rebuild this context value.
+    [history.past, history.future, history.undo, history.redo],
   );
 
-  // SongContext value — depends on primitive state slices and stable callbacks,
-  // NOT on the `history` object reference (which is reconstructed every render).
-  // This prevents the memo from invalidating on every SongProvider render and
-  // cascading re-renders to all useSongContext() consumers.
+  // SongContext value — depends on primitive state slices and stable callbacks.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const value = useMemo<SongContextValue>(
     () => ({ ...history, ...meta }),
     [
-      // State slices — change only when song data mutates
       history.song,
       history.structure,
       history.past,
       history.future,
-      // Callbacks — all useCallback([], []) or useCallback([stable], [stable]),
-      // referentially stable across renders
       history.updateState,
       history.updateSongWithHistory,
       history.updateStructureWithHistory,
@@ -88,7 +83,6 @@ export function SongProvider({ children }: { children: ReactNode }) {
       history.clearHistory,
       history.undo,
       history.redo,
-      // Meta — stable ref from useSongMeta
       meta,
     ],
   );

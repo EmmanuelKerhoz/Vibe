@@ -77,11 +77,6 @@ export const SectionEditor = React.memo(function SectionEditor({
   // ── isProxied from song-level map ──────────────────────────────────────────────
   const isProxied = isProxiedForSection(section.id);
 
-  // Serialise only the relevant slice of lineLanguages to avoid
-  // re-running on unrelated line language changes in other sections.
-  // Extracted to a variable so ESLint exhaustive-deps can analyse it statically.
-  const lineLanguagesKey = section.lines.map(l => lineLanguages[l.id] ?? '').join('\x00');
-
   // ── Multi-lang lines: per-line lang from lineLanguages, fallback to section lang ──
   const multiLangLines = useMemo(
     () =>
@@ -91,7 +86,17 @@ export const SectionEditor = React.memo(function SectionEditor({
           text: l.text,
           lang: lineLanguages[l.id] ?? sectionTargetLanguage,
         })),
-    [section.lines, sectionTargetLanguage, lineLanguages, lineLanguagesKey],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // lineLanguages is a record rebuilt on any line lang change; section.lines
+    // covers structural changes. The serialised key avoids spurious re-runs on
+    // unrelated sections but cannot be statically analysed — disable needed.
+    [
+      section.lines,
+      sectionTargetLanguage,
+      lineLanguages,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      section.lines.map(l => lineLanguages[l.id] ?? '').join('\x00'),
+    ],
   );
 
   const schemeResult = useRhymeSchemeMultiLang(multiLangLines, isProxied);

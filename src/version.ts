@@ -1,2 +1,2 @@
 // Auto-generated — do not edit manually
-export const APP_VERSION = '1.13.0.49';
+export const APP_VERSION = '1.13.0.50';
