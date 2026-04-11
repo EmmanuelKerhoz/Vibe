@@ -4,11 +4,15 @@
  *
  * HA (Haoussa) is a Chadic language with lexical tones (H/L/falling).
  * Tonal extraction is applied for HA; other CRV langs remain atonal.
+ *
+ * Note: routeToFamily returns lowResource=false for all CRV langs by design.
+ * extractNucleusCRV lowResource path is therefore only reachable if the caller
+ * overrides the flag explicitly (e.g. cross-family FALLBACK).
  */
 
 import type { LineEndingUnit, LangCode, RhymeNucleus } from './types';
 
-// ─── Haoussa tone extraction ───────────────────────────────────────────────────────────────
+// ─── Haoussa tone extraction ───────────────────────────────────────────────────────────────────────
 // Haoussa tone notation: acute = H, grave = L, circumflex/macron = falling/low
 const HA_TONE_MAP: Array<[RegExp, string]> = [
   [/[\u0301]/u, 'H'],   // combining acute
@@ -24,7 +28,7 @@ function extractHATone(token: string): string {
   return 'M'; // mid / unmarked
 }
 
-// ─── Sonority ladder ──────────────────────────────────────────────────────────────────────────────────
+// ─── Sonority ladder ──────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const SONORITY: Record<string, number> = {
   a: 7, e: 7, i: 6, o: 7, u: 6,
@@ -75,7 +79,7 @@ function moraCount(vowels: string): number {
   return 1;
 }
 
-// ─── Public API ─────────────────────────────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────────────────────────────
 
 export function extractNucleusCRV(
   unit: LineEndingUnit,
@@ -93,52 +97,4 @@ export function extractNucleusCRV(
   const tone = lang === 'ha' ? extractHATone(unit.surface) : '';
 
   return { vowels, coda, tone, onset, moraCount: moraCount(vowels) };
-}
-
-/**
- * @deprecated Use `scoreCRV` from `./scoring` instead.
- * That function accepts an optional `lang` param and activates
- * the HA tonal path via `toneDistance` (canonical, called by `engine.ts`).
- *
- * Kept here for reference / possible unit comparison.
- *
- * CRV score.
- * For HA (Haoussa): tone participates (20%) given lexical tone significance.
- * For other CRV langs: atonal — vowel 55% + coda 45%.
- */
-export function scoreCRV(
-  a: RhymeNucleus,
-  b: RhymeNucleus,
-  lang: LangCode | string = ''
-): number {
-  const isHA = lang === 'ha';
-  const vSim = vowelSimilarity(a.vowels, b.vowels);
-  const cSim = a.coda === b.coda ? 1.0
-    : a.coda && b.coda && a.coda[0] === b.coda[0] ? 0.5
-    : 0.0;
-
-  if (isHA) {
-    let tSim: number;
-    if (a.tone === b.tone) {
-      tSim = 1.0;
-    } else if (a.tone === 'F' || b.tone === 'F') {
-      tSim = 0.5;
-    } else {
-      tSim = 0.0;
-    }
-    return 0.55 * vSim + 0.25 * cSim + 0.20 * tSim;
-  }
-
-  return 0.55 * vSim + 0.45 * cSim;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────────────────────────
-
-function vowelSimilarity(a: string, b: string): number {
-  if (!a && !b) return 1.0;
-  if (!a || !b) return 0.0;
-  if (a === b) return 1.0;
-  if (a.at(-1) === b.at(-1)) return 0.8;
-  if (a[0] === b[0]) return 0.4;
-  return 0.0;
 }
