@@ -15,9 +15,9 @@
 import React, { useEffect, useRef } from 'react';
 import {
   Download, Upload, Trash2, History,
-  Library, FilePlus, Settings, Info, WandSparkles, ClipboardPaste, Heart
+  Library, FilePlus, Settings, Info, WandSparkles, ClipboardPaste, Heart,
+  KeyboardRegular, Music,
 } from '../ui/icons';
-import { Sparkles } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
@@ -138,7 +138,7 @@ export function RibbonMenuPanel({
           Save/Export
         </button>
       </Tooltip>
-      <Tooltip title="Paste lyrics from clipboard">
+      <Tooltip title={canPasteLyrics ? "Paste lyrics from clipboard" : "No lyrics detected in clipboard"}>
         <button disabled={!canPasteLyrics} onClick={() => run(openPasteModal)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <ClipboardPaste className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.editor.emptyState.pasteLyrics}
@@ -156,7 +156,7 @@ export function RibbonMenuPanel({
       </Tooltip>
       <Tooltip title="Switch to the musical tab">
         <button onClick={() => run(() => setActiveTab('musical'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-          <Sparkles className="w-4 h-4 text-[#f59e0b]" />
+          <Music className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.ribbon.musical}
         </button>
       </Tooltip>
@@ -194,7 +194,7 @@ export function RibbonMenuPanel({
       </Tooltip>
       <Tooltip title="View keyboard shortcuts">
         <button onClick={() => run(openKeyboardShortcuts)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-          <Info className="w-4 h-4 text-[var(--text-secondary)]" />
+          <KeyboardRegular className="w-4 h-4 text-[var(--text-secondary)]" />
           Keyboard shortcuts
         </button>
       </Tooltip>
