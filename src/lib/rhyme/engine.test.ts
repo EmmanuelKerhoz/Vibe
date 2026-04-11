@@ -80,9 +80,9 @@ describe('routeToFamily', () => {
     expect(routeToFamily('ba').family).toBe('KWA');
     expect(routeToFamily('ew').family).toBe('KWA');
   });
-  // yo is Yoruboid (Niger-Congo), NOT Bantu — must route KWA
-  it('routes yo → KWA (Yoruboid, not Bantu)', () => {
-    expect(routeToFamily('yo').family).toBe('KWA');
+  // yo is Yoruboid (Niger-Congo), NOT Bantu — must route YRB
+  it('routes yo → YRB (Yoruboid, not Bantu)', () => {
+    expect(routeToFamily('yo').family).toBe('YRB');
     expect(routeToFamily('yo').lowResource).toBe(false);
   });
   // sw is the sole true Bantu representative
@@ -163,9 +163,9 @@ describe('KWA rhyme engine', () => {
     const rMismatch = rhymeScore('amá', 'damà', 'ba', 'ba');
     expect(rMatch.score).toBeGreaterThan(rMismatch.score);
   });
-  it('yo routes to KWA family', () => {
+  it('yo routes to YRB family', () => {
     const r = rhymeScore('ilé', 'olé', 'yo', 'yo');
-    expect(r.family).toBe('KWA');
+    expect(r.family).toBe('YRB');
   });
   it('yo tone match yields higher score than mismatch', () => {
     const rMatch    = rhymeScore('ilé', 'olé', 'yo', 'yo');
@@ -383,8 +383,8 @@ describe('AGG rhyme engine', () => {
     expect(rGeminate.score).toBeGreaterThan(0.70);
   });
   it('FI: vowel harmony merge — a/ä treated as same nucleus', () => {
-    // talossa / metsässä — ssa/ssä suffix stripped; a vs ä merge → same nucleus
-    const r = rhymeScore('talossa', 'metsässä', 'fi', 'fi');
+    // maassa / metsässä — ssa/ssä suffix stripped; a vs ä merge → same nucleus
+    const r = rhymeScore('maassa', 'metsässä', 'fi', 'fi');
     expect(r.family).toBe('AGG');
     expect(r.score).toBeGreaterThan(0.50);
   });

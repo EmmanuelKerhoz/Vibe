@@ -57,9 +57,8 @@ vi.mock('../../contexts/ComposerContext', () => ({
 
 vi.mock('../../contexts/RhymeProxyContext', () => ({
   useRhymeProxyContext: () => ({
-    isProxied: false,
-    proxyLanguage: null,
-    setProxyLanguage: vi.fn(),
+    proxyMap: new Map(),
+    isProxiedForSection: () => false,
   }),
 }));
 
