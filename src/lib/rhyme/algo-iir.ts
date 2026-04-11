@@ -29,6 +29,11 @@ const DEVA_VOWEL_MAP: Record<string, string> = {
   'े': 'e',  'ै': 'ai', 'ो': 'o', 'ौ': 'au', 'ृ': 'ri',
 };
 
+// Matras (dependent vowel signs) — used to detect & cancel preceding inherent 'a'
+const DEVA_MATRAS = new Set([
+  'ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', 'ृ',
+]);
+
 const DEVA_CONSONANT_MAP: Record<string, string> = {
   'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng',
   'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
@@ -44,20 +49,24 @@ const DEVA_CONSONANT_MAP: Record<string, string> = {
 
 function transcribeDEVA(token: string): { vowels: string; coda: string; onset: string } {
   const chars = [...token.normalize('NFC')];
-  let phonemes: string[] = [];
+  const phonemes: string[] = [];
 
   for (let i = 0; i < chars.length; i++) {
     const ch = chars[i]!;
-    if (ch in DEVA_VOWEL_MAP) {
+    if (DEVA_MATRAS.has(ch)) {
+      // Matra: cancel the spurious inherent 'a' pushed by the preceding consonant,
+      // then push the actual matra vowel.
+      if (phonemes.at(-1) === 'a') phonemes.pop();
+      phonemes.push(DEVA_VOWEL_MAP[ch]!);
+    } else if (ch in DEVA_VOWEL_MAP) {
       phonemes.push(DEVA_VOWEL_MAP[ch]!);
     } else if (ch in DEVA_CONSONANT_MAP) {
       const mapped = DEVA_CONSONANT_MAP[ch]!;
       phonemes.push(mapped);
       // Add inherent 'a' unless next char is matra, halant, or end
       const next = chars[i + 1];
-      const isMatra = next && next in DEVA_VOWEL_MAP;
       const isHalant = next === '्';
-      if (!isMatra && !isHalant && mapped !== '') {
+      if (!DEVA_MATRAS.has(next ?? '') && !isHalant && mapped !== '') {
         phonemes.push('a');
       }
     }
@@ -95,7 +104,7 @@ const PERSO_CONSONANT: Record<string, string> = {
 
 function transcribePERSO(token: string): { vowels: string; coda: string; onset: string } {
   const chars = [...token.normalize('NFC')];
-  let phonemes: string[] = [];
+  const phonemes: string[] = [];
 
   for (const ch of chars) {
     if (ch in PERSO_LONG_VOWEL) {
@@ -129,6 +138,10 @@ const BN_VOWEL_MAP: Record<string, string> = {
   '্': '',   // hasanta
 };
 
+const BN_MATRAS = new Set([
+  'া', 'ি', 'ী', 'ু', 'ূ', 'ে', 'ৈ', 'ো', 'ৌ',
+]);
+
 const BN_CONSONANT_MAP: Record<string, string> = {
   'ক': 'k', 'খ': 'kh', 'গ': 'g', 'ঘ': 'gh', 'ঙ': 'ng',
   'চ': 'ch', 'ছ': 'chh', 'জ': 'j', 'ঝ': 'jh', 'ঞ': 'ny',
@@ -142,18 +155,22 @@ const BN_CONSONANT_MAP: Record<string, string> = {
 
 function transcribeBN(token: string): { vowels: string; coda: string; onset: string } {
   const chars = [...token.normalize('NFC')];
-  let phonemes: string[] = [];
+  const phonemes: string[] = [];
 
   for (let i = 0; i < chars.length; i++) {
     const ch = chars[i]!;
-    if (ch in BN_VOWEL_MAP) {
+    if (BN_MATRAS.has(ch)) {
+      // Cancel spurious inherent 'o' from preceding consonant
+      if (phonemes.at(-1) === 'o') phonemes.pop();
+      const m = BN_VOWEL_MAP[ch]!;
+      if (m) phonemes.push(m);
+    } else if (ch in BN_VOWEL_MAP) {
       const m = BN_VOWEL_MAP[ch]!;
       if (m) phonemes.push(m);
     } else if (ch in BN_CONSONANT_MAP) {
       phonemes.push(BN_CONSONANT_MAP[ch]!);
       const next = chars[i + 1];
-      const isMatra = next && next in BN_VOWEL_MAP;
-      if (!isMatra) phonemes.push('o'); // inherent vowel in Bengali is 'o'
+      if (!BN_MATRAS.has(next ?? '')) phonemes.push('o'); // inherent vowel in Bengali is 'o'
     }
   }
 
@@ -180,6 +197,10 @@ const GU_VOWEL_MAP: Record<string, string> = {
   '੍': '',   // virama
 };
 
+const GU_MATRAS = new Set([
+  'ਾ', 'ਿ', 'ੀ', 'ੁ', 'ੂ', 'ੇ', 'ੈ', 'ੋ', 'ੌ',
+]);
+
 const GU_CONSONANT_MAP: Record<string, string> = {
   'ਕ': 'k', 'ਖ': 'kh', 'ਗ': 'g', 'ਘ': 'gh', 'ਙ': 'ng',
   'ਚ': 'ch', 'ਛ': 'chh', 'ਜ': 'j', 'ਝ': 'jh', 'ਞ': 'ny',
@@ -193,18 +214,22 @@ const GU_CONSONANT_MAP: Record<string, string> = {
 
 function transcribeGU(token: string): { vowels: string; coda: string; onset: string } {
   const chars = [...token.normalize('NFC')];
-  let phonemes: string[] = [];
+  const phonemes: string[] = [];
 
   for (let i = 0; i < chars.length; i++) {
     const ch = chars[i]!;
-    if (ch in GU_VOWEL_MAP) {
+    if (GU_MATRAS.has(ch)) {
+      // Cancel spurious inherent 'a' from preceding consonant
+      if (phonemes.at(-1) === 'a') phonemes.pop();
+      const m = GU_VOWEL_MAP[ch]!;
+      if (m) phonemes.push(m);
+    } else if (ch in GU_VOWEL_MAP) {
       const m = GU_VOWEL_MAP[ch]!;
       if (m) phonemes.push(m);
     } else if (ch in GU_CONSONANT_MAP) {
       phonemes.push(GU_CONSONANT_MAP[ch]!);
       const next = chars[i + 1];
-      const isMatra = next && next in GU_VOWEL_MAP;
-      if (!isMatra) phonemes.push('a');
+      if (!GU_MATRAS.has(next ?? '')) phonemes.push('a');
     }
   }
 
