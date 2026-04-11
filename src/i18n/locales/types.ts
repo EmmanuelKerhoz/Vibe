@@ -243,6 +243,7 @@ export interface Translations {
     noData: string;
     showMusicalSuggestions: string;
     hideMusicalSuggestions: string;
+    musicalSuggestionsMovedHint: string;
   };
 
   similarity: {

@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { LyricsMusicAnalysis } from './LyricsMusicAnalysis';
 import { MusicalParamsPanel } from './MusicalParamsPanel';
 import { MusicalPromptBuilder } from './MusicalPromptBuilder';
+import { MusicalSuggestionsPanel } from './MusicalSuggestionsPanel';
 import { useSongContext } from '../../../contexts/SongContext';
 import { useComposerContext } from '../../../contexts/ComposerContext';
 
@@ -47,6 +48,7 @@ export function MusicalTab({
         completedSteps={completedSteps}
       />
       <div className="flex-1 p-6 space-y-5">
+        <MusicalSuggestionsPanel />
         <MusicalParamsPanel
           genre={genre} setGenre={setGenre}
           tempo={tempo} setTempo={setTempo}

@@ -191,7 +191,8 @@
     "close": "Cerrar informe",
     "noData": "No hay datos de análisis disponibles.",
     "showMusicalSuggestions": "Mostrar sugerencias musicales",
-    "hideMusicalSuggestions": "Ocultar sugerencias musicales"
+    "hideMusicalSuggestions": "Ocultar sugerencias musicales",
+    "musicalSuggestionsMovedHint": "Sugerencias musicales disponibles en la pestaña Musical"
   },
   "similarity": {
     "title": "Verificación de similitud",
