@@ -3,22 +3,23 @@
  */
 
 export type LangCode =
-  | 'fr' | 'es' | 'it' | 'pt'           // Romance
-  | 'en' | 'de' | 'nl'                   // Germanic
-  | 'ar' | 'he'                           // Semitic
-  | 'zh' | 'ja' | 'ko'                   // CJK
-  | 'th' | 'lo'                           // TAI (Thai, Lao)
-  | 'vi' | 'km'                           // VIET (Vietnamese, Khmer)
-  | 'sw' | 'lg' | 'rw' | 'sn' | 'zu' | 'xh' | 'ny'  // Bantu
-  | 'yo'                                  // Yoruboid
-  | 'ba' | 'di' | 'ew' | 'mi'           // KWA
-  | 'bk' | 'cb' | 'og' | 'ha'           // CRV
-  | 'ru' | 'pl' | 'cs'                   // Slavic
-  | 'tr'                                  // TRK (Turkish)
-  | 'fi' | 'hu'                           // FIN (Finnish, Hungarian)
-  | 'hi' | 'ur' | 'bn' | 'fa' | 'pa'   // Indo-Iranian
-  | 'id' | 'ms' | 'tl' | 'mg'           // Austronesian
-  | 'ta' | 'te' | 'kn' | 'ml'           // Dravidian
+  | 'fr' | 'es' | 'it' | 'pt' | 'ro' | 'ca'  // Romance
+  | 'en' | 'de' | 'nl' | 'sv' | 'da' | 'no' | 'is'  // Germanic
+  | 'ar' | 'he' | 'am'                          // Semitic
+  | 'zh' | 'yue' | 'ja' | 'ko'                  // CJK
+  | 'th' | 'lo'                                  // TAI (Thai, Lao)
+  | 'vi' | 'km'                                  // VIET (Vietnamese, Khmer)
+  | 'sw' | 'lg' | 'rw' | 'sn' | 'zu' | 'xh' | 'ny' | 'bm' | 'ff' | 'jv'  // Bantu
+  | 'yo'                                         // Yoruboid
+  | 'ba' | 'di' | 'ew' | 'mi'                   // KWA
+  | 'bk' | 'cb' | 'og' | 'ha'                   // CRV
+  | 'ru' | 'pl' | 'cs' | 'sk' | 'uk' | 'bg' | 'sr' | 'hr'  // Slavic
+  | 'tr' | 'az' | 'uz' | 'kk'                   // TRK (Turkic)
+  | 'fi' | 'hu' | 'et'                           // FIN (Finno-Ugric)
+  | 'hi' | 'ur' | 'bn' | 'fa' | 'pa'            // Indo-Iranian
+  | 'id' | 'ms' | 'tl' | 'mg'                   // Austronesian
+  | 'ta' | 'te' | 'kn' | 'ml'                   // Dravidian
+  | 'nou' | 'pcm' | 'cfg'                        // Creole / Pidgin
   | '__unknown__';
 
 export type FamilyId =
@@ -33,11 +34,12 @@ export type FamilyId =
   | 'TAI'      // Tai-Kadai tonal (Thai, Lao)
   | 'VIET'     // Vietic + Khmer (Vietnamese, Khmer)
   | 'CJK'      // Chinese-Japanese-Korean
-  | 'TRK'      // Turkic (Turkish)
-  | 'FIN'      // Finno-Ugric (Finnish, Hungarian)
+  | 'TRK'      // Turkic
+  | 'FIN'      // Finno-Ugric (Finnish, Hungarian, Estonian)
   | 'IIR'      // Indo-Iranian (Hindi, Urdu, Bengali, Persian, Punjabi)
   | 'AUS'      // Austronesian (Indonesian, Malay, Tagalog, Malagasy)
   | 'DRA'      // Dravidian (Tamil, Telugu, Kannada, Malayalam)
+  | 'CRE'      // Creole / Pidgin
   | 'FALLBACK';
 
 export type SegmentationMode =
