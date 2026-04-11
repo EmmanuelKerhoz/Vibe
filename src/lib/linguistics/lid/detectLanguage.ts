@@ -21,6 +21,12 @@
  *
  * Confidence is intentionally NOT exposed in the public API — callers receive
  * a code and use it; the Registry's ALGO-ROBUST fallback handles residual errors.
+ *
+ * Exclusivity rules (pilots must NOT appear in sibling language lists):
+ *   pt vs es: pt uses não/você/lhe/mesmo/nossa — absent from es.
+ *             Shared tokens (que, por, para, como, quando) removed from pt.
+ *   cfg vs nou: cfg tokens are CM-exclusive (mboa, feymania, mbenguiste, feyeur).
+ *               Shared tokens (tchamba, blèkè, sawa) kept only in nou.
  */
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -131,7 +137,7 @@ const WORD_PILOTS: Record<string, string[]> = {
     'when', 'what', 'which', 'your', 'you',
   ],
   es: [
-    'que', 'una', 'por', 'con', 'para', 'pero', 'como', 'más',
+    'que', 'una', 'por', 'con', 'para', 'como', 'más',
     'todo', 'este', 'esta', 'tiene', 'cuando', 'desde', 'hasta',
     'porque', 'también', 'bien', 'entre', 'puede',
   ],
@@ -140,10 +146,14 @@ const WORD_PILOTS: Record<string, string[]> = {
     'questo', 'questa', 'quando', 'perché', 'loro', 'bene', 'può',
     'siamo', 'vuole', 'sapere',
   ],
+  // pt pilots are PT-exclusive vs es:
+  //   não, você, lhe, mesmo, nossa, agora, ainda, embora, nunca, sempre,
+  //   aqui, isso, algo, nada, teu — none of these appear in standard es.
+  //   Shared tokens (que, por, uma, para, como, quando, porque) removed.
   pt: [
-    'que', 'uma', 'por', 'com', 'para', 'mas', 'como', 'tudo',
-    'este', 'esta', 'quando', 'porque', 'também', 'bem', 'pode',
-    'são', 'está', 'esse',
+    'não', 'você', 'lhe', 'mesmo', 'nossa', 'agora', 'ainda',
+    'embora', 'nunca', 'sempre', 'aqui', 'isso', 'algo', 'nada', 'teu',
+    'são', 'está', 'esse', 'tudo', 'bem', 'mas',
   ],
   de: [
     'der', 'die', 'das', 'und', 'ist', 'ein', 'eine', 'nicht',
@@ -231,8 +241,8 @@ const WORD_PILOTS: Record<string, string[]> = {
     'kama', 'folo', 'minnu',
   ],
   // ─── Creole / Pidgin languages (Latin-script) ────────────────────────────
-  // Nouchi — Côte d'Ivoire urban creole. Exclusive markers vs. FR/DYU/BCI.
-  // Key: gnaman, yako, warra, tchamba are uniquely Nouchi; gnaman ≠ any FR word.
+  // Nouchi — Côte d'Ivoire urban creole. Exclusive markers vs. FR/DYU/BCI/CFG.
+  // tchamba, blèkè, sawa kept here (CI-exclusive); removed from cfg to avoid collision.
   nou: [
     'gnaman', 'yako', 'warra', 'tchamba', 'blaka', 'sawa',
     'kpoto', 'gbrou', 'drogbo', 'mboki', 'ndoki', 'broki',
@@ -246,13 +256,16 @@ const WORD_PILOTS: Record<string, string[]> = {
     'katakata', 'yawa', 'gbege', 'oga',
     'waka', 'dey', 'bele', 'belle', 'pele',
   ],
-  // Camfranglais — Yaoundé / Douala. Exclusive markers vs. FR/EN.
+  // Camfranglais — Yaoundé / Douala. Exclusive markers vs. FR/EN/NOU.
   // mboa (=pays/home), feymania (=arnaque), kanda (=quartier) uniquely CFG.
+  // Removed: tchamba, blèkè, sawa (shared with nou → collision risk).
+  // Added CM-exclusive: mbenguiste (=personne de Mbeng/Europe), feyeur (=arnaqueur),
+  //   couper (=partir vite), boulot (=argent, CM usage), gbata (=gifle, CM).
   cfg: [
     'mboa', 'feymania', 'kanda', 'makossa', 'mbamba', 'ngola',
     'manawa', 'arnaka', 'bikutsi', 'gbaka',
-    'nda', 'bangangté', 'sawa',
-    'tchamba', 'blèkè', 'ndè',
+    'nda', 'bangangté', 'ndè',
+    'mbenguiste', 'feyeur', 'couper', 'boulot', 'gbata',
   ],
 };
 
