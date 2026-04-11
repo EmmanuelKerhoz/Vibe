@@ -33,6 +33,10 @@ function sanitizeConfig(raw: Record<string, unknown>): SanitizedConfig {
       case 'responseMimeType':
         if (typeof val === 'string') out[key] = val;
         break;
+      case 'responseSchema':
+        // Pass the schema object as-is — the Gemini SDK validates its shape internally.
+        if (val !== null && typeof val === 'object') out[key] = val;
+        break;
     }
   }
   return out;
