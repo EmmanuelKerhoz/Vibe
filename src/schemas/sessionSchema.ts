@@ -12,6 +12,10 @@
  * isManual, rhymeScheme, targetSyllables, mood, preInstructions,
  * postInstructions) were silently dropped on session restore.
  *
+ * P6: Added isMeta — mirrors Line.isMeta from src/types/index.ts.
+ *     Was preserved by .passthrough() but absent from the inferred
+ *     SessionLine type, causing silent type gaps.
+ *
  * Usage:
  *   const result = SessionSchema.safeParse(JSON.parse(raw));
  *   if (result.success) { // use result.data }
@@ -28,6 +32,8 @@ export const SectionLineSchema = z.object({
   rhymingSyllables:  z.string().optional(),
   concept:           z.string().optional(),
   isManual:          z.boolean().optional(),
+  // P6: production/performance meta-instruction flag (e.g. [Guitar solo])
+  isMeta:            z.boolean().optional(),
 }).passthrough(); // allow extra fields — normalizeLoadedSection will handle them
 
 export const SectionSchema = z.object({

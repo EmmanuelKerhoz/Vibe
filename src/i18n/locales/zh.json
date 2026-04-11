@@ -1,4 +1,7 @@
 {
+  "common": {
+    "loading": "加载中"
+  },
   "app": {
     "name": "Lyricist Pro",
     "tagline": "专为词曲作者和诗人打造的专业AI歌词编辑器。借助实时建议、结构管理和智能量化，创作您的传世之作。"
@@ -17,7 +20,8 @@
     "theme": "明暗主题",
     "audioFeedback": "音频反馈",
     "language": "切换语言",
-    "settings": "设置"
+    "settings": "设置",
+    "settingsTooltip": "所有设置"
   },
   "ribbon": {
     "lyrics": "歌词",
@@ -110,6 +114,7 @@
     "rhyme": "韵脚",
     "syllables": "音节",
     "syllableCount": "数量",
+    "schemaHeader": "格式",
     "concept": "概念",
     "lines": "行数",
     "chars": "字符",
@@ -117,6 +122,7 @@
     "moodPlaceholder": "情感...",
     "regenerateWarning": "这将完全重新生成当前歌词。是否继续？",
     "addLine": "添加行",
+    "addLineAfter": "在此行后添加行",
     "addMusicalEffect": "添加音乐效果 / 调制 / 特效",
     "moveSectionUp": "上移段落",
     "moveSectionDown": "下移段落",
@@ -127,7 +133,16 @@
     "aiLine": "AI生成的行",
     "moveLineUp": "上移行",
     "moveLineDown": "下移行",
-    "deleteLine": "删除行"
+    "deleteLine": "删除行",
+    "linePlaceholder": "写一行歌词…",
+    "adaptLine": "将此行适配到目标语言",
+    "adaptingLabel": "适配中…",
+    "detectingLanguageLabel": "检测语言中…",
+    "analyzingLabel": "分析中…",
+    "checkingSimilarityLabel": "检查相似度中…",
+    "lyricsEditors": "视图",
+    "lyricsInsights": "洞察",
+    "detect": "检测"
   },
   "suggestions": {
     "title": "AI 建议",
@@ -203,7 +218,7 @@
     "sharedLines": "共享行数",
     "matchedSections": "匹配段落",
     "sharedKeywords": "共享关键词",
-    "thresholdHint": "只显示相似度高于 50% 的歌曲，并按从高到低排序。",
+    "thresholdHint": "按相似度从高到低排序，与分数无关。",
     "webTitle": "网络相似度",
     "webSubtitle": "来自 DuckDuckGo 和 Wikipedia 的结果",
     "webIdle": "尚未运行搜索。引擎在 30 秒不活动后自动触发（文本变化 ≥ 20%），或点击刷新。",
@@ -313,6 +328,15 @@
     "licenseLabel": "许可证",
     "close": "关闭"
   },
+  "aiAssistant": {
+    "title": "AI 助手",
+    "onboarding": "您想了解或做什么？",
+    "placeholder": "询问有关您的歌词或创作的任何问题…",
+    "send": "发送",
+    "close": "关闭助手",
+    "thinking": "思考中…",
+    "error": "无法获取回复，请重试。"
+  },
   "settings": {
     "title": "设置",
     "theme": {
@@ -343,6 +367,11 @@
       "markdown": "Markdown 编辑器",
       "phonetic": "音标视图"
     },
+    "translation": {
+      "label": "翻译 / 适配",
+      "show": "显示",
+      "hide": "隐藏"
+    },
     "actions": {
       "default": "默认",
       "save": "保存",
@@ -367,9 +396,6 @@
     "reset": "重置歌曲",
     "aiUnavailable": "Gemini 后端不可用",
     "aiUnavailableHelp": "在您的 Vercel 项目环境变量中设置 GEMINI_API_KEY（设置 → 环境变量），然后重新部署。",
-    "adaptSong": "将整首歌曲翻译并改编为 {lang}（创意改编，而非直译）",
-    "checkSimilarity": "将这首歌与已保存版本进行比较，并显示最接近的结果",
-    "copyPrompt": "复制到剪贴板",
     "quantize": "调整所有行以匹配目标音节数，同时保持含义",
     "analyzeTheme": "分析歌曲结构、押韵质量和情感影响",
     "regenerate": "根据当前设置和主题重写整首歌曲",
@@ -386,6 +412,7 @@
     "generateSong": "用 AI 生成新歌曲",
     "regenerateSection": "仅重写此段落",
     "quantizeSection": "调整此段落的行以匹配音节目标",
+    "adaptSong": "将整首歌曲翻译并改编为 {lang}（创意改编，而非直译）",
     "sectionAdapt": "将此段落适配到所选语言",
     "markupMode": "切换到纯文本模式",
     "phoneticMode": "切换到音标模式",
@@ -399,10 +426,24 @@
     "closeAbout": "关闭",
     "analysisCancel": "取消并关闭",
     "analysisImport": "分析并导入粘贴的歌词",
+    "checkSimilarity": "将这首歌与已保存版本进行比较，并显示最接近的结果",
+    "copyPrompt": "复制到剪贴板",
     "generateTitle": "从歌词生成标题",
     "aiGeneratedTitle": "AI生成的标题",
     "userEnteredTitle": "用户输入的标题",
-    "openSearch": "在歌词中搜索和替换 (Ctrl+F)"
+    "openSearch": "在歌词中搜索和替换 (Ctrl+F)",
+    "closeDialog": "关闭对话框",
+    "processing": "处理中…",
+    "removeFromLibrary": "从资料库中删除",
+    "removeFromLibraryItem": "从资料库中删除 {title}",
+    "openLeftPanel": "打开歌词生成面板",
+    "closeLeftPanel": "关闭歌词生成面板",
+    "detectLanguage": "检测歌曲语言",
+    "redetectLanguage": "已检测到：{langs} — 点击重新检测",
+    "moodPresets": "为您的歌曲选择预设情绪",
+    "rhymeScheme": "选择所有段落的默认押韵方案",
+    "targetSyllables": "设置每行的目标音节数",
+    "viewMode": "在不同歌词编辑器视图之间切换"
   },
   "sections": {
     "intro": "前奏",
@@ -457,5 +498,31 @@
     "ABABAB": "ABABAB（六行交替）",
     "ABCABC": "ABCABC（六行循环）",
     "FREE": "自由诗"
+  },
+  "apiError": {
+    "title": "API 错误",
+    "close": "关闭"
+  },
+  "adaptationProgress": {
+    "adapting": "适配中",
+    "reversing": "回译中",
+    "reviewing": "审核中",
+    "done": "完成",
+    "fidelityScore": "保真度评分",
+    "reviewRecommended": "建议审核",
+    "pipelineFailed": "适配流程失败，请查看控制台详情。",
+    "dismissResult": "关闭适配结果"
+  },
+  "confirmModal": {
+    "regenerateTitle": "重新生成歌曲",
+    "regenerateConfirm": "重新生成",
+    "cancel": "取消"
+  },
+  "promptModal": {
+    "saveVersionTitle": "保存版本",
+    "saveVersionMessage": "输入此版本的名称：",
+    "saveVersionPlaceholder": "版本名称",
+    "saveVersionConfirm": "保存",
+    "cancel": "取消"
   }
 }
