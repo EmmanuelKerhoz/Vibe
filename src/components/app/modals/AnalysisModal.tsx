@@ -156,57 +156,61 @@ export function AnalysisModal({
                   <h4 className="micro-label text-emerald-500 flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5" />{t.analysis.strengths}
                   </h4>
-                  <ul className="space-y-2">
-                    {strengths.map((s, i) => (
-                      <li key={i} className="text-sm text-[var(--text-secondary)] flex gap-2"><span className="text-emerald-500 mt-1">•</span>{s}</li>
-                    ))}
-                  </ul>
+                  <div className="max-h-52 overflow-y-auto custom-scrollbar bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5">
+                    <ul className="space-y-2">
+                      {strengths.map((s, i) => (
+                        <li key={i} className="text-sm text-[var(--text-secondary)] flex gap-2"><span className="text-emerald-500 mt-1 flex-shrink-0">•</span>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </section>
                 <section className="space-y-3">
                   <h4 className="micro-label text-amber-500 flex items-center gap-2">
                     <Target className="w-3.5 h-3.5" />{t.analysis.improvements}
                   </h4>
-                  <ul className="space-y-3">
-                    {improvements.map((s, i) => (
-                      <li key={i} className="flex items-start gap-3 group">
-                        <button
-                          onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)}
-                          disabled={isApplyingAnalysis !== null || appliedAnalysisItems.has(s)}
-                          aria-label={appliedAnalysisItems.has(s) ? 'Applied' : selectedAnalysisItems.has(s) ? 'Deselect' : 'Select for batch apply'}
-                          className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                            appliedAnalysisItems.has(s)
-                              ? 'bg-emerald-500 border-emerald-500 text-white'
-                              : selectedAnalysisItems.has(s)
-                              ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white'
-                              : 'border-[var(--border-color)] hover:border-amber-500/50 group-hover:bg-amber-500/10'
-                          }`}
-                        >
-                          {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-3 h-3" /> : <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/20 group-hover:bg-amber-500/50" />}
-                        </button>
-                        <span className={`flex-1 text-sm leading-relaxed transition-colors ${
-                          appliedAnalysisItems.has(s) ? 'text-[var(--text-secondary)] line-through' : selectedAnalysisItems.has(s) ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
-                        }`}>{s}</span>
-                        {/* One-click apply button — visible on hover, hidden once applied */}
-                        {applyAnalysisItem && !appliedAnalysisItems.has(s) && (
-                          <Tooltip title="Apply this suggestion directly">
-                            <button
-                              onClick={() => applyAnalysisItem(s)}
-                              disabled={isApplyingAnalysis !== null}
-                              aria-label={`Apply: ${s}`}
-                              className={`flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-amber-500/70 hover:text-amber-400 hover:bg-amber-500/10 disabled:opacity-0 ${
-                                isApplyingAnalysis === s ? 'opacity-100' : ''
-                              }`}
-                            >
-                              {isApplyingAnalysis === s
-                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                : <Zap className="w-3.5 h-3.5" />
-                              }
-                            </button>
-                          </Tooltip>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="max-h-52 overflow-y-auto custom-scrollbar bg-black/[0.02] dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5">
+                    <ul className="space-y-3">
+                      {improvements.map((s, i) => (
+                        <li key={i} className="flex items-start gap-3 group">
+                          <button
+                            onClick={() => !appliedAnalysisItems.has(s) && toggleAnalysisItemSelection(s)}
+                            disabled={isApplyingAnalysis !== null || appliedAnalysisItems.has(s)}
+                            aria-label={appliedAnalysisItems.has(s) ? 'Applied' : selectedAnalysisItems.has(s) ? 'Deselect' : 'Select for batch apply'}
+                            className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                              appliedAnalysisItems.has(s)
+                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                : selectedAnalysisItems.has(s)
+                                ? 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white'
+                                : 'border-[var(--border-color)] hover:border-amber-500/50 group-hover:bg-amber-500/10'
+                            }`}
+                          >
+                            {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-3 h-3" /> : <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/20 group-hover:bg-amber-500/50" />}
+                          </button>
+                          <span className={`flex-1 text-sm leading-relaxed transition-colors ${
+                            appliedAnalysisItems.has(s) ? 'text-[var(--text-secondary)] line-through' : selectedAnalysisItems.has(s) ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
+                          }`}>{s}</span>
+                          {/* One-click apply button — visible on hover, hidden once applied */}
+                          {applyAnalysisItem && !appliedAnalysisItems.has(s) && (
+                            <Tooltip title="Apply this suggestion directly">
+                              <button
+                                onClick={() => applyAnalysisItem(s)}
+                                disabled={isApplyingAnalysis !== null}
+                                aria-label={`Apply: ${s}`}
+                                className={`flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-amber-500/70 hover:text-amber-400 hover:bg-amber-500/10 disabled:opacity-0 ${
+                                  isApplyingAnalysis === s ? 'opacity-100' : ''
+                                }`}
+                              >
+                                {isApplyingAnalysis === s
+                                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  : <Zap className="w-3.5 h-3.5" />
+                                }
+                              </button>
+                            </Tooltip>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </section>
               </div>
               <div className="flex justify-center pt-2">
