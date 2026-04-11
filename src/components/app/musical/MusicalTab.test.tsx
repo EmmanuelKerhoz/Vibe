@@ -120,6 +120,10 @@ vi.mock('./MusicalPromptBuilder', () => ({
   ),
 }));
 
+vi.mock('./MusicalSuggestionsPanel', () => ({
+  MusicalSuggestionsPanel: () => <div data-testid="musical-suggestions-panel" />,
+}));
+
 describe('MusicalTab', () => {
   beforeEach(() => {
     mockSongContext.song = [];
