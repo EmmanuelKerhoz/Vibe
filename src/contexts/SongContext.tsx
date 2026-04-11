@@ -52,6 +52,9 @@ export function SongProvider({ children }: { children: ReactNode }) {
   const meta = useSongMeta();
 
   // SongHistoryContext value — only changes on undo/redo, never on keystroke.
+  // history is a new object every render; we intentionally track its members
+  // (past, future, undo, redo) as the actual invalidation drivers so that
+  // keystroke mutations to song do NOT rebuild this context value.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const historyValue = useMemo<SongHistoryContextValue>(
     () => ({
@@ -60,9 +63,6 @@ export function SongProvider({ children }: { children: ReactNode }) {
       undo: history.undo,
       redo: history.redo,
     }),
-    // history is a new object every render; we intentionally track its members
-    // (past, future, undo, redo) as the actual invalidation drivers so that
-    // keystroke mutations to song do NOT rebuild this context value.
     [history.past, history.future, history.undo, history.redo],
   );
 

@@ -18,7 +18,7 @@ const mockSetRhythm = vi.fn();
 const mockSetNarrative = vi.fn();
 const mockSetMusicalPrompt = vi.fn();
 
-vi.mock('../contexts/SongContext', () => ({
+vi.mock('../../contexts/SongContext', () => ({
   useSongContext: () => ({
     song: [],
     structure: [],
@@ -49,7 +49,7 @@ vi.mock('../contexts/SongContext', () => ({
   }),
 }));
 
-vi.mock('../utils/sessionReset', () => ({
+vi.mock('../../utils/sessionReset', () => ({
   buildResetPayload: (rhymeScheme: string) => ({
     song: [],
     structure: [],
@@ -83,7 +83,7 @@ vi.mock('../utils/sessionReset', () => ({
   clearPersistedSession: vi.fn(),
 }));
 
-vi.mock('../utils/songDefaults', () => ({
+vi.mock('../../utils/songDefaults', () => ({
   createEmptySong: () => [],
 }));
 
