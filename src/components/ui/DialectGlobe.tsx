@@ -34,20 +34,27 @@ const REGION_ROTATIONS: Record<string, [number, number]> = {
   'Oceania':          [135, -25],
 };
 
+/** Maps region keywords to their general geographic area. */
+const REGION_KEYWORDS: [string, string[]][] = [
+  ['West Africa', ['west africa', 'ivory coast', 'nigeria', 'niger', 'senegal', 'mali', 'burkina', 'togo', 'cameroon']],
+  ['East Africa', ['east africa', 'ethiopia', 'tanzania', 'kenya']],
+  ['Central Africa', ['central africa', 'congo']],
+  ['South Africa', ['south africa']],
+  ['East Asia', ['hong kong', 'guangdong', 'mandarin', 'south korea', 'japan']],
+  ['Southeast Asia', ['java', 'indonesia', 'cambodia', 'philippines', 'vietnam', 'thailand', 'lao', 'malay']],
+  ['South Asia', ['india', 'bangladesh', 'bengal', 'karnataka', 'kerala', 'punjab', 'tamil', 'andhra', 'sri lanka', 'pakistan']],
+  ['Middle East', ['iran', 'persian']],
+];
+
 /**
  * Infer the general region from a language code or region string.
  */
 function inferRegion(code: string, region?: string): [number, number] {
   if (region) {
     const r = region.toLowerCase();
-    if (r.includes('west africa') || r.includes('ivory coast') || r.includes('nigeria') || r.includes('niger') || r.includes('senegal') || r.includes('mali') || r.includes('burkina') || r.includes('togo') || r.includes('cameroon')) return REGION_ROTATIONS['West Africa']!;
-    if (r.includes('east africa') || r.includes('ethiopia') || r.includes('tanzania') || r.includes('kenya')) return REGION_ROTATIONS['East Africa']!;
-    if (r.includes('central africa') || r.includes('congo')) return REGION_ROTATIONS['Central Africa']!;
-    if (r.includes('south africa')) return REGION_ROTATIONS['South Africa']!;
-    if (r.includes('hong kong') || r.includes('guangdong') || r.includes('mandarin') || r.includes('south korea') || r.includes('japan')) return REGION_ROTATIONS['East Asia']!;
-    if (r.includes('java') || r.includes('indonesia') || r.includes('cambodia') || r.includes('philippines') || r.includes('vietnam') || r.includes('thailand') || r.includes('lao') || r.includes('malay')) return REGION_ROTATIONS['Southeast Asia']!;
-    if (r.includes('india') || r.includes('bangladesh') || r.includes('bengal') || r.includes('karnataka') || r.includes('kerala') || r.includes('punjab') || r.includes('tamil') || r.includes('andhra') || r.includes('sri lanka') || r.includes('pakistan')) return REGION_ROTATIONS['South Asia']!;
-    if (r.includes('iran') || r.includes('persian')) return REGION_ROTATIONS['Middle East']!;
+    for (const [area, keywords] of REGION_KEYWORDS) {
+      if (keywords.some(kw => r.includes(kw))) return REGION_ROTATIONS[area]!;
+    }
   }
 
   // Fallback by code
