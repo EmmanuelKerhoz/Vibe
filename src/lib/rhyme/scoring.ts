@@ -57,10 +57,11 @@ export function phonemeEditDistance(a: string, b: string): number {
  */
 export function toneDistance(a: string | undefined, b: string | undefined): number {
   if (!a || !b) return 0.4;       // at least one tone undetected — uncertain
-  if (a === b)  return 1.0;       // exact match
 
   const aU = a.toUpperCase();
   const bU = b.toUpperCase();
+
+  if (aU === bU) return 1.0;      // exact match (case-insensitive)
 
   // Adjacent steps: H↔M or M↔L
   if ((aU === 'H' && bU === 'M') || (aU === 'M' && bU === 'H')) return 0.5;
