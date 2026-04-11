@@ -86,7 +86,6 @@ export const SectionEditor = React.memo(function SectionEditor({
           text: l.text,
           lang: lineLanguages[l.id] ?? sectionTargetLanguage,
         })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // lineLanguages is a record rebuilt on any line lang change; section.lines
     // covers structural changes. The serialised key avoids spurious re-runs on
     // unrelated sections but cannot be statically analysed — disable needed.
@@ -100,7 +99,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   );
 
   const schemeResult = useRhymeSchemeMultiLang(multiLangLines, isProxied);
-  // ────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────────
 
   const adaptControlOptional = {
     ...(onSectionTargetLanguageChange ? { onSectionTargetLanguageChange } : {}),
