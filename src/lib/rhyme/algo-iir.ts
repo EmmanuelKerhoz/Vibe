@@ -3,7 +3,7 @@
  * Languages: HI (Hindi), UR (Urdu), BN (Bengali), FA (Persian), PA (Punjabi)
  *
  * Strategy:
- * - HI: Devanagari vowel matras + inherent 'a', schwa deletion rule on penultimate
+ * - HI: Devanagari vowel matras + inherent 'a', schwa deletion rule on final consonant
  * - UR: Perso-Arabic script, vowel letters (ا و ی) + harakat when present
  * - BN: Bengali script vowel map, final hasanta strips inherent vowel
  * - FA: Perso-Arabic, long vowels (آ ا و ی), short vowels ignored (unwritten)
@@ -72,6 +72,19 @@ function transcribeDEVA(token: string): { vowels: string; coda: string; onset: s
     }
   }
 
+  // Hindi schwa deletion: word-final inherent 'a' after a consonant is typically
+  // deleted in Hindi pronunciation. This is critical for rhyme: without it,
+  // words like नार (naar) and सुबह (subah) both appear to end in 'a',
+  // producing identical nuclei and indistinguishable scores.
+  if (
+    phonemes.length >= 2 &&
+    phonemes.at(-1) === 'a' &&
+    phonemes.at(-2) !== undefined &&
+    !/[aeiou]/.test(phonemes.at(-2)!)
+  ) {
+    phonemes.pop();
+  }
+
   // Find last vowel sequence
   const str = phonemes.join('');
   const vowelMatch = [...str.matchAll(/[aeiou]+/g)];
@@ -128,7 +141,7 @@ function transcribePERSO(token: string): { vowels: string; coda: string; onset: 
   };
 }
 
-// ─── Bengali script ───────────────────────────────────────────────────────────
+// ─── Bengali script ────────────────────────────────────────────────────────────
 
 const BN_VOWEL_MAP: Record<string, string> = {
   'অ': 'o', 'আ': 'aa', 'ই': 'i', 'ঈ': 'ii', 'উ': 'u', 'ঊ': 'uu',
@@ -186,9 +199,8 @@ function transcribeBN(token: string): { vowels: string; coda: string; onset: str
   };
 }
 
-// ─── Gurmukhi (PA) ────────────────────────────────────────────────────────────
+// ─── Gurmukhi (PA) ─────────────────────────────────────────────────────────────
 // Punjabi tones (3) are collapsed — not relevant for written rhyme detection
-
 const GU_VOWEL_MAP: Record<string, string> = {
   'ਅ': 'a', 'ਆ': 'aa', 'ਇ': 'i', 'ਈ': 'ii', 'ਉ': 'u', 'ਊ': 'uu',
   'ਏ': 'e', 'ਐ': 'ai', 'ਓ': 'o', 'ਔ': 'au',
@@ -221,8 +233,8 @@ function transcribeGU(token: string): { vowels: string; coda: string; onset: str
     if (GU_MATRAS.has(ch)) {
       // Cancel spurious inherent 'a' from preceding consonant
       if (phonemes.at(-1) === 'a') phonemes.pop();
-      const m = GU_VOWEL_MAP[ch]!;
-      if (m) phonemes.push(m);
+      const m = GU_VOWEL_MAP[ch]!
+;      if (m) phonemes.push(m);
     } else if (ch in GU_VOWEL_MAP) {
       const m = GU_VOWEL_MAP[ch]!;
       if (m) phonemes.push(m);
@@ -245,7 +257,7 @@ function transcribeGU(token: string): { vowels: string; coda: string; onset: str
   };
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// ─── Public API ──────────────────────────────────────────────────────────────
 
 export function extractNucleusIIR(
   unit: LineEndingUnit,
