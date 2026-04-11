@@ -9,9 +9,11 @@
  * - FA: Perso-Arabic, long vowels (آ ا و ی), short vowels ignored (unwritten)
  * - PA: Gurmukhi vowel matras, tonal distinction collapsed (not phonemic for rhyme)
  *
- * Scoring: vowel nucleus 60% + coda consonant 40%
+ * Scoring: vowel nucleus 70% + coda consonant 30%
  * Rationale: Hindi/Urdu poetry (ghazal, nazm) is vowel-rhyme dominant;
  *            coda matching is secondary but distinguishes perfect rhyme.
+ *            Weight 0.7/0.3 ensures different vowel nuclei (aa vs a) produce
+ *            a structurally robust score gap over coda variation.
  */
 
 import type { LineEndingUnit, LangCode, RhymeNucleus } from './types';
@@ -254,5 +256,5 @@ export function extractNucleusIIR(
 export function scoreIIR(a: RhymeNucleus, b: RhymeNucleus): number {
   const vowSim  = 1 - phonemeEditDistance(a.vowels, b.vowels);
   const codaSim = 1 - phonemeEditDistance(a.coda,   b.coda);
-  return 0.6 * vowSim + 0.4 * codaSim;
+  return 0.7 * vowSim + 0.3 * codaSim;
 }

@@ -8,8 +8,11 @@ import type { LineEndingUnit, LangCode, RhymeNucleus } from './types';
 
 // ─── French mute final consonants ────────────────────────────────────────────
 
-// In French, these word-final consonants are typically silent
-const FR_MUTE_FINALS = /[bcdghlpqrst]+$/i;
+// In French, these word-final consonants are typically silent.
+// NOTE: 'l' and 'r' are intentionally excluded — they are phonetically
+// realised in most French lyric words (ciel /sjɛl/, immortel /imɔʁtɛl/,
+// amour /amuʁ/). Including them would incorrectly destroy the vowel nucleus.
+const FR_MUTE_FINALS = /[bcdghpqst]+$/i;
 
 // French e muet (schwa) — word-final silent e (masculine/feminine rhyme parity)
 const FR_SILENT_E = /e$/i;
