@@ -24,7 +24,6 @@ import type { RefObject } from 'react';
 import { useAppState } from '../hooks/useAppState';
 import { useUIStateForProvider } from '../hooks/useUIStateForProvider';
 import type { UIStateBag } from './ModalContext';
-import type { UIStateSlice } from './UIStateSlice';
 
 type AppStateBag = ReturnType<typeof useAppState>;
 
@@ -45,8 +44,13 @@ export interface AppNavigationValue {
 const AppStateContext = createContext<AppStateContextValue | null>(null);
 const AppNavigationContext = createContext<AppNavigationValue | null>(null);
 
-export function selectUIStateSlice(appState: AppStateBag): UIStateSlice {
-  return {
+export function AppStateProvider({ children }: { children: ReactNode }) {
+  const appState = useAppState();
+
+  // Feed appState directly — useUIStateForProvider owns the single useMemo.
+  // The previous intermediate `uiSlice` useMemo was redundant (double O(N)
+  // allocation + invalidation on every modal toggle).
+  const uiStateForProvider = useUIStateForProvider({
     setIsAboutOpen: appState.setIsAboutOpen,
     setIsSettingsOpen: appState.setIsSettingsOpen,
     setApiErrorModal: appState.setApiErrorModal,
@@ -64,6 +68,9 @@ export function selectUIStateSlice(appState: AppStateBag): UIStateSlice {
     setIsAnalysisModalOpen: appState.setIsAnalysisModalOpen,
     setIsSearchReplaceOpen: appState.setIsSearchReplaceOpen,
     setIsAnalysisPanelOpen: appState.setIsAnalysisPanelOpen,
+    setActiveTab: appState.setActiveTab,
+    setIsStructureOpen: appState.setIsStructureOpen,
+    setIsLeftPanelOpen: appState.setIsLeftPanelOpen,
     isAboutOpen: appState.isAboutOpen,
     isSettingsOpen: appState.isSettingsOpen,
     apiErrorModal: appState.apiErrorModal,
@@ -82,48 +89,10 @@ export function selectUIStateSlice(appState: AppStateBag): UIStateSlice {
     isSearchReplaceOpen: appState.isSearchReplaceOpen,
     isAnalysisPanelOpen: appState.isAnalysisPanelOpen,
     activeTab: appState.activeTab,
-    setActiveTab: appState.setActiveTab,
     isStructureOpen: appState.isStructureOpen,
-    setIsStructureOpen: appState.setIsStructureOpen,
     isLeftPanelOpen: appState.isLeftPanelOpen,
-    setIsLeftPanelOpen: appState.setIsLeftPanelOpen,
-    // useRef<HTMLInputElement>(null) returns MutableRefObject<HTMLInputElement|null>
-    // in @types/react 18.x — cast to RefObject<HTMLInputElement> to satisfy the slice contract.
     importInputRef: appState.importInputRef as RefObject<HTMLInputElement>,
-  };
-}
-
-export function AppStateProvider({ children }: { children: ReactNode }) {
-  const appState = useAppState();
-
-  const uiSlice = useMemo<UIStateSlice>(
-    () => selectUIStateSlice(appState),
-    [
-      appState.setIsAboutOpen, appState.setIsSettingsOpen,
-      appState.setApiErrorModal, appState.setIsImportModalOpen,
-      appState.setIsExportModalOpen, appState.setIsSectionDropdownOpen,
-      appState.setIsSimilarityModalOpen, appState.setIsSaveToLibraryModalOpen,
-      appState.setIsVersionsModalOpen, appState.setIsResetModalOpen,
-      appState.setIsKeyboardShortcutsModalOpen, appState.setConfirmModal,
-      appState.setPromptModal, appState.setIsPasteModalOpen,
-      appState.setIsAnalysisModalOpen, appState.setIsSearchReplaceOpen,
-      appState.setIsAnalysisPanelOpen, appState.setActiveTab,
-      appState.setIsStructureOpen, appState.setIsLeftPanelOpen,
-      appState.isAboutOpen, appState.isSettingsOpen,
-      appState.apiErrorModal, appState.isImportModalOpen,
-      appState.isExportModalOpen, appState.isSectionDropdownOpen,
-      appState.isSimilarityModalOpen, appState.isSaveToLibraryModalOpen,
-      appState.isVersionsModalOpen, appState.isResetModalOpen,
-      appState.isKeyboardShortcutsModalOpen, appState.confirmModal,
-      appState.promptModal, appState.isPasteModalOpen,
-      appState.isAnalysisModalOpen, appState.isSearchReplaceOpen,
-      appState.isAnalysisPanelOpen, appState.activeTab,
-      appState.isStructureOpen, appState.isLeftPanelOpen,
-      appState.importInputRef,
-    ],
-  );
-
-  const uiStateForProvider = useUIStateForProvider(uiSlice);
+  });
 
   const contextValue = useMemo(
     () => ({ appState, uiStateForProvider }),
