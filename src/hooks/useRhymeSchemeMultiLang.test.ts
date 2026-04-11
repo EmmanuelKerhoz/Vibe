@@ -61,10 +61,10 @@ describe('useRhymeSchemeMultiLang — single-language stanza', () => {
 
   it('returns AABB for couplet French lines', () => {
     const lines = [
-      { text: 'Le vent souffle fort ce soir', lang: 'fr' },
-      { text: 'La nuit tombe sans espoir', lang: 'fr' },
-      { text: 'Les étoiles brillent au ciel', lang: 'fr' },
-      { text: 'Comme un regard immortel', lang: 'fr' },
+      { text: 'Mon coeur bat pour toujours', lang: 'fr' },
+      { text: 'Je pense à notre amour', lang: 'fr' },
+      { text: 'La vie est si belle', lang: 'fr' },
+      { text: 'Comme une étincelle', lang: 'fr' },
     ];
     const { result } = renderHook(() => useRhymeSchemeMultiLang(lines));
     expect(result.current).not.toBeNull();
