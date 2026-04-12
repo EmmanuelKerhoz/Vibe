@@ -69,7 +69,10 @@ export function AnalysisModal({
 
       {/*
         Outer flex row: [dialog] [improvements panel]
-        On mobile the right panel stacks below (flex-col), on sm+ it's side-by-side.
+        LCARS radius logic:
+          dialog       → rounded-[24px_8px_24px_8px]  (TL large, TR small, BR large, BL small)
+          right panel  → rounded-[0_24px_8px_0]        (TL flush, TR large, BR small, BL flush)
+        Together they form one continuous LCARS shape.
       */}
       <div className="relative flex flex-col sm:flex-row items-stretch gap-0 w-full sm:w-auto sm:max-w-5xl h-full sm:h-auto animate-in zoom-in-95 duration-300">
 
@@ -206,17 +209,21 @@ export function AnalysisModal({
           </div>
         </div>
 
-        {/* ── Right panel: Actionable Improvements — only when report is available ── */}
+        {/* ── Right panel: Actionable Improvements — only when report is available ──
+            LCARS radius: TL=0 (flush with dialog), TR=24px (free outer corner),
+                          BR=8px (small accent), BL=0 (flush with dialog)
+            → rounded-[0_24px_8px_0] / inner rounded-[0_22px_6px_0]
+        */}
         {hasReport && (
           <div
-            className="lcars-gradient-outline relative w-full sm:w-72 sm:max-h-[90vh] rounded-none sm:rounded-[8px_24px_8px_24px] flex-shrink-0 sm:-ml-[2px]"
+            className="lcars-gradient-outline relative w-full sm:w-72 sm:max-h-[90vh] rounded-none sm:rounded-[0_24px_8px_0] flex-shrink-0 sm:-ml-[2px]"
             style={{
               padding: '2px',
               boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
               isolation: 'isolate',
             }}
           >
-            <div className="relative w-full h-full flex flex-col glass-panel rounded-none sm:rounded-[6px_22px_6px_22px] overflow-hidden">
+            <div className="relative w-full h-full flex flex-col glass-panel rounded-none sm:rounded-[0_22px_6px_0] overflow-hidden">
               {/* Panel header */}
               <div className="px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex-shrink-0">
                 <h4 className="micro-label text-amber-500 flex items-center gap-2">
@@ -268,7 +275,7 @@ export function AnalysisModal({
                 </ul>
               </div>
 
-              {/* Panel footer: revert + apply batch */}
+              {/* Panel footer: apply batch + revert */}
               <div className="px-4 py-3 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex flex-col gap-2 flex-shrink-0">
                 {selectedAnalysisItems.size > 0 && (
                   <Tooltip title={t.tooltips.applyAnalysis}>
