@@ -93,17 +93,17 @@ describe('StructureSidebar section tooltips', () => {
     expect(screen.queryByRole('button', { name: 'Generate Lyrics' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Normalize Structure' })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add section' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add section...' }));
     fireEvent.mouseDown(screen.getByRole('option', { name: 'Verse' }));
 
-    expect(screen.queryAllByRole('button', { name: /^Add section$/ })).toHaveLength(1);
+    expect(screen.queryAllByRole('button', { name: /^Add section\.\.\.$/ })).toHaveLength(1);
     expect(screen.queryByRole('option', { name: 'Verse' })).toBeNull();
     expect(addStructureItem).toHaveBeenCalledTimes(1);
     expect(addStructureItem).toHaveBeenCalledWith('Verse');
 
     const turnaroundButton = screen.getAllByRole('button', { name: /Courte transition/ })[0]!;
     expect(turnaroundButton.closest('div.group')?.className).toContain('rounded-[12px_4px_12px_4px]');
-    expect(screen.getByRole('button', { name: 'Add section' }).getAttribute('style')).toContain('font-size: 11px');
+    expect(screen.getByRole('button', { name: 'Add section...' }).getAttribute('style')).toContain('font-size: 11px');
     expect(screen.getByRole('button', { name: 'Normalize Structure' }).getAttribute('style')).toContain('font-size: 11px');
   });
 
