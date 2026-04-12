@@ -23,13 +23,11 @@ export function SimilarityButton({
   setIsSimilarityModalOpen,
 }: SimilarityButtonProps) {
   const { t } = useTranslation();
-  // Read index directly from SimilarityContext to avoid re-rendering
-  // the InsightsBar subtree on every similarity engine run.
   const { index: webSimilarityIndex } = useSimilarityContext();
   const isDisabled = !hasApiKey || isGenerating || isAnalyzing || !hasLyrics;
   const tooltipTitle = !hasApiKey
     ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
-    : 'Compare with existing published songs and your saved library versions';
+    : 'Compare existing published songs and your owns in library';
 
   return (
     <Tooltip title={tooltipTitle}>

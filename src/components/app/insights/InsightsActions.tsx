@@ -54,12 +54,14 @@ export function InsightsActions({
         <Tooltip title="Phonological Analysis Panel">
           <button
             onClick={onToggleAnalysisPanel}
+            disabled={!hasLyrics}
             aria-label="Toggle phonological analysis panel"
             aria-pressed={isAnalysisPanelOpen}
-            className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[28px] min-h-[28px]"
+            aria-disabled={!hasLyrics}
+            className="px-2 lg:px-3 py-1 glass-button text-[11px] rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[28px] min-h-[28px] disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              color: isAnalysisPanelOpen ? 'var(--lcars-amber)' : 'var(--text-secondary)',
-              backgroundColor: isAnalysisPanelOpen ? 'var(--lcars-amber-transparent, rgba(255,168,0,0.12))' : undefined,
+              color: isAnalysisPanelOpen && hasLyrics ? 'var(--lcars-amber)' : 'var(--text-secondary)',
+              backgroundColor: isAnalysisPanelOpen && hasLyrics ? 'var(--lcars-amber-transparent, rgba(255,168,0,0.12))' : undefined,
             }}
           >
             <DataBarVertical24Regular className="w-3.5 h-3.5" style={{ width: 14, height: 14 }} />

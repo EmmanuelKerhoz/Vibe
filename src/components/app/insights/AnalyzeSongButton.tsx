@@ -1,4 +1,4 @@
-import { Loader2, BarChart2 } from '../../ui/icons';
+import { Loader2, ScanText } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
 
@@ -37,7 +37,7 @@ export function AnalyzeSongButton({
               <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
               <span className="sr-only">{t.editor.analyzingLabel ?? 'Analyzing…'}</span>
             </>)
-          : <BarChart2 className="w-3.5 h-3.5" aria-hidden="true" />}
+          : <ScanText className="w-3.5 h-3.5" aria-hidden="true" />}
         <span className="hidden lg:inline">Analysis</span>
       </button>
     </Tooltip>
