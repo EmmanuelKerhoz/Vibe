@@ -3,7 +3,6 @@ import { X, BarChart2, GripVertical, Link2, AlignLeft } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { AnimatePresence, motion } from 'motion/react';
 import { LcarsSelect } from '../ui/LcarsSelect';
-import { Button } from '../ui/Button';
 import { useTranslation } from '../../i18n';
 import { getSectionColor, getSectionDotColor, getSectionTextColor } from '../../utils/songUtils';
 import {
@@ -200,9 +199,10 @@ export const StructureSidebar = React.memo(function StructureSidebar({
               )}
             </div>
 
-            {/* Section list — scrollable */}
-            <div className="px-5 pt-5 flex-1 overflow-y-auto custom-scrollbar">
+            {/* Scrollable body: section list + ADD SECTION + COMPOSITION + Normalize */}
+            <div className="px-5 pt-5 pb-5 flex-1 overflow-y-auto custom-scrollbar">
               <div className="space-y-2">
+                {/* Section rows */}
                 <div className="flex flex-col gap-1.5">
                   {structure.map((item, idx) => {
                     if (groupedChorusIndices.has(idx)) return null;
@@ -216,7 +216,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     const chorusSectionId = chorusIdx !== undefined ? (song[chorusIdx]?.id ?? null) : null;
 
                     const rowKey = sectionId ?? `${item}-${idx}`;
-
                     const dragHandlers = makeDragHandlers(idx, isDraggable);
 
                     if (isGroupLeader && chorusItem !== undefined && chorusIdx !== undefined) {
@@ -281,6 +280,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                   })}
                 </div>
 
+                {/* ADD SECTION control */}
                 <div className="mt-3">
                   <LcarsSelect
                     value=""
@@ -294,32 +294,29 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     style={{ fontSize: '11px', textTransform: 'uppercase' }}
                   />
                 </div>
-              </div>
-            </div>
 
-            {/* Footer — Composition controls + Normalize (fixed, out of scroll) */}
-            <div
-              className="shrink-0"
-              style={{ borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}
-            >
-              <CompositionSection />
-              <div className="px-5 pb-5">
-                <Tooltip title={t.tooltips.normalizeStructure}>
-                  <div className="lcars-gradient-outline" style={{ borderRadius: sectionButtonShapeClass, width: '100%' }}>
-                    <Button
+                {/* COMPOSITION section — directly below ADD SECTION */}
+                <div className="mt-2">
+                  <CompositionSection />
+                </div>
+
+                {/* Normalize Structure — LCARS button */}
+                <div className="px-0 pb-2">
+                  <Tooltip title={t.tooltips.normalizeStructure}>
+                    <button
+                      type="button"
                       onClick={normalizeStructure}
                       disabled={structure.length === 0}
-                      variant="outlined" fullWidth
-                      startIcon={<AlignLeft className="w-3.5 h-3.5" />}
-                      className="ux-interactive"
-                      style={{ fontSize: '11px', padding: '4px 0', borderRadius: sectionButtonShapeClass }}
+                      className={`lcars-btn w-full flex items-center justify-center gap-2 ${sectionButtonShapeClass} px-3 py-2 text-[11px] uppercase tracking-wider font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed`}
                     >
-                      {t.structure.normalize}
-                    </Button>
-                  </div>
-                </Tooltip>
+                      <AlignLeft className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t.structure.normalize}</span>
+                    </button>
+                  </Tooltip>
+                </div>
               </div>
             </div>
+            {/* No pinned footer */}
           </div>
         </motion.div>
       )}
