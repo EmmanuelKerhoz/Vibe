@@ -18,6 +18,8 @@ interface Props {
   setAudioFeedback: (v: boolean) => void;
   onOpenAbout: () => void;
   onOpenSettings: () => void;
+  /** True when a valid OPFS session snapshot exists for this device. */
+  hasSavedSession?: boolean;
   /** Extra class applied to the root element (e.g. for mobile hide/show). */
   className?: string;
 }
@@ -26,7 +28,7 @@ export function StatusBar({
   hasApiKey,
   isAnalyzing,
   theme, setTheme, audioFeedback, setAudioFeedback,
-  onOpenAbout, onOpenSettings, className,
+  onOpenAbout, onOpenSettings, hasSavedSession, className,
 }: Props) {
   const { isGenerating, isSuggesting } = useComposerContext();
   const { sectionCount, wordCount, charCount } = useAppKpis();
@@ -51,10 +53,20 @@ export function StatusBar({
           </span>
           {isBusy && <span className="lcars-cursor-blink text-[var(--accent-warning)]" />}
         </div>
+        {/* Session persistence indicator */}
+        {hasSavedSession && (
+          <Tooltip title="Session auto-saved to this device">
+            <div className="flex items-center gap-1 cursor-default">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />
+              <span className="telemetry-text uppercase tracking-wider text-emerald-600 dark:text-emerald-400 hidden sm:inline">
+                saved
+              </span>
+            </div>
+          </Tooltip>
+        )}
         <div className="lcars-divider" />
         <StorageGauge />
         <div className="lcars-divider hidden lg:block" />
-        {/* KPIs — desktop only (hidden on mobile, shown in InsightsBar) */}
         <span className="hidden lg:inline telemetry-text text-zinc-700 dark:text-zinc-400">
           {sectionCount}{' '}
           <span className="text-zinc-500 dark:text-zinc-600 uppercase">

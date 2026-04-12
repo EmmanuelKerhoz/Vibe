@@ -2,10 +2,7 @@
  * useSessionAutoSave
  *
  * Watches song + meta state and persists a SessionSnapshot to OPFS
- * with a 2-second debounce.  Runs silently — never throws.
- *
- * Call this hook once, inside a component that is a descendant of
- * both SongProvider and AppStateProvider.
+ * with a 2-second debounce.  Calls onSaved() after the first successful write.
  */
 import { useEffect, useRef } from 'react';
 import { saveSession } from '../lib/sessionPersistence';
@@ -31,17 +28,18 @@ interface AutoSavePayload {
   activeTab: 'lyrics' | 'musical';
   isStructureOpen: boolean;
   isLeftPanelOpen: boolean;
+  /** Called once after the first successful OPFS write. */
+  onSaved?: () => void;
 }
 
 export function useSessionAutoSave(payload: AutoSavePayload): void {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Stable ref to always hold latest payload without re-running the effect
   const payloadRef = useRef<AutoSavePayload>(payload);
   payloadRef.current = payload;
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
+    timerRef.current = setTimeout(async () => {
       const p = payloadRef.current;
       const snapshot: SessionSnapshot = {
         schemaVersion: 1,
@@ -65,14 +63,14 @@ export function useSessionAutoSave(payload: AutoSavePayload): void {
         isStructureOpen: p.isStructureOpen,
         isLeftPanelOpen: p.isLeftPanelOpen,
       };
-      void saveSession(snapshot);
+      await saveSession(snapshot);
+      payloadRef.current.onSaved?.();
     }, 2000);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [
-    // Only the primitive values drive the debounce
     payload.song,
     payload.structure,
     payload.title,

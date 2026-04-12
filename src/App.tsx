@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
 import { AppEditorLayout } from './components/app/AppEditorLayout';
@@ -46,7 +46,10 @@ function AppInnerContent() {
   const { undo, redo } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { appState } = useAppStateContext();
-  const { theme, setTheme, audioFeedback, setAudioFeedback, hasApiKey } = appState;
+  const {
+    theme, setTheme, audioFeedback, setAudioFeedback, hasApiKey,
+    hasSavedSession, setHasSavedSession,
+  } = appState;
 
   const {
     activeTab, setActiveTab,
@@ -78,6 +81,12 @@ function AppInnerContent() {
 
   // ── Auto-save to OPFS ─────────────────────────────────────────────────
   const songCtx = useSongContext();
+
+  // Mark session as saved after first successful auto-save
+  const onSaved = useCallback(() => {
+    if (!hasSavedSession) setHasSavedSession(true);
+  }, [hasSavedSession, setHasSavedSession]);
+
   useSessionAutoSave({
     song: songCtx.song,
     structure: songCtx.structure,
@@ -97,6 +106,7 @@ function AppInnerContent() {
     activeTab,
     isStructureOpen,
     isLeftPanelOpen,
+    onSaved,
   });
 
   return (
@@ -133,6 +143,7 @@ function AppInnerContent() {
             className="lcars-status-bar-desktop"
             hasApiKey={hasApiKey}
             isAnalyzing={isAnalyzing}
+            hasSavedSession={hasSavedSession}
             theme={theme} setTheme={setTheme}
             audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
             onOpenAbout={handleOpenAbout}
@@ -211,14 +222,12 @@ function AppProviders({ initialSession }: { initialSession: SessionSnapshot | nu
 }
 
 function AppInner() {
-  // ── OPFS preload — resolves before first provider tree render ─────────
   const [initialSession, setInitialSession] = useState<SessionSnapshot | null | undefined>(undefined);
 
   useEffect(() => {
     loadSession().then(setInitialSession).catch(() => setInitialSession(null));
   }, []);
 
-  // Wait for the OPFS read (typically <10 ms) before mounting providers
   if (initialSession === undefined) return null;
 
   return (

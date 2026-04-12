@@ -1,35 +1,28 @@
 // ---------------------------------------------------------------------------
 // sessionReset.ts — canonical reset payload builder
 // ---------------------------------------------------------------------------
-// Single source of truth for every field that must be zeroed on
-// "New empty song" or "Reset song". Adding a new piece of state only
-// requires touching this file.
-// ---------------------------------------------------------------------------
 
 import { safeRemoveItem } from './safeStorage';
 import { createEmptySong, DEFAULT_TOPIC, DEFAULT_MOOD } from './songDefaults';
 import { DEFAULT_STRUCTURE } from '../constants/editor';
 import type { Section } from '../types';
+import { clearSession } from '../lib/sessionPersistence';
 
 export interface ResetPayload {
-  // Song content
   song: Section[];
   structure: string[];
-  // Editorial metadata
   title: string;
   titleOrigin: 'user' | 'ai';
   topic: string;
   mood: string;
   rhymeScheme: string;
   targetSyllables: number;
-  // Musical metadata
   genre: string;
   tempo: number;
   instrumentation: string;
   rhythm: string;
   narrative: string;
   musicalPrompt: string;
-  // UI / session
   markupText: string;
   activeTab: 'lyrics' | 'musical';
   isLeftPanelOpen: boolean;
@@ -37,10 +30,6 @@ export interface ResetPayload {
   hasSavedSession: boolean;
 }
 
-/**
- * Full reset — clears everything including musical params and UI state.
- * Used by handleCreateEmptySong ("New empty song").
- */
 export const buildResetPayload = (rhymeScheme = 'AABB'): ResetPayload => ({
   song:             createEmptySong(DEFAULT_STRUCTURE, rhymeScheme),
   structure:        DEFAULT_STRUCTURE,
@@ -63,10 +52,6 @@ export const buildResetPayload = (rhymeScheme = 'AABB'): ResetPayload => ({
   hasSavedSession:  false,
 });
 
-/**
- * Partial reset — preserves musical params and UI prefs.
- * Used by resetSong ("Reset lyrics" from reset modal).
- */
 export const buildPartialResetPayload = (currentRhymeScheme: string): Pick<
   ResetPayload,
   'song' | 'structure' | 'title' | 'titleOrigin' | 'topic' | 'mood' | 'markupText' | 'similarityMatches' | 'hasSavedSession'
@@ -83,9 +68,10 @@ export const buildPartialResetPayload = (currentRhymeScheme: string): Pick<
 });
 
 /**
- * Side-effect: wipes persisted session from localStorage.
- * Call alongside any reset to prevent stale hydration on next load.
+ * Wipes persisted session from localStorage AND OPFS.
+ * Synchronous for localStorage; OPFS deletion is fire-and-forget.
  */
 export const clearPersistedSession = (): void => {
   safeRemoveItem('lyricist_session');
+  void clearSession(); // OPFS — async, non-blocking
 };
