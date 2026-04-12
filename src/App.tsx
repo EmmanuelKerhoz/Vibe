@@ -15,6 +15,7 @@ import { DragProvider } from './contexts/DragContext';
 import { DragHandlersProvider } from './contexts/DragHandlersContext';
 import { EditorProvider } from './contexts/EditorContext';
 import { AnalysisProvider } from './contexts/AnalysisContext';
+import { RhymeProxyProvider } from './contexts/RhymeProxyContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
 import { TranslationAdaptationProvider } from './contexts/TranslationAdaptationContext';
 import { VersionProvider, useVersionContext } from './contexts/VersionContext';
@@ -211,9 +212,11 @@ function AppProviders({ initialSession }: { initialSession: SessionSnapshot | nu
             clearLineSelection={clearSelection}
             requestAutoTitleGeneration={() => setShouldAutoGenerateTitle(true)}
           >
-            <ErrorBoundary>
-              <AppInnerContent />
-            </ErrorBoundary>
+            <RhymeProxyProvider>
+              <ErrorBoundary>
+                <AppInnerContent />
+              </ErrorBoundary>
+            </RhymeProxyProvider>
           </AnalysisProvider>
         </ModalProvider>
       </ErrorBoundary>
