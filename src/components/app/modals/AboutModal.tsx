@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
-import { Apple, Github, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag, Info, X } from '../../ui/icons';
+import React, { useEffect, useRef, useState } from 'react';
+import { Apple, Github, Music, Youtube, ExternalLink, Linkedin, Radio, ShoppingBag, Info, X, BookOpen } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { AI_KEY_ENV_VAR, AI_MODEL_NAME } from '../../../utils/aiUtils';
 import { Button } from '../../ui/Button';
+import { AiAssistantPanel } from '../AiAssistantPanel';
 import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
 
 interface Props {
@@ -15,6 +16,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
   const { t } = useTranslation();
   const bodyRef = useRef<HTMLDivElement>(null);
   const sweepItemsRef = useRef<HTMLDivElement>(null);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -120,8 +122,39 @@ export function AboutModal({ isOpen, onClose }: Props) {
               </div>
             </div>
 
-            {/* Social Links */}
+            {/* Links */}
             <div className="pt-2 space-y-3">
+              {/* GitHub repo + Documentation */}
+              <div className="flex gap-2">
+                <a
+                  href="https://github.com/EmmanuelKerhoz/Vibe"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t.about.github}
+                  className="about-sweep-item ux-interactive flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg text-xs font-medium"
+                >
+                  <Github className="w-4 h-4" /><span>{t.about.github}</span><ExternalLink className="w-3 h-3 opacity-50" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setIsAssistantOpen(v => !v)}
+                  aria-label={t.about.docs}
+                  aria-pressed={isAssistantOpen}
+                  className={`about-sweep-item ux-interactive flex-1 flex items-center justify-center gap-2 px-4 py-2 border rounded-lg text-xs font-medium transition-all ${
+                    isAssistantOpen
+                      ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/40 text-[var(--accent-color)]'
+                      : 'bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" /><span>{t.about.docs}</span>
+                </button>
+              </div>
+
+              {isAssistantOpen && (
+                <AiAssistantPanel onClose={() => setIsAssistantOpen(false)} />
+              )}
+
+              {/* Donation */}
               <a href="https://github.com/sponsors/EmmanuelKerhoz" target="_blank" rel="noopener noreferrer" aria-label="Visit GitHub Sponsors page"
                 className="about-sweep-item ux-interactive mx-auto flex w-full max-w-sm items-center justify-center gap-2 px-4 py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 hover:border-pink-500/40 text-pink-400 hover:text-pink-300 rounded-lg text-xs font-medium">
                 <Github className="w-4 h-4" /><span>Donation (Github Sponsor)</span><ExternalLink className="w-3 h-3 opacity-50" />

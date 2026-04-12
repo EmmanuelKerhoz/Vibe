@@ -1,10 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Github, BookOpen, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCode, Languages } from '../../ui/icons';
+import { X, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCode, Languages } from '../../ui/icons';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';
 import { FlagEmoji } from '../../ui/FlagEmoji';
-import { AiAssistantPanel } from '../AiAssistantPanel';
 
 interface Props {
   isOpen: boolean;
@@ -52,7 +51,6 @@ export function SettingsModal({
   const [draftUiScale, setDraftUiScale] = useState(uiScale);
   const [draftDefaultEditMode, setDraftDefaultEditMode] = useState(defaultEditMode);
   const [draftShowTranslation, setDraftShowTranslation] = useState(showTranslationFeatures);
-  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const closeActionRef = useRef<'save' | 'close' | null>(null);
 
   useEffect(() => {
@@ -119,7 +117,7 @@ export function SettingsModal({
             <div className="w-[500px] h-[400px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
           </div>
 
-          {/* Gradient border wrapper — isolation prevents gradient from bleeding into interior */}
+          {/* Gradient border wrapper */}
           <div
             className="lcars-gradient-outline relative w-full sm:max-w-lg h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
             style={{
@@ -128,7 +126,7 @@ export function SettingsModal({
               isolation: 'isolate',
             }}
           >
-            {/* Modal panel — dialog-surface ensures opaque dark background */}
+            {/* Modal panel */}
             <div
               role="dialog"
               aria-modal="true"
@@ -322,48 +320,6 @@ export function SettingsModal({
                       </button>
                     ))}
                   </div>
-                </section>
-
-                {/* About section */}
-                <section aria-labelledby="settings-about-heading" className="border-t border-[var(--border-color)] pt-6">
-                  <h3 id="settings-about-heading" className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-3">
-                    {t.settings.about.version}
-                  </h3>
-                  <div className="flex items-center justify-between px-4 py-3 bg-[var(--bg-app)] border border-[var(--border-color)] rounded-lg mb-3">
-                    <span className="text-xs text-[var(--text-secondary)]">{t.app.name}</span>
-                    <span className="text-xs font-mono text-[var(--text-primary)]">{APP_VERSION_LABEL}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <a
-                      href="https://github.com/EmmanuelKerhoz/Vibe"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={t.settings.about.github}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-all text-xs"
-                    >
-                      <Github className="w-3.5 h-3.5" />
-                      {t.settings.about.github}
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => setIsAssistantOpen(v => !v)}
-                      aria-label={t.settings.about.docs}
-                      aria-pressed={isAssistantOpen}
-                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 border rounded-lg transition-all text-xs ${
-                        isAssistantOpen
-                          ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/40 text-[var(--accent-color)]'
-                          : 'bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      }`}
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      {t.settings.about.docs}
-                    </button>
-                  </div>
-                  {isAssistantOpen && (
-                    <AiAssistantPanel
-                      onClose={() => setIsAssistantOpen(false)}
-                    />
-                  )}
                 </section>
               </div>
 
