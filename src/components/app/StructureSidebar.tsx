@@ -19,6 +19,7 @@ import {
   useStructureDragHandlers,
   type StructureDragHandlers,
 } from '../../hooks/useStructureDragHandlers';
+import { CompositionSection } from './CompositionSection';
 
 interface Props {
   isStructureOpen: boolean;
@@ -199,8 +200,11 @@ export const StructureSidebar = React.memo(function StructureSidebar({
               )}
             </div>
 
+            {/* Composition controls — rhyme scheme, syllables, quantize */}
+            <CompositionSection />
+
             {/* Section list */}
-            <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
+            <div className="px-5 pb-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
               <div className="space-y-2">
                 <div className="flex flex-col gap-1.5">
                   {structure.map((item, idx) => {

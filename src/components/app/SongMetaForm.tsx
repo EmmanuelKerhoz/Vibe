@@ -1,8 +1,10 @@
 /**
  * SongMetaForm
  *
- * Autonomous form component for song meta params (title, topic, mood,
- * rhyme scheme, syllable target) and composition actions.
+ * Autonomous form component for song meta params (title, topic, mood)
+ * and generation actions. Composition controls (rhyme scheme, syllables,
+ * quantize) have been moved to CompositionSection, rendered in the right
+ * panel (StructureSidebar).
  *
  * Sources all data/state from ComposerParamsContext — zero prop drilling.
  * Receives only the layout-intent callbacks that cannot live in context:
@@ -12,7 +14,7 @@
  *   headingId         — aria labelling for the panel dialog
  */
 import React from 'react';
-import { Music, Ruler, Bot, User, Sparkles, Loader2, Shuffle, RefreshCw } from '../ui/icons';
+import { Music, Bot, User, Sparkles, Loader2, Shuffle, RefreshCw } from '../ui/icons';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Label } from '../ui/Label';
@@ -29,8 +31,6 @@ interface SongMetaFormProps {
   headingId?: string;
 }
 
-const RHYME_SCHEME_ORDER = ['FREE', 'AABB', 'ABAB', 'AAAA', 'ABCB', 'AAABBB', 'AABBCC', 'ABABAB', 'ABCABC'] as const;
-
 export function SongMetaForm({
   onGenerateSong,
   onRegenerateSong,
@@ -41,9 +41,7 @@ export function SongMetaForm({
   const {
     title, setTitle, titleOrigin,
     topic, setTopic, mood, setMood,
-    rhymeScheme, setRhymeScheme,
-    targetSyllables, setTargetSyllables,
-    song, isGenerating, quantizeSyllables,
+    song, isGenerating,
     isGeneratingTitle, onGenerateTitle,
     isSurprising, onSurprise,
     hasApiKey,
@@ -64,13 +62,8 @@ export function SongMetaForm({
       ? <RefreshCw className="w-3.5 h-3.5" />
       : <Sparkles className="w-3.5 h-3.5" />;
 
-  // Conditional buttonTitle spreads — satisfies exactOptionalPropertyTypes:
-  // never pass `string | undefined` to `buttonTitle?: string`.
   const moodPresetsButtonTitle = t.tooltips.moodPresets
     ? { buttonTitle: t.tooltips.moodPresets }
-    : {};
-  const rhymeSchemeButtonTitle = t.tooltips.rhymeScheme
-    ? { buttonTitle: t.tooltips.rhymeScheme }
     : {};
 
   return (
@@ -204,55 +197,6 @@ export function SongMetaForm({
               </datalist>
             </div>
           </div>
-        </div>
-
-        <div className="h-px bg-black/5 dark:bg-white/5 mx-1" />
-
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-cyan,#06b6d4)] opacity-80" />
-          <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Composition</span>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <Label>{t.leftPanel.rhymeScheme}</Label>
-            <LcarsSelect
-              value={rhymeScheme}
-              onChange={setRhymeScheme}
-              accentColor="var(--lcars-cyan)"
-              options={RHYME_SCHEME_ORDER.map(value => ({
-                value,
-                label: t.rhymeSchemes[value],
-              }))}
-              {...rhymeSchemeButtonTitle}
-            />
-          </div>
-          <div>
-            <Label>{t.leftPanel.targetSyllables}</Label>
-            <Tooltip title={t.tooltips.targetSyllables ?? ''}>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range" min="4" max="20" value={targetSyllables}
-                  onChange={e => setTargetSyllables(parseInt(e.target.value))}
-                  className="flex-1 accent-[var(--accent-color)] h-1.5 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
-                />
-                <span className="text-xs telemetry-text text-[var(--accent-color)] w-5 text-center">
-                  {targetSyllables}
-                </span>
-              </div>
-            </Tooltip>
-          </div>
-          <Tooltip title={t.tooltips.quantize}>
-            <Button
-              onClick={() => { void quantizeSyllables(); }}
-              disabled={song.length === 0 || isGenerating}
-              variant="outlined" color="primary" fullWidth
-              startIcon={<Ruler className="w-3.5 h-3.5" />}
-              style={{ fontSize: '11px', padding: '4px 0' }}
-            >
-              {t.leftPanel.quantize}
-            </Button>
-          </Tooltip>
         </div>
       </div>
 
