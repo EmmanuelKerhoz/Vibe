@@ -47,7 +47,6 @@ export function AnalysisModal({
 
   if (!isOpen) return null;
 
-  // Defensive normalization — guards against AI returning null for array fields
   const strengths = Array.isArray(analysisReport?.strengths) ? analysisReport!.strengths : [];
   const improvements = Array.isArray(analysisReport?.improvements) ? analysisReport!.improvements : [];
   const musicalSuggestions = Array.isArray(analysisReport?.musicalSuggestions) ? analysisReport!.musicalSuggestions : [];
@@ -68,21 +67,16 @@ export function AnalysisModal({
       </div>
 
       {/*
-        Outer flex row: [dialog] [improvements panel]
-        LCARS diagonal rule — large corners on TL↔BR axis:
-          dialog      : TL=24  TR=8   BR=24  BL=8
-          right panel : TL=0   TR=8   BR=24  BL=0  (left edge flush, diagonal continues)
+        LCARS rule: TL=grand TR=petit BR=grand BL=petit
+        Both panels use rounded-[24px_8px_24px_8px] / inner rounded-[22px_6px_22px_6px]
+        Right panel left edge flush via sm:-ml-[2px] (gradient border overlap).
       */}
       <div className="relative flex flex-col sm:flex-row items-stretch gap-0 w-full sm:w-auto sm:max-w-5xl h-full sm:h-auto animate-in zoom-in-95 duration-300">
 
         {/* ── Main dialog ── */}
         <div
           className="lcars-gradient-outline relative w-full sm:w-[520px] h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] flex-shrink-0"
-          style={{
-            padding: '2px',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
-            isolation: 'isolate',
-          }}
+          style={{ padding: '2px', boxShadow: '0 25px 60px rgba(0,0,0,0.5)', isolation: 'isolate' }}
         >
           <div
             role="dialog"
@@ -143,7 +137,11 @@ export function AnalysisModal({
                     <h4 className="text-lg font-medium text-[var(--text-primary)]">{t.analysis.deepAnalysis}</h4>
                     <div className="flex flex-col items-center gap-2">
                       {analysisSteps.map((step, idx) => (
-                        <p key={idx} className={`text-xs transition-all duration-500 ${idx === analysisSteps.length - 1 ? 'text-[var(--accent-color)] font-medium scale-110' : 'text-[var(--text-secondary)] opacity-50'}`}>{step}</p>
+                        <p key={idx} className={`text-xs transition-all duration-500 ${
+                          idx === analysisSteps.length - 1
+                            ? 'text-[var(--accent-color)] font-medium scale-110'
+                            : 'text-[var(--text-secondary)] opacity-50'
+                        }`}>{step}</p>
                       ))}
                     </div>
                   </div>
@@ -177,12 +175,13 @@ export function AnalysisModal({
                     <div className="bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
                       <ul className="space-y-1.5">
                         {strengths.map((s, i) => (
-                          <li key={i} className="text-xs text-[var(--text-secondary)] flex gap-2"><span className="text-emerald-500 mt-0.5 flex-shrink-0">•</span>{s}</li>
+                          <li key={i} className="text-xs text-[var(--text-secondary)] flex gap-2">
+                            <span className="text-emerald-500 mt-0.5 flex-shrink-0">•</span>{s}
+                          </li>
                         ))}
                       </ul>
                     </div>
                   </section>
-                  {/* Musical Suggestions hint */}
                   {musicalSuggestions.length > 0 && (
                     <p className="text-[9px] text-[var(--text-secondary)]/60 text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
                       <Music className="w-2.5 h-2.5" />
@@ -209,22 +208,15 @@ export function AnalysisModal({
         </div>
 
         {/* ── Right panel: Actionable Improvements ──
-            LCARS diagonal (TL↔BR large):
-              TL = 0    — flush joint with dialog
-              TR = 8px  — small (mirrors dialog TR)
-              BR = 24px — large (continues TL↔BR diagonal)
-              BL = 0    — flush joint with dialog
+            LCARS: TL=grand(24) TR=petit(8) BR=grand(24) BL=petit(8)
+            Identical pattern to the main dialog.
         */}
         {hasReport && (
           <div
-            className="lcars-gradient-outline relative w-full sm:w-72 sm:max-h-[90vh] rounded-none sm:rounded-[0_8px_24px_0] flex-shrink-0 sm:-ml-[2px]"
-            style={{
-              padding: '2px',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
-              isolation: 'isolate',
-            }}
+            className="lcars-gradient-outline relative w-full sm:w-72 sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] flex-shrink-0 sm:-ml-[2px]"
+            style={{ padding: '2px', boxShadow: '0 25px 60px rgba(0,0,0,0.4)', isolation: 'isolate' }}
           >
-            <div className="relative w-full h-full flex flex-col glass-panel rounded-none sm:rounded-[0_6px_22px_0] overflow-hidden">
+            <div className="relative w-full h-full flex flex-col glass-panel rounded-none sm:rounded-[22px_6px_22px_6px] overflow-hidden">
               {/* Panel header */}
               <div className="px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex-shrink-0">
                 <h4 className="micro-label text-amber-500 flex items-center gap-2">
@@ -249,10 +241,16 @@ export function AnalysisModal({
                             : 'border-[var(--border-color)] hover:border-amber-500/50 group-hover:bg-amber-500/10'
                         }`}
                       >
-                        {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s)) ? <Check className="w-2.5 h-2.5" /> : <div className="w-1 h-1 rounded-full bg-[var(--text-secondary)]/20 group-hover:bg-amber-500/50" />}
+                        {(appliedAnalysisItems.has(s) || selectedAnalysisItems.has(s))
+                          ? <Check className="w-2.5 h-2.5" />
+                          : <div className="w-1 h-1 rounded-full bg-[var(--text-secondary)]/20 group-hover:bg-amber-500/50" />}
                       </button>
                       <span className={`flex-1 text-xs leading-relaxed transition-colors ${
-                        appliedAnalysisItems.has(s) ? 'text-[var(--text-secondary)] line-through' : selectedAnalysisItems.has(s) ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
+                        appliedAnalysisItems.has(s)
+                          ? 'text-[var(--text-secondary)] line-through'
+                          : selectedAnalysisItems.has(s)
+                          ? 'text-[var(--text-primary)]'
+                          : 'text-[var(--text-secondary)]'
                       }`}>{s}</span>
                       {applyAnalysisItem && !appliedAnalysisItems.has(s) && (
                         <Tooltip title="Apply this suggestion directly">
@@ -284,7 +282,9 @@ export function AnalysisModal({
                       onClick={applySelectedAnalysisItems}
                       variant="contained" color="success"
                       disabled={isApplyingAnalysis !== null}
-                      startIcon={isApplyingAnalysis === 'batch' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      startIcon={isApplyingAnalysis === 'batch'
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Sparkles className="w-4 h-4" />}
                       fullWidth
                     >
                       {t.analysis.apply} ({selectedAnalysisItems.size})
