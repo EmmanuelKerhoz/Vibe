@@ -16,7 +16,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   Download, Upload, Trash2, History,
   Library, FilePlus, Settings, Info, WandSparkles, ClipboardPaste, Heart,
-  KeyboardRegular, Music, PenLine,
+  KeyboardRegular, Music, AlignLeft,
 } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
@@ -150,8 +150,8 @@ export function RibbonMenuPanel({
       <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{t.menu?.workspace ?? 'Workspace'}</div>
       <Tooltip title={t.tooltips.lyricsTab ?? 'Open the lyrics editor'}>
         <button onClick={() => run(() => setActiveTab('lyrics'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-          <PenLine className="w-4 h-4 text-[var(--text-secondary)]" />
-          {t.menu?.lyricsEditor ?? t.ribbon?.lyrics ?? 'Lyrics Editor'}
+          <AlignLeft className="w-4 h-4 text-[var(--text-secondary)]" />
+          {t.ribbon?.lyrics ?? 'Lyrics Editor'}
         </button>
       </Tooltip>
       <Tooltip title={t.tooltips.musicalTab}>
