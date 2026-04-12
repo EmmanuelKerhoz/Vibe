@@ -69,10 +69,9 @@ export function AnalysisModal({
 
       {/*
         Outer flex row: [dialog] [improvements panel]
-        LCARS radius logic:
-          dialog       → rounded-[24px_8px_24px_8px]  (TL large, TR small, BR large, BL small)
-          right panel  → rounded-[0_24px_8px_0]        (TL flush, TR large, BR small, BL flush)
-        Together they form one continuous LCARS shape.
+        LCARS diagonal rule — large corners on TL↔BR axis:
+          dialog      : TL=24  TR=8   BR=24  BL=8
+          right panel : TL=0   TR=8   BR=24  BL=0  (left edge flush, diagonal continues)
       */}
       <div className="relative flex flex-col sm:flex-row items-stretch gap-0 w-full sm:w-auto sm:max-w-5xl h-full sm:h-auto animate-in zoom-in-95 duration-300">
 
@@ -209,21 +208,23 @@ export function AnalysisModal({
           </div>
         </div>
 
-        {/* ── Right panel: Actionable Improvements — only when report is available ──
-            LCARS radius: TL=0 (flush with dialog), TR=24px (free outer corner),
-                          BR=8px (small accent), BL=0 (flush with dialog)
-            → rounded-[0_24px_8px_0] / inner rounded-[0_22px_6px_0]
+        {/* ── Right panel: Actionable Improvements ──
+            LCARS diagonal (TL↔BR large):
+              TL = 0    — flush joint with dialog
+              TR = 8px  — small (mirrors dialog TR)
+              BR = 24px — large (continues TL↔BR diagonal)
+              BL = 0    — flush joint with dialog
         */}
         {hasReport && (
           <div
-            className="lcars-gradient-outline relative w-full sm:w-72 sm:max-h-[90vh] rounded-none sm:rounded-[0_24px_8px_0] flex-shrink-0 sm:-ml-[2px]"
+            className="lcars-gradient-outline relative w-full sm:w-72 sm:max-h-[90vh] rounded-none sm:rounded-[0_8px_24px_0] flex-shrink-0 sm:-ml-[2px]"
             style={{
               padding: '2px',
               boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
               isolation: 'isolate',
             }}
           >
-            <div className="relative w-full h-full flex flex-col glass-panel rounded-none sm:rounded-[0_22px_6px_0] overflow-hidden">
+            <div className="relative w-full h-full flex flex-col glass-panel rounded-none sm:rounded-[0_6px_22px_0] overflow-hidden">
               {/* Panel header */}
               <div className="px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex-shrink-0">
                 <h4 className="micro-label text-amber-500 flex items-center gap-2">
