@@ -29,6 +29,20 @@ vi.mock('../../contexts/DragHandlersContext', () => ({
   }),
 }));
 
+// CompositionSection consumes ComposerParamsContext — mock it here.
+vi.mock('../../contexts/ComposerParamsContext', () => ({
+  useComposerParamsContext: () => ({
+    rhymeScheme: 'AABB',
+    setRhymeScheme: vi.fn(),
+    targetSyllables: 8,
+    setTargetSyllables: vi.fn(),
+    song: [],
+    isGenerating: false,
+    quantizeSyllables: vi.fn(),
+  }),
+  ComposerParamsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 function renderStructureSidebar({
   addStructureItem = vi.fn(),
   initialDropdownOpen = false,

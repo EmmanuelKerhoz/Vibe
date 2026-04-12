@@ -1,10 +1,9 @@
 /**
- * LeftSettingsPanel tests — adapted for the post-refactor shell signature.
+ * LeftSettingsPanel tests — post Composition-section migration.
  *
- * LeftSettingsPanel now receives only 5 props (isLeftPanelOpen,
- * setIsLeftPanelOpen, isMobileOverlay, onGenerateSong, onRegenerateSong).
- * All song meta state is sourced from ComposerParamsContext, which is mocked
- * below alongside SongContext and ComposerContext.
+ * Composition controls (rhyme scheme, syllables, Quantize) have been moved
+ * to CompositionSection inside StructureSidebar. Tests for those controls
+ * now live in StructureSidebar.test.tsx.
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -12,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../i18n';
 import { LeftSettingsPanel } from './LeftSettingsPanel';
 
-// ── Context mocks ──────────────────────────────────────────────────────────
+// ── Context mocks ───────────────────────────────────────────────────────
 
 const mockSong = vi.hoisted(() => ({
   current: [] as Array<{ id: string; name: string; lines: Array<{ id: string; text: string; isMeta: boolean }> }>,
@@ -62,7 +61,7 @@ vi.mock('../ui/Tooltip', () => ({
   ),
 }));
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────
 
 function renderPanel(
   setIsLeftPanelOpen = vi.fn(),
@@ -81,7 +80,7 @@ function renderPanel(
   );
 }
 
-// ── Tests ──────────────────────────────────────────────────────────────────
+// ── Tests ──────────────────────────────────────────────────────────────
 
 describe('LeftSettingsPanel', () => {
   beforeEach(() => {
@@ -93,35 +92,6 @@ describe('LeftSettingsPanel', () => {
     mockComposerParams.quantizeSyllables.mockReset();
     mockComposerParams.onGenerateTitle.mockReset();
     mockComposerParams.onSurprise.mockReset();
-  });
-
-  it('disables quantize when the song context is empty', () => {
-    renderPanel();
-    expect(screen.getByText('Quantize Syllables (GLOBAL)').closest('button')).toHaveProperty('disabled', true);
-  });
-
-  it('uses composer context for quantize and generating button state', () => {
-    mockSong.current = [{ id: 'verse-1', name: 'Verse', lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }] }];
-    mockComposerParams.isGenerating = true;
-
-    const { rerender } = renderPanel();
-
-    expect(screen.getByRole('button', { name: 'Regenerate Lyrics' })).toHaveProperty('disabled', true);
-    expect(screen.getByText('Quantize Syllables (GLOBAL)').closest('button')).toHaveProperty('disabled', true);
-
-    mockComposerParams.isGenerating = false;
-    rerender(
-      <LanguageProvider>
-        <LeftSettingsPanel
-          isLeftPanelOpen
-          setIsLeftPanelOpen={vi.fn()}
-          onGenerateSong={vi.fn()}
-        />
-      </LanguageProvider>,
-    );
-
-    fireEvent.click(screen.getByText('Quantize Syllables (GLOBAL)').closest('button') as HTMLButtonElement);
-    expect(mockComposerParams.quantizeSyllables).toHaveBeenCalledTimes(1);
   });
 
   it('shows Generate Lyrics when no lyrics exist and calls the generate handler', () => {
@@ -142,12 +112,6 @@ describe('LeftSettingsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Regenerate Lyrics' }));
     expect(onRegenerateSong).toHaveBeenCalledTimes(1);
     expect(onGenerateSong).not.toHaveBeenCalled();
-  });
-
-  it('shows Free Verse first in the default rhyme scheme selector', () => {
-    renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: 'AABB (Couplets)' }));
-    expect(screen.getAllByRole('option')[0]?.textContent).toContain('Free Verse');
   });
 
   it('closes the panel from the header control', () => {
@@ -173,7 +137,6 @@ describe('LeftSettingsPanel', () => {
     renderPanel();
 
     expect(screen.getByRole('button', { name: 'Suggest' }).getAttribute('style')).toContain('font-size: 11px');
-    expect(screen.getByRole('button', { name: 'Quantize Syllables (GLOBAL)' }).getAttribute('style')).toContain('font-size: 11px');
     expect(screen.getByRole('button', { name: 'Regenerate Lyrics' }).getAttribute('style')).toContain('font-size: 11px');
   });
 
@@ -204,5 +167,14 @@ describe('LeftSettingsPanel', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Generate title from lyrics' })).toBeTruthy();
+  });
+
+  it('uses composer context for generating button state', () => {
+    mockSong.current = [{ id: 'verse-1', name: 'Verse', lines: [{ id: 'line-1', text: 'Hello world', isMeta: false }] }];
+    mockComposerParams.isGenerating = true;
+
+    renderPanel();
+
+    expect(screen.getByRole('button', { name: 'Regenerate Lyrics' })).toHaveProperty('disabled', true);
   });
 });
