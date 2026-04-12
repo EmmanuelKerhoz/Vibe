@@ -4,11 +4,9 @@ import { useSongHistoryState } from '../hooks/useSongHistoryState';
 import { useSongMeta } from '../hooks/useSongMeta';
 import { createEmptySong } from '../utils/songDefaults';
 import type { Section } from '../types';
+import type { SessionSnapshot } from '../lib/sessionPersistence';
 
 // ─── SongHistoryContext ───────────────────────────────────────────────────────
-// Carries only the undo/redo stack — stable references that change at most once
-// per user undo/redo action, never on every keystroke.
-// Consumers: TopRibbon (undo/redo buttons) and VersionContext.
 
 type SongHistorySnapshot = { song: Section[]; structure: string[] };
 
@@ -28,8 +26,6 @@ export function useSongHistoryContext(): SongHistoryContextValue {
 }
 
 // ─── SongContext ──────────────────────────────────────────────────────────────
-// Full song state: song + structure + meta + all mutation helpers.
-// Unchanged public surface — all existing useSongContext() calls need no update.
 
 type SongContextValue = ReturnType<typeof useSongHistoryState> & ReturnType<typeof useSongMeta>;
 
@@ -42,19 +38,20 @@ export function useSongContext(): SongContextValue {
 }
 
 // ─── SongProvider ─────────────────────────────────────────────────────────────
-// Nests SongHistoryContext inside SongContext so both are provided in one mount.
 
-export function SongProvider({ children }: { children: ReactNode }) {
-  const history = useSongHistoryState(
-    createEmptySong(DEFAULT_STRUCTURE, DEFAULT_RHYME_SCHEME),
-    DEFAULT_STRUCTURE,
-  );
-  const meta = useSongMeta();
+interface SongProviderProps {
+  children: ReactNode;
+  /** Optional session snapshot loaded from OPFS before first render. */
+  initialSession?: SessionSnapshot | null;
+}
 
-  // SongHistoryContext value — only changes on undo/redo, never on keystroke.
-  // history is a new object every render; we intentionally track its members
-  // (past, future, undo, redo) as the actual invalidation drivers so that
-  // keystroke mutations to song do NOT rebuild this context value.
+export function SongProvider({ children, initialSession }: SongProviderProps) {
+  const initialSong = initialSession?.song ?? createEmptySong(DEFAULT_STRUCTURE, DEFAULT_RHYME_SCHEME);
+  const initialStructure = initialSession?.structure ?? DEFAULT_STRUCTURE;
+
+  const history = useSongHistoryState(initialSong, initialStructure);
+  const meta = useSongMeta(initialSession ?? undefined);
+
   const historyValue = useMemo<SongHistoryContextValue>(
     () => ({
       past: history.past,
@@ -65,7 +62,6 @@ export function SongProvider({ children }: { children: ReactNode }) {
     [history.past, history.future, history.undo, history.redo],
   );
 
-  // SongContext value — depends on primitive state slices and stable callbacks.
   const value = useMemo<SongContextValue>(
     () => ({ ...history, ...meta }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
 import { AppEditorLayout } from './components/app/AppEditorLayout';
@@ -8,6 +8,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAppOrchestration } from './hooks/useAppOrchestration';
 import { useEditorPanelState } from './hooks/useEditorPanelState';
 import { useMobileSession } from './hooks/useMobileSession';
+import { useSessionAutoSave } from './hooks/useSessionAutoSave';
 import { SimilarityProvider } from './contexts/SimilarityContext';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
@@ -23,6 +24,8 @@ import { useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { SongMutationProvider } from './contexts/SongMutationContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
+import { loadSession } from './lib/sessionPersistence';
+import type { SessionSnapshot } from './lib/sessionPersistence';
 
 function ModalShortcutBindings({
   isMobileOrTablet,
@@ -45,7 +48,6 @@ function AppInnerContent() {
   const { appState } = useAppStateContext();
   const { theme, setTheme, audioFeedback, setAudioFeedback, hasApiKey } = appState;
 
-  // ── Panel state (structure, suggestions, backdrop) ────────────────────
   const {
     activeTab, setActiveTab,
     isStructureOpen, isLeftPanelOpen, setIsLeftPanelOpen,
@@ -54,13 +56,11 @@ function AppInnerContent() {
     showBackdrop,
   } = useEditorPanelState();
 
-  // ── Mobile detection + closeMobilePanels ──────────────────────────────
   const { isMobileOrTablet, closeMobilePanels } = useMobileSession({
     setIsLeftPanelOpen,
     setIsStructureOpen: setIsStructureOpenAndClearLine,
   });
 
-  // ── Orchestration (session, audio, handlers, analysis…) ──────────────
   const {
     playAudioFeedback,
     playAudioFeedbackRef,
@@ -75,6 +75,29 @@ function AppInnerContent() {
     adaptLineLanguage,
     adaptingLineIds,
   } = useAppOrchestration(isMobileOrTablet);
+
+  // ── Auto-save to OPFS ─────────────────────────────────────────────────
+  const songCtx = useSongContext();
+  useSessionAutoSave({
+    song: songCtx.song,
+    structure: songCtx.structure,
+    title: songCtx.title,
+    titleOrigin: songCtx.titleOrigin,
+    topic: songCtx.topic,
+    mood: songCtx.mood,
+    rhymeScheme: songCtx.rhymeScheme,
+    targetSyllables: songCtx.targetSyllables,
+    songLanguage: songCtx.songLanguage,
+    genre: songCtx.genre,
+    tempo: songCtx.tempo,
+    instrumentation: songCtx.instrumentation,
+    rhythm: songCtx.rhythm,
+    narrative: songCtx.narrative,
+    musicalPrompt: songCtx.musicalPrompt,
+    activeTab,
+    isStructureOpen,
+    isLeftPanelOpen,
+  });
 
   return (
     <TranslationAdaptationProvider
@@ -134,7 +157,7 @@ function AppInnerContent() {
   );
 }
 
-function AppProviders() {
+function AppProviders({ initialSession }: { initialSession: SessionSnapshot | null }) {
   const { language } = useLanguage();
   const {
     updateState,
@@ -188,15 +211,25 @@ function AppProviders() {
 }
 
 function AppInner() {
+  // ── OPFS preload — resolves before first provider tree render ─────────
+  const [initialSession, setInitialSession] = useState<SessionSnapshot | null | undefined>(undefined);
+
+  useEffect(() => {
+    loadSession().then(setInitialSession).catch(() => setInitialSession(null));
+  }, []);
+
+  // Wait for the OPFS read (typically <10 ms) before mounting providers
+  if (initialSession === undefined) return null;
+
   return (
     <AppStateProvider>
       <DragProvider>
-        <SongProvider>
+        <SongProvider initialSession={initialSession}>
           <SongMutationProvider>
             <ComposerProvider>
               <VersionProvider>
                 <SimilarityProvider>
-                  <AppProviders />
+                  <AppProviders initialSession={initialSession} />
                 </SimilarityProvider>
               </VersionProvider>
             </ComposerProvider>
