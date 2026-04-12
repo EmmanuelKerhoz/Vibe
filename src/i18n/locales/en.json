@@ -337,7 +337,9 @@
     "apiKeyLabel": "AI Key",
     "license": "Commercial Pro",
     "licenseLabel": "License",
-    "close": "Close"
+    "close": "Close",
+    "github": "GitHub Repository",
+    "docs": "Documentation"
   },
   "aiAssistant": {
     "title": "AI Assistant",
@@ -376,7 +378,7 @@
       "text": "Text",
       "section": "Sections",
       "markdown": "Markdown",
-      "phonetic": "Phonetic View"
+      "phonetic": "Phonetic"
     },
     "translation": {
       "label": "Linguistic Adaptation",
