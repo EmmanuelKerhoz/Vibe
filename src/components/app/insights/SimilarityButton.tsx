@@ -29,7 +29,7 @@ export function SimilarityButton({
   const isDisabled = !hasApiKey || isGenerating || isAnalyzing || !hasLyrics;
   const tooltipTitle = !hasApiKey
     ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
-    : t.tooltips.checkSimilarity;
+    : 'Compare with existing published songs and your saved library versions';
 
   return (
     <Tooltip title={tooltipTitle}>

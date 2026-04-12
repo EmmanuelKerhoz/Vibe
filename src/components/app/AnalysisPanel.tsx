@@ -8,7 +8,7 @@
  *
  * Architecture invariant (docs_fusion_optimal.md):
  *   All heavy computation runs in a Web Worker. This component is a pure
- *   observer of the worker’s output — it NEVER mutates song state or
+ *   observer of the worker's output — it NEVER mutates song state or
  *   participates in the UNDO/REDO stack.
  */
 import React, { useState } from 'react';
@@ -32,6 +32,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { SelectTabData, SelectTabEventHandler } from '@fluentui/react-components';
 import type { AnalysisResult, SectionInsight, SimilarityPair } from '../../lib/workers/linguistics.types';
 import type { DetectedSchema } from '../../lib/linguistics/core/types';
+
+// Panel width — ~25% larger than original 280
+const PANEL_WIDTH = 350;
 
 // ─── Sub-components ───────────────────────────────────────────────────
 
@@ -314,7 +317,7 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
     <AnimatePresence>
       <motion.div
         initial={{ width: 0, opacity: 0 }}
-        animate={{ width: isMobileOverlay ? '100%' : 280, opacity: 1 }}
+        animate={{ width: isMobileOverlay ? '100%' : PANEL_WIDTH, opacity: 1 }}
         exit={{ width: 0, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={`flex flex-col z-50 shadow-2xl lcars-panel${
@@ -324,7 +327,7 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
       >
         <div
           className="flex flex-col h-full overflow-hidden"
-          style={{ width: isMobileOverlay ? '100%' : 280, minWidth: isMobileOverlay ? undefined : 280 }}
+          style={{ width: isMobileOverlay ? '100%' : PANEL_WIDTH, minWidth: isMobileOverlay ? undefined : PANEL_WIDTH }}
         >
           {/* Header — LCARS standard h-16 */}
           <div
@@ -341,13 +344,13 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
             <div className="flex items-center gap-3">
               <DataBarVertical24Regular className="text-[var(--lcars-amber)] w-4 h-4" />
               <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">
-                Analysis
+                Phonologic Analysis
               </span>
               {isComputing && <Spinner size="tiny" />}
             </div>
             <button
               onClick={onClose}
-              aria-label="Close analysis panel"
+              aria-label="Close phonologic analysis panel"
               className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
               <X className="w-4 h-4" />

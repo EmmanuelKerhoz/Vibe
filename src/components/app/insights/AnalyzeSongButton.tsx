@@ -38,7 +38,7 @@ export function AnalyzeSongButton({
               <span className="sr-only">{t.editor.analyzingLabel ?? 'Analyzing…'}</span>
             </>)
           : <BarChart2 className="w-3.5 h-3.5" aria-hidden="true" />}
-        <span className="hidden lg:inline">{t.editor.analyze}</span>
+        <span className="hidden lg:inline">Phonological</span>
       </button>
     </Tooltip>
   );
