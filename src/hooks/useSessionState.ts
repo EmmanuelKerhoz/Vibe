@@ -10,8 +10,8 @@
  *   useUiPreferences   — uiScale, defaultEditMode, showTranslation + fontSize
  *   useLibraryState    — similarityMatches, libraryCount, libraryAssets, isSavingToLibrary
  *
- * Session (isSessionHydrated, hasSavedSession) and audio (audioFeedback)
- * remain here as lightweight glue state — they don't belong to any single domain.
+ * hasSavedSession is initialized to true when a session was restored from OPFS
+ * (initialSession !== null). The boolean is passed down from AppStateProvider.
  */
 import { useState } from 'react';
 import { useThemeState } from './useThemeState';
@@ -19,7 +19,7 @@ import { useApiStatus } from './useApiStatus';
 import { useUiPreferences } from './useUiPreferences';
 import { useLibraryState } from './useLibraryState';
 
-export function useSessionState() {
+export function useSessionState(hasSavedSessionInit = false) {
   const { theme, setTheme } = useThemeState();
   const { hasApiKey } = useApiStatus();
   const {
@@ -34,28 +34,20 @@ export function useSessionState() {
     isSavingToLibrary, setIsSavingToLibrary,
   } = useLibraryState();
 
-  // Glue state: session hydration
   const [isSessionHydrated, setIsSessionHydrated] = useState(false);
-  const [hasSavedSession, setHasSavedSession] = useState(false);
-
-  // Glue state: audio feedback toggle
+  // Initialize to true if a session snapshot was loaded from OPFS
+  const [hasSavedSession, setHasSavedSession] = useState(hasSavedSessionInit);
   const [audioFeedback, setAudioFeedback] = useState(true);
 
   return {
-    // Theme
     theme, setTheme,
-    // API
     hasApiKey,
-    // Session
     isSessionHydrated, setIsSessionHydrated,
     hasSavedSession, setHasSavedSession,
-    // Audio
     audioFeedback, setAudioFeedback,
-    // UI Preferences
     uiScale, setUiScale,
     defaultEditMode, setDefaultEditMode,
     showTranslationFeatures, setShowTranslationFeatures,
-    // Library
     similarityMatches, setSimilarityMatches,
     libraryCount, setLibraryCount,
     libraryAssets, setLibraryAssets,

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
 import { AppEditorLayout } from './components/app/AppEditorLayout';
@@ -81,11 +81,11 @@ function AppInnerContent() {
 
   // ── Auto-save to OPFS ─────────────────────────────────────────────────
   const songCtx = useSongContext();
+  // Stable ref — never triggers useSessionAutoSave dep array
+  const onSavedRef = useRef<(() => void) | null>(null);
+  onSavedRef.current = hasSavedSession ? null : () => setHasSavedSession(true);
 
-  // Mark session as saved after first successful auto-save
-  const onSaved = useCallback(() => {
-    if (!hasSavedSession) setHasSavedSession(true);
-  }, [hasSavedSession, setHasSavedSession]);
+  const onSaved = useRef(() => { onSavedRef.current?.(); }).current;
 
   useSessionAutoSave({
     song: songCtx.song,
@@ -231,7 +231,8 @@ function AppInner() {
   if (initialSession === undefined) return null;
 
   return (
-    <AppStateProvider>
+    // initialSession passed to both providers so song + nav state are fully restored
+    <AppStateProvider initialSession={initialSession}>
       <DragProvider>
         <SongProvider initialSession={initialSession}>
           <SongMutationProvider>

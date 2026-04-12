@@ -1,35 +1,14 @@
 /**
  * useUIState — ephemeral UI state
  *
- * Owns all transient UI state that does NOT need to survive a page reload:
- *   - Modal open/close flags (16 modals)
- *   - Navigation state (activeTab, isStructureOpen, isLeftPanelOpen)
- *   - Edit mode and markup text
- *   - DOM refs (markupTextareaRef, importInputRef)
- *
- * Architecture note — separation of concerns:
- *
- *   useUIState        (this file)  — ephemeral, in-memory only
- *   useSessionState   (./useSessionState.ts) — persisted to localStorage
- *                                    (theme, uiScale, defaultEditMode,
- *                                     showTranslationFeatures, library,
- *                                     similarityMatches, API key status)
- *
- * Consumption chain:
- *   useUIState → useAppState → AppStateContext → (consumers via
- *   useAppStateContext / useAppNavigationContext)
- *
- * Do NOT consume useUIState directly in components. Always go through
- * useAppStateContext() or the more granular selector hooks.
- *
- * Internal note: do not merge or delete without auditing the full
- * dependency chain (useAppState → AppStateContext → all consumers).
+ * Navigation state (activeTab, isStructureOpen, isLeftPanelOpen) can be
+ * seeded from a SessionSnapshot loaded before first render (OPFS restore).
+ * All other state is ephemeral and always resets to defaults.
  */
 import { useState, useRef, useEffect } from 'react';
 import type { EditMode } from '../types';
 import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 
-/** Splash guard — runs synchronously once to avoid double render. */
 const SPLASH_SHOWN_KEY = 'vibe_splash_shown';
 const shouldShowSplash = (): boolean => {
   try {
@@ -41,9 +20,14 @@ const shouldShowSplash = (): boolean => {
   }
 };
 
-// Internal base — consumed only via useAppState. Do not merge or delete without confirming the full dependency chain.
-export function useUIState() {
-  // ── Modals ────────────────────────────────────────────────────────────────
+export interface NavInitial {
+  activeTab?: 'lyrics' | 'musical';
+  isStructureOpen?: boolean;
+  isLeftPanelOpen?: boolean;
+}
+
+export function useUIState(initial?: NavInitial) {
+  // ── Modals ───────────────────────────────────────────────────────────────
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(() => shouldShowSplash());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiErrorModal, setApiErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
@@ -62,21 +46,20 @@ export function useUIState() {
   const [isSearchReplaceOpen, setIsSearchReplaceOpen] = useState(false);
   const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
 
-  // ── Navigation ────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>('lyrics');
-  // Starts closed — AppEditorLayout opens it automatically once song has content.
-  const [isStructureOpen, setIsStructureOpen] = useState(false);
-  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+  // ── Navigation ───────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>(initial?.activeTab ?? 'lyrics');
+  const [isStructureOpen, setIsStructureOpen] = useState(initial?.isStructureOpen ?? false);
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(initial?.isLeftPanelOpen ?? true);
 
-  // ── Edit mode ────────────────────────────────────────────────────────────
+  // ── Edit mode ──────────────────────────────────────────────────────────
   const [editMode, setEditMode] = useState<EditMode>('markdown');
   const [markupText, setMarkupText] = useState('');
   const markupTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── Import ref ────────────────────────────────────────────────────────────
+  // ── Import ref ─────────────────────────────────────────────────────────
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  // ── vibe:apierror global event ────────────────────────────────────────────
+  // ── Global error event ─────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ message: string }>).detail;
