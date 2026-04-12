@@ -49,7 +49,17 @@ export const InsightsBar = React.memo(function InsightsBar() {
   return (
     <InsightsBarLayout
       viewSelector={<ViewModeSelector editMode={editMode} switchEditMode={switchEditMode} disabled={isGenerating || isAnalyzing} />}
-      detectControl={<DetectLanguageButton detectedDisplays={detectedDisplays} hasLyrics={hasLyrics} isDetectingLanguage={isDetectingLanguage} onDetect={detectLanguage} hasApiKey={hasApiKey} />}
+      detectControl={
+        <DetectLanguageButton
+          detectedDisplays={detectedDisplays}
+          hasLyrics={hasLyrics}
+          isDetectingLanguage={isDetectingLanguage}
+          onDetect={detectLanguage}
+          hasApiKey={hasApiKey}
+          onSetDefaultLanguage={setTargetLanguage}
+          defaultLanguage={targetLanguage}
+        />
+      }
       translationControls={<TranslateGroup targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage} isAdaptingLanguage={isAdaptingLanguage} song={song} adaptSongLanguage={adaptSongLanguage} showTranslationFeatures={showTranslationFeatures} hasApiKey={hasApiKey} />}
       metronomeControl={<MetronomeButton {...metronomeOptional} />}
       insightsActions={<InsightsActions webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} hasApiKey={hasApiKey} onOpenSearch={onOpenSearch} onToggleAnalysisPanel={onToggleAnalysisPanel} isAnalysisPanelOpen={isAnalysisPanelOpen} />}
