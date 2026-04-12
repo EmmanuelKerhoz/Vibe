@@ -35,7 +35,7 @@ export function DetectLanguageButton({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [coords, setCoords] = useState<{ bottom: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   // Disabled only when AI unavailable or currently detecting — NOT when hasLyrics is false
   const isDisabled = !hasApiKey || isDetectingLanguage;
