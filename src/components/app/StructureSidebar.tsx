@@ -53,7 +53,7 @@ function getGroupedChorusIndices(structure: string[]) {
   return groupedIndices;
 }
 
-// ── SectionRow ─────────────────────────────────────────────────────────────────────────────────────
+// ── SectionRow ──────────────────────────────────────────────────────────────
 
 interface SectionRowProps {
   sectionItem: string;
@@ -87,7 +87,11 @@ const SectionRow = React.memo(function SectionRow({
     <div
       draggable={draggable}
       {...dragHandlers}
-      className={`group flex items-center gap-3 ${sectionButtonShapeClass} border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(sectionItem)} ${draggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'} ${draggedItemIndex === sectionIdx ? 'opacity-30' : ''} ${dragOverIndex === sectionIdx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+      className={`group flex items-center gap-3 ${sectionButtonShapeClass} border bg-[var(--bg-card)]/85 shadow-sm pl-3 pr-2 py-2.5 text-xs transition-all duration-200 ${getSectionColor(sectionItem)} ${
+        draggable ? 'cursor-grab active:cursor-grabbing hover:border-[var(--accent-color)]/40 hover:bg-[var(--bg-card)]' : 'cursor-default'
+      } ${draggedItemIndex === sectionIdx ? 'opacity-30' : ''} ${
+        dragOverIndex === sectionIdx ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900' : ''
+      }`}
     >
       <span className={`h-7 w-1.5 rounded-full ${getSectionDotColor(sectionItem)}`} aria-hidden="true" />
       {showDragHandle ? (
@@ -118,7 +122,7 @@ const SectionRow = React.memo(function SectionRow({
   );
 });
 
-// ── StructureSidebar ───────────────────────────────────────────────────────────────────────────────────────
+// ── StructureSidebar ────────────────────────────────────────────────────────
 
 export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
@@ -143,7 +147,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
 
   useFocusTrap(panelRef, !!(isMobileOverlay && isStructureOpen), () => setIsStructureOpen(false));
 
-  const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|\u2026)$/, '').trim();
+  const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|…)$/, '').trim();
   const removeSectionLabel = t.tooltips.removeSection;
   const normalizeSectionLabel = t.structure.normalize;
 
@@ -215,11 +219,11 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     const chorusItem  = isGroupLeader ? structure[idx + 1] : undefined;
                     const chorusIdx   = isGroupLeader ? idx + 1 : undefined;
 
-                    const isDraggable    = !isAnchoredStartSection(item) && !isAnchoredEndSection(item);
-                    const sectionId      = song[idx]?.id ?? null;
+                    const isDraggable     = !isAnchoredStartSection(item) && !isAnchoredEndSection(item);
+                    const sectionId       = song[idx]?.id ?? null;
                     const chorusSectionId = chorusIdx !== undefined ? (song[chorusIdx]?.id ?? null) : null;
 
-                    const rowKey = sectionId ?? `${item}-${idx}`;
+                    const rowKey      = sectionId ?? `${item}-${idx}`;
                     const dragHandlers = makeDragHandlers(idx, isDraggable);
 
                     if (isGroupLeader && chorusItem !== undefined && chorusIdx !== undefined) {
@@ -287,12 +291,13 @@ export const StructureSidebar = React.memo(function StructureSidebar({
 
                 {/* Add section */}
                 <LcarsSelect
+                  value=""
                   options={sectionOptions}
                   onChange={(value) => addStructureItem(value)}
                   placeholder={addSectionLabel}
-                  aria-label={t.structure.addSection}
+                  buttonAriaLabel={t.structure.addSection}
                   isOpen={isSectionDropdownOpen}
-                  setIsOpen={setIsSectionDropdownOpen}
+                  onOpenChange={setIsSectionDropdownOpen}
                 />
 
                 {/* Composition section */}
