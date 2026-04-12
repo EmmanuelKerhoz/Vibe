@@ -136,6 +136,57 @@ describe('useSongAnalysisEngine', () => {
     expect(result.current.analysisSteps.at(-1)).toBe('Error during analysis. Please try again.');
   });
 
+  it('re-runs analysis automatically when uiLanguage changes', async () => {
+    // First analysis in English
+    generateContentWithRetry.mockResolvedValueOnce({
+      text: JSON.stringify({
+        theme: 'Night energy',
+        emotionalArc: 'Rising',
+        technicalAnalysis: ['Solid rhyme'],
+        strengths: ['Imagery'],
+        improvements: ['Bridge flow'],
+        musicalSuggestions: ['Sparse intro'],
+        summary: 'Good draft',
+      }),
+    });
+
+    const params = createParams({ uiLanguage: 'en' });
+    const { result, rerender } = renderHook(
+      (props: Parameters<typeof useSongAnalysisEngine>[0]) => useSongAnalysisEngine(props),
+      { initialProps: params },
+    );
+
+    await act(async () => {
+      await result.current.analyzeCurrentSong();
+    });
+
+    await waitFor(() => {
+      expect(result.current.analysisReport).toEqual(expect.objectContaining({ theme: 'Night energy' }));
+    });
+
+    // Mock second AI call for French analysis
+    generateContentWithRetry.mockResolvedValueOnce({
+      text: JSON.stringify({
+        theme: 'Énergie nocturne',
+        emotionalArc: 'Croissant',
+        technicalAnalysis: ['Rime solide'],
+        strengths: ['Imagerie'],
+        improvements: ['Flux du pont'],
+        musicalSuggestions: ['Intro éparse'],
+        summary: 'Bon brouillon',
+      }),
+    });
+
+    // Change language to French — should trigger automatic re-analysis
+    await act(async () => {
+      rerender({ ...params, uiLanguage: 'fr' });
+    });
+
+    await waitFor(() => {
+      expect(result.current.analysisReport).toEqual(expect.objectContaining({ theme: 'Énergie nocturne' }));
+    });
+  });
+
   it('toggles selected analysis items on and off', () => {
     const { result } = renderHook(() => useSongAnalysisEngine(createParams()));
 
