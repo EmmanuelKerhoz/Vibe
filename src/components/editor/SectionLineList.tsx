@@ -178,8 +178,9 @@ export const SectionLineList = React.memo(function SectionLineList({
         // sectionLinesCount: exclude meta lines consistently using both flags
         const sectionLinesCount = section.lines.filter(l => !(l.isMeta ?? isPureMetaLine(l.text))).length;
 
+        const resolvedLineLanguage = lineLanguages[line.id] ?? sectionTargetLanguage;
         const lineOptional = {
-          ...(lineLanguages[line.id] !== undefined ? { lineLanguage: lineLanguages[line.id] as string } : {}),
+          ...(resolvedLineLanguage ? { lineLanguage: resolvedLineLanguage } : {}),
           ...(adaptLineLanguage ? { adaptLineLanguage } : {}),
           ...(onLineBlur ? { onLineBlur } : {}),
         };

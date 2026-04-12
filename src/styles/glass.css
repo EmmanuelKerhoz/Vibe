@@ -55,9 +55,11 @@
   border: 1px solid var(--border-color);
 }
 
-/* Double-border fix : .lcars-gradient-outline wrapping .dialog-surface */
-.lcars-gradient-outline > .dialog-surface { border: none; }
-.lcars-gradient-outline > .dialog-surface::after { display: none !important; }
+/* Double-border fix : .lcars-gradient-outline wrapping .dialog-surface / .glass-panel */
+.lcars-gradient-outline > .dialog-surface,
+.lcars-gradient-outline > .glass-panel { border: none; }
+.lcars-gradient-outline > .dialog-surface::after,
+.lcars-gradient-outline > .glass-panel::after { display: none !important; }
 
 .glass-button {
   background: rgba(0, 0, 0, 0.04);
