@@ -121,6 +121,8 @@ export const useSongAnalysisEngine = ({
   const [isApplyingAnalysis, setIsApplyingAnalysis] = useState<string | null>(null);
   /** Foreground-only controller for user-triggered analysis/apply actions; keep separate from background aborts. */
   const fgAbortRef = useRef<AbortController | null>(null);
+  /** Language name used when the current analysisReport was generated. */
+  const reportLangRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -314,6 +316,7 @@ export const useSongAnalysisEngine = ({
         setAnalysisSteps(prev => [...prev, 'Finalizing report...']);
         const raw = safeJsonParse<AnalysisReport>(response.text || '{}', EMPTY_ANALYSIS_REPORT);
         setAnalysisReport(normalizeAnalysisReport(raw));
+        reportLangRef.current = uiLang;
         setAnalysisSteps(prev => [...prev, 'Analysis complete!']);
       });
     } catch (error) {
@@ -327,6 +330,16 @@ export const useSongAnalysisEngine = ({
       if (!wasAborted) setIsAnalyzing(false);
     }
   }, [song, uiLang, setIsAnalyzing, setIsAnalysisModalOpen]);
+
+  // Re-run analysis automatically when the UI language changes while a report exists.
+  useEffect(() => {
+    if (
+      reportLangRef.current !== null &&
+      reportLangRef.current !== uiLang
+    ) {
+      analyzeCurrentSong();
+    }
+  }, [uiLang, analyzeCurrentSong]);
 
   return {
     analysisReport,
