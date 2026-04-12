@@ -383,6 +383,8 @@ export interface Translations {
     apiKeyLabel: string;
     license: string;
     licenseLabel: string;
+    github: string;
+    docs: string;
     close: string;
   };
 
