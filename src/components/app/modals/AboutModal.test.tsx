@@ -15,7 +15,7 @@ describe('AboutModal', () => {
     const donationLink = screen.getByText('Donation (Github Sponsor)').closest('a');
 
     expect(donationLink?.getAttribute('href')).toBe('https://github.com/sponsors/EmmanuelKerhoz');
-    expect(screen.getAllByRole('link')).toHaveLength(7);
+    expect(screen.getAllByRole('link')).toHaveLength(8);
     expect(container.querySelector('.lcars-gradient-outline')).toBeTruthy();
   });
 
