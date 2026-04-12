@@ -155,7 +155,7 @@ export function AnalysisModal({
                   <h4 className="micro-label text-amber-500 flex items-center gap-2">
                     <Target className="w-3.5 h-3.5" />{t.analysis.improvements}
                   </h4>
-                  <div className="max-h-52 overflow-y-auto custom-scrollbar bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
+                  <div className="bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
                     <ul className="space-y-2">
                       {improvements.map((s, i) => (
                         <li key={i} className="flex items-start gap-2 group">
@@ -210,7 +210,7 @@ export function AnalysisModal({
                     <h4 className="micro-label text-emerald-500 flex items-center gap-2">
                       <CheckCircle2 className="w-3.5 h-3.5" />{t.analysis.strengths}
                     </h4>
-                    <div className="max-h-44 overflow-y-auto custom-scrollbar bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
+                    <div className="bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
                       <ul className="space-y-1.5">
                         {strengths.map((s, i) => (
                           <li key={i} className="text-xs text-[var(--text-secondary)] flex gap-2"><span className="text-emerald-500 mt-0.5 flex-shrink-0">•</span>{s}</li>
