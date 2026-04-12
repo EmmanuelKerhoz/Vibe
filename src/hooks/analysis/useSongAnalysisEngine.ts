@@ -334,13 +334,12 @@ export const useSongAnalysisEngine = ({
   // Re-run analysis automatically when the UI language changes while a report exists.
   useEffect(() => {
     if (
-      analysisReport !== null &&
       reportLangRef.current !== null &&
       reportLangRef.current !== uiLang
     ) {
       analyzeCurrentSong();
     }
-  }, [uiLang, analysisReport, analyzeCurrentSong]);
+  }, [uiLang, analyzeCurrentSong]);
 
   return {
     analysisReport,
