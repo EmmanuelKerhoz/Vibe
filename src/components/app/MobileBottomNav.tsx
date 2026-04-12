@@ -88,17 +88,15 @@ export function MobileBottomNav({
         <span>{t.mobileNav.music}</span>
       </button>
 
-      {/*
-        FIX #4 (amend): open-only from here — closing is exclusively handled by
-        StructureSidebar's handleClose (stopPropagation + setIsStructureOpen(false)).
-        This prevents the ghost re-appearance caused by a rapid tap during the
-        motion exit animation re-toggling the state from false back to true.
-      */}
       <button
         className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
         onClick={() => {
-          if (!isStructureOpen) setIsStructureOpen(true);
-          setIsLeftPanelOpen(false);
+          if (isStructureOpen) {
+            setIsStructureOpen(false);
+          } else {
+            setIsStructureOpen(true);
+            setIsLeftPanelOpen(false);
+          }
         }}
         aria-label={t.mobileNav.structure}
         aria-pressed={isStructureOpen}
