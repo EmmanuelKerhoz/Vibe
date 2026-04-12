@@ -53,7 +53,7 @@ function getGroupedChorusIndices(structure: string[]) {
   return groupedIndices;
 }
 
-// ── SectionRow ─────────────────────────────────────────────────────────────────────────
+// ── SectionRow ─────────────────────────────────────────────────────────────────────────────────────
 
 interface SectionRowProps {
   sectionItem: string;
@@ -118,7 +118,7 @@ const SectionRow = React.memo(function SectionRow({
   );
 });
 
-// ── StructureSidebar ───────────────────────────────────────────────────────────────────
+// ── StructureSidebar ───────────────────────────────────────────────────────────────────────────────────────
 
 export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
@@ -143,7 +143,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
 
   useFocusTrap(panelRef, !!(isMobileOverlay && isStructureOpen), () => setIsStructureOpen(false));
 
-  const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|…)$/, '').trim();
+  const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|\u2026)$/, '').trim();
   const removeSectionLabel = t.tooltips.removeSection;
   const normalizeSectionLabel = t.structure.normalize;
 
@@ -230,12 +230,12 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                           {...dragHandlers}
                           className={`relative flex flex-col gap-1.5 ${
                             dragOverIndex === idx
-                              ? `ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 ${sectionButtonShapeClass}`
+                              ? 'ring-2 ring-[var(--accent-color)] ring-offset-1 dark:ring-offset-zinc-900 rounded-[14px_6px_14px_6px]'
                               : ''
-                          }`}
+                          } ${draggedItemIndex === idx ? 'opacity-30' : ''}`}
                         >
-                          <div className="absolute left-2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[var(--accent-color)]/20 bg-[var(--bg-card)]/95 pointer-events-none">
-                            <Link2 className="w-2.5 h-2.5 text-[var(--accent-color)] opacity-60" />
+                          <div className="absolute left-2 top-[calc(50%-8px)] z-10 pointer-events-none">
+                            <Link2 className="w-3 h-3 text-[var(--accent-color)]/60" />
                           </div>
                           <SectionRow
                             sectionItem={item}
@@ -243,9 +243,9 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                             sectionId={sectionId}
                             draggable={false}
                             showDragHandle={isDraggable}
-                            draggedItemIndex={draggedItemIndex}
-                            dragOverIndex={dragOverIndex}
-                            dragHandlers={dragHandlers}
+                            draggedItemIndex={null}
+                            dragOverIndex={null}
+                            dragHandlers={{} as StructureDragHandlers}
                             onScrollToSection={onScrollToSection}
                             removeStructureItem={removeStructureItem}
                             removeSectionLabel={removeSectionLabel}
@@ -255,9 +255,10 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                             sectionIdx={chorusIdx}
                             sectionId={chorusSectionId}
                             draggable={false}
-                            draggedItemIndex={draggedItemIndex}
-                            dragOverIndex={dragOverIndex}
-                            dragHandlers={makeDragHandlers(chorusIdx, false)}
+                            showDragHandle={false}
+                            draggedItemIndex={null}
+                            dragOverIndex={null}
+                            dragHandlers={{} as StructureDragHandlers}
                             onScrollToSection={onScrollToSection}
                             removeStructureItem={removeStructureItem}
                             removeSectionLabel={removeSectionLabel}
@@ -284,43 +285,32 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                   })}
                 </div>
 
-                {/* ADD SECTION control */}
-                <div className="mt-3">
-                  <LcarsSelect
-                    value=""
-                    onChange={addStructureItem}
-                    options={sectionOptions}
-                    placeholder={addSectionLabel}
-                    isOpen={isSectionDropdownOpen}
-                    onOpenChange={setIsSectionDropdownOpen}
-                    accentColor="var(--lcars-cyan)"
-                    buttonTitle={t.tooltips.addSection}
-                    buttonAriaLabel={addSectionLabel}
-                    style={{ fontSize: '11px', textTransform: 'uppercase' }}
-                  />
-                </div>
+                {/* Add section */}
+                <LcarsSelect
+                  options={sectionOptions}
+                  onChange={(value) => addStructureItem(value)}
+                  placeholder={addSectionLabel}
+                  aria-label={t.structure.addSection}
+                  isOpen={isSectionDropdownOpen}
+                  setIsOpen={setIsSectionDropdownOpen}
+                />
 
-                {/* COMPOSITION section */}
-                <div className="mt-2">
-                  <CompositionSection />
-                </div>
+                {/* Composition section */}
+                <CompositionSection />
 
-                {/* Normalize Structure */}
-                <div className="px-0 pb-2">
-                  <Tooltip title={t.tooltips.normalizeStructure}>
-                    <button
-                      type="button"
-                      aria-label={normalizeSectionLabel}
-                      onClick={normalizeStructure}
-                      disabled={structure.length === 0}
-                      className={`lcars-btn w-full flex items-center justify-center gap-2 ${sectionButtonShapeClass} px-3 py-2 text-[11px] uppercase tracking-wider font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed`}
-                      style={{ fontSize: '11px' }}
-                    >
-                      <AlignLeft className="w-3.5 h-3.5 shrink-0" />
-                      <span>{t.structure.normalize}</span>
-                    </button>
-                  </Tooltip>
-                </div>
+                {/* Normalize structure */}
+                <Tooltip title={normalizeSectionLabel}>
+                  <button
+                    type="button"
+                    onClick={normalizeStructure}
+                    aria-label={normalizeSectionLabel}
+                    className={`lcars-container-btn w-full flex items-center justify-center gap-2 ${sectionButtonShapeClass} px-3 py-2 text-[11px] uppercase tracking-wider font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed`}
+                    style={{ fontSize: '11px' }}
+                  >
+                    <AlignLeft className="w-3.5 h-3.5" />
+                    {normalizeSectionLabel}
+                  </button>
+                </Tooltip>
               </div>
             </div>
           </div>

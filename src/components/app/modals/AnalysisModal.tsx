@@ -142,6 +142,11 @@ export function AnalysisModal({
             </div>
           ) : analysisReport ? (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {/* Executive Brief — top of dialog */}
+              <div className="bg-[var(--accent-color)]/5 border border-[var(--accent-color)]/20 p-3 rounded-2xl">
+                <h4 className="text-xs font-medium text-[var(--accent-color)] mb-1">{t.analysis.summary}</h4>
+                <p className="text-xs text-[var(--text-secondary)] italic leading-relaxed">"{analysisReport.summary}"</p>
+              </div>
               {/* Emotional Arc — full width */}
               <section className="space-y-2">
                 <h4 className="micro-label text-[var(--accent-color)] flex items-center gap-2">
@@ -220,13 +225,6 @@ export function AnalysisModal({
                   </section>
                 </div>
               </div>
-              {/* Summary — always visible */}
-              <section className="pt-1">
-                <div className="bg-[var(--accent-color)]/5 border border-[var(--accent-color)]/20 p-3 rounded-2xl">
-                  <h4 className="text-xs font-medium text-[var(--accent-color)] mb-1">{t.analysis.summary}</h4>
-                  <p className="text-xs text-[var(--text-secondary)] italic leading-relaxed">"{analysisReport.summary}"</p>
-                </div>
-              </section>
               {/* Musical Suggestions are shown in the Musical tab */}
               {musicalSuggestions.length > 0 && (
                 <p className="text-[9px] text-[var(--text-secondary)]/60 text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
