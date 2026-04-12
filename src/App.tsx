@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
 import { AppEditorLayout } from './components/app/AppEditorLayout';
@@ -27,6 +28,24 @@ import { SongMutationProvider } from './contexts/SongMutationContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 import { loadSession } from './lib/sessionPersistence';
 import type { SessionSnapshot } from './lib/sessionPersistence';
+
+// ── Splash shown while OPFS session loads ──────────────────────────────────
+function AppSplash() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100dvh',
+        width: '100dvw',
+        background: '#0a0a12',
+      }}
+    >
+      <Spinner size="large" label="Initializing…" labelPosition="below" />
+    </div>
+  );
+}
 
 function ModalShortcutBindings({
   isMobileOrTablet,
@@ -82,7 +101,6 @@ function AppInnerContent() {
 
   // ── Auto-save to OPFS ─────────────────────────────────────────────────
   const songCtx = useSongContext();
-  // Stable ref — never triggers useSessionAutoSave dep array
   const onSavedRef = useRef<(() => void) | null>(null);
   onSavedRef.current = hasSavedSession ? null : () => setHasSavedSession(true);
 
@@ -228,13 +246,20 @@ function AppInner() {
   const [initialSession, setInitialSession] = useState<SessionSnapshot | null | undefined>(undefined);
 
   useEffect(() => {
-    loadSession().then(setInitialSession).catch(() => setInitialSession(null));
+    // Safety timeout: if OPFS ever hangs (quota exceeded, locked file…)
+    // the splash won't block forever — app boots with a fresh session.
+    const safetyTimer = setTimeout(() => setInitialSession(null), 5000);
+
+    loadSession()
+      .then(setInitialSession)
+      .catch(() => setInitialSession(null))
+      .finally(() => clearTimeout(safetyTimer));
   }, []);
 
-  if (initialSession === undefined) return null;
+  // Show splash instead of a blank white screen while the session loads.
+  if (initialSession === undefined) return <AppSplash />;
 
   return (
-    // initialSession passed to both providers so song + nav state are fully restored
     <AppStateProvider initialSession={initialSession}>
       <DragProvider>
         <SongProvider initialSession={initialSession}>
