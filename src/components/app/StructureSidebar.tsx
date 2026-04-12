@@ -82,6 +82,7 @@ const SectionRow = React.memo(function SectionRow({
   removeStructureItem,
   removeSectionLabel,
 }: SectionRowProps) {
+  const tooltipText = getSectionTooltipText(sectionItem);
   return (
     <div
       draggable={draggable}
@@ -94,9 +95,10 @@ const SectionRow = React.memo(function SectionRow({
       ) : (
         <div className="w-3.5" />
       )}
-      <Tooltip title={getSectionTooltipText(sectionItem)}>
+      <Tooltip title={tooltipText}>
         <button
           type="button"
+          aria-label={tooltipText || sectionItem}
           className={`flex-1 text-left truncate transition-colors ${getSectionTextColor(sectionItem)} hover:text-[var(--accent-color)]`}
           onClick={() => sectionId && onScrollToSection(sectionId)}
         >
@@ -105,6 +107,7 @@ const SectionRow = React.memo(function SectionRow({
       </Tooltip>
       <Tooltip title={removeSectionLabel}>
         <button
+          aria-label={removeSectionLabel}
           onClick={() => removeStructureItem(sectionIdx)}
           className="p-1 hover:bg-black/20 rounded transition-colors opacity-0 group-hover:opacity-100"
         >
@@ -140,8 +143,9 @@ export const StructureSidebar = React.memo(function StructureSidebar({
 
   useFocusTrap(panelRef, !!(isMobileOverlay && isStructureOpen), () => setIsStructureOpen(false));
 
-  const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|\u2026)$/, '').trim();
+  const addSectionLabel = t.structure.addSection.replace(/(\.\.\.|…)$/, '').trim();
   const removeSectionLabel = t.tooltips.removeSection;
+  const normalizeSectionLabel = t.structure.normalize;
 
   const sectionOptions = useMemo(
     () => getSectionOptions(structure).map(name => ({
@@ -199,7 +203,7 @@ export const StructureSidebar = React.memo(function StructureSidebar({
               )}
             </div>
 
-            {/* Scrollable body: section list + ADD SECTION + COMPOSITION + Normalize */}
+            {/* Scrollable body */}
             <div className="px-5 pt-5 pb-5 flex-1 overflow-y-auto custom-scrollbar">
               <div className="space-y-2">
                 {/* Section rows */}
@@ -291,23 +295,26 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     onOpenChange={setIsSectionDropdownOpen}
                     accentColor="var(--lcars-cyan)"
                     buttonTitle={t.tooltips.addSection}
+                    buttonAriaLabel={addSectionLabel}
                     style={{ fontSize: '11px', textTransform: 'uppercase' }}
                   />
                 </div>
 
-                {/* COMPOSITION section — directly below ADD SECTION */}
+                {/* COMPOSITION section */}
                 <div className="mt-2">
                   <CompositionSection />
                 </div>
 
-                {/* Normalize Structure — LCARS button */}
+                {/* Normalize Structure */}
                 <div className="px-0 pb-2">
                   <Tooltip title={t.tooltips.normalizeStructure}>
                     <button
                       type="button"
+                      aria-label={normalizeSectionLabel}
                       onClick={normalizeStructure}
                       disabled={structure.length === 0}
                       className={`lcars-btn w-full flex items-center justify-center gap-2 ${sectionButtonShapeClass} px-3 py-2 text-[11px] uppercase tracking-wider font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed`}
+                      style={{ fontSize: '11px' }}
                     >
                       <AlignLeft className="w-3.5 h-3.5 shrink-0" />
                       <span>{t.structure.normalize}</span>
@@ -316,7 +323,6 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                 </div>
               </div>
             </div>
-            {/* No pinned footer */}
           </div>
         </motion.div>
       )}
