@@ -29,6 +29,8 @@ interface LcarsSelectProps {
   /** Override the glow/border accent colour (CSS colour string or var()). Defaults to var(--accent-color). */
   accentColor?: string;
   buttonTitle?: string;
+  /** Accessible label for the trigger button (aria-label). Falls back to placeholder when omitted. */
+  buttonAriaLabel?: string;
 }
 
 export function LcarsSelect({
@@ -44,6 +46,7 @@ export function LcarsSelect({
   triggerLabel,
   accentColor,
   buttonTitle,
+  buttonAriaLabel,
 }: LcarsSelectProps) {
   const accent = accentColor ?? 'var(--accent-color)';
   const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
@@ -77,7 +80,6 @@ export function LcarsSelect({
     if (!isOpen) setFocusedIndex(-1);
   }, [isOpen]);
 
-  // Helper: find next/prev non-disabled index
   const nextEnabled = useCallback((from: number, direction: 1 | -1): number => {
     let i = from + direction;
     while (i >= 0 && i < options.length) {
@@ -85,7 +87,7 @@ export function LcarsSelect({
       if (opt && !opt.disabled) return i;
       i += direction;
     }
-    return from; // stay if nothing found
+    return from;
   }, [options]);
 
   const updateDropdownPosition = useCallback(() => {
@@ -165,7 +167,6 @@ export function LcarsSelect({
         e.preventDefault();
         if (isOpen && focusedIndex >= 0) {
           const opt = options[focusedIndex];
-          // Guard: skip disabled items on keyboard confirm
           if (opt && !opt.disabled) handleSelect(opt.value);
         } else {
           setOpen(true);
@@ -192,75 +193,74 @@ export function LcarsSelect({
     }
   };
 
+  const resolvedAriaLabel = buttonAriaLabel ?? (typeof placeholder === 'string' ? placeholder : undefined);
+
   const triggerBlock = (
-      <div
-        className="lcars-gradient-outline"
+    <div
+      className="lcars-gradient-outline"
+      style={{ borderRadius: '6px 2px 6px 2px', display: 'block', width: '100%' }}
+    >
+      <button
+        type="button"
+        ref={triggerRef}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-label={resolvedAriaLabel}
+        onClick={handleTriggerClick}
+        onKeyDown={handleKeyDown}
+        className={['ux-interactive', className].filter(Boolean).join(' ')}
         style={{
-          borderRadius: '6px 2px 6px 2px',
-          display: 'block',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           width: '100%',
+          padding: '6px 10px',
+          borderRadius: '6px 2px 6px 2px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-card)',
+          color: 'var(--text-primary)',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.5 : 1,
+          transition: 'box-shadow 0.2s, border-color 0.2s',
+          outline: 'none',
+          gap: '6px',
+          fontSize: 'inherit',
+          fontFamily: EMOJI_FONT_STACK,
+          textAlign: 'left',
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 1,
+          ...style,
         }}
+        onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+        onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
+        onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.borderColor = accent; } }}
+        onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
       >
-        <button
-          type="button"
-          ref={triggerRef}
-          disabled={disabled}
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-          aria-controls={isOpen ? listboxId : undefined}
-          onClick={handleTriggerClick}
-          onKeyDown={handleKeyDown}
-          className={['ux-interactive', className].filter(Boolean).join(' ')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            padding: '6px 10px',
-            borderRadius: '6px 2px 6px 2px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-card)',
-            color: 'var(--text-primary)',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.5 : 1,
-            transition: 'box-shadow 0.2s, border-color 0.2s',
-            outline: 'none',
-            gap: '6px',
-            fontSize: 'inherit',
-            fontFamily: EMOJI_FONT_STACK,
-            textAlign: 'left',
-            overflow: 'hidden',
-            position: 'relative',
-            zIndex: 1,
-            ...style,
-          }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
-          onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
-          onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.borderColor = accent; } }}
-          onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
-        >
-          <div style={{
-            flex: 1,
-            minWidth: 0,
-            display: 'flex',
-            alignItems: 'center',
-            fontFamily: EMOJI_FONT_STACK,
-            overflow: 'hidden',
-          }}>
-            {(() => {
-              const displayLabel = triggerLabel ?? selectedLabel;
-              return typeof displayLabel === 'string' ? (
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', width: '100%' }}>
-                  {displayLabel}
-                </span>
-              ) : (
-                <>{displayLabel}</>
-              );
-            })()}
-          </div>
-          <ChevronDown style={{ width: 14, height: 14, flexShrink: 0, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-        </button>
-      </div>
+        <div style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          alignItems: 'center',
+          fontFamily: EMOJI_FONT_STACK,
+          overflow: 'hidden',
+        }}>
+          {(() => {
+            const displayLabel = triggerLabel ?? selectedLabel;
+            return typeof displayLabel === 'string' ? (
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', width: '100%' }}>
+                {displayLabel}
+              </span>
+            ) : (
+              <>{displayLabel}</>
+            );
+          })()}
+        </div>
+        <ChevronDown style={{ width: 14, height: 14, flexShrink: 0, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+      </button>
+    </div>
   );
 
   return (
@@ -270,10 +270,7 @@ export function LcarsSelect({
       {isOpen && dropdownStyle && createPortal(
         <div
           className="lcars-gradient-outline"
-          style={{
-            ...dropdownStyle,
-            borderRadius: '2px 6px 6px 2px',
-          }}
+          style={{ ...dropdownStyle, borderRadius: '2px 6px 6px 2px' }}
         >
           <ul
             ref={listRef}
