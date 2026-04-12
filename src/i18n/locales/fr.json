@@ -374,12 +374,12 @@
     "editMode": {
       "label": "Éditeur par défaut",
       "text": "Texte",
-      "section": "Éditeur de sections",
-      "markdown": "Éditeur Markdown",
+      "section": "Sections",
+      "markdown": "Markdown",
       "phonetic": "Vue phonétique"
     },
     "translation": {
-      "label": "Traduction / Adaptation",
+      "label": "Adaptation linguistique",
       "show": "Afficher",
       "hide": "Masquer"
     },
