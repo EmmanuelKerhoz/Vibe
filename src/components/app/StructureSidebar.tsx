@@ -54,7 +54,7 @@ function getGroupedChorusIndices(structure: string[]) {
   return groupedIndices;
 }
 
-// ── SectionRow ──────────────────────────────────────────────────────────────────────────
+// ── SectionRow ─────────────────────────────────────────────────────────────────────────
 
 interface SectionRowProps {
   sectionItem: string;
@@ -116,7 +116,7 @@ const SectionRow = React.memo(function SectionRow({
   );
 });
 
-// ── StructureSidebar ────────────────────────────────────────────────────────────────────
+// ── StructureSidebar ───────────────────────────────────────────────────────────────────
 
 export const StructureSidebar = React.memo(function StructureSidebar({
   isStructureOpen, setIsStructureOpen,
@@ -200,11 +200,8 @@ export const StructureSidebar = React.memo(function StructureSidebar({
               )}
             </div>
 
-            {/* Composition controls — rhyme scheme, syllables, quantize */}
-            <CompositionSection />
-
-            {/* Section list */}
-            <div className="px-5 pb-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
+            {/* Section list — scrollable */}
+            <div className="px-5 pt-5 flex-1 overflow-y-auto custom-scrollbar">
               <div className="space-y-2">
                 <div className="flex flex-col gap-1.5">
                   {structure.map((item, idx) => {
@@ -297,9 +294,18 @@ export const StructureSidebar = React.memo(function StructureSidebar({
                     style={{ fontSize: '11px', textTransform: 'uppercase' }}
                   />
                 </div>
+              </div>
+            </div>
 
+            {/* Footer — Composition controls + Normalize (fixed, out of scroll) */}
+            <div
+              className="shrink-0"
+              style={{ borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}
+            >
+              <CompositionSection />
+              <div className="px-5 pb-5">
                 <Tooltip title={t.tooltips.normalizeStructure}>
-                  <div className="lcars-gradient-outline mt-4" style={{ borderRadius: sectionButtonShapeClass, width: '100%' }}>
+                  <div className="lcars-gradient-outline" style={{ borderRadius: sectionButtonShapeClass, width: '100%' }}>
                     <Button
                       onClick={normalizeStructure}
                       disabled={structure.length === 0}

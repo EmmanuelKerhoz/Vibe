@@ -8,7 +8,7 @@
  *
  * Architecture invariant (docs_fusion_optimal.md):
  *   All heavy computation runs in a Web Worker. This component is a pure
- *   observer of the worker's output — it NEVER mutates song state or
+ *   observer of the worker’s output — it NEVER mutates song state or
  *   participates in the UNDO/REDO stack.
  */
 import React, { useState } from 'react';
@@ -26,13 +26,14 @@ import {
   DataBarVertical24Regular,
   TextGrammarWand24Regular,
   ArrowSwap24Regular,
-  Dismiss24Regular,
 } from '@fluentui/react-icons';
+import { X } from '../ui/icons';
+import { AnimatePresence, motion } from 'motion/react';
 import type { SelectTabData, SelectTabEventHandler } from '@fluentui/react-components';
 import type { AnalysisResult, SectionInsight, SimilarityPair } from '../../lib/workers/linguistics.types';
 import type { DetectedSchema } from '../../lib/linguistics/core/types';
 
-// ─── Sub-components ─────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────
 
 function InsightsTab({ sections }: { sections: SectionInsight[] }) {
   if (sections.length === 0) {
@@ -45,14 +46,12 @@ function InsightsTab({ sections }: { sections: SectionInsight[] }) {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Global KPIs */}
       <div className="grid grid-cols-3 gap-2">
         <KpiCard label="Lines" value={totalLines} />
         <KpiCard label="Syllables" value={totalSyllables} />
         <KpiCard label="Words" value={totalWords} />
       </div>
       <Divider />
-      {/* Per-section breakdown */}
       {sections.map(sec => (
         <SectionInsightCard key={sec.sectionId} section={sec} />
       ))}
@@ -72,8 +71,6 @@ function AnalysisTab({ sections }: { sections: SectionInsight[] }) {
           <Text weight="semibold" size={300} className="block mb-2 font-mono text-[var(--lcars-amber)]">
             {sec.sectionName}
           </Text>
-
-          {/* Rhyme Schema */}
           <div className="flex items-center gap-2 mb-2">
             <Text size={200} className="text-[var(--text-muted)] min-w-[80px]">Schema:</Text>
             <SchemaDisplay
@@ -82,15 +79,10 @@ function AnalysisTab({ sections }: { sections: SectionInsight[] }) {
               detectedSchemaObj={sec.detectedSchemaObj}
             />
           </div>
-
-          {/* Assonance / Alliteration density bars */}
           <div className="flex flex-col gap-1 mb-2">
             <DensityBar label="Assonance" value={sec.assonanceDensity} color="var(--lcars-cyan)" />
             <DensityBar label="Alliteration" value={sec.alliterationDensity} color="var(--lcars-violet)" />
           </div>
-
-          {/* Rhyme type distribution — typed filter guards against undefined/null
-              values in malformed worker payloads without relying on a cast. */}
           <div className="flex flex-wrap gap-1 mt-1">
             {(Object.entries(sec.rhymeTypes) as [string, unknown][])
               .filter((entry): entry is [string, number] => typeof entry[1] === 'number' && entry[1] > 0)
@@ -100,8 +92,6 @@ function AnalysisTab({ sections }: { sections: SectionInsight[] }) {
                 </Badge>
               ))}
           </div>
-
-          {/* Per-line labels */}
           <div className="mt-2 flex flex-col gap-0.5">
             {sec.lineInsights.map(li => (
               <div key={li.lineId} className="flex items-center gap-2 text-xs font-mono">
@@ -172,7 +162,7 @@ function SimilarityTab({ pairs }: { pairs: SimilarityPair[] }) {
   );
 }
 
-// ─── Shared micro-components ────────────────────────────────────────────────
+// ─── Shared micro-components ────────────────────────────────────────────
 
 function KpiCard({ label, value }: { label: string; value: number }) {
   return (
@@ -297,7 +287,7 @@ function rhymeTypeColor(type: string): 'success' | 'warning' | 'danger' | 'infor
   }
 }
 
-// ─── Main panel component ───────────────────────────────────────────────────
+// ─── Main panel component ──────────────────────────────────────────────
 
 interface AnalysisPanelProps {
   result: AnalysisResult | null;
@@ -321,91 +311,86 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
   };
 
   return (
-    <aside
-      className={`analysis-panel flex flex-col border-l border-[var(--border-color)] bg-[var(--bg-sidebar)] ${
-        isMobileOverlay ? 'structure-sidebar-mobile-overlay' : ''
-      }`}
-      style={{
-        // clamp absorbs narrow-viewport constraints (< 320px, iPhone SE landscape
-        // with safe-area) that a fixed 320px value would escape under overflow:hidden.
-        width: isMobileOverlay ? '100%' : 'clamp(280px, 25vw, 400px)',
-        height: '100%',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)]">
-        <div className="flex items-center gap-2">
-          <DataBarVertical24Regular className="text-[var(--lcars-amber)]" />
-          <Text weight="semibold" size={300} className="font-mono text-[var(--lcars-amber)] uppercase tracking-wider">
-            Analysis
-          </Text>
-          {isComputing && (
-            <Spinner size="tiny" />
-          )}
-        </div>
-        <button
-          onClick={onClose}
-          className="p-1 rounded hover:bg-[var(--bg-hover)] transition-colors"
-          aria-label="Close analysis panel"
+    <AnimatePresence>
+      <motion.div
+        initial={{ width: 0, opacity: 0 }}
+        animate={{ width: isMobileOverlay ? '100%' : 280, opacity: 1 }}
+        exit={{ width: 0, opacity: 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className={`flex flex-col z-50 shadow-2xl lcars-panel${
+          isMobileOverlay ? ' structure-sidebar-mobile-overlay' : ''
+        }`}
+        style={{ overflow: 'hidden', position: 'relative' }}
+      >
+        <div
+          className="flex flex-col h-full overflow-hidden"
+          style={{ width: isMobileOverlay ? '100%' : 280, minWidth: isMobileOverlay ? undefined : 280 }}
         >
-          <Dismiss24Regular className="text-[var(--text-muted)]" />
-        </button>
-      </div>
-
-      {/* LCARS accent bar */}
-      <div
-        style={{
-          height: '2px',
-          background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)',
-          opacity: 0.85,
-        }}
-      />
-
-      {/* Loading indicator */}
-      {isComputing && (
-        <ProgressBar thickness="medium" className="w-full" />
-      )}
-
-      {/* Tab navigation */}
-      <TabList selectedValue={selectedTab} onTabSelect={handleTabSelect} size="small" className="px-2 pt-1">
-        <Tab value="insights" icon={<DataBarVertical24Regular />}>
-          Insights
-        </Tab>
-        <Tab value="analysis" icon={<TextGrammarWand24Regular />}>
-          Analysis
-        </Tab>
-        <Tab value="similarity" icon={<ArrowSwap24Regular />}>
-          Similarity
-        </Tab>
-      </TabList>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
-        {error && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 mb-3">
-            <Text size={200} className="text-red-400">{error}</Text>
+          {/* Header — LCARS standard h-16 */}
+          <div
+            className="h-16 px-5 flex items-center justify-between shrink-0"
+            style={{ position: 'relative', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}
+          >
+            {/* Accent rail */}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              height: 'var(--accent-rail-thickness, 2px)',
+              background: 'var(--accent-rail-gradient-h-rev)',
+              opacity: 0.85, pointerEvents: 'none', zIndex: 1,
+            }} />
+            <div className="flex items-center gap-3">
+              <DataBarVertical24Regular className="text-[var(--lcars-amber)] w-4 h-4" />
+              <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">
+                Analysis
+              </span>
+              {isComputing && <Spinner size="tiny" />}
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Close analysis panel"
+              className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        )}
 
-        {result && result.computeTimeMs > 0 && (
-          <div className="text-right mb-2">
-            <Text size={100} className="text-[var(--text-muted)] font-mono">
-              ⚡ {result.computeTimeMs.toFixed(0)}ms
-            </Text>
+          {/* Computing progress bar */}
+          {isComputing && (
+            <ProgressBar thickness="medium" className="w-full shrink-0" />
+          )}
+
+          {/* Tab navigation */}
+          <TabList
+            selectedValue={selectedTab}
+            onTabSelect={handleTabSelect}
+            size="small"
+            className="px-3 pt-1 shrink-0"
+          >
+            <Tab value="insights" icon={<DataBarVertical24Regular />}>Insights</Tab>
+            <Tab value="analysis" icon={<TextGrammarWand24Regular />}>Analysis</Tab>
+            <Tab value="similarity" icon={<ArrowSwap24Regular />}>Similarity</Tab>
+          </TabList>
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+            {error && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 mb-3">
+                <Text size={200} className="text-red-400">{error}</Text>
+              </div>
+            )}
+            {result && result.computeTimeMs > 0 && (
+              <div className="text-right mb-2">
+                <Text size={100} className="text-[var(--text-muted)] font-mono">
+                  ⚡ {result.computeTimeMs.toFixed(0)}ms
+                </Text>
+              </div>
+            )}
+            {selectedTab === 'insights' && <InsightsTab sections={result?.sections ?? []} />}
+            {selectedTab === 'analysis' && <AnalysisTab sections={result?.sections ?? []} />}
+            {selectedTab === 'similarity' && <SimilarityTab pairs={result?.similarityPairs ?? []} />}
           </div>
-        )}
-
-        {selectedTab === 'insights' && (
-          <InsightsTab sections={result?.sections ?? []} />
-        )}
-        {selectedTab === 'analysis' && (
-          <AnalysisTab sections={result?.sections ?? []} />
-        )}
-        {selectedTab === 'similarity' && (
-          <SimilarityTab pairs={result?.similarityPairs ?? []} />
-        )}
-      </div>
-    </aside>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 });
