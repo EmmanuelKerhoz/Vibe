@@ -90,7 +90,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // E
   { code: 'EN',  aiName: 'English',          sign: '🇬🇧' },
   { code: 'ET',  aiName: 'Estonian',         sign: '🇪🇪' },
-  { code: 'EW',  aiName: 'Ewe',              sign: '🎶', region: 'Togo - Volta Region', isEthnical: true },
+  { code: 'EW',  aiName: 'Ewe',              sign: '🪘', region: 'Togo - Volta Region', isEthnical: true },
   // F
   { code: 'FA',  aiName: 'Farsi',            sign: '🇮🇷', region: 'Persian - Iran' },
   { code: 'FI',  aiName: 'Finnish',          sign: '🇫🇮' },
@@ -127,7 +127,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'NOU', aiName: 'Nouchi',           sign: '🇨🇮', region: 'Ivory Coast - Urban Creole', isEthnical: true },
   { code: 'NO',  aiName: 'Norwegian',        sign: '🇳🇴' },
   // O
-  { code: 'OG',  aiName: 'Ogoja',            sign: '🌾', region: 'Cross River - Nigeria', isEthnical: true },
+  { code: 'OG',  aiName: 'Ogoja',            sign: '🗿', region: 'Cross River - Nigeria', isEthnical: true },
   // P
   { code: 'PA',  aiName: 'Punjabi',          sign: '🇮🇳', region: 'Punjab' },
   { code: 'PT',  aiName: 'Portuguese',       sign: '🇵🇹' },
