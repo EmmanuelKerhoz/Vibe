@@ -33,13 +33,16 @@ import type { SessionSnapshot } from './lib/sessionPersistence';
 function AppSplash() {
   return (
     <div
+      role="status"
+      aria-live="polite"
+      aria-label="Application loading"
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         height: '100dvh',
         width: '100dvw',
-        background: '#0a0a12',
+        background: 'var(--bg-app, #0a0a12)',
       }}
     >
       <Spinner size="large" label="Initializing…" labelPosition="below" />
@@ -246,14 +249,27 @@ function AppInner() {
   const [initialSession, setInitialSession] = useState<SessionSnapshot | null | undefined>(undefined);
 
   useEffect(() => {
-    // Safety timeout: if OPFS ever hangs (quota exceeded, locked file…)
-    // the splash won't block forever — app boots with a fresh session.
-    const safetyTimer = setTimeout(() => setInitialSession(null), 5000);
+    // Guard against post-unmount or post-timeout setState races.
+    // If the 5 s safety fires first, `cancelled = true` prevents the
+    // subsequent Promise resolution from overwriting the null session.
+    let cancelled = false;
+
+    const safetyTimer = setTimeout(() => {
+      if (!cancelled) setInitialSession(null);
+    }, 5000);
 
     loadSession()
-      .then(setInitialSession)
-      .catch(() => setInitialSession(null))
-      .finally(() => clearTimeout(safetyTimer));
+      .then(data => { if (!cancelled) setInitialSession(data); })
+      .catch(() => { if (!cancelled) setInitialSession(null); })
+      .finally(() => {
+        clearTimeout(safetyTimer);
+        cancelled = true;
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   // Show splash instead of a blank white screen while the session loads.
