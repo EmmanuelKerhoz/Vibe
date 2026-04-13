@@ -9,6 +9,13 @@ import { useTranslation } from '../../../i18n';
 import { AnalysisLanguagePicker } from './AnalysisLanguagePicker';
 import type { SongVersion } from '../../../types';
 
+// Sentinel strings used when saving a version before applying analysis
+// suggestions. Must stay in sync with the values emitted by useAnalysis.
+const BEFORE_ANALYSIS_VERSION_NAMES = [
+  'Before Analysis Improvements',
+  'Before Analysis Batch Improvements',
+] as const;
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -47,11 +54,24 @@ export function AnalysisModal({
 
   if (!isOpen) return null;
 
-  const strengths = Array.isArray(analysisReport?.strengths) ? analysisReport!.strengths : [];
-  const improvements = Array.isArray(analysisReport?.improvements) ? analysisReport!.improvements : [];
-  const musicalSuggestions = Array.isArray(analysisReport?.musicalSuggestions) ? analysisReport!.musicalSuggestions : [];
+  const strengths = Array.isArray(analysisReport?.strengths) ? analysisReport.strengths : [];
+  const improvements = Array.isArray(analysisReport?.improvements) ? analysisReport.improvements : [];
+  const musicalSuggestions = Array.isArray(analysisReport?.musicalSuggestions) ? analysisReport.musicalSuggestions : [];
 
   const hasReport = !!analysisReport;
+
+  // Only clear the applied-items state when a matching snapshot actually exists.
+  // Calling clearAppliedAnalysisItems() without a rollback would mislead the UI
+  // into showing 'reverted' state while the song data is unchanged.
+  function handleRevert() {
+    const beforeVersion = versions.find(v =>
+      BEFORE_ANALYSIS_VERSION_NAMES.includes(v.name as typeof BEFORE_ANALYSIS_VERSION_NAMES[number])
+    );
+    if (beforeVersion) {
+      rollbackToVersion(beforeVersion);
+      clearAppliedAnalysisItems();
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
@@ -257,7 +277,7 @@ export function AnalysisModal({
                           <button
                             onClick={() => applyAnalysisItem(s)}
                             disabled={isApplyingAnalysis !== null}
-                            aria-label={`Apply: ${s}`}
+                            aria-label={`Apply: ${s.slice(0, 80)}${s.length > 80 ? '…' : ''}`}
                             className={`flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-amber-500/70 hover:text-amber-400 hover:bg-amber-500/10 disabled:opacity-0 ${
                               isApplyingAnalysis === s ? 'opacity-100' : ''
                             }`}
@@ -294,13 +314,7 @@ export function AnalysisModal({
                 {appliedAnalysisItems.size > 0 && (
                   <Tooltip title={t.tooltips.revertAnalysis}>
                     <button
-                      onClick={() => {
-                        const beforeVersion = versions.find(v =>
-                          v.name === 'Before Analysis Improvements' || v.name === 'Before Analysis Batch Improvements'
-                        );
-                        if (beforeVersion) rollbackToVersion(beforeVersion);
-                        clearAppliedAnalysisItems();
-                      }}
+                      onClick={handleRevert}
                       className="text-[10px] uppercase tracking-widest text-amber-500 hover:text-amber-400 flex items-center justify-center gap-2 transition-colors w-full py-1"
                     >
                       <Undo2 className="w-3.5 h-3.5" />
