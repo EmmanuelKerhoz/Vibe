@@ -58,100 +58,106 @@ export type SupportedUiLocaleCode = typeof SUPPORTED_UI_LOCALES[number]['code'];
 // ---------------------------------------------------------------------------
 // Adaptation Languages — for AI creative lyric adaptation
 // Sorted alphabetically by aiName for consistent dropdown order.
+//
+// sign conventions:
+//   - Nation flag   : language tied to a sovereign state (standard)
+//   - Ethnic picto  : dialect / regional language without a dedicated flag;
+//                     each picto is chosen for cultural resonance, NOT generic.
+//                     isEthnical: true marks these entries.
 // ---------------------------------------------------------------------------
 
 export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // A
-  { code: 'AM', aiName: 'Amharic',    sign: '🇪🇹', region: 'Ethiopia - East Africa' },
-  { code: 'AR', aiName: 'Arabic',     sign: '🇸🇦' },
+  { code: 'AM',  aiName: 'Amharic',         sign: '🇪🇹', region: 'Ethiopia - East Africa' },
+  { code: 'AR',  aiName: 'Arabic',           sign: '🇸🇦' },
+  { code: 'AZ',  aiName: 'Azerbaijani',      sign: '🇦🇿' },
   // B
-  { code: 'BA', aiName: 'Baoulé',     sign: '🪘', region: 'Ivory Coast - West Africa', isEthnical: true },
-  { code: 'BK', aiName: 'Bekwarra',   sign: '🪘', region: 'Nigeria - Cross River', isEthnical: true },
-  { code: 'BN', aiName: 'Bengali',    sign: '🇧🇩', region: 'Bangladesh / West Bengal' },
-  { code: 'BG', aiName: 'Bulgarian',  sign: '🇧🇬' },
+  { code: 'BA',  aiName: 'Baoulé',           sign: '🌿', region: 'Ivory Coast - West Africa', isEthnical: true },
+  { code: 'BK',  aiName: 'Bekwarra',         sign: '🌾', region: 'Nigeria - Cross River', isEthnical: true },
+  { code: 'BN',  aiName: 'Bengali',          sign: '🇧🇩', region: 'Bangladesh / West Bengal' },
+  { code: 'BG',  aiName: 'Bulgarian',        sign: '🇧🇬' },
+  { code: 'BM',  aiName: 'Bambara',          sign: '🦅', region: 'Mali - West Africa', isEthnical: true },
   // C
-  { code: 'CB', aiName: 'Calabari',   sign: '🪘', region: 'Niger Delta - Nigeria', isEthnical: true },
-  { code: 'YUE', aiName: 'Cantonese', sign: '🇭🇰', region: 'Hong Kong / Guangdong' },
-  { code: 'CFG', aiName: 'Camfranglais', sign: '🇨🇲', region: 'Cameroon - Urban Creole', isEthnical: true },
-  { code: 'ZH', aiName: 'Chinese',    sign: '🇨🇳', region: 'Mandarin' },
-  { code: 'HR', aiName: 'Croatian',   sign: '🇭🇷' },
-  { code: 'CS', aiName: 'Czech',      sign: '🇨🇿' },
+  { code: 'CB',  aiName: 'Calabari',         sign: '🐚', region: 'Niger Delta - Nigeria', isEthnical: true },
+  { code: 'YUE', aiName: 'Cantonese',        sign: '🇭🇰', region: 'Hong Kong / Guangdong' },
+  { code: 'CFG', aiName: 'Camfranglais',     sign: '🇨🇲', region: 'Cameroon - Urban Creole', isEthnical: true },
+  { code: 'ZH',  aiName: 'Chinese',          sign: '🇨🇳', region: 'Mandarin' },
+  { code: 'HR',  aiName: 'Croatian',         sign: '🇭🇷' },
+  { code: 'CS',  aiName: 'Czech',            sign: '🇨🇿' },
   // D
-  { code: 'DA', aiName: 'Danish',     sign: '🇩🇰' },
-  { code: 'DI', aiName: 'Dioula',     sign: '🪘', region: 'Ivory Coast/Burkina Faso - West Africa', isEthnical: true },
+  { code: 'DA',  aiName: 'Danish',           sign: '🇩🇰' },
+  { code: 'DI',  aiName: 'Dioula',           sign: '🧭', region: 'Ivory Coast/Burkina Faso - West Africa', isEthnical: true },
   // E
-  { code: 'EN', aiName: 'English',    sign: '🇬🇧' },
-  { code: 'ET', aiName: 'Estonian',   sign: '🇪🇪' },
-  { code: 'EW', aiName: 'Ewe',        sign: '🪘', region: 'Togo - Volta Region', isEthnical: true },
+  { code: 'EN',  aiName: 'English',          sign: '🇬🇧' },
+  { code: 'ET',  aiName: 'Estonian',         sign: '🇪🇪' },
+  { code: 'EW',  aiName: 'Ewe',              sign: '🎶', region: 'Togo - Volta Region', isEthnical: true },
   // F
-  { code: 'FA', aiName: 'Farsi',      sign: '🇮🇷', region: 'Persian - Iran' },
-  { code: 'FI', aiName: 'Finnish',    sign: '🇫🇮' },
-  { code: 'FF', aiName: 'Fula',       sign: '🪘', region: 'West Africa (Sahel)', isEthnical: true },
-  { code: 'FR', aiName: 'French',     sign: '🇫🇷' },
+  { code: 'FA',  aiName: 'Farsi',            sign: '🇮🇷', region: 'Persian - Iran' },
+  { code: 'FI',  aiName: 'Finnish',          sign: '🇫🇮' },
+  { code: 'FF',  aiName: 'Fula',             sign: '🐄', region: 'West Africa (Sahel)', isEthnical: true },
+  { code: 'FR',  aiName: 'French',           sign: '🇫🇷' },
   // G
-  { code: 'DE', aiName: 'German',     sign: '🇩🇪' },
+  { code: 'DE',  aiName: 'German',           sign: '🇩🇪' },
   // H
-  { code: 'HA', aiName: 'Hausa',      sign: '🪘', region: 'Nigeria/Niger - West Africa', isEthnical: true },
-  { code: 'HE', aiName: 'Hebrew',     sign: '🇮🇱' },
-  { code: 'HI', aiName: 'Hindi',      sign: '🇮🇳' },
-  { code: 'HU', aiName: 'Hungarian',  sign: '🇭🇺' },
+  { code: 'HA',  aiName: 'Hausa',            sign: '🏺', region: 'Nigeria/Niger - West Africa', isEthnical: true },
+  { code: 'HE',  aiName: 'Hebrew',           sign: '🇮🇱' },
+  { code: 'HI',  aiName: 'Hindi',            sign: '🇮🇳' },
+  { code: 'HU',  aiName: 'Hungarian',        sign: '🇭🇺' },
   // I
-  { code: 'IS', aiName: 'Icelandic',  sign: '🇮🇸' },
-  { code: 'ID', aiName: 'Indonesian', sign: '🇮🇩' },
-  { code: 'IT', aiName: 'Italian',    sign: '🇮🇹' },
+  { code: 'IS',  aiName: 'Icelandic',        sign: '🇮🇸' },
+  { code: 'ID',  aiName: 'Indonesian',       sign: '🇮🇩' },
+  { code: 'IT',  aiName: 'Italian',          sign: '🇮🇹' },
   // J
-  { code: 'JA', aiName: 'Japanese',   sign: '🇯🇵' },
-  { code: 'JV', aiName: 'Javanese',   sign: '🪘', region: 'Java - Indonesia', isEthnical: true },
+  { code: 'JA',  aiName: 'Japanese',         sign: '🇯🇵' },
+  { code: 'JV',  aiName: 'Javanese',         sign: '🎭', region: 'Java - Indonesia', isEthnical: true },
   // K
-  { code: 'KN', aiName: 'Kannada',    sign: '🇮🇳', region: 'Karnataka' },
-  { code: 'KK', aiName: 'Kazakh',     sign: '🇰🇿' },
-  { code: 'KM', aiName: 'Khmer',      sign: '🇰🇭', region: 'Cambodia' },
-  { code: 'KO', aiName: 'Korean',     sign: '🇰🇷', region: 'South Korea' },
+  { code: 'KN',  aiName: 'Kannada',          sign: '🇮🇳', region: 'Karnataka' },
+  { code: 'KK',  aiName: 'Kazakh',           sign: '🇰🇿' },
+  { code: 'KM',  aiName: 'Khmer',            sign: '🇰🇭', region: 'Cambodia' },
+  { code: 'KO',  aiName: 'Korean',           sign: '🇰🇷', region: 'South Korea' },
   // L
-  { code: 'LO', aiName: 'Lao',        sign: '🇱🇦' },
-  { code: 'LN', aiName: 'Lingala',    sign: '🪘', region: 'Congo - Central Africa', isEthnical: true },
+  { code: 'LO',  aiName: 'Lao',              sign: '🇱🇦' },
+  { code: 'LN',  aiName: 'Lingala',          sign: '🥁', region: 'Congo - Central Africa', isEthnical: true },
   // M
-  { code: 'MS', aiName: 'Malay',      sign: '🇲🇾' },
-  { code: 'ML', aiName: 'Malayalam',  sign: '🇮🇳', region: 'Kerala' },
-  { code: 'BM', aiName: 'Bambara',    sign: '🪘', region: 'Mali - West Africa', isEthnical: true },
-  { code: 'MI', aiName: 'Mina',       sign: '🪘', region: 'Togo - Maritime Region', isEthnical: true },
+  { code: 'MS',  aiName: 'Malay',            sign: '🇲🇾' },
+  { code: 'ML',  aiName: 'Malayalam',        sign: '🇮🇳', region: 'Kerala' },
+  { code: 'MI',  aiName: 'Mina',             sign: '🪗', region: 'Togo - Maritime Region', isEthnical: true },
   // N
-  { code: 'PCM', aiName: 'Nigerian Pidgin', sign: '🇳🇬', region: 'Nigeria - Urban Creole', isEthnical: true },
-  { code: 'NOU', aiName: 'Nouchi',    sign: '🇨🇮', region: 'Ivory Coast - Urban Creole', isEthnical: true },
-  { code: 'NO', aiName: 'Norwegian',  sign: '🇳🇴' },
+  { code: 'PCM', aiName: 'Nigerian Pidgin',  sign: '🇳🇬', region: 'Nigeria - Urban Creole', isEthnical: true },
+  { code: 'NOU', aiName: 'Nouchi',           sign: '🇨🇮', region: 'Ivory Coast - Urban Creole', isEthnical: true },
+  { code: 'NO',  aiName: 'Norwegian',        sign: '🇳🇴' },
   // O
-  { code: 'OG', aiName: 'Ogoja',      sign: '🪘', region: 'Cross River - Nigeria', isEthnical: true },
+  { code: 'OG',  aiName: 'Ogoja',            sign: '🌾', region: 'Cross River - Nigeria', isEthnical: true },
   // P
-  { code: 'PA', aiName: 'Punjabi',    sign: '🇮🇳', region: 'Punjab' },
-  { code: 'PT', aiName: 'Portuguese', sign: '🇵🇹' },
+  { code: 'PA',  aiName: 'Punjabi',          sign: '🇮🇳', region: 'Punjab' },
+  { code: 'PT',  aiName: 'Portuguese',       sign: '🇵🇹' },
   // R
-  { code: 'RO', aiName: 'Romanian',   sign: '🇷🇴' },
-  { code: 'RU', aiName: 'Russian',    sign: '🇷🇺' },
+  { code: 'RO',  aiName: 'Romanian',         sign: '🇷🇴' },
+  { code: 'RU',  aiName: 'Russian',          sign: '🇷🇺' },
   // S
-  { code: 'SR', aiName: 'Serbian',    sign: '🇷🇸' },
-  { code: 'SK', aiName: 'Slovak',     sign: '🇸🇰' },
-  { code: 'ES', aiName: 'Spanish',    sign: '🇪🇸' },
-  { code: 'SW', aiName: 'Swahili',    sign: '🇹🇿', region: 'East Africa' },
-  { code: 'SV', aiName: 'Swedish',    sign: '🇸🇪' },
+  { code: 'SR',  aiName: 'Serbian',          sign: '🇷🇸' },
+  { code: 'SK',  aiName: 'Slovak',           sign: '🇸🇰' },
+  { code: 'ES',  aiName: 'Spanish',          sign: '🇪🇸' },
+  { code: 'SW',  aiName: 'Swahili',          sign: '🇹🇿', region: 'East Africa' },
+  { code: 'SV',  aiName: 'Swedish',          sign: '🇸🇪' },
   // T
-  { code: 'TL', aiName: 'Tagalog',    sign: '🇵🇭' },
-  { code: 'TA', aiName: 'Tamil',      sign: '🇮🇳', region: 'Tamil Nadu / Sri Lanka' },
-  { code: 'TE', aiName: 'Telugu',     sign: '🇮🇳', region: 'Andhra Pradesh' },
-  { code: 'TH', aiName: 'Thai',       sign: '🇹🇭' },
-  { code: 'TR', aiName: 'Turkish',    sign: '🇹🇷' },
+  { code: 'TL',  aiName: 'Tagalog',          sign: '🇵🇭' },
+  { code: 'TA',  aiName: 'Tamil',            sign: '🇮🇳', region: 'Tamil Nadu / Sri Lanka' },
+  { code: 'TE',  aiName: 'Telugu',           sign: '🇮🇳', region: 'Andhra Pradesh' },
+  { code: 'TH',  aiName: 'Thai',             sign: '🇹🇭' },
+  { code: 'TR',  aiName: 'Turkish',          sign: '🇹🇷' },
   // U
-  { code: 'UK', aiName: 'Ukrainian',  sign: '🇺🇦' },
-  { code: 'UR', aiName: 'Urdu',       sign: '🇵🇰' },
-  { code: 'UZ', aiName: 'Uzbek',      sign: '🇺🇿' },
+  { code: 'UK',  aiName: 'Ukrainian',        sign: '🇺🇦' },
+  { code: 'UR',  aiName: 'Urdu',             sign: '🇵🇰' },
+  { code: 'UZ',  aiName: 'Uzbek',            sign: '🇺🇿' },
   // V
-  { code: 'VI', aiName: 'Vietnamese', sign: '🇻🇳' },
+  { code: 'VI',  aiName: 'Vietnamese',       sign: '🇻🇳' },
   // W
-  { code: 'WO', aiName: 'Wolof',      sign: '🪘', region: 'Senegal - West Africa', isEthnical: true },
+  { code: 'WO',  aiName: 'Wolof',            sign: '🦁', region: 'Senegal - West Africa', isEthnical: true },
   // Y
-  { code: 'YO', aiName: 'Yoruba',     sign: '🪘', region: 'Nigeria - West Africa', isEthnical: true },
+  { code: 'YO',  aiName: 'Yoruba',           sign: '🎺', region: 'Nigeria - West Africa', isEthnical: true },
   // Z
-  { code: 'AZ', aiName: 'Azerbaijani', sign: '🇦🇿' },
-  { code: 'ZU', aiName: 'Zulu',       sign: '🪘', region: 'South Africa', isEthnical: true },
+  { code: 'ZU',  aiName: 'Zulu',             sign: '🛡️', region: 'South Africa', isEthnical: true },
 ] as const;
 
 /** Returns the formatted display label for use in dropdown menus. */
