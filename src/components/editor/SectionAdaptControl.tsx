@@ -3,7 +3,6 @@ import { Loader2, Languages, Check } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { EmojiSign } from '../ui/EmojiSign';
-import { DialectGlobe } from '../ui/DialectGlobe';
 import { useTranslation } from '../../i18n';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 
@@ -53,9 +52,6 @@ function buildLanguageOptions() {
           <span className="truncate text-[11px]">
             {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}
           </span>
-          {lang.region && (
-            <DialectGlobe code={lang.code} region={lang.region} size={20} />
-          )}
         </span>
       ) as React.ReactNode,
     });
