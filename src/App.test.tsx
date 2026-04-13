@@ -34,6 +34,18 @@ const mockAppState = vi.hoisted(() => ({
   asyncNoop: vi.fn(async () => {}),
 }));
 
+// ─── UI leaf mocks (jsdom-incompatible: SVG/Twemoji) ─────────────────────────
+
+vi.mock('./components/ui/DialectGlobe', () => ({
+  DialectGlobe: () => null,
+}));
+
+vi.mock('./components/ui/EmojiSign', () => ({
+  EmojiSign: ({ sign }: { sign: string }) => <span>{sign}</span>,
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 vi.mock('@fluentui/react-components', () => ({
   FluentProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   webLightTheme: {},
