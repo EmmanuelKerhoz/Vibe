@@ -15,17 +15,16 @@ type LangGroup = {
 };
 
 const LANGUAGE_GROUPS: LangGroup[] = [
-  { label: 'Romance',        codes: ['AR_ROM', 'ES', 'FR', 'IT', 'PT', 'RO', 'CA'] },
-  { label: 'Germanic',       codes: ['EN', 'DE', 'NL', 'SV', 'DA', 'NO', 'IS'] },
-  { label: 'Slavic',         codes: ['RU', 'PL', 'CS', 'SK', 'UK', 'BG', 'SR', 'HR'] },
-  { label: 'Semitic',        codes: ['AR', 'HE', 'AM'] },
+  { label: 'Romance',          codes: ['AR_ROM', 'ES', 'FR', 'IT', 'PT', 'RO', 'CA'] },
+  { label: 'Germanic',         codes: ['EN', 'DE', 'NL', 'SV', 'DA', 'NO', 'IS'] },
+  { label: 'Slavic',           codes: ['RU', 'PL', 'CS', 'SK', 'UK', 'BG', 'SR', 'HR'] },
+  { label: 'Semitic',          codes: ['AR', 'HE', 'AM'] },
   { label: 'South & SE Asian', codes: ['HI', 'UR', 'BN', 'PA', 'FA', 'TA', 'TE', 'KN', 'ML', 'TH', 'LO', 'VI', 'KM', 'ID', 'MS', 'TL'] },
-  { label: 'CJK & Altaic',   codes: ['ZH', 'YUE', 'JA', 'KO', 'JV', 'TR', 'AZ', 'UZ', 'KK', 'FI', 'HU', 'ET'] },
-  { label: 'African',        codes: ['SW', 'YO', 'HA', 'FF', 'BM', 'BA', 'DI', 'EW', 'MI', 'LN', 'ZU', 'WO', 'BK', 'CB', 'OG'] },
-  { label: 'Creole & Other', codes: ['NOU', 'PCM', 'CFG', 'MG', 'IS_ETC'] },
+  { label: 'CJK & Altaic',     codes: ['ZH', 'YUE', 'JA', 'KO', 'JV', 'TR', 'AZ', 'UZ', 'KK', 'FI', 'HU', 'ET'] },
+  { label: 'African',          codes: ['SW', 'YO', 'HA', 'FF', 'BM', 'BA', 'DI', 'EW', 'MI', 'LN', 'ZU', 'WO', 'BK', 'CB', 'OG'] },
+  { label: 'Creole & Other',   codes: ['NOU', 'PCM', 'CFG', 'MG', 'IS_ETC'] },
 ];
 
-// Build a code → group label index for fast lookup
 const CODE_TO_GROUP = new Map<string, string>();
 for (const g of LANGUAGE_GROUPS) {
   for (const c of g.codes) CODE_TO_GROUP.set(c, g.label);
@@ -35,10 +34,12 @@ function getGroupLabel(code: string): string {
   return CODE_TO_GROUP.get(code.toUpperCase()) ?? 'Other';
 }
 
-// ─── Options (built once at module level) ─────────────────────────────────────
+// ─── Helper: build grouped options (called inside useMemo, not at module level)
+// This ensures EmojiSign/<img> nodes are created inside a React render cycle so
+// Twemoji images are actually mounted, their onError handler fires correctly, and
+// the fallback font path works on platforms that don't support flag codepoints.
 
-const SECTION_LANGUAGE_OPTIONS = (() => {
-  // Group → array of options
+function buildLanguageOptions() {
   const grouped = new Map<string, { value: string; label: React.ReactNode }[]>();
 
   for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
@@ -60,7 +61,6 @@ const SECTION_LANGUAGE_OPTIONS = (() => {
     });
   }
 
-  // Flatten with group headers as disabled separators
   const result: { value: string; label: React.ReactNode; disabled?: boolean; isGroupHeader?: boolean }[] = [];
   for (const [groupLabel, items] of grouped.entries()) {
     result.push({
@@ -76,7 +76,7 @@ const SECTION_LANGUAGE_OPTIONS = (() => {
     result.push(...items);
   }
   return result;
-})();
+}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -105,20 +105,22 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
 }: SectionAdaptControlProps) {
   const { t } = useTranslation();
 
-  // Pending selection: updated immediately on dropdown change, applied on confirm
+  // Built inside the component so EmojiSign nodes are part of the React tree.
+  // useMemo with empty deps: rebuilt only on first mount, not on every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const languageOptions = useMemo(() => buildLanguageOptions(), []);
+
   const [pendingLang, setPendingLang] = useState<string>(sectionTargetLanguage);
 
   const canAdapt = !!adaptSectionLanguage && hasApiKey && !isGenerating && !isAnalyzing && !isAdaptingLanguage;
   const isDirty = pendingLang !== sectionTargetLanguage;
 
-  // Selection change: update pending + notify parent (preview only, no adaptation)
   const handleLanguageSelect = useCallback((lang: string) => {
-    if (lang.startsWith('__group__')) return; // skip group headers
+    if (lang.startsWith('__group__')) return;
     setPendingLang(lang);
     onSectionTargetLanguageChange?.(sectionId, lang);
   }, [sectionId, onSectionTargetLanguageChange]);
 
-  // Apply: triggers the actual AI adaptation
   const handleApply = useCallback(() => {
     if (!canAdapt) return;
     adaptSectionLanguage!(sectionId, pendingLang);
@@ -147,13 +149,12 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {/* Language selector — always navigable, never fully disabled */}
       <Tooltip title={selectTooltip}>
         <div className="min-w-[13rem] max-w-[18rem] flex-shrink-0">
           <LcarsSelect
             value={pendingLang}
             onChange={handleLanguageSelect}
-            options={SECTION_LANGUAGE_OPTIONS}
+            options={languageOptions}
             accentColor="var(--lcars-cyan)"
             triggerLabel={triggerContent}
             disabled={false}
@@ -161,7 +162,6 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
         </div>
       </Tooltip>
 
-      {/* Apply button — disabled without API key or while busy */}
       <Tooltip title={applyTooltip}>
         <button
           type="button"
