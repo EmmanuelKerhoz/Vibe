@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Loader2, Languages } from '../../ui/icons';
 import { LcarsSelect } from '../../ui/LcarsSelect';
 import { Tooltip } from '../../ui/Tooltip';
@@ -18,19 +18,6 @@ interface TranslateGroupProps {
   hasApiKey: boolean;
 }
 
-const LANGUAGE_SELECT_OPTIONS = SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
-  value: lang.aiName,
-  label: (
-    <span className="flex items-center gap-1.5 min-w-0 w-full">
-      <EmojiSign sign={lang.sign} />
-      <span className="truncate">{lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</span>
-      {lang.region && (
-        <DialectGlobe code={lang.code} region={lang.region} size={20} />
-      )}
-    </span>
-  ),
-}));
-
 export function TranslateGroup({
   targetLanguage,
   setTargetLanguage,
@@ -45,6 +32,24 @@ export function TranslateGroup({
   const tooltipTitle = !hasApiKey
     ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
     : 'Select a target language to adapt the entire song';
+
+  // Built inside the component so EmojiSign nodes are part of the React tree.
+  // useMemo with empty deps: rebuilt only on first mount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const languageOptions = useMemo(() =>
+    SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
+      value: lang.aiName,
+      label: (
+        <span className="flex items-center gap-1.5 min-w-0 w-full">
+          <EmojiSign sign={lang.sign} />
+          <span className="truncate">{lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</span>
+          {lang.region && (
+            <DialectGlobe code={lang.code} region={lang.region} size={20} />
+          )}
+        </span>
+      ),
+    }))
+  , []);
 
   const handleLanguageSelect = useCallback((lang: string) => {
     setTargetLanguage(lang);
@@ -74,7 +79,7 @@ export function TranslateGroup({
         <LcarsSelect
           value={targetLanguage}
           onChange={handleLanguageSelect}
-          options={LANGUAGE_SELECT_OPTIONS}
+          options={languageOptions}
           triggerLabel={triggerContent}
           disabled={isDisabled}
         />
