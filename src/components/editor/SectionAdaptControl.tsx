@@ -107,7 +107,6 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
 
   // Built inside the component so EmojiSign nodes are part of the React tree.
   // useMemo with empty deps: rebuilt only on first mount, not on every render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const languageOptions = useMemo(() => buildLanguageOptions(), []);
 
   const [pendingLang, setPendingLang] = useState<string>(sectionTargetLanguage);
