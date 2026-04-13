@@ -164,7 +164,7 @@ export function AboutModal({ isOpen, onClose }: Props) {
                   className="about-sweep-item ux-interactive flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium">
                   <Youtube className="w-4 h-4" /><span>YouTube</span><ExternalLink className="w-3 h-3 opacity-50" />
                 </a>
-                <a href="https://open.spotify.com/artist/6VfhDlWsBW0qk0a8x7UbOM?si=UtpaOQ5JT3iN1mUb2vN7vg&nd=1&dlsi=1dffb43b3c7d4280" target="_blank" rel="noopener noreferrer" aria-label="Visit Spotify artist page"
+                <a href="https://open.spotify.com/artist/6VfhDlWsBW0qk0a8x7UbOM" target="_blank" rel="noopener noreferrer" aria-label="Visit Spotify artist page"
                   className="about-sweep-item ux-interactive flex items-center justify-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/40 text-green-400 hover:text-green-300 rounded-lg text-xs font-medium">
                   <Music className="w-4 h-4" /><span>Spotify</span><ExternalLink className="w-3 h-3 opacity-50" />
                 </a>
