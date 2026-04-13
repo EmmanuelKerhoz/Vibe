@@ -7,6 +7,15 @@
  * word-pilot stage. They mirror the canonical SIL codes (bci, ee, gej, dyu)
  * and route to ALGO-KWA. Both must be present so Registry.resolve() works
  * regardless of which code arrives from the call site.
+ *
+ * LANGUAGE_FLAGS coverage rule:
+ *   - Nation-state language  → official country flag emoji
+ *   - Sub-national dialect / no single nation-state → ethnic pictogram
+ *     bkv 🌿  Bekwarra (Cross River, Nigeria)
+ *     ijn ⚓  Ijaw (Niger Delta, Nigeria)
+ *     iko 🏺  Ogoja (Cross River, Nigeria)
+ *     jv  🎭  Javanese (Java, sub-national dialect)
+ *     wuu 🏙️  Wu / Shanghainese (Sinitic regional dialect)
  */
 
 export type AlgoFamily =
@@ -41,22 +50,46 @@ export interface LanguageFamilyConfig {
 }
 
 export const LANGUAGE_FLAGS: Record<string, string> = {
+  // ── Romance ──────────────────────────────────────────────────────────────
   'fr': '🇫🇷', 'es': '🇪🇸', 'it': '🇮🇹', 'pt': '🇵🇹', 'ro': '🇷🇴', 'ca': '🇦🇩',
+  // ── Germanic ─────────────────────────────────────────────────────────────
   'en': '🇬🇧', 'de': '🇩🇪', 'nl': '🇳🇱', 'sv': '🇸🇪', 'da': '🇩🇰', 'no': '🇳🇴', 'is': '🇮🇸',
+  // ── Slavic ───────────────────────────────────────────────────────────────
   'ru': '🇷🇺', 'pl': '🇵🇱', 'cs': '🇨🇿', 'sk': '🇸🇰', 'uk': '🇺🇦', 'bg': '🇧🇬', 'sr': '🇷🇸', 'hr': '🇭🇷',
-  // KWA — canonical + aliases
+  // ── Semitic ──────────────────────────────────────────────────────────────
+  'ar': '🇸🇦', 'he': '🇮🇱', 'am': '🇪🇹',
+  // ── Sinitic (nation-state flags where applicable; dialect → picto) ────────
+  'zh': '🇨🇳', 'yue': '🇭🇰', 'wuu': '🏙️',   // Wu/Shanghainese: Sinitic dialect, no single flag
+  // ── Japanese / Korean ────────────────────────────────────────────────────
+  'ja': '🇯🇵', 'ko': '🇰🇷',
+  // ── Bantu / Niger-Congo ──────────────────────────────────────────────────
+  'sw': '🇰🇪', 'yo': '🇳🇬', 'zu': '🇿🇦', 'xh': '🇿🇦', 'ha': '🇳🇬',
+  'bm': '🇲🇱', 'ff': '🇬🇳', 'lua': '🇨🇩', 'mos': '🇧🇫',
+  // ── KWA — canonical + short aliases ──────────────────────────────────────
   'bci': '🇨🇮', 'ba': '🇨🇮',   // Baoulé
   'ee':  '🇹🇬', 'ew': '🇹🇬',   // Ewe
   'gej': '🇹🇬', 'mi': '🇹🇬',   // Mina / Gen
   'dyu': '🇨🇮', 'di': '🇨🇮',   // Dioula
-  // Bantu / Niger-Congo
-  'sw': '🇰🇪', 'yo': '🇳🇬', 'zu': '🇿🇦', 'xh': '🇿🇦', 'ha': '🇳🇬',
-  'bm': '🇲🇱', 'ff': '🇬🇳', 'lua': '🇨🇩', 'mos': '🇧🇫',
-  // Asia / Pacific
-  'zh': '🇨🇳', 'yue': '🇭🇰', 'ja': '🇯🇵', 'ko': '🇰🇷',
-  'hi': '🇮🇳', 'th': '🇹🇭', 'vi': '🇻🇳',
-  'ar': '🇸🇦', 'he': '🇮🇱', 'tr': '🇹🇷', 'id': '🇮🇩',
-  // Creole
+  // ── Cross River / Chadic (ethnic pictos for sub-national dialects) ────────
+  'bkv': '🌿',                  // Bekwarra (Cross River, Nigeria)
+  'ijn': '⚓',                  // Ijaw (Niger Delta, Nigeria)
+  'iko': '🏺',                  // Ogoja (Cross River, Nigeria)
+  // ── Indo-Iranian ─────────────────────────────────────────────────────────
+  'hi': '🇮🇳', 'ur': '🇵🇰', 'bn': '🇧🇩', 'pa': '🇮🇳', 'fa': '🇮🇷',
+  // ── Dravidian ────────────────────────────────────────────────────────────
+  'ta': '🇱🇰', 'te': '🇮🇳', 'kn': '🇮🇳', 'ml': '🇮🇳',
+  // ── Turkic ───────────────────────────────────────────────────────────────
+  'tr': '🇹🇷', 'uz': '🇺🇿', 'kk': '🇰🇿', 'az': '🇦🇿',
+  // ── Uralic ───────────────────────────────────────────────────────────────
+  'fi': '🇫🇮', 'et': '🇪🇪', 'hu': '🇭🇺',
+  // ── Tai-Kadai ────────────────────────────────────────────────────────────
+  'th': '🇹🇭', 'lo': '🇱🇦',
+  // ── Austroasiatic ────────────────────────────────────────────────────────
+  'vi': '🇻🇳', 'km': '🇰🇭',
+  // ── Austronesian ─────────────────────────────────────────────────────────
+  'id': '🇮🇩', 'id-id': '🇮🇩', 'ms': '🇲🇾', 'ms-my': '🇲🇾',
+  'tl': '🇵🇭', 'jv': '🎭',     // Javanese: sub-national Java dialect, no single flag
+  // ── Creole / Pidgin ───────────────────────────────────────────────────────
   'nou': '🇨🇮', 'pcm': '🇳🇬', 'cfg': '🇨🇲',
 };
 
@@ -164,18 +197,21 @@ export const LANGUAGE_NAME_TO_CODE: Record<string, string> = {
   'bambara': 'bm', 'dioula bambara': 'bm',
   'fula': 'ff', 'fulfulde': 'ff', 'peul': 'ff',
   'luba': 'lua', 'moore': 'mos', 'mooré': 'mos',
+  // Cross River
+  'bekwarra': 'bkv', 'ijaw': 'ijn', 'ogoja': 'iko',
   // Creole
   'nouchi': 'nou', 'nigerian pidgin': 'pcm', 'pidgin': 'pcm', 'camfranglais': 'cfg',
   // Asia / Pacific
-  'chinese': 'zh', 'mandarin': 'zh', 'cantonese': 'yue',
-  'japanese': 'ja', 'korean': 'ko',
+  'chinese': 'zh', 'mandarin': 'zh', 'cantonese': 'yue', 'wu': 'wuu', 'shanghainese': 'wuu',
+  'japanese': 'ja', 'korean': 'ko', 'javanese': 'jv',
   'hindi': 'hi', 'urdu': 'ur', 'bengali': 'bn', 'punjabi': 'pa', 'persian': 'fa',
   'tamil': 'ta', 'telugu': 'te', 'kannada': 'kn', 'malayalam': 'ml',
-  'thai': 'th', 'vietnamese': 'vi',
+  'thai': 'th', 'lao': 'lo', 'vietnamese': 'vi', 'khmer': 'km',
   'indonesian': 'id', 'malay': 'ms', 'tagalog': 'tl',
   // Semitic / other
   'arabic': 'ar', 'hebrew': 'he', 'amharic': 'am',
-  'turkish': 'tr', 'finnish': 'fi', 'hungarian': 'hu',
+  'turkish': 'tr', 'uzbek': 'uz', 'kazakh': 'kk', 'azerbaijani': 'az',
+  'finnish': 'fi', 'estonian': 'et', 'hungarian': 'hu',
 };
 
 export const languageNameToCode = (languageName: string): string | undefined => {
