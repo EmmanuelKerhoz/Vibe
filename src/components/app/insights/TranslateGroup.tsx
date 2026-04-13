@@ -34,8 +34,6 @@ export function TranslateGroup({
     : 'Select a target language to adapt the entire song';
 
   // Built inside the component so EmojiSign nodes are part of the React tree.
-  // useMemo with empty deps: rebuilt only on first mount.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const languageOptions = useMemo(() =>
     SUPPORTED_ADAPTATION_LANGUAGES.map(lang => ({
       value: lang.aiName,

@@ -11,9 +11,9 @@ describe('adaptation language dialects', () => {
   });
 
   it('exposes Bekwarra, Mina, Ewe, and Korean through display lookups', () => {
-    expect(getLanguageDisplay('BK')).toMatchObject({ label: 'Bekwarra', sign: '🪘' });
-    expect(getLanguageDisplay('Mina')).toMatchObject({ label: 'Mina', sign: '🪘' });
-    expect(getLanguageDisplay('EW')).toMatchObject({ label: 'Ewe', sign: '🪘' });
+    expect(getLanguageDisplay('BK')).toMatchObject({ label: 'Bekwarra', sign: '🏹' });
+    expect(getLanguageDisplay('Mina')).toMatchObject({ label: 'Mina', sign: '🌊' });
+    expect(getLanguageDisplay('EW')).toMatchObject({ label: 'Ewe', sign: '🎶' });
     expect(getLanguageDisplay('ko')).toMatchObject({ label: '한국어', sign: '🇰🇷' });
   });
 
