@@ -64,6 +64,8 @@ export type SupportedUiLocaleCode = typeof SUPPORTED_UI_LOCALES[number]['code'];
 //   - Ethnic picto  : dialect / regional language without a dedicated flag;
 //                     each picto is chosen for cultural resonance, NOT generic.
 //                     isEthnical: true marks these entries.
+//
+// Picto uniqueness rule: no two ethnic entries may share the same sign.
 // ---------------------------------------------------------------------------
 
 export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
@@ -73,7 +75,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'AZ',  aiName: 'Azerbaijani',      sign: '🇦🇿' },
   // B
   { code: 'BA',  aiName: 'Baoulé',           sign: '🌿', region: 'Ivory Coast - West Africa', isEthnical: true },
-  { code: 'BK',  aiName: 'Bekwarra',         sign: '🪘', region: 'Nigeria - Cross River', isEthnical: true },
+  { code: 'BK',  aiName: 'Bekwarra',         sign: '🏹', region: 'Nigeria - Cross River', isEthnical: true },
   { code: 'BN',  aiName: 'Bengali',          sign: '🇧🇩', region: 'Bangladesh / West Bengal' },
   { code: 'BG',  aiName: 'Bulgarian',        sign: '🇧🇬' },
   { code: 'BM',  aiName: 'Bambara',          sign: '🦅', region: 'Mali - West Africa', isEthnical: true },
@@ -90,7 +92,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // E
   { code: 'EN',  aiName: 'English',          sign: '🇬🇧' },
   { code: 'ET',  aiName: 'Estonian',         sign: '🇪🇪' },
-  { code: 'EW',  aiName: 'Ewe',              sign: '🪘', region: 'Togo - Volta Region', isEthnical: true },
+  { code: 'EW',  aiName: 'Ewe',              sign: '🎶', region: 'Togo - Volta Region', isEthnical: true },
   // F
   { code: 'FA',  aiName: 'Farsi',            sign: '🇮🇷', region: 'Persian - Iran' },
   { code: 'FI',  aiName: 'Finnish',          sign: '🇫🇮' },
@@ -121,7 +123,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // M
   { code: 'MS',  aiName: 'Malay',            sign: '🇲🇾' },
   { code: 'ML',  aiName: 'Malayalam',        sign: '🇮🇳', region: 'Kerala' },
-  { code: 'MI',  aiName: 'Mina',             sign: '🪘', region: 'Togo - Maritime Region', isEthnical: true },
+  { code: 'MI',  aiName: 'Mina',             sign: '🌊', region: 'Togo - Maritime Region', isEthnical: true },
   // N
   { code: 'PCM', aiName: 'Nigerian Pidgin',  sign: '🇳🇬', region: 'Nigeria - Urban Creole', isEthnical: true },
   { code: 'NOU', aiName: 'Nouchi',           sign: '🇨🇮', region: 'Ivory Coast - Urban Creole', isEthnical: true },
