@@ -4,6 +4,7 @@ import {
   getFamilyConfig,
   isTonalLanguage,
   LANG_TO_FAMILY,
+  LANGUAGE_FLAGS,
   FAMILY_CONFIG,
 } from '../constants/langFamilyMap';
 
@@ -71,16 +72,13 @@ describe('langFamilyMap', () => {
   describe('language coverage', () => {
     it('covers all 17 language families', () => {
       const families = new Set(Object.values(LANG_TO_FAMILY));
-      expect(families.size).toBeGreaterThanOrEqual(10); // At least 10 families mapped
+      expect(families.size).toBeGreaterThanOrEqual(10);
     });
 
     it('includes African language support', () => {
-      // KWA family
       expect(getAlgoFamily('bci')).toBe('ALGO-KWA'); // Baoulé
       expect(getAlgoFamily('dyu')).toBe('ALGO-KWA'); // Dioula
       expect(getAlgoFamily('ee')).toBe('ALGO-KWA');  // Ewe
-
-      // CRV family
       expect(getAlgoFamily('ha')).toBe('ALGO-CRV');  // Hausa
     });
   });
@@ -105,6 +103,31 @@ describe('langFamilyMap', () => {
       const config = FAMILY_CONFIG['ALGO-ROM'];
       expect(config.hasTones).toBe(false);
       expect(config.syllableStructure).toBe('CVC');
+    });
+  });
+
+  // ── Parity: every LANG_TO_FAMILY code must have a flag ──────────────────
+  // Prevents silent undefined when rendering language selectors.
+  // If this test fails, add the missing entry to LANGUAGE_FLAGS in langFamilyMap.ts.
+  describe('LANGUAGE_FLAGS parity', () => {
+    it('every LANG_TO_FAMILY code has an entry in LANGUAGE_FLAGS', () => {
+      const missing = Object.keys(LANG_TO_FAMILY).filter(
+        code => LANGUAGE_FLAGS[code] === undefined,
+      );
+      expect(missing, `Missing flags for: ${missing.join(', ')}`).toHaveLength(0);
+    });
+
+    it('LANGUAGE_FLAGS values are non-empty strings', () => {
+      for (const [code, flag] of Object.entries(LANGUAGE_FLAGS)) {
+        expect(flag, `Empty flag for code: ${code}`).toBeTruthy();
+      }
+    });
+
+    it('known ethnic pictograms are distinct', () => {
+      const ethnicCodes = ['bkv', 'ijn', 'iko', 'jv', 'wuu'];
+      const pictos = ethnicCodes.map(c => LANGUAGE_FLAGS[c]).filter(Boolean);
+      const unique = new Set(pictos);
+      expect(unique.size).toBe(pictos.length);
     });
   });
 });
