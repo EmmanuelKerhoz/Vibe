@@ -73,7 +73,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'AZ',  aiName: 'Azerbaijani',      sign: '🇦🇿' },
   // B
   { code: 'BA',  aiName: 'Baoulé',           sign: '🌿', region: 'Ivory Coast - West Africa', isEthnical: true },
-  { code: 'BK',  aiName: 'Bekwarra',         sign: '🌾', region: 'Nigeria - Cross River', isEthnical: true },
+  { code: 'BK',  aiName: 'Bekwarra',         sign: '🪘', region: 'Nigeria - Cross River', isEthnical: true },
   { code: 'BN',  aiName: 'Bengali',          sign: '🇧🇩', region: 'Bangladesh / West Bengal' },
   { code: 'BG',  aiName: 'Bulgarian',        sign: '🇧🇬' },
   { code: 'BM',  aiName: 'Bambara',          sign: '🦅', region: 'Mali - West Africa', isEthnical: true },
@@ -121,7 +121,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // M
   { code: 'MS',  aiName: 'Malay',            sign: '🇲🇾' },
   { code: 'ML',  aiName: 'Malayalam',        sign: '🇮🇳', region: 'Kerala' },
-  { code: 'MI',  aiName: 'Mina',             sign: '🪗', region: 'Togo - Maritime Region', isEthnical: true },
+  { code: 'MI',  aiName: 'Mina',             sign: '🪘', region: 'Togo - Maritime Region', isEthnical: true },
   // N
   { code: 'PCM', aiName: 'Nigerian Pidgin',  sign: '🇳🇬', region: 'Nigeria - Urban Creole', isEthnical: true },
   { code: 'NOU', aiName: 'Nouchi',           sign: '🇨🇮', region: 'Ivory Coast - Urban Creole', isEthnical: true },
