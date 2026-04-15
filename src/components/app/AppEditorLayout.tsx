@@ -15,6 +15,9 @@
  * AppEditorZone/LyricsView can consume isAnalyzing / isAdaptingLanguage /
  * targetLanguage without prop relay.
  *
+ * SuggestionsProvider is mounted here so that SuggestionsPanel sources all
+ * its data from context — no prop drilling from AppEditorLayout.
+ *
  * Note: webSimilarityIndex is intentionally excluded from InsightsBarContext
  * to prevent re-rendering the entire InsightsBar subtree on every similarity
  * engine run. SimilarityButton reads index directly from SimilarityContext.
@@ -28,6 +31,7 @@ import { useTranslation } from '../../i18n';
 import { AppEditorZone } from './AppEditorZone';
 import { ComposerParamsProvider } from '../../contexts/ComposerParamsContext';
 import { InsightsBarProvider } from '../../contexts/InsightsBarContext';
+import { SuggestionsProvider } from '../../contexts/SuggestionsContext';
 import type { InsightsBarContextValue } from '../../contexts/InsightsBarContext';
 
 const LeftSettingsPanel = lazy(() =>
@@ -140,17 +144,12 @@ export function AppEditorLayout({
     adaptSongLanguage, detectLanguage, analyzeCurrentSong,
     adaptationProgress, adaptationResult,
     canPasteLyrics,
-    // Composer
-    selectedLineId, setSelectedLineId, suggestions, isSuggesting,
-    generateSuggestions, applySuggestion,
     // Derived
     webBadgeLabel, isSuggestionsOpen,
     // Panels
     linguisticsWorker, spellCheck,
     switchEditMode,
-    // generateSong sourced from composerCtx via useEditorState
     generateSong,
-    // Song (needed for AppEditorZone)
     song,
   } = state;
 
@@ -174,9 +173,6 @@ export function AppEditorLayout({
   } = handlers;
 
   // ── InsightsBarContext value ──────────────────────────────────────────────
-  // webSimilarityIndex is intentionally excluded: SimilarityButton reads it
-  // directly from SimilarityContext, preventing re-renders of the full
-  // InsightsBar subtree on every similarity engine run.
   const insightsBarValue = useMemo<InsightsBarContextValue>(() => ({
     targetLanguage,
     setTargetLanguage,
@@ -210,9 +206,6 @@ export function AppEditorLayout({
     isAnalysisPanelOpen, hasApiKey,
   ]);
 
-  // Mobile overlay className — only provided when truthy to satisfy
-  // exactOptionalPropertyTypes (avoids passing `string | undefined` to
-  // a `className?: string` prop).
   const mobileOverlayClass = isMobileOrTablet
     ? { className: 'structure-sidebar-mobile-overlay' as const }
     : {};
@@ -220,127 +213,104 @@ export function AppEditorLayout({
   return (
     <ComposerParamsProvider>
       <InsightsBarProvider value={insightsBarValue}>
-        {/*
-          lcars-lyrics-area is placed on the flex row parent so that the
-          textured background shows through the rounded corners of the
-          right panels (StructureSidebar, SuggestionsPanel, AnalysisPanel).
-          min-h-0 prevents flex-1 from overflowing and pushing the StatusBar.
-        */}
-        <div className="flex-1 flex overflow-hidden min-h-0 lcars-lyrics-area">
-          {/* ── Left panel ──────────────────────────────────────────────────── */}
-          <ErrorBoundary label="Left panel">
-            <Suspense fallback={<LazyFallback />}>
-              <LeftSettingsPanel
-                isMobileOverlay={isMobileOrTablet}
-                isLeftPanelOpen={isLeftPanelOpen}
-                setIsLeftPanelOpen={setIsLeftPanelOpen}
-                onGenerateSong={handleGenerateSongFromLeftPanel}
-                onRegenerateSong={handleGlobalRegenerate}
-              />
-            </Suspense>
-          </ErrorBoundary>
-
-          {/* ── Center column ───────────────────────────────────────────────── */}
-          {/*
-            bg-fluent-bg keeps the editor zone background independent from
-            the textured row parent — the texture should only show through
-            at the rounded panel corners, not flood the editor area.
-          */}
-          <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
-            {/* Ambient glow — max-w-full prevents overflow on mobile viewports */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
-
-            <ErrorBoundary label="Top ribbon">
+        <SuggestionsProvider spellCheck={spellCheck}>
+          <div className="flex-1 flex overflow-hidden min-h-0 lcars-lyrics-area">
+            {/* ── Left panel ──────────────────────────────────────────────────── */}
+            <ErrorBoundary label="Left panel">
               <Suspense fallback={<LazyFallback />}>
-                <TopRibbon
-                  hasApiKey={hasApiKey}
-                  handleApiKeyHelp={handleApiKeyHelp}
-                  onOpenNewGeneration={handleOpenNewGeneration}
-                  onOpenNewEmpty={handleCreateEmptySong}
+                <LeftSettingsPanel
+                  isMobileOverlay={isMobileOrTablet}
+                  isLeftPanelOpen={isLeftPanelOpen}
+                  setIsLeftPanelOpen={setIsLeftPanelOpen}
+                  onGenerateSong={handleGenerateSongFromLeftPanel}
+                  onRegenerateSong={handleGlobalRegenerate}
                 />
               </Suspense>
             </ErrorBoundary>
 
-            <ErrorBoundary label="Editor zone">
-              <AppEditorZone
-                activeTab={appState.activeTab}
-                isMobileOrTablet={isMobileOrTablet}
-                hasApiKey={hasApiKey}
-                songHasContent={song.length > 0}
-                playAudioFeedback={playAudioFeedback}
-                canPasteLyrics={canPasteLyrics}
-                onOpenLibrary={handleOpenSaveToLibraryModal}
-                onPasteLyrics={handleOpenPasteModal}
-                onGenerateSong={handleGlobalRegenerate}
-                onOpenSearch={handleOpenSearch}
-              />
-            </ErrorBoundary>
-          </div>
+            {/* ── Center column ───────────────────────────────────────────────── */}
+            <div className="flex-1 flex flex-col min-w-0 bg-fluent-bg relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[400px] bg-[var(--accent-color)]/5 blur-[120px] pointer-events-none rounded" />
 
-          {/* ── Right panels — each isolated in its own boundary ─────────────── */}
-          {/*
-            Each conditional panel has its own ErrorBoundary with a lightweight
-            PanelErrorFallback. An exception in AnalysisPanel no longer affects
-            SuggestionsPanel or StructureSidebar, and never triggers a full reload.
-          */}
-          <Suspense fallback={<LazyFallback />}>
-            {isAnalysisPanelOpen ? (
-              <ErrorBoundary
-                label="Analysis panel"
-                fallback={
-                  <PanelErrorFallback
-                    label="Analysis panel"
-                    onClose={handleCloseAnalysisPanel}
+              <ErrorBoundary label="Top ribbon">
+                <Suspense fallback={<LazyFallback />}>
+                  <TopRibbon
+                    hasApiKey={hasApiKey}
+                    handleApiKeyHelp={handleApiKeyHelp}
+                    onOpenNewGeneration={handleOpenNewGeneration}
+                    onOpenNewEmpty={handleCreateEmptySong}
                   />
-                }
-              >
-                <AnalysisPanel
-                  result={linguisticsWorker.result}
-                  isComputing={linguisticsWorker.isComputing}
-                  error={linguisticsWorker.error}
-                  onClose={handleCloseAnalysisPanel}
-                  isMobileOverlay={isMobileOrTablet}
-                />
+                </Suspense>
               </ErrorBoundary>
-            ) : isSuggestionsOpen ? (
-              <ErrorBoundary
-                label="Suggestions panel"
-                fallback={<PanelErrorFallback label="Suggestions panel" />}
-              >
-                <SuggestionsPanel
-                  isMobileOverlay={isMobileOrTablet}
-                  {...mobileOverlayClass}
-                  selectedLineId={selectedLineId}
-                  setSelectedLineId={setSelectedLineId}
-                  suggestions={suggestions}
-                  isSuggesting={isSuggesting}
+
+              <ErrorBoundary label="Editor zone">
+                <AppEditorZone
+                  activeTab={appState.activeTab}
+                  isMobileOrTablet={isMobileOrTablet}
                   hasApiKey={hasApiKey}
-                  applySuggestion={applySuggestion}
-                  generateSuggestions={generateSuggestions}
-                  spellCheck={spellCheck}
+                  songHasContent={song.length > 0}
+                  playAudioFeedback={playAudioFeedback}
+                  canPasteLyrics={canPasteLyrics}
+                  onOpenLibrary={handleOpenSaveToLibraryModal}
+                  onPasteLyrics={handleOpenPasteModal}
+                  onGenerateSong={handleGlobalRegenerate}
+                  onOpenSearch={handleOpenSearch}
                 />
               </ErrorBoundary>
-            ) : (
-              <ErrorBoundary
-                label="Structure sidebar"
-                fallback={<PanelErrorFallback label="Structure sidebar" />}
-              >
-                <StructureSidebar
-                  isMobileOverlay={isMobileOrTablet}
-                  {...mobileOverlayClass}
-                  isStructureOpen={isStructureOpen}
-                  setIsStructureOpen={setIsStructureOpenAndClearLine}
-                  isSectionDropdownOpen={isSectionDropdownOpen}
-                  setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-                  addStructureItem={addStructureItem}
-                  removeStructureItem={removeStructureItem}
-                  normalizeStructure={normalizeStructure}
-                  onScrollToSection={handleScrollToSection}
-                />
-              </ErrorBoundary>
-            )}
-          </Suspense>
-        </div>
+            </div>
+
+            {/* ── Right panels ─────────────────────────────────────────────────── */}
+            <Suspense fallback={<LazyFallback />}>
+              {isAnalysisPanelOpen ? (
+                <ErrorBoundary
+                  label="Analysis panel"
+                  fallback={
+                    <PanelErrorFallback
+                      label="Analysis panel"
+                      onClose={handleCloseAnalysisPanel}
+                    />
+                  }
+                >
+                  <AnalysisPanel
+                    result={linguisticsWorker.result}
+                    isComputing={linguisticsWorker.isComputing}
+                    error={linguisticsWorker.error}
+                    onClose={handleCloseAnalysisPanel}
+                    isMobileOverlay={isMobileOrTablet}
+                  />
+                </ErrorBoundary>
+              ) : isSuggestionsOpen ? (
+                <ErrorBoundary
+                  label="Suggestions panel"
+                  fallback={<PanelErrorFallback label="Suggestions panel" />}
+                >
+                  <SuggestionsPanel
+                    isMobileOverlay={isMobileOrTablet}
+                    {...mobileOverlayClass}
+                  />
+                </ErrorBoundary>
+              ) : (
+                <ErrorBoundary
+                  label="Structure sidebar"
+                  fallback={<PanelErrorFallback label="Structure sidebar" />}
+                >
+                  <StructureSidebar
+                    isMobileOverlay={isMobileOrTablet}
+                    {...mobileOverlayClass}
+                    isStructureOpen={isStructureOpen}
+                    setIsStructureOpen={setIsStructureOpenAndClearLine}
+                    isSectionDropdownOpen={isSectionDropdownOpen}
+                    setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+                    addStructureItem={addStructureItem}
+                    removeStructureItem={removeStructureItem}
+                    normalizeStructure={normalizeStructure}
+                    onScrollToSection={handleScrollToSection}
+                  />
+                </ErrorBoundary>
+              )}
+            </Suspense>
+          </div>
+        </SuggestionsProvider>
       </InsightsBarProvider>
     </ComposerParamsProvider>
   );

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Lightbulb, Sparkles, Hash, RefreshCw, Check } from '../ui/icons';
 import { useTranslation } from '../../i18n';
 import { countSyllables } from '../../utils/syllableUtils';
-import type { UseSpellCheckReturn } from '../../hooks/composer/useSpellCheck';
+import { useSuggestionsContext } from '../../contexts/SuggestionsContext';
 
 /** Compute total syllable count for a line of text. */
 const computeSyllables = (text: string): number =>
@@ -12,35 +12,34 @@ const computeSyllables = (text: string): number =>
     .reduce((acc, word) => acc + countSyllables(word), 0);
 
 interface Props {
-  selectedLineId: string | null;
-  setSelectedLineId: (id: string | null) => void;
-  suggestions: string[];
-  isSuggesting: boolean;
-  hasApiKey: boolean;
-  applySuggestion: (s: string) => void;
-  generateSuggestions: (lineId: string) => void;
-  spellCheck?: UseSpellCheckReturn;
-  synonyms?: Record<string, string[]> | null;
-  isSynonymsLoading?: boolean;
+  /** Layout-only concerns — all data sourced from SuggestionsContext. */
   isMobileOverlay?: boolean;
   className?: string;
 }
 
 export function SuggestionsPanel({
-  selectedLineId, setSelectedLineId,
-  suggestions, isSuggesting, hasApiKey,
-  applySuggestion, generateSuggestions,
-  spellCheck,
-  synonyms,
-  isSynonymsLoading,
   isMobileOverlay = false,
   className,
 }: Props) {
   const { t } = useTranslation();
-  const [openSynonymWord, setOpenSynonymWord] = useState<string | null>(null);
+  const [
+    openSynonymWord,
+    setOpenSynonymWord,
+  ] = useState<string | null>(null);
 
-  // Panels own their visual boundary via lcars-panel + LCARS rail.
-  // No external border-l/border-r — the rail IS the separator.
+  const {
+    selectedLineId,
+    setSelectedLineId,
+    suggestions,
+    isSuggesting,
+    hasApiKey,
+    applySuggestion,
+    generateSuggestions,
+    spellCheck,
+    synonyms,
+    isSynonymsLoading,
+  } = useSuggestionsContext();
+
   const panelClassName = [
     'flex flex-col z-50 shadow-2xl',
     'lcars-panel fluent-animate-panel',
