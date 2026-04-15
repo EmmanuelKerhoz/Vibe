@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { RefObject } from 'react';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../../utils/aiUtils';
 import { mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
@@ -64,6 +64,27 @@ export const useLanguageAdapter = ({
   const detectRunIdRef = useRef(0);
   const adaptRunIdRef = useRef(0);
   const adaptationLabelRef = useRef('');
+
+  // Stable refs for callbacks that close over frequently-changing values
+  const songRef = useRef(song);
+  songRef.current = song;
+  const songLanguageRef = useRef(songLanguage);
+  songLanguageRef.current = songLanguage;
+  const uiLanguageRef = useRef(uiLanguage);
+  uiLanguageRef.current = uiLanguage;
+  const saveVersionRef = useRef(saveVersion);
+  saveVersionRef.current = saveVersion;
+  const updateSongAndStructureWithHistoryRef = useRef(updateSongAndStructureWithHistory);
+  updateSongAndStructureWithHistoryRef.current = updateSongAndStructureWithHistory;
+  const updateStateRef = useRef(updateState);
+  updateStateRef.current = updateState;
+  const setSongLanguageRef = useRef(setSongLanguage);
+  setSongLanguageRef.current = setSongLanguage;
+  const setDetectedLanguagesRef = useRef(setDetectedLanguages);
+  setDetectedLanguagesRef.current = setDetectedLanguages;
+  const setLineLanguagesRef = useRef(setLineLanguages);
+  setLineLanguagesRef.current = setLineLanguages;
+
   const updateSong = makeSongUpdater(updateState);
   const uiLang = resolveUiLanguageName(uiLanguage);
   const isGenerating = isGeneratingRef.current ?? false;
@@ -113,22 +134,21 @@ export const useLanguageAdapter = ({
   const setStep = (id: AdaptationStepId, label: string) =>
     setAdaptationProgress(prev => ({ ...prev, active: id, label }));
 
-  const detectLanguage = async () => {
-    if (song.length === 0) return;
+  const detectLanguage = useCallback(async () => {
+    const currentSong = songRef.current;
+    if (currentSong.length === 0) return;
 
     const runId = ++detectRunIdRef.current;
     setIsDetectingLanguage(true);
     try {
       await withAbort(abortRef, async (nextSignal) => {
-        const result = await detectSongLanguage(song, nextSignal);
-        if (nextSignal.aborted) {
-          return;
-        }
+        const result = await detectSongLanguage(currentSong, nextSignal);
+        if (nextSignal.aborted) return;
         if (result.languages.length > 0) {
-          setSongLanguage(result.languages[0]!);
-          setDetectedLanguages(result.languages);
+          setSongLanguageRef.current(result.languages[0]!);
+          setDetectedLanguagesRef.current(result.languages);
         }
-        setLineLanguages(result.lineLanguageMap);
+        setLineLanguagesRef.current(result.lineLanguageMap);
       });
     } catch (error) {
       if (isAbortError(error)) return;
@@ -136,7 +156,7 @@ export const useLanguageAdapter = ({
     } finally {
       if (detectRunIdRef.current === runId) setIsDetectingLanguage(false);
     }
-  };
+  }, []);
 
   const runAdaptationPipeline = async (
     scope: AdaptationScope,
@@ -220,14 +240,13 @@ export const useLanguageAdapter = ({
     setIsAdaptingLanguage(true);
     setAdaptationResult(null);
     setAdaptationProgress({ active: 'adapting', steps: PIPELINE_STEPS, label: progressLabel });
-    saveVersion(saveLabel);
+    saveVersionRef.current(saveLabel);
 
     try {
       await withAbort(abortRef, async (nextSignal) => {
         setStep('adapting', progressLabel);
         await runAdaptationPipeline(scope, newLanguage, sourceLanguage, nextSignal, buildPrompt, onAdapted);
         if (nextSignal.aborted) return;
-
         setAdaptationProgress({ active: 'done', steps: PIPELINE_STEPS, label: progressLabel });
       });
     } catch (error) {
@@ -239,11 +258,14 @@ export const useLanguageAdapter = ({
     }
   };
 
-  const adaptSongLanguage = async (newLanguage: string) => {
-    if (song.length === 0 || newLanguage === songLanguage) return;
+  const adaptSongLanguage = useCallback(async (newLanguage: string) => {
+    const currentSong = songRef.current;
+    const currentSongLanguage = songLanguageRef.current;
+    const currentUiLang = resolveUiLanguageName(uiLanguageRef.current);
+    if (currentSong.length === 0 || newLanguage === currentSongLanguage) return;
 
-    const sourceSong = [...song];
-    const sourceLanguage = songLanguage || 'unknown';
+    const sourceSong = [...currentSong];
+    const sourceLanguage = currentSongLanguage || 'unknown';
     const progressLabel = `${sourceLanguage} → ${newLanguage}`;
 
     await runAdaptation({
@@ -253,14 +275,15 @@ export const useLanguageAdapter = ({
       progressLabel,
       saveLabel: `Before Translation to ${newLanguage}`,
       errorLabel: 'Language adaptation error:',
-      buildPrompt: ipaEnhancedPrompt => buildAdaptSongPrompt({ sourceSong, newLanguage, uiLanguage: uiLang, ipaEnhancedPrompt }),
+      buildPrompt: ipaEnhancedPrompt => buildAdaptSongPrompt({ sourceSong, newLanguage, uiLanguage: currentUiLang, ipaEnhancedPrompt }),
       onAdapted: adaptedSong => {
-        updateSongAndStructureWithHistory(adaptedSong, adaptedSong.map(section => section.name));
-        setSongLanguage(newLanguage);
-        setDetectedLanguages([newLanguage]);
+        updateSongAndStructureWithHistoryRef.current(adaptedSong, adaptedSong.map(section => section.name));
+        setSongLanguageRef.current(newLanguage);
+        setDetectedLanguagesRef.current([newLanguage]);
       },
     });
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const adaptSectionLanguage = async (sectionId: string, newLanguage: string) => {
     const section = song.find(s => s.id === sectionId);
@@ -284,7 +307,6 @@ export const useLanguageAdapter = ({
       )),
     });
 
-    // Re-detect language after section adaptation to update the Detected Language display
     void detectLanguage();
   };
 
@@ -297,7 +319,6 @@ export const useLanguageAdapter = ({
     setAdaptingLineIds(prev => new Set(prev).add(lineId));
     try {
       const controller = new AbortController();
-      // Abort any in-flight adaptation for this same line
       lineAbortControllersRef.current.get(lineId)?.abort();
       lineAbortControllersRef.current.set(lineId, controller);
 
