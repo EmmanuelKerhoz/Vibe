@@ -13,6 +13,7 @@ import { useMarkupEditor } from './useMarkupEditor';
 import { useDerivedAppState } from './useDerivedAppState';
 import { useLinguisticsWorker } from './useLinguisticsWorker';
 import { useSpellCheck } from './composer/useSpellCheck';
+import { useEditorPanelState } from './useEditorPanelState';
 
 export function useEditorState() {
   // ── Song ────────────────────────────────────────────────────────────────
@@ -68,9 +69,8 @@ export function useEditorState() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [composerCtx.selectedLineId, hasApiKey]);
 
-  // ── Derived panel visibility ─────────────────────────────────────────────
-  const isSuggestionsOpen =
-    appState.activeTab === 'lyrics' && Boolean(composerCtx.selectedLineId);
+  // ── Derived panel visibility — single source of truth via useEditorPanelState
+  const { isSuggestionsOpen } = useEditorPanelState();
 
   return {
     // Song
