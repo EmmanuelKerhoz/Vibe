@@ -1,10 +1,9 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { lazy, Suspense, useMemo, useState, useEffect, useRef } from 'react';
 import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
-import { AppEditorLayout } from './components/app/AppEditorLayout';
-import { AppPanelOrchestrator } from './components/app/AppPanelOrchestrator';
-import { AppModalLayer } from './components/app/AppModalLayer';
+import { StatusBar } from './components/app/StatusBar';
+import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAppOrchestration } from './hooks/useAppOrchestration';
 import { useEditorPanelState } from './hooks/useEditorPanelState';
@@ -20,14 +19,23 @@ import { RhymeProxyProvider } from './contexts/RhymeProxyContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
 import { TranslationAdaptationProvider } from './contexts/TranslationAdaptationContext';
 import { VersionProvider, useVersionContext } from './contexts/VersionContext';
-import { StatusBar } from './components/app/StatusBar';
-import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { useLanguage } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { SongMutationProvider } from './contexts/SongMutationContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
 import { loadSession } from './lib/sessionPersistence';
 import type { SessionSnapshot } from './lib/sessionPersistence';
+
+// ── Lazy-loaded heavy panels (conditionally visible — keep out of initial bundle) ──
+const AppEditorLayout = lazy(() =>
+  import('./components/app/AppEditorLayout').then(m => ({ default: m.AppEditorLayout }))
+);
+const AppPanelOrchestrator = lazy(() =>
+  import('./components/app/AppPanelOrchestrator').then(m => ({ default: m.AppPanelOrchestrator }))
+);
+const AppModalLayer = lazy(() =>
+  import('./components/app/AppModalLayer').then(m => ({ default: m.AppModalLayer }))
+);
 
 // ── Splash shown while OPFS session loads ──────────────────────────────────
 function AppSplash() {
@@ -48,6 +56,11 @@ function AppSplash() {
       <Spinner size="large" label="Initializing…" labelPosition="below" />
     </div>
   );
+}
+
+// Minimal fallback for lazy panels — invisible (panels mount inside shell).
+function PanelFallback() {
+  return null;
 }
 
 function ModalShortcutBindings({
@@ -141,7 +154,9 @@ function AppInnerContent() {
       showTranslationFeatures={appState.showTranslationFeatures}
     >
       <DragHandlersProvider playAudioFeedbackRef={playAudioFeedbackRef}>
-        <AppPanelOrchestrator />
+        <Suspense fallback={<PanelFallback />}>
+          <AppPanelOrchestrator />
+        </Suspense>
         <ModalShortcutBindings
           isMobileOrTablet={isMobileOrTablet}
           closeMobilePanels={closeMobilePanels}
@@ -155,11 +170,13 @@ function AppInnerContent() {
           isGenerating={isGenerating}
           onBackdropClick={closeMobilePanels}
         >
-          <AppEditorLayout
-            isMobileOrTablet={isMobileOrTablet}
-            playAudioFeedback={playAudioFeedback}
-            setIsStructureOpenAndClearLine={setIsStructureOpenAndClearLine}
-          />
+          <Suspense fallback={<PanelFallback />}>
+            <AppEditorLayout
+              isMobileOrTablet={isMobileOrTablet}
+              playAudioFeedback={playAudioFeedback}
+              setIsStructureOpenAndClearLine={setIsStructureOpenAndClearLine}
+            />
+          </Suspense>
 
           <StatusBar
             className="lcars-status-bar-desktop"
@@ -183,7 +200,9 @@ function AppInnerContent() {
             />
           )}
 
-          <AppModalLayer />
+          <Suspense fallback={<PanelFallback />}>
+            <AppModalLayer />
+          </Suspense>
         </AppShell>
       </DragHandlersProvider>
     </TranslationAdaptationProvider>
@@ -249,9 +268,6 @@ function AppInner() {
   const [initialSession, setInitialSession] = useState<SessionSnapshot | null | undefined>(undefined);
 
   useEffect(() => {
-    // Guard against post-unmount or post-timeout setState races.
-    // If the 5 s safety fires first, `cancelled = true` prevents the
-    // subsequent Promise resolution from overwriting the null session.
     let cancelled = false;
 
     const safetyTimer = setTimeout(() => {
@@ -272,7 +288,6 @@ function AppInner() {
     };
   }, []);
 
-  // Show splash instead of a blank white screen while the session loads.
   if (initialSession === undefined) return <AppSplash />;
 
   return (
