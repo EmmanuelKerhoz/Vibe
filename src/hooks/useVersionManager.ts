@@ -14,23 +14,50 @@ interface UseVersionManagerParams {
 }
 
 /**
+ * Architecture note — two complementary history systems:
+ *
+ * useSongHistoryState  — lightweight in-memory undo/redo stack (LIFO, no UI).
+ *                        Resets on session load. Fast, ephemeral.
+ * useVersionManager    — named persistent snapshots (up to MAX_VERSIONS).
+ *                        Survives navigation, surfaced in the Versions modal.
+ *                        Auto-restore-points are created before each meaningful
+ *                        lyrical/structural change via fingerprintSnapshot.
+ *
+ * The two systems are intentionally separate: undo/redo is keystroke-level;
+ * versions are milestone-level. They must NOT be merged.
+ */
+
+/**
+ * djb2 hash — fast non-cryptographic string hash.
+ * Pure arithmetic, no allocations, safe for fingerprinting lyric text.
+ * Consistent with useLinguisticsWorker which uses the same algorithm.
+ */
+function djb2(str: string): number {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h >>> 0;
+  }
+  return h;
+}
+
+/**
  * Builds a stable structural fingerprint for auto-restore detection.
  *
- * Goals:
- * - detect meaningful lyrical/metadata edits even when section/line ids stay stable;
- * - avoid false negatives like text-only edits;
- * - remain cheaper than full JSON.stringify(snapshot) by only hashing fields
- *   that influence the editable song content and restore behaviour.
+ * Uses djb2 on each line's text (consistent with useLinguisticsWorker)
+ * instead of raw string concatenation, capping the per-line cost at O(n chars)
+ * regardless of song size. Structure fields (ids, names, metadata) are
+ * concatenated as before since they are short and structurally bounded.
  */
 const fingerprintSnapshot = (song: Section[], structure: string[]): string => {
   const songPrint = song.map((section) => {
     const linePrint = section.lines.map((line) => [
       line.id,
-      line.text,
+      djb2(line.text),
       line.rhymingSyllables,
       line.rhyme,
       String(line.syllables),
-      line.concept,
+      line.concept ? djb2(line.concept) : 0,
       line.isMeta ? '1' : '0',
     ].join(':')).join('|');
 
