@@ -3,31 +3,14 @@ import { emojiToTwemojiUrl } from '../../utils/emojiUtils';
 
 /**
  * Renders a single emoji reliably across all platforms by loading it as a
- * Twemoji SVG image. Falls back to a plain text <span> with an emoji font
- * stack if the CDN image fails to load (e.g. offline or unknown codepoint).
- *
- * Use this component anywhere a flag or complex emoji must render consistently
- * — especially on Windows where regional-indicator pairs (🇬🇧, 🇫🇷 …) are
- * displayed as two-letter country codes by the system emoji font.
+ * Twemoji SVG image. Returns null if the SVG fails to load — avoids the
+ * Windows fallback font rendering unknown emoji as 🌐 (globe).
  */
 export function EmojiSign({ sign }: { sign: string }) {
-  const [useFallback, setUseFallback] = React.useState(false);
+  const [error, setError] = React.useState(false);
 
-  if (useFallback) {
-    return (
-      <span
-        aria-hidden="true"
-        style={{
-          fontFamily:
-            '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
-          lineHeight: 1,
-          display: 'inline-block',
-          fontSize: '1em',
-        }}
-      >
-        {sign}
-      </span>
-    );
+  if (error) {
+    return null;
   }
 
   return (
@@ -35,7 +18,7 @@ export function EmojiSign({ sign }: { sign: string }) {
       src={emojiToTwemojiUrl(sign)}
       alt={sign}
       aria-hidden="true"
-      onError={() => setUseFallback(true)}
+      onError={() => setError(true)}
       style={{
         width: '1em',
         height: '1em',
