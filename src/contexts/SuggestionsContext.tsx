@@ -13,6 +13,11 @@
  *
  * Mount point: AppEditorLayout, inside ComposerParamsProvider so that the
  * provider tree stays consistent with the existing context hierarchy.
+ *
+ * Note: exactOptionalPropertyTypes is enabled in tsconfig.
+ * synonyms and isSynonymsLoading are declared without `?` in the context
+ * value interface and coalesced to their zero values in the useMemo so that
+ * `undefined` never leaks into the typed value shape (TS2375).
  */
 import React, {
   createContext,
@@ -33,8 +38,9 @@ export interface SuggestionsContextValue {
   applySuggestion: (s: string) => void;
   generateSuggestions: (lineId: string) => void;
   spellCheck: UseSpellCheckReturn | undefined;
-  synonyms?: Record<string, string[]> | null;
-  isSynonymsLoading?: boolean;
+  /** null = not loaded / cleared; populated = synonyms available. */
+  synonyms: Record<string, string[]> | null;
+  isSynonymsLoading: boolean;
 }
 
 const SuggestionsContext = createContext<SuggestionsContextValue | null>(null);
@@ -66,8 +72,8 @@ export function SuggestionsProvider({
       applySuggestion: composerCtx.applySuggestion,
       generateSuggestions: composerCtx.generateSuggestions,
       spellCheck,
-      synonyms,
-      isSynonymsLoading,
+      synonyms: synonyms ?? null,
+      isSynonymsLoading: isSynonymsLoading ?? false,
     }),
     [
       composerCtx.selectedLineId,
