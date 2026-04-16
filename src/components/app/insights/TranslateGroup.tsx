@@ -37,8 +37,7 @@ export function TranslateGroup({
       value: lang.aiName,
       label: (
         <span className="flex items-center gap-1.5 min-w-0 w-full">
-          {/* Flags use native OS rendering; ethnic pictograms use local Twemoji SVG */}
-          <EmojiSign sign={lang.sign} native={!lang.isEthnical} />
+          <EmojiSign sign={lang.sign} />
           <span className="truncate">{lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}</span>
         </span>
       ),
