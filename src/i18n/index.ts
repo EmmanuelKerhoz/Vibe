@@ -1,1 +1,26 @@
-aW1wb3J0IHsgdXNlQ29udGV4dCB9IGZyb20gJ3JlYWN0JzsKaW1wb3J0IHsgTGFuZ3VhZ2VDb250ZXh0IH0gZnJvbSAnLi9MYW5ndWFnZVByb3ZpZGVyJzsKCmV4cG9ydCB7IExhbmd1YWdlUHJvdmlkZXIsIFNVUFBPUlRFRF9MQU5HVUFHRVMgfSBmcm9tICcuL0xhbmd1YWdlUHJvdmlkZXInOwpleHBvcnQgewogIFNVUFBPUlRFRF9VSV9MT0NBTEVTLAogIFNVUFBPUlRFRF9BREFQVEFUSU9OX0xBTkdVQUdFUywKICBhZGFwdGF0aW9uTGFuZ3VhZ2VMYWJlbCwKICBnZXRMYW5ndWFnZURpc3BsYXksCiAgZm9ybWF0TGFuZ3VhZ2VEaXNwbGF5LAogIENVU1RPTV9MQU5HVUFHRV9WQUxVRSwKICBpc0N1c3RvbUFkYXB0YXRpb25MYW5ndWFnZSwKfSBmcm9tICcuL2NvbnN0YW50cyc7CmV4cG9ydCB0eXBlIHsgVWlMb2NhbGVJbmZvLCBBZGFwdGF0aW9uTGFuZ3VhZ2UsIFN1cHBvcnRlZFVpTG9jYWxlQ29kZSB9IGZyb20gJy4vY29uc3RhbnRzJzsKZXhwb3J0IHR5cGUgeyBUcmFuc2xhdGlvbnMgfSBmcm9tICcuL2xvY2Fscy90eXBlcyc7CmV4cG9ydCB0eXBlIHsgTGFuZ3VhZ2VDb250ZXh0VmFsdWUgfSBmcm9tICcuL0xhbmd1YWdlUHJvdmlkZXInOwoKZXhwb3J0IGZ1bmN0aW9uIHVzZVRyYW5zbGF0aW9uKCkgewogIGNvbnN0IGNvbnRleHQgPSB1c2VDb250ZXh0KExhbmd1YWdlQ29udGV4dCk7CiAgaWYgKCFjb250ZXh0KSB7CiAgICB0aHJvdyBuZXcgRXJyb3IoJ3VzZVRyYW5zbGF0aW9uIG11c3QgYmUgdXNlZCB3aXRoaW4gYSBMYW5ndWFnZVByb3ZpZGVyJyk7CiAgfQogIHJldHVybiBjb250ZXh0Owp9CgovKiogQWxpYXMgLS0gc2FtZSBjb250ZXh0LCBuYW1lZCBmb3IgY2xhcml0eSBhdCBjYWxsLXNpdGUuICovCmV4cG9ydCBjb25zdCB1c2VMYW5ndWFnZSA9IHVzZVRyYW5zbGF0aW9uOwo=
+import { useContext } from 'react';
+import { LanguageContext } from './LanguageProvider';
+
+export { LanguageProvider, SUPPORTED_LANGUAGES } from './LanguageProvider';
+export {
+  SUPPORTED_UI_LOCALES,
+  SUPPORTED_ADAPTATION_LANGUAGES,
+  adaptationLanguageLabel,
+  getLanguageDisplay,
+  formatLanguageDisplay,
+  CUSTOM_LANGUAGE_VALUE,
+  isCustomAdaptationLanguage,
+} from './constants';
+export type { UiLocaleInfo, AdaptationLanguage, SupportedUiLocaleCode } from './constants';
+export type { Translations } from './locals/types';
+export type { LanguageContextValue } from './LanguageProvider';
+
+export function useTranslation() {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useTranslation must be used within a LanguageProvider');
+  }
+  return context;
+}
+
+export const useLanguage = useTranslation;
