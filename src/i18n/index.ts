@@ -12,7 +12,7 @@ export {
   isCustomAdaptationLanguage,
 } from './constants';
 export type { UiLocaleInfo, AdaptationLanguage, SupportedUiLocaleCode } from './constants';
-export type { Translations } from './locals/types';
+export type { Translations } from './locales/types';
 export type { LanguageContextValue } from './LanguageProvider';
 
 export function useTranslation() {
