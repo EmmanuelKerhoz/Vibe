@@ -1,10 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Loader2, Languages, Check } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
-import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
+import { SUPPORTED_ADAPTATION_LANGUAGES, CUSTOM_LANGUAGE_VALUE, isCustomAdaptationLanguage } from '../../i18n';
 
 // ─── Language grouping ────────────────────────────────────────────────────────
 
@@ -33,10 +33,7 @@ function getGroupLabel(code: string): string {
   return CODE_TO_GROUP.get(code.toUpperCase()) ?? 'Other';
 }
 
-// ─── Helper: build grouped options (called inside useMemo, not at module level)
-// This ensures EmojiSign/<img> nodes are created inside a React render cycle so
-// Twemoji images are actually mounted, their onError handler fires correctly, and
-// the fallback font path works on platforms that don't support flag codepoints.
+// ─── Helper: build grouped options ───────────────────────────────────────────
 
 function buildLanguageOptions() {
   const grouped = new Map<string, { value: string; label: React.ReactNode }[]>();
@@ -57,7 +54,7 @@ function buildLanguageOptions() {
     });
   }
 
-  const result: { value: string; label: React.ReactNode; disabled?: boolean; isGroupHeader?: boolean }[] = [];
+  const result: { value: string; label: React.ReactNode; disabled?: boolean }[] = [];
   for (const [groupLabel, items] of grouped.entries()) {
     result.push({
       value: `__group__${groupLabel}`,
@@ -67,10 +64,32 @@ function buildLanguageOptions() {
         </span>
       ) as React.ReactNode,
       disabled: true,
-      isGroupHeader: true,
     });
     result.push(...items);
   }
+
+  // ── Free-text sentinel entry (always last) ─────────────────────────────────
+  result.push(
+    {
+      value: '__group__other_lang',
+      label: (
+        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-500 select-none">
+          Free input
+        </span>
+      ) as React.ReactNode,
+      disabled: true,
+    },
+    {
+      value: CUSTOM_LANGUAGE_VALUE,
+      label: (
+        <span className="flex items-center gap-1.5 min-w-0 w-full">
+          <span style={{ fontSize: '0.95em' }}>✏️</span>
+          <span className="truncate text-[11px]">Other language…</span>
+        </span>
+      ) as React.ReactNode,
+    },
+  );
+
   return result;
 }
 
@@ -101,33 +120,75 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
 }: SectionAdaptControlProps) {
   const { t } = useTranslation();
 
-  // Built inside the component so EmojiSign nodes are part of the React tree.
-  // useMemo with empty deps: rebuilt only on first mount, not on every render.
   const languageOptions = useMemo(() => buildLanguageOptions(), []);
 
-  const [pendingLang, setPendingLang] = useState<string>(sectionTargetLanguage);
+  // Determine if the stored value is the custom sentinel or a typed custom string
+  // (a previously-saved free-text value is not in the list → also treated as custom).
+  const isStoredCustom =
+    isCustomAdaptationLanguage(sectionTargetLanguage) ||
+    (!SUPPORTED_ADAPTATION_LANGUAGES.some(l => l.aiName === sectionTargetLanguage) &&
+      sectionTargetLanguage !== '');
 
-  const canAdapt = !!adaptSectionLanguage && hasApiKey && !isGenerating && !isAnalyzing && !isAdaptingLanguage;
-  const isDirty = pendingLang !== sectionTargetLanguage;
+  const [selectValue, setSelectValue] = useState<string>(
+    isStoredCustom ? CUSTOM_LANGUAGE_VALUE : sectionTargetLanguage,
+  );
+  const [customText, setCustomText] = useState<string>(
+    isStoredCustom ? sectionTargetLanguage : '',
+  );
+  const customInputRef = useRef<HTMLInputElement>(null);
 
-  const handleLanguageSelect = useCallback((lang: string) => {
-    if (lang.startsWith('__group__')) return;
-    setPendingLang(lang);
-    onSectionTargetLanguageChange?.(sectionId, lang);
-  }, [sectionId, onSectionTargetLanguageChange]);
+  const showCustomInput = isCustomAdaptationLanguage(selectValue);
+
+  // The effective language name sent to the AI.
+  const effectiveLang = showCustomInput ? customText.trim() : selectValue;
+
+  const canAdapt =
+    !!adaptSectionLanguage &&
+    hasApiKey &&
+    !isGenerating &&
+    !isAnalyzing &&
+    !isAdaptingLanguage &&
+    effectiveLang.length > 0;
+
+  const isDirty = effectiveLang !== sectionTargetLanguage && effectiveLang.length > 0;
+
+  const handleLanguageSelect = useCallback(
+    (lang: string) => {
+      if (lang.startsWith('__group__')) return;
+      setSelectValue(lang);
+      if (!isCustomAdaptationLanguage(lang)) {
+        onSectionTargetLanguageChange?.(sectionId, lang);
+      } else {
+        // Focus the input on next tick
+        setTimeout(() => customInputRef.current?.focus(), 50);
+      }
+    },
+    [sectionId, onSectionTargetLanguageChange],
+  );
+
+  const handleCustomTextChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      setCustomText(val);
+      if (val.trim()) {
+        onSectionTargetLanguageChange?.(sectionId, val.trim());
+      }
+    },
+    [sectionId, onSectionTargetLanguageChange],
+  );
 
   const handleApply = useCallback(() => {
     if (!canAdapt) return;
-    adaptSectionLanguage!(sectionId, pendingLang);
-  }, [canAdapt, adaptSectionLanguage, sectionId, pendingLang]);
+    adaptSectionLanguage!(sectionId, effectiveLang);
+  }, [canAdapt, adaptSectionLanguage, sectionId, effectiveLang]);
 
   if (!adaptSectionLanguage) return null;
 
   const applyTooltip = !hasApiKey
     ? (t.tooltips?.aiUnavailable ?? 'AI unavailable — configure an API key')
     : isDirty
-      ? `Adapt this section to ${pendingLang}`
-      : `Section already set to ${pendingLang}`;
+      ? `Adapt this section to ${effectiveLang}`
+      : `Section already set to ${effectiveLang}`;
 
   const selectTooltip = 'Select a target language for this section';
 
@@ -147,7 +208,7 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
       <Tooltip title={selectTooltip}>
         <div className="min-w-[13rem] max-w-[18rem] flex-shrink-0">
           <LcarsSelect
-            value={pendingLang}
+            value={selectValue}
             onChange={handleLanguageSelect}
             options={languageOptions}
             accentColor="var(--lcars-cyan)"
@@ -156,6 +217,29 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
           />
         </div>
       </Tooltip>
+
+      {showCustomInput && (
+        <input
+          ref={customInputRef}
+          type="text"
+          value={customText}
+          onChange={handleCustomTextChange}
+          placeholder="e.g. Scots Gaelic, Toki Pona…"
+          maxLength={80}
+          className="flex-1 min-w-[10rem] max-w-[18rem] px-2 py-1 rounded text-[11px]"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--lcars-cyan, var(--border-color))',
+            color: 'var(--text-primary)',
+            outline: 'none',
+            borderRadius: '6px 2px 6px 2px',
+          }}
+          aria-label="Custom adaptation language"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && canAdapt) handleApply();
+          }}
+        />
+      )}
 
       <Tooltip title={applyTooltip}>
         <button

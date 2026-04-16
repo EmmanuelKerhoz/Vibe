@@ -162,6 +162,22 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'ZU',  aiName: 'Zulu',             sign: '🛡️', region: 'South Africa', isEthnical: true },
 ] as const;
 
+/**
+ * Sentinel value used as the `value` prop in language selectors to indicate
+ * the user wants to type a custom language name instead of picking from the list.
+ * Never passed to the AI — components must substitute the user-typed text.
+ */
+export const CUSTOM_LANGUAGE_VALUE = '__custom__' as const;
+
+/**
+ * Returns true when the stored language value is the custom-language sentinel.
+ * Use this to decide whether to show/read the free-text input instead of the
+ * drop-down selection, and to gate the AI call (must not fire with the sentinel).
+ */
+export function isCustomAdaptationLanguage(value: string): boolean {
+  return value === CUSTOM_LANGUAGE_VALUE;
+}
+
 /** Returns the formatted display label for use in dropdown menus. */
 export function adaptationLanguageLabel(lang: AdaptationLanguage): string {
   return `${lang.sign} ${lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}`;
@@ -185,8 +201,6 @@ const LANGUAGE_DISPLAY_INDEX = new Map<string, LanguageDisplay>(
 );
 
 for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
-  // Conditional spread: omit optional keys when value is undefined to satisfy
-  // exactOptionalPropertyTypes (LanguageDisplay.region?: string excludes undefined).
   const adaptationDisplay: LanguageDisplay = {
     label: lang.aiName,
     sign: lang.sign,
@@ -194,9 +208,6 @@ for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
     ...(lang.isEthnical !== undefined && { isEthnical: lang.isEthnical }),
   };
   const normalizedCode = normalizeLanguageKey(lang.code);
-  // UI locale codes and adaptation codes can overlap (for example `ko` vs `KO`).
-  // Preserve the UI-locale display entry for code-based lookups, while still
-  // indexing the adaptation language by its human-readable name.
   if (!LANGUAGE_DISPLAY_INDEX.has(normalizedCode)) {
     LANGUAGE_DISPLAY_INDEX.set(normalizedCode, adaptationDisplay);
   }
