@@ -195,16 +195,15 @@ vi.mock('./hooks/useKeyboardShortcuts', () => ({
   useKeyboardShortcuts: mockAppState.noop,
 }));
 
-// ─── ErrorBoundary ───────────────────────────────────────────────────────────
+// ─── ErrorBoundary ────────────────────────────────────────────────────────────
 
 vi.mock('./components/app/ErrorBoundary', () => ({
   ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-// ─── Lazy panels ─────────────────────────────────────────────────────────────// AppEditorLayout: renders the test IDs the App tests assert on.
-// AppPanelOrchestrator: no-op (tested separately).
-// AppModalLayer: left UNMOCKED so it loads naturally and pipes isAnalyzingTheme
-//               into the mocked AppModals (test 3).
+// ─── Lazy panels ─────────────────────────────────────────────────────────────// AppPanelOrchestrator: no-op (tested separately).
+// AppModalLayer: mocked to render AppModals synchronously — nested React.lazy()
+//               calls inside AppModalLayer do not resolve in jsdom's act() block.
 
 vi.mock('./components/app/AppEditorLayout', () => ({
   AppEditorLayout: () => (
@@ -224,6 +223,21 @@ vi.mock('./components/app/AppEditorLayout', () => ({
 vi.mock('./components/app/AppPanelOrchestrator', () => ({
   AppPanelOrchestrator: () => null,
 }));
+
+// ─── AppModalLayer mock ────────────────────────────────────────────────────────// AppModalLayer internally lazy-loads AppModals via React.lazy + dynamic import.
+// In jsdom the nested async resolution never completes within act(), so AppModals
+// never mounts and appModalsPropsSpy is never called. We mock AppModalLayer to
+// render the (already-mocked) AppModals synchronously with the props the test
+// verifies.
+
+vi.mock('./components/app/AppModalLayer', async () => {
+  const { AppModals } = await import('./components/app/AppModals');
+  return {
+    AppModalLayer: () => (
+      <AppModals isAnalyzingTheme={false} applyAnalysisItem={() => {}} />
+    ),
+  };
+});
 
 // ─── Leaf component stubs ─────────────────────────────────────────────────────
 
@@ -251,8 +265,7 @@ vi.mock('@fluentui/react-components', () => ({
   Spinner: () => <div data-testid="spinner" />, 
 }));
 
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ──────────────────────────────────────────────────────────────────────────────
 describe('App markup mode reset', () => {
   beforeEach(() => {
     mockAppState.initialIsGenerating = false;
@@ -293,7 +306,7 @@ describe('App markup mode reset', () => {
     await act(async () => { render(<App />); });
 
     expect(screen.getByRole('status', { name: 'Song generation in progress' })).toBeTruthy();
-    expect(screen.getByText('Generating your song\u2026')).toBeTruthy();
+    expect(screen.getByText('Generating your song…')).toBeTruthy();
     expect(screen.getByText('Please wait while the editor is temporarily locked.')).toBeTruthy();
     // AppShell sets aria-hidden imperatively via useEffect on the content wrapper
     expect(screen.getByTestId('left-settings-panel').closest('[aria-hidden="true"]')).toBeTruthy();
