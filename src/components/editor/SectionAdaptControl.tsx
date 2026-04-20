@@ -36,12 +36,11 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
   const {
     selectValue,
     customText,
-    customInputRef,
     showCustomInput,
     effectiveLang,
     languageOptions,
     handleLanguageSelect,
-    handleCustomTextChange,
+    setCustomText,
     handleCustomConfirm,
   } = useCustomLanguageSelector({
     storedValue: sectionTargetLanguage,
@@ -72,7 +71,9 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
       ? `Adapt this section to ${effectiveLang}`
       : `Section already set to ${effectiveLang}`;
 
-  const selectTooltip = 'Select a target language for this section';
+  const selectTooltip = showCustomInput
+    ? `Type a custom language in the dropdown filter, then pick "Other language…"`
+    : 'Type to filter or pick a target language for this section';
 
   const triggerContent = (
     <span className="flex items-center gap-1.5 min-w-0 w-full">
@@ -82,6 +83,14 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
       <span className="truncate text-[11px] font-semibold uppercase tracking-[0.15em]">
         {t.editor?.adaptation ?? 'Adaptation'}
       </span>
+      {showCustomInput && customText && (
+        <span
+          className="truncate text-[11px] font-normal normal-case tracking-normal"
+          style={{ opacity: 0.85 }}
+        >
+          · {customText}
+        </span>
+      )}
     </span>
   );
 
@@ -96,33 +105,13 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
             accentColor="var(--lcars-cyan)"
             triggerLabel={triggerContent}
             disabled={false}
+            searchable
+            searchValue={customText}
+            onSearchChange={setCustomText}
+            searchPlaceholder="Type a language… (e.g. Fr → French)"
           />
         </div>
       </Tooltip>
-
-      {showCustomInput && (
-        <input
-          ref={customInputRef}
-          type="text"
-          value={customText}
-          onChange={handleCustomTextChange}
-          onBlur={handleCustomConfirm}
-          placeholder="e.g. Scots Gaelic, Toki Pona…"
-          maxLength={80}
-          className="flex-1 min-w-[10rem] max-w-[18rem] px-2 py-1 rounded text-[11px]"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--lcars-cyan, var(--border-color))',
-            color: 'var(--text-primary)',
-            outline: 'none',
-            borderRadius: '6px 2px 6px 2px',
-          }}
-          aria-label="Custom adaptation language"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && canAdapt) handleApply();
-          }}
-        />
-      )}
 
       <Tooltip title={applyTooltip}>
         <button
