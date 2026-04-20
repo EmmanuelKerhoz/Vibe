@@ -75,6 +75,11 @@ const LazyFallback = React.memo(function LazyFallback() {
  * onClose resets the panel state in the parent so the user can reopen cleanly.
  */
 function PanelErrorFallback({ label, onClose }: { label: string; onClose?: () => void }) {
+  const { t } = useTranslation();
+  const titleTpl = t.errorBoundary?.panelUnavailable ?? '{label} unavailable';
+  const title = titleTpl.replace('{label}', label);
+  const description = t.errorBoundary?.panelGeneric ?? 'An unexpected error occurred in this panel.';
+  const closeLabel = t.errorBoundary?.closePanel ?? 'Close panel';
   return (
     <div
       role="alert"
@@ -84,17 +89,17 @@ function PanelErrorFallback({ label, onClose }: { label: string; onClose?: () =>
         alignItems: 'flex-start',
         gap: '0.5rem',
         padding: '1rem',
-        background: 'var(--colorNeutralBackground2, #1c1c1c)',
-        borderLeft: '2px solid var(--colorPaletteRedBorder1, #f87171)',
-        color: 'var(--colorNeutralForeground1, #e0e0e0)',
+        background: 'var(--bg-elev-1, var(--bg-app))',
+        borderLeft: '2px solid var(--accent-danger, #f87171)',
+        color: 'var(--text-primary)',
         fontSize: '0.75rem',
         fontFamily: 'var(--fontFamilyBase, sans-serif)',
         width: '100%',
       }}
     >
-      <span style={{ fontWeight: 600 }}>{label} unavailable</span>
-      <span style={{ color: 'var(--colorNeutralForeground3, #888)' }}>
-        An unexpected error occurred in this panel.
+      <span style={{ fontWeight: 600 }}>{title}</span>
+      <span style={{ color: 'var(--text-secondary)' }}>
+        {description}
       </span>
       {onClose && (
         <button
@@ -103,14 +108,14 @@ function PanelErrorFallback({ label, onClose }: { label: string; onClose?: () =>
             marginTop: '0.25rem',
             padding: '0.25rem 0.75rem',
             background: 'transparent',
-            border: '1px solid var(--colorNeutralStroke1, #444)',
+            border: '1px solid var(--border-color)',
             borderRadius: '4px',
-            color: 'var(--colorNeutralForeground1, #e0e0e0)',
+            color: 'var(--text-primary)',
             cursor: 'pointer',
             fontSize: '0.75rem',
           }}
         >
-          Close panel
+          {closeLabel}
         </button>
       )}
     </div>

@@ -2,6 +2,27 @@ export interface Translations {
   /** Generic shared strings */
   common?: {
     loading: string;
+    /** Aria-label for the application splash screen */
+    appLoading?: string;
+    /** Label shown under the splash spinner during initialization */
+    initializing?: string;
+  };
+
+  /** Labels for inline error fallbacks rendered by panel ErrorBoundaries.
+   *  Use `{label}` placeholder for the panel name in `panelUnavailable`. */
+  errorBoundary?: {
+    panelUnavailable: string;
+    panelGeneric: string;
+    closePanel: string;
+  };
+
+  /** Labels for the right-side panel switcher (Structure / Suggestions / Analysis). */
+  panels?: {
+    structure: string;
+    suggestions: string;
+    analysis: string;
+    /** Aria template used for the segmented switcher buttons. Use `{name}`. */
+    switchTo: string;
   };
 
   app: {
@@ -32,6 +53,20 @@ export interface Translations {
     language: string;
     settings: string;
     settingsTooltip?: string;
+    /** Tooltip shown on the saved-session indicator dot */
+    sessionSavedTooltip?: string;
+    /** Inline badge text next to the saved-session dot */
+    sessionSavedBadge?: string;
+    /** Inline badge text while the session is being persisted */
+    saving?: string;
+    /** Inline badge text when the latest changes are not yet saved */
+    unsaved?: string;
+    /** Inline badge text when the most recent save attempt failed */
+    saveError?: string;
+    /** Aria-label template for the theme toggle when current theme is dark */
+    themeSwitchToLight?: string;
+    /** Aria-label template for the theme toggle when current theme is light */
+    themeSwitchToDark?: string;
   };
 
   ribbon: {
@@ -45,6 +80,10 @@ export interface Translations {
     redo: string;
     reset: string;
     aiUnavailable: string;
+    /** Tooltip shown on the burger menu trigger */
+    menu?: string;
+    /** Aria-label for the burger menu trigger */
+    menuAria?: string;
   };
 
   mobileNav: {
@@ -53,6 +92,12 @@ export interface Translations {
     lyrics: string;
     music: string;
     structure: string;
+    /** Short label on the centre CTA when it opens the composer panel */
+    compose?: string;
+    /** Aria-label for the centre CTA when in compose mode */
+    composeAria?: string;
+    /** Short label on the centre CTA when it triggers a regenerate */
+    generateShort?: string;
   };
 
   /** Labels for the burger-menu panel section headers and menu items */
@@ -80,6 +125,16 @@ export interface Translations {
     targetSyllables: string;
     quantize: string;
     collapse: string;
+    /** Top-right badge that labels the panel as the new-generation form */
+    newGenerationBadge?: string;
+    /** Section header for the song-info group inside the form */
+    songInfoSection?: string;
+    /** Label of the "Suggest random" button */
+    suggest?: string;
+    /** Tooltip of the "Suggest random" button */
+    suggestTooltip?: string;
+    /** Aria-label for the close button of the form panel */
+    closePanel?: string;
   };
 
   structure: {

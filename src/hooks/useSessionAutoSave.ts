@@ -3,11 +3,16 @@
  *
  * Watches song + meta state and persists a SessionSnapshot to OPFS
  * with a 2-second debounce.  Calls onSaved() after the first successful write.
+ *
+ * Exposes a `saveStatus` so the UI can render a real-time persistence
+ * indicator (saving / saved / unsaved / error).
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { saveSession } from '../lib/sessionPersistence';
 import type { SessionSnapshot } from '../lib/sessionPersistence';
 import type { Section } from '../types';
+
+export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'error';
 
 interface AutoSavePayload {
   song: Section[];
@@ -32,12 +37,31 @@ interface AutoSavePayload {
   onSaved?: () => void;
 }
 
-export function useSessionAutoSave(payload: AutoSavePayload): void {
+export interface SessionAutoSaveResult {
+  /** Real-time persistence status for the UI indicator. */
+  saveStatus: SaveStatus;
+  /** Timestamp (ms) of the last successful save, or null if none yet. */
+  lastSavedAt: number | null;
+}
+
+export function useSessionAutoSave(payload: AutoSavePayload): SessionAutoSaveResult {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const payloadRef = useRef<AutoSavePayload>(payload);
   payloadRef.current = payload;
+  const isFirstRunRef = useRef(true);
+
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
   useEffect(() => {
+    // Skip the very first effect tick: it fires from initial hydration and
+    // would mis-flag the freshly-loaded session as "unsaved".
+    if (isFirstRunRef.current) {
+      isFirstRunRef.current = false;
+    } else {
+      setSaveStatus('unsaved');
+    }
+
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       const p = payloadRef.current;
@@ -63,8 +87,16 @@ export function useSessionAutoSave(payload: AutoSavePayload): void {
         isStructureOpen: p.isStructureOpen,
         isLeftPanelOpen: p.isLeftPanelOpen,
       };
-      await saveSession(snapshot);
-      payloadRef.current.onSaved?.();
+      setSaveStatus('saving');
+      try {
+        await saveSession(snapshot);
+        setSaveStatus('saved');
+        setLastSavedAt(snapshot.savedAt);
+        payloadRef.current.onSaved?.();
+      } catch (err) {
+        console.error('[useSessionAutoSave] failed to persist session', err);
+        setSaveStatus('error');
+      }
     }, 2000);
 
     return () => {
@@ -90,4 +122,6 @@ export function useSessionAutoSave(payload: AutoSavePayload): void {
     payload.isStructureOpen,
     payload.isLeftPanelOpen,
   ]);
+
+  return { saveStatus, lastSavedAt };
 }

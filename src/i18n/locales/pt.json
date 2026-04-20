@@ -36,7 +36,10 @@
     "settings": "Configurações",
     "lyrics": "Letras",
     "music": "Música",
-    "structure": "Estrutura"
+    "structure": "Estrutura",
+    "compose": "Compor",
+    "composeAria": "Abrir o painel de geração de letras",
+    "generateShort": "Gerar"
   },
   "leftPanel": {
     "title": "Lyricist Pro",

@@ -36,7 +36,10 @@
     "settings": "Einstellungen",
     "lyrics": "Texte",
     "music": "Musik",
-    "structure": "Struktur"
+    "structure": "Struktur",
+    "compose": "Erstellen",
+    "composeAria": "Texterstellungs-Bereich öffnen",
+    "generateShort": "Gen"
   },
   "leftPanel": {
     "title": "Lyricist Pro",

@@ -188,7 +188,7 @@ vi.mock('./hooks/useAppOrchestration', () => ({
 }));
 
 vi.mock('./hooks/useSessionAutoSave', () => ({
-  useSessionAutoSave: mockAppState.noop,
+  useSessionAutoSave: () => ({ saveStatus: 'idle' as const, lastSavedAt: null }),
 }));
 
 vi.mock('./hooks/useKeyboardShortcuts', () => ({

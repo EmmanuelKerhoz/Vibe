@@ -1,6 +1,19 @@
 {
   "common": {
-    "loading": "Chargement"
+    "loading": "Chargement",
+    "appLoading": "Chargement de l'application",
+    "initializing": "Initialisation…"
+  },
+  "errorBoundary": {
+    "panelUnavailable": "{label} indisponible",
+    "panelGeneric": "Une erreur inattendue s'est produite dans ce panneau.",
+    "closePanel": "Fermer le panneau"
+  },
+  "panels": {
+    "structure": "Structure",
+    "suggestions": "Suggestions",
+    "analysis": "Analyse",
+    "switchTo": "Afficher : {name}"
   },
   "app": {
     "name": "Lyricist Pro",
@@ -21,7 +34,14 @@
     "audioFeedback": "Retour audio",
     "language": "Changer de langue",
     "settings": "Paramètres",
-    "settingsTooltip": "Ouvrir les paramètres"
+    "settingsTooltip": "Ouvrir les paramètres",
+    "sessionSavedTooltip": "Session enregistrée automatiquement sur cet appareil",
+    "sessionSavedBadge": "enregistré",
+    "saving": "enregistrement…",
+    "unsaved": "non enregistré",
+    "saveError": "erreur d'enregistrement",
+    "themeSwitchToLight": "Passer au thème clair",
+    "themeSwitchToDark": "Passer au thème sombre"
   },
   "ribbon": {
     "lyrics": "PAROLES",
@@ -33,14 +53,19 @@
     "undo": "Annuler",
     "redo": "Rétablir",
     "reset": "Réinitialiser",
-    "aiUnavailable": "IA INDISPONIBLE"
+    "aiUnavailable": "IA INDISPONIBLE",
+    "menu": "Menu",
+    "menuAria": "Ouvrir le menu principal"
   },
   "mobileNav": {
     "navigation": "Navigation mobile",
     "settings": "Paramètres",
     "lyrics": "Paroles",
     "music": "Musique",
-    "structure": "Structure"
+    "structure": "Structure",
+    "compose": "Composer",
+    "composeAria": "Ouvrir le panneau de génération de paroles",
+    "generateShort": "Gén"
   },
   "menu": {
     "create": "Créer",
@@ -64,7 +89,12 @@
     "rhymeScheme": "SCHÉMA DE RIME PAR DÉFAUT",
     "targetSyllables": "SYLLABES CIBLES",
     "quantize": "Quantifier les syllabes (GLOBAL)",
-    "collapse": "Réduire la barre latérale"
+    "collapse": "Réduire la barre latérale",
+    "newGenerationBadge": "Nouvelle génération",
+    "songInfoSection": "Informations sur la chanson",
+    "suggest": "Suggérer",
+    "suggestTooltip": "Proposer un sujet, une ambiance et un titre aléatoires",
+    "closePanel": "Fermer le panneau de génération de paroles"
   },
   "structure": {
     "title": "Éditeur de structure",
