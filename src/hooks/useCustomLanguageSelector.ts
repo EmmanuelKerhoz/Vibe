@@ -30,8 +30,18 @@ function getGroupLabel(code: string): string {
   return CODE_TO_GROUP.get(code.toUpperCase()) ?? 'Other';
 }
 
-export function buildGroupedLanguageOptions(): { value: string; label: React.ReactNode; disabled?: boolean }[] {
-  const grouped = new Map<string, { value: string; label: React.ReactNode }[]>();
+export interface GroupedLanguageOption {
+  value: string;
+  label: React.ReactNode;
+  disabled?: boolean;
+  /** When true, the option is shown even when a search filter is active. */
+  alwaysShow?: boolean;
+  /** Plain-text representation used for live filtering in searchable selects. */
+  searchText?: string;
+}
+
+export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
+  const grouped = new Map<string, GroupedLanguageOption[]>();
 
   for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
     const group = getGroupLabel(lang.code);
@@ -46,10 +56,36 @@ export function buildGroupedLanguageOptions(): { value: string; label: React.Rea
           )
         )
       ) as React.ReactNode,
+      searchText: lang.aiName,
     });
   }
 
-  const result: { value: string; label: React.ReactNode; disabled?: boolean }[] = [];
+  const result: GroupedLanguageOption[] = [];
+
+  // "Free input" entry sits at the very top so users can immediately access the
+  // custom-language slot or type a value into the searchable dropdown filter.
+  result.push(
+    {
+      value: '__group__other_lang',
+      label: React.createElement('span', {
+        className: 'text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-500 select-none'
+      }, 'Free input') as React.ReactNode,
+      disabled: true,
+      alwaysShow: true,
+    },
+    {
+      value: CUSTOM_LANGUAGE_VALUE,
+      label: (
+        React.createElement('span', { className: 'flex items-center gap-1.5 min-w-0 w-full' },
+          React.createElement('span', { style: { fontSize: '0.95em' } }, '✏️'),
+          React.createElement('span', { className: 'truncate text-[11px]' }, 'Other language…')
+        )
+      ) as React.ReactNode,
+      alwaysShow: true,
+      searchText: 'Other language',
+    },
+  );
+
   for (const [groupLabel, items] of grouped.entries()) {
     result.push({
       value: `__group__${groupLabel}`,
@@ -62,25 +98,6 @@ export function buildGroupedLanguageOptions(): { value: string; label: React.Rea
     });
     result.push(...items);
   }
-
-  result.push(
-    {
-      value: '__group__other_lang',
-      label: React.createElement('span', {
-        className: 'text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-500 select-none'
-      }, 'Free input') as React.ReactNode,
-      disabled: true,
-    },
-    {
-      value: CUSTOM_LANGUAGE_VALUE,
-      label: (
-        React.createElement('span', { className: 'flex items-center gap-1.5 min-w-0 w-full' },
-          React.createElement('span', { style: { fontSize: '0.95em' } }, '✏️'),
-          React.createElement('span', { className: 'truncate text-[11px]' }, 'Other language…')
-        )
-      ) as React.ReactNode,
-    },
-  );
 
   return result;
 }
@@ -101,6 +118,8 @@ export interface UseCustomLanguageSelectorResult {
   languageOptions: ReturnType<typeof buildGroupedLanguageOptions>;
   handleLanguageSelect: (lang: string) => void;
   handleCustomTextChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Imperatively set the custom text (e.g. wired from a searchable dropdown). */
+  setCustomText: (value: string) => void;
   /** Call on Enter / blur / Apply button to commit the custom text. */
   handleCustomConfirm: () => void;
 }
@@ -132,6 +151,9 @@ export function useCustomLanguageSelector({
       if (lang.startsWith('__group__')) return;
       setSelectValue(lang);
       if (!isCustomAdaptationLanguage(lang)) {
+        // Picking a real language clears any pending custom text so the search
+        // box doesn't keep stale input next time the user opens the dropdown.
+        setCustomText('');
         onValueChange(lang);
       } else {
         requestAnimationFrame(() => customInputRef.current?.focus());
@@ -163,6 +185,7 @@ export function useCustomLanguageSelector({
     languageOptions,
     handleLanguageSelect,
     handleCustomTextChange,
+    setCustomText,
     handleCustomConfirm,
   };
 }

@@ -12,6 +12,10 @@ interface LcarsSelectOption {
   title?: string;
   /** When true the item is rendered as a non-interactive separator/header. */
   disabled?: boolean;
+  /** When true, the item is shown even when a search filter is active. */
+  alwaysShow?: boolean;
+  /** Optional plain-text value used for live filtering. Falls back to extracted label text. */
+  searchText?: string;
 }
 
 interface LcarsSelectProps {
@@ -31,6 +35,29 @@ interface LcarsSelectProps {
   buttonTitle?: string;
   /** Accessible label for the trigger button (aria-label). Falls back to placeholder when omitted. */
   buttonAriaLabel?: string;
+  /** Renders a live filter input at the top of the dropdown. Filtering is case-insensitive `startsWith` on the option label text. */
+  searchable?: boolean;
+  /** Controlled search value. When provided, the parent owns the filter state. */
+  searchValue?: string;
+  /** Notified on every keystroke in the search input. */
+  onSearchChange?: (value: string) => void;
+  /** Placeholder for the search input. */
+  searchPlaceholder?: string;
+}
+
+function nodeToText(node: React.ReactNode): string {
+  if (node == null || typeof node === 'boolean') return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(nodeToText).join(' ');
+  if (React.isValidElement(node)) {
+    const props = node.props as { children?: React.ReactNode };
+    return nodeToText(props.children);
+  }
+  return '';
+}
+
+function getOptionSearchText(opt: LcarsSelectOption): string {
+  return opt.searchText ?? nodeToText(opt.label);
 }
 
 export function LcarsSelect({
@@ -47,16 +74,24 @@ export function LcarsSelect({
   accentColor,
   buttonTitle,
   buttonAriaLabel,
+  searchable = false,
+  searchValue: searchValueProp,
+  onSearchChange,
+  searchPlaceholder,
 }: LcarsSelectProps) {
   const accent = accentColor ?? 'var(--accent-color)';
   const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const [internalSearch, setInternalSearch] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>();
   const listboxId = useId();
   const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
+  const effectiveSearch = searchValueProp ?? internalSearch;
 
   const setOpen = useCallback((nextOpen: boolean) => {
     if (nextOpen === isOpen) return;
@@ -65,6 +100,17 @@ export function LcarsSelect({
     }
     onOpenChange?.(nextOpen);
   }, [controlledIsOpen, isOpen, onOpenChange, setUncontrolledIsOpen]);
+
+  const displayedOptions = React.useMemo(() => {
+    if (!searchable) return options;
+    const q = effectiveSearch.trim().toLowerCase();
+    if (q === '') return options;
+    return options.filter((o) => {
+      if (o.alwaysShow) return true;
+      if (o.disabled) return false;
+      return getOptionSearchText(o).toLowerCase().startsWith(q);
+    });
+  }, [options, searchable, effectiveSearch]);
 
   const selectedLabel: React.ReactNode =
     options.find((o) => o.value === value)?.label ??
@@ -82,13 +128,13 @@ export function LcarsSelect({
 
   const nextEnabled = useCallback((from: number, direction: 1 | -1): number => {
     let i = from + direction;
-    while (i >= 0 && i < options.length) {
-      const opt = options[i];
+    while (i >= 0 && i < displayedOptions.length) {
+      const opt = displayedOptions[i];
       if (opt && !opt.disabled) return i;
       i += direction;
     }
     return from;
-  }, [options]);
+  }, [displayedOptions]);
 
   const updateDropdownPosition = useCallback(() => {
     if (!triggerRef.current) return;
@@ -120,7 +166,11 @@ export function LcarsSelect({
     if (!isOpen) return;
     const handleOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (!containerRef.current?.contains(target) && !listRef.current?.contains(target)) close();
+      if (
+        !containerRef.current?.contains(target) &&
+        !listRef.current?.contains(target) &&
+        !portalRef.current?.contains(target)
+      ) close();
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
@@ -144,19 +194,49 @@ export function LcarsSelect({
     }
   }, [isOpen, focusedIndex]);
 
+  // Auto-focus the search input when a searchable dropdown opens so the user
+  // can start filtering immediately without an extra click.
+  useEffect(() => {
+    if (isOpen && searchable) {
+      requestAnimationFrame(() => searchInputRef.current?.focus());
+    }
+  }, [isOpen, searchable]);
+
+  // When the search filter changes, reset focus to the first visible option so
+  // arrow-key navigation and Enter behave naturally.
+  useEffect(() => {
+    if (!isOpen || !searchable) return;
+    setFocusedIndex(-1);
+  }, [effectiveSearch, isOpen, searchable]);
+
   const handleTriggerClick = () => {
     if (disabled) return;
     const nextOpen = !isOpen;
     setOpen(nextOpen);
     if (nextOpen) {
-      const idx = options.findIndex((o) => o.value === value);
-      setFocusedIndex(idx >= 0 ? idx : 0);
+      const idx = displayedOptions.findIndex((o) => o.value === value);
+      setFocusedIndex(idx >= 0 ? idx : -1);
     }
   };
 
   const handleSelect = (optValue: string) => {
     onChange(optValue);
     close();
+  };
+
+  const handleSearchChange = (next: string) => {
+    if (searchValueProp === undefined) {
+      setInternalSearch(next);
+    }
+    onSearchChange?.(next);
+  };
+
+  const selectFirstVisibleEnabled = () => {
+    const firstIdx = displayedOptions.findIndex((o) => !o.disabled);
+    if (firstIdx >= 0) {
+      const opt = displayedOptions[firstIdx];
+      if (opt) handleSelect(opt.value);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -166,11 +246,11 @@ export function LcarsSelect({
       case ' ':
         e.preventDefault();
         if (isOpen && focusedIndex >= 0) {
-          const opt = options[focusedIndex];
+          const opt = displayedOptions[focusedIndex];
           if (opt && !opt.disabled) handleSelect(opt.value);
         } else {
           setOpen(true);
-          const idx = options.findIndex((o) => o.value === value);
+          const idx = displayedOptions.findIndex((o) => o.value === value);
           setFocusedIndex(idx >= 0 ? idx : nextEnabled(-1, 1));
         }
         break;
@@ -181,12 +261,41 @@ export function LcarsSelect({
       case 'ArrowDown':
         e.preventDefault();
         if (!isOpen) { setOpen(true); setFocusedIndex(nextEnabled(-1, 1)); }
-        else setFocusedIndex((i) => nextEnabled(Math.min(i, options.length - 1), 1));
+        else setFocusedIndex((i) => nextEnabled(Math.min(i, displayedOptions.length - 1), 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        if (!isOpen) { setOpen(true); setFocusedIndex(nextEnabled(options.length, -1)); }
+        if (!isOpen) { setOpen(true); setFocusedIndex(nextEnabled(displayedOptions.length, -1)); }
         else setFocusedIndex((i) => nextEnabled(Math.max(i, 0), -1));
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    switch (e.key) {
+      case 'Enter':
+        e.preventDefault();
+        if (focusedIndex >= 0) {
+          const opt = displayedOptions[focusedIndex];
+          if (opt && !opt.disabled) handleSelect(opt.value);
+        } else {
+          selectFirstVisibleEnabled();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        close();
+        triggerRef.current?.focus();
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusedIndex((i) => nextEnabled(Math.min(i, displayedOptions.length - 1), 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusedIndex((i) => nextEnabled(Math.max(i, 0), -1));
         break;
       default:
         break;
@@ -269,9 +378,52 @@ export function LcarsSelect({
 
       {isOpen && dropdownStyle && createPortal(
         <div
+          ref={portalRef}
           className="lcars-gradient-outline"
-          style={{ ...dropdownStyle, borderRadius: '2px 6px 6px 2px' }}
+          style={{
+            ...dropdownStyle,
+            borderRadius: '2px 6px 6px 2px',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
         >
+          {searchable && (
+            <div
+              style={{
+                position: 'relative',
+                zIndex: 2,
+                padding: '6px 8px',
+                background: 'var(--bg-card)',
+                borderTopLeftRadius: '2px',
+                borderTopRightRadius: '6px',
+                borderBottom: `1px solid color-mix(in srgb, ${accent} 30%, var(--border-color))`,
+                flexShrink: 0,
+                fontFamily: EMOJI_FONT_STACK,
+              }}
+            >
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={effectiveSearch}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder={searchPlaceholder ?? 'Filter…'}
+                aria-label={searchPlaceholder ?? 'Filter options'}
+                aria-controls={listboxId}
+                style={{
+                  width: '100%',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-primary)',
+                  fontSize: 'inherit',
+                  outline: 'none',
+                  fontFamily: EMOJI_FONT_STACK,
+                }}
+              />
+            </div>
+          )}
           <ul
             ref={listRef}
             id={listboxId}
@@ -281,11 +433,12 @@ export function LcarsSelect({
               position: 'relative',
               zIndex: 1,
               width: '100%',
-              height: '100%',
-              maxHeight: 'inherit',
+              flex: 1,
+              minHeight: 0,
               fontFamily: EMOJI_FONT_STACK,
-              borderRadius: '2px 6px 6px 2px',
+              borderRadius: searchable ? '0 0 6px 2px' : '2px 6px 6px 2px',
               border: '1px solid var(--border-color)',
+              borderTop: searchable ? 'none' : '1px solid var(--border-color)',
               background: 'var(--bg-card)',
               backdropFilter: 'blur(2px)',
               boxShadow: `0 0 20px 2px color-mix(in srgb, ${accent} 30%, transparent)`,
@@ -297,7 +450,21 @@ export function LcarsSelect({
               scrollbarColor: `${accent} transparent`,
             }}
           >
-            {options.map((opt, idx) => {
+            {displayedOptions.length === 0 && (
+              <li
+                role="presentation"
+                style={{
+                  padding: '10px 14px',
+                  color: 'var(--text-muted, #888)',
+                  fontSize: '0.85em',
+                  opacity: 0.7,
+                  userSelect: 'none',
+                }}
+              >
+                No matches
+              </li>
+            )}
+            {displayedOptions.map((opt, idx) => {
               const isSelected = opt.value === value;
               const isFocused = idx === focusedIndex;
               const isDisabled = opt.disabled === true;
