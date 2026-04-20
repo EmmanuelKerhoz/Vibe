@@ -94,6 +94,10 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
     </span>
   );
 
+  const customSearchProps = showCustomInput
+    ? { searchValue: customText, onSearchChange: setCustomText }
+    : {};
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <Tooltip title={selectTooltip}>
@@ -106,8 +110,7 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
             triggerLabel={triggerContent}
             disabled={false}
             searchable
-            searchValue={showCustomInput ? customText : undefined}
-            onSearchChange={showCustomInput ? setCustomText : undefined}
+            {...customSearchProps}
             searchPlaceholder="Type a language… (e.g. Fr → French)"
           />
         </div>
