@@ -3,24 +3,31 @@ import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../i18n';
 import { SuggestionsPanel } from './SuggestionsPanel';
 
-function renderSuggestionsPanel() {
-  const setSelectedLineId = vi.fn();
+const mockSetSelectedLineId = vi.fn();
 
+vi.mock('../../contexts/SuggestionsContext', () => ({
+  useSuggestionsContext: () => ({
+    selectedLineId: 'line-1',
+    setSelectedLineId: mockSetSelectedLineId,
+    suggestions: ['A brighter line'],
+    isSuggesting: false,
+    hasApiKey: true,
+    applySuggestion: vi.fn(),
+    generateSuggestions: vi.fn(),
+    spellCheck: undefined,
+    synonyms: null,
+    isSynonymsLoading: false,
+  }),
+}));
+
+function renderSuggestionsPanel() {
   const view = render(
     <LanguageProvider>
-      <SuggestionsPanel
-        selectedLineId="line-1"
-        setSelectedLineId={setSelectedLineId}
-        suggestions={['A brighter line']}
-        isSuggesting={false}
-        hasApiKey
-        applySuggestion={vi.fn()}
-        generateSuggestions={vi.fn()}
-      />
+      <SuggestionsPanel />
     </LanguageProvider>,
   );
 
-  return { ...view, setSelectedLineId };
+  return { ...view, setSelectedLineId: mockSetSelectedLineId };
 }
 
 describe('SuggestionsPanel', () => {
