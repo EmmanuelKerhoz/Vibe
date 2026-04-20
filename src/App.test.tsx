@@ -34,7 +34,7 @@ const mockAppState = vi.hoisted(() => ({
   asyncNoop: vi.fn(async () => {}),
 }));
 
-// ─── UI leaf mocks (jsdom-incompatible: SVG/Twemoji) ─────────────────────────
+// --- UI leaf mocks (jsdom-incompatible: SVG/Twemoji) -------------------------
 
 vi.mock('./components/ui/DialectGlobe', () => ({
   DialectGlobe: () => null,
@@ -44,13 +44,20 @@ vi.mock('./components/ui/EmojiSign', () => ({
   EmojiSign: ({ sign }: { sign: string }) => <span>{sign}</span>,
 }));
 
-// ─────────────────────────────────────────────────────────────────────────────
+// --- Session persistence: resolve immediately so AppSplash is never shown ----
+
+vi.mock('./lib/sessionPersistence', () => ({
+  loadSession: vi.fn(async () => null),
+  saveSession: vi.fn(async () => {}),
+}));
+
+// -----------------------------------------------------------------------------
 
 vi.mock('@fluentui/react-components', () => ({
   FluentProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   webLightTheme: {},
   webDarkTheme: {},
-  Spinner: () => <div data-testid="spinner" />,
+  Spinner: () => <div data-testid="spinner" />, 
 }));
 
 vi.mock('./contexts/ModalContext', async () => {
@@ -423,7 +430,7 @@ vi.mock('./hooks/useUIStateForProvider', () => ({
 }));
 
 vi.mock('./components/app/LeftSettingsPanel', () => ({
-  LeftSettingsPanel: () => <div data-testid="left-settings-panel" />,
+  LeftSettingsPanel: () => <div data-testid="left-settings-panel" />, 
 }));
 
 vi.mock('./components/app/TopRibbon', async () => {
@@ -439,11 +446,11 @@ vi.mock('./components/app/TopRibbon', async () => {
 });
 
 vi.mock('./components/app/StructureSidebar', () => ({
-  StructureSidebar: () => <div data-testid="structure-sidebar" />,
+  StructureSidebar: () => <div data-testid="structure-sidebar" />, 
 }));
 
 vi.mock('./components/app/SuggestionsPanel', () => ({
-  SuggestionsPanel: () => <div data-testid="suggestions-panel" />,
+  SuggestionsPanel: () => <div data-testid="suggestions-panel" />, 
 }));
 
 vi.mock('./components/app/StatusBar', () => ({
@@ -460,7 +467,7 @@ vi.mock('./components/app/InsightsBar', () => ({
 }));
 
 vi.mock('./components/app/LyricsView', () => ({
-  LyricsView: () => <div data-testid="lyrics-view" />,
+  LyricsView: () => <div data-testid="lyrics-view" />, 
 }));
 
 vi.mock('./components/app/AppModals', () => ({
