@@ -85,8 +85,8 @@ export function StatusBar({
     : 'text-emerald-600 dark:text-emerald-400';
 
   const themeAriaLabel = theme === 'dark'
-    ? (t.statusBar.themeSwitchToLight ?? t.statusBar.theme)
-    : (t.statusBar.themeSwitchToDark ?? t.statusBar.theme);
+    ? (t.statusBar.themeSwitchToLight ?? `${t.statusBar.theme} — ${t.settings.theme.light}`)
+    : (t.statusBar.themeSwitchToDark ?? `${t.statusBar.theme} — ${t.settings.theme.dark}`);
 
   return (
     <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
