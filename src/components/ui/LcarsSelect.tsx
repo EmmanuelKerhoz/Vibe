@@ -43,6 +43,13 @@ interface LcarsSelectProps {
   onSearchChange?: (value: string) => void;
   /** Placeholder for the search input. */
   searchPlaceholder?: string;
+  /**
+   * Called when the user presses Enter inside the search input.
+   * Return true to consume the event and suppress the default auto-select
+   * behaviour (selectFirstVisibleEnabled). Return false/undefined to let the
+   * default behaviour run.
+   */
+  onSearchEnter?: () => boolean;
 }
 
 function nodeToText(node: React.ReactNode): string {
@@ -78,6 +85,7 @@ export function LcarsSelect({
   searchValue: searchValueProp,
   onSearchChange,
   searchPlaceholder,
+  onSearchEnter,
 }: LcarsSelectProps) {
   const accent = accentColor ?? 'var(--accent-color)';
   const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
@@ -277,6 +285,10 @@ export function LcarsSelect({
           const opt = displayedOptions[focusedIndex];
           if (opt && !opt.disabled) handleSelect(opt.value);
         } else {
+          // Give the parent a chance to intercept Enter (e.g. to commit a
+          // custom-language value). If onSearchEnter returns true, the event
+          // is consumed and we do NOT fall through to auto-select.
+          if (onSearchEnter?.()) break;
           selectFirstVisibleEnabled();
         }
         break;

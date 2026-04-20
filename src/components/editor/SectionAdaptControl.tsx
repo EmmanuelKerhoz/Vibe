@@ -63,6 +63,17 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
     adaptSectionLanguage!(sectionId, effectiveLang);
   }, [canAdapt, handleCustomConfirm, adaptSectionLanguage, sectionId, effectiveLang]);
 
+  // Called by LcarsSelect when the user presses Enter inside the search input
+  // with no option focused. When we are in custom-input mode, we either trigger
+  // Apply (if there is a valid lang) or simply block the default auto-select so
+  // the dropdown doesn't pick the first visible option unexpectedly.
+  const handleSearchEnter = useCallback((): boolean => {
+    if (!showCustomInput) return false;
+    if (canAdapt) handleApply();
+    // Always consume the event when in custom-input mode.
+    return true;
+  }, [showCustomInput, canAdapt, handleApply]);
+
   if (!adaptSectionLanguage) return null;
 
   const applyTooltip = !hasApiKey
@@ -112,6 +123,7 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
             searchable
             {...customSearchProps}
             searchPlaceholder="Type a language… (e.g. Fr → French)"
+            onSearchEnter={handleSearchEnter}
           />
         </div>
       </Tooltip>
