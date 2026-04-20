@@ -65,7 +65,14 @@ export function AppEditorZone({
 
   return (
     <>
-      {activeTab === 'lyrics' && songHasContent && (
+      {/*
+        InsightsBar exposes language-detection, adaptation and similarity
+        controls that remain meaningful even when the user is on the
+        musical tab — restricting it to the lyrics tab made these
+        actions silently unavailable. We render it whenever lyric
+        content exists, regardless of the active tab.
+      */}
+      {songHasContent && (
         <ErrorBoundary label="Insights">
           <InsightsBar />
         </ErrorBoundary>
