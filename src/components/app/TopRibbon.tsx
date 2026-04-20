@@ -59,13 +59,13 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
 
       <div className="flex items-center gap-3 lg:gap-6 pl-0">
         <div className="relative" style={{ zIndex: 60 }}>
-          <Tooltip title="Menu">
+          <Tooltip title={t.ribbon.menu ?? 'Menu'}>
             <button
               ref={menuButtonRef}
               onClick={() => setIsMenuOpen(v => !v)}
               className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md transition-all duration-200"
               style={{ color: isMenuOpen ? 'var(--accent-color)' : 'var(--text-secondary)', backgroundColor: isMenuOpen ? 'color-mix(in srgb, var(--accent-color) 12%, transparent)' : undefined }}
-              aria-label="Open main menu"
+              aria-label={t.ribbon.menuAria ?? 'Open main menu'}
               aria-expanded={isMenuOpen}
             >
               <Menu className="w-5 h-5" />

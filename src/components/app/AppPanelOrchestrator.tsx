@@ -68,24 +68,19 @@ export function AppPanelOrchestrator() {
     }
   }, [isSuggestionsOpen, isStructureOpen, setIsStructureOpen]);
 
-  // ── Effect 4: Auto-open/close left panel based on lyric content ───────
+  // ── Effect 4: Auto-open left panel after initial hydration only ───────
+  // Intent: respect the author's intentionality. We only auto-open the
+  // composer panel on initial mount when the hydrated session has no real
+  // lyric content. We do NOT re-open it when the user manually empties
+  // their lyrics — that would surprise them. Explicit reset flows
+  // (useSessionActions.resetSong) already toggle isLeftPanelOpen
+  // themselves via the reset payload.
   const hasSyncedInitialLeftPanelRef = useRef(false);
-  const previousHasRealLyricContentRef = useRef(hasRealLyricContent);
   useEffect(() => {
     if (!isSessionHydrated) return;
-
-    const hadRealLyricContent = previousHasRealLyricContentRef.current;
-    previousHasRealLyricContentRef.current = hasRealLyricContent;
-
-    if (!hasSyncedInitialLeftPanelRef.current) {
-      hasSyncedInitialLeftPanelRef.current = true;
-      setIsLeftPanelOpen(!hasRealLyricContent);
-      return;
-    }
-
-    if (hadRealLyricContent && !hasRealLyricContent) {
-      setIsLeftPanelOpen(true);
-    }
+    if (hasSyncedInitialLeftPanelRef.current) return;
+    hasSyncedInitialLeftPanelRef.current = true;
+    setIsLeftPanelOpen(!hasRealLyricContent);
   }, [hasRealLyricContent, isSessionHydrated, setIsLeftPanelOpen]);
 
   return null;

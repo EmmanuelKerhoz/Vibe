@@ -8,6 +8,7 @@ import { tPlural } from '../../i18n/plurals';
 import { APP_VERSION_LABEL } from '../../version';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
+import type { SaveStatus } from '../../hooks/useSessionAutoSave';
 
 interface Props {
   hasApiKey: boolean;
@@ -20,6 +21,10 @@ interface Props {
   onOpenSettings: () => void;
   /** True when a valid OPFS session snapshot exists for this device. */
   hasSavedSession?: boolean;
+  /** Real-time auto-save status (saving / saved / unsaved / error). */
+  saveStatus?: SaveStatus;
+  /** Timestamp of the most recent successful save (ms). */
+  lastSavedAt?: number | null;
   /** Extra class applied to the root element (e.g. for mobile hide/show). */
   className?: string;
 }
@@ -28,7 +33,9 @@ export function StatusBar({
   hasApiKey,
   isAnalyzing,
   theme, setTheme, audioFeedback, setAudioFeedback,
-  onOpenAbout, onOpenSettings, hasSavedSession, className,
+  onOpenAbout, onOpenSettings, hasSavedSession,
+  saveStatus = 'idle', lastSavedAt = null,
+  className,
 }: Props) {
   const { isGenerating, isSuggesting } = useComposerContext();
   const { sectionCount, wordCount, charCount } = useAppKpis();
@@ -42,6 +49,45 @@ export function StatusBar({
 
   const statusBarDict = t.statusBar as Record<string, string | undefined>;
 
+  // ── Persistence indicator ────────────────────────────────────────────────
+  // Show inline status whenever an autosave activity has occurred, or fall
+  // back to the static "saved" badge when a hydrated session is present.
+  const isPersistenceActive = saveStatus !== 'idle';
+  const persistenceVisible = isPersistenceActive || hasSavedSession;
+  const persistenceState: SaveStatus = isPersistenceActive
+    ? saveStatus
+    : (hasSavedSession ? 'saved' : 'idle');
+
+  const persistenceLabel =
+    persistenceState === 'saving' ? (t.statusBar.saving ?? 'saving…')
+    : persistenceState === 'unsaved' ? (t.statusBar.unsaved ?? 'unsaved')
+    : persistenceState === 'error' ? (t.statusBar.saveError ?? 'save error')
+    : (t.statusBar.sessionSavedBadge ?? 'saved');
+
+  const persistenceTooltip =
+    persistenceState === 'saving' ? (t.statusBar.saving ?? 'Saving…')
+    : persistenceState === 'unsaved' ? (t.statusBar.unsaved ?? 'Unsaved changes')
+    : persistenceState === 'error' ? (t.statusBar.saveError ?? 'Save error')
+    : lastSavedAt
+      ? `${t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device'} — ${new Date(lastSavedAt).toLocaleTimeString(language)}`
+      : (t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device');
+
+  const persistenceDotClass =
+    persistenceState === 'saving' ? 'bg-amber-500 animate-pulse'
+    : persistenceState === 'unsaved' ? 'bg-zinc-400 dark:bg-zinc-500'
+    : persistenceState === 'error' ? 'bg-red-500'
+    : 'bg-emerald-500 opacity-80';
+
+  const persistenceTextClass =
+    persistenceState === 'saving' ? 'text-amber-600 dark:text-amber-400'
+    : persistenceState === 'unsaved' ? 'text-zinc-600 dark:text-zinc-400'
+    : persistenceState === 'error' ? 'text-red-600 dark:text-red-400'
+    : 'text-emerald-600 dark:text-emerald-400';
+
+  const themeAriaLabel = theme === 'dark'
+    ? (t.statusBar.themeSwitchToLight ?? t.statusBar.theme)
+    : (t.statusBar.themeSwitchToDark ?? t.statusBar.theme);
+
   return (
     <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
       {/* Left: system status + storage gauge + KPIs (desktop only) */}
@@ -54,12 +100,16 @@ export function StatusBar({
           {isBusy && <span className="lcars-cursor-blink text-[var(--accent-warning)]" />}
         </div>
         {/* Session persistence indicator */}
-        {hasSavedSession && (
-          <Tooltip title="Session auto-saved to this device">
-            <div className="flex items-center gap-1 cursor-default">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />
-              <span className="telemetry-text uppercase tracking-wider text-emerald-600 dark:text-emerald-400 hidden sm:inline">
-                saved
+        {persistenceVisible && (
+          <Tooltip title={persistenceTooltip}>
+            <div
+              className="flex items-center gap-1 cursor-default"
+              role="status"
+              aria-live="polite"
+            >
+              <div className={`w-1.5 h-1.5 rounded-full transition-colors ${persistenceDotClass}`} />
+              <span className={`telemetry-text uppercase tracking-wider hidden sm:inline ${persistenceTextClass}`}>
+                {persistenceLabel}
               </span>
             </div>
           </Tooltip>
@@ -102,7 +152,8 @@ export function StatusBar({
         <Tooltip title={t.tooltips.theme}>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            aria-label={t.statusBar.theme}
+            aria-label={themeAriaLabel}
+            aria-pressed={theme === 'dark'}
             className="lcars-meta-btn min-h-[44px] lg:min-h-0"
           >
             {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}

@@ -1,6 +1,19 @@
 {
   "common": {
-    "loading": "Loading"
+    "loading": "Loading",
+    "appLoading": "Application loading",
+    "initializing": "Initializing…"
+  },
+  "errorBoundary": {
+    "panelUnavailable": "{label} unavailable",
+    "panelGeneric": "An unexpected error occurred in this panel.",
+    "closePanel": "Close panel"
+  },
+  "panels": {
+    "structure": "Structure",
+    "suggestions": "Suggestions",
+    "analysis": "Analysis",
+    "switchTo": "Switch to {name}"
   },
   "app": {
     "name": "Lyricist Pro",
@@ -21,7 +34,14 @@
     "audioFeedback": "Audio Feedback",
     "language": "Switch UI Language",
     "settings": "Settings",
-    "settingsTooltip": "All Settings"
+    "settingsTooltip": "All Settings",
+    "sessionSavedTooltip": "Session auto-saved to this device",
+    "sessionSavedBadge": "saved",
+    "saving": "saving…",
+    "unsaved": "unsaved",
+    "saveError": "save error",
+    "themeSwitchToLight": "Switch to light theme",
+    "themeSwitchToDark": "Switch to dark theme"
   },
   "ribbon": {
     "lyrics": "LYRICS",
@@ -33,14 +53,19 @@
     "undo": "Undo",
     "redo": "Redo",
     "reset": "Reset",
-    "aiUnavailable": "AI UNAVAILABLE"
+    "aiUnavailable": "AI UNAVAILABLE",
+    "menu": "Menu",
+    "menuAria": "Open main menu"
   },
   "mobileNav": {
     "navigation": "Mobile navigation",
     "settings": "Settings",
     "lyrics": "Lyrics",
     "music": "Music",
-    "structure": "Structure"
+    "structure": "Structure",
+    "compose": "Compose",
+    "composeAria": "Open lyrics generation panel",
+    "generateShort": "Gen"
   },
   "menu": {
     "create": "Create",
@@ -64,7 +89,12 @@
     "rhymeScheme": "DEFAULT RHYME SCHEME",
     "targetSyllables": "TARGET SYLLABLES",
     "quantize": "Quantize Syllables (GLOBAL)",
-    "collapse": "Collapse Sidebar"
+    "collapse": "Collapse Sidebar",
+    "newGenerationBadge": "New generation",
+    "songInfoSection": "Song Info",
+    "suggest": "Suggest",
+    "suggestTooltip": "Suggest a random topic, mood & title",
+    "closePanel": "Close lyrics generation panel"
   },
   "structure": {
     "title": "Structure Editor",

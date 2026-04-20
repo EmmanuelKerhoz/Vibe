@@ -54,7 +54,9 @@ export function SongMetaForm({
   const primaryActionLabel = hasLyrics ? t.editor.regenerateLyrics : t.editor.emptyState.generateSong;
   const primaryActionTooltip = isAiUnavailable
     ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
-    : (hasLyrics ? t.tooltips.regenerate : t.tooltips.generateSong);
+    : isGenerating
+      ? (t.tooltips.processing ?? 'Processing…')
+      : (hasLyrics ? t.tooltips.regenerate : t.tooltips.generateSong);
   const primaryActionHandler = hasLyrics && onRegenerateSong ? onRegenerateSong : onGenerateSong;
   const primaryActionIcon = isGenerating
     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -65,6 +67,17 @@ export function SongMetaForm({
   const moodPresetsButtonTitle = t.tooltips.moodPresets
     ? { buttonTitle: t.tooltips.moodPresets }
     : {};
+
+  const suggestTooltipBase = t.leftPanel.suggestTooltip ?? 'Suggest a random topic, mood & title';
+  const suggestTooltip = isAiUnavailable
+    ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
+    : (isSurprising || isGenerating)
+      ? (t.tooltips.processing ?? 'Processing…')
+      : suggestTooltipBase;
+  const newGenerationBadge = t.leftPanel.newGenerationBadge ?? 'New generation';
+  const songInfoSectionLabel = t.leftPanel.songInfoSection ?? 'Song Info';
+  const suggestLabel = t.leftPanel.suggest ?? 'Suggest';
+  const closePanelAria = t.leftPanel.closePanel ?? t.tooltips.closeLeftPanel ?? 'Close lyrics generation panel';
 
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
@@ -89,11 +102,11 @@ export function SongMetaForm({
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">New generation</span>
+          <span className="text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{newGenerationBadge}</span>
           <button
             type="button"
             onClick={() => setIsLeftPanelOpen(false)}
-            aria-label="Close lyrics generation panel"
+            aria-label={closePanelAria}
             className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
             <span aria-hidden="true" className="text-lg leading-none">&times;</span>
@@ -106,9 +119,9 @@ export function SongMetaForm({
 
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-4 rounded-full bg-[var(--lcars-amber,#f59e0b)] opacity-80" />
-          <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">Song Info</span>
+          <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">{songInfoSectionLabel}</span>
           <div className="flex-1" />
-          <Tooltip title={isAiUnavailable ? (t.tooltips.aiUnavailable ?? 'AI unavailable') : 'Suggest a random topic, mood &amp; title'}>
+          <Tooltip title={suggestTooltip}>
             <div className="lcars-gradient-outline" style={{ borderRadius: '8px 2px 8px 2px' }}>
               <Button
                 onClick={() => { void onSurprise(); }}
@@ -118,7 +131,7 @@ export function SongMetaForm({
                 startIcon={isSurprising ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />}
                 style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px 2px 8px 2px' }}
               >
-                Suggest
+                {suggestLabel}
               </Button>
             </div>
           </Tooltip>

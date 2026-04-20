@@ -36,7 +36,10 @@
     "settings": "الإعدادات",
     "lyrics": "الكلمات",
     "music": "الموسيقى",
-    "structure": "البنية"
+    "structure": "البنية",
+    "compose": "إنشاء",
+    "composeAria": "فتح لوحة إنشاء الكلمات",
+    "generateShort": "إنشاء"
   },
   "leftPanel": {
     "title": "Lyricist Pro",

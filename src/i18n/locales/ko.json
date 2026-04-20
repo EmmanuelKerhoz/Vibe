@@ -39,7 +39,10 @@
     "settings": "설정",
     "lyrics": "가사",
     "music": "음악",
-    "structure": "구성"
+    "structure": "구성",
+    "compose": "작성",
+    "composeAria": "가사 생성 패널 열기",
+    "generateShort": "생성"
   },
   "leftPanel": {
     "title": "Lyricist Pro",

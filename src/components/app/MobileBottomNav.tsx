@@ -1,7 +1,8 @@
 import React from 'react';
-import { Settings, BookOpen, Music, Menu, Sparkles } from '../ui/icons';
+import { Settings, BookOpen, Music, Menu, Sparkles, RefreshCw } from '../ui/icons';
 import { useTranslation } from '../../i18n';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useSongContext } from '../../contexts/SongContext';
 
 interface Props {
   isLeftPanelOpen: boolean;
@@ -11,6 +12,7 @@ interface Props {
   setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
+  /** Callback used when the user explicitly asks to (re)generate the song. */
   onGenerateSong?: () => void;
   /** Opens the Settings dialog (not the generation panel) */
   onOpenSettings?: () => void;
@@ -23,7 +25,42 @@ export function MobileBottomNav({
   onOpenSettings,
 }: Props) {
   const { isGenerating } = useComposerContext();
+  const { song } = useSongContext();
   const { t } = useTranslation();
+
+  // ── Contextual CTA: when no real lyric content exists, the centre button
+  // opens the composer panel so the author can express intent before
+  // generation. Once content exists, the button regenerates directly
+  // (with confirmation modal handled upstream by handleGlobalRegenerate).
+  const hasLyrics = song.some(
+    section => section.lines.some(line => !line.isMeta && line.text.trim().length > 0),
+  );
+  const composeMode = !hasLyrics;
+
+  const cta = composeMode
+    ? {
+        label: t.mobileNav.compose ?? 'Compose',
+        ariaLabel: t.mobileNav.composeAria ?? t.tooltips.openLeftPanel ?? 'Open lyrics generation panel',
+        icon: <Sparkles size={20} />,
+        onClick: () => {
+          setIsStructureOpen(false);
+          setActiveTab('lyrics');
+          setIsLeftPanelOpen(true);
+        },
+        // Composer panel itself does not require an API key to open.
+        disabled: false,
+      }
+    : {
+        label: t.mobileNav.generateShort ?? 'Gen',
+        ariaLabel: t.editor.regenerateLyrics ?? t.editor.emptyState.generateSong,
+        icon: <RefreshCw size={20} />,
+        onClick: () => {
+          setIsLeftPanelOpen(false);
+          setIsStructureOpen(false);
+          onGenerateSong?.();
+        },
+        disabled: !hasApiKey,
+      };
 
   return (
     <nav className="mobile-bottom-nav" aria-label={t.mobileNav.navigation}>
@@ -56,21 +93,17 @@ export function MobileBottomNav({
         <span>{t.mobileNav.lyrics}</span>
       </button>
 
-      {/* Generate — centre CTA */}
+      {/* Centre CTA — context aware: Compose (open form) or Gen (regenerate) */}
       <button
         className="mobile-bottom-nav-btn mobile-bottom-nav-generate"
-        onClick={() => {
-          setIsLeftPanelOpen(false);
-          setIsStructureOpen(false);
-          onGenerateSong?.();
-        }}
-        disabled={!hasApiKey || isGenerating}
-        aria-label={t.editor.emptyState.generateSong}
+        onClick={cta.onClick}
+        disabled={cta.disabled || isGenerating}
+        aria-label={cta.ariaLabel}
       >
         {isGenerating
           ? <span className="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-          : <Sparkles size={20} />}
-        <span>Gen</span>
+          : cta.icon}
+        <span>{cta.label}</span>
       </button>
 
       {/* Musical tab */}

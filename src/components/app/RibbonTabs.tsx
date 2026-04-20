@@ -34,13 +34,13 @@ export function RibbonTabs() {
           onClick={() => setActiveTab('musical')}
           className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${
             activeTab === 'musical'
-              ? 'text-[#f59e0b]'
-              : 'text-zinc-600 dark:text-zinc-500 hover:text-[#f59e0b]'
+              ? 'text-[var(--lcars-amber)]'
+              : 'text-zinc-600 dark:text-zinc-500 hover:text-[var(--lcars-amber)]'
           }`}
         >
           {t.ribbon.musical}
           {activeTab === 'musical' && (
-            <motion.div layoutId="activeMusicalTab" className="absolute bottom-[6px] left-0 right-0 h-0.5 bg-[#f59e0b]" />
+            <motion.div layoutId="activeMusicalTab" className="absolute bottom-[6px] left-0 right-0 h-0.5 bg-[var(--lcars-amber)]" />
           )}
         </button>
       </Tooltip>

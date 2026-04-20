@@ -40,7 +40,10 @@
     "settings": "设置",
     "lyrics": "歌词",
     "music": "音乐",
-    "structure": "结构"
+    "structure": "结构",
+    "compose": "创作",
+    "composeAria": "打开歌词生成面板",
+    "generateShort": "生成"
   },
   "leftPanel": {
     "title": "Lyricist Pro",

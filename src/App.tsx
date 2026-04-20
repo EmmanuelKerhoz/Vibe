@@ -19,7 +19,7 @@ import { RhymeProxyProvider } from './contexts/RhymeProxyContext';
 import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
 import { TranslationAdaptationProvider } from './contexts/TranslationAdaptationContext';
 import { VersionProvider, useVersionContext } from './contexts/VersionContext';
-import { useLanguage } from './i18n';
+import { useLanguage, useTranslation } from './i18n';
 import { SongProvider, useSongContext } from './contexts/SongContext';
 import { SongMutationProvider } from './contexts/SongMutationContext';
 import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
@@ -39,21 +39,25 @@ const AppModalLayer = lazy(() =>
 
 // ── Splash shown while OPFS session loads ──────────────────────────────────
 function AppSplash() {
+  const { t } = useTranslation();
+  const ariaLabel = t.common?.appLoading ?? 'Application loading';
+  const initLabel = t.common?.initializing ?? 'Initializing…';
   return (
     <div
       role="status"
       aria-live="polite"
-      aria-label="Application loading"
+      aria-label={ariaLabel}
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         height: '100dvh',
         width: '100dvw',
-        background: 'var(--bg-app, #0a0a12)',
+        background: 'var(--bg-app)',
+        color: 'var(--text-primary)',
       }}
     >
-      <Spinner size="large" label="Initializing…" labelPosition="below" />
+      <Spinner size="large" label={initLabel} labelPosition="below" />
     </div>
   );
 }
@@ -122,7 +126,7 @@ function AppInnerContent() {
 
   const onSaved = useRef(() => { onSavedRef.current?.(); }).current;
 
-  useSessionAutoSave({
+  const { saveStatus, lastSavedAt } = useSessionAutoSave({
     song: songCtx.song,
     structure: songCtx.structure,
     title: songCtx.title,
@@ -183,6 +187,8 @@ function AppInnerContent() {
             hasApiKey={hasApiKey}
             isAnalyzing={isAnalyzing}
             hasSavedSession={hasSavedSession}
+            saveStatus={saveStatus}
+            lastSavedAt={lastSavedAt}
             theme={theme} setTheme={setTheme}
             audioFeedback={audioFeedback} setAudioFeedback={setAudioFeedback}
             onOpenAbout={handleOpenAbout}

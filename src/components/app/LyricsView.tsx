@@ -3,6 +3,7 @@ import { ClipboardPaste, Library, Music, Sparkles } from '../ui/icons';
 import { SectionEditor } from '../editor/SectionEditor';
 import { countSectionRenderItems } from '../editor/SectionLineList';
 import { Button } from '../ui/Button';
+import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
@@ -101,15 +102,21 @@ export const LyricsView = memo(function LyricsView({
               {t.editor.emptyState.description}
             </p>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-              <Button onClick={onOpenLibrary} aria-label={t.saveToLibrary.browseDescription} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
-                {t.saveToLibrary.title}
-              </Button>
-              <Button onClick={onPasteLyrics} disabled={!canPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
-                {t.editor.emptyState.pasteLyrics}
-              </Button>
-              <Button onClick={onGenerateSong} disabled={!hasApiKey} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
-                {t.editor.emptyState.generateSong}
-              </Button>
+              <Tooltip title={t.tooltips.browseLibrary ?? t.saveToLibrary.browseDescription} relationship="description">
+                <Button onClick={onOpenLibrary} aria-label={t.saveToLibrary.browseDescription} variant="outlined" color="info" size="small" startIcon={<Library className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+                  {t.saveToLibrary.title}
+                </Button>
+              </Tooltip>
+              <Tooltip title={canPasteLyrics ? (t.tooltips.pasteAvailable ?? t.tooltips.pasteLyrics) : (t.tooltips.pasteUnavailable ?? t.tooltips.pasteLyrics)} relationship="description">
+                <Button onClick={onPasteLyrics} disabled={!canPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+                  {t.editor.emptyState.pasteLyrics}
+                </Button>
+              </Tooltip>
+              <Tooltip title={!hasApiKey ? (t.tooltips.aiUnavailable ?? 'AI unavailable') : t.tooltips.generateSong} relationship="description">
+                <Button onClick={onGenerateSong} disabled={!hasApiKey} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
+                  {t.editor.emptyState.generateSong}
+                </Button>
+              </Tooltip>
             </div>
           </div>
         ) : (
