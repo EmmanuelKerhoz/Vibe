@@ -16,3 +16,4 @@ export { useTopRibbonActions } from '../useTopRibbonActions';
 export { useUIState } from '../useUIState';
 export { useUIStateForProvider } from '../useUIStateForProvider';
 export { useUiPreferences } from '../useUiPreferences';
+export { makeSongUpdater } from '../hookUtils';

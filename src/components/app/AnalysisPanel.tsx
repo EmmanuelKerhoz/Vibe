@@ -316,6 +316,7 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
   return (
     <AnimatePresence>
       <motion.div
+        key="analysis-panel"
         initial={{ width: 0, opacity: 0 }}
         animate={{ width: isMobileOverlay ? '100%' : PANEL_WIDTH, opacity: 1 }}
         exit={{ width: 0, opacity: 0 }}

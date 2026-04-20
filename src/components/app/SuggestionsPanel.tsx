@@ -4,13 +4,6 @@ import { useTranslation } from '../../i18n';
 import { countSyllables } from '../../utils/syllableUtils';
 import { useSuggestionsContext } from '../../contexts/SuggestionsContext';
 
-/** Compute total syllable count for a line of text. */
-const computeSyllables = (text: string): number =>
-  text
-    .split(/\s+/)
-    .filter(Boolean)
-    .reduce((acc, word) => acc + countSyllables(word), 0);
-
 interface Props {
   /** Layout-only concerns — all data sourced from SuggestionsContext. */
   isMobileOverlay?: boolean;
@@ -184,7 +177,10 @@ export function SuggestionsPanel({
           ) : suggestions.length > 0 ? (
             <div className="space-y-3">
               {suggestions.map((suggestion, idx) => {
-                const syllables = computeSyllables(suggestion);
+                const syllables = suggestion
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .reduce((acc, word) => acc + countSyllables(word), 0);
                 return (
                   <button
                     key={idx}
