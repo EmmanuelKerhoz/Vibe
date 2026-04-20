@@ -8,10 +8,17 @@
  * (U+200D) as isolated codepoint segments — they are stripped before
  * building the URL so that composite emojis like 🛡️ resolve correctly
  * (e.g. `1f6e1.svg` instead of `1f6e1-fe0f.svg`).
+ *
+ * Results are cached in a module-level Map so the codepoint computation
+ * runs at most once per unique emoji across the entire session.
  */
+
+const STRIPPED = new Set([0xfe0f, 0x200d]);
+const _twemojiCache = new Map<string, string>();
+
 export function emojiToTwemojiUrl(emoji: string): string {
-  // Codepoints to strip: VS-16 (fe0f) and ZWJ (200d)
-  const STRIPPED = new Set([0xfe0f, 0x200d]);
+  const cached = _twemojiCache.get(emoji);
+  if (cached !== undefined) return cached;
 
   const codepoints = [...emoji]
     .map(char => char.codePointAt(0)!)
@@ -19,7 +26,9 @@ export function emojiToTwemojiUrl(emoji: string): string {
     .map(cp => cp.toString(16))
     .join('-');
 
-  return `/twemoji/${codepoints}.svg`;
+  const url = `/twemoji/${codepoints}.svg`;
+  _twemojiCache.set(emoji, url);
+  return url;
 }
 
 /**
