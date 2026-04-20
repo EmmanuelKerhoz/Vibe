@@ -106,8 +106,8 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
             triggerLabel={triggerContent}
             disabled={false}
             searchable
-            searchValue={customText}
-            onSearchChange={setCustomText}
+            searchValue={showCustomInput ? customText : undefined}
+            onSearchChange={showCustomInput ? setCustomText : undefined}
             searchPlaceholder="Type a language… (e.g. Fr → French)"
           />
         </div>
