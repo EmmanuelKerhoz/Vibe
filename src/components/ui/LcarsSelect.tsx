@@ -35,7 +35,7 @@ interface LcarsSelectProps {
   buttonTitle?: string;
   /** Accessible label for the trigger button (aria-label). Falls back to placeholder when omitted. */
   buttonAriaLabel?: string;
-  /** Renders a live filter input at the top of the dropdown. Filtering is case-insensitive `startsWith` on the option label text. */
+  /** Renders a live filter input at the top of the dropdown. Filtering is case-insensitive `includes` on the option label text. */
   searchable?: boolean;
   /** Controlled search value. When provided, the parent owns the filter state. */
   searchValue?: string;
@@ -108,7 +108,7 @@ export function LcarsSelect({
     return options.filter((o) => {
       if (o.alwaysShow) return true;
       if (o.disabled) return false;
-      return getOptionSearchText(o).toLowerCase().startsWith(q);
+      return getOptionSearchText(o).toLowerCase().includes(q);
     });
   }, [options, searchable, effectiveSearch]);
 
@@ -194,16 +194,12 @@ export function LcarsSelect({
     }
   }, [isOpen, focusedIndex]);
 
-  // Auto-focus the search input when a searchable dropdown opens so the user
-  // can start filtering immediately without an extra click.
   useEffect(() => {
     if (isOpen && searchable) {
       requestAnimationFrame(() => searchInputRef.current?.focus());
     }
   }, [isOpen, searchable]);
 
-  // When the search filter changes, reset focus to the first visible option so
-  // arrow-key navigation and Enter behave naturally.
   useEffect(() => {
     if (!isOpen || !searchable) return;
     setFocusedIndex(-1);
