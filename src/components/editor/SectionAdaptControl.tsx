@@ -1,99 +1,9 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback } from 'react';
 import { Loader2, Languages, Check } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
-import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
-import { SUPPORTED_ADAPTATION_LANGUAGES, CUSTOM_LANGUAGE_VALUE, isCustomAdaptationLanguage } from '../../i18n';
-
-// ─── Language grouping ────────────────────────────────────────────────────────
-
-type LangGroup = {
-  label: string;
-  codes: string[];
-};
-
-const LANGUAGE_GROUPS: LangGroup[] = [
-  { label: 'Romance',          codes: ['AR_ROM', 'ES', 'FR', 'IT', 'PT', 'RO', 'CA'] },
-  { label: 'Germanic',         codes: ['EN', 'DE', 'NL', 'SV', 'DA', 'NO', 'IS'] },
-  { label: 'Slavic',           codes: ['RU', 'PL', 'CS', 'SK', 'UK', 'BG', 'SR', 'HR'] },
-  { label: 'Semitic',          codes: ['AR', 'HE', 'AM'] },
-  { label: 'South & SE Asian', codes: ['HI', 'UR', 'BN', 'PA', 'FA', 'TA', 'TE', 'KN', 'ML', 'TH', 'LO', 'VI', 'KM', 'ID', 'MS', 'TL'] },
-  { label: 'CJK & Altaic',     codes: ['ZH', 'YUE', 'JA', 'KO', 'JV', 'TR', 'AZ', 'UZ', 'KK', 'FI', 'HU', 'ET'] },
-  { label: 'African',          codes: ['SW', 'YO', 'HA', 'FF', 'BM', 'BA', 'DI', 'EW', 'MI', 'LN', 'ZU', 'WO', 'BK', 'CB', 'OG'] },
-  { label: 'Creole & Other',   codes: ['NOU', 'PCM', 'CFG', 'MG', 'IS_ETC'] },
-];
-
-const CODE_TO_GROUP = new Map<string, string>();
-for (const g of LANGUAGE_GROUPS) {
-  for (const c of g.codes) CODE_TO_GROUP.set(c, g.label);
-}
-
-function getGroupLabel(code: string): string {
-  return CODE_TO_GROUP.get(code.toUpperCase()) ?? 'Other';
-}
-
-// ─── Helper: build grouped options ───────────────────────────────────────────
-
-function buildLanguageOptions() {
-  const grouped = new Map<string, { value: string; label: React.ReactNode }[]>();
-
-  for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
-    const group = getGroupLabel(lang.code);
-    if (!grouped.has(group)) grouped.set(group, []);
-    grouped.get(group)!.push({
-      value: lang.aiName,
-      label: (
-        <span className="flex items-center gap-1.5 min-w-0 w-full">
-          <EmojiSign sign={lang.sign} />
-          <span className="truncate text-[11px]">
-            {lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}
-          </span>
-        </span>
-      ) as React.ReactNode,
-    });
-  }
-
-  const result: { value: string; label: React.ReactNode; disabled?: boolean }[] = [];
-  for (const [groupLabel, items] of grouped.entries()) {
-    result.push({
-      value: `__group__${groupLabel}`,
-      label: (
-        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-500 select-none">
-          {groupLabel}
-        </span>
-      ) as React.ReactNode,
-      disabled: true,
-    });
-    result.push(...items);
-  }
-
-  // ── Free-text sentinel entry (always last) ─────────────────────────────────
-  result.push(
-    {
-      value: '__group__other_lang',
-      label: (
-        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-500 select-none">
-          Free input
-        </span>
-      ) as React.ReactNode,
-      disabled: true,
-    },
-    {
-      value: CUSTOM_LANGUAGE_VALUE,
-      label: (
-        <span className="flex items-center gap-1.5 min-w-0 w-full">
-          <span style={{ fontSize: '0.95em' }}>✏️</span>
-          <span className="truncate text-[11px]">Other language…</span>
-        </span>
-      ) as React.ReactNode,
-    },
-  );
-
-  return result;
-}
-
-// ─── Props ────────────────────────────────────────────────────────────────────
+import { useCustomLanguageSelector } from '../../hooks/useCustomLanguageSelector';
 
 interface SectionAdaptControlProps {
   sectionId: string;
@@ -105,8 +15,6 @@ interface SectionAdaptControlProps {
   onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
   adaptSectionLanguage?: (sectionId: string, lang: string) => void;
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export const SectionAdaptControl = React.memo(function SectionAdaptControl({
   sectionId,
@@ -120,27 +28,24 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
 }: SectionAdaptControlProps) {
   const { t } = useTranslation();
 
-  const languageOptions = useMemo(() => buildLanguageOptions(), []);
-
-  // Determine if the stored value is the custom sentinel or a typed custom string
-  // (a previously-saved free-text value is not in the list → also treated as custom).
-  const isStoredCustom =
-    isCustomAdaptationLanguage(sectionTargetLanguage) ||
-    (!SUPPORTED_ADAPTATION_LANGUAGES.some(l => l.aiName === sectionTargetLanguage) &&
-      sectionTargetLanguage !== '');
-
-  const [selectValue, setSelectValue] = useState<string>(
-    isStoredCustom ? CUSTOM_LANGUAGE_VALUE : sectionTargetLanguage,
+  const handleValueChange = useCallback(
+    (lang: string) => onSectionTargetLanguageChange?.(sectionId, lang),
+    [sectionId, onSectionTargetLanguageChange],
   );
-  const [customText, setCustomText] = useState<string>(
-    isStoredCustom ? sectionTargetLanguage : '',
-  );
-  const customInputRef = useRef<HTMLInputElement>(null);
 
-  const showCustomInput = isCustomAdaptationLanguage(selectValue);
-
-  // The effective language name sent to the AI.
-  const effectiveLang = showCustomInput ? customText.trim() : selectValue;
+  const {
+    selectValue,
+    customText,
+    customInputRef,
+    showCustomInput,
+    effectiveLang,
+    languageOptions,
+    handleLanguageSelect,
+    handleCustomTextChange,
+  } = useCustomLanguageSelector({
+    storedValue: sectionTargetLanguage,
+    onValueChange: handleValueChange,
+  });
 
   const canAdapt =
     !!adaptSectionLanguage &&
@@ -151,31 +56,6 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
     effectiveLang.length > 0;
 
   const isDirty = effectiveLang !== sectionTargetLanguage && effectiveLang.length > 0;
-
-  const handleLanguageSelect = useCallback(
-    (lang: string) => {
-      if (lang.startsWith('__group__')) return;
-      setSelectValue(lang);
-      if (!isCustomAdaptationLanguage(lang)) {
-        onSectionTargetLanguageChange?.(sectionId, lang);
-      } else {
-        // Focus the input on next tick
-        setTimeout(() => customInputRef.current?.focus(), 50);
-      }
-    },
-    [sectionId, onSectionTargetLanguageChange],
-  );
-
-  const handleCustomTextChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value;
-      setCustomText(val);
-      if (val.trim()) {
-        onSectionTargetLanguageChange?.(sectionId, val.trim());
-      }
-    },
-    [sectionId, onSectionTargetLanguageChange],
-  );
 
   const handleApply = useCallback(() => {
     if (!canAdapt) return;
