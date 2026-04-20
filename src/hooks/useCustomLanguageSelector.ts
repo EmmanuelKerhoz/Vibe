@@ -101,6 +101,8 @@ export interface UseCustomLanguageSelectorResult {
   languageOptions: ReturnType<typeof buildGroupedLanguageOptions>;
   handleLanguageSelect: (lang: string) => void;
   handleCustomTextChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Call on Enter / blur / Apply button to commit the custom text. */
+  handleCustomConfirm: () => void;
 }
 
 export function useCustomLanguageSelector({
@@ -132,20 +134,25 @@ export function useCustomLanguageSelector({
       if (!isCustomAdaptationLanguage(lang)) {
         onValueChange(lang);
       } else {
-        setTimeout(() => customInputRef.current?.focus(), 50);
+        requestAnimationFrame(() => customInputRef.current?.focus());
       }
     },
     [onValueChange],
   );
 
+  // Updates local state only — does NOT call onValueChange on every keystroke.
   const handleCustomTextChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value;
-      setCustomText(val);
-      if (val.trim()) onValueChange(val.trim());
+      setCustomText(e.target.value);
     },
-    [onValueChange],
+    [],
   );
+
+  // Commits the current customText to onValueChange (Enter / blur / Apply).
+  const handleCustomConfirm = useCallback(() => {
+    const trimmed = customText.trim();
+    if (trimmed) onValueChange(trimmed);
+  }, [customText, onValueChange]);
 
   return {
     selectValue,
@@ -156,5 +163,6 @@ export function useCustomLanguageSelector({
     languageOptions,
     handleLanguageSelect,
     handleCustomTextChange,
+    handleCustomConfirm,
   };
 }

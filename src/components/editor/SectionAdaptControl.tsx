@@ -42,6 +42,7 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
     languageOptions,
     handleLanguageSelect,
     handleCustomTextChange,
+    handleCustomConfirm,
   } = useCustomLanguageSelector({
     storedValue: sectionTargetLanguage,
     onValueChange: handleValueChange,
@@ -59,8 +60,9 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
 
   const handleApply = useCallback(() => {
     if (!canAdapt) return;
+    handleCustomConfirm();
     adaptSectionLanguage!(sectionId, effectiveLang);
-  }, [canAdapt, adaptSectionLanguage, sectionId, effectiveLang]);
+  }, [canAdapt, handleCustomConfirm, adaptSectionLanguage, sectionId, effectiveLang]);
 
   if (!adaptSectionLanguage) return null;
 
@@ -104,6 +106,7 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
           type="text"
           value={customText}
           onChange={handleCustomTextChange}
+          onBlur={handleCustomConfirm}
           placeholder="e.g. Scots Gaelic, Toki Pona…"
           maxLength={80}
           className="flex-1 min-w-[10rem] max-w-[18rem] px-2 py-1 rounded text-[11px]"

@@ -28,6 +28,7 @@ export function TranslateGroup({
   const { t } = useTranslation();
   const isBaseDisabled = !hasApiKey || isAdaptingLanguage || song.length === 0;
 
+  // For standard (non-custom) language selection: store + immediately adapt.
   const handleValueChange = useCallback(
     (lang: string) => {
       setTargetLanguage(lang);
@@ -45,15 +46,19 @@ export function TranslateGroup({
     languageOptions,
     handleLanguageSelect,
     handleCustomTextChange,
+    handleCustomConfirm,
   } = useCustomLanguageSelector({
     storedValue: targetLanguage,
-    onValueChange: handleValueChange,
+    // For custom text, onValueChange is only called on confirm (Enter/blur),
+    // not on every keystroke — so only setTargetLanguage here, no adapt.
+    onValueChange: setTargetLanguage,
   });
 
   const handleCustomSubmit = useCallback(() => {
     if (!effectiveLang || isBaseDisabled) return;
+    handleCustomConfirm();
     adaptSongLanguage(effectiveLang);
-  }, [effectiveLang, isBaseDisabled, adaptSongLanguage]);
+  }, [effectiveLang, isBaseDisabled, handleCustomConfirm, adaptSongLanguage]);
 
   const tooltipTitle = !hasApiKey
     ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
@@ -72,13 +77,21 @@ export function TranslateGroup({
     </span>
   );
 
+  // Suppress unused warning — handleValueChange is kept for symmetry if
+  // non-custom selection needs direct adapt in the future.
+  void handleValueChange;
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <Tooltip title={tooltipTitle}>
         <div className="min-w-0 overflow-hidden" style={{ maxWidth: '180px' }}>
           <LcarsSelect
             value={selectValue}
-            onChange={handleLanguageSelect}
+            onChange={(lang) => {
+              setTargetLanguage(lang);
+              if (!isBaseDisabled) adaptSongLanguage(lang);
+              handleLanguageSelect(lang);
+            }}
             options={languageOptions}
             triggerLabel={triggerContent}
             disabled={isBaseDisabled && !showCustomInput}
@@ -92,6 +105,7 @@ export function TranslateGroup({
           type="text"
           value={customText}
           onChange={handleCustomTextChange}
+          onBlur={handleCustomConfirm}
           placeholder="e.g. Scots Gaelic…"
           maxLength={80}
           className="flex-1 min-w-[9rem] max-w-[16rem] px-2 py-1 rounded text-[11px]"
