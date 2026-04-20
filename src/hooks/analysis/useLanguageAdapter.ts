@@ -4,6 +4,7 @@ import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../../ut
 import { mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
 import { isSectionHeader } from '../../utils/metaUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
+import { sanitizeLangName } from '../../utils/sanitizeLangInput';
 import type { Line, Section } from '../../types';
 import { makeSongUpdater } from '../hookUtils';
 import {
@@ -65,7 +66,6 @@ export const useLanguageAdapter = ({
   const adaptRunIdRef = useRef(0);
   const adaptationLabelRef = useRef('');
 
-  // Stable refs for callbacks that close over frequently-changing values
   const songRef = useRef(song);
   songRef.current = song;
   const songLanguageRef = useRef(songLanguage);
@@ -258,7 +258,8 @@ export const useLanguageAdapter = ({
     }
   };
 
-  const adaptSongLanguage = useCallback(async (newLanguage: string) => {
+  const adaptSongLanguage = useCallback(async (rawLanguage: string) => {
+    const newLanguage = sanitizeLangName(rawLanguage);
     const currentSong = songRef.current;
     const currentSongLanguage = songLanguageRef.current;
     const currentUiLang = resolveUiLanguageName(uiLanguageRef.current);
@@ -285,7 +286,8 @@ export const useLanguageAdapter = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const adaptSectionLanguage = async (sectionId: string, newLanguage: string) => {
+  const adaptSectionLanguage = async (sectionId: string, rawLanguage: string) => {
+    const newLanguage = sanitizeLangName(rawLanguage);
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
 
@@ -310,7 +312,8 @@ export const useLanguageAdapter = ({
     void detectLanguage();
   };
 
-  const adaptLineLanguage = async (sectionId: string, lineId: string, newLanguage: string) => {
+  const adaptLineLanguage = async (sectionId: string, lineId: string, rawLanguage: string) => {
+    const newLanguage = sanitizeLangName(rawLanguage);
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
     const line = section.lines.find(l => l.id === lineId);
