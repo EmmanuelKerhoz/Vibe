@@ -47,13 +47,13 @@ export function MusicalTab({
 
   const handleGenerateWithSuno = useCallback(() => {
     if (!musicalPrompt.trim()) return;
+    const trimmedTitle = title?.trim();
     void generate({
       prompt: musicalPrompt.trim(),
-      title: title?.trim() || undefined,
+      ...(trimmedTitle ? { title: trimmedTitle } : {}),
       style: [genre, mood, instrumentation, rhythm].filter(Boolean).join(', '),
-      lyrics: hasLyrics ? song.flatMap(section => section.lines.map(line => line.text)).join('\n') : undefined,
     });
-  }, [generate, musicalPrompt, title, genre, mood, instrumentation, rhythm, hasLyrics, song]);
+  }, [generate, musicalPrompt, title, genre, mood, instrumentation, rhythm]);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto fluent-fade-in">
