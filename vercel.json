@@ -2,14 +2,6 @@
   "buildCommand": "npm ci && npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "functions": {
-    "api/**": {
-      "maxDuration": 60
-    },
-    "api/suno/*.ts": {
-      "maxDuration": 300
-    }
-  },
   "headers": [
     {
       "source": "/index.html",
