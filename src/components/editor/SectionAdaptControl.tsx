@@ -9,6 +9,7 @@ interface SectionAdaptControlProps {
   sectionId: string;
   sectionTargetLanguage: string;
   hasApiKey: boolean;
+  hasLyrics: boolean;
   isGenerating: boolean;
   isAnalyzing: boolean;
   isAdaptingLanguage: boolean;
@@ -20,6 +21,7 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
   sectionId,
   sectionTargetLanguage,
   hasApiKey,
+  hasLyrics,
   isGenerating,
   isAnalyzing,
   isAdaptingLanguage,
@@ -50,6 +52,7 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
   const canAdapt =
     !!adaptSectionLanguage &&
     hasApiKey &&
+    hasLyrics &&
     !isGenerating &&
     !isAnalyzing &&
     !isAdaptingLanguage &&
@@ -63,14 +66,9 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
     adaptSectionLanguage!(sectionId, effectiveLang);
   }, [canAdapt, handleCustomConfirm, adaptSectionLanguage, sectionId, effectiveLang]);
 
-  // Called by LcarsSelect when the user presses Enter inside the search input
-  // with no option focused. When we are in custom-input mode, we either trigger
-  // Apply (if there is a valid lang) or simply block the default auto-select so
-  // the dropdown doesn't pick the first visible option unexpectedly.
   const handleSearchEnter = useCallback((): boolean => {
     if (!showCustomInput) return false;
     if (canAdapt) handleApply();
-    // Always consume the event when in custom-input mode.
     return true;
   }, [showCustomInput, canAdapt, handleApply]);
 
@@ -78,9 +76,11 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
 
   const applyTooltip = !hasApiKey
     ? (t.tooltips?.aiUnavailable ?? 'AI unavailable — configure an API key')
-    : isDirty
-      ? `Adapt this section to ${effectiveLang}`
-      : `Section already set to ${effectiveLang}`;
+    : !hasLyrics
+      ? 'No lyrics to adapt — add content first'
+      : isDirty
+        ? `Adapt this section to ${effectiveLang}`
+        : `Section already set to ${effectiveLang}`;
 
   const selectTooltip = showCustomInput
     ? `Type a custom language in the dropdown filter, then pick "Other language…"`

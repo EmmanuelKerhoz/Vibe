@@ -45,6 +45,7 @@ function SchemeBadge({ label, confidence, isProxied }: SchemeBadgeProps) {
 
 interface SectionFooterProps {
   sectionId: string;
+  hasLyrics: boolean;
   preInstructions: string[];
   postInstructions: string[];
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
@@ -61,6 +62,7 @@ interface SectionFooterProps {
 
 export const SectionFooter = React.memo(function SectionFooter({
   sectionId,
+  hasLyrics,
   preInstructions, postInstructions,
   playAudioFeedback,
   schemeResult,
@@ -71,10 +73,12 @@ export const SectionFooter = React.memo(function SectionFooter({
   const { addLineToSection } = useSongMutation();
 
   const showBadge = schemeResult !== null && !(schemeResult.label === 'FREE_VERSE' && schemeResult.confidence < 0.25);
-  // Resolve isProxied: explicit prop takes precedence, then SchemeResult field.
-  // Always coerce to boolean so SchemeBadgeProps (non-optional) is satisfied
-  // under exactOptionalPropertyTypes: true.
   const proxied: boolean = (isProxied ?? schemeResult?.isProxied) === true;
+
+  const canRegenerate = hasLyrics && !isRegeneratingSection(sectionId);
+  const regenTooltip = !hasLyrics
+    ? 'No lyrics to regenerate — add content first'
+    : (t.tooltips?.regenerateSection ?? 'Regenerate this section');
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -115,11 +119,16 @@ export const SectionFooter = React.memo(function SectionFooter({
       )}
 
       {!isGenerating && (
-        <Tooltip title={t.tooltips?.regenerateSection ?? 'Regenerate this section'}>
+        <Tooltip title={regenTooltip}>
           <button
             type="button"
-            onClick={() => { regenerateSection(sectionId); playAudioFeedback('click'); }}
-            disabled={isRegeneratingSection(sectionId)}
+            onClick={() => {
+              if (!canRegenerate) return;
+              regenerateSection(sectionId);
+              playAudioFeedback('click');
+            }}
+            disabled={!canRegenerate}
+            aria-label={regenTooltip}
             className={`
               flex items-center gap-1 text-[10px] uppercase tracking-[0.2em]
               text-zinc-600 dark:text-zinc-500

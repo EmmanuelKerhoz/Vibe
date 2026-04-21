@@ -54,6 +54,15 @@ export const SectionEditor = React.memo(function SectionEditor({
   const sectionName: string = section.name ?? '';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
 
+  // True when the section contains at least one non-meta line with non-empty text.
+  // Used to gate lyrics-processing actions (adapt, regenerate).
+  const hasLyrics = useMemo(
+    () => section.lines.some(
+      l => !(l.isMeta ?? isPureMetaLine(l.text)) && l.text.trim().length > 0,
+    ),
+    [section.lines],
+  );
+
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     if (draggedItemIndex === null || draggedItemIndex === sectionIndex) return;
@@ -74,10 +83,8 @@ export const SectionEditor = React.memo(function SectionEditor({
     handleDrop(sectionIndex);
   }, [handleDrop, sectionIndex]);
 
-  // ── isProxied from song-level map ──────────────────────────────────────────────
   const isProxied = isProxiedForSection(section.id);
 
-  // ── Multi-lang lines: per-line lang from lineLanguages, fallback to section lang ──
   const multiLangLines = useMemo(
     () =>
       section.lines
@@ -86,9 +93,6 @@ export const SectionEditor = React.memo(function SectionEditor({
           text: l.text,
           lang: lineLanguages[l.id] ?? sectionTargetLanguage,
         })),
-    // lineLanguages is a record rebuilt on any line lang change; section.lines
-    // covers structural changes. The serialised key avoids spurious re-runs on
-    // unrelated sections but cannot be statically analysed — disable needed.
     [
       section.lines,
       sectionTargetLanguage,
@@ -99,7 +103,6 @@ export const SectionEditor = React.memo(function SectionEditor({
   );
 
   const schemeResult = useRhymeSchemeMultiLang(multiLangLines, isProxied);
-  // ──────────────────────────────────────────────────────────────────────────────
 
   const adaptControlOptional = {
     ...(onSectionTargetLanguageChange ? { onSectionTargetLanguageChange } : {}),
@@ -139,6 +142,7 @@ export const SectionEditor = React.memo(function SectionEditor({
             sectionId={section.id}
             sectionTargetLanguage={sectionTargetLanguage}
             hasApiKey={hasApiKey}
+            hasLyrics={hasLyrics}
             isGenerating={isGenerating}
             isAnalyzing={isAnalyzing}
             isAdaptingLanguage={isAdaptingLanguage}
@@ -173,6 +177,7 @@ export const SectionEditor = React.memo(function SectionEditor({
 
         <SectionFooter
           sectionId={section.id}
+          hasLyrics={hasLyrics}
           preInstructions={section.preInstructions ?? []}
           postInstructions={section.postInstructions ?? []}
           playAudioFeedback={playAudioFeedback}
