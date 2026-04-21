@@ -6,8 +6,10 @@
     "api/**": {
       "maxDuration": 60
     },
-    "api/suno/**": {
-      "maxDuration": 300
+        "api/suno/generate.ts": { "maxDuration": 300 },
+        "api/suno/get.ts": { "maxDuration": 300 },
+        "api/suno/extend.ts": { "maxDuration": 300
+      
     }
   },
   "headers": [
