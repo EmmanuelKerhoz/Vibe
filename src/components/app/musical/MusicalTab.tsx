@@ -50,7 +50,7 @@ export function MusicalTab({
     void generate({
       prompt: musicalPrompt.trim(),
       title: title?.trim() || undefined,
-      tags: [genre, mood, instrumentation, rhythm].filter(Boolean).join(', '),
+      style: [genre, mood, instrumentation, rhythm].filter(Boolean).join(', '),
       lyrics: hasLyrics ? song.flatMap(section => section.lines.map(line => line.text)).join('\n') : undefined,
     });
   }, [generate, musicalPrompt, title, genre, mood, instrumentation, rhythm, hasLyrics, song]);
