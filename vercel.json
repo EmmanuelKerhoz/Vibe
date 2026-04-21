@@ -5,6 +5,9 @@
   "functions": {
     "api/**": {
       "maxDuration": 60
+    },
+    "api/suno/**": {
+      "maxDuration": 300
     }
   },
   "headers": [
@@ -26,7 +29,7 @@
         { "key": "Cross-Origin-Resource-Policy", "value": "same-origin" },
         { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(self), geolocation=(), clipboard-read=(self)" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.duckduckgo.com https://*.wikipedia.org; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self' blob:; manifest-src 'self'; frame-ancestors 'none'" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.duckduckgo.com https://*.wikipedia.org; img-src 'self' data: blob: https://cdn1.suno.ai https://cdn2.suno.ai; media-src 'self' blob: https://cdn1.suno.ai https://cdn2.suno.ai; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self' blob:; manifest-src 'self'; frame-ancestors 'none'" }
       ]
     }
   ],
