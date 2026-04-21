@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MusicalTab } from './MusicalTab';
 
+import { LanguageProvider } from '../../../i18n';
 const mockSongContext = vi.hoisted(() => ({
   song: [] as Array<{ id: string; name: string; lines: Array<{ id: string; text: string }> }>,
   title: '',
@@ -158,7 +159,7 @@ describe('MusicalTab', () => {
     mockComposerContext.isGeneratingMusicalPrompt = true;
     mockComposerContext.isAnalyzingLyrics = true;
 
-    render(<MusicalTab hasApiKey />);
+        render(<LanguageProvider><MusicalTab hasApiKey /></LanguageProvider>);
 
     expect(screen.getByTestId('lyrics-music-analysis').textContent).toContain('"title":"Night Drive"');
     expect(screen.getByTestId('lyrics-music-analysis').textContent).toContain('"hasContext":true');
