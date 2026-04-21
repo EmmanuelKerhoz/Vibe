@@ -156,6 +156,10 @@ export function useCustomLanguageSelector({
         setCustomText('');
         onValueChange(lang);
       } else {
+        // Always reset customText when entering free-input mode so a stale
+        // storedValue (e.g. 'French' previously mis-classified as custom)
+        // does not pre-fill the field and trigger an immediate adaptation.
+        setCustomText('');
         requestAnimationFrame(() => customInputRef.current?.focus());
       }
     },
