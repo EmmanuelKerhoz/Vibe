@@ -3,7 +3,7 @@
  * Renders the central content area: InsightsBar (conditional) + the scrollable
  * lyrics/musical zone.
  *
- * Props surface: 7 (isAnalyzing / isAdaptingLanguage / targetLanguage now
+ * Props surface: 6 (isAnalyzing / isAdaptingLanguage / targetLanguage now
  * sourced from InsightsBarContext — no longer passed as props).
  */
 import React, { Suspense, lazy } from 'react';
@@ -43,7 +43,6 @@ interface AppEditorZoneProps {
   canPasteLyrics: boolean;
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
-  onGenerateSong: () => void;
   onOpenSearch: () => void;
 }
 
@@ -56,7 +55,6 @@ export function AppEditorZone({
   canPasteLyrics,
   onOpenLibrary,
   onPasteLyrics,
-  onGenerateSong,
   onOpenSearch: _onOpenSearch,
 }: AppEditorZoneProps) {
   // isAnalyzing / isAdaptingLanguage / targetLanguage live in InsightsBarContext
@@ -97,7 +95,6 @@ export function AppEditorZone({
                   targetLanguage={targetLanguage}
                   onOpenLibrary={onOpenLibrary}
                   onPasteLyrics={onPasteLyrics}
-                  onGenerateSong={onGenerateSong}
                 />
               </ErrorBoundary>
             ) : (

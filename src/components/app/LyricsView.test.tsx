@@ -52,6 +52,7 @@ vi.mock('../../contexts/ComposerContext', () => ({
     addInstruction: vi.fn(),
     removeInstruction: vi.fn(),
     regenerateSection: vi.fn(),
+    clearSelection: vi.fn(),
   }),
 }));
 
@@ -78,12 +79,11 @@ vi.mock('../../contexts/EditorContext', () => ({
 }));
 
 describe('LyricsView empty state', () => {
-  it('offers quick actions for library, paste, and generation', () => {
+  it('offers quick actions for library and paste', () => {
     mockEditMode = 'section';
     mockMarkupText = '';
     const onOpenLibrary = vi.fn();
     const onPasteLyrics = vi.fn();
-    const onGenerateSong = vi.fn();
 
     render(
       <DragProvider>
@@ -96,7 +96,6 @@ describe('LyricsView empty state', () => {
               canPasteLyrics={true}
               onOpenLibrary={onOpenLibrary}
               onPasteLyrics={onPasteLyrics}
-              onGenerateSong={onGenerateSong}
             />
           </RefsProvider>
         </LanguageProvider>
@@ -105,11 +104,9 @@ describe('LyricsView empty state', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open your library and manage saved songs' }));
     fireEvent.click(screen.getByRole('button', { name: 'Import and analyze existing lyrics' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Generate a new song with AI' }));
 
     expect(onOpenLibrary).toHaveBeenCalledTimes(1);
     expect(onPasteLyrics).toHaveBeenCalledTimes(1);
-    expect(onGenerateSong).toHaveBeenCalledTimes(1);
   });
 
   it('disables the paste action when there is no text available to paste', () => {
@@ -126,7 +123,6 @@ describe('LyricsView empty state', () => {
               canPasteLyrics={false}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
-              onGenerateSong={() => {}}
             />
           </RefsProvider>
         </LanguageProvider>
@@ -134,31 +130,6 @@ describe('LyricsView empty state', () => {
     );
 
     expect((screen.getByRole('button', { name: 'Import and analyze existing lyrics' }) as HTMLButtonElement).disabled).toBe(true);
-  });
-
-  it('disables the generate action when AI is unavailable', () => {
-    mockEditMode = 'section';
-    mockMarkupText = '';
-
-    render(
-      <DragProvider>
-        <LanguageProvider>
-          <RefsProvider>
-            <LyricsView
-              isAnalyzing={false}
-              hasApiKey={false}
-              playAudioFeedback={() => {}}
-              canPasteLyrics={true}
-              onOpenLibrary={() => {}}
-              onPasteLyrics={() => {}}
-              onGenerateSong={() => {}}
-            />
-          </RefsProvider>
-        </LanguageProvider>
-      </DragProvider>,
-    );
-
-    expect((screen.getByRole('button', { name: 'Generate a new song with AI' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('uses the shared gradient container surface in markup mode', () => {
@@ -175,7 +146,6 @@ describe('LyricsView empty state', () => {
               canPasteLyrics={true}
               onOpenLibrary={() => {}}
               onPasteLyrics={() => {}}
-              onGenerateSong={() => {}}
             />
           </RefsProvider>
         </LanguageProvider>
@@ -214,7 +184,6 @@ describe('LyricsView empty state', () => {
             canPasteLyrics={true}
             onOpenLibrary={() => {}}
             onPasteLyrics={() => {}}
-            onGenerateSong={() => {}}
           />
         </LanguageProvider>
       </DragProvider>,
@@ -258,7 +227,6 @@ describe('LyricsView empty state', () => {
                 canPasteLyrics={true}
                 onOpenLibrary={() => {}}
                 onPasteLyrics={() => {}}
-                onGenerateSong={() => {}}
               />
             </SongMutationProvider>
           </RefsProvider>
@@ -321,7 +289,6 @@ describe('LyricsView empty state', () => {
                 canPasteLyrics={true}
                 onOpenLibrary={() => {}}
                 onPasteLyrics={() => {}}
-                onGenerateSong={() => {}}
               />
             </SongMutationProvider>
           </RefsProvider>

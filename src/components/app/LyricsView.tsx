@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, memo } from 'react';
-import { ClipboardPaste, Library, Music, Sparkles } from '../ui/icons';
+import { ClipboardPaste, Library, Music } from '../ui/icons';
 import { SectionEditor } from '../editor/SectionEditor';
 import { countSectionRenderItems } from '../editor/SectionLineList';
 import { Button } from '../ui/Button';
@@ -23,7 +23,6 @@ interface LyricsViewProps {
   targetLanguage?: string;
   onOpenLibrary: () => void;
   onPasteLyrics: () => void;
-  onGenerateSong: () => void;
 }
 
 export const LyricsView = memo(function LyricsView({
@@ -33,7 +32,7 @@ export const LyricsView = memo(function LyricsView({
   playAudioFeedback,
   canPasteLyrics,
   targetLanguage,
-  onOpenLibrary, onPasteLyrics, onGenerateSong,
+  onOpenLibrary, onPasteLyrics,
 }: LyricsViewProps) {
   const { song, songLanguage } = useSongContext();
   const { clearSelection } = useComposerContext();
@@ -110,11 +109,6 @@ export const LyricsView = memo(function LyricsView({
               <Tooltip title={canPasteLyrics ? (t.tooltips.pasteAvailable ?? t.tooltips.pasteLyrics) : (t.tooltips.pasteUnavailable ?? t.tooltips.pasteLyrics)} relationship="description">
                 <Button onClick={onPasteLyrics} disabled={!canPasteLyrics} aria-label={t.tooltips.pasteLyrics} variant="outlined" color="info" size="small" startIcon={<ClipboardPaste className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
                   {t.editor.emptyState.pasteLyrics}
-                </Button>
-              </Tooltip>
-              <Tooltip title={!hasApiKey ? (t.tooltips.aiUnavailable ?? 'AI unavailable') : t.tooltips.generateSong} relationship="description">
-                <Button onClick={onGenerateSong} disabled={!hasApiKey} aria-label={t.tooltips.generateSong} variant="contained" color="primary" size="small" startIcon={<Sparkles className="w-3.5 h-3.5" />} className="fluent-animate-pressable">
-                  {t.editor.emptyState.generateSong}
                 </Button>
               </Tooltip>
             </div>

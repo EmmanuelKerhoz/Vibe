@@ -258,7 +258,6 @@ export function AppEditorLayout({
                   canPasteLyrics={canPasteLyrics}
                   onOpenLibrary={handleOpenSaveToLibraryModal}
                   onPasteLyrics={handleOpenPasteModal}
-                  onGenerateSong={handleGlobalRegenerate}
                   onOpenSearch={handleOpenSearch}
                 />
               </ErrorBoundary>
