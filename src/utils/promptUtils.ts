@@ -213,7 +213,9 @@ export const buildAdaptLinePrompt = ({
   uiLanguage,
   ipaEnhancedPrompt = '',
 }: BuildAdaptLinePromptParams): string => {
-  const sourceLanguage = ((line as Line & { language?: string }).language) || 'unknown';
+  const sourceLanguage = 'language' in line && typeof line.language === 'string' && line.language.trim() !== ''
+    ? line.language
+    : 'unknown';
 
   return `You are an expert lyricist specializing in creative song adaptation across languages.\n\nSource language detected: ${sourceLanguage}.\nAdapt the following single lyric line to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.\nPreserve the emotional impact and singability. Update rhymingSyllables, rhyme, and syllables to reflect the adapted text.\nWrite the "concept" field in ${uiLanguage}.\n\nLine Data:\n${JSON.stringify(line)}${ipaEnhancedPrompt}`;
 };
