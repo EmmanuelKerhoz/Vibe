@@ -1,0 +1,18 @@
+export * from './domain/types';
+export * from './domain/enums';
+export * from './domain/config';
+export * from './utils/normalizeLyrics';
+export * from './utils/ngrams';
+export * from './utils/textHashes';
+export * from './utils/distinctiveness';
+export * from './services/repository/ReferenceCorpusRepository';
+export * from './services/similarity/ExactMatcher';
+export * from './services/similarity/FuzzyMatcher';
+export * from './services/similarity/StructureMatcher';
+export * from './services/similarity/SemanticMatcher';
+export * from './services/similarity/RiskScorer';
+export * from './services/similarity/SimilarityEngine';
+export * from './hooks/useCopyrightChecker';
+export { CopyrightCheckerPanel, CHECKER_DISCLAIMER } from './components/CopyrightCheckerPanel';
+export { RiskBadge } from './components/RiskBadge';
+export { FlaggedMatchesTable } from './components/FlaggedMatchesTable';
