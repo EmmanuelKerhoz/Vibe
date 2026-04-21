@@ -21,7 +21,6 @@ export default defineConfig(({ mode }) => ({
         name: 'VIBE — Lyricist Pro',
         short_name: 'VIBE',
         description: 'AI-powered lyric writing assistant with Star Trek LCARS interface',
-        version: pkg.version,
         theme_color: '#0a0a1a',
         background_color: '#0a0a1a',
         display: 'standalone',
