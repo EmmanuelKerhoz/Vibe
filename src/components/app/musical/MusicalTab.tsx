@@ -47,9 +47,10 @@ export function MusicalTab({
 
   const handleGenerateWithSuno = useCallback(() => {
     if (!musicalPrompt.trim()) return;
+    const trimmedTitle = title?.trim();
     void generate({
       prompt: musicalPrompt.trim(),
-      title: title?.trim() || undefined,
+      ...(trimmedTitle ? { title: trimmedTitle } : {}),
       style: [genre, mood, instrumentation, rhythm].filter(Boolean).join(', '),
     });
   }, [generate, musicalPrompt, title, genre, mood, instrumentation, rhythm]);
