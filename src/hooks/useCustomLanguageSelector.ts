@@ -128,10 +128,10 @@ export function useCustomLanguageSelector({
   storedValue,
   onValueChange,
 }: UseCustomLanguageSelectorOptions): UseCustomLanguageSelectorResult {
-  const isStoredCustom =
-    isCustomAdaptationLanguage(storedValue) ||
-    (!SUPPORTED_ADAPTATION_LANGUAGES.some(l => l.aiName === storedValue) &&
-      storedValue !== '');
+  // Only treat storedValue as custom when it was explicitly saved as such —
+  // unknown/unmatched values must NOT pre-fill customText, which would make
+  // canAdapt=true before the user has typed anything ("Other language" regression).
+  const isStoredCustom = isCustomAdaptationLanguage(storedValue);
 
   const [selectValue, setSelectValue] = useState<string>(
     isStoredCustom ? CUSTOM_LANGUAGE_VALUE : storedValue,
@@ -157,8 +157,7 @@ export function useCustomLanguageSelector({
         onValueChange(lang);
       } else {
         // Always reset customText when entering free-input mode so a stale
-        // storedValue (e.g. 'French' previously mis-classified as custom)
-        // does not pre-fill the field and trigger an immediate adaptation.
+        // storedValue does not pre-fill the field and trigger an immediate adaptation.
         setCustomText('');
         requestAnimationFrame(() => customInputRef.current?.focus());
       }
