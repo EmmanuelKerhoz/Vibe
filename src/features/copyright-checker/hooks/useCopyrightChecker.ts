@@ -172,7 +172,6 @@ export const useCopyrightChecker = (
       // Omit the optional `language` field entirely when unspecified
       // (exactOptionalPropertyTypes is enabled, so `undefined` ≠ absent).
       const { language: _omit, ...rest } = input;
-      void _omit;
       validatedInput = rest;
     }
     timer.current = setTimeout(() => {

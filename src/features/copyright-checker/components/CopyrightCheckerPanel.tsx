@@ -125,7 +125,7 @@ const CopyrightCheckerPanelContent: React.FC<CopyrightCheckerPanelContentProps> 
         <Field
           label="Language"
           style={fieldStyle}
-          hint='BCP 47 tag, e.g. "en" or "pt-BR".'
+          hint='BCP 47 tag, e.g. "en" or "pt-BR"'
         >
           <Input
             value={language}
