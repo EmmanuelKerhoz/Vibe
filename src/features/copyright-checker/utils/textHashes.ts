@@ -36,15 +36,28 @@ export const fnv1a64Hex = (input: string): string => {
  * SHA-256 hex digest of `input`. Falls back to `fnv1a64Hex` when the
  * SubtleCrypto API is unavailable (e.g. test runners without a secure
  * context); the fallback is clearly distinguishable by length (16 vs 64).
+ *
+ * `crypto.subtle` is only specified to work in a secure context (HTTPS or
+ * localhost). Calling it from a non-secure context throws on some
+ * browsers, so we explicitly check `isSecureContext` and also wrap the
+ * digest call in try/catch to degrade gracefully in any unexpected
+ * environment (older runtimes, embedded WebViews, etc.).
  */
 export const sha256Hex = async (input: string): Promise<string> => {
-  const subtle: SubtleCrypto | undefined =
-    (typeof globalThis !== 'undefined' &&
-      (globalThis as { crypto?: { subtle?: SubtleCrypto } }).crypto?.subtle) ||
-    undefined;
+  const g = (typeof globalThis !== 'undefined' ? globalThis : undefined) as
+    | (typeof globalThis & { isSecureContext?: boolean; crypto?: { subtle?: SubtleCrypto } })
+    | undefined;
+  const subtle = g?.crypto?.subtle;
   if (!subtle) return fnv1a64Hex(input);
-  const buf = await subtle.digest('SHA-256', textEncoder.encode(input));
-  return toHex(buf);
+  // `isSecureContext` is undefined in some runtimes (Node test env); only
+  // skip subtle when it is explicitly false.
+  if (g && g.isSecureContext === false) return fnv1a64Hex(input);
+  try {
+    const buf = await subtle.digest('SHA-256', textEncoder.encode(input));
+    return toHex(buf);
+  } catch {
+    return fnv1a64Hex(input);
+  }
 };
 
 /**

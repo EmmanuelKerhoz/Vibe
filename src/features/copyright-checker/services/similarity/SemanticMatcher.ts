@@ -68,15 +68,39 @@ interface SemanticMatcherDeps {
 /**
  * Matcher D — semantic similarity over line-grouped chunks. Returns only
  * the top-K most suspicious chunk pairs to avoid leaking dense match maps.
+ *
+ * The matcher caches per-document embeddings keyed by document `id` so
+ * the submission is embedded only once per assessment, even when fanned
+ * out across many candidate references. Reference embeddings are also
+ * cached so repeated assessments against the same matcher instance are
+ * inexpensive.
  */
 export class SemanticMatcher {
+  private readonly cache = new Map<string, Promise<readonly Float32Array[]>>();
+
   constructor(private readonly deps: SemanticMatcherDeps) {}
+
+  private async embedCached(
+    docId: string,
+    chunks: readonly SemanticChunk[],
+  ): Promise<readonly Float32Array[]> {
+    const cached = this.cache.get(docId);
+    if (cached) return cached;
+    const pending = this.deps.provider.embed(chunks).catch((err) => {
+      // Do not poison the cache with a rejected promise — drop the entry
+      // so a later retry can succeed.
+      this.cache.delete(docId);
+      throw err;
+    });
+    this.cache.set(docId, pending);
+    return pending;
+  }
 
   async match(
     submitted: SubmittedLyricDocument,
     reference: ReferenceLyricDocument,
   ): Promise<SimilarityMatch[]> {
-    const { config, provider } = this.deps;
+    const { config } = this.deps;
     const minSim = this.deps.minSimilarity ?? 0.78;
     const topK = this.deps.topK ?? 3;
 
@@ -85,8 +109,8 @@ export class SemanticMatcher {
     if (subChunks.length === 0 || refChunks.length === 0) return [];
 
     const [subEmb, refEmb] = await Promise.all([
-      provider.embed(subChunks),
-      provider.embed(refChunks),
+      this.embedCached(submitted.id, subChunks),
+      this.embedCached(reference.id, refChunks),
     ]);
 
     type Pair = {

@@ -10,6 +10,13 @@ export interface CandidateSearchInput {
   readonly tokens: readonly string[];
   readonly language?: LanguageCode;
   readonly maxResults: number;
+  /**
+   * Optional cancellation signal. Implementations that perform network
+   * I/O SHOULD honour it (e.g. forward to `fetch`) and reject with the
+   * signal's reason as soon as it aborts. The in-memory implementation
+   * checks it cooperatively.
+   */
+  readonly signal?: AbortSignal;
 }
 
 /** Compact pre-computed signature for fast candidate pruning. */
@@ -26,8 +33,8 @@ export interface ReferenceFingerprint {
  */
 export interface ReferenceCorpusRepository {
   searchCandidateReferences(input: CandidateSearchInput): Promise<readonly ReferenceLyricDocument[]>;
-  getReferenceFingerprint(id: string): Promise<ReferenceFingerprint | null>;
-  getReferenceSegments(id: string): Promise<readonly SemanticChunk[]>;
+  getReferenceFingerprint(id: string, options?: { readonly signal?: AbortSignal }): Promise<ReferenceFingerprint | null>;
+  getReferenceSegments(id: string, options?: { readonly signal?: AbortSignal }): Promise<readonly SemanticChunk[]>;
 }
 
 /**
@@ -56,6 +63,7 @@ export class InMemoryReferenceRepository implements ReferenceCorpusRepository {
   }
 
   async searchCandidateReferences(input: CandidateSearchInput): Promise<readonly ReferenceLyricDocument[]> {
+    input.signal?.throwIfAborted?.();
     const sizes = DEFAULT_CHECKER_CONFIG.ngrams.sizes;
     const submittedSet = documentNGramSet(input.tokens, sizes);
     if (submittedSet.size === 0) return [];
@@ -63,6 +71,9 @@ export class InMemoryReferenceRepository implements ReferenceCorpusRepository {
     type Scored = { readonly ref: ReferenceLyricDocument; readonly score: number };
     const scored: Scored[] = [];
     for (const [id, fp] of this.fingerprints) {
+      if (input.signal?.aborted) {
+        throw input.signal.reason ?? new DOMException('Aborted', 'AbortError');
+      }
       if (input.language) {
         const ref = this.references.get(id);
         if (ref?.language && ref.language !== input.language) continue;
@@ -82,11 +93,13 @@ export class InMemoryReferenceRepository implements ReferenceCorpusRepository {
     return scored.slice(0, input.maxResults).map((s) => s.ref);
   }
 
-  async getReferenceFingerprint(id: string): Promise<ReferenceFingerprint | null> {
+  async getReferenceFingerprint(id: string, options?: { readonly signal?: AbortSignal }): Promise<ReferenceFingerprint | null> {
+    options?.signal?.throwIfAborted?.();
     return this.fingerprints.get(id) ?? null;
   }
 
-  async getReferenceSegments(id: string): Promise<readonly SemanticChunk[]> {
+  async getReferenceSegments(id: string, options?: { readonly signal?: AbortSignal }): Promise<readonly SemanticChunk[]> {
+    options?.signal?.throwIfAborted?.();
     return this.references.get(id)?.chunks ?? [];
   }
 }
