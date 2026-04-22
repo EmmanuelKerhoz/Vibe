@@ -33,6 +33,15 @@ type UseMusicalPromptParams = {
   setNarrative: (value: string) => void;
 };
 
+/** Returns the 2 first sections + the last one (if distinct), avoiding duplicates. */
+function getLyricsSnippet(song: Section[]): Section[] {
+  if (song.length <= 2) return song;
+  const last = song[song.length - 1];
+  const head = song.slice(0, 2);
+  // avoid duplicate if song has exactly 3 sections (last === head[2] already excluded)
+  return [...head, last];
+}
+
 export const useMusicalPrompt = ({
   song,
   title,
@@ -71,7 +80,7 @@ export const useMusicalPrompt = ({
     let wasAborted = false;
     try {
       await withAbort(promptAbortRef, async (nextSignal) => {
-        const lyricsSnippet = getSongText(song.slice(0, 3));
+        const lyricsSnippet = getSongText(getLyricsSnippet(song));
         const response = await generateContentWithRetry({
           model: AI_MODEL_NAME,
           contents: `Generate a structured musical production prompt for an AI music generator (like Suno or Udio).
