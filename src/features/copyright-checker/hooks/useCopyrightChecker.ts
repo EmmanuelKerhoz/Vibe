@@ -19,6 +19,33 @@ export type CheckerStatus = 'idle' | 'running' | 'done' | 'error';
  *  in-browser matchers (n-gram explosion, embedding workloads, etc.). */
 export const DEFAULT_MAX_LYRICS_LENGTH = 50_000;
 
+/**
+ * Accepted shape for a {@link LanguageCode}: a 2–3 letter base tag,
+ * optionally followed by a 2-letter region subtag (e.g. "en", "fr",
+ * "pt-BR"). Matched case-insensitively; the value is normalized to
+ * lowercase base + uppercase region before being forwarded to the
+ * matchers, mirroring BCP 47 conventions for the small subset we use.
+ */
+const LANGUAGE_CODE_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z]{2})?$/;
+
+/**
+ * Validate and normalize a user-provided language tag.
+ * Returns the normalized lowercase base (with optional uppercase region)
+ * when valid, or `null` when the value cannot be interpreted as a language
+ * code. Empty / whitespace-only values are treated as "unspecified".
+ */
+export const normalizeLanguageCode = (
+  raw: string | undefined,
+): LanguageCode | null | undefined => {
+  if (raw === undefined) return undefined;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return undefined;
+  if (!LANGUAGE_CODE_PATTERN.test(trimmed)) return null;
+  const dash = trimmed.indexOf('-');
+  if (dash === -1) return trimmed.toLowerCase();
+  return `${trimmed.slice(0, dash).toLowerCase()}-${trimmed.slice(dash + 1).toUpperCase()}`;
+};
+
 export interface CheckerInput {
   readonly text: string;
   readonly title?: string;
@@ -127,6 +154,27 @@ export const useCopyrightChecker = (
       setStatus('error');
       return;
     }
+    const normalizedLanguage = normalizeLanguageCode(input.language);
+    if (normalizedLanguage === null) {
+      cancelInflight();
+      if (!mounted.current) return;
+      setAssessment(null);
+      setError(
+        `Invalid language code "${input.language}" — expected a BCP 47 tag like "en" or "pt-BR"`,
+      );
+      setStatus('error');
+      return;
+    }
+    let validatedInput: CheckerInput;
+    if (normalizedLanguage) {
+      validatedInput = { ...input, language: normalizedLanguage };
+    } else {
+      // Omit the optional `language` field entirely when unspecified
+      // (exactOptionalPropertyTypes is enabled, so `undefined` ≠ absent).
+      const { language: _omit, ...rest } = input;
+      void _omit;
+      validatedInput = rest;
+    }
     timer.current = setTimeout(() => {
       timer.current = null;
       const myRun = ++runId.current;
@@ -136,7 +184,7 @@ export const useCopyrightChecker = (
       inflight.current = controller;
       setStatus('running');
       setError(null);
-      const submission = buildSubmission(input, config);
+      const submission = buildSubmission(validatedInput, config);
       engine
         .assess(submission, { signal: controller.signal })
         .then((res) => {
