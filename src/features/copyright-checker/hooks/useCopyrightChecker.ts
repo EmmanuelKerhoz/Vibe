@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SourceType } from '../domain/enums';
 import type {
   CheckerConfig,
@@ -14,6 +14,11 @@ import type { EmbeddingProvider } from '../services/similarity/SemanticMatcher';
 
 export type CheckerStatus = 'idle' | 'running' | 'done' | 'error';
 
+/** Default upper bound on submitted lyric size (characters). Acts as a
+ *  defence-in-depth against pathological inputs that could DoS the
+ *  in-browser matchers (n-gram explosion, embedding workloads, etc.). */
+export const DEFAULT_MAX_LYRICS_LENGTH = 50_000;
+
 export interface CheckerInput {
   readonly text: string;
   readonly title?: string;
@@ -27,6 +32,10 @@ export interface UseCopyrightCheckerOptions {
   readonly embeddings?: EmbeddingProvider;
   /** Debounce window for `runCheck`. Defaults to 350 ms. */
   readonly debounceMs?: number;
+  /** Hard cap on submitted lyrics length (characters). Defaults to
+   *  {@link DEFAULT_MAX_LYRICS_LENGTH}. Submissions above the cap are
+   *  rejected with an `error` status instead of being processed. */
+  readonly maxLyricsLength?: number;
 }
 
 export interface UseCopyrightCheckerResult {
@@ -64,6 +73,7 @@ export const useCopyrightChecker = (
 ): UseCopyrightCheckerResult => {
   const config = options.config ?? DEFAULT_CHECKER_CONFIG;
   const debounceMs = options.debounceMs ?? 350;
+  const maxLyricsLength = options.maxLyricsLength ?? DEFAULT_MAX_LYRICS_LENGTH;
 
   const engine = useMemo(
     () => new SimilarityEngine({
@@ -80,17 +90,27 @@ export const useCopyrightChecker = (
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const runId = useRef(0);
+  const inflight = useRef<AbortController | null>(null);
+  const mounted = useRef(true);
 
-  const reset = useCallback(() => {
+  const cancelInflight = useCallback((): void => {
     if (timer.current) {
       clearTimeout(timer.current);
       timer.current = null;
     }
+    if (inflight.current) {
+      inflight.current.abort();
+      inflight.current = null;
+    }
     runId.current += 1;
+  }, []);
+
+  const reset = useCallback(() => {
+    cancelInflight();
     setStatus('idle');
     setAssessment(null);
     setError(null);
-  }, []);
+  }, [cancelInflight]);
 
   const runCheck = useCallback((input: CheckerInput) => {
     if (timer.current) clearTimeout(timer.current);
@@ -98,25 +118,63 @@ export const useCopyrightChecker = (
       reset();
       return;
     }
+    if (input.text.length > maxLyricsLength) {
+      // Supersede any pending run before reporting the validation error.
+      cancelInflight();
+      if (!mounted.current) return;
+      setAssessment(null);
+      setError(`Lyrics exceed maximum length of ${maxLyricsLength} characters`);
+      setStatus('error');
+      return;
+    }
     timer.current = setTimeout(() => {
+      timer.current = null;
       const myRun = ++runId.current;
+      // Cancel any previous in-flight assessment before starting a new one.
+      if (inflight.current) inflight.current.abort();
+      const controller = new AbortController();
+      inflight.current = controller;
       setStatus('running');
       setError(null);
       const submission = buildSubmission(input, config);
       engine
-        .assess(submission)
+        .assess(submission, { signal: controller.signal })
         .then((res) => {
-          if (myRun !== runId.current) return; // superseded
+          if (myRun !== runId.current || !mounted.current) return; // superseded / unmounted
           setAssessment(res);
           setStatus('done');
         })
         .catch((err: unknown) => {
-          if (myRun !== runId.current) return;
+          if (myRun !== runId.current || !mounted.current) return;
+          // Swallow expected aborts: those are not user-visible errors.
+          if (controller.signal.aborted) return;
+          if (err instanceof DOMException && err.name === 'AbortError') return;
           setError(err instanceof Error ? err.message : 'Unknown error');
           setStatus('error');
+        })
+        .finally(() => {
+          if (inflight.current === controller) inflight.current = null;
         });
     }, debounceMs);
-  }, [engine, config, debounceMs, reset]);
+  }, [engine, config, debounceMs, maxLyricsLength, reset, cancelInflight]);
+
+  // Cleanup on unmount: clear pending debounce timer and abort any in-flight
+  // assessment so we never call setState on an unmounted component and never
+  // leak a setTimeout handle.
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
+      if (inflight.current) {
+        inflight.current.abort();
+        inflight.current = null;
+      }
+    };
+  }, []);
 
   return { status, assessment, error, runCheck, reset };
 };

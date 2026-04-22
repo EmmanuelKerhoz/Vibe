@@ -139,13 +139,25 @@ export class SimilarityEngine {
     this.matchersFactory = deps.matchersFactory ?? defaultMatchersFactory;
   }
 
-  async assess(submitted: SubmittedLyricDocument): Promise<RiskAssessment> {
+  async assess(
+    submitted: SubmittedLyricDocument,
+    options?: { readonly signal?: AbortSignal },
+  ): Promise<RiskAssessment> {
+    const signal = options?.signal;
+    const throwIfAborted = (): void => {
+      if (signal?.aborted) {
+        throw signal.reason ?? new DOMException('Aborted', 'AbortError');
+      }
+    };
     const offload = this.deps.offload ?? inlineOffload;
+    throwIfAborted();
     const candidates = await this.deps.repository.searchCandidateReferences({
       tokens: submitted.tokens,
       ...(submitted.language ? { language: submitted.language } : {}),
       maxResults: 25,
+      ...(signal ? { signal } : {}),
     });
+    throwIfAborted();
 
     if (candidates.length === 0) {
       const scorer = new RiskScorer({ config: this.config });
@@ -161,9 +173,11 @@ export class SimilarityEngine {
 
     const allMatches: SimilarityMatch[] = [];
     for (const ref of candidates) {
+      throwIfAborted();
       const collected = await offload.run(`assess:${ref.id}`, async () => {
         const ms: SimilarityMatch[] = [];
         for (const matcher of matchers) {
+          throwIfAborted();
           const result = await matcher.match(submitted, ref);
           ms.push(...result);
         }
@@ -172,6 +186,7 @@ export class SimilarityEngine {
       allMatches.push(...collected);
     }
 
+    throwIfAborted();
     // Replace fast FNV hashes with SHA-256 (privacy-preferred algorithm).
     const hashedMatches = await Promise.all(
       allMatches.map(async (m) => ({ ...m, spanHash: await sha256Hex(m.spanHash) })),
