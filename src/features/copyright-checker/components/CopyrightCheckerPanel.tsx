@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import {
   Body1, Button, Caption1, Card, CardHeader, Divider, Field,
   Input, Spinner, Subtitle2, Textarea, Title3,
 } from '@fluentui/react-components';
+import { ErrorBoundary } from '../../../components/app/ErrorBoundary';
 import { RiskBadge } from './RiskBadge';
 import { FlaggedMatchesTable } from './FlaggedMatchesTable';
 import { useCopyrightChecker } from '../hooks/useCopyrightChecker';
@@ -56,6 +57,57 @@ export const CopyrightCheckerPanel: React.FC<CopyrightCheckerPanelProps> = ({
     });
   };
 
+  // Scope the boundary to the dynamic content so an exception inside the
+  // matchers/results UI never takes down the surrounding application.
+  return (
+    <ErrorBoundary
+      label="Copyright checker"
+      fallback={
+        <Card
+          aria-label="Lyrics similarity risk checker"
+          style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 16 }}
+        >
+          <Body1 role="alert">
+            The copyright checker panel encountered an unexpected error and could not render.
+            Reload the page to retry; submitted lyrics are not persisted.
+          </Body1>
+        </Card>
+      }
+    >
+      <CopyrightCheckerPanelContent
+        text={text}
+        title={title}
+        artist={artist}
+        language={language}
+        onTextChange={setText}
+        onTitleChange={setTitle}
+        onArtistChange={setArtist}
+        onLanguageChange={setLanguage}
+        onRun={handleRun}
+        checker={checker}
+      />
+    </ErrorBoundary>
+  );
+};
+
+interface CopyrightCheckerPanelContentProps {
+  readonly text: string;
+  readonly title: string;
+  readonly artist: string;
+  readonly language: LanguageCode;
+  readonly onTextChange: (v: string) => void;
+  readonly onTitleChange: (v: string) => void;
+  readonly onArtistChange: (v: string) => void;
+  readonly onLanguageChange: (v: LanguageCode) => void;
+  readonly onRun: () => void;
+  readonly checker: ReturnType<typeof useCopyrightChecker>;
+}
+
+const CopyrightCheckerPanelContent: React.FC<CopyrightCheckerPanelContentProps> = ({
+  text, title, artist, language,
+  onTextChange, onTitleChange, onArtistChange, onLanguageChange,
+  onRun, checker,
+}) => {
   return (
     <Card aria-label="Lyrics similarity risk checker" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 16 }}>
       <CardHeader
@@ -65,20 +117,28 @@ export const CopyrightCheckerPanel: React.FC<CopyrightCheckerPanelProps> = ({
 
       <div style={rowStyle}>
         <Field label="Title (optional)" style={fieldStyle}>
-          <Input value={title} onChange={(_, d) => setTitle(d.value)} />
+          <Input value={title} onChange={(_, d) => onTitleChange(d.value)} />
         </Field>
         <Field label="Artist (optional)" style={fieldStyle}>
-          <Input value={artist} onChange={(_, d) => setArtist(d.value)} />
+          <Input value={artist} onChange={(_, d) => onArtistChange(d.value)} />
         </Field>
-        <Field label="Language" style={fieldStyle}>
-          <Input value={language} onChange={(_, d) => setLanguage(d.value)} maxLength={5} />
+        <Field
+          label="Language"
+          style={fieldStyle}
+          hint='BCP 47 tag, e.g. "en" or "pt-BR"'
+        >
+          <Input
+            value={language}
+            onChange={(_, d) => onLanguageChange(d.value)}
+            maxLength={5}
+          />
         </Field>
       </div>
 
       <Field label="Lyrics" style={fieldStyle}>
         <Textarea
           value={text}
-          onChange={(_, d) => setText(d.value)}
+          onChange={(_, d) => onTextChange(d.value)}
           rows={10}
           placeholder="Paste lyrics here for an internal similarity risk check…"
           aria-describedby="checker-disclaimer"
@@ -88,7 +148,7 @@ export const CopyrightCheckerPanel: React.FC<CopyrightCheckerPanelProps> = ({
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <Button
           appearance="primary"
-          onClick={handleRun}
+          onClick={onRun}
           disabled={!text.trim() || checker.status === 'running'}
         >
           Run similarity check
@@ -128,8 +188,35 @@ interface ResultsSectionProps {
 
 const ResultsSection: React.FC<ResultsSectionProps> = ({ assessment }) => {
   const noResults = assessment.flaggedMatches.length === 0;
+  const headingId = useId();
+  const reasonsId = useId();
+  const overlapsId = useId();
+  const noteId = useId();
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <section
+      role="region"
+      aria-labelledby={headingId}
+      aria-live="polite"
+      style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+    >
+      <Subtitle2
+        as="h3"
+        id={headingId}
+        style={{
+          // Visually-hidden heading used as the accessible name of the region.
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: 'hidden',
+          clip: 'rect(0 0 0 0)',
+          whiteSpace: 'nowrap',
+          border: 0,
+        }}
+      >
+        Similarity check results
+      </Subtitle2>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <RiskBadge level={assessment.level} score={assessment.overallScore} />
         <Caption1>Score: <strong>{assessment.overallScore}</strong> / 100</Caption1>
@@ -141,18 +228,22 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ assessment }) => {
         </Body1>
       ) : (
         <>
-          <Subtitle2 as="h4" style={{ margin: 0 }}>Top reasons</Subtitle2>
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
+          <Subtitle2 as="h4" id={reasonsId} style={{ margin: 0 }}>Top reasons</Subtitle2>
+          <ul aria-labelledby={reasonsId} style={{ margin: 0, paddingLeft: 18 }}>
             {assessment.reasons.slice(0, 5).map((r) => (
               <li key={r.code}><Body1>{r.message}</Body1></li>
             ))}
           </ul>
 
-          <Subtitle2 as="h4" style={{ margin: 0 }}>Flagged overlaps</Subtitle2>
-          <FlaggedMatchesTable matches={assessment.flaggedMatches} />
+          <Subtitle2 as="h4" id={overlapsId} style={{ margin: 0 }}>Flagged overlaps</Subtitle2>
+          <FlaggedMatchesTable
+            matches={assessment.flaggedMatches}
+            caption="Flagged overlaps between the submitted lyrics and reference documents"
+          />
 
-          <Subtitle2 as="h4" style={{ margin: 0 }}>Reviewer note template</Subtitle2>
+          <Subtitle2 as="h4" id={noteId} style={{ margin: 0 }}>Reviewer note template</Subtitle2>
           <pre
+            aria-labelledby={noteId}
             style={{
               fontFamily: 'inherit', fontSize: 12, whiteSpace: 'pre-wrap',
               background: 'var(--colorNeutralBackground2, #f5f5f5)',
@@ -161,6 +252,6 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ assessment }) => {
           >{assessment.reviewerNotesTemplate}</pre>
         </>
       )}
-    </div>
+    </section>
   );
 };
