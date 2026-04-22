@@ -3,16 +3,17 @@
  * Ribbon contextuel affiché à la place de InsightsBar quand activeTab === 'musical'.
  *
  * Groupes :
- *   [State]   — badge prompt filled/empty + tag version Suno
- *   [Actions] — Copy prompt · Export JSON · Reset fields
+ *   [State]   — badge prompt filled/empty
+ *   [Actions] — Auto-Suggest · Copy · Export JSON · Reset fields
  *   [Generate]— bouton Generate → Suno (spinner pendant génération)
  *   [Quality] — score de complétude du prompt (segments remplis / total)
  */
 import React, { useCallback, useState } from 'react';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
-import { useMusicalPromptContext } from '../../contexts/MusicalPromptContext';
+import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useSuno } from '../../hooks/useSuno';
 import {
   MusicNote2Regular,
   CopyRegular,
@@ -28,7 +29,6 @@ import {
 
 function computeCompleteness(prompt: string | undefined): { filled: number; total: number; pct: number } {
   if (!prompt || prompt.trim().length === 0) return { filled: 0, total: 5, pct: 0 };
-  // heuristic: count presence of key sections in the prompt string
   const checks = [
     /style/i,
     /mood|vibe/i,
@@ -51,7 +51,11 @@ function PromptStateBadge({ hasPrompt }: { hasPrompt: boolean }) {
           ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 12%, transparent)'
           : 'color-mix(in srgb, var(--text-secondary) 8%, transparent)',
         color: hasPrompt ? 'var(--lcars-cyan, #4f98a3)' : 'var(--text-secondary)',
-        border: `1px solid ${hasPrompt ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 25%, transparent)' : 'var(--border-color)'}`,
+        border: `1px solid ${
+          hasPrompt
+            ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 25%, transparent)'
+            : 'var(--border-color)'
+        }`,
       }}
       aria-label={hasPrompt ? 'Prompt ready' : 'Prompt empty'}
     >
@@ -111,7 +115,13 @@ function Divider() {
   return (
     <div
       aria-hidden
-      style={{ width: 1, height: 20, background: 'var(--border-color)', opacity: 0.5, flexShrink: 0 }}
+      style={{
+        width: 1,
+        height: 20,
+        background: 'var(--border-color)',
+        opacity: 0.5,
+        flexShrink: 0,
+      }}
     />
   );
 }
@@ -120,35 +130,75 @@ function Divider() {
 
 export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
   const { t } = useTranslation();
-  const { isGenerating } = useComposerContext();
 
-  // MusicalPromptContext exposes the generated prompt string + reset + generate
+  // ── Song state ──────────────────────────────────────────────────────────────
   const {
-    generatedPrompt,
-    resetMusicalForm,
-    generateMusicalPrompt,
-    generateWithSuno,
-    isSunoGenerating,
-  } = useMusicalPromptContext();
+    musicalPrompt,
+    setMusicalPrompt,
+    setGenre,
+    setTempo,
+    setInstrumentation,
+    setRhythm,
+    setNarrative,
+    genre,
+    mood,
+    instrumentation,
+    rhythm,
+    title,
+  } = useSongContext();
 
-  const hasPrompt = Boolean(generatedPrompt && generatedPrompt.trim().length > 0);
-  const { filled, total, pct } = computeCompleteness(generatedPrompt);
+  // ── Composer ────────────────────────────────────────────────────────────────
+  const {
+    isGenerating,
+    isGeneratingMusicalPrompt,
+    generateMusicalPrompt,
+  } = useComposerContext();
+
+  // ── Suno ────────────────────────────────────────────────────────────────────
+  const { generate, status } = useSuno();
+
+  const isSunoGenerating =
+    status.phase === 'generating' || status.phase === 'polling';
+
+  const hasPrompt = Boolean(musicalPrompt && musicalPrompt.trim().length > 0);
+  const { filled, total, pct } = computeCompleteness(musicalPrompt);
+  const busy = isGenerating || isGeneratingMusicalPrompt || isSunoGenerating;
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+  const handleReset = useCallback(() => {
+    setMusicalPrompt('');
+    setGenre('');
+    setTempo(120);
+    setInstrumentation('');
+    setRhythm('');
+    setNarrative('');
+  }, [setMusicalPrompt, setGenre, setTempo, setInstrumentation, setRhythm, setNarrative]);
+
+  const handleGenerateWithSuno = useCallback(() => {
+    if (!musicalPrompt.trim()) return;
+    const trimmedTitle = title?.trim();
+    void generate({
+      prompt: musicalPrompt.trim(),
+      ...(trimmedTitle ? { title: trimmedTitle } : {}),
+      style: [genre, mood, instrumentation, rhythm].filter(Boolean).join(', '),
+    });
+  }, [generate, musicalPrompt, title, genre, mood, instrumentation, rhythm]);
 
   // copy feedback
   const [copied, setCopied] = useState(false);
   const handleCopy = useCallback(async () => {
-    if (!generatedPrompt) return;
-    await navigator.clipboard.writeText(generatedPrompt);
+    if (!musicalPrompt) return;
+    await navigator.clipboard.writeText(musicalPrompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
-  }, [generatedPrompt]);
+  }, [musicalPrompt]);
 
   // export as JSON
   const handleExport = useCallback(() => {
-    if (!generatedPrompt) return;
+    if (!musicalPrompt) return;
     const blob = new Blob(
-      [JSON.stringify({ prompt: generatedPrompt, exportedAt: new Date().toISOString() }, null, 2)],
-      { type: 'application/json' }
+      [JSON.stringify({ prompt: musicalPrompt, exportedAt: new Date().toISOString() }, null, 2)],
+      { type: 'application/json' },
     );
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -156,10 +206,9 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
     a.download = 'musical-prompt.json';
     a.click();
     URL.revokeObjectURL(url);
-  }, [generatedPrompt]);
+  }, [musicalPrompt]);
 
-  const busy = isGenerating || isSunoGenerating;
-
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div
       role="toolbar"
@@ -174,28 +223,37 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
     >
       {/* ── State ─────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2">
-        <MusicNote2Regular style={{ width: 15, height: 15, color: 'var(--lcars-violet, #a86fdf)', flexShrink: 0 }} aria-hidden />
+        <MusicNote2Regular
+          style={{ width: 15, height: 15, color: 'var(--lcars-violet, #a86fdf)', flexShrink: 0 }}
+          aria-hidden
+        />
         <PromptStateBadge hasPrompt={hasPrompt} />
       </div>
 
       <Divider />
 
-      {/* ── Prompt actions ─────────────────────────────────────────────── */}
+      {/* ── Prompt actions ────────────────────────────────────────────── */}
       <div className="flex items-center gap-1">
-        {/* Generate prompt */}
+        {/* Auto-Suggest */}
         <Tooltip title="Generate musical prompt from current settings">
           <button
             onClick={generateMusicalPrompt}
             disabled={busy}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all"
             style={{
-              background: busy ? 'transparent' : 'color-mix(in srgb, var(--accent-color) 10%, transparent)',
+              background: busy
+                ? 'transparent'
+                : 'color-mix(in srgb, var(--accent-color) 10%, transparent)',
               color: busy ? 'var(--text-secondary)' : 'var(--accent-color)',
-              border: `1px solid ${busy ? 'var(--border-color)' : 'color-mix(in srgb, var(--accent-color) 30%, transparent)'}`,
+              border: `1px solid ${
+                busy
+                  ? 'var(--border-color)'
+                  : 'color-mix(in srgb, var(--accent-color) 30%, transparent)'
+              }`,
               cursor: busy ? 'not-allowed' : 'pointer',
               opacity: busy ? 0.5 : 1,
             }}
-            aria-label="Generate musical prompt"
+            aria-label={t.tooltips?.generateMusicalPrompt ?? 'Generate musical prompt'}
           >
             <SparkleRegular style={{ width: 13, height: 13 }} />
             <span className="hidden sm:inline">Auto-Suggest</span>
@@ -209,7 +267,7 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
             disabled={!hasPrompt || busy}
             className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md transition-all"
             style={{
-              color: copied ? 'var(--lcars-cyan, #4f98a3)' : hasPrompt ? 'var(--text-secondary)' : 'var(--text-secondary)',
+              color: copied ? 'var(--lcars-cyan, #4f98a3)' : 'var(--text-secondary)',
               opacity: hasPrompt ? 1 : 0.35,
               cursor: hasPrompt ? 'pointer' : 'not-allowed',
             }}
@@ -240,7 +298,7 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
         {/* Reset */}
         <Tooltip title="Reset all musical fields">
           <button
-            onClick={resetMusicalForm}
+            onClick={handleReset}
             disabled={busy}
             className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md transition-all"
             style={{
@@ -260,13 +318,14 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
       {/* ── Suno generate ─────────────────────────────────────────────── */}
       <Tooltip title={hasPrompt ? 'Generate music with Suno' : 'Generate a prompt first'}>
         <button
-          onClick={generateWithSuno}
+          onClick={handleGenerateWithSuno}
           disabled={!hasPrompt || busy}
           className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all"
           style={{
-            background: hasPrompt && !busy
-              ? 'var(--lcars-amber, #e8af34)'
-              : 'color-mix(in srgb, var(--lcars-amber, #e8af34) 15%, transparent)',
+            background:
+              hasPrompt && !busy
+                ? 'var(--lcars-amber, #e8af34)'
+                : 'color-mix(in srgb, var(--lcars-amber, #e8af34) 15%, transparent)',
             color: hasPrompt && !busy ? '#0c0c0c' : 'var(--text-secondary)',
             border: 'none',
             cursor: hasPrompt && !busy ? 'pointer' : 'not-allowed',
@@ -284,13 +343,37 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
           ) : (
             <PlayCircleRegular style={{ width: 14, height: 14 }} />
           )}
-          <span>{isSunoGenerating ? 'Generating…' : 'Generate Music'}</span>
+          <span>
+            {status.phase === 'polling'
+              ? `Generating… ${Math.round(((status as { elapsed?: number }).elapsed ?? 0) / 1000)}s`
+              : isSunoGenerating
+              ? 'Generating…'
+              : 'Generate Music'}
+          </span>
         </button>
       </Tooltip>
 
-      {/* ── Completeness ──────────────────────────────────────────────── */}
+      {/* Suno error */}
+      {status.phase === 'error' && (
+        <span
+          className="text-[10px]"
+          style={{ color: 'var(--accent-danger, #f87171)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          title={(status as { message?: string }).message}
+        >
+          {(status as { message?: string }).message}
+        </span>
+      )}
+
+      {/* ── Completeness ─────────────────────────────────────────────── */}
       <div className="ml-auto hidden sm:flex items-center gap-2">
-        <span style={{ fontSize: 10, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <span
+          style={{
+            fontSize: 10,
+            color: 'var(--text-secondary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+          }}
+        >
           Prompt
         </span>
         <CompletenessScore pct={pct} filled={filled} total={total} />
