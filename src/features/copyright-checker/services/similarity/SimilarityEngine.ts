@@ -23,9 +23,79 @@ export interface SimilarityOffload {
   run<T>(name: string, fn: () => Promise<T>): Promise<T>;
 }
 
-/** Default offload: synchronous execution on the main thread. */
+/**
+ * Common shape implemented by every similarity matcher. The return value
+ * may be synchronous (most lexical matchers) or asynchronous (semantic
+ * matcher relying on an async embedding provider).
+ */
+export interface SimilarityMatcher {
+  match(
+    submitted: SubmittedLyricDocument,
+    reference: ReferenceLyricDocument,
+  ): SimilarityMatch[] | Promise<SimilarityMatch[]>;
+}
+
+/** Context passed to a matchers factory when building per-assessment matchers. */
+export interface SimilarityMatchersContext {
+  readonly config: CheckerConfig;
+  readonly distinctiveness: DistinctivenessIndex;
+  readonly embeddings?: EmbeddingProvider;
+}
+
+/**
+ * Factory that builds the list of matchers used by {@link SimilarityEngine}
+ * for a single assessment. Allows callers to inject custom matchers (or
+ * stubbed/mocked ones in tests) without subclassing the engine.
+ */
+export type SimilarityMatchersFactory = (
+  context: SimilarityMatchersContext,
+) => readonly SimilarityMatcher[];
+
+/**
+ * Yield to the event loop so long similarity runs do not monopolise the
+ * main thread. Uses a macrotask (setTimeout(0)) when available — falling
+ * back to a microtask in environments without a timer.
+ */
+const yieldToEventLoop = (): Promise<void> =>
+  new Promise<void>((resolve) => {
+    if (typeof setTimeout === 'function') {
+      setTimeout(resolve, 0);
+      return;
+    }
+    if (typeof queueMicrotask === 'function') {
+      queueMicrotask(resolve);
+      return;
+    }
+    Promise.resolve().then(resolve);
+  });
+
+/**
+ * Default offload: runs each task on the main thread but yields to the
+ * event loop first so the UI stays responsive between candidates. Callers
+ * that need true parallelism can provide a worker-backed implementation.
+ */
 export const inlineOffload: SimilarityOffload = {
-  run: <T>(_name: string, fn: () => Promise<T>) => fn(),
+  run: async <T>(_name: string, fn: () => Promise<T>): Promise<T> => {
+    await yieldToEventLoop();
+    return fn();
+  },
+};
+
+/** Default factory: builds the built-in Exact/Fuzzy/Structure/Semantic matchers. */
+export const defaultMatchersFactory: SimilarityMatchersFactory = ({
+  config,
+  distinctiveness,
+  embeddings,
+}) => {
+  const matchers: SimilarityMatcher[] = [
+    new ExactMatcher({ config, distinctiveness }),
+    new FuzzyMatcher({ config, distinctiveness }),
+    new StructureMatcher({ config }),
+  ];
+  if (embeddings) {
+    matchers.push(new SemanticMatcher({ config, provider: embeddings }));
+  }
+  return matchers;
 };
 
 export interface SimilarityEngineDeps {
@@ -33,6 +103,12 @@ export interface SimilarityEngineDeps {
   readonly config?: CheckerConfig;
   readonly embeddings?: EmbeddingProvider;
   readonly offload?: SimilarityOffload;
+  /**
+   * Optional override for the matchers used during an assessment. Defaults
+   * to {@link defaultMatchersFactory}, which builds the standard
+   * Exact/Fuzzy/Structure/Semantic stack.
+   */
+  readonly matchersFactory?: SimilarityMatchersFactory;
 }
 
 const buildCorpusDistinctiveness = (
@@ -57,8 +133,10 @@ const buildCorpusDistinctiveness = (
  */
 export class SimilarityEngine {
   private readonly config: CheckerConfig;
+  private readonly matchersFactory: SimilarityMatchersFactory;
   constructor(private readonly deps: SimilarityEngineDeps) {
     this.config = deps.config ?? DEFAULT_CHECKER_CONFIG;
+    this.matchersFactory = deps.matchersFactory ?? defaultMatchersFactory;
   }
 
   async assess(submitted: SubmittedLyricDocument): Promise<RiskAssessment> {
@@ -75,21 +153,20 @@ export class SimilarityEngine {
     }
 
     const distinctiveness = buildCorpusDistinctiveness(candidates);
-    const exact = new ExactMatcher({ config: this.config, distinctiveness });
-    const fuzzy = new FuzzyMatcher({ config: this.config, distinctiveness });
-    const structure = new StructureMatcher({ config: this.config });
-    const semantic = this.deps.embeddings
-      ? new SemanticMatcher({ config: this.config, provider: this.deps.embeddings })
-      : null;
+    const matchers = this.matchersFactory({
+      config: this.config,
+      distinctiveness,
+      ...(this.deps.embeddings ? { embeddings: this.deps.embeddings } : {}),
+    });
 
     const allMatches: SimilarityMatch[] = [];
     for (const ref of candidates) {
       const collected = await offload.run(`assess:${ref.id}`, async () => {
         const ms: SimilarityMatch[] = [];
-        ms.push(...exact.match(submitted, ref));
-        ms.push(...fuzzy.match(submitted, ref));
-        ms.push(...structure.match(submitted, ref));
-        if (semantic) ms.push(...(await semantic.match(submitted, ref)));
+        for (const matcher of matchers) {
+          const result = await matcher.match(submitted, ref);
+          ms.push(...result);
+        }
         return ms;
       });
       allMatches.push(...collected);
