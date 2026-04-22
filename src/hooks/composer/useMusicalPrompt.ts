@@ -36,7 +36,8 @@ type UseMusicalPromptParams = {
 /** Returns the 2 first sections + the last one (if distinct), avoiding duplicates. */
 function getLyricsSnippet(song: Section[]): Section[] {
   if (song.length <= 2) return song;
-  const last = song[song.length - 1];
+  // song.length >= 3 here — last element is guaranteed to exist
+  const last = song[song.length - 1] as Section;
   const head = song.slice(0, 2);
   // avoid duplicate if song has exactly 3 sections (last === head[2] already excluded)
   return [...head, last];
