@@ -253,7 +253,7 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
               cursor: busy ? 'not-allowed' : 'pointer',
               opacity: busy ? 0.5 : 1,
             }}
-            aria-label={t.tooltips?.generateMusicalPrompt ?? 'Generate musical prompt'}
+            aria-label={t.tooltips?.generateMusical ?? 'Generate musical prompt'}
           >
             <SparkleRegular style={{ width: 13, height: 13 }} />
             <span className="hidden sm:inline">Auto-Suggest</span>
