@@ -74,13 +74,10 @@ export const normalizeLyrics = (
   const rawLines = raw.split(LINE_SPLIT_RE);
   const lines: string[] = [];
   const lineTokens: string[][] = [];
-  const tokens: string[] = [];
   for (const rawLine of rawLines) {
     const collapsed = rawLine.replace(/\s+/g, ' ').trim();
     lines.push(collapsed);
-    const lt = tokenizeLine(collapsed, config.normalization, language, stemmer);
-    lineTokens.push(lt);
-    for (const t of lt) tokens.push(t);
+    lineTokens.push(tokenizeLine(collapsed, config.normalization, language, stemmer));
   }
   // Trim leading/trailing pure-empty lines but preserve internal empties
   // (they often carry structural information in lyrics).
@@ -90,6 +87,13 @@ export const normalizeLyrics = (
   while (end > start && lines[end - 1] === '') end -= 1;
   const trimmedLines = lines.slice(start, end);
   const trimmedLineTokens = lineTokens.slice(start, end);
+  // Derive the flat token stream from the trimmed line tokens so it stays
+  // consistent with `lines`/`lineTokens` even if leading/trailing lines
+  // contributed tokens before being dropped.
+  const tokens: string[] = [];
+  for (const lt of trimmedLineTokens) {
+    for (const t of lt) tokens.push(t);
+  }
 
   return {
     normalizedText: trimmedLines.join('\n'),

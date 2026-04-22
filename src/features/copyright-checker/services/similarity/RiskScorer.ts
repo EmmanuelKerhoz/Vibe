@@ -197,7 +197,6 @@ export class RiskScorer {
     if (score >= t.escalate) return RiskLevel.ESCALATE;
     if (score >= t.high) return RiskLevel.HIGH;
     if (score >= t.moderate) return RiskLevel.MODERATE;
-    if (score >= t.low) return RiskLevel.MODERATE; // anything above LOW threshold is at least MODERATE
     return RiskLevel.LOW;
   }
 
