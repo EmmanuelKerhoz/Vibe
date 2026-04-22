@@ -5,11 +5,14 @@
  *
  * Props surface: 6 (isAnalyzing / isAdaptingLanguage / targetLanguage now
  * sourced from InsightsBarContext — no longer passed as props).
+ *
+ * Ribbon swap: InsightsBar (lyrics tab) ↔ MusicalInsightsBar (musical tab).
  */
 import React, { Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './ErrorBoundary';
 import { InsightsBar } from './InsightsBar';
+import { MusicalInsightsBar } from './MusicalInsightsBar';
 import { LyricsView } from './LyricsView';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { useInsightsBarContext } from '../../contexts/InsightsBarContext';
@@ -57,23 +60,21 @@ export function AppEditorZone({
   onPasteLyrics,
   onOpenSearch: _onOpenSearch,
 }: AppEditorZoneProps) {
-  // isAnalyzing / isAdaptingLanguage / targetLanguage live in InsightsBarContext
-  // which is mounted in AppEditorLayout above this component.
   const { isAnalyzing, isAdaptingLanguage, targetLanguage } = useInsightsBarContext();
 
   return (
     <>
-      {/*
-        InsightsBar exposes language-detection, adaptation and similarity
-        controls that remain meaningful even when the user is on the
-        musical tab — restricting it to the lyrics tab made these
-        actions silently unavailable. We render it whenever lyric
-        content exists, regardless of the active tab.
-      */}
-      {songHasContent && (
-        <ErrorBoundary label="Insights">
-          <InsightsBar />
+      {/* ── Ribbon contextuel : swap selon activeTab ───────────────────── */}
+      {activeTab === 'musical' ? (
+        <ErrorBoundary label="Musical insights">
+          <MusicalInsightsBar />
         </ErrorBoundary>
+      ) : (
+        songHasContent && (
+          <ErrorBoundary label="Insights">
+            <InsightsBar />
+          </ErrorBoundary>
+        )
       )}
 
       <div
