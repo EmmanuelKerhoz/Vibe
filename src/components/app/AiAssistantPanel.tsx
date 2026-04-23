@@ -6,6 +6,7 @@ import { AI_MODEL_NAME } from '../../utils/aiUtils';
 import { useModalState } from '../../contexts/ModalContext';
 import { useEditorContext } from '../../contexts/EditorContext';
 import { UNTRUSTED_INPUT_PREAMBLE, fence, sanitizeForPrompt } from '../../utils/promptSanitization';
+import { withAbort, isAbortError } from '../../utils/withAbort';
 import knowledgeEn from '../../knowledge/en.md?raw';
 import knowledgeFr from '../../knowledge/fr.md?raw';
 
@@ -59,11 +60,7 @@ export function AiAssistantPanel({ onClose }: Props) {
     inputRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
 
   const buildSystemPrompt = useCallback(() => {
     const knowledge = getKnowledgeBase(language);
@@ -84,35 +81,34 @@ export function AiAssistantPanel({ onClose }: Props) {
     setMessages(prev => [...prev, userMessage]);
     setIsThinking(true);
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     try {
-      const systemPrompt = buildSystemPrompt();
-      const history = [...messages, userMessage];
-      const fullContents = [
-        UNTRUSTED_INPUT_PREAMBLE,
-        `[SYSTEM]\n${systemPrompt}`,
-        ...history.map(m =>
-          fence(m.role === 'user' ? 'USER_MESSAGE' : 'ASSISTANT_MESSAGE', m.text, {
-            maxLength: 4000,
-            preserveLineBreaks: true,
-          }),
-        ),
-      ].join('\n\n');
+      await withAbort(abortRef, async (signal) => {
+        const systemPrompt = buildSystemPrompt();
+        const history = [...messages, userMessage];
+        const fullContents = [
+          UNTRUSTED_INPUT_PREAMBLE,
+          `[SYSTEM]\n${systemPrompt}`,
+          ...history.map(m =>
+            fence(m.role === 'user' ? 'USER_MESSAGE' : 'ASSISTANT_MESSAGE', m.text, {
+              maxLength: 4000,
+              preserveLineBreaks: true,
+            }),
+          ),
+        ].join('\n\n');
 
-      const response = await generateContentWithRetry({
-        model: AI_MODEL_NAME,
-        contents: fullContents,
-        config: { maxOutputTokens: 512, temperature: 0.7 },
-        signal: controller.signal,
+        const response = await generateContentWithRetry({
+          model: AI_MODEL_NAME,
+          contents: fullContents,
+          config: { maxOutputTokens: 512, temperature: 0.7 },
+          signal,
+        });
+
+        if (signal.aborted) return;
+        const answer = response.text?.trim() ?? labels.error;
+        setMessages(prev => [...prev, { role: 'assistant', text: answer }]);
       });
-
-      const answer = response.text?.trim() ?? labels.error;
-      setMessages(prev => [...prev, { role: 'assistant', text: answer }]);
     } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return;
+      if (isAbortError(err)) return;
       setMessages(prev => [...prev, { role: 'assistant', text: labels.error }]);
     } finally {
       setIsThinking(false);
