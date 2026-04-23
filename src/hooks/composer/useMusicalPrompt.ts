@@ -4,6 +4,12 @@ import type { Section } from '../../types';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { getSongText } from '../../utils/songUtils';
 import { withAbort, isAbortError } from '../../utils/withAbort';
+import {
+  DEFAULT_LONG_FIELD_MAX_LENGTH,
+  UNTRUSTED_INPUT_PREAMBLE,
+  sanitizeForPrompt,
+  wrapUntrusted,
+} from '../../utils/promptSanitization';
 
 const MusicalAnalysisSchema = z.object({
   genre: z.string().optional(),
@@ -43,6 +49,18 @@ function getLyricsSnippet(song: Section[]): Section[] {
   return [...head, last];
 }
 
+/**
+ * Coerce a numeric language input (e.g. tempo BPM) into a clean integer
+ * string. We sanitise the *string form* of numeric inputs so a downstream
+ * malicious caller cannot smuggle markup through a non-finite or absurdly
+ * large value.
+ */
+function sanitizeBpm(tempo: number): string {
+  if (!Number.isFinite(tempo)) return '120';
+  const clamped = Math.max(20, Math.min(300, Math.round(tempo)));
+  return String(clamped);
+}
+
 export const useMusicalPrompt = ({
   song,
   title,
@@ -74,29 +92,51 @@ export const useMusicalPrompt = ({
   const generateMusicalPrompt = async () => {
     if (!title && !topic) return;
     setIsGeneratingMusicalPrompt(true);
-    const lang = songLanguage || 'English';
+    // Capture our own signal so we can later check whether *this* invocation
+    // is still the latest one in the ref. This replaces the previous mutable
+    // `wasAborted` boolean (an ad-hoc, untyped status flag whose semantics
+    // were ambiguous between "superseded by newer run" and "aborted on
+    // unmount") with a single, well-typed equality check on the controller.
+    let mySignal: AbortSignal | null = null;
+
+    // Sanitise every user-controlled field before interpolation. Wrap each
+    // one in an explicit `<<<FIELD>>>` fence so the model can be instructed
+    // to treat the contents strictly as data — never as instructions.
+    const safeTitle           = sanitizeForPrompt(title);
+    const safeTopic           = sanitizeForPrompt(topic);
+    const safeMood            = sanitizeForPrompt(mood);
+    const safeGenre           = sanitizeForPrompt(genre);
+    const safeRhythm          = sanitizeForPrompt(rhythm);
+    const safeInstrumentation = sanitizeForPrompt(instrumentation);
+    const safeNarrative       = sanitizeForPrompt(narrative);
+    const safeLang            = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
     const culturalStyleInstruction = songLanguage.trim()
-      ? `Treat ${songLanguage.trim()} as a cultural style lens so the generated prompt favors idiomatic references, vocal phrasing, and genre cues that feel authentic to that language (for example, French chanson, Korean pop, or Brazilian funk when relevant).`
+      ? `Treat ${safeLang} as a cultural style lens so the generated prompt favors idiomatic references, vocal phrasing, and genre cues that feel authentic to that language (for example, French chanson, Korean pop, or Brazilian funk when relevant).`
       : '';
-    let wasAborted = false;
+
     try {
       await withAbort(promptAbortRef, async (nextSignal) => {
-        const lyricsSnippet = getSongText(getLyricsSnippet(song));
+        mySignal = nextSignal;
+        const lyricsSnippet = sanitizeForPrompt(getSongText(getLyricsSnippet(song)), {
+          maxLength: DEFAULT_LONG_FIELD_MAX_LENGTH,
+          preserveLineBreaks: true,
+        });
         const response = await generateContentWithRetry({
           model: AI_MODEL_NAME,
-          contents: `Generate a structured musical production prompt for an AI music generator (like Suno or Udio).
-Song Title: ${title}
-Topic/Theme: ${topic}
-Mood: ${mood}
-Genre: ${genre}
-Tempo: ${tempo.toString()} BPM
-Rhythm & Groove: ${rhythm}
-Instrumentation: ${instrumentation}
-Narrative / Vibe: ${narrative}
-Song Language: ${lang}
+          contents: `${UNTRUSTED_INPUT_PREAMBLE}
+
+Generate a structured musical production prompt for an AI music generator (like Suno or Udio).
+${wrapUntrusted('SONG_TITLE', safeTitle)}
+${wrapUntrusted('TOPIC_THEME', safeTopic)}
+${wrapUntrusted('MOOD', safeMood)}
+${wrapUntrusted('GENRE', safeGenre)}
+${wrapUntrusted('TEMPO_BPM', sanitizeBpm(tempo))}
+${wrapUntrusted('RHYTHM_GROOVE', safeRhythm)}
+${wrapUntrusted('INSTRUMENTATION', safeInstrumentation)}
+${wrapUntrusted('NARRATIVE_VIBE', safeNarrative)}
+${wrapUntrusted('SONG_LANGUAGE', safeLang)}
 ${culturalStyleInstruction}
-Lyrics:
-${lyricsSnippet}
+${wrapUntrusted('LYRICS', lyricsSnippet)}
 
 Return a concise prompt (<= 900 characters) using this exact labeled, line-by-line format:
 STYLE: [style/genre lane and sonic fingerprint]
@@ -114,45 +154,58 @@ Keep the response in English (required by music AI tools) and avoid markdown or 
           signal: nextSignal,
         });
 
-        if (nextSignal.aborted) {
-          wasAborted = true;
-          return;
-        }
+        if (nextSignal.aborted) return;
         setMusicalPrompt(response.text || '');
       });
     } catch (error) {
-      if (isAbortError(error)) {
-        wasAborted = true;
-        return;
-      }
+      if (isAbortError(error)) return;
       handleApiError(error, 'Error generating musical prompt.');
     } finally {
-      if (!wasAborted) setIsGeneratingMusicalPrompt(false);
+      // Always release the spinner — *unless* a newer invocation has already
+      // taken ownership of `promptAbortRef`. This fixes the race where an
+      // aborted run would leave `isGeneratingMusicalPrompt` stuck at `true`.
+      if (!mySignal || promptAbortRef.current?.signal === mySignal) {
+        setIsGeneratingMusicalPrompt(false);
+        // Also clear the ref so we don't hold on to a finished controller.
+        if (mySignal && promptAbortRef.current?.signal === mySignal) {
+          promptAbortRef.current = null;
+        }
+      }
     }
   };
 
   const analyzeLyricsForMusic = async () => {
     if (song.length === 0 && !topic && !mood) return;
     setIsAnalyzingLyrics(true);
-    const lang = songLanguage || 'English';
+    let mySignal: AbortSignal | null = null;
+
+    const safeTitle = sanitizeForPrompt(title);
+    const safeTopic = sanitizeForPrompt(topic);
+    const safeMood  = sanitizeForPrompt(mood);
+    const safeLang  = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
     const culturalStyleInstruction = songLanguage.trim()
-      ? `Use ${songLanguage.trim()} as a cultural context clue so the suggested genre, instrumentation, rhythm, and narrative feel native to that language's musical traditions when appropriate.`
+      ? `Use ${safeLang} as a cultural context clue so the suggested genre, instrumentation, rhythm, and narrative feel native to that language's musical traditions when appropriate.`
       : '';
-    let wasAborted = false;
+
     try {
       await withAbort(analysisAbortRef, async (nextSignal) => {
-        const lyricsText = getSongText(song);
+        mySignal = nextSignal;
+        const lyricsText = sanitizeForPrompt(getSongText(song), {
+          maxLength: DEFAULT_LONG_FIELD_MAX_LENGTH,
+          preserveLineBreaks: true,
+        });
         const response = await generateContentWithRetry({
           model: AI_MODEL_NAME,
-          contents: `Analyze these song lyrics and metadata to suggest detailed musical production parameters for an AI music generator.
+          contents: `${UNTRUSTED_INPUT_PREAMBLE}
 
-Song Title: ${title || '(untitled)'}
-Topic/Theme: ${topic || '(not specified)'}
-Mood: ${mood || '(not specified)'}
-Song Language: ${lang}
+Analyze these song lyrics and metadata to suggest detailed musical production parameters for an AI music generator.
+
+${wrapUntrusted('SONG_TITLE', safeTitle || '(untitled)')}
+${wrapUntrusted('TOPIC_THEME', safeTopic || '(not specified)')}
+${wrapUntrusted('MOOD', safeMood || '(not specified)')}
+${wrapUntrusted('SONG_LANGUAGE', safeLang)}
 ${culturalStyleInstruction}
-Lyrics:
-${lyricsText || '(no lyrics yet)'}
+${wrapUntrusted('LYRICS', lyricsText || '(no lyrics yet)')}
 
 Based on this, provide JSON with exactly these keys:
 {
@@ -167,10 +220,7 @@ Return only valid JSON, no markdown, no explanations.`,
           signal: nextSignal,
         });
 
-        if (nextSignal.aborted) {
-          wasAborted = true;
-          return;
-        }
+        if (nextSignal.aborted) return;
         const parsed = safeJsonParse<MusicalAnalysis>(response.text || '{}', {}, MusicalAnalysisSchema);
         if (parsed.genre) setGenre(parsed.genre);
         if (parsed.tempo) setTempo(parseInt(parsed.tempo, 10) || 120);
@@ -179,13 +229,15 @@ Return only valid JSON, no markdown, no explanations.`,
         if (parsed.narrative) setNarrative(parsed.narrative);
       });
     } catch (error) {
-      if (isAbortError(error)) {
-        wasAborted = true;
-        return;
-      }
+      if (isAbortError(error)) return;
       handleApiError(error, 'Error analyzing lyrics for music suggestions.');
     } finally {
-      if (!wasAborted) setIsAnalyzingLyrics(false);
+      if (!mySignal || analysisAbortRef.current?.signal === mySignal) {
+        setIsAnalyzingLyrics(false);
+        if (mySignal && analysisAbortRef.current?.signal === mySignal) {
+          analysisAbortRef.current = null;
+        }
+      }
     }
   };
 

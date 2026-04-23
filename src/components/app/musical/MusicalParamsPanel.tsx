@@ -4,6 +4,7 @@ import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
 import { useMetronome } from '../../../hooks/useMetronome';
 import { RHYTHM_BPM } from '../../../constants/rhythmBpm';
+import { copyToClipboard } from '../../../utils/clipboard';
 
 const AMBER_PRIMARY = '#f59e0b';
 
@@ -322,11 +323,13 @@ export function MusicalParamsPanel({ genre, setGenre, tempo, setTempo, instrumen
   const handleCopyReferences = useCallback(() => {
     if (!selectedCategory) return;
     const refs = selectedCategory.artists.join(', ');
-    navigator.clipboard?.writeText(refs).then(() => {
+    // Use the shared clipboard helper — `navigator.clipboard?.writeText(...).then(...)`
+    // crashes with `TypeError: undefined.then` when `clipboard` is undefined
+    // (non-secure context, sandboxed iframe, older browsers).
+    void copyToClipboard(refs).then((ok) => {
+      if (!ok) return;
       setReferencesCopied(true);
       setTimeout(() => setReferencesCopied(false), 1600);
-    }).catch(() => {
-      /* noop */
     });
   }, [selectedCategory]);
 
