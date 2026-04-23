@@ -214,8 +214,8 @@ describe('usePasteImport', () => {
     expect(importedTexts).not.toContain('[Couplet]');
     expect(importedTexts).not.toContain('[Refrain]');
     expect(song.map((section: Section) => section.name)).toEqual(['Verse', 'Chorus']);
-    expect(vi.mocked(generateContentWithRetry).mock.calls[0]?.[0].contents).toContain('Source section label: Couplet');
-    expect(vi.mocked(generateContentWithRetry).mock.calls[1]?.[0].contents).toContain('Source section label: Refrain');
+    expect(vi.mocked(generateContentWithRetry).mock.calls[0]?.[0].contents).toContain('<<<SOURCE_SECTION_LABEL>>>\nCouplet');
+    expect(vi.mocked(generateContentWithRetry).mock.calls[1]?.[0].contents).toContain('<<<SOURCE_SECTION_LABEL>>>\nRefrain');
   });
 
   it('calls onDetectedLanguage with detected language and section IDs after import', async () => {

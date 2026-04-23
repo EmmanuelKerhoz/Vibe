@@ -112,3 +112,26 @@ export function wrapUntrusted(label: string, value: string): string {
   const safeLabel = label.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
   return `<<<${safeLabel}>>>\n${value}\n<<<END ${safeLabel}>>>`;
 }
+
+/**
+ * Convenience helper combining {@link sanitizeForPrompt} and
+ * {@link wrapUntrusted}: sanitises `value` then wraps it in a clearly
+ * labelled `<<<LABEL>>> … <<<END LABEL>>>` fence so the model can be
+ * instructed (via {@link UNTRUSTED_INPUT_PREAMBLE}) to treat the content
+ * strictly as data.
+ */
+export function fence(label: string, value: unknown, opts?: SanitizeOptions): string {
+  return wrapUntrusted(label, sanitizeForPrompt(value, opts));
+}
+
+/**
+ * Fences a long-form text field (lyrics, narratives, pasted text, …) using
+ * {@link DEFAULT_LONG_FIELD_MAX_LENGTH} and `preserveLineBreaks: true`.
+ */
+export function fenceLong(label: string, value: unknown, opts?: SanitizeOptions): string {
+  return fence(label, value, {
+    maxLength: DEFAULT_LONG_FIELD_MAX_LENGTH,
+    preserveLineBreaks: true,
+    ...(opts ?? {}),
+  });
+}

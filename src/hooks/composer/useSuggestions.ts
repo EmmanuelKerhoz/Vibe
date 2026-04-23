@@ -6,6 +6,7 @@ import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError 
 import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
 import { countSyllables } from '../../utils/syllableUtils';
 import { withAbort, isAbortError } from '../../utils/withAbort';
+import { UNTRUSTED_INPUT_PREAMBLE, fence, sanitizeForPrompt } from '../../utils/promptSanitization';
 
 const SuggestionsSchema = z.array(z.string());
 const SynonymsSchema = z.record(z.array(z.string()));
@@ -92,7 +93,7 @@ export const useSuggestions = ({
 
       const lang = songLanguage || 'English';
       const exclusiveLanguageInstruction = songLanguage.trim()
-        ? `Write exclusively in ${songLanguage.trim()}.`
+        ? `Write exclusively in ${sanitizeForPrompt(songLanguage.trim(), { maxLength: 64 })}.`
         : '';
       let wasAborted = false;
       try {
@@ -119,18 +120,20 @@ export const useSuggestions = ({
             }
           }
 
-          const prompt = `Generate 3 creative alternative versions for a lyric line.
-Context:
-- Topic: ${topic}
-- Mood: ${mood}
-- Rhyme Scheme: ${song.find(s => s.lines.some(l => l.id === lineId))?.rhymeScheme || rhymeScheme}
-- Target Syllables: ${targetSyllables}
-- Section: ${sectionName}
-- Previous Line: "${previousLine?.text || ''}" (Rhyme: ${previousLine?.rhyme || ''})
-- Current Line to replace: "${currentLine.text}" (Rhyme: ${currentLine.rhyme}, Concept: ${currentLine.concept})
-- Next Line: "${nextLine?.text || ''}" (Rhyme: ${nextLine?.rhyme || ''})${ipaConstraints}
+          const prompt = `${UNTRUSTED_INPUT_PREAMBLE}
 
-IMPORTANT: All 3 alternatives MUST be written in ${lang}.
+Generate 3 creative alternative versions for a lyric line.
+Context:
+${fence('TOPIC', topic)}
+${fence('MOOD', mood)}
+- Rhyme Scheme: ${sanitizeForPrompt(song.find(s => s.lines.some(l => l.id === lineId))?.rhymeScheme || rhymeScheme, { maxLength: 64 })}
+- Target Syllables: ${targetSyllables}
+${fence('SECTION', sectionName, { maxLength: 64 })}
+${fence('PREVIOUS_LINE', `${previousLine?.text || ''} (Rhyme: ${previousLine?.rhyme || ''})`)}
+${fence('CURRENT_LINE_TO_REPLACE', `${currentLine.text} (Rhyme: ${currentLine.rhyme}, Concept: ${currentLine.concept})`)}
+${fence('NEXT_LINE', `${nextLine?.text || ''} (Rhyme: ${nextLine?.rhyme || ''})`)}${ipaConstraints}
+
+IMPORTANT: All 3 alternatives MUST be written in ${sanitizeForPrompt(lang, { maxLength: 64 })}.
 ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Provide exactly 3 alternative lines that fit the context, mood, and rhyme scheme. Return them as a JSON array of strings.`;
 
           const response = await generateContentWithRetry({
@@ -224,15 +227,17 @@ export const useSynonyms = ({
 
       if (!currentLine) { setIsSynonymsLoading(false); return; }
 
-      const lang = songLanguage.trim() || 'English';
-      const prompt = `You are a specialist in ${lang} lyrics and poetic vocabulary.
+      const lang = sanitizeForPrompt(songLanguage.trim() || 'English', { maxLength: 64 });
+      const prompt = `${UNTRUSTED_INPUT_PREAMBLE}
+
+You are a specialist in ${lang} lyrics and poetic vocabulary.
 
 For each word in the lyric line below, suggest up to 3 synonyms or near-synonyms that:
 - Have the SAME number of syllables as the original word (strict constraint — count carefully)
 - Fit naturally in the same position in the line
 - Match the emotional tone of the original
 
-Line: "${currentLine.text}"
+${fence('LINE', currentLine.text)}
 
 Return a JSON object where each key is a word from the line and the value is an array of synonym strings.
 Words with no valid same-syllable synonym should be omitted entirely.

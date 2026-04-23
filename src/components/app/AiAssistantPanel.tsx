@@ -5,6 +5,7 @@ import { generateContentWithRetry } from '../../utils/aiUtils';
 import { AI_MODEL_NAME } from '../../utils/aiUtils';
 import { useModalState } from '../../contexts/ModalContext';
 import { useEditorContext } from '../../contexts/EditorContext';
+import { UNTRUSTED_INPUT_PREAMBLE, fence, sanitizeForPrompt } from '../../utils/promptSanitization';
 import knowledgeEn from '../../knowledge/en.md?raw';
 import knowledgeFr from '../../knowledge/fr.md?raw';
 
@@ -67,8 +68,8 @@ export function AiAssistantPanel({ onClose }: Props) {
   const buildSystemPrompt = useCallback(() => {
     const knowledge = getKnowledgeBase(language);
     return PROMPT_TEMPLATE
-      .replace('<<<page>>>', currentPage)
-      .replace('<<<mode>>>', editMode)
+      .replace('<<<page>>>', sanitizeForPrompt(currentPage, { maxLength: 64 }))
+      .replace('<<<mode>>>', sanitizeForPrompt(editMode, { maxLength: 64 }))
       .replace('<<<knowledge>>>', knowledge);
   }, [language, currentPage, editMode]);
 
@@ -91,8 +92,14 @@ export function AiAssistantPanel({ onClose }: Props) {
       const systemPrompt = buildSystemPrompt();
       const history = [...messages, userMessage];
       const fullContents = [
+        UNTRUSTED_INPUT_PREAMBLE,
         `[SYSTEM]\n${systemPrompt}`,
-        ...history.map(m => `[${m.role === 'user' ? 'USER' : 'ASSISTANT'}]\n${m.text}`),
+        ...history.map(m =>
+          fence(m.role === 'user' ? 'USER_MESSAGE' : 'ASSISTANT_MESSAGE', m.text, {
+            maxLength: 4000,
+            preserveLineBreaks: true,
+          }),
+        ),
       ].join('\n\n');
 
       const response = await generateContentWithRetry({

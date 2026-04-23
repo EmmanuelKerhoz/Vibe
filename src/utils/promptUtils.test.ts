@@ -431,8 +431,11 @@ Current Song Data:`;
         uiLanguage: 'English',
       });
 
-      const batchRules = batchPrompt.slice(batchPrompt.indexOf('IMPORTANT:'));
-      const itemRules = itemPrompt.slice(itemPrompt.indexOf('IMPORTANT:'));
+      // The shared APPLY_PROMPT_RULES block (starting with "IMPORTANT:\n1. Maintain")
+      // and the trailing fenced song JSON must be identical between the two builders.
+      const RULES_MARKER = 'IMPORTANT:\n1. Maintain';
+      const batchRules = batchPrompt.slice(batchPrompt.indexOf(RULES_MARKER));
+      const itemRules = itemPrompt.slice(itemPrompt.indexOf(RULES_MARKER));
 
       expect(batchRules).toBe(itemRules);
     });
