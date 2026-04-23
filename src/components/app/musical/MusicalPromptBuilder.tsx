@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Sparkles, Loader2, Copy, Check } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
+import { copyToClipboard } from '../../../utils/clipboard';
 
 const AMBER_PRIMARY = '#f59e0b';
 const PROMPT_CHARACTER_LIMIT = 1000;
@@ -36,10 +37,11 @@ export function MusicalPromptBuilder({
 
   const handleCopy = useCallback(() => {
     if (!musicalPrompt) return;
-    navigator.clipboard.writeText(musicalPrompt).then(() => {
+    void copyToClipboard(musicalPrompt).then((ok) => {
+      if (!ok) return; // clipboard unavailable or write rejected — leave UI untouched
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    }).catch(() => { /* clipboard write failed — silently ignore */ });
+    });
   }, [musicalPrompt]);
 
   return (

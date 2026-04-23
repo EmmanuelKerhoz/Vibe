@@ -14,6 +14,7 @@ import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSuno } from '../../hooks/useSuno';
+import { copyToClipboard } from '../../utils/clipboard';
 import {
   MusicNote2Regular,
   CopyRegular,
@@ -188,7 +189,8 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
   const [copied, setCopied] = useState(false);
   const handleCopy = useCallback(async () => {
     if (!musicalPrompt) return;
-    await navigator.clipboard.writeText(musicalPrompt);
+    const ok = await copyToClipboard(musicalPrompt);
+    if (!ok) return; // clipboard unavailable — do not flash the "Copied" state
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   }, [musicalPrompt]);
