@@ -90,6 +90,16 @@ export interface DetectionResult {
   lineLanguageMap: Record<string, string>;
 }
 
+/** Strips markdown code fences (```json ... ``` or ``` ... ```) from an AI response. */
+function stripMarkdownFences(raw: string): string {
+  return raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+}
+
+/** Returns true if the string looks like a bare language name (no JSON structure). */
+function looksLikePlainLanguageName(s: string): boolean {
+  return s.length > 0 && s.length < 64 && !s.includes('{') && !s.includes('[');
+}
+
 export const detectSongLanguage = async (song: Section[], signal?: AbortSignal): Promise<DetectionResult> => {
   const lineRefs = getSourceLineRefs(song);
   const songText = lineRefs.map(r => r.text).join('\n');
@@ -101,9 +111,11 @@ export const detectSongLanguage = async (song: Section[], signal?: AbortSignal):
     ...(signal ? { signal } : {}),
   });
 
-  const text = response.text?.trim() || '';
+  const rawText = response.text?.trim() || '';
+  // Strip markdown fences that Gemini sometimes wraps around JSON responses.
+  const text = stripMarkdownFences(rawText);
 
-  // Try parsing as JSON (new multi-language format)
+  // Try parsing as JSON (multi-language format)
   try {
     const parsed = JSON.parse(text) as { languages?: unknown; lineLanguages?: unknown };
     const languages = Array.isArray(parsed.languages)
@@ -126,9 +138,11 @@ export const detectSongLanguage = async (song: Section[], signal?: AbortSignal):
       lineLanguageMap,
     };
   } catch {
-    // Fallback: old-style plain text response (single language name)
+    // Fallback: plain-text single language name.
+    // Guard: never store a raw JSON blob or multi-line string as a language name.
+    const fallback = looksLikePlainLanguageName(text) ? text : 'English';
     return {
-      languages: [text || 'English'],
+      languages: [fallback],
       lineLanguageMap: {},
     };
   }
