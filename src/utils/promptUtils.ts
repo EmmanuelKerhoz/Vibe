@@ -69,6 +69,38 @@ type BuildSongAnalysisPromptParams = {
 };
 
 /**
+ * Extracts per-line syllable constraints from source sections for adaptation prompts.
+ * Returns an empty string if no lines have syllable data.
+ */
+const buildSyllableConstraintsBlock = (sections: Section[]): string => {
+  const entries: { text: string; syllables: number }[] = [];
+  for (const section of sections) {
+    for (const line of section.lines) {
+      if (!line.isMeta && line.text.trim() && typeof line.syllables === 'number' && line.syllables > 0) {
+        entries.push({ text: line.text, syllables: line.syllables });
+      }
+    }
+  }
+  if (entries.length === 0) return '';
+
+  const lines = entries
+    .map((e, i) => `  Line ${i + 1}: "${e.text}" → MUST have ${e.syllables} syllables (±1 tolerance)`)
+    .join('\n');
+
+  return `\n\nSYLLABLE CONSTRAINTS (hard — singability depends on this):
+Each adapted line MUST match the syllable count of its source line (±1 tolerance).
+Violating this breaks the rhythmic fit with the music. Do NOT exceed ±1 syllable per line.
+${lines}`;
+};
+
+/**
+ * Extracts per-line syllable constraints from a single section.
+ */
+const buildSyllableConstraintsBlockFromSection = (section: Section): string => {
+  return buildSyllableConstraintsBlock([section]);
+};
+
+/**
  * Builds a rhyme-constrained prompt by analyzing existing lines with the IPA pipeline
  *
  * @param existingLines - Array of existing lines in the section
@@ -216,6 +248,8 @@ export const buildAdaptSongPrompt = ({
     .map(section => `${section.name}: ${section.rhymeScheme || 'FREE'}`)
     .join(', ');
 
+  const syllableConstraints = buildSyllableConstraintsBlock(sourceSong);
+
   return `${UNTRUSTED_INPUT_PREAMBLE}
 
 You are an expert lyricist specializing in creative song adaptation across languages.
@@ -244,7 +278,7 @@ CRITICAL GUIDELINES:
 4. POETIC STRUCTURE
    - Maintain rhyme scheme quality (e.g., if AABB, keep clean rhymes in ${newLanguage})
    - Maintain section rhyme schemes: ${songRhymeScheme}
-   - Match syllable counts when possible, but prioritize natural phrasing
+   - STRICTLY respect the per-line syllable counts listed below — singability depends on it
    - Preserve rhythm and singability
    - Adapt imagery and metaphors to resonate in the target culture
 
@@ -257,8 +291,9 @@ CRITICAL GUIDELINES:
    - Maintain the existing section structure (same section names)
    - Return the FULL updated song in the same JSON format as input
    - Update rhymingSyllables to reflect actual ${newLanguage} rhymes
-   - Adjust syllable counts to match the adapted lyrics
+   - Set the syllables field to the actual syllable count of each adapted line
    - Write the "concept" field for each line in ${uiLanguage}
+${syllableConstraints}
 
 ${fenceLong('CURRENT_SONG_DATA', JSON.stringify(sourceSong))}${ipaEnhancedPrompt}
 
@@ -273,6 +308,7 @@ export const buildAdaptSectionPrompt = ({
 }: BuildAdaptSectionPromptParams): string => {
   const sourceLanguage = section.language || 'unknown';
   const sectionRhymeScheme = section.rhymeScheme || 'FREE';
+  const syllableConstraints = buildSyllableConstraintsBlockFromSection(section);
 
   return `${UNTRUSTED_INPUT_PREAMBLE}
 
@@ -280,11 +316,13 @@ You are an expert lyricist specializing in creative song adaptation across langu
 
 Source language detected: ${sourceLanguage}.
 Adapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.
-Keep section name unchanged. Update rhymingSyllables. Adjust syllable counts.
+Keep section name unchanged. Update rhymingSyllables. Set syllables to the actual count of each adapted line.
 Write the "concept" field for each line in ${uiLanguage}.
 Maintain rhyme scheme: ${sectionRhymeScheme}.
+STRICTLY respect the per-line syllable counts listed below — singability depends on it.
 
 IMPORTANT: Return the adapted lyrics using the authentic writing system and orthography of ${newLanguage}. Do NOT use phonetic transcription, romanization, or IPA notation. Use the real native script, diacritics, and character set of ${newLanguage}. Phonetic or romanized output is only acceptable if ${newLanguage} has no native script of its own.
+${syllableConstraints}
 
 ${fenceLong('CURRENT_SECTION_DATA', JSON.stringify(section))}${ipaEnhancedPrompt}`;
 };
@@ -299,6 +337,10 @@ export const buildAdaptLinePrompt = ({
     ? line.language
     : 'unknown';
 
+  const syllableHint = typeof line.syllables === 'number' && line.syllables > 0
+    ? `\nSYLLABLE CONSTRAINT: The adapted line MUST have ${line.syllables} syllables (±1 tolerance). Singability depends on this.`
+    : '';
+
   return `${UNTRUSTED_INPUT_PREAMBLE}
 
 You are an expert lyricist specializing in creative song adaptation across languages.
@@ -306,7 +348,7 @@ You are an expert lyricist specializing in creative song adaptation across langu
 Source language detected: ${sourceLanguage}.
 Adapt the following single lyric line to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.
 Preserve the emotional impact and singability. Update rhymingSyllables, rhyme, and syllables to reflect the adapted text.
-Write the "concept" field in ${uiLanguage}.
+Write the "concept" field in ${uiLanguage}.${syllableHint}
 
 ${fence('LINE_DATA', JSON.stringify(line), { maxLength: DEFAULT_LONG_FIELD_MAX_LENGTH })}${ipaEnhancedPrompt}`;
 };
