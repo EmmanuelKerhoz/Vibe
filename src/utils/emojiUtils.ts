@@ -4,16 +4,14 @@
  * Uses locally-bundled SVGs in `/twemoji/` so flag rendering is reliable even
  * when external CDNs are blocked by ad-blockers or corporate firewalls.
  *
- * Twemoji filenames never include variation selectors (U+FE0F) or ZWJ
- * (U+200D) as isolated codepoint segments — they are stripped before
- * building the URL so that composite emojis like 🛡️ resolve correctly
- * (e.g. `1f6e1.svg` instead of `1f6e1-fe0f.svg`).
+ * Only variation selector U+FE0F is stripped — it never appears in Twemoji
+ * filenames. U+200D (ZWJ) is intentionally preserved because it is part of
+ * subdivision flag sequences (e.g. 🏴󠁧󠁢󠁥󠁮󠁧󠁿) and composite emoji filenames.
  *
  * Results are cached in a module-level Map so the codepoint computation
  * runs at most once per unique emoji across the entire session.
  */
 
-const STRIPPED = new Set([0xfe0f, 0x200d]);
 const _twemojiCache = new Map<string, string>();
 
 export function emojiToTwemojiUrl(emoji: string): string {
@@ -22,7 +20,7 @@ export function emojiToTwemojiUrl(emoji: string): string {
 
   const codepoints = [...emoji]
     .map(char => char.codePointAt(0)!)
-    .filter(cp => !STRIPPED.has(cp))
+    .filter(cp => cp !== 0xfe0f) // strip variation selector only
     .map(cp => cp.toString(16))
     .join('-');
 
