@@ -15,6 +15,7 @@ import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSuno } from '../../hooks/useSuno';
 import { copyToClipboard } from '../../utils/clipboard';
+import { computeCompleteness } from '../../utils/musicalPromptCompleteness';
 import {
   MusicNote2Regular,
   CopyRegular,
@@ -25,21 +26,6 @@ import {
   ErrorCircleRegular,
   SparkleRegular,
 } from '@fluentui/react-icons';
-
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-function computeCompleteness(prompt: string | undefined): { filled: number; total: number; pct: number } {
-  if (!prompt || prompt.trim().length === 0) return { filled: 0, total: 5, pct: 0 };
-  const checks = [
-    /style/i,
-    /mood|vibe/i,
-    /vocal|voice/i,
-    /instrument|bpm|tempo/i,
-    /structure|verse|chorus/i,
-  ];
-  const filled = checks.filter(re => re.test(prompt)).length;
-  return { filled, total: checks.length, pct: Math.round((filled / checks.length) * 100) };
-}
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
