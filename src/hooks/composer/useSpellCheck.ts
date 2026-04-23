@@ -3,6 +3,7 @@ import { Type } from '@google/genai';
 import type { Line, Section } from '../../types';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse, handleApiError } from '../../utils/aiUtils';
 import { withAbort, isAbortError } from '../../utils/withAbort';
+import { UNTRUSTED_INPUT_PREAMBLE, fence, sanitizeForPrompt } from '../../utils/promptSanitization';
 
 type UseSpellCheckParams = {
   song: Section[];
@@ -45,15 +46,17 @@ export const useSpellCheck = ({
 
       if (!currentLine) { setIsChecking(false); return; }
 
-      const lang = songLanguage.trim() || 'English';
+      const lang = sanitizeForPrompt(songLanguage.trim() || 'English', { maxLength: 64 });
       const syllableCount = currentLine.syllables ?? 0;
-      const prompt = `You are a meticulous lyric proofreader for ${lang} lyrics.
+      const prompt = `${UNTRUSTED_INPUT_PREAMBLE}
+
+You are a meticulous lyric proofreader for ${lang} lyrics.
 
 Fix ONLY genuine spelling errors in the following lyric line.
 Preserve: the exact number of syllables (${syllableCount}), all rhyme sounds, capitalisation style, poetic contractions, and deliberate vernacular (e.g. "gonna", "ain't").
 Do NOT rephrase, add or remove words unless strictly required by a spelling fix.
 
-Line: "${currentLine.text}"
+${fence('LINE', currentLine.text)}
 
 Return a JSON object with a single key "corrected" whose value is the corrected line string.
 If there are no errors, return the line unchanged.`;

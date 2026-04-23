@@ -2,6 +2,7 @@ import { Type } from '@google/genai';
 import { z } from 'zod';
 import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from './aiUtils';
 import { sanitizeLangName } from './sanitizeLangInput';
+import { UNTRUSTED_INPUT_PREAMBLE, fenceLong } from './promptSanitization';
 
 const buildReverseTranslatePrompt = (
   lines: string[],
@@ -11,10 +12,12 @@ const buildReverseTranslatePrompt = (
   const from = sanitizeLangName(fromLanguage);
   const to = sanitizeLangName(toLanguage);
   return [
+    UNTRUSTED_INPUT_PREAMBLE,
+    '',
     `You are a professional literal translator. Translate the following ${from} lyrics LITERALLY (word-for-word, no adaptation) into ${to}.`,
     `Return a JSON array of strings, one translated string per input line, preserving order exactly.`,
     `Input lines (${from}):`,
-    JSON.stringify(lines),
+    fenceLong('INPUT_LINES', JSON.stringify(lines)),
   ].join('\n');
 };
 
@@ -27,6 +30,8 @@ const buildFidelityReviewPrompt = (
   const target = sanitizeLangName(targetLanguage);
   const source = sanitizeLangName(sourceLang);
   return [
+    UNTRUSTED_INPUT_PREAMBLE,
+    '',
     `You are a senior lyric consultant reviewing the conceptual fidelity of a song adaptation from ${source} to ${target}.`,
     ``,
     `You have:`,
@@ -40,10 +45,10 @@ const buildFidelityReviewPrompt = (
     `- "warnings": array of strings describing specific intent losses (empty array if none)`,
     ``,
     `ORIGINAL (${source}):`,
-    JSON.stringify(originalLines),
+    fenceLong('ORIGINAL_LINES', JSON.stringify(originalLines)),
     ``,
     `REVERSE TRANSLATION (back to ${source}):`,
-    JSON.stringify(reversedLines),
+    fenceLong('REVERSE_TRANSLATION', JSON.stringify(reversedLines)),
   ].join('\n');
 };
 

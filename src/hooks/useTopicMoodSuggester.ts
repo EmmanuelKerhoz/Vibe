@@ -4,6 +4,7 @@ import { AI_MODEL_NAME, generateContentWithRetry, safeJsonParse } from '../utils
 import { withAbort, isAbortError } from '../utils/withAbort';
 import { useSongContext } from '../contexts/SongContext';
 import { DEFAULT_TITLE } from '../constants/editor';
+import { sanitizeForPrompt } from '../utils/promptSanitization';
 
 interface TopicMoodSuggestion {
   topic: string;
@@ -40,8 +41,9 @@ export function useTopicMoodSuggester({ hasApiKey }: { hasApiKey: boolean }) {
     let wasAborted = false;
     try {
       return await withAbort(abortControllerRef, async (nextSignal) => {
-        const languageInstruction = songLanguage.trim()
-          ? `\nWhen responding, write the "topic", "mood", and "title" values exclusively in ${songLanguage.trim()}.`
+        const safeLang = sanitizeForPrompt(songLanguage.trim(), { maxLength: 64 });
+        const languageInstruction = safeLang
+          ? `\nWhen responding, write the "topic", "mood", and "title" values exclusively in ${safeLang}.`
           : '';
         const prompt = `Generate a creative, inspiring song topic, matching mood, and fitting title for a songwriting session.\nReturn as JSON:\n{\n  "topic": "short description (2-8 words)",\n  "mood": "comma-separated mood descriptors (e.g., 'Melancholic, nostalgic, bittersweet')",\n  "title": "concise song title (2-6 words)"\n}\n\nExamples:\n- {"topic": "A lonely astronaut drifting in deep space", "mood": "Isolated, contemplative, yearning", "title": "Orbit Without You"}\n- {"topic": "Dancing in a neon-lit city at midnight", "mood": "Energetic, euphoric, cyberpunk", "title": "Midnight Neon"}\n- {"topic": "The last letter from a lost love", "mood": "Heartbreaking, tender, regretful", "title": "The Final Letter"}\n\nBe original and evocative.${languageInstruction}`;
 

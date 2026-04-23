@@ -12,6 +12,7 @@ import { buildDetectLanguagePrompt } from '../../utils/promptUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { SECTION_TYPE_DEFINITIONS } from '../../constants/sections';
 import { parseTextToSections } from '../../utils/libraryUtils';
+import { UNTRUSTED_INPUT_PREAMBLE, fence, fenceLong, sanitizeForPrompt } from '../../utils/promptSanitization';
 
 /** More aggressive retry budget for chunked paste-import calls. */
 const PASTE_IMPORT_RETRY = { maxAttempts: 3, delayMs: 1200 } as const;
@@ -173,7 +174,9 @@ const splitPastedLyricsIntoChunks = (text: string): PasteImportChunk[] => {
     : [];
 };
 
-const buildSectionPrompt = (chunk: PasteImportChunk, uiLang: string): string => `Analyze this single lyrics section.
+const buildSectionPrompt = (chunk: PasteImportChunk, uiLang: string): string => `${UNTRUSTED_INPUT_PREAMBLE}
+
+Analyze this single lyrics section.
 IMPORTANT: You MUST ONLY use the following section names (you can append numbers like "Verse 1", "Chorus 2"):
 - Intro
 - Verse
@@ -188,7 +191,7 @@ CRITICAL INSTRUCTIONS:
 2. DO NOT generate new lyrics.
 3. DO NOT continue the song.
 4. Stop immediately when you reach the end of the provided lyrics.
-5. Keep concepts very short (1-3 words) and write them in ${uiLang}.
+5. Keep concepts very short (1-3 words) and write them in ${sanitizeForPrompt(uiLang, { maxLength: 64 })}.
 6. Performance/production meta-instructions in brackets (e.g. [Guitar solo], [Whispered], [Anthemic], [Ad-lib]) are NOT section headers — include them verbatim as lyric lines with their brackets preserved.
 7. If a source section label is provided, normalize it to the closest allowed section name instead of inventing a new one.
 
@@ -203,18 +206,18 @@ For this single section, return one JSON object with:
 - "rhymeScheme": one of AABB, ABAB, ABCB, AAAA, AABBA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, ABACBC, FREE
 - "lines": array of lines with exact lyric text, rhyming syllables, rhyme identifier, exact syllable count, and short core concept
 
-${chunk.nameHint ? `Source section label: ${chunk.nameHint}\n\n` : ''}Lyrics:
-${chunk.text}`;
+${chunk.nameHint ? `${fence('SOURCE_SECTION_LABEL', chunk.nameHint, { maxLength: 64 })}\n\n` : ''}${fenceLong('LYRICS', chunk.text)}`;
 
-const buildMetadataPrompt = (text: string, uiLang: string): string => `Analyze these lyrics and return a JSON object with:
-- "topic": the overall topic in ${uiLang}
-- "mood": the overall mood in ${uiLang}
+const buildMetadataPrompt = (text: string, uiLang: string): string => `${UNTRUSTED_INPUT_PREAMBLE}
+
+Analyze these lyrics and return a JSON object with:
+- "topic": the overall topic in ${sanitizeForPrompt(uiLang, { maxLength: 64 })}
+- "mood": the overall mood in ${sanitizeForPrompt(uiLang, { maxLength: 64 })}
 - "language": the main lyric language in English (e.g. "English", "French", "Yoruba")
 
 Use only the provided lyrics. Do not generate new content.
 
-Lyrics:
-${text.substring(0, MAX_METADATA_PROMPT_LENGTH)}`;
+${fenceLong('LYRICS', text.substring(0, MAX_METADATA_PROMPT_LENGTH), { maxLength: 0 })}`;
 
 export const usePasteImport = ({
   rhymeScheme,

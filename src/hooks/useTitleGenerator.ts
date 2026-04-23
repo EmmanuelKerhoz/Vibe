@@ -3,6 +3,7 @@ import { AI_MODEL_NAME, generateContentWithRetry, handleApiError } from '../util
 import { getSongText } from '../utils/songUtils';
 import { withAbort, isAbortError } from '../utils/withAbort';
 import { useSongContext } from '../contexts/SongContext';
+import { UNTRUSTED_INPUT_PREAMBLE, fence, fenceLong } from '../utils/promptSanitization';
 
 export function useTitleGenerator() {
   const {
@@ -29,15 +30,17 @@ export function useTitleGenerator() {
     try {
       return await withAbort(abortControllerRef, async (nextSignal) => {
         const lyricsSnippet = getSongText(song.slice(0, 2)).substring(0, 500);
-        const languageInstruction = songLanguage.trim()
-          ? `IMPORTANT: Respond exclusively in ${songLanguage.trim()}. The title MUST be written in that language.\n`
+        const safeLang = songLanguage.trim();
+        const languageInstruction = safeLang
+          ? `IMPORTANT: Respond exclusively in ${fence('SONG_LANGUAGE', safeLang, { maxLength: 64 })}. The title MUST be written in that language.\n`
           : '';
 
-        const prompt = `Generate a creative, concise song title (max 6 words) based on:
-Topic: ${topic}
-Mood: ${mood}
-Lyrics excerpt:
-${lyricsSnippet}
+        const prompt = `${UNTRUSTED_INPUT_PREAMBLE}
+
+Generate a creative, concise song title (max 6 words) based on:
+${fence('TOPIC', topic)}
+${fence('MOOD', mood)}
+${fenceLong('LYRICS_EXCERPT', lyricsSnippet)}
 
 ${languageInstruction}Return ONLY the title as plain text, no quotes, no explanation.`;
 

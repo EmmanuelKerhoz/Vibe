@@ -81,7 +81,8 @@ describe('AI prompt language enforcement', () => {
 
     expect(aiUtilsMocks.generateContentWithRetry).toHaveBeenCalled();
     const firstPrompt = getPromptAt(0);
-    expect(firstPrompt).toContain('Respond exclusively in Arabic');
+    expect(firstPrompt).toContain('Respond exclusively in');
+    expect(firstPrompt).toContain('Arabic');
 
     rerender({ language: '' });
     await act(async () => {

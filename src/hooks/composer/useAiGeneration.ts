@@ -12,6 +12,12 @@ import { withRetry } from '../../utils/withRetry';
 import { getDefaultLineCount } from '../../utils/songDefaults';
 import { buildRhymeConstrainedPrompt } from '../../utils/promptUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
+import {
+  UNTRUSTED_INPUT_PREAMBLE,
+  fence,
+  fenceLong,
+  sanitizeForPrompt,
+} from '../../utils/promptSanitization';
 import { z } from 'zod';
 
 const LineResponseSchema = z.object({
@@ -83,13 +89,17 @@ const flagMetaLines = <T extends { text?: string }>(lines: T[]): (T & { isMeta: 
 
 /**
  * Sanitises a user-supplied string before prompt interpolation.
- * Prevents trivial prompt-injection attacks (role confusion, instruction override).
- * - Trims whitespace
- * - Strips double-quotes and backticks (common injection delimiters)
- * - Hard-truncates at maxLength characters
+ * Thin wrapper around {@link sanitizeForPrompt} kept for backward compat
+ * inside this module — prefer {@link fence}/{@link fenceLong} for new
+ * call sites because they also wrap the value in untrusted-input fences.
  */
 const sanitisePromptField = (value: string, maxLength = 500): string =>
-  value.trim().replace(/["`]/g, "'").slice(0, maxLength);
+  sanitizeForPrompt(value, { maxLength });
+
+const buildExclusiveLanguageInstruction = (language: string): string => {
+  const safe = sanitizeForPrompt(language, { maxLength: 64 });
+  return safe ? `Write exclusively in ${safe}.` : '';
+};
 
 /**
  * Meta-instruction formatting rule injected into every prompt.
@@ -129,9 +139,6 @@ Scheme-specific guidance:
 SELF-VALIDATION (mandatory before returning):
 For each section, mentally check: do all lines sharing the same letter end with matching
 phonetic sounds? If any pair fails, rewrite those lines before returning.`;
-
-const buildExclusiveLanguageInstruction = (language: string): string =>
-  language.trim() ? `Write exclusively in ${language.trim()}.` : '';
 
 const GENERATION_SCHEMA = {
   type: Type.ARRAY,
@@ -232,16 +239,20 @@ export const useAiGeneration = ({
     setIsGenerating(true);
     try {
       await withAbort(generateAbortRef, async (signal) => {
-        const lang = songLanguage || 'English';
-        const sTopic = sanitisePromptField(topic);
-        const sMood = sanitisePromptField(mood);
+        const lang = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
         const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
+        const safeStructure = structure.map(s => sanitizeForPrompt(s, { maxLength: 64 })).join(', ');
+        const safeRhymeScheme = sanitizeForPrompt(rhymeScheme, { maxLength: 64 });
+        const safeUiLang = sanitizeForPrompt(resolvedUiLanguage, { maxLength: 64 });
         const prompt =
-`Write a song about "${sTopic}".
-Mood: ${sMood}
-Default Rhyme Scheme: ${rhymeScheme}
+`${UNTRUSTED_INPUT_PREAMBLE}
+
+Write a song based on the following untrusted user-supplied brief:
+${fence('TOPIC', topic)}
+${fence('MOOD', mood)}
+Default Rhyme Scheme: ${safeRhymeScheme}
 Target Syllables per line: ${targetSyllables}
-Structure: ${structure.join(', ')}
+Structure: ${safeStructure}
 
 IMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY.
 ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Generate exactly the sections listed in the Structure field, in that specific order.
@@ -258,7 +269,7 @@ Line counts for sections:
 - Outro: 4 lines
 
 For each section, provide a rhyme scheme (e.g., AABB, ABAB, ABCB, AAAA, AAABBB, AABBCC, ABABAB, ABCABC, AABCCB, or FREE).
-For each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${resolvedUiLanguage}).`;
+For each line, provide the lyric text (in ${lang}), the rhyming syllables, the rhyme identifier, the exact syllable count, and a short core concept (in ${safeUiLang}).`;
 
         const response = await withRetry(() =>
           getAi().models.generateContent({
@@ -322,20 +333,18 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
       else if (lowerName.includes('bridge')) lineCountPrompt = 'The section should have exactly 6 lines.';
       else if (lowerName.includes('outro'))  lineCountPrompt = 'The section should have exactly 4 lines.';
 
-      const songStructure = song.map(s => s.name).join(' → ');
-      const lang = songLanguage || 'English';
-      const sTitle = sanitisePromptField(title);
-      const sTopic = sanitisePromptField(topic);
-      const sMood = sanitisePromptField(mood);
+      const songStructure = song.map(s => sanitizeForPrompt(s.name, { maxLength: 64 })).join(' → ');
+      const lang = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
+      const safeUiLang = sanitizeForPrompt(resolvedUiLanguage, { maxLength: 64 });
       const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
       const formatSectionLyrics = (sec: Section) =>
         sec.lines.map(l => l.text).filter(Boolean).join('\n');
 
       const prevContext = prevSection
-        ? `\nPrevious section context (${prevSection.name}):\n${formatSectionLyrics(prevSection)}`
+        ? `\n${fenceLong(`PREVIOUS_SECTION_${sanitizeForPrompt(prevSection.name, { maxLength: 32 })}`, formatSectionLyrics(prevSection))}`
         : '';
       const nextContext = nextSection
-        ? `\nNext section context (${nextSection.name}):\n${formatSectionLyrics(nextSection)}`
+        ? `\n${fenceLong(`NEXT_SECTION_${sanitizeForPrompt(nextSection.name, { maxLength: 32 })}`, formatSectionLyrics(nextSection))}`
         : '';
 
       const creativeDirectives = [
@@ -343,7 +352,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
         ...(sectionToRegenerate.postInstructions || []),
       ];
       const directivesPrompt = creativeDirectives.length > 0
-        ? `\nCreative directives:\n${creativeDirectives.map(d => `- ${sanitisePromptField(d, 200)}`).join('\n')}`
+        ? `\nCreative directives:\n${creativeDirectives.map((d, i) => `- ${fence(`DIRECTIVE_${i + 1}`, d, { maxLength: 200 })}`).join('\n')}`
         : '';
 
       const langCode = sectionToRegenerate.language || songLanguage;
@@ -369,11 +378,15 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
       }
 
       const prompt =
-`Rewrite the following section of a song titled "${sTitle}" about "${sTopic}".
-Mood: ${sMood}
+`${UNTRUSTED_INPUT_PREAMBLE}
+
+Rewrite the following section of a song.
+${fence('TITLE', title, { maxLength: 200 })}
+${fence('TOPIC', topic)}
+${fence('MOOD', mood)}
 Target Syllables per line: ${targetSyllables}
-Section Name: ${sectionToRegenerate.name}
-Rhyme Scheme: ${sectionToRegenerate.rhymeScheme || rhymeScheme}
+Section Name: ${sanitizeForPrompt(sectionToRegenerate.name, { maxLength: 64 })}
+Rhyme Scheme: ${sanitizeForPrompt(sectionToRegenerate.rhymeScheme || rhymeScheme, { maxLength: 64 })}
 ${lineCountPrompt}
 Song structure: ${songStructure}
 ${prevContext}${nextContext}${directivesPrompt}
@@ -382,11 +395,10 @@ ${RHYME_ENFORCEMENT_RULES}${ipaConstraints}
 
 ${META_INSTRUCTION_HINT}
 
-IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${resolvedUiLanguage}.
+IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${safeUiLang}.
 ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}
 
-Current Section:
-${JSON.stringify([sectionToRegenerate], null, 2)}
+${fenceLong('CURRENT_SECTION', JSON.stringify([sectionToRegenerate], null, 2))}
 
 Provide a new creative version of this section that fits seamlessly with the surrounding sections.
 Return the updated section in the exact same JSON structure (as an array with one section).`;
@@ -435,7 +447,7 @@ Return the updated section in the exact same JSON structure (as an array with on
   const quantizeSyllables = useCallback(async (sectionId?: string) => {
     if (song.length === 0) return;
     setIsGenerating(true);
-    const lang = songLanguage || 'English';
+    const lang = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
     const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
 
     try {
@@ -446,20 +458,23 @@ Return the updated section in the exact same JSON structure (as an array with on
           if (!sectionToQuantize) return;
           const syllables = sectionToQuantize.targetSyllables ?? targetSyllables;
           prompt =
-`Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables.
+`${UNTRUSTED_INPUT_PREAMBLE}
+
+Rewrite the following section of a song so that EVERY line has EXACTLY ${syllables} syllables.
 Maintain the original meaning, rhyme scheme, and section structure.
 Write ALL lyrics in ${lang}.
 ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
 
 ${RHYME_ENFORCEMENT_RULES}
 
-Current Section:
-${JSON.stringify([sectionToQuantize], null, 2)}
+${fenceLong('CURRENT_SECTION', JSON.stringify([sectionToQuantize], null, 2))}
 
 Return the updated section in the exact same JSON structure (as an array with one section).`;
         } else {
           prompt =
-`Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its
+`${UNTRUSTED_INPUT_PREAMBLE}
+
+Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its
 section's targetSyllables (or ${targetSyllables} if not specified).
 Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
 Write ALL lyrics in ${lang}.
@@ -467,8 +482,7 @@ ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Preser
 
 ${RHYME_ENFORCEMENT_RULES}
 
-Current Song:
-${JSON.stringify(song, null, 2)}
+${fenceLong('CURRENT_SONG', JSON.stringify(song, null, 2))}
 
 Return the updated song in the exact same JSON structure.`;
         }
