@@ -229,6 +229,15 @@ export const buildRhymeConstrainedPrompt = async (
   return prompt;
 };
 
+/**
+ * Maximum characters of lyrics sent to the language-detection model.
+ * Capped to keep the prompt small and avoid blowing past model token limits
+ * for very long pasted songs. The cap is enforced via {@link fenceLong} so an
+ * explicit `… [truncated]` marker is appended — the model can therefore tell
+ * it is seeing a sample, not the full song.
+ */
+export const DETECT_LANGUAGE_LYRICS_MAX_CHARS = 2000;
+
 export const buildDetectLanguagePrompt = (songText: string): string =>
   `${UNTRUSTED_INPUT_PREAMBLE}
 
@@ -239,7 +248,7 @@ Return a JSON object with:
 
 Return ONLY valid JSON, no markdown fences.
 
-${fenceLong('LYRICS', songText.substring(0, 2000), { maxLength: 0 })}`;
+${fenceLong('LYRICS', songText, { maxLength: DETECT_LANGUAGE_LYRICS_MAX_CHARS })}`;
 
 export const buildThemeAnalysisPrompt = ({
   song,

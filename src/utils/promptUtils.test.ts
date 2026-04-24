@@ -459,11 +459,25 @@ Current Song Data:`;
       ],
     };
 
-    it('buildDetectLanguagePrompt truncates long lyrics samples', () => {
+    it('buildDetectLanguagePrompt truncates long lyrics samples and emits an explicit truncation marker', () => {
       const prompt = buildDetectLanguagePrompt('a'.repeat(2105));
       expect(prompt).toContain('Analyze the languages used in these lyrics');
-      expect(prompt).toContain('a'.repeat(2000));
+      // The sanitizer caps to DETECT_LANGUAGE_LYRICS_MAX_CHARS (2000) and
+      // appends a "… [truncated]" marker so the model knows it is seeing a
+      // sample, not the full song.
+      expect(prompt).toContain('… [truncated]');
+      // The fenced LYRICS payload itself must not exceed the cap.
+      const lyricsBlock = prompt.slice(prompt.indexOf('<<<LYRICS>>>'), prompt.indexOf('<<<END LYRICS>>>'));
+      const lyricsBody = lyricsBlock.replace('<<<LYRICS>>>\n', '').trimEnd();
+      expect(lyricsBody.length).toBeLessThanOrEqual(2000);
+      // No 2001-char run of "a" should survive — the marker replaces the tail.
       expect(prompt).not.toContain('a'.repeat(2001));
+    });
+
+    it('buildDetectLanguagePrompt does not append a truncation marker when input fits the cap', () => {
+      const prompt = buildDetectLanguagePrompt('a'.repeat(100));
+      expect(prompt).toContain('a'.repeat(100));
+      expect(prompt).not.toContain('… [truncated]');
     });
 
     it('buildAdaptSongPrompt includes adaptation instructions and optional IPA constraints', () => {
@@ -593,6 +607,124 @@ Current Song Data:`;
 
       // No syllable data → no SYLLABLE CONSTRAINTS block emitted.
       expect(prompt).not.toContain('SYLLABLE CONSTRAINTS');
+    });
+  });
+
+  describe('buildSyllableConstraintsBlock (via buildAdaptSongPrompt)', () => {
+    // The block builder is an internal helper; we exercise its branches
+    // through the public adapt-song prompt so the tests stay tied to the
+    // observable prompt contract.
+
+    const sectionWithMixedLines: Section = {
+      id: 'verse-mixed',
+      name: 'Verse Mixed',
+      language: 'en',
+      rhymeScheme: 'AABB',
+      lines: [
+        // Valid sung line — must appear in constraints.
+        { id: 'l-valid', text: 'We chase the light', rhymingSyllables: 'light', rhyme: 'A', syllables: 4, concept: '' },
+        // Meta line (e.g. "[Guitar solo]") — must be skipped.
+        { id: 'l-meta', text: '[Guitar solo]', rhymingSyllables: '', rhyme: '', syllables: 3, concept: '', isMeta: true },
+        // Empty text — must be skipped even though syllables > 0.
+        { id: 'l-empty', text: '', rhymingSyllables: '', rhyme: '', syllables: 5, concept: '' },
+        // Whitespace-only text — must be skipped.
+        { id: 'l-blank', text: '   ', rhymingSyllables: '', rhyme: '', syllables: 6, concept: '' },
+        // Stored syllables = 0 → no constraint emitted unless IPA provides one.
+        { id: 'l-zero', text: 'Just an idea', rhymingSyllables: 'idea', rhyme: 'B', syllables: 0, concept: '' },
+      ],
+    };
+
+    const extractConstraintsBlock = (prompt: string): string => {
+      const start = prompt.indexOf('SYLLABLE CONSTRAINTS');
+      if (start === -1) return '';
+      const end = prompt.indexOf('<<<CURRENT_SONG_DATA>>>', start);
+      return end === -1 ? prompt.slice(start) : prompt.slice(start, end);
+    };
+
+    it('skips meta lines and empty/whitespace-only text in the constraints block', () => {
+      const prompt = buildAdaptSongPrompt({
+        sourceSong: [sectionWithMixedLines],
+        newLanguage: 'French',
+        uiLanguage: 'English',
+      });
+      const block = extractConstraintsBlock(prompt);
+
+      expect(block).toContain('"We chase the light" → MUST have 4 syllables');
+      expect(block).not.toContain('[Guitar solo]');
+      // The zero-syllable line has no stored count and no IPA override — skipped.
+      expect(block).not.toContain('Just an idea');
+    });
+
+    it('lets the IPA pipeline contribute counts for lines whose stored syllables are 0', () => {
+      const ipaSyllableCounts = new Map<string, number>([
+        ['l-zero', 5],
+        // Meta and empty lines must remain skipped even if IPA returns a count.
+        ['l-meta', 9],
+        ['l-empty', 9],
+      ]);
+
+      const prompt = buildAdaptSongPrompt({
+        sourceSong: [sectionWithMixedLines],
+        newLanguage: 'French',
+        uiLanguage: 'English',
+        ipaSyllableCounts,
+      });
+      const block = extractConstraintsBlock(prompt);
+
+      expect(block).toContain('"Just an idea" → MUST have 5 syllables');
+      // Meta / empty lines stay filtered out regardless of any IPA count.
+      expect(block).not.toContain('[Guitar solo]');
+      expect(block).not.toMatch(/MUST have 9 syllables/);
+    });
+
+    it('omits the SYLLABLE CONSTRAINTS block entirely when no line has a usable count', () => {
+      const sectionWithoutCounts: Section = {
+        id: 'no-counts',
+        name: 'No counts',
+        language: 'en',
+        rhymeScheme: 'FREE',
+        lines: [
+          { id: 'a', text: 'Sing along', rhymingSyllables: 'along', rhyme: 'A', syllables: 0, concept: '' },
+          { id: 'b', text: '[Bridge]', rhymingSyllables: '', rhyme: '', syllables: 4, concept: '', isMeta: true },
+        ],
+      };
+
+      const prompt = buildAdaptSongPrompt({
+        sourceSong: [sectionWithoutCounts],
+        newLanguage: 'French',
+        uiLanguage: 'English',
+      });
+
+      expect(prompt).not.toContain('SYLLABLE CONSTRAINTS');
+    });
+
+    it('treats negative or non-positive stored syllables as missing and falls back to IPA', () => {
+      const sectionWithBadCounts: Section = {
+        id: 'bad-counts',
+        name: 'Bad counts',
+        language: 'en',
+        rhymeScheme: 'AABB',
+        lines: [
+          { id: 'neg', text: 'Negative line', rhymingSyllables: 'line', rhyme: 'A', syllables: -3, concept: '' },
+        ],
+      };
+
+      const ipaSyllableCounts = new Map<string, number>([['neg', 4]]);
+
+      const promptWithoutIpa = buildAdaptSongPrompt({
+        sourceSong: [sectionWithBadCounts],
+        newLanguage: 'French',
+        uiLanguage: 'English',
+      });
+      expect(promptWithoutIpa).not.toContain('SYLLABLE CONSTRAINTS');
+
+      const promptWithIpa = buildAdaptSongPrompt({
+        sourceSong: [sectionWithBadCounts],
+        newLanguage: 'French',
+        uiLanguage: 'English',
+        ipaSyllableCounts,
+      });
+      expect(promptWithIpa).toContain('"Negative line" → MUST have 4 syllables');
     });
   });
 });
