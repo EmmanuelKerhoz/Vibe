@@ -513,5 +513,86 @@ Current Song Data:`;
       expect(prompt).toContain('authentic writing system and orthography of Wolof');
       expect(prompt).toContain('Do NOT use phonetic transcription, romanization, or IPA notation');
     });
+
+    it('buildAdaptSongPrompt embeds stored syllable counts in the SYLLABLE CONSTRAINTS block', () => {
+      const prompt = buildAdaptSongPrompt({
+        sourceSong: [section],
+        newLanguage: 'French',
+        uiLanguage: 'English',
+      });
+
+      expect(prompt).toContain('SYLLABLE CONSTRAINTS');
+      // Stored Line.syllables = 4
+      expect(prompt).toContain('"We chase the light" → MUST have 4 syllables');
+    });
+
+    it('buildAdaptSongPrompt prefers IPA pipeline syllable counts over stale stored values', () => {
+      const ipaSyllableCounts = new Map<string, number>([['line-1', 7]]);
+      const prompt = buildAdaptSongPrompt({
+        sourceSong: [section],
+        newLanguage: 'French',
+        uiLanguage: 'English',
+        ipaSyllableCounts,
+      });
+
+      // Fresh IPA count (7) overrides stored value (4)
+      expect(prompt).toContain('"We chase the light" → MUST have 7 syllables');
+      expect(prompt).not.toContain('MUST have 4 syllables');
+    });
+
+    it('buildAdaptSectionPrompt prefers IPA pipeline syllable counts over stale stored values', () => {
+      const ipaSyllableCounts = new Map<string, number>([['line-1', 6]]);
+      const prompt = buildAdaptSectionPrompt({
+        section,
+        newLanguage: 'Spanish',
+        uiLanguage: 'French',
+        ipaSyllableCounts,
+      });
+
+      expect(prompt).toContain('"We chase the light" → MUST have 6 syllables');
+      expect(prompt).not.toContain('MUST have 4 syllables');
+    });
+
+    it('buildAdaptSongPrompt does not throw when a section has undefined lines', () => {
+      const malformedSection = { id: 's', name: 'Bad', rhymeScheme: 'FREE' } as unknown as Section;
+
+      expect(() =>
+        buildAdaptSongPrompt({
+          sourceSong: [malformedSection, section],
+          newLanguage: 'French',
+          uiLanguage: 'English',
+        })
+      ).not.toThrow();
+
+      const prompt = buildAdaptSongPrompt({
+        sourceSong: [malformedSection, section],
+        newLanguage: 'French',
+        uiLanguage: 'English',
+      });
+
+      // The malformed section is skipped, but the well-formed one still contributes.
+      expect(prompt).toContain('"We chase the light" → MUST have 4 syllables');
+    });
+
+    it('buildAdaptSectionPrompt does not throw when section.lines is undefined', () => {
+      const malformedSection = { id: 's', name: 'Bad', rhymeScheme: 'FREE' } as unknown as Section;
+
+      expect(() =>
+        buildAdaptSectionPrompt({
+          section: malformedSection,
+          newLanguage: 'French',
+          uiLanguage: 'English',
+        })
+      ).not.toThrow();
+
+      const prompt = buildAdaptSectionPrompt({
+        section: malformedSection,
+        newLanguage: 'French',
+        uiLanguage: 'English',
+      });
+
+      // No syllable data → no SYLLABLE CONSTRAINTS block emitted.
+      expect(prompt).not.toContain('SYLLABLE CONSTRAINTS');
+    });
   });
 });
