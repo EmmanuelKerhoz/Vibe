@@ -42,7 +42,30 @@ export type PhonemeResponse = z.infer<typeof PhonemeResponseSchema>;
 /** Timeout (ms) for the health-check probe — avoids indefinite hang. */
 const HEALTH_CHECK_TIMEOUT_MS = 3_000;
 
+/**
+ * Per-request timeout (ms) for the phonemize POST endpoint.
+ *
+ * Without this, a single slow or hung response would stall every consumer
+ * that fans out via {@link runIPAPipelineBatch}'s `Promise.all` — the whole
+ * batch would wait forever on one stuck line. The timeout is composed with
+ * the caller's `AbortSignal` so explicit cancellation still wins.
+ */
+const PHONEMIZE_REQUEST_TIMEOUT_MS = 15_000;
+
 const isPhonemizeEnabled = () => import.meta.env.VITE_PHONEMIZE_ENABLED !== 'false';
+
+/**
+ * Compose the caller's `AbortSignal` with a per-request timeout signal so
+ * the fetch is cancelled whichever fires first.
+ */
+const makePhonemizeSignal = (
+  outerSignal: AbortSignal | undefined,
+  timeoutMs: number,
+): AbortSignal => {
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  if (!outerSignal) return timeoutSignal;
+  return AbortSignal.any([outerSignal, timeoutSignal]);
+};
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 
@@ -68,7 +91,7 @@ export const phonemizeText = async (
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, lang } satisfies PhonemeRequest),
-      signal: signal ?? null,
+      signal: makePhonemizeSignal(signal, PHONEMIZE_REQUEST_TIMEOUT_MS),
     });
 
     if (!response.ok) {
