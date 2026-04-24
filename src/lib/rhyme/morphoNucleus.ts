@@ -110,11 +110,11 @@ function splitMoras(word: string): string[] {
   const chars = [...word]; // spread handles surrogate pairs
   let i = 0;
   while (i < chars.length) {
-    const c = chars[i];
+    const c = chars[i]!;
     // Combined kana: small kana follows
     const small = /[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]/;
-    if (i + 1 < chars.length && small.test(chars[i + 1])) {
-      moras.push(c + chars[i + 1]);
+    if (i + 1 < chars.length && small.test(chars[i + 1]!)) {
+      moras.push(c + chars[i + 1]!);
       i += 2;
     } else {
       moras.push(c);
@@ -177,7 +177,7 @@ export function extractNucleus(
     // Skip purely mute-e final syllable
     while (
       nucleusStart > 0 &&
-      /^[^aeiouáéíóú]*e$/i.test(syllables[nucleusStart])
+      /^[^aeiouáéíóú]*e$/i.test(syllables[nucleusStart]!)
     ) {
       nucleusStart--;
     }

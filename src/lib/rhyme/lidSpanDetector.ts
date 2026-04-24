@@ -136,7 +136,7 @@ export function detectSpanLangs(
   // Dominant lang = highest token count
   const counts: Record<string, number> = {};
   for (const t of resolved) counts[t.langcode] = (counts[t.langcode] ?? 0) + 1;
-  const dominantLang = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  const dominantLang = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? defaultLangcode;
   const isMixed = Object.keys(counts).length > 1;
 
   return { tokens: resolved, dominantLang, isMixed };

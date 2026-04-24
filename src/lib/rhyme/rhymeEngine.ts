@@ -167,7 +167,11 @@ export function analyzeBlock(text: string, opts: BlockOptions = {}): BlockAnalys
             opts.position === 'internal' ? (ti > 0 && tj < tokens.length - 1) :
             opts.position === 'initial'  ? (ti === 0) : true;
           if (!match) continue;
-          const result = compareWords(tokens[ti]!, tokens[tj]!, { lang, position: opts.position, toneSensitive: opts.toneSensitive });
+          const result = compareWords(tokens[ti]!, tokens[tj]!, {
+            lang,
+            position: opts.position,
+            ...(opts.toneSensitive !== undefined ? { toneSensitive: opts.toneSensitive } : {}),
+          });
           if (result.score >= MIN_RHYME_SCORE)
             lineRhymes.push({ tokenA: tokens[ti]!, tokenB: tokens[tj]!, result });
         }
@@ -176,5 +180,10 @@ export function analyzeBlock(text: string, opts: BlockOptions = {}): BlockAnalys
     }
   }
 
-  return { lines, scheme, positionRhymes, csWarnings };
+  return {
+    lines,
+    scheme,
+    ...(positionRhymes !== undefined ? { positionRhymes } : {}),
+    csWarnings,
+  };
 }

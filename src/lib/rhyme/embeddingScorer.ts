@@ -65,7 +65,7 @@ function meanPool(phones: string[]): PhoneVector {
   for (const ph of phones) {
     const vec = PHONE_VECTORS[ph.toLowerCase()];
     if (!vec) continue;
-    for (let i = 0; i < dim; i++) sum[i] += vec[i];
+    for (let i = 0; i < dim; i++) sum[i]! += vec[i]!;
     count++;
   }
   if (count === 0) return sum;
@@ -76,9 +76,9 @@ function meanPool(phones: string[]): PhoneVector {
 function cosine(a: PhoneVector, b: PhoneVector): number {
   let dot = 0, normA = 0, normB = 0;
   for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
+    dot += a[i]! * b[i]!;
+    normA += a[i]! * a[i]!;
+    normB += b[i]! * b[i]!;
   }
   const denom = Math.sqrt(normA) * Math.sqrt(normB);
   return denom === 0 ? 0 : dot / denom;
