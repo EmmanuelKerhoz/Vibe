@@ -74,14 +74,14 @@ export function segmentVerses(
     .map(l => l.replace(/\s*\/\/\s*/g, ' ').trim())
     .filter(Boolean);
 
-  const lines: VerseLine[] = rawLines.map((text, index) => {
-    const isRTL = RTL_RANGE.test(text);
+  const lines: VerseLine[] = rawLines.map((lineText, index) => {
+    const isRTL = RTL_RANGE.test(lineText);
     const tokens = isRTL
-      ? tokenizeLine(text).reverse() // normalise to LTR order for phonetics
-      : tokenizeLine(text);
+      ? tokenizeLine(lineText).reverse() // normalise to LTR order for phonetics
+      : tokenizeLine(lineText);
     return {
       index,
-      text,
+      text: lineText,
       isRTL,
       tokens,
       rhymeTargets: deriveRhymeTargets(tokens, position),

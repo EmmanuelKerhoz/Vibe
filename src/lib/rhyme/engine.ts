@@ -4,7 +4,7 @@
  * analyzeBlock(block, lang, opts): BlockAnalysis
  */
 
-import type { LangCode, RhymeNucleus, RhymeResult } from './types';
+import type { LangCode, RhymeNucleus, RhymeResult, SchemeResult } from './types';
 import { extractLineEndingUnit, normalizeInput } from './normalize';
 import { routeToFamily } from './router';
 import { categorize, scoreKWANormalized, scoreCRV, phonemeEditDistance } from './scoring';
@@ -25,8 +25,7 @@ import { extractNucleusIIR, scoreIIR } from './algo-iir';
 import { extractNucleusAUS, scoreAUS } from './algo-aus';
 import { extractNucleusDRA, scoreDRA } from './algo-dra';
 import { extractNucleusCRE, scoreCRE } from './algo-cre';
-import { segmentVerses, type LineSegment } from './verseSegmenter';
-import { detectRhymeSchemeMultiLang, type SchemeResult } from './rhymeSchemeDetector';
+import { detectRhymeSchemeMultiLang } from './rhymeSchemeDetector';
 
 export interface BlockAnalysisOptions {
   /** Per-line language override. If provided, langs[i] is used for line i. */
@@ -39,7 +38,8 @@ export interface BlockAnalysisOptions {
 
 export interface BlockAnalysis {
   scheme: SchemeResult;
-  segments: LineSegment[];
+  /** Normalized verse lines used as input to the scheme detector. */
+  lines: Array<{ text: string; lang: LangCode }>;
 }
 
 /**
@@ -55,16 +55,24 @@ export function analyzeBlock(
   lang: LangCode,
   opts: BlockAnalysisOptions = {}
 ): BlockAnalysis {
-  const segments = segmentVerses(block, lang, opts.splitHemistich ?? true);
+  const splitHemistich = opts.splitHemistich ?? true;
 
-  const lineItems = segments.map((seg, i) => ({
-    text: seg.text,
+  // Split block into raw lines: \n + sentence-final punctuation,
+  // and optionally split " / " hemistich separators.
+  const rawLines = block
+    .split(/\n|(?<=[.!?;])\s+/)
+    .flatMap(l => splitHemistich ? l.split(/\s*\/\/\s*|\s+\/\s+/) : [l])
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  const lineItems = rawLines.map((text, i) => ({
+    text,
     lang: opts.langs?.[i] ?? lang,
   }));
 
   const scheme = detectRhymeSchemeMultiLang(lineItems, opts.window ?? 6);
 
-  return { scheme, segments };
+  return { scheme, lines: lineItems };
 }
 
 // ─── Core pairwise scorer (unchanged) ────────────────────────────────────────

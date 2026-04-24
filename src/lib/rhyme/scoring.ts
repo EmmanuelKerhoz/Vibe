@@ -103,13 +103,20 @@ const FAMILY_CONFIG: Record<FamilyId, FamilyScoringConfig> = {
 };
 
 const THRESHOLDS: Array<[number, RhymeCategory]> = [
-  [0.90,'perfect'],[0.75,'rich'],[0.55,'sufficient'],[0.30,'weak'],[0.00,'none'],
+  [0.92,'perfect'],[0.80,'rich'],[0.60,'sufficient'],[0.35,'weak'],[0.00,'none'],
 ];
 
-function categorise(score: number): RhymeCategory {
+/**
+ * Categorize a rhyme score into one of the 5 RhymeCategory buckets.
+ * Thresholds: ≥0.92 perfect, ≥0.80 rich, ≥0.60 sufficient, ≥0.35 weak, else none.
+ */
+export function categorize(score: number): RhymeCategory {
   for (const [t, cat] of THRESHOLDS) if (score >= t) return cat;
   return 'none';
 }
+
+/** Backwards-compatible alias used by scoreNuclei (British spelling). */
+const categorise = categorize;
 
 export type RhymePositionMode = 'end' | 'internal' | 'initial' | 'all';
 
@@ -154,4 +161,77 @@ export function scoreNuclei(
 
   const adjusted = Math.max(0, score - POSITION_THRESHOLD_ADJUST[position]);
   return { score: adjusted, category: categorise(adjusted) };
+}
+
+// ─── Tone similarity (used by KWA/CRV/VIET/YRB/TAI scorers) ──────────────────
+
+/**
+ * Tone similarity in [0, 1] (1 = identical, 0 = maximally distant).
+ * Despite the name, returns a SIMILARITY (kept for API compatibility with callers).
+ *
+ *   H/M/L  → discrete level distance: sim = 1 - |Δlevel|/2
+ *   F      → falling, treated as "halfway" → 0.5 against any other level
+ *   case-insensitive; either side undefined → 0.4 (no-info baseline)
+ */
+export function toneDistance(a?: string, b?: string): number {
+  if (a === undefined || b === undefined) return 0.4;
+  const A = a.toUpperCase();
+  const B = b.toUpperCase();
+  if (A === B) return 1;
+  if (A === 'F' || B === 'F') return 0.5;
+  const LEVEL: Record<string, number> = { H: 2, M: 1, L: 0 };
+  const la = LEVEL[A];
+  const lb = LEVEL[B];
+  if (la === undefined || lb === undefined) return 0.4;
+  return 1 - Math.abs(la - lb) / 2;
+}
+
+// ─── Family scorers exposed to engine.ts ─────────────────────────────────────
+
+/** Minimal nucleus shape consumed by family scorers (allows test literals
+ *  that omit `onset`). Compatible with the full RhymeNucleus interface. */
+interface ScorableNucleus {
+  vowels: string;
+  coda: string;
+  tone?: string;
+  moraCount?: number;
+}
+
+/**
+ * KWA-family normalized score in [0, 1].
+ * Weights mirror FAMILY_CONFIG.KWA: vowel 0.45, coda 0.20, tone 0.35.
+ * Identical nuclei → 1.
+ */
+export function scoreKWANormalized(a: ScorableNucleus, b: ScorableNucleus): number {
+  if (a.vowels === b.vowels && a.coda === b.coda && (a.tone ?? '') === (b.tone ?? ''))
+    return 1;
+  const vSim = a.vowels === b.vowels ? 1 : 1 - phonemeEditDistance(a.vowels, b.vowels);
+  const cSim = a.coda   === b.coda   ? 1 : 1 - phonemeEditDistance(a.coda,   b.coda);
+  const tSim = toneDistance(a.tone || undefined, b.tone || undefined);
+  const score = 0.45 * vSim + 0.20 * cSim + 0.35 * tSim;
+  return Math.max(0, Math.min(1, score));
+}
+
+/**
+ * CRV-family score in [0, 1].
+ * Atonal default (vowel 0.60 + coda 0.40); 'ha' (Haoussa) enables tonal weighting
+ * (vowel 0.45 + coda 0.20 + tone 0.35). Adds a small mora bonus when both nuclei
+ * carry moraCount=2 (long vowels). Result is capped to 1.
+ */
+export function scoreCRV(
+  a: ScorableNucleus,
+  b: ScorableNucleus,
+  lang?: LangCode | string,
+): number {
+  const vSim = a.vowels === b.vowels ? 1 : 1 - phonemeEditDistance(a.vowels, b.vowels);
+  const cSim = a.coda   === b.coda   ? 1 : 1 - phonemeEditDistance(a.coda,   b.coda);
+  let base: number;
+  if (lang === 'ha') {
+    const tSim = toneDistance(a.tone || undefined, b.tone || undefined);
+    base = 0.45 * vSim + 0.20 * cSim + 0.35 * tSim;
+  } else {
+    base = 0.60 * vSim + 0.40 * cSim;
+  }
+  const moraBonus = (a.moraCount === 2 && b.moraCount === 2) ? 0.05 : 0;
+  return Math.max(0, Math.min(1, base + moraBonus));
 }

@@ -77,14 +77,14 @@ function classifyScore(score: number, position: RhymePosition): RhymeType {
 function levenshtein(a: string, b: string): number {
   const m = a.length, n = b.length;
   const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
-    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    Array.from({ length: n + 1 }, (_v, j) => (i === 0 ? j : j === 0 ? i : 0))
   );
   for (let i = 1; i <= m; i++)
     for (let j = 1; j <= n; j++)
-      dp[i][j] = a[i-1] === b[j-1]
-        ? dp[i-1][j-1]
-        : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
-  return dp[m][n];
+      dp[i]![j] = a[i-1] === b[j-1]
+        ? dp[i-1]![j-1]!
+        : 1 + Math.min(dp[i-1]![j]!, dp[i]![j-1]!, dp[i-1]![j-1]!);
+  return dp[m]![n]!;
 }
 
 function featureWeightedScore(nucleusA: string, nucleusB: string): number {
@@ -134,10 +134,10 @@ function getLineWord(
 ): string {
   const tokens = line.tokens;
   if (!tokens.length) return '';
-  if (position === 'end' || position === 'all') return tokens[tokens.length - 1];
-  if (position === 'initial') return tokens[0];
+  if (position === 'end' || position === 'all') return tokens[tokens.length - 1] ?? '';
+  if (position === 'initial') return tokens[0] ?? '';
   // internal: middle token
-  return tokens[Math.floor(tokens.length / 2)];
+  return tokens[Math.floor(tokens.length / 2)] ?? '';
 }
 
 // ── Main orchestrator ─────────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ export async function analyzeBlock(
     .reduce((acc, lc) => {
       const counts: Record<string, number> = {};
       [acc, lc].forEach(l => (counts[l] = (counts[l] ?? 0) + 1));
-      return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+      return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]![0];
     });
 
   const isMixed = lineSpans.some(s => s.isMixed);
@@ -197,6 +197,7 @@ export async function analyzeBlock(
     // Langcode for each word
     const spanA = lineSpans[idxA];
     const spanB = lineSpans[idxB];
+    if (!spanA || !spanB) continue;
     const tokenLangA = spanA.tokens.find(t => t.token.toLowerCase() === wordA.toLowerCase());
     const tokenLangB = spanB.tokens.find(t => t.token.toLowerCase() === wordB.toLowerCase());
     const langcodeA = tokenLangA?.langcode ?? spanA.dominantLang;
