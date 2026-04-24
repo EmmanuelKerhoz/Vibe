@@ -163,11 +163,11 @@ export const useLanguageAdapter = ({
     newLanguage: string,
     sourceLanguage: string,
     signal: AbortSignal,
-    buildPrompt: (ipaEnhancedPrompt: string) => string,
+    buildPrompt: (ipaEnhancedPrompt: string, ipaSyllableCounts: ReadonlyMap<string, number>) => string,
     onAdapted: (adaptedSong: Section[]) => void,
   ): Promise<void> => {
     const sourceSong = scope.kind === 'song' ? scope.sourceSong : [scope.section];
-    const ipaEnhancedPrompt = await getIpaEnhancedPrompt(
+    const { prompt: ipaEnhancedPrompt, ipaSyllableCounts } = await getIpaEnhancedPrompt(
       sourceSong,
       sourceLanguage,
       newLanguage,
@@ -178,7 +178,7 @@ export const useLanguageAdapter = ({
 
     const adaptResponse = await generateContentWithRetry({
       model: AI_MODEL_NAME,
-      contents: buildPrompt(ipaEnhancedPrompt),
+      contents: buildPrompt(ipaEnhancedPrompt, ipaSyllableCounts),
       config: {
         responseMimeType: 'application/json',
         responseSchema: getAdaptationResponseSchema(scope.kind),
@@ -231,7 +231,7 @@ export const useLanguageAdapter = ({
     progressLabel: string;
     saveLabel: string;
     errorLabel: string;
-    buildPrompt: (ipaEnhancedPrompt: string) => string;
+    buildPrompt: (ipaEnhancedPrompt: string, ipaSyllableCounts: ReadonlyMap<string, number>) => string;
     onAdapted: (adaptedSong: Section[]) => void;
   }) => {
     const runId = ++adaptRunIdRef.current;
@@ -276,7 +276,7 @@ export const useLanguageAdapter = ({
       progressLabel,
       saveLabel: `Before Translation to ${newLanguage}`,
       errorLabel: 'Language adaptation error:',
-      buildPrompt: ipaEnhancedPrompt => buildAdaptSongPrompt({ sourceSong, newLanguage, uiLanguage: currentUiLang, ipaEnhancedPrompt }),
+      buildPrompt: (ipaEnhancedPrompt, ipaSyllableCounts) => buildAdaptSongPrompt({ sourceSong, newLanguage, uiLanguage: currentUiLang, ipaEnhancedPrompt, ipaSyllableCounts }),
       onAdapted: adaptedSong => {
         updateSongAndStructureWithHistoryRef.current(adaptedSong, adaptedSong.map(section => section.name));
         setSongLanguageRef.current(newLanguage);
@@ -301,7 +301,7 @@ export const useLanguageAdapter = ({
       progressLabel,
       saveLabel: `Before Section ${section.name} Translation to ${newLanguage}`,
       errorLabel: 'Section language adaptation error:',
-      buildPrompt: ipaEnhancedPrompt => buildAdaptSectionPrompt({ section, newLanguage, uiLanguage: uiLang, ipaEnhancedPrompt }),
+      buildPrompt: (ipaEnhancedPrompt, ipaSyllableCounts) => buildAdaptSectionPrompt({ section, newLanguage, uiLanguage: uiLang, ipaEnhancedPrompt, ipaSyllableCounts }),
       onAdapted: adaptedSong => updateSong(currentSong => currentSong.map(currentSection =>
         currentSection.id === sectionId
           ? mergeAiSectionIntoCurrent(currentSection, adaptedSong[0]!, newLanguage)

@@ -28,6 +28,13 @@ type BuildAdaptSongPromptParams = {
   newLanguage: string;
   uiLanguage: string;
   ipaEnhancedPrompt?: string;
+  /**
+   * Authoritative per-line syllable counts computed by the IPA pipeline,
+   * keyed by `line.id`. When provided, these override any stale value
+   * stored on `Line.syllables` so the prompt stays in sync with the
+   * IPA-enhanced block.
+   */
+  ipaSyllableCounts?: ReadonlyMap<string, number>;
 };
 
 type BuildAdaptSectionPromptParams = {
@@ -35,6 +42,8 @@ type BuildAdaptSectionPromptParams = {
   newLanguage: string;
   uiLanguage: string;
   ipaEnhancedPrompt?: string;
+  /** See {@link BuildAdaptSongPromptParams.ipaSyllableCounts}. */
+  ipaSyllableCounts?: ReadonlyMap<string, number>;
 };
 
 type BuildAdaptLinePromptParams = {
@@ -71,13 +80,29 @@ type BuildSongAnalysisPromptParams = {
 /**
  * Extracts per-line syllable constraints from source sections for adaptation prompts.
  * Returns an empty string if no lines have syllable data.
+ *
+ * Defensively iterates: any section whose `lines` is missing/non-array is
+ * skipped instead of throwing. When `ipaSyllableCounts` is provided, the
+ * authoritative IPA-pipeline count for a line ID takes precedence over the
+ * (potentially stale) `Line.syllables` value.
  */
-const buildSyllableConstraintsBlock = (sections: Section[]): string => {
+const buildSyllableConstraintsBlock = (
+  sections: Section[],
+  ipaSyllableCounts?: ReadonlyMap<string, number>,
+): string => {
   const entries: { text: string; syllables: number }[] = [];
-  for (const section of sections) {
-    for (const line of section.lines) {
-      if (!line.isMeta && line.text.trim() && typeof line.syllables === 'number' && line.syllables > 0) {
-        entries.push({ text: line.text, syllables: line.syllables });
+  const sectionList = Array.isArray(sections) ? sections : [];
+  for (const section of sectionList) {
+    const lines = Array.isArray(section?.lines) ? section.lines : [];
+    for (const line of lines) {
+      if (line.isMeta || !line.text || !line.text.trim()) continue;
+      const fresh = ipaSyllableCounts?.get(line.id);
+      const stored = typeof line.syllables === 'number' && line.syllables > 0
+        ? line.syllables
+        : 0;
+      const count = typeof fresh === 'number' && fresh > 0 ? fresh : stored;
+      if (count > 0) {
+        entries.push({ text: line.text, syllables: count });
       }
     }
   }
@@ -96,8 +121,11 @@ ${lines}`;
 /**
  * Extracts per-line syllable constraints from a single section.
  */
-const buildSyllableConstraintsBlockFromSection = (section: Section): string => {
-  return buildSyllableConstraintsBlock([section]);
+const buildSyllableConstraintsBlockFromSection = (
+  section: Section,
+  ipaSyllableCounts?: ReadonlyMap<string, number>,
+): string => {
+  return buildSyllableConstraintsBlock([section], ipaSyllableCounts);
 };
 
 /**
@@ -243,12 +271,13 @@ export const buildAdaptSongPrompt = ({
   newLanguage,
   uiLanguage,
   ipaEnhancedPrompt = '',
+  ipaSyllableCounts,
 }: BuildAdaptSongPromptParams): string => {
   const songRhymeScheme = sourceSong
     .map(section => `${section.name}: ${section.rhymeScheme || 'FREE'}`)
     .join(', ');
 
-  const syllableConstraints = buildSyllableConstraintsBlock(sourceSong);
+  const syllableConstraints = buildSyllableConstraintsBlock(sourceSong, ipaSyllableCounts);
 
   return `${UNTRUSTED_INPUT_PREAMBLE}
 
@@ -305,10 +334,11 @@ export const buildAdaptSectionPrompt = ({
   newLanguage,
   uiLanguage,
   ipaEnhancedPrompt = '',
+  ipaSyllableCounts,
 }: BuildAdaptSectionPromptParams): string => {
   const sourceLanguage = section.language || 'unknown';
   const sectionRhymeScheme = section.rhymeScheme || 'FREE';
-  const syllableConstraints = buildSyllableConstraintsBlockFromSection(section);
+  const syllableConstraints = buildSyllableConstraintsBlockFromSection(section, ipaSyllableCounts);
 
   return `${UNTRUSTED_INPUT_PREAMBLE}
 

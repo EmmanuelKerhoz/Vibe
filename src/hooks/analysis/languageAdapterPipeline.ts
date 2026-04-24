@@ -148,19 +148,36 @@ export const detectSongLanguage = async (song: Section[], signal?: AbortSignal):
   }
 };
 
+export interface IpaEnhancedPromptResult {
+  /** The IPA-enriched prompt block, prefixed with newlines, or '' when unavailable. */
+  prompt: string;
+  /**
+   * Authoritative per-line syllable counts produced by the IPA pipeline,
+   * keyed by `Line.id`. Empty when the pipeline did not run, was aborted,
+   * or produced no usable results.
+   */
+  ipaSyllableCounts: Map<string, number>;
+}
+
+const EMPTY_IPA_PROMPT_RESULT = (): IpaEnhancedPromptResult => ({
+  prompt: '',
+  ipaSyllableCounts: new Map(),
+});
+
 export const getIpaEnhancedPrompt = async (
   sections: Section[],
   sourceLanguage: string,
   newLanguage: string,
   signal: AbortSignal,
   sectionName?: string,
-) => {
-  const sourceLines = getSourceLines(sections);
+): Promise<IpaEnhancedPromptResult> => {
+  const sourceRefs = getSourceLineRefs(sections);
+  const sourceLines = sourceRefs.map(r => r.text);
   const sourceLangCode = languageNameToCode(sourceLanguage);
   const targetLangCode = languageNameToCode(newLanguage);
 
   if (!sourceLangCode || !targetLangCode || sourceLines.length === 0) {
-    return '';
+    return EMPTY_IPA_PROMPT_RESULT();
   }
 
   try {
@@ -171,22 +188,34 @@ export const getIpaEnhancedPrompt = async (
       signal
     );
     if (signal.aborted || !adaptationResult.success) {
-      return '';
+      return EMPTY_IPA_PROMPT_RESULT();
     }
+
+    // Build authoritative per-line syllable counts aligned to source line IDs.
+    const ipaSyllableCounts = new Map<string, number>();
+    adaptationResult.sourceAnalysis.forEach((analysis, idx) => {
+      const ref = sourceRefs[idx];
+      if (!ref || !analysis?.success) return;
+      const count = analysis.syllables.length;
+      if (count > 0) ipaSyllableCounts.set(ref.lineId, count);
+    });
 
     if (sectionName) {
       console.debug('IPA constraints applied for section:', sectionName, adaptationResult.sourceScheme);
     } else {
       console.debug('IPA constraints applied:', adaptationResult.sourceScheme);
     }
-    return `\n\n${adaptationResult.constrainedPrompt}`;
+    return {
+      prompt: `\n\n${adaptationResult.constrainedPrompt}`,
+      ipaSyllableCounts,
+    };
   } catch (error) {
     if (sectionName) {
       console.debug('IPA pipeline not available for section, continuing with standard prompt:', error);
     } else {
       console.debug('IPA pipeline not available, continuing with standard prompt:', error);
     }
-    return '';
+    return EMPTY_IPA_PROMPT_RESULT();
   }
 };
 
