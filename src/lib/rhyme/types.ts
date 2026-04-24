@@ -1,59 +1,42 @@
 /**
- * Rhyme Engine v2 — Core Types
+ * Rhyme Engine v3 — Core Types
  */
 
 export type LangCode =
-  | 'fr' | 'es' | 'it' | 'pt' | 'ro' | 'ca'  // Romance
-  | 'en' | 'de' | 'nl' | 'sv' | 'da' | 'no' | 'is'  // Germanic
-  | 'ar' | 'he' | 'am' | 'ha'                  // Semitic + Chadic (Afro-Asiatic)
-  | 'zh' | 'yue' | 'ja' | 'ko'                  // CJK
-  | 'th' | 'lo'                                  // TAI (Thai, Lao)
-  | 'vi' | 'km'                                  // VIET (Vietnamese, Khmer)
-  | 'sw' | 'lg' | 'rw' | 'sn' | 'zu' | 'xh' | 'ny' | 'bm' | 'ff'  // Bantu
-  | 'yo'                                         // Yoruboid
-  | 'ba' | 'di' | 'ew' | 'mi'                   // KWA
-  | 'bk' | 'cb' | 'og'                          // CRV
-  | 'ru' | 'pl' | 'cs' | 'sk' | 'uk' | 'bg' | 'sr' | 'hr'  // Slavic
-  | 'tr' | 'az' | 'uz' | 'kk'                   // TRK (Turkic)
-  | 'fi' | 'hu' | 'et'                           // FIN (Finno-Ugric)
-  | 'hi' | 'ur' | 'bn' | 'fa' | 'pa'            // Indo-Iranian
-  | 'id' | 'ms' | 'tl' | 'mg' | 'jv'            // Austronesian
-  | 'ta' | 'te' | 'kn' | 'ml'                   // Dravidian
-  | 'nou' | 'pcm' | 'cfg'                        // Creole / Pidgin
+  | 'fr' | 'es' | 'it' | 'pt' | 'ro' | 'ca'
+  | 'en' | 'de' | 'nl' | 'sv' | 'da' | 'no' | 'is'
+  | 'ar' | 'he' | 'am' | 'ha'
+  | 'zh' | 'yue' | 'ja' | 'ko'
+  | 'th' | 'lo'
+  | 'vi' | 'km'
+  | 'sw' | 'lg' | 'rw' | 'sn' | 'zu' | 'xh' | 'ny' | 'bm' | 'ff'
+  | 'yo'
+  | 'ba' | 'di' | 'ew' | 'mi'
+  | 'bk' | 'cb' | 'og'
+  | 'ru' | 'pl' | 'cs' | 'sk' | 'uk' | 'bg' | 'sr' | 'hr'
+  | 'tr' | 'az' | 'uz' | 'kk'
+  | 'fi' | 'hu' | 'et'
+  | 'hi' | 'ur' | 'bn' | 'fa' | 'pa'
+  | 'id' | 'ms' | 'tl' | 'mg' | 'jv'
+  | 'ta' | 'te' | 'kn' | 'ml'
+  | 'nou' | 'pcm' | 'cfg'
   | '__unknown__';
 
 export type FamilyId =
-  | 'KWA'      // Kwa (Akan, Ewe, Mina…)
-  | 'CRV'      // Crioulo / Volta-Congo residual
-  | 'ROM'      // Romance
-  | 'GER'      // Germanic
-  | 'BNT'      // Bantu
-  | 'YRB'      // Yoruboid
-  | 'SLV'      // Slavic
-  | 'SEM'      // Semitic + Chadic (Afro-Asiatic)
-  | 'TAI'      // Tai-Kadai tonal (Thai, Lao)
-  | 'VIET'     // Vietic + Khmer (Vietnamese, Khmer)
-  | 'CJK'      // Chinese-Japanese-Korean
-  | 'TRK'      // Turkic
-  | 'FIN'      // Finno-Ugric (Finnish, Hungarian, Estonian)
-  | 'IIR'      // Indo-Iranian (Hindi, Urdu, Bengali, Persian, Punjabi)
-  | 'AUS'      // Austronesian (Indonesian, Malay, Tagalog, Malagasy, Javanese)
-  | 'DRA'      // Dravidian (Tamil, Telugu, Kannada, Malayalam)
-  | 'CRE'      // Creole / Pidgin
-  | 'FALLBACK';
+  | 'KWA' | 'CRV' | 'ROM' | 'GER' | 'BNT' | 'YRB' | 'SLV' | 'SEM'
+  | 'TAI' | 'VIET' | 'CJK' | 'TRK' | 'FIN' | 'IIR' | 'AUS' | 'DRA'
+  | 'CRE' | 'FALLBACK';
 
 export type SegmentationMode =
-  | 'whitespace'
-  | 'character'
-  | 'rtl'
-  | 'tonal-syllable'
-  | 'tone-mark'
-  | 'morpheme'
-  | 'unknown';
+  | 'whitespace' | 'character' | 'rtl' | 'tonal-syllable'
+  | 'tone-mark' | 'morpheme' | 'unknown';
 
 export type ScriptClass =
   | 'latin' | 'arabic' | 'hebrew' | 'cjk' | 'thai' | 'khmer'
   | 'cyrillic' | 'devanagari' | 'other';
+
+/** Position where the rhyme is searched within lines */
+export type RhymePosition = 'end' | 'internal' | 'initial' | 'all';
 
 export interface LineEndingUnit {
   surface: string;
@@ -83,24 +66,18 @@ export interface RhymeResult {
   nucleusB: RhymeNucleus;
   lowResourceFallback: boolean;
   warnings: string[];
+  /** Position mode used for this result (default: 'end') */
+  position?: RhymePosition;
+  /** True when code-switching was detected and cross-lang scoring was applied */
+  csDetected?: boolean;
 }
 
 export type RhymeCategory =
-  | 'perfect'
-  | 'rich'
-  | 'sufficient'
-  | 'weak'
-  | 'none';
+  | 'perfect' | 'rich' | 'sufficient' | 'weak' | 'none';
 
 export type SchemeLabel =
-  | 'AABB'
-  | 'ABAB'
-  | 'ABBA'
-  | 'ABCABC'
-  | 'TERZA_RIMA'
-  | 'MONORHYME'
-  | 'FREE_VERSE'
-  | 'CUSTOM';
+  | 'AABB' | 'ABAB' | 'ABBA' | 'ABCABC' | 'TERZA_RIMA'
+  | 'MONORHYME' | 'FREE_VERSE' | 'CUSTOM';
 
 export interface SchemeResult {
   letters: string[];
@@ -109,4 +86,19 @@ export interface SchemeResult {
   pairScores: Array<{ i: number; j: number; result: RhymeResult }>;
   warnings: string[];
   isProxied: boolean;
+}
+
+/** Result of a full block (multi-line text) analysis */
+export interface BlockAnalysisResult {
+  /** Cleaned verse lines extracted from the block */
+  lines: string[];
+  /** End-of-line rhyme scheme */
+  scheme: SchemeResult;
+  /** Internal / initial rhymes when position !== 'end' */
+  positionRhymes?: Array<{
+    lineIndex: number;
+    tokenPairs: Array<{ tokenA: string; tokenB: string; result: RhymeResult }>;
+  }>;
+  /** Code-switching detection warnings per line, format: "lineN:cs:lang@tokenIdx" */
+  csWarnings: string[];
 }

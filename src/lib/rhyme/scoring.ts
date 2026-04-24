@@ -1,125 +1,157 @@
 /**
- * Rhyme Engine v2 — Scoring utilities
+ * Rhyme Engine v3 — Scoring
+ *
+ * L1 exact | L2 PED | L3 feature-weighted | L4 PHOIBLE mean-pool embedding
+ * Tone penalty from toneMatrix. Position threshold adjustment.
  */
 
-import type { RhymeCategory, RhymeNucleus } from './types';
-
-// ─── Phoneme Edit Distance ────────────────────────────────────────────────────────
-//
-// Use a flat Int32Array to avoid all dp[i][j] optional-chain issues.
-// idx(i, j) = i * (lb+1) + j
-// Int32Array[n] is `number | undefined` under noUncheckedIndexedAccess —
-// use non-null assertion (!) which is safe here because all indices are
-// computed within bounds.
+import type { FamilyId, LangCode, RhymeCategory, RhymeNucleus } from './types';
+import { getTonePenalty } from './toneMatrix';
 
 export function phonemeEditDistance(a: string, b: string): number {
   if (a === b) return 0;
   if (!a.length || !b.length) return 1;
-
-  const la = a.length;
-  const lb = b.length;
-  const cols = lb + 1;
+  const la = a.length, lb = b.length, cols = lb + 1;
   const dp = new Int32Array((la + 1) * cols);
-
-  // Base row
   for (let j = 0; j <= lb; j++) dp[j] = j;
-  // Base column
   for (let i = 1; i <= la; i++) dp[i * cols] = i;
-
   for (let i = 1; i <= la; i++) {
     for (let j = 1; j <= lb; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      const del = dp[(i - 1) * cols + j]! + 1;
-      const ins = dp[i * cols + (j - 1)]! + 1;
-      const sub = dp[(i - 1) * cols + (j - 1)]! + cost;
-      dp[i * cols + j] = Math.min(del, ins, sub);
+      dp[i * cols + j] = Math.min(
+        dp[(i - 1) * cols + j]! + 1,
+        dp[i * cols + j - 1]! + 1,
+        dp[(i - 1) * cols + j - 1]! + cost,
+      );
     }
   }
-
   return dp[la * cols + lb]! / Math.max(la, lb);
 }
 
-// ─── KWA tonal scoring ──────────────────────────────────────────────────────────────
+// ─── PHOIBLE mean-pool embedding (L4, offline, 14 dims) ───────────────────────
 
-/**
- * Tone distance table for 3-level tonal systems (H / M / L).
- *
- * Rationale:
- * - H ≠ L : maximal distance (adjacent levels skipped)  → 0.0
- * - H ≠ M : one step apart                              → 0.5
- * - M ≠ L : one step apart                              → 0.5
- * - any = any                                            → 1.0
- * - one tone absent (undefined)                          → 0.4
- *   (uncertainty — lower than a confirmed partial match,
- *    higher than a confirmed full mismatch)
- *
- * Exported for unit tests.
- */
-export function toneDistance(a: string | undefined, b: string | undefined): number {
-  if (!a || !b) return 0.4;       // at least one tone undetected — uncertain
-  if (a === b)  return 1.0;       // exact match (case-sensitive fast path)
+const PHOIBLE_VOWELS: Record<string, readonly number[]> = {
+  'a':  [1,0,1,1,0,1,0,0,1,0,1,0,0,0],
+  'e':  [1,0,1,1,0,1,0,0,1,1,0,1,0,0],
+  'i':  [1,0,1,1,0,1,0,0,1,1,0,1,0,0],
+  'o':  [1,0,1,1,0,1,1,0,1,1,0,0,1,1],
+  'u':  [1,0,1,1,0,1,1,0,1,1,0,0,1,1],
+  'ɑ':  [1,0,1,1,0,1,0,0,1,0,1,0,1,0],
+  'æ':  [1,0,1,1,0,1,0,0,1,0,1,1,0,0],
+  'ɛ':  [1,0,1,1,0,1,0,0,1,0,0,1,0,0],
+  'ɔ':  [1,0,1,1,0,1,1,0,1,0,0,0,1,1],
+  'ə':  [1,0,1,1,0,1,0,0,1,0,0,0,0,0],
+  'ɪ':  [1,0,1,1,0,1,0,0,1,1,0,1,0,0],
+  'ʊ':  [1,0,1,1,0,1,1,0,1,1,0,0,1,1],
+  'y':  [1,0,1,1,0,1,1,0,1,1,0,1,0,1],
+  'ø':  [1,0,1,1,0,1,1,0,1,1,0,1,0,1],
+  'ü':  [1,0,1,1,0,1,1,0,1,1,0,1,0,1],
+  'ö':  [1,0,1,1,0,1,1,0,1,1,0,1,0,1],
+  'ä':  [1,0,1,1,0,1,0,0,1,0,1,1,0,0],
+};
+const DIM = 14;
+const ZERO_VEC: readonly number[] = new Array(DIM).fill(0);
 
-  const aU = a.toUpperCase();
-  const bU = b.toUpperCase();
-
-  if (aU === bU) return 1.0;      // case-insensitive match ('m' vs 'M')
-
-  // Adjacent steps: H↔M or M↔L
-  if ((aU === 'H' && bU === 'M') || (aU === 'M' && bU === 'H')) return 0.5;
-  if ((aU === 'M' && bU === 'L') || (aU === 'L' && bU === 'M')) return 0.5;
-
-  // Maximum distance: H↔L
-  if ((aU === 'H' && bU === 'L') || (aU === 'L' && bU === 'H')) return 0.0;
-
-  // Falling tone (F): partially compatible with both H and L
-  if (aU === 'F' || bU === 'F') return 0.5;
-
-  // Numeric tones or unrecognised labels: treat as binary
-  return 0.0;
+function meanPool(str: string): Float32Array {
+  const acc = new Float32Array(DIM);
+  let count = 0;
+  for (const ch of str) {
+    const vec = PHOIBLE_VOWELS[ch] ?? ZERO_VEC;
+    for (let d = 0; d < DIM; d++) acc[d]! += vec[d]!;
+    count++;
+  }
+  if (count > 0) for (let d = 0; d < DIM; d++) acc[d]! /= count;
+  return acc;
 }
 
-export function scoreKWANormalized(a: RhymeNucleus, b: RhymeNucleus): number {
-  const vowelSim = 1 - phonemeEditDistance(a.vowels, b.vowels);
-  const codaSim  = 1 - phonemeEditDistance(a.coda,   b.coda);
-  const toneSim  = toneDistance(a.tone, b.tone);
-  return 0.4 * vowelSim + 0.2 * codaSim + 0.4 * toneSim;
+function cosineSimilarity(a: Float32Array, b: Float32Array): number {
+  let dot = 0, normA = 0, normB = 0;
+  for (let d = 0; d < DIM; d++) { dot += a[d]! * b[d]!; normA += a[d]! ** 2; normB += b[d]! ** 2; }
+  return normA === 0 || normB === 0 ? 0 : dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// ─── CRV mora-weighted scoring ────────────────────────────────────────────────────────────
+function embeddingScore(vA: string, vB: string): number {
+  return !vA || !vB ? 0 : cosineSimilarity(meanPool(vA), meanPool(vB));
+}
 
-/**
- * CRV score.
- * For HA (Haoussa): tonal class contributes 20% via toneDistance.
- * Other CRV langs: atonal — vowel 55% + coda 45% + mora bonus.
- *
- * @param lang  Optional LangCode or string — 'ha' activates tonal path.
- */
-export function scoreCRV(
-  a: RhymeNucleus,
-  b: RhymeNucleus,
-  lang = ''
-): number {
-  const vowelSim  = 1 - phonemeEditDistance(a.vowels, b.vowels);
-  const codaSim   = 1 - phonemeEditDistance(a.coda, b.coda);
-  const moraBonus = (a.moraCount === 2 && b.moraCount === 2) ? 1.3 : 1.0;
+// ─── Family config ────────────────────────────────────────────────────────────
 
-  if (lang === 'ha') {
-    // Haoussa: tone 20%, vowel 50%, coda 30% — mora bonus still applies on vowel
-    const toneSim = toneDistance(a.tone, b.tone);
-    const raw = 0.50 * vowelSim * moraBonus + 0.30 * codaSim + 0.20 * toneSim;
-    return Math.min(raw, 1);
+interface FamilyScoringConfig {
+  vowelWeight: number; codaWeight: number; toneWeight: number;
+  tonePenaltyFactor: number; useEmbedding: boolean; embeddingBlend: number;
+}
+
+const FAMILY_CONFIG: Record<FamilyId, FamilyScoringConfig> = {
+  ROM:      { vowelWeight:0.65, codaWeight:0.35, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  GER:      { vowelWeight:0.60, codaWeight:0.40, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  SLV:      { vowelWeight:0.60, codaWeight:0.40, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  SEM:      { vowelWeight:0.50, codaWeight:0.50, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  TRK:      { vowelWeight:0.70, codaWeight:0.30, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  FIN:      { vowelWeight:0.70, codaWeight:0.30, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  BNT:      { vowelWeight:0.70, codaWeight:0.30, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  CJK:      { vowelWeight:0.40, codaWeight:0.20, toneWeight:0.40, tonePenaltyFactor:0.60, useEmbedding:true,  embeddingBlend:0.40 },
+  TAI:      { vowelWeight:0.40, codaWeight:0.20, toneWeight:0.40, tonePenaltyFactor:0.50, useEmbedding:true,  embeddingBlend:0.40 },
+  VIET:     { vowelWeight:0.40, codaWeight:0.20, toneWeight:0.40, tonePenaltyFactor:0.50, useEmbedding:true,  embeddingBlend:0.40 },
+  KWA:      { vowelWeight:0.45, codaWeight:0.20, toneWeight:0.35, tonePenaltyFactor:0.45, useEmbedding:false, embeddingBlend:0.0  },
+  CRV:      { vowelWeight:0.45, codaWeight:0.20, toneWeight:0.35, tonePenaltyFactor:0.45, useEmbedding:false, embeddingBlend:0.0  },
+  YRB:      { vowelWeight:0.45, codaWeight:0.20, toneWeight:0.35, tonePenaltyFactor:0.45, useEmbedding:false, embeddingBlend:0.0  },
+  IIR:      { vowelWeight:0.65, codaWeight:0.35, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  AUS:      { vowelWeight:0.65, codaWeight:0.35, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  DRA:      { vowelWeight:0.65, codaWeight:0.35, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  CRE:      { vowelWeight:0.60, codaWeight:0.40, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+  FALLBACK: { vowelWeight:0.60, codaWeight:0.40, toneWeight:0.0,  tonePenaltyFactor:0.0,  useEmbedding:false, embeddingBlend:0.0  },
+};
+
+const THRESHOLDS: Array<[number, RhymeCategory]> = [
+  [0.90,'perfect'],[0.75,'rich'],[0.55,'sufficient'],[0.30,'weak'],[0.00,'none'],
+];
+
+function categorise(score: number): RhymeCategory {
+  for (const [t, cat] of THRESHOLDS) if (score >= t) return cat;
+  return 'none';
+}
+
+export type RhymePositionMode = 'end' | 'internal' | 'initial' | 'all';
+
+const POSITION_THRESHOLD_ADJUST: Record<RhymePositionMode, number> = {
+  end: 0.00, internal: 0.05, initial: 0.10, all: 0.00,
+};
+
+export interface NucleiScoreOptions {
+  family: FamilyId;
+  lang: LangCode;
+  position?: RhymePositionMode;
+  toneSensitive?: boolean;
+}
+
+export function scoreNuclei(
+  nA: RhymeNucleus,
+  nB: RhymeNucleus,
+  opts: NucleiScoreOptions,
+): { score: number; category: RhymeCategory } {
+  const cfg = FAMILY_CONFIG[opts.family] ?? FAMILY_CONFIG['FALLBACK']!;
+  const position = opts.position ?? 'end';
+  const toneSensitive = opts.toneSensitive ?? true;
+
+  if (nA.vowels === nB.vowels && nA.coda === nB.coda && nA.tone === nB.tone)
+    return { score: 1.0, category: 'perfect' };
+
+  const pedVowels = 1 - phonemeEditDistance(nA.vowels, nB.vowels);
+  const pedCoda   = nA.coda === nB.coda ? 1.0 : 1 - phonemeEditDistance(nA.coda, nB.coda);
+  const l3 = cfg.vowelWeight * pedVowels + cfg.codaWeight * pedCoda;
+
+  let base = l3;
+  if (cfg.useEmbedding && cfg.embeddingBlend > 0 && nA.vowels && nB.vowels) {
+    const l4 = embeddingScore(nA.vowels, nB.vowels);
+    base = (1 - cfg.embeddingBlend) * l3 + cfg.embeddingBlend * l4;
   }
 
-  const raw = 0.55 * vowelSim * moraBonus + 0.45 * codaSim;
-  return Math.min(raw, 1);
-}
+  let score = base;
+  if (toneSensitive && cfg.tonePenaltyFactor > 0) {
+    const tonePenalty = getTonePenalty(nA.tone, nB.tone, opts.family, opts.lang);
+    score *= 1 - cfg.tonePenaltyFactor * tonePenalty;
+  }
 
-// ─── Category threshold mapping ─────────────────────────────────────────────────────────────────
-
-export function categorize(score: number): RhymeCategory {
-  if (score >= 0.92) return 'perfect';
-  if (score >= 0.80) return 'rich';
-  if (score >= 0.60) return 'sufficient';
-  if (score >= 0.35) return 'weak';
-  return 'none';
+  const adjusted = Math.max(0, score - POSITION_THRESHOLD_ADJUST[position]);
+  return { score: adjusted, category: categorise(adjusted) };
 }

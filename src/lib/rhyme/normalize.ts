@@ -1,17 +1,12 @@
 /**
- * Rhyme Engine v2 — Normalization & Line Ending Extraction
- * Replaces the legacy extractLineTail(line: string): string
+ * Rhyme Engine v3 — Normalization, Line Ending Extraction & Block Segmentation
  */
 
-import type { LineEndingUnit, ScriptClass, SegmentationMode } from './types';
+import type { LineEndingUnit, ScriptClass, SegmentationMode, LangCode } from './types';
 
-// ─── Languages that require tone-mark segmentation despite latin script ──────
-// Vietnamese and KWA languages: tone diacritics are phonemic, not decorative.
-// yo (Yoruba) intentionally excluded: it routes KWA/YRB and receives
-// tonal extraction inside the algo pipeline, not at the segmentation stage.
 const TONE_MARK_LANGS = new Set(['vi', 'ba', 'ew', 'mi', 'di']);
 
-// ─── Script detection ────────────────────────────────────────────────────────
+// ─── Script detection ─────────────────────────────────────────────────────────
 
 const SCRIPT_RANGES: Array<[RegExp, ScriptClass]> = [
   [/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/u, 'arabic'],
@@ -31,64 +26,68 @@ function detectScript(text: string): ScriptClass {
   return 'other';
 }
 
-// ─── Segmentation mode resolution ────────────────────────────────────────────
-// langHint overrides script-derived mode for tonal latin languages.
+// ─── Segmentation mode ────────────────────────────────────────────────────────
 
 function segmentationModeForScript(script: ScriptClass): SegmentationMode {
   switch (script) {
-    case 'cjk':       return 'character';
+    case 'cjk':    return 'character';
     case 'arabic':
-    case 'hebrew':    return 'rtl';
+    case 'hebrew': return 'rtl';
     case 'thai':
-    case 'khmer':     return 'tonal-syllable';
-    default:          return 'whitespace';
+    case 'khmer':  return 'tonal-syllable';
+    default:       return 'whitespace';
   }
 }
 
-function resolveSegmentationMode(
-  script: ScriptClass,
-  langHint?: string
-): SegmentationMode {
-  if (langHint && TONE_MARK_LANGS.has(langHint) && script === 'latin') {
-    return 'tone-mark';
-  }
+function resolveSegmentationMode(script: ScriptClass, langHint?: string): SegmentationMode {
+  if (langHint && TONE_MARK_LANGS.has(langHint) && script === 'latin') return 'tone-mark';
   return segmentationModeForScript(script);
 }
 
-// ─── Unicode normalization safe for tonal diacritics ─────────────────────────
+// ─── Normalization ────────────────────────────────────────────────────────────
 
-/**
- * NFC normalization — preserves all combining diacritics (tones, accents).
- * Does NOT strip diacritics. Stripping is left to language-specific G2P.
- */
 export function normalizeInput(raw: string): string {
   return raw.normalize('NFC').trim();
 }
 
-// ─── Punctuation stripping (script-aware) ────────────────────────────────────
+// ─── Punctuation ──────────────────────────────────────────────────────────────
 
-const LATIN_PUNCT    = /[.,;:!?¡¿"'«»()\[\]{}…–—]+$/u;
-const ARABIC_PUNCT   = /[،؛؟\u06D4\.!"'()\[\]{}…]+$/u;
-const CJK_PUNCT      = /[。、！？「」『』【】〔〕…・]+$/u;
-const GENERIC_PUNCT  = /[\p{P}\p{S}]+$/u;
+const LATIN_PUNCT   = /[.,;:!?¡¿"'«»()\[\]{}…–—]+$/u;
+const ARABIC_PUNCT  = /[،؛؟\u06D4\.!"'()\[\]{}…]+$/u;
+const CJK_PUNCT     = /[。、！？「」『』【】〔〕…・]+$/u;
+const GENERIC_PUNCT = /[\p{P}\p{S}]+$/u;
 
 function stripTrailingPunctuation(token: string, script: ScriptClass): string {
   switch (script) {
     case 'arabic':
-    case 'hebrew':  return token.replace(ARABIC_PUNCT, '');
-    case 'cjk':     return token.replace(CJK_PUNCT, '');
-    case 'latin':   return token.replace(LATIN_PUNCT, '');
-    default:        return token.replace(GENERIC_PUNCT, '');
+    case 'hebrew': return token.replace(ARABIC_PUNCT, '');
+    case 'cjk':    return token.replace(CJK_PUNCT, '');
+    case 'latin':  return token.replace(LATIN_PUNCT, '');
+    default:       return token.replace(GENERIC_PUNCT, '');
   }
 }
 
-// ─── Token extraction per segmentation mode ──────────────────────────────────
+// ─── RTL languages ────────────────────────────────────────────────────────────
 
-function extractFinalToken(
-  normalized: string,
-  mode: SegmentationMode,
-  script: ScriptClass
-): string {
+const RTL_LANGS = new Set(['ar', 'he', 'fa', 'ur']);
+
+function isRTLLang(lang?: string): boolean {
+  return !!lang && RTL_LANGS.has(lang);
+}
+
+// ─── French hemistich split ───────────────────────────────────────────────────
+
+const FR_HEMISTICH_RE = /\s{3,}|[—]\s|\s;\s/;
+
+function splitFrenchHemistich(line: string): [string, string] | null {
+  const match = FR_HEMISTICH_RE.exec(line);
+  if (!match || match.index < 3) return null;
+  return [line.slice(0, match.index).trimEnd(), line.slice(match.index + match[0].length).trimStart()];
+}
+
+// ─── Token extraction ─────────────────────────────────────────────────────────
+
+function extractFinalToken(normalized: string, mode: SegmentationMode, script: ScriptClass): string {
   switch (mode) {
     case 'character': {
       const chars = [...normalized].filter(c => !/[\p{P}\p{S}]/u.test(c));
@@ -96,7 +95,7 @@ function extractFinalToken(
     }
     case 'rtl': {
       const tokens = normalized.split(/\s+/).filter(Boolean);
-      const raw = tokens.at(-1) ?? '';
+      const raw = tokens[0] ?? '';
       return stripTrailingPunctuation(raw, script);
     }
     case 'tonal-syllable': {
@@ -118,37 +117,47 @@ function extractFinalToken(
   }
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// ─── Public: extractLineEndingUnit ───────────────────────────────────────────
 
-/**
- * Replaces the legacy extractLineTail().
- * Returns a structured LineEndingUnit suitable for G2P → RhymeNucleus pipeline.
- *
- * @param line     Raw input line
- * @param langHint BCP-47 language code (e.g. 'vi', 'ba', 'fr', 'yo')
- */
 export function extractLineEndingUnit(line: string, langHint?: string): LineEndingUnit {
   const warnings: string[] = [];
   const normalized = normalizeInput(line);
 
   if (!normalized) {
     warnings.push('empty-line');
-    return {
-      surface: '',
-      normalized: '',
-      script: 'other',
-      segmentationMode: 'unknown',
-      warnings,
-    };
+    return { surface: '', normalized: '', script: 'other', segmentationMode: 'unknown', warnings };
   }
 
   const script = detectScript(normalized);
   const segmentationMode = resolveSegmentationMode(script, langHint);
-  const surface = extractFinalToken(normalized, segmentationMode, script);
 
-  if (!surface) {
-    warnings.push('no-token-extracted');
-  }
+  const workingNorm = isRTLLang(langHint)
+    ? normalized.split(/\s+/).reverse().join(' ')
+    : normalized;
+
+  const surface = extractFinalToken(workingNorm, segmentationMode, script);
+
+  if (!surface) warnings.push('no-token-extracted');
 
   return { surface, normalized, script, segmentationMode, warnings };
+}
+
+// ─── Public: segmentBlock ────────────────────────────────────────────────────
+
+export function segmentBlock(text: string, lang?: LangCode): string[] {
+  const rawLines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const result: string[] = [];
+
+  for (const line of rawLines) {
+    if (lang === 'fr' || lang === 'ca') {
+      const hemi = splitFrenchHemistich(line);
+      if (hemi) {
+        result.push(hemi[0], hemi[1]);
+        continue;
+      }
+    }
+    result.push(line);
+  }
+
+  return result;
 }
