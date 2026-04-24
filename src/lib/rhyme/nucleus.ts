@@ -1,9 +1,9 @@
 /**
  * Rhyme Engine v3 — Rhyme Nucleus Extraction
  *
- * Morpho-aware suffix stripping for TRK / FIN families.
- * BNT noun-class prefix stripping.
- * Japanese mora-based nucleus.
+ * Morpho-aware suffix stripping for TRK / FIN / HU families.
+ * BNT noun-class prefix stripping (min stem guard).
+ * Japanese mora-based nucleus (last 2 morae, honorific prefix exclusion).
  */
 
 import type { FamilyId, LangCode, RhymeNucleus } from './types';
@@ -13,6 +13,7 @@ const VOWELS_IPA   = new Set('aeiouɑæɐɛɜɪɔʊʌəɹ');
 const VOWELS_ALL   = new Set([...VOWELS_LATIN, ...VOWELS_IPA]);
 const TONE_DIACRITICS_LATIN: RegExp = /[\u0300-\u0308\u030A-\u036F]/gu;
 
+// ─── TRK morpheme suffixes (sorted longest-first for greedy match) ────────────
 const TRK_SUFFIXES = [
   'ların', 'lerin', 'larım', 'lerim', 'larına', 'lerine',
   'lardan', 'lerden', 'lara', 'lere',
@@ -20,60 +21,73 @@ const TRK_SUFFIXES = [
   'dan', 'den', 'tan', 'ten', 'da', 'de', 'ta', 'te',
   'a', 'e', 'ı', 'i', 'u', 'ü',
   'ım', 'im', 'um', 'üm', 'yım', 'yim',
-  'ın', 'in', 'un', 'ün', 'nın', 'nin',
+  'ın', 'in', 'un', 'ün',
   'dır', 'dir', 'dur', 'dür', 'tır', 'tir', 'tur', 'tür',
   'mak', 'mek', 'mış', 'miş', 'muş', 'müş',
   'yor', 'yar', 'acak', 'ecek', 'mal', 'mel',
 ].sort((a, b) => b.length - a.length);
 
+// ─── FIN suffixes (Finnish + Estonian) ───────────────────────────────────────
 const FIN_SUFFIXES = [
   'kseen', 'kseesi', 'nsa', 'nsä', 'ansa', 'änsä',
   'llaan', 'llään', 'lleen',
   'ssa', 'ssä', 'sta', 'stä', 'lla', 'llä', 'lta', 'ltä',
   'lle', 'ksi', 'tta', 'ttä', 'na', 'nä', 'ko', 'kö',
   'kin', 'kaan', 'kään', 'han', 'hän',
-  'ni', 'si', 'mme', 'nne', 'nsa',
-  'nak', 'nek', 'ban', 'ben', 'ból', 'ből', 'hoz', 'hez', 'höz',
-  'tól', 'től', 'ról', 'ről', 'nál', 'nél', 'val', 'vel', 'ra', 're',
-  'on', 'en', 'ön', 'ba', 'be', 'ig', 'ért', 'ként', 'ul', 'ül',
-  'de', 'tes', 'le', 'lt', 'ga', 'ks',
+  'ni', 'si', 'mme', 'nne',
+  // Estonian
+  'nak', 'nek', 'de', 'tes', 'le', 'lt', 'ga', 'ks',
 ].sort((a, b) => b.length - a.length);
 
-function stripMorphoSuffix(token: string, suffixes: string[]): string {
+// ─── HU suffixes (Hungarian — isolated from FIN to avoid false strip) ─────────
+const HU_SUFFIXES = [
+  'ban', 'ben', 'ból', 'ből', 'hoz', 'hez', 'höz',
+  'tól', 'től', 'ról', 'ről', 'nál', 'nél',
+  'val', 'vel', 'ra', 're', 'on', 'en', 'ön',
+  'ba', 'be', 'ig', 'ért', 'ként', 'ul', 'ül',
+  'k', 't', 'm', 'd', 'nk', 'tek', 'ják', 'jék',
+].sort((a, b) => b.length - a.length);
+
+function stripMorphoSuffix(token: string, suffixes: string[], minStem = 3): string {
   for (const suf of suffixes) {
-    if (token.endsWith(suf) && token.length - suf.length >= 3) {
+    if (token.endsWith(suf) && token.length - suf.length >= minStem) {
       return token.slice(0, token.length - suf.length);
     }
   }
   return token;
 }
 
+// ─── BNT noun-class prefixes ─────────────────────────────────────────────────
 const BNT_PREFIXES = [
-  'm', 'mi', 'u', 'i', 'li', 'ma', 'ki', 'vi', 'n', 'a', 'wa',
-  'mu', 'pa', 'ku', 'gu', 'bu', 'lu', 'zu', 'tu', 'ka',
-  'zi', 'bi', 'ba', 'di', 'ri', 'si', 'gi', 'ti',
+  'mi', 'mu', 'wa', 'ki', 'vi', 'li', 'ma', 'pa', 'ku', 'gu', 'bu', 'lu',
+  'zu', 'tu', 'ka', 'zi', 'bi', 'ba', 'di', 'ri', 'si', 'gi', 'ti',
+  'm', 'u', 'i', 'n', 'a',
 ].sort((a, b) => b.length - a.length);
 
-function stripBNTPrefix(token: string): string {
+function stripBNTPrefix(token: string, minStem = 3): string {
   for (const pfx of BNT_PREFIXES) {
-    if (token.startsWith(pfx) && token.length - pfx.length >= 3) return token.slice(pfx.length);
+    if (token.startsWith(pfx) && token.length - pfx.length >= minStem) {
+      return token.slice(pfx.length);
+    }
   }
   return token;
 }
 
-const JP_HON_PREFIXES = ['お', 'ご', '御'];
-const JP_MORA_RE = /[\u3041-\u3096\u30A1-\u30F6ん\u30F3っ\u30C3ー\u30FC][\u3099\u309A]?/gu;
+// ─── Japanese mora extraction ─────────────────────────────────────────────────
+const JP_HON_PREFIXES = ['お', 'ご', '御', 'お無', 'ご無'];
+const JP_MORA_RE = /[\u3041-\u3096\u30A1-\u30F6\u30F3\u3093\u30C3\u3063\u30FC\u30FC][\u3099\u309A]?/gu;
 const JP_LAST_N_MORA = 2;
 
 function extractJapaneseMorae(surface: string, n = JP_LAST_N_MORA): string {
   let s = surface;
   for (const pfx of JP_HON_PREFIXES) {
-    if (s.startsWith(pfx) && s.length > pfx.length + 1) { s = s.slice(pfx.length); break; }
+    if (s.startsWith(pfx) && s.length > pfx.length + 2) { s = s.slice(pfx.length); break; }
   }
   const morae = s.match(JP_MORA_RE) ?? [];
   return morae.slice(-n).join('');
 }
 
+// ─── Tone extraction helpers ──────────────────────────────────────────────────
 const TONE_MARKS_VI: Record<string, string> = {
   '\u0300': '`', '\u0301': "'", '\u0303': '~', '\u0309': '?', '\u0323': '.',
 };
@@ -97,6 +111,7 @@ function extractToneThai(syllable: string): string {
   return 'M';
 }
 
+// ─── IPA parser ───────────────────────────────────────────────────────────────
 function parseIPA(ipa: string): RhymeNucleus {
   let vowelStart = -1;
   let vowelEnd = -1;
@@ -115,6 +130,7 @@ function parseIPA(ipa: string): RhymeNucleus {
   return { onset, vowels, coda: toneMatch ? coda.slice(0, -1) : coda, tone, moraCount: vowels.length };
 }
 
+// ─── Stressed vowel helpers ───────────────────────────────────────────────────
 const STRESSED_VOWELS = /[áéíóúàèìòùâêîôûÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛ]/u;
 
 function lastStressedVowelIndex(word: string): number {
@@ -133,6 +149,8 @@ function extractSuffixFromIndex(word: string, idx: number): string {
   return word.slice(idx);
 }
 
+// ─── Family-specific nucleus extractors ──────────────────────────────────────
+
 function nucleusROM(surface: string, lang: LangCode): RhymeNucleus {
   let s = surface.toLowerCase();
   if (lang === 'fr') s = s.replace(/(?<=[aeiouàâéèêëîïôùûü])(nt|s)?$/u, '').replace(/e(nt|s)?$/, '');
@@ -147,19 +165,22 @@ function nucleusGER(surface: string, lang: LangCode): RhymeNucleus {
 
 function nucleusTRK(surface: string): RhymeNucleus {
   const stripped = stripMorphoSuffix(surface.toLowerCase(), TRK_SUFFIXES);
-  const idx = lastStressedVowelIndex(stripped) !== -1 ? lastStressedVowelIndex(stripped) : stripped.search(/[aeiouıiuü]/iu);
+  const idx = lastStressedVowelIndex(stripped) !== -1
+    ? lastStressedVowelIndex(stripped)
+    : stripped.search(/[aeiouıiuü]/iu);
   return parseIPA(extractSuffixFromIndex(stripped, idx));
 }
 
-function nucleusFIN(surface: string): RhymeNucleus {
-  const stripped = stripMorphoSuffix(surface.toLowerCase(), FIN_SUFFIXES);
+function nucleusFIN(surface: string, lang: LangCode): RhymeNucleus {
+  const suffixes = lang === 'hu' ? HU_SUFFIXES : FIN_SUFFIXES;
+  const stripped = stripMorphoSuffix(surface.toLowerCase(), suffixes);
   const m = stripped.match(/([aeiouäöüy]{1,2})[^aeiouäöüy]*$/iu);
   if (!m) return parseIPA(stripped.slice(-3));
   return parseIPA(stripped.slice(stripped.lastIndexOf(m[1]!)));
 }
 
 function nucleusBNT(surface: string): RhymeNucleus {
-  const deprefixed = stripBNTPrefix(surface.toLowerCase());
+  const deprefixed = stripBNTPrefix(surface.toLowerCase(), 3);
   const m = deprefixed.match(/[aeiou][^aeiou]*$/iu);
   return parseIPA(m ? m[0] : deprefixed.slice(-3));
 }
@@ -246,13 +267,15 @@ function nucleusCRE(surface: string): RhymeNucleus {
   return parseIPA(m ? m[0] : surface.slice(-3));
 }
 
+// ─── Public API ───────────────────────────────────────────────────────────────
+
 export function extractNucleus(surface: string, family: FamilyId, lang: LangCode): RhymeNucleus {
   switch (family) {
     case 'ROM':      return nucleusROM(surface, lang);
     case 'GER':      return nucleusGER(surface, lang);
     case 'SLV':      return nucleusSLV(surface);
     case 'TRK':      return nucleusTRK(surface);
-    case 'FIN':      return nucleusFIN(surface);
+    case 'FIN':      return nucleusFIN(surface, lang);
     case 'BNT':      return nucleusBNT(surface);
     case 'CJK':      return nucleusCJK(surface, lang);
     case 'TAI':      return nucleusTAI(surface);

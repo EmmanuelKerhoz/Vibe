@@ -1,6 +1,7 @@
 /**
- * Rhyme Engine v2 — Entry Point
+ * Rhyme Engine v3 — Entry Point
  * rhymeScore(lineA, lineB, langA, langB): RhymeResult
+ * analyzeBlock(block, lang, opts): BlockAnalysis
  */
 
 import type { LangCode, RhymeNucleus, RhymeResult } from './types';
@@ -24,6 +25,49 @@ import { extractNucleusIIR, scoreIIR } from './algo-iir';
 import { extractNucleusAUS, scoreAUS } from './algo-aus';
 import { extractNucleusDRA, scoreDRA } from './algo-dra';
 import { extractNucleusCRE, scoreCRE } from './algo-cre';
+import { segmentVerses, type LineSegment } from './verseSegmenter';
+import { detectRhymeSchemeMultiLang, type SchemeResult } from './rhymeSchemeDetector';
+
+export interface BlockAnalysisOptions {
+  /** Per-line language override. If provided, langs[i] is used for line i. */
+  langs?: LangCode[];
+  /** Split on " / " hemistich separator (default: true) */
+  splitHemistich?: boolean;
+  /** Window size for rhyme pair detection (default: 6) */
+  window?: number;
+}
+
+export interface BlockAnalysis {
+  scheme: SchemeResult;
+  segments: LineSegment[];
+}
+
+/**
+ * Top-level entry point: analyze a raw text block.
+ * Segments the block into verse lines, then detects the rhyme scheme.
+ *
+ * @param block  Raw multiline text
+ * @param lang   Primary language code (used when opts.langs is not provided)
+ * @param opts   Optional: per-line lang overrides, hemistich split, window
+ */
+export function analyzeBlock(
+  block: string,
+  lang: LangCode,
+  opts: BlockAnalysisOptions = {}
+): BlockAnalysis {
+  const segments = segmentVerses(block, lang, opts.splitHemistich ?? true);
+
+  const lineItems = segments.map((seg, i) => ({
+    text: seg.text,
+    lang: opts.langs?.[i] ?? lang,
+  }));
+
+  const scheme = detectRhymeSchemeMultiLang(lineItems, opts.window ?? 6);
+
+  return { scheme, segments };
+}
+
+// ─── Core pairwise scorer (unchanged) ────────────────────────────────────────
 
 export function rhymeScore(
   lineA: string,
