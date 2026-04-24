@@ -141,3 +141,27 @@ export function detectSpanLangs(
 
   return { tokens: resolved, dominantLang, isMixed };
 }
+
+export function detectCodeSwitch(text: string, defaultLangcode = 'fr'): {
+  detectedLang: string;
+  isMixed: boolean;
+  confidence: number;
+} | null {
+  const tokens = text
+    .split(/\s+/)
+    .map(t => t.trim())
+    .filter(Boolean);
+
+  if (!tokens.length) return null;
+
+  const res = detectSpanLangs(tokens, defaultLangcode);
+  const confidence = res.tokens.length > 0
+    ? res.tokens.reduce((acc, t) => acc + (t.confidence ?? 0), 0) / res.tokens.length
+    : 0;
+
+  return {
+    detectedLang: res.dominantLang,
+    isMixed: res.isMixed,
+    confidence,
+  };
+}
