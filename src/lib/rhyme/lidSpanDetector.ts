@@ -155,8 +155,9 @@ export function detectCodeSwitch(text: string, defaultLangcode = 'fr'): {
   if (!tokens.length) return null;
 
   const res = detectSpanLangs(tokens, defaultLangcode);
-  const confidence =
-    res.tokens.reduce((acc, t) => acc + (t.confidence ?? 0), 0) / res.tokens.length;
+  const confidence = res.tokens.length > 0
+    ? res.tokens.reduce((acc, t) => acc + (t.confidence ?? 0), 0) / res.tokens.length
+    : 0;
 
   return {
     detectedLang: res.dominantLang,
