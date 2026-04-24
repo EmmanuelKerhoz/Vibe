@@ -38,7 +38,7 @@ export interface BlockAnalysisOptions {
 
 export interface BlockAnalysis {
   scheme: SchemeResult;
-  /** Normalised verse lines used as input to the scheme detector. */
+  /** Normalized verse lines used as input to the scheme detector. */
   lines: Array<{ text: string; lang: LangCode }>;
 }
 
