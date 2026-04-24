@@ -37,7 +37,7 @@ import { detectRhymeSchemeMultiLang } from './rhymeSchemeDetector';
 import { extractNucleus as morphoExtractNucleus } from './morphoNucleus';
 import { detectCodeSwitch } from './lidSpanDetector';
 import { embeddingScore, blendScores } from './embeddingScorer';
-import { applyTonalPenalty, type TonalFamily } from './tonalMatrix';
+import { applyTonalPenalty, type TonalLang as TonalFamily } from './tonalDistance';
 import {
   extractPositionUnits,
   multiSyllabicTail,
@@ -68,8 +68,12 @@ export interface BlockAnalysis {
 
 // ─── Tonal families that receive matrix penalty ───────────────────────────────
 const TONAL_FAMILY_MAP: Partial<Record<string, TonalFamily>> = {
-  ZH: 'ZH', YUE: 'YUE', TH: 'TH', LO: 'LO',
-  VIET: 'VI', CRV: 'HA', KWA: 'KWA', YRB: 'YRB',
+  CJK: 'zh',
+  TAI: 'th',
+  VIET: 'vi',
+  CRV: 'ha',
+  KWA: 'kwa',
+  YRB: 'yo',
 };
 
 // ─── Embedding-eligible families ─────────────────────────────────────────────
