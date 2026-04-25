@@ -28,8 +28,11 @@ export const POSITION_THRESHOLDS: Record<RhymePosition, number> = {
   all:      0.75, // governed by whichever position matched
 };
 
-// CJK punctuation to strip from token edges
-const CJK_PUNCT_RE = /^[\u3000-\u303F\uFF00-\uFFEF\u2000-\u206F\u0021-\u002F\u003A-\u0040。，、！？；：「」『』【】〔〕…—]+|[\u3000-\u303F\uFF00-\uFFEF\u2000-\u206F\u0021-\u002F\u003A-\u0040。，、！？；：「」『』【】〔〕…—]+$/gu;
+// CJK punctuation character test (single-char filter for character-by-character split)
+const CJK_PUNCT_CHAR_RE = /^[\u3000-\u303F\uFF00-\uFFEF\u2000-\u206F\u0021-\u002F\u003A-\u0040。，、！？；：「」『』【】〔〕…—]$/;
+
+// Vowel pattern shared by tokeniseLine and multiSyllabicTail
+const VOWEL_RE_SRC = '[aeiouáéíóúàèìòùäëïöüâêîôûãõ]+';
 
 /**
  * Tokenise a line into words, respecting RTL scripts and CJK.
@@ -38,8 +41,7 @@ const CJK_PUNCT_RE = /^[\u3000-\u303F\uFF00-\uFFEF\u2000-\u206F\u0021-\u002F\u00
 export function tokeniseLine(line: string): string[] {
   // CJK: split character by character (no spaces), strip punctuation
   if (/[\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/.test(line)) {
-    return [...line.replace(/\s+/g, '')]
-      .filter(ch => !/^[\u3000-\u303F\uFF00-\uFFEF。，、！？；：「」『』【】〔〕…—\u0021-\u002F\u003A-\u0040]$/.test(ch));
+    return [...line.replace(/\s+/g, '')].filter(ch => !CJK_PUNCT_CHAR_RE.test(ch));
   }
   // Default: split on whitespace, strip punctuation from edges
   return line
@@ -94,7 +96,7 @@ export function extractPositionUnits(
  */
 export function multiSyllabicTail(word: string, n: number): string {
   if (n <= 1) return word;
-  const vowelRe = /[aeiouáéíóúàèìòùäëïöüâêîôûãõ]+/gi;
+  const vowelRe = new RegExp(VOWEL_RE_SRC, 'gi');
   const boundaries: number[] = [];
   let m;
   while ((m = vowelRe.exec(word)) !== null) {
@@ -102,24 +104,18 @@ export function multiSyllabicTail(word: string, n: number): string {
   }
   if (boundaries.length <= n) return word;
   // Find the start of the onset consonant(s) before the target vowel.
-  // We slice from the previous vowel's end to find where the onset starts,
-  // then look back through consonants. Simple heuristic: scan back from the
-  // vowel index to find the end of the previous vowel cluster.
+  // Onset starts right after the previous vowel cluster ends.
   const vowelIdx = boundaries[boundaries.length - n]!;
-  // Find end of previous vowel (if any)
   const prevVowelEnd = boundaries.length > n
     ? (() => {
         const prevVowelStart = boundaries[boundaries.length - n - 1]!;
-        // advance past previous vowel cluster
-        const prevVowelRe = /[aeiouáéíóúàèìòùäëïöüâêîôûãõ]+/gi;
+        const prevVowelRe = new RegExp(VOWEL_RE_SRC, 'gi');
         prevVowelRe.lastIndex = prevVowelStart;
         const pv = prevVowelRe.exec(word);
         return pv ? pv.index + pv[0].length : 0;
       })()
     : 0;
-  // The onset starts right after the end of the previous vowel cluster
-  const onsetStart = prevVowelEnd;
-  // Only include the onset if it's before our target vowel
-  const sliceFrom = onsetStart < vowelIdx ? onsetStart : vowelIdx;
+  // Only include the onset if it precedes the target vowel
+  const sliceFrom = prevVowelEnd < vowelIdx ? prevVowelEnd : vowelIdx;
   return word.slice(sliceFrom);
 }
