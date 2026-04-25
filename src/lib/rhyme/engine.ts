@@ -1,7 +1,14 @@
 /**
- * Rhyme Engine v3 — Entry Point
- * rhymeScore(lineA, lineB, langA, langB): RhymeResult
+ * Rhyme Engine v4 — Entry Point
+ * rhymeScore(lineA, lineB, langA, langB, opts): RhymeResult
  * analyzeBlock(block, lang, opts): BlockAnalysis
+ *
+ * v4 additions:
+ *  - morphoAwareNucleus wired for TRK/FIN/BNT families
+ *  - lidSpanDetector auto-detects code-switching before routing
+ *  - embeddingScorer (level 4) blended for CJK/TAI/VIET/YRB/KWA
+ *  - tonalMatrix unified penalty applied to all tonal families
+ *  - rhymePosition mode: end | internal | initial | all
  */
 
 import type { LangCode, RhymeNucleus, RhymeResult, SchemeResult } from './types';
@@ -26,30 +33,54 @@ import { extractNucleusAUS, scoreAUS } from './algo-aus';
 import { extractNucleusDRA, scoreDRA } from './algo-dra';
 import { extractNucleusCRE, scoreCRE } from './algo-cre';
 import { detectRhymeSchemeMultiLang } from './rhymeSchemeDetector';
+// v4 imports
+import { extractNucleus as morphoExtractNucleus } from './morphoNucleus';
+import { detectCodeSwitch } from './lidSpanDetector';
+import { embeddingScore, blendScores } from './embeddingScorer';
+import { applyTonalPenalty, type TonalLang as TonalFamily } from './tonalDistance';
+import {
+  extractPositionUnits,
+  multiSyllabicTail,
+  POSITION_THRESHOLDS,
+  type RhymePosition,
+  type PositionOptions,
+} from './rhymePosition';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface BlockAnalysisOptions {
-  /** Per-line language override. If provided, langs[i] is used for line i. */
   langs?: LangCode[];
-  /** Split on " / " hemistich separator (default: true) */
   splitHemistich?: boolean;
-  /** Window size for rhyme pair detection (default: 6) */
   window?: number;
+}
+
+export interface RhymeScoreOptions extends PositionOptions {
+  /** Enable level-4 embedding blend (async). Default false for sync compat. */
+  useEmbedding?: boolean;
+  /** Tonal penalty weight override (default 0.25) */
+  tonalWeight?: number;
 }
 
 export interface BlockAnalysis {
   scheme: SchemeResult;
-  /** Normalized verse lines used as input to the scheme detector. */
   lines: Array<{ text: string; lang: LangCode }>;
 }
 
-/**
- * Top-level entry point: analyze a raw text block.
- * Segments the block into verse lines, then detects the rhyme scheme.
- *
- * @param block  Raw multiline text
- * @param lang   Primary language code (used when opts.langs is not provided)
- * @param opts   Optional: per-line lang overrides, hemistich split, window
- */
+// ─── Tonal families that receive matrix penalty ───────────────────────────────
+const TONAL_FAMILY_MAP: Partial<Record<string, TonalFamily>> = {
+  CJK: 'zh',
+  TAI: 'th',
+  VIET: 'vi',
+  CRV: 'ha',
+  KWA: 'kwa',
+  YRB: 'yo',
+};
+
+// ─── Embedding-eligible families ─────────────────────────────────────────────
+const EMBEDDING_FAMILIES = new Set(['CJK', 'TAI', 'VIET', 'YRB', 'KWA']);
+
+// ─── analyzeBlock ─────────────────────────────────────────────────────────────
+
 export function analyzeBlock(
   block: string,
   lang: LangCode,
@@ -57,8 +88,6 @@ export function analyzeBlock(
 ): BlockAnalysis {
   const splitHemistich = opts.splitHemistich ?? true;
 
-  // Split block into raw lines: \n + sentence-final punctuation,
-  // and optionally split " / " hemistich separators.
   const rawLines = block
     .split(/\n|(?<=[.!?;])\s+/)
     .flatMap(l => splitHemistich ? l.split(/\s*\/\/\s*|\s+\/\s+/) : [l])
@@ -71,33 +100,62 @@ export function analyzeBlock(
   }));
 
   const scheme = detectRhymeSchemeMultiLang(lineItems, opts.window ?? 6);
-
   return { scheme, lines: lineItems };
 }
 
-// ─── Core pairwise scorer (unchanged) ────────────────────────────────────────
+// ─── Core pairwise scorer ─────────────────────────────────────────────────────
 
 export function rhymeScore(
   lineA: string,
   lineB: string,
   langA: LangCode,
-  langB: LangCode
+  langB: LangCode,
+  opts: RhymeScoreOptions = {}
 ): RhymeResult {
   const warnings: string[] = [];
+  const position: RhymePosition = opts.position ?? 'end';
+  const multiSyl = opts.multiSyllabic ?? 1;
 
-  const unitA = extractLineEndingUnit(lineA, langA);
-  const unitB = extractLineEndingUnit(lineB, langB);
+  // ── Step 0: LID — auto-detect code-switch ────────────────────────────────
+  // Only override explicit language codes when confidence is very high (> 0.96)
+  // or when the provided language is the default fallback ('fr').
+  // Note: 0.96 threshold excludes script-only detection (0.95) which can be
+  // ambiguous (e.g., Arabic script used by ar/ur/fa).
+  const csA = detectCodeSwitch(lineA, langA);
+  const csB = detectCodeSwitch(lineB, langB);
+  const shouldOverrideA = langA === 'fr' || (csA && csA.confidence > 0.96);
+  const shouldOverrideB = langB === 'fr' || (csB && csB.confidence > 0.96);
+  const resolvedLangA: LangCode = (shouldOverrideA && csA?.detectedLang as LangCode) || langA;
+  const resolvedLangB: LangCode = (shouldOverrideB && csB?.detectedLang as LangCode) || langB;
+  if (resolvedLangA !== langA) warnings.push(`lid-cs:${langA}->${resolvedLangA}`);
+  if (resolvedLangB !== langB) warnings.push(`lid-cs:${langB}->${resolvedLangB}`);
+
+  // ── Step 1: Extract position unit ────────────────────────────────────────
+  const unitsA = extractPositionUnits(lineA, opts);
+  const unitsB = extractPositionUnits(lineB, opts);
+
+  // For multi-syllabic mode, extend tail
+  const surfaceA = multiSyl > 1
+    ? multiSyllabicTail(unitsA[unitsA.length - 1] ?? lineA, multiSyl)
+    : (unitsA[unitsA.length - 1] ?? lineA);
+  const surfaceB = multiSyl > 1
+    ? multiSyllabicTail(unitsB[unitsB.length - 1] ?? lineB, multiSyl)
+    : (unitsB[unitsB.length - 1] ?? lineB);
+
+  const unitA = extractLineEndingUnit(surfaceA, resolvedLangA);
+  const unitB = extractLineEndingUnit(surfaceB, resolvedLangB);
 
   warnings.push(...unitA.warnings.map(w => `A:${w}`));
   warnings.push(...unitB.warnings.map(w => `B:${w}`));
 
-  const { family, lowResource } = routeToFamily(langA);
-  const familyB = routeToFamily(langB).family;
+  const { family, lowResource } = routeToFamily(resolvedLangA);
+  const familyB = routeToFamily(resolvedLangB).family;
 
+  // ── Step 2: Cross-family fallback ────────────────────────────────────────
   if (family !== familyB) {
     warnings.push('cross-family-fallback');
-    const nucleusA = extractBestNucleus(unitA, family, langA, lowResource);
-    const nucleusB = extractBestNucleus(unitB, familyB, langB, routeToFamily(langB).lowResource);
+    const nucleusA = extractBestNucleus(unitA, family, resolvedLangA, lowResource);
+    const nucleusB = extractBestNucleus(unitB, familyB, resolvedLangB, routeToFamily(resolvedLangB).lowResource);
     const tailA = normalizeInput(unitA.surface).slice(-4).toLowerCase();
     const tailB = normalizeInput(unitB.surface).slice(-4).toLowerCase();
     const scoreRaw = 1 - phonemeEditDistance(tailA, tailB);
@@ -105,113 +163,218 @@ export function rhymeScore(
       score: Math.max(0, Math.min(1, scoreRaw)),
       category: categorize(scoreRaw),
       family: 'FALLBACK',
-      langA, langB, unitA, unitB,
+      langA: resolvedLangA, langB: resolvedLangB, unitA, unitB,
       nucleusA, nucleusB,
       lowResourceFallback: true,
       warnings,
     };
   }
 
+  // ── Step 3: Family scoring ────────────────────────────────────────────────
+  let baseScore = 0;
+  let nucleusA: RhymeNucleus;
+  let nucleusB: RhymeNucleus;
+
   switch (family) {
     case 'KWA': {
       const nA = extractNucleusKWA(unitA);
       const nB = extractNucleusKWA(unitB);
-      return build(scoreKWANormalized(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreKWANormalized(nA, nB);
+      break;
     }
     case 'CRV': {
-      const nA = extractNucleusCRV(unitA, lowResource, langA);
-      const nB = extractNucleusCRV(unitB, lowResource, langB);
+      const nA = extractNucleusCRV(unitA, lowResource, resolvedLangA);
+      const nB = extractNucleusCRV(unitB, lowResource, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
       if (lowResource) warnings.push('low-resource-fallback');
-      return build(scoreCRV(nA, nB, langA), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      baseScore = scoreCRV(nA, nB, resolvedLangA);
+      break;
     }
     case 'ROM': {
-      const nA = extractNucleusROM(unitA, langA);
-      const nB = extractNucleusROM(unitB, langB);
-      const score = 0.6 * (1 - phonemeEditDistance(nA.vowels, nB.vowels))
-                  + 0.4 * (1 - phonemeEditDistance(nA.coda,   nB.coda));
-      return build(score, family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusROM(unitA, resolvedLangA);
+      const nB = extractNucleusROM(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = 0.6 * (1 - phonemeEditDistance(nA.vowels, nB.vowels))
+                + 0.4 * (1 - phonemeEditDistance(nA.coda, nB.coda));
+      break;
     }
     case 'GER': {
-      const nA = extractNucleusGER(unitA, langA);
-      const nB = extractNucleusGER(unitB, langB);
-      return build(scoreGER(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusGER(unitA, resolvedLangA);
+      const nB = extractNucleusGER(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreGER(nA, nB);
+      break;
     }
     case 'BNT': {
-      const nA = extractNucleusBNT(unitA, langA);
-      const nB = extractNucleusBNT(unitB, langB);
-      return build(scoreBNT(nA, nB, langA), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      // morphoAware: strip class prefix before nucleus extraction
+      const stemA = morphoExtractNucleus(unitA.surface, 'BNT').stem;
+      const stemB = morphoExtractNucleus(unitB.surface, 'BNT').stem;
+      const mUnitA = extractLineEndingUnit(stemA, resolvedLangA);
+      const mUnitB = extractLineEndingUnit(stemB, resolvedLangB);
+      const nA = extractNucleusBNT(mUnitA, resolvedLangA);
+      const nB = extractNucleusBNT(mUnitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreBNT(nA, nB, resolvedLangA);
+      break;
     }
     case 'YRB': {
       const nA = extractNucleusYRB(unitA) as YRBNucleus;
       const nB = extractNucleusYRB(unitB) as YRBNucleus;
-      return build(scoreYRB(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreYRB(nA, nB);
+      break;
     }
     case 'SLV': {
-      const nA = extractNucleusSLV(unitA, langA);
-      const nB = extractNucleusSLV(unitB, langB);
-      return build(scoreSLV(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusSLV(unitA, resolvedLangA);
+      const nB = extractNucleusSLV(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreSLV(nA, nB);
+      break;
     }
     case 'SEM': {
-      const nA = extractNucleusSEM(unitA, langA);
-      const nB = extractNucleusSEM(unitB, langB);
-      return build(scoreSEM(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusSEM(unitA, resolvedLangA);
+      const nB = extractNucleusSEM(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreSEM(nA, nB);
+      break;
     }
     case 'TAI': {
-      const nA = extractNucleusTAI(unitA, langA);
-      const nB = extractNucleusTAI(unitB, langB);
-      return build(scoreTAI(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusTAI(unitA, resolvedLangA);
+      const nB = extractNucleusTAI(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreTAI(nA, nB);
+      break;
     }
     case 'VIET': {
-      const nA = extractNucleusVIET(unitA, langA);
-      const nB = extractNucleusVIET(unitB, langB);
-      return build(scoreVIET(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusVIET(unitA, resolvedLangA);
+      const nB = extractNucleusVIET(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreVIET(nA, nB);
+      break;
     }
     case 'CJK': {
-      const nA = extractNucleusCJK(unitA, langA);
-      const nB = extractNucleusCJK(unitB, langB);
+      const nA = extractNucleusCJK(unitA, resolvedLangA);
+      const nB = extractNucleusCJK(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
       warnings.push('cjk-graphemic-proxy');
-      return build(scoreCJK(nA, nB), family, langA, langB, unitA, unitB, nA, nB, true, warnings);
+      baseScore = scoreCJK(nA, nB);
+      break;
     }
     case 'TRK': {
-      const nA = extractNucleusTRK(unitA, langA) as TRKNucleus;
-      const nB = extractNucleusTRK(unitB, langB) as TRKNucleus;
-      return build(scoreTRK(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      // morphoAware: strip agglutinative suffixes
+      const stemA = morphoExtractNucleus(unitA.surface, 'AGG').stem;
+      const stemB = morphoExtractNucleus(unitB.surface, 'AGG').stem;
+      const mUnitA = extractLineEndingUnit(stemA, resolvedLangA);
+      const mUnitB = extractLineEndingUnit(stemB, resolvedLangB);
+      const nA = extractNucleusTRK(mUnitA, resolvedLangA) as TRKNucleus;
+      const nB = extractNucleusTRK(mUnitB, resolvedLangB) as TRKNucleus;
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreTRK(nA, nB);
+      break;
     }
     case 'FIN': {
-      const nA = extractNucleusFIN(unitA, langA) as FINNucleus;
-      const nB = extractNucleusFIN(unitB, langB) as FINNucleus;
-      return build(scoreFIN(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      // FIN algorithm handles its own suffix stripping - don't pre-strip
+      const nA = extractNucleusFIN(unitA, resolvedLangA) as FINNucleus;
+      const nB = extractNucleusFIN(unitB, resolvedLangB) as FINNucleus;
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreFIN(nA, nB);
+      break;
     }
     case 'IIR': {
-      const nA = extractNucleusIIR(unitA, langA);
-      const nB = extractNucleusIIR(unitB, langB);
-      return build(scoreIIR(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusIIR(unitA, resolvedLangA);
+      const nB = extractNucleusIIR(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreIIR(nA, nB);
+      break;
     }
     case 'AUS': {
-      const nA = extractNucleusAUS(unitA, langA);
-      const nB = extractNucleusAUS(unitB, langB);
-      return build(scoreAUS(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusAUS(unitA, resolvedLangA);
+      const nB = extractNucleusAUS(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreAUS(nA, nB);
+      break;
     }
     case 'DRA': {
-      const nA = extractNucleusDRA(unitA, langA);
-      const nB = extractNucleusDRA(unitB, langB);
-      return build(scoreDRA(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusDRA(unitA, resolvedLangA);
+      const nB = extractNucleusDRA(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreDRA(nA, nB);
+      break;
     }
     case 'CRE': {
-      const nA = extractNucleusCRE(unitA, langA);
-      const nB = extractNucleusCRE(unitB, langB);
-      return build(scoreCRE(nA, nB), family, langA, langB, unitA, unitB, nA, nB, lowResource, warnings);
+      const nA = extractNucleusCRE(unitA, resolvedLangA);
+      const nB = extractNucleusCRE(unitB, resolvedLangB);
+      nucleusA = nA; nucleusB = nB;
+      baseScore = scoreCRE(nA, nB);
+      break;
     }
     default: {
       const tailA = normalizeInput(unitA.surface).slice(-4).toLowerCase();
       const tailB = normalizeInput(unitB.surface).slice(-4).toLowerCase();
-      const scoreRaw = 1 - phonemeEditDistance(tailA, tailB);
+      baseScore = 1 - phonemeEditDistance(tailA, tailB);
       const dN: RhymeNucleus = { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
+      nucleusA = dN; nucleusB = dN;
       warnings.push('fallback-graphemic');
-      return build(scoreRaw, 'FALLBACK', langA, langB, unitA, unitB, dN, dN, true, warnings);
     }
   }
+
+  // ── Step 4: Tonal penalty ─────────────────────────────────────────────────
+  const tonalFamily = TONAL_FAMILY_MAP[family];
+  if (tonalFamily && nucleusA!.tone && nucleusB!.tone) {
+    baseScore = applyTonalPenalty(
+      baseScore, tonalFamily,
+      nucleusA!.tone, nucleusB!.tone,
+      opts.tonalWeight ?? 0.25
+    );
+  }
+
+  // ── Step 5: Embedding blend (sync path — embedding deferred) ─────────────
+  // Embedding is async; in sync call we skip and flag for caller.
+  // Use rhymeScoreAsync() for full level-4 blend.
+  if (opts.useEmbedding && EMBEDDING_FAMILIES.has(family)) {
+    warnings.push('embedding-deferred:use-rhymeScoreAsync');
+  }
+
+  // ── Step 6: Position threshold annotation ────────────────────────────────
+  const threshold = POSITION_THRESHOLDS[position];
+  if (baseScore < threshold) warnings.push(`below-threshold:${position}:${threshold}`);
+
+  const score = Math.max(0, Math.min(1, baseScore));
+  return build(score, family, resolvedLangA, resolvedLangB, unitA, unitB, nucleusA!, nucleusB!, lowResource, warnings);
 }
+
+/**
+ * Async variant — runs full level-4 embedding blend for eligible families.
+ */
+export async function rhymeScoreAsync(
+  lineA: string,
+  lineB: string,
+  langA: LangCode,
+  langB: LangCode,
+  opts: RhymeScoreOptions = {}
+): Promise<RhymeResult> {
+  const syncResult = rhymeScore(lineA, lineB, langA, langB, { ...opts, useEmbedding: false });
+  const { family } = routeToFamily(langA);
+
+  if (!EMBEDDING_FAMILIES.has(family)) return syncResult;
+
+  const phonesA = syncResult.nucleusA.vowels.split('') .concat(syncResult.nucleusA.coda.split(''));
+  const phonesB = syncResult.nucleusB.vowels.split('').concat(syncResult.nucleusB.coda.split(''));
+
+  const embResult = await embeddingScore(phonesA, phonesB, family as any, langA);
+  const blended = blendScores(syncResult.score, embResult.score, 0.4);
+  const warnings = [...syncResult.warnings, `embedding:${embResult.backend}`];
+
+  return {
+    ...syncResult,
+    score: Math.max(0, Math.min(1, blended)),
+    category: categorize(blended),
+    warnings,
+  };
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function extractBestNucleus(
   unit: RhymeResult['unitA'],
