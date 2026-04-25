@@ -4,7 +4,7 @@
  * analyzeBlock(block, lang, opts): BlockAnalysis
  *
  * v4 additions:
- *  - morphoAwareNucleus wired for TRK/FIN/BNT families
+ *  - morphoAwareNucleus wired for BNT family (TRK/FIN handle morpho internally)
  *  - lidSpanDetector auto-detects code-switching before routing
  *  - embeddingScorer (level 4) blended for CJK/TAI/VIET/YRB/KWA
  *  - tonalMatrix unified penalty applied to all tonal families
@@ -47,7 +47,6 @@ import {
 } from './rhymePosition';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
 export interface BlockAnalysisOptions {
   langs?: LangCode[];
   splitHemistich?: boolean;
@@ -80,7 +79,6 @@ const TONAL_FAMILY_MAP: Partial<Record<string, TonalFamily>> = {
 const EMBEDDING_FAMILIES = new Set(['CJK', 'TAI', 'VIET', 'YRB', 'KWA']);
 
 // ─── analyzeBlock ────────────────────────────────────────────────────────────
-
 export function analyzeBlock(
   block: string,
   lang: LangCode,
@@ -90,7 +88,7 @@ export function analyzeBlock(
 
   const rawLines = block
     .split(/\n|(?<=[.!?;])\s+/)
-    .flatMap(l => splitHemistich ? l.split(/\s*\/\/\s*|\s+\/\s+/) : [l])
+    .flatMap(l => splitHemistich ? l.split(/\s*//\s*|\s+/) : [l])
     .map(l => l.trim())
     .filter(Boolean);
 
@@ -104,7 +102,6 @@ export function analyzeBlock(
 }
 
 // ─── Core pairwise scorer ─────────────────────────────────────────────────────
-
 export function rhymeScore(
   lineA: string,
   lineB: string,
@@ -275,25 +272,21 @@ export function rhymeScore(
       break;
     }
     case 'TRK': {
-      // morphoAware: strip agglutinative suffixes
-      const stemA = morphoExtractNucleus(unitA.surface, 'AGG').stem;
-      const stemB = morphoExtractNucleus(unitB.surface, 'AGG').stem;
-      const mUnitA = extractLineEndingUnit(stemA, resolvedLangA);
-      const mUnitB = extractLineEndingUnit(stemB, resolvedLangB);
-      const nA = extractNucleusTRK(mUnitA, resolvedLangA) as TRKNucleus;
-      const nB = extractNucleusTRK(mUnitB, resolvedLangB) as TRKNucleus;
+      // algo-trk handles agglutinative suffix stripping internally.
+      // Pre-stripping with the generic 'AGG' morphoNucleus is destructive
+      // (strips too aggressively, can leave empty stems on short words).
+      const nA = extractNucleusTRK(unitA, resolvedLangA) as TRKNucleus;
+      const nB = extractNucleusTRK(unitB, resolvedLangB) as TRKNucleus;
       nucleusA = nA; nucleusB = nB;
       baseScore = scoreTRK(nA, nB);
       break;
     }
     case 'FIN': {
-      // morphoAware: strip agglutinative suffixes
-      const stemA = morphoExtractNucleus(unitA.surface, 'AGG').stem;
-      const stemB = morphoExtractNucleus(unitB.surface, 'AGG').stem;
-      const mUnitA = extractLineEndingUnit(stemA, resolvedLangA);
-      const mUnitB = extractLineEndingUnit(stemB, resolvedLangB);
-      const nA = extractNucleusFIN(mUnitA, resolvedLangA) as FINNucleus;
-      const nB = extractNucleusFIN(mUnitB, resolvedLangB) as FINNucleus;
+      // algo-fin handles FI/HU suffix stripping + vowel-harmony normalisation.
+      // Pre-stripping with the generic 'AGG' morphoNucleus would double-strip
+      // (e.g. 'maassa' -> 'maa' -> 'ma'), destroying the rhyme nucleus.
+      const nA = extractNucleusFIN(unitA, resolvedLangA) as FINNucleus;
+      const nB = extractNucleusFIN(unitB, resolvedLangB) as FINNucleus;
       nucleusA = nA; nucleusB = nB;
       baseScore = scoreFIN(nA, nB);
       break;
@@ -392,7 +385,6 @@ export async function rhymeScoreAsync(
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function extractBestNucleus(
   unit: RhymeResult['unitA'],
   family: RhymeResult['family'],
