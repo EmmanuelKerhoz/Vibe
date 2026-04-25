@@ -8,7 +8,7 @@
  *   initial  — first word
  *   all      — end + internal + initial; returns best score across positions
  *
- * multiSyllabic=true extends the nucleus to the last N stressed syllables
+ * multiSyllabic: number — extends nucleus to last N syllables
  * (rap / multi-syllabic rhyme convention). Default N=1.
  */
 
@@ -28,14 +28,20 @@ export const POSITION_THRESHOLDS: Record<RhymePosition, number> = {
   all:      0.75, // governed by whichever position matched
 };
 
+// CJK punctuation character test (single-char filter for character-by-character split)
+const CJK_PUNCT_CHAR_RE = /^[\u3000-\u303F\uFF00-\uFFEF\u2000-\u206F\u0021-\u002F\u003A-\u0040。，、！？；：「」『』【】〔〕…—]$/;
+
+// Vowel pattern shared by tokeniseLine and multiSyllabicTail
+const VOWEL_RE_SRC = '[aeiouáéíóúàèìòùäëïöüâêîôûãõ]+';
+
 /**
  * Tokenise a line into words, respecting RTL scripts and CJK.
  * Returns tokens left-to-right in logical order.
  */
 export function tokeniseLine(line: string): string[] {
-  // CJK: split character by character (no spaces)
+  // CJK: split character by character (no spaces), strip punctuation
   if (/[\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/.test(line)) {
-    return [...line.replace(/\s+/g, '')].filter(Boolean);
+    return [...line.replace(/\s+/g, '')].filter(ch => !CJK_PUNCT_CHAR_RE.test(ch));
   }
   // Default: split on whitespace, strip punctuation from edges
   return line
@@ -47,6 +53,7 @@ export function tokeniseLine(line: string): string[] {
 /**
  * Extract candidate units from a line according to position mode.
  * Returns an array of strings to be passed individually to the nucleus extractor.
+ * For 'internal'/'all', multiple candidates are returned for best-pair scoring.
  */
 export function extractPositionUnits(
   line: string,
@@ -74,21 +81,41 @@ export function extractPositionUnits(
         ...tokens.slice(1, -1),
         tokens[tokens.length - 1]!,
       ])];
+
+    default:
+      // Safety fallback for invalid runtime values
+      return [tokens[tokens.length - 1]!];
   }
 }
 
 /**
  * For multi-syllabic rap rhymes: given a word, return the last N syllables
  * concatenated (heuristic CV syllabifier).
+ * Slices from the onset consonant(s) before the Nth-from-last vowel nucleus,
+ * preserving the full syllable including any leading consonants.
  */
 export function multiSyllabicTail(word: string, n: number): string {
   if (n <= 1) return word;
-  const vowelRe = /[aeiouáéíóúàèìòùäëïöüâêîôûãõ]+/gi;
+  const vowelRe = new RegExp(VOWEL_RE_SRC, 'gi');
   const boundaries: number[] = [];
   let m;
   while ((m = vowelRe.exec(word)) !== null) {
     boundaries.push(m.index);
   }
   if (boundaries.length <= n) return word;
-  return word.slice(boundaries[boundaries.length - n]!);
+  // Find the start of the onset consonant(s) before the target vowel.
+  // Onset starts right after the previous vowel cluster ends.
+  const vowelIdx = boundaries[boundaries.length - n]!;
+  const prevVowelEnd = boundaries.length > n
+    ? (() => {
+        const prevVowelStart = boundaries[boundaries.length - n - 1]!;
+        const prevVowelRe = new RegExp(VOWEL_RE_SRC, 'gi');
+        prevVowelRe.lastIndex = prevVowelStart;
+        const pv = prevVowelRe.exec(word);
+        return pv ? pv.index + pv[0].length : 0;
+      })()
+    : 0;
+  // Only include the onset if it precedes the target vowel
+  const sliceFrom = prevVowelEnd < vowelIdx ? prevVowelEnd : vowelIdx;
+  return word.slice(sliceFrom);
 }
