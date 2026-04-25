@@ -46,7 +46,7 @@ import {
   type PositionOptions,
 } from './rhymePosition';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface BlockAnalysisOptions {
   langs?: LangCode[];
@@ -79,7 +79,7 @@ const TONAL_FAMILY_MAP: Partial<Record<string, TonalFamily>> = {
 // ─── Embedding-eligible families ─────────────────────────────────────────────
 const EMBEDDING_FAMILIES = new Set(['CJK', 'TAI', 'VIET', 'YRB', 'KWA']);
 
-// ─── analyzeBlock ─────────────────────────────────────────────────────────────
+// ─── analyzeBlock ────────────────────────────────────────────────────────────
 
 export function analyzeBlock(
   block: string,
@@ -116,13 +116,32 @@ export function rhymeScore(
   const position: RhymePosition = opts.position ?? 'end';
   const multiSyl = opts.multiSyllabic ?? 1;
 
-  // ── Step 0: LID — auto-detect code-switch ────────────────────────────────
+  // ── Step 0: LID — assistive only ─────────────────────────────────────────
+  // The caller-provided lang takes precedence. LID only re-routes when the
+  // caller didn't specify a language (or passed an unknown/auto value).
+  // Mismatches are still surfaced as warnings for diagnostics.
   const csA = detectCodeSwitch(lineA, langA);
   const csB = detectCodeSwitch(lineB, langB);
-  const resolvedLangA: LangCode = (csA?.detectedLang as LangCode) ?? langA;
-  const resolvedLangB: LangCode = (csB?.detectedLang as LangCode) ?? langB;
-  if (resolvedLangA !== langA) warnings.push(`lid-cs:${langA}->${resolvedLangA}`);
-  if (resolvedLangB !== langB) warnings.push(`lid-cs:${langB}->${resolvedLangB}`);
+
+  const isUnspecified = (l: LangCode | undefined): boolean => {
+    if (!l) return true;
+    const s = String(l).toLowerCase();
+    return s === 'auto' || s === 'und' || s === 'unknown' || s === '';
+  };
+
+  const resolvedLangA: LangCode = isUnspecified(langA)
+    ? ((csA?.detectedLang as LangCode) ?? langA)
+    : langA;
+  const resolvedLangB: LangCode = isUnspecified(langB)
+    ? ((csB?.detectedLang as LangCode) ?? langB)
+    : langB;
+
+  if (csA?.detectedLang && csA.detectedLang !== langA) {
+    warnings.push(`lid-cs-hint:${langA}->${csA.detectedLang}`);
+  }
+  if (csB?.detectedLang && csB.detectedLang !== langB) {
+    warnings.push(`lid-cs-hint:${langB}->${csB.detectedLang}`);
+  }
 
   // ── Step 1: Extract position unit ────────────────────────────────────────
   const unitsA = extractPositionUnits(lineA, opts);
