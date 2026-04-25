@@ -79,6 +79,10 @@ const TONAL_FAMILY_MAP: Partial<Record<string, TonalFamily>> = {
 const EMBEDDING_FAMILIES = new Set(['CJK', 'TAI', 'VIET', 'YRB', 'KWA']);
 
 // ─── analyzeBlock ────────────────────────────────────────────────────────────
+// Hemistich separators: " // " (double slash) or " / " (single slash with spaces)
+const HEMISTICH_RE = new RegExp('\s*\/\/\s*|\s+\/\s+');
+const LINE_BREAK_RE = /\n|(?<=[.!?;])\s+/;
+
 export function analyzeBlock(
   block: string,
   lang: LangCode,
@@ -87,8 +91,8 @@ export function analyzeBlock(
   const splitHemistich = opts.splitHemistich ?? true;
 
   const rawLines = block
-    .split(/\n|(?<=[.!?;])\s+/)
-    .flatMap(l => splitHemistich ? l.split(/\s*//\s*|\s+/) : [l])
+    .split(LINE_BREAK_RE)
+    .flatMap(l => splitHemistich ? l.split(HEMISTICH_RE) : [l])
     .map(l => l.trim())
     .filter(Boolean);
 
