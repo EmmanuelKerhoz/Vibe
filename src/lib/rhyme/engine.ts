@@ -6,7 +6,7 @@
  * v4 additions:
  *  - morphoAwareNucleus wired for BNT family (TRK/FIN handle morpho internally)
  *  - lidSpanDetector auto-detects code-switching before routing
- *  - embeddingScorer (level 4) blended for CJK/TAI/VIET/YRB/KWA
+ *  - embeddingScorer (level 4) blended for TAI/VIET/YRB/KWA (CJK excluded: graphemic proxies)
  *  - tonalMatrix unified penalty applied to all tonal families
  *  - rhymePosition mode: end | internal | initial | all
  */
@@ -65,18 +65,16 @@ export interface BlockAnalysis {
   lines: Array<{ text: string; lang: LangCode }>;
 }
 
-// ─── Tonal families that receive matrix penalty ───────────────────────────────
-const TONAL_FAMILY_MAP: Partial<Record<string, TonalFamily>> = {
-  CJK: 'zh',
-  TAI: 'th',
-  VIET: 'vi',
-  CRV: 'ha',
-  KWA: 'kwa',
-  YRB: 'yo',
-};
+// ─── Per-language tonal family lookup ────────────────────────────────────────
+// Keyed by resolved LangCode for per-language precision (e.g. yue ≠ zh).
+const TONAL_LANG_SET = new Set<string>(['zh', 'yue', 'th', 'lo', 'vi', 'ha', 'kwa', 'yo']);
+function getTonalLang(lang: LangCode): TonalFamily | undefined {
+  return TONAL_LANG_SET.has(lang) ? (lang as TonalFamily) : undefined;
+}
 
 // ─── Embedding-eligible families ─────────────────────────────────────────────
-const EMBEDDING_FAMILIES = new Set(['CJK', 'TAI', 'VIET', 'YRB', 'KWA']);
+// CJK excluded: Han/kana/jamo graphemic proxies are not in PHOIBLE vectors.
+const EMBEDDING_FAMILIES = new Set(['TAI', 'VIET', 'YRB', 'KWA']);
 
 // ─── analyzeBlock ────────────────────────────────────────────────────────────
 // Hemistich separators: " // " (double slash) or " / " (single slash with spaces)
@@ -148,13 +146,34 @@ export function rhymeScore(
   const unitsA = extractPositionUnits(lineA, opts);
   const unitsB = extractPositionUnits(lineB, opts);
 
-  // For multi-syllabic mode, extend tail
+  // For multi-unit modes (internal/all), find the best-matching pair by quick
+  // phoneme similarity across all unit combinations, then score that pair fully.
+  let bestUnitA: string;
+  let bestUnitB: string;
+  if (unitsA.length === 1 && unitsB.length === 1) {
+    bestUnitA = unitsA[0]!;
+    bestUnitB = unitsB[0]!;
+  } else {
+    let bestSim = -1;
+    bestUnitA = unitsA[0]!;
+    bestUnitB = unitsB[0]!;
+    for (const ua of unitsA) {
+      for (const ub of unitsB) {
+        const na = normalizeInput(ua).toLowerCase();
+        const nb = normalizeInput(ub).toLowerCase();
+        const sim = 1 - phonemeEditDistance(na.slice(-5), nb.slice(-5));
+        if (sim > bestSim) { bestSim = sim; bestUnitA = ua; bestUnitB = ub; }
+      }
+    }
+  }
+
+  // For multi-syllabic mode, extend tail of the chosen units
   const surfaceA = multiSyl > 1
-    ? multiSyllabicTail(unitsA[unitsA.length - 1] ?? lineA, multiSyl)
-    : (unitsA[unitsA.length - 1] ?? lineA);
+    ? multiSyllabicTail(bestUnitA, multiSyl)
+    : bestUnitA;
   const surfaceB = multiSyl > 1
-    ? multiSyllabicTail(unitsB[unitsB.length - 1] ?? lineB, multiSyl)
-    : (unitsB[unitsB.length - 1] ?? lineB);
+    ? multiSyllabicTail(bestUnitB, multiSyl)
+    : bestUnitB;
 
   const unitA = extractLineEndingUnit(surfaceA, resolvedLangA);
   const unitB = extractLineEndingUnit(surfaceB, resolvedLangB);
@@ -181,6 +200,8 @@ export function rhymeScore(
       nucleusA, nucleusB,
       lowResourceFallback: true,
       warnings,
+      position,
+      csDetected: resolvedLangA !== langA || resolvedLangB !== langB,
     };
   }
 
@@ -334,10 +355,11 @@ export function rhymeScore(
   }
 
   // ── Step 4: Tonal penalty ─────────────────────────────────────────────────
-  const tonalFamily = TONAL_FAMILY_MAP[family];
-  if (tonalFamily && nucleusA!.tone && nucleusB!.tone) {
+  // Use resolved language for per-language precision (yue ≠ zh, lo ≠ th, etc.)
+  const tonalLang = getTonalLang(resolvedLangA);
+  if (tonalLang && nucleusA!.tone && nucleusB!.tone) {
     baseScore = applyTonalPenalty(
-      baseScore, tonalFamily,
+      baseScore, tonalLang,
       nucleusA!.tone, nucleusB!.tone,
       opts.tonalWeight ?? 0.25
     );
@@ -355,11 +377,13 @@ export function rhymeScore(
   if (baseScore < threshold) warnings.push(`below-threshold:${position}:${threshold}`);
 
   const score = Math.max(0, Math.min(1, baseScore));
-  return build(score, family, resolvedLangA, resolvedLangB, unitA, unitB, nucleusA!, nucleusB!, lowResource, warnings);
+  return build(score, family, resolvedLangA, resolvedLangB, unitA, unitB, nucleusA!, nucleusB!, lowResource, warnings, position, resolvedLangA !== langA || resolvedLangB !== langB);
 }
 
 /**
  * Async variant — runs full level-4 embedding blend for eligible families.
+ * Uses the LID-resolved languages from the sync result to ensure embedding
+ * eligibility is evaluated on the same language as the sync scoring path.
  */
 export async function rhymeScoreAsync(
   lineA: string,
@@ -369,14 +393,15 @@ export async function rhymeScoreAsync(
   opts: RhymeScoreOptions = {}
 ): Promise<RhymeResult> {
   const syncResult = rhymeScore(lineA, lineB, langA, langB, { ...opts, useEmbedding: false });
-  const { family } = routeToFamily(langA);
+  // Use LID-resolved language (stored in syncResult.langA after rhymeScore)
+  const { family } = routeToFamily(syncResult.langA);
 
   if (!EMBEDDING_FAMILIES.has(family)) return syncResult;
 
-  const phonesA = syncResult.nucleusA.vowels.split('') .concat(syncResult.nucleusA.coda.split(''));
+  const phonesA = syncResult.nucleusA.vowels.split('').concat(syncResult.nucleusA.coda.split(''));
   const phonesB = syncResult.nucleusB.vowels.split('').concat(syncResult.nucleusB.coda.split(''));
 
-  const embResult = await embeddingScore(phonesA, phonesB, family as any, langA);
+  const embResult = await embeddingScore(phonesA, phonesB, family as any, syncResult.langA);
   const blended = blendScores(syncResult.score, embResult.score, 0.4);
   const warnings = [...syncResult.warnings, `embedding:${embResult.backend}`];
 
@@ -427,11 +452,16 @@ function build(
   nucleusA: RhymeNucleus,
   nucleusB: RhymeNucleus,
   lowResourceFallback: boolean,
-  warnings: string[]
+  warnings: string[],
+  position?: RhymeResult['position'],
+  csDetected?: boolean
 ): RhymeResult {
-  return {
+  const result: RhymeResult = {
     score: Math.max(0, Math.min(1, score)),
     category: categorize(score),
     family, langA, langB, unitA, unitB, nucleusA, nucleusB, lowResourceFallback, warnings,
   };
+  if (position !== undefined) result.position = position;
+  if (csDetected !== undefined) result.csDetected = csDetected;
+  return result;
 }
