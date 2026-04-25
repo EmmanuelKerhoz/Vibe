@@ -16,6 +16,7 @@
  *     iko 🏺  Ogoja (Cross River, Nigeria)
  *     jv  🎭  Javanese (Java, sub-national dialect)
  *     wuu 🏙️  Wu / Shanghainese (Sinitic regional dialect)
+ *     sa  🕉️  Sanskrit (classical, no single nation-state)
  */
 
 export type AlgoFamily =
@@ -76,6 +77,7 @@ export const LANGUAGE_FLAGS: Record<string, string> = {
   'iko': '🏺',                  // Ogoja (Cross River, Nigeria)
   // ── Indo-Iranian ─────────────────────────────────────────────────────────
   'hi': '🇮🇳', 'ur': '🇵🇰', 'bn': '🇧🇩', 'pa': '🇮🇳', 'fa': '🇮🇷',
+  'sa': '🕉️',                   // Sanskrit: classical language, no nation-state flag
   // ── Dravidian ────────────────────────────────────────────────────────────
   'ta': '🇱🇰', 'te': '🇮🇳', 'kn': '🇮🇳', 'ml': '🇮🇳',
   // ── Turkic ───────────────────────────────────────────────────────────────
@@ -115,8 +117,9 @@ export const LANG_TO_FAMILY: Record<string, AlgoFamily> = {
   'ba':  'ALGO-KWA', 'di': 'ALGO-KWA', 'ew': 'ALGO-KWA', 'mi': 'ALGO-KWA',
   // Cross River / Chadic
   'bkv': 'ALGO-CRV', 'ijn': 'ALGO-CRV', 'iko': 'ALGO-CRV', 'ha': 'ALGO-CRV',
-  // Indo-Iranian
+  // Indo-Iranian — Sanskrit shares ALGO-IIR (same family, distinct phonology handled at strategy level)
   'hi': 'ALGO-IIR', 'ur': 'ALGO-IIR', 'bn': 'ALGO-IIR', 'pa': 'ALGO-IIR', 'fa': 'ALGO-IIR',
+  'sa': 'ALGO-IIR',
   // Dravidian
   'ta': 'ALGO-DRV', 'te': 'ALGO-DRV', 'kn': 'ALGO-DRV', 'ml': 'ALGO-DRV',
   // Turkic
@@ -145,7 +148,11 @@ export const FAMILY_CONFIG: Record<AlgoFamily, LanguageFamilyConfig> = {
   'ALGO-BNT':    { family: 'ALGO-BNT',    label: 'Bantu',                flag: '🇰🇪', hasTones: true,  hasVowelHarmony: true,  syllableStructure: 'CV',      codaRelevance: 'medium' },
   'ALGO-KWA':    { family: 'ALGO-KWA',    label: 'Kwa (Niger-Congo)',    flag: '🇨🇮', hasTones: true,  hasVowelHarmony: true,  syllableStructure: 'CV',      codaRelevance: 'none' },
   'ALGO-CRV':    { family: 'ALGO-CRV',    label: 'Cross River / Chadic', flag: '🇳🇬', hasTones: true,  hasVowelHarmony: false, syllableStructure: 'CVC',     codaRelevance: 'medium' },
-  'ALGO-IIR':    { family: 'ALGO-IIR',    label: 'Indo-Iranian',         flag: '🇮🇳', hasTones: false, hasVowelHarmony: false, syllableStructure: 'CVC',     codaRelevance: 'medium' },
+  // ALGO-IIR: syllableStructure set to 'complex' to cover both modern Hindi (CVC)
+  // and Classical Sanskrit (laghu/guru weight system, conjunct consonants, sandhi).
+  // Strategy implementations must check langCode === 'sa' to apply Sanskrit-specific
+  // syllabification (mātrā-based weight) vs. Hindi (stress-accent based).
+  'ALGO-IIR':    { family: 'ALGO-IIR',    label: 'Indo-Iranian',         flag: '🇮🇳', hasTones: false, hasVowelHarmony: false, syllableStructure: 'complex', codaRelevance: 'medium' },
   'ALGO-DRV':    { family: 'ALGO-DRV',    label: 'Dravidian',            flag: '🇮🇳', hasTones: false, hasVowelHarmony: false, syllableStructure: 'CVC',     codaRelevance: 'medium' },
   'ALGO-TRK':    { family: 'ALGO-TRK',    label: 'Turkic',               flag: '🇹🇷', hasTones: false, hasVowelHarmony: true,  syllableStructure: 'CVC',     codaRelevance: 'medium' },
   'ALGO-FIN':    { family: 'ALGO-FIN',    label: 'Uralic',               flag: '🇫🇮', hasTones: false, hasVowelHarmony: true,  syllableStructure: 'CVC',     codaRelevance: 'medium' },
@@ -205,6 +212,8 @@ export const LANGUAGE_NAME_TO_CODE: Record<string, string> = {
   'chinese': 'zh', 'mandarin': 'zh', 'cantonese': 'yue', 'wu': 'wuu', 'shanghainese': 'wuu',
   'japanese': 'ja', 'korean': 'ko', 'javanese': 'jv',
   'hindi': 'hi', 'urdu': 'ur', 'bengali': 'bn', 'punjabi': 'pa', 'persian': 'fa',
+  // Sanskrit — multiple surface forms (classical + transliterated)
+  'sanskrit': 'sa', 'samskrita': 'sa', 'saṃskṛta': 'sa', 'संस्कृत': 'sa',
   'tamil': 'ta', 'telugu': 'te', 'kannada': 'kn', 'malayalam': 'ml',
   'thai': 'th', 'lao': 'lo', 'vietnamese': 'vi', 'khmer': 'km',
   'indonesian': 'id', 'malay': 'ms', 'tagalog': 'tl',

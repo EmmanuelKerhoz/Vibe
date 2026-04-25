@@ -8,6 +8,18 @@
  *     Unicode range matching resolves ~80% of cases unambiguously
  *     (Cyrillic → ru, CJK → zh/ja/ko, Arabic → ar, Devanagari → hi, etc.).
  *
+ *   Stage 1.5 — Devanagari disambiguation
+ *     Hindi (hi), Sanskrit (sa), Marathi (mr) and Nepali (ne) all use
+ *     Devanagari (\u0900-\u097F). Stage 1 alone cannot distinguish them.
+ *     A word-pilot pass over Sanskrit-exclusive tokens (classical particles,
+ *     sandhi markers) runs ONLY when Devanagari script is detected.
+ *     If no Sanskrit signal is found, falls back to 'hi' (highest-frequency
+ *     Devanagari language in practice).
+ *
+ *     Sanskrit pilots (must be absent from modern Hindi / Marathi / Nepali
+ *     prose): च, एव, तु, अपि, इति, वा, यत्, तत्, सः, अस्ति, भवति,
+ *     अहम्, त्वम्, एतत्, इदम्, किम्, कः, सर्व, धर्म, कर्म, मोक्ष.
+ *
  *   Stage 2 — Word-pilot detector
  *     For Latin-script text, a small set of high-frequency, language-exclusive
  *     words scores each candidate language. Highest score wins.
@@ -33,6 +45,9 @@
  *   KWA noise : all mono/bichar tokens removed from ba/ew/mi/di.
  *               Replaced by multichar tokens with diacritics absent from
  *               fr/en/es/it, providing unambiguous signal.
+ *   sa vs hi  : Sanskrit pilots are Classical Sanskrit-exclusive particles and
+ *               inflected forms absent from modern Hindi/Marathi/Nepali prose.
+ *               Score threshold: ≥ 2 hits required to flip to 'sa'.
  */
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -49,6 +64,10 @@ const MIN_TOKENS = 3;
  * Unicode range → language code.
  * Checked in order; first match wins.
  * Ranges cover the primary script for each language family.
+ *
+ * NOTE: Devanagari maps to 'hi' here as a provisional code only.
+ * Stage 1.5 (disambiguateDevanagari) may upgrade it to 'sa' (Sanskrit),
+ * 'mr' (Marathi) or 'ne' (Nepali) before the result is returned.
  */
 const SCRIPT_RULES: Array<{ pattern: RegExp; lang: string }> = [
   // Cyrillic
@@ -57,7 +76,7 @@ const SCRIPT_RULES: Array<{ pattern: RegExp; lang: string }> = [
   { pattern: /[\u0600-\u06FF]/, lang: 'ar' },
   // Hebrew
   { pattern: /[\u0590-\u05FF]/, lang: 'he' },
-  // Devanagari (Hindi / Sanskrit)
+  // Devanagari (Hindi / Sanskrit / Marathi / Nepali) — Stage 1.5 disambiguates
   { pattern: /[\u0900-\u097F]/, lang: 'hi' },
   // Bengali
   { pattern: /[\u0980-\u09FF]/, lang: 'bn' },
@@ -90,6 +109,81 @@ function detectByScript(text: string): string | undefined {
     if (pattern.test(text)) return lang;
   }
   return undefined;
+}
+
+// ─── Stage 1.5: Devanagari Disambiguation ─────────────────────────────────────
+
+/**
+ * Sanskrit-exclusive word pilots.
+ *
+ * Selection criteria:
+ *   1. Classical Sanskrit particles and inflected forms.
+ *   2. Must NOT appear in common modern Hindi / Marathi / Nepali prose.
+ *   3. Multi-character only — single-character tokens create too many
+ *      false positives with partial Devanagari sequences.
+ *
+ * Tokens include:
+ *   - Classical particles: च (ca, "and"), एव (eva, "indeed"), तु (tu, "but"),
+ *     अपि (api, "also"), इति (iti, end-of-quote marker), वा (vā, "or")
+ *   - Relative/demonstrative: यत् (yat), तत् (tat), एतत् (etat), इदम् (idam),
+ *     किम् (kim, "what?"), कः (kaḥ, "who?")
+ *   - Verbs: अस्ति (asti, "is"), भवति (bhavati, "becomes"), करोति (karoti)
+ *   - Pronouns: अहम् (aham, "I"), त्वम् (tvam, "you")
+ *   - High-frequency lexical: सर्व (sarva, "all"), धर्म (dharma), कर्म (karma),
+ *     मोक्ष (mokṣa), ब्रह्म (brahman), आत्म (ātman stem), लोक (loka),
+ *     देव (deva), नाम (nāma), पुण्य (puṇya)
+ *
+ * Threshold: ≥ SA_PILOT_THRESHOLD hits → classify as Sanskrit.
+ */
+const SA_PILOTS: ReadonlySet<string> = new Set([
+  'च', 'एव', 'तु', 'अपि', 'इति', 'वा',
+  'यत्', 'तत्', 'एतत्', 'इदम्', 'किम्', 'कः',
+  'अस्ति', 'भवति', 'करोति', 'अस्तु', 'भवतु',
+  'अहम्', 'त्वम्', 'वयम्', 'युयम्', 'तेषाम्',
+  'सर्व', 'सर्वे', 'सर्वम्',
+  'धर्म', 'धर्मः', 'धर्मम्', 'धर्मस्य',
+  'कर्म', 'कर्मः', 'कर्मणि',
+  'मोक्ष', 'मोक्षः',
+  'ब्रह्म', 'ब्रह्मन्', 'ब्रह्मणः',
+  'आत्म', 'आत्मन्', 'आत्मनः',
+  'लोक', 'लोकः', 'लोकम्',
+  'देव', 'देवः', 'देवानाम्',
+  'नाम', 'नामः', 'नाम्नः',
+  'पुण्य', 'पुण्यम्',
+  'ज्ञान', 'ज्ञानम्', 'ज्ञानस्य',
+  'वेद', 'वेदः', 'वेदानाम्',
+  'श्लोक', 'श्लोकः',
+]);
+
+/** Minimum Sanskrit pilot hits to flip Devanagari detection from 'hi' to 'sa'. */
+const SA_PILOT_THRESHOLD = 2;
+
+/**
+ * Stage 1.5 — given that Devanagari script was detected, attempt to
+ * differentiate Sanskrit (sa) from Hindi (hi).
+ *
+ * Splits the text into whitespace-delimited tokens and counts matches
+ * against SA_PILOTS. Returns 'sa' if threshold is met, 'hi' otherwise.
+ *
+ * Marathi (mr) and Nepali (ne) disambiguation is not implemented yet;
+ * both fall back to 'hi' — acceptable given their far lower lyric corpus
+ * frequency compared to hi/sa.
+ *
+ * @param text  Raw Devanagari text.
+ * @returns     'sa' | 'hi'
+ */
+function disambiguateDevanagari(text: string): 'sa' | 'hi' {
+  const tokens = text.split(/\s+/).filter(t => t.length > 0);
+  let hits = 0;
+  for (const token of tokens) {
+    // Strip trailing Devanagari punctuation (daṇḍa ।, double daṇḍa ॥)
+    const clean = token.replace(/[।॥]/g, '').trim();
+    if (clean.length > 0 && SA_PILOTS.has(clean)) {
+      hits++;
+      if (hits >= SA_PILOT_THRESHOLD) return 'sa';
+    }
+  }
+  return 'hi';
 }
 
 // ─── Stage 2: Word-Pilot Detector ──────────────────────────────────────────────────────────────
@@ -273,7 +367,11 @@ export function detectLanguage(text: string): string {
   if (!text || text.trim().length === 0) return DEFAULT_LANG;
 
   const byScript = detectByScript(text);
-  if (byScript) return byScript;
+  if (byScript) {
+    // Stage 1.5: disambiguate Devanagari before returning
+    if (byScript === 'hi') return disambiguateDevanagari(text);
+    return byScript;
+  }
 
   const tokens = tokenize(text);
   if (tokens.length < MIN_TOKENS) return DEFAULT_LANG;
