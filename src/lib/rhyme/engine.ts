@@ -80,7 +80,7 @@ const EMBEDDING_FAMILIES = new Set(['CJK', 'TAI', 'VIET', 'YRB', 'KWA']);
 
 // ─── analyzeBlock ────────────────────────────────────────────────────────────
 // Hemistich separators: " // " (double slash) or " / " (single slash with spaces)
-const HEMISTICH_RE = new RegExp('\s*\/\/\s*|\s+\/\s+');
+const HEMISTICH_RE = /\s*\/\/\s*|\s+\/\s+/;
 const LINE_BREAK_RE = /\n|(?<=[.!?;])\s+/;
 
 export function analyzeBlock(
@@ -127,7 +127,7 @@ export function rhymeScore(
   const isUnspecified = (l: LangCode | undefined): boolean => {
     if (!l) return true;
     const s = String(l).toLowerCase();
-    return s === 'auto' || s === 'und' || s === 'unknown' || s === '';
+    return s === 'auto' || s === 'und' || s === 'unknown' || s === '' || s === '__unknown__';
   };
 
   const resolvedLangA: LangCode = isUnspecified(langA)

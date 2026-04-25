@@ -143,7 +143,9 @@ export function extractNucleus(
       // Pick shortest strip that still leaves ≥3 chars
       const candidates = [trStripped, fiStripped, huStripped, stem]
         .filter(s => s.length >= 3);
-      stem = candidates.reduce((a, b) => (a.length < b.length ? a : b));
+      stem = candidates.length > 0
+        ? candidates.reduce((a, b) => (a.length < b.length ? a : b))
+        : stem;
       break;
     }
     case 'BNT': {
