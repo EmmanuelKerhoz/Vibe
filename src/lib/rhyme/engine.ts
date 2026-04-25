@@ -117,10 +117,16 @@ export function rhymeScore(
   const multiSyl = opts.multiSyllabic ?? 1;
 
   // ── Step 0: LID — auto-detect code-switch ────────────────────────────────
+  // Only override explicit language codes when confidence is very high (> 0.96)
+  // or when the provided language is the default fallback ('fr').
+  // Note: 0.96 threshold excludes script-only detection (0.95) which can be
+  // ambiguous (e.g., Arabic script used by ar/ur/fa).
   const csA = detectCodeSwitch(lineA, langA);
   const csB = detectCodeSwitch(lineB, langB);
-  const resolvedLangA: LangCode = (csA?.detectedLang as LangCode) ?? langA;
-  const resolvedLangB: LangCode = (csB?.detectedLang as LangCode) ?? langB;
+  const shouldOverrideA = langA === 'fr' || (csA && csA.confidence > 0.96);
+  const shouldOverrideB = langB === 'fr' || (csB && csB.confidence > 0.96);
+  const resolvedLangA: LangCode = (shouldOverrideA && csA?.detectedLang as LangCode) || langA;
+  const resolvedLangB: LangCode = (shouldOverrideB && csB?.detectedLang as LangCode) || langB;
   if (resolvedLangA !== langA) warnings.push(`lid-cs:${langA}->${resolvedLangA}`);
   if (resolvedLangB !== langB) warnings.push(`lid-cs:${langB}->${resolvedLangB}`);
 
@@ -268,13 +274,9 @@ export function rhymeScore(
       break;
     }
     case 'FIN': {
-      // morphoAware: strip agglutinative suffixes
-      const stemA = morphoExtractNucleus(unitA.surface, 'AGG').stem;
-      const stemB = morphoExtractNucleus(unitB.surface, 'AGG').stem;
-      const mUnitA = extractLineEndingUnit(stemA, resolvedLangA);
-      const mUnitB = extractLineEndingUnit(stemB, resolvedLangB);
-      const nA = extractNucleusFIN(mUnitA, resolvedLangA) as FINNucleus;
-      const nB = extractNucleusFIN(mUnitB, resolvedLangB) as FINNucleus;
+      // FIN algorithm handles its own suffix stripping - don't pre-strip
+      const nA = extractNucleusFIN(unitA, resolvedLangA) as FINNucleus;
+      const nB = extractNucleusFIN(unitB, resolvedLangB) as FINNucleus;
       nucleusA = nA; nucleusB = nB;
       baseScore = scoreFIN(nA, nB);
       break;
