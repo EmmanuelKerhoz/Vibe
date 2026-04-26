@@ -45,6 +45,7 @@ import {
   type RhymePosition,
   type PositionOptions,
 } from './rhymePosition';
+import { segmentVerses } from './verseSegmenter';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export interface BlockAnalysisOptions {
@@ -72,9 +73,6 @@ export interface BlockAnalysis {
 const EMBEDDING_FAMILIES = new Set(['TAI', 'VIET', 'YRB', 'KWA']);
 
 // ─── analyzeBlock ────────────────────────────────────────────────────────────
-// Hemistich separators: " // " (double slash) or " / " (single slash with spaces)
-const HEMISTICH_RE = /\s*\/\/\s*|\s+\/\s+/;
-const LINE_BREAK_RE = /\n|(?<=[.!?;])\s+/;
 
 export function analyzeBlock(
   block: string,
@@ -83,20 +81,65 @@ export function analyzeBlock(
 ): BlockAnalysis {
   const splitHemistich = opts.splitHemistich ?? true;
 
-  const rawLines = block
-    .split(LINE_BREAK_RE)
-    .flatMap(l => splitHemistich ? l.split(HEMISTICH_RE) : [l])
-    .map(l => l.trim())
-    .filter(Boolean);
+  // Pre-process hemistich if needed (since segmentVerses strips // by default but ignores internal logic if we pre-split)
+  const processedBlock = splitHemistich 
+    ? block.replace(/\s*\/\/\s*|\s+\/\s+/g, '\n')
+    : block;
 
-  const lineItems = rawLines.map((text, i) => ({
-    text,
-    lang: opts.langs?.[i] ?? lang,
-  }));
+  // Delegate strictly to the centralized verseSegmenter which handles CJK/RTL safety
+  const { lines } = segmentVerses(processedBlock);
+
+  // Robust validation against unaligned or malformed opts.langs arrays
+  const langsArr = Array.isArray(opts.langs) ? opts.langs : [];
+
+  const lineItems = lines.map((vLine, i) => {
+    // Safe lookup ensuring neither undefined, empty string, nor out-of-bounds array access breaks behavior
+    const explicitLang = langsArr.length > i ? langsArr[i] : undefined;
+    return {
+      text: vLine.text,
+      lang: (explicitLang && explicitLang.trim() !== '') ? explicitLang : lang,
+    };
+  });
 
   const scheme = detectRhymeSchemeMultiLang(lineItems, opts.window ?? 6);
   return { scheme, lines: lineItems };
 }
+
+// ─── Algorithm Registry ───────────────────────────────────────────────────────
+type NucleusExtractor = (unit: RhymeResult['unitA'], lang: LangCode, lowResource: boolean) => RhymeNucleus;
+type NucleusScorer = (nA: any, nB: any, langA: LangCode, langB: LangCode) => number;
+
+interface AlgoRegistry {
+  extract: NucleusExtractor;
+  score: NucleusScorer;
+}
+
+const ALGO_REGISTRY: Partial<Record<string, AlgoRegistry>> = {
+  KWA:  { extract: (u) => extractNucleusKWA(u), score: (nA, nB) => scoreKWANormalized(nA, nB) },
+  CRV:  { extract: (u, _, lowRes) => extractNucleusCRV(u, lowRes, _), score: (nA, nB, lA) => scoreCRV(nA, nB, lA) },
+  ROM:  { extract: (u, l) => extractNucleusROM(u, l), score: (nA, nB) => 0.6 * (1 - phonemeEditDistance(nA.vowels, nB.vowels)) + 0.4 * (1 - phonemeEditDistance(nA.coda, nB.coda)) },
+  GER:  { extract: (u, l) => extractNucleusGER(u, l), score: (nA, nB) => scoreGER(nA, nB) },
+  YRB:  { extract: (u) => extractNucleusYRB(u), score: (nA, nB) => scoreYRB(nA, nB) },
+  SLV:  { extract: (u, l) => extractNucleusSLV(u, l), score: (nA, nB) => scoreSLV(nA, nB) },
+  SEM:  { extract: (u, l) => extractNucleusSEM(u, l), score: (nA, nB) => scoreSEM(nA, nB) },
+  TAI:  { extract: (u, l) => extractNucleusTAI(u, l), score: (nA, nB) => scoreTAI(nA, nB) },
+  VIET: { extract: (u, l) => extractNucleusVIET(u, l), score: (nA, nB) => scoreVIET(nA, nB) },
+  CJK:  { extract: (u, l) => extractNucleusCJK(u, l), score: (nA, nB) => scoreCJK(nA, nB) },
+  TRK:  { extract: (u, l) => extractNucleusTRK(u, l), score: (nA, nB) => scoreTRK(nA, nB) },
+  FIN:  { extract: (u, l) => extractNucleusFIN(u, l), score: (nA, nB) => scoreFIN(nA, nB) },
+  IIR:  { extract: (u, l) => extractNucleusIIR(u, l), score: (nA, nB) => scoreIIR(nA, nB) },
+  AUS:  { extract: (u, l) => extractNucleusAUS(u, l), score: (nA, nB) => scoreAUS(nA, nB) },
+  DRA:  { extract: (u, l) => extractNucleusDRA(u, l), score: (nA, nB) => scoreDRA(nA, nB) },
+  CRE:  { extract: (u, l) => extractNucleusCRE(u, l), score: (nA, nB) => scoreCRE(nA, nB) },
+  BNT:  {
+    extract: (u, l) => {
+      const stem = morphoExtractNucleus(u.surface, 'BNT').stem;
+      const mUnit = extractLineEndingUnit(stem, l);
+      return extractNucleusBNT(mUnit, l);
+    },
+    score: (nA, nB, lA) => scoreBNT(nA, nB, lA),
+  }
+};
 
 // ─── Core pairwise scorer ─────────────────────────────────────────────────────
 export function rhymeScore(
@@ -205,148 +248,23 @@ export function rhymeScore(
   let nucleusA: RhymeNucleus;
   let nucleusB: RhymeNucleus;
 
-  switch (family) {
-    case 'KWA': {
-      const nA = extractNucleusKWA(unitA);
-      const nB = extractNucleusKWA(unitB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreKWANormalized(nA, nB);
-      break;
-    }
-    case 'CRV': {
-      const nA = extractNucleusCRV(unitA, lowResource, resolvedLangA);
-      const nB = extractNucleusCRV(unitB, lowResource, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      if (lowResource) warnings.push('low-resource-fallback');
-      baseScore = scoreCRV(nA, nB, resolvedLangA);
-      break;
-    }
-    case 'ROM': {
-      const nA = extractNucleusROM(unitA, resolvedLangA);
-      const nB = extractNucleusROM(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = 0.6 * (1 - phonemeEditDistance(nA.vowels, nB.vowels))
-                + 0.4 * (1 - phonemeEditDistance(nA.coda, nB.coda));
-      break;
-    }
-    case 'GER': {
-      const nA = extractNucleusGER(unitA, resolvedLangA);
-      const nB = extractNucleusGER(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreGER(nA, nB);
-      break;
-    }
-    case 'BNT': {
-      // morphoAware: strip class prefix before nucleus extraction
-      const stemA = morphoExtractNucleus(unitA.surface, 'BNT').stem;
-      const stemB = morphoExtractNucleus(unitB.surface, 'BNT').stem;
-      const mUnitA = extractLineEndingUnit(stemA, resolvedLangA);
-      const mUnitB = extractLineEndingUnit(stemB, resolvedLangB);
-      const nA = extractNucleusBNT(mUnitA, resolvedLangA);
-      const nB = extractNucleusBNT(mUnitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreBNT(nA, nB, resolvedLangA);
-      break;
-    }
-    case 'YRB': {
-      const nA = extractNucleusYRB(unitA) as YRBNucleus;
-      const nB = extractNucleusYRB(unitB) as YRBNucleus;
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreYRB(nA, nB);
-      break;
-    }
-    case 'SLV': {
-      const nA = extractNucleusSLV(unitA, resolvedLangA);
-      const nB = extractNucleusSLV(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreSLV(nA, nB);
-      break;
-    }
-    case 'SEM': {
-      const nA = extractNucleusSEM(unitA, resolvedLangA);
-      const nB = extractNucleusSEM(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreSEM(nA, nB);
-      break;
-    }
-    case 'TAI': {
-      const nA = extractNucleusTAI(unitA, resolvedLangA);
-      const nB = extractNucleusTAI(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreTAI(nA, nB);
-      break;
-    }
-    case 'VIET': {
-      const nA = extractNucleusVIET(unitA, resolvedLangA);
-      const nB = extractNucleusVIET(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreVIET(nA, nB);
-      break;
-    }
-    case 'CJK': {
-      const nA = extractNucleusCJK(unitA, resolvedLangA);
-      const nB = extractNucleusCJK(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      warnings.push('cjk-graphemic-proxy');
-      baseScore = scoreCJK(nA, nB);
-      break;
-    }
-    case 'TRK': {
-      // algo-trk handles agglutinative suffix stripping internally.
-      // Pre-stripping with the generic 'AGG' morphoNucleus is destructive
-      // (strips too aggressively, can leave empty stems on short words).
-      const nA = extractNucleusTRK(unitA, resolvedLangA) as TRKNucleus;
-      const nB = extractNucleusTRK(unitB, resolvedLangB) as TRKNucleus;
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreTRK(nA, nB);
-      break;
-    }
-    case 'FIN': {
-      // algo-fin handles FI/HU suffix stripping + vowel-harmony normalisation.
-      // Pre-stripping with the generic 'AGG' morphoNucleus would double-strip
-      // (e.g. 'maassa' -> 'maa' -> 'ma'), destroying the rhyme nucleus.
-      const nA = extractNucleusFIN(unitA, resolvedLangA) as FINNucleus;
-      const nB = extractNucleusFIN(unitB, resolvedLangB) as FINNucleus;
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreFIN(nA, nB);
-      break;
-    }
-    case 'IIR': {
-      const nA = extractNucleusIIR(unitA, resolvedLangA);
-      const nB = extractNucleusIIR(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreIIR(nA, nB);
-      break;
-    }
-    case 'AUS': {
-      const nA = extractNucleusAUS(unitA, resolvedLangA);
-      const nB = extractNucleusAUS(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreAUS(nA, nB);
-      break;
-    }
-    case 'DRA': {
-      const nA = extractNucleusDRA(unitA, resolvedLangA);
-      const nB = extractNucleusDRA(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreDRA(nA, nB);
-      break;
-    }
-    case 'CRE': {
-      const nA = extractNucleusCRE(unitA, resolvedLangA);
-      const nB = extractNucleusCRE(unitB, resolvedLangB);
-      nucleusA = nA; nucleusB = nB;
-      baseScore = scoreCRE(nA, nB);
-      break;
-    }
-    default: {
-      const tailA = normalizeInput(unitA.surface).slice(-4).toLowerCase();
-      const tailB = normalizeInput(unitB.surface).slice(-4).toLowerCase();
-      baseScore = 1 - phonemeEditDistance(tailA, tailB);
-      const dN: RhymeNucleus = { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
-      nucleusA = dN; nucleusB = dN;
-      warnings.push('fallback-graphemic');
-    }
+  const handler = ALGO_REGISTRY[family];
+  if (handler) {
+    nucleusA = handler.extract(unitA, resolvedLangA, lowResource);
+    nucleusB = handler.extract(unitB, resolvedLangB, routeToFamily(resolvedLangB).lowResource);
+
+    if (family === 'CRV' && lowResource) warnings.push('low-resource-fallback');
+    if (family === 'CJK') warnings.push('cjk-graphemic-proxy');
+
+    baseScore = handler.score(nucleusA, nucleusB, resolvedLangA, resolvedLangB);
+  } else {
+    // FALLBACK GRAPHEMIC
+    const tailA = normalizeInput(unitA.surface).slice(-4).toLowerCase();
+    const tailB = normalizeInput(unitB.surface).slice(-4).toLowerCase();
+    baseScore = 1 - phonemeEditDistance(tailA, tailB);
+    const dN: RhymeNucleus = { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
+    nucleusA = dN; nucleusB = dN;
+    warnings.push('fallback-graphemic');
   }
 
   // ── Step 4: Tonal penalty ─────────────────────────────────────────────────
@@ -413,26 +331,9 @@ function extractBestNucleus(
   lang: LangCode,
   lowResource: boolean
 ): RhymeNucleus {
-  switch (family) {
-    case 'KWA':  return extractNucleusKWA(unit);
-    case 'CRV':  return extractNucleusCRV(unit, lowResource, lang);
-    case 'ROM':  return extractNucleusROM(unit, lang);
-    case 'GER':  return extractNucleusGER(unit, lang);
-    case 'BNT':  return extractNucleusBNT(unit, lang);
-    case 'YRB':  return extractNucleusYRB(unit);
-    case 'SLV':  return extractNucleusSLV(unit, lang);
-    case 'SEM':  return extractNucleusSEM(unit, lang);
-    case 'TAI':  return extractNucleusTAI(unit, lang);
-    case 'VIET': return extractNucleusVIET(unit, lang);
-    case 'CJK':  return extractNucleusCJK(unit, lang);
-    case 'TRK':  return extractNucleusTRK(unit, lang);
-    case 'FIN':  return extractNucleusFIN(unit, lang);
-    case 'IIR':  return extractNucleusIIR(unit, lang);
-    case 'AUS':  return extractNucleusAUS(unit, lang);
-    case 'DRA':  return extractNucleusDRA(unit, lang);
-    case 'CRE':  return extractNucleusCRE(unit, lang);
-    default:     return { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
-  }
+  const handler = ALGO_REGISTRY[family];
+  if (handler) return handler.extract(unit, lang, lowResource);
+  return { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
 }
 
 function build(
