@@ -4,9 +4,9 @@
  * analyzeBlock(block, lang, opts): BlockAnalysis
  *
  * v4 additions:
- *  - morphoAwareNucleus wired for TRK/FIN/BNT families
+ *  - morphoAwareNucleus wired for BNT family (TRK/FIN handle morpho internally)
  *  - lidSpanDetector auto-detects code-switching before routing
- *  - embeddingScorer (level 4) blended for CJK/TAI/VIET/YRB/KWA
+ *  - embeddingScorer (level 4) blended for TAI/VIET/YRB/KWA (CJK excluded: graphemic proxies)
  *  - tonalMatrix unified penalty applied to all tonal families
  *  - rhymePosition mode: end | internal | initial | all
  */
@@ -46,8 +46,7 @@ import {
   type PositionOptions,
 } from './rhymePosition';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
+// ─── Types ───────────────────────────────────────────────────────────────────
 export interface BlockAnalysisOptions {
   langs?: LangCode[];
   splitHemistich?: boolean;
@@ -66,20 +65,21 @@ export interface BlockAnalysis {
   lines: Array<{ text: string; lang: LangCode }>;
 }
 
-// ─── Tonal families that receive matrix penalty ───────────────────────────────
-const TONAL_FAMILY_MAP: Partial<Record<string, TonalFamily>> = {
-  CJK: 'zh',
-  TAI: 'th',
-  VIET: 'vi',
-  CRV: 'ha',
-  KWA: 'kwa',
-  YRB: 'yo',
-};
+// ─── Per-language tonal family lookup ────────────────────────────────────────
+// Keyed by resolved LangCode for per-language precision (e.g. yue ≠ zh).
+const TONAL_LANG_SET = new Set<string>(['zh', 'yue', 'th', 'lo', 'vi', 'ha', 'kwa', 'yo']);
+function getTonalLang(lang: LangCode): TonalFamily | undefined {
+  return TONAL_LANG_SET.has(lang) ? (lang as TonalFamily) : undefined;
+}
 
 // ─── Embedding-eligible families ─────────────────────────────────────────────
-const EMBEDDING_FAMILIES = new Set(['CJK', 'TAI', 'VIET', 'YRB', 'KWA']);
+// CJK excluded: Han/kana/jamo graphemic proxies are not in PHOIBLE vectors.
+const EMBEDDING_FAMILIES = new Set(['TAI', 'VIET', 'YRB', 'KWA']);
 
-// ─── analyzeBlock ─────────────────────────────────────────────────────────────
+// ─── analyzeBlock ────────────────────────────────────────────────────────────
+// Hemistich separators: " // " (double slash) or " / " (single slash with spaces)
+const HEMISTICH_RE = /\s*\/\/\s*|\s+\/\s+/;
+const LINE_BREAK_RE = /\n|(?<=[.!?;])\s+/;
 
 export function analyzeBlock(
   block: string,
@@ -89,8 +89,8 @@ export function analyzeBlock(
   const splitHemistich = opts.splitHemistich ?? true;
 
   const rawLines = block
-    .split(/\n|(?<=[.!?;])\s+/)
-    .flatMap(l => splitHemistich ? l.split(/\s*\/\/\s*|\s+\/\s+/) : [l])
+    .split(LINE_BREAK_RE)
+    .flatMap(l => splitHemistich ? l.split(HEMISTICH_RE) : [l])
     .map(l => l.trim())
     .filter(Boolean);
 
@@ -104,7 +104,6 @@ export function analyzeBlock(
 }
 
 // ─── Core pairwise scorer ─────────────────────────────────────────────────────
-
 export function rhymeScore(
   lineA: string,
   lineB: string,
@@ -116,31 +115,65 @@ export function rhymeScore(
   const position: RhymePosition = opts.position ?? 'end';
   const multiSyl = opts.multiSyllabic ?? 1;
 
-  // ── Step 0: LID — auto-detect code-switch ────────────────────────────────
-  // Only override explicit language codes when confidence is very high (> 0.96)
-  // or when the provided language is the default fallback ('fr').
-  // Note: 0.96 threshold excludes script-only detection (0.95) which can be
-  // ambiguous (e.g., Arabic script used by ar/ur/fa).
+  // ── Step 0: LID — assistive only ─────────────────────────────────────────
+  // The caller-provided lang takes precedence. LID only re-routes when the
+  // caller didn't specify a language (or passed an unknown/auto value).
+  // Mismatches are still surfaced as warnings for diagnostics.
   const csA = detectCodeSwitch(lineA, langA);
   const csB = detectCodeSwitch(lineB, langB);
-  const shouldOverrideA = langA === 'fr' || (csA && csA.confidence > 0.96);
-  const shouldOverrideB = langB === 'fr' || (csB && csB.confidence > 0.96);
-  const resolvedLangA: LangCode = (shouldOverrideA && csA?.detectedLang as LangCode) || langA;
-  const resolvedLangB: LangCode = (shouldOverrideB && csB?.detectedLang as LangCode) || langB;
-  if (resolvedLangA !== langA) warnings.push(`lid-cs:${langA}->${resolvedLangA}`);
-  if (resolvedLangB !== langB) warnings.push(`lid-cs:${langB}->${resolvedLangB}`);
+
+  const isUnspecified = (l: LangCode | undefined): boolean => {
+    if (!l) return true;
+    const s = String(l).toLowerCase();
+    return s === 'auto' || s === 'und' || s === 'unknown' || s === '' || s === '__unknown__';
+  };
+
+  const resolvedLangA: LangCode = isUnspecified(langA)
+    ? ((csA?.detectedLang as LangCode) ?? langA)
+    : langA;
+  const resolvedLangB: LangCode = isUnspecified(langB)
+    ? ((csB?.detectedLang as LangCode) ?? langB)
+    : langB;
+
+  if (csA?.detectedLang && csA.detectedLang !== langA) {
+    warnings.push(`lid-cs-hint:${langA}->${csA.detectedLang}`);
+  }
+  if (csB?.detectedLang && csB.detectedLang !== langB) {
+    warnings.push(`lid-cs-hint:${langB}->${csB.detectedLang}`);
+  }
 
   // ── Step 1: Extract position unit ────────────────────────────────────────
   const unitsA = extractPositionUnits(lineA, opts);
   const unitsB = extractPositionUnits(lineB, opts);
 
-  // For multi-syllabic mode, extend tail
+  // For multi-unit modes (internal/all), find the best-matching pair by quick
+  // phoneme similarity across all unit combinations, then score that pair fully.
+  let bestUnitA: string;
+  let bestUnitB: string;
+  if (unitsA.length === 1 && unitsB.length === 1) {
+    bestUnitA = unitsA[0]!;
+    bestUnitB = unitsB[0]!;
+  } else {
+    let bestSim = -1;
+    bestUnitA = unitsA[0]!;
+    bestUnitB = unitsB[0]!;
+    for (const ua of unitsA) {
+      for (const ub of unitsB) {
+        const na = normalizeInput(ua).toLowerCase();
+        const nb = normalizeInput(ub).toLowerCase();
+        const sim = 1 - phonemeEditDistance(na.slice(-5), nb.slice(-5));
+        if (sim > bestSim) { bestSim = sim; bestUnitA = ua; bestUnitB = ub; }
+      }
+    }
+  }
+
+  // For multi-syllabic mode, extend tail of the chosen units
   const surfaceA = multiSyl > 1
-    ? multiSyllabicTail(unitsA[unitsA.length - 1] ?? lineA, multiSyl)
-    : (unitsA[unitsA.length - 1] ?? lineA);
+    ? multiSyllabicTail(bestUnitA, multiSyl)
+    : bestUnitA;
   const surfaceB = multiSyl > 1
-    ? multiSyllabicTail(unitsB[unitsB.length - 1] ?? lineB, multiSyl)
-    : (unitsB[unitsB.length - 1] ?? lineB);
+    ? multiSyllabicTail(bestUnitB, multiSyl)
+    : bestUnitB;
 
   const unitA = extractLineEndingUnit(surfaceA, resolvedLangA);
   const unitB = extractLineEndingUnit(surfaceB, resolvedLangB);
@@ -167,6 +200,8 @@ export function rhymeScore(
       nucleusA, nucleusB,
       lowResourceFallback: true,
       warnings,
+      position,
+      csDetected: resolvedLangA !== langA || resolvedLangB !== langB,
     };
   }
 
@@ -262,19 +297,19 @@ export function rhymeScore(
       break;
     }
     case 'TRK': {
-      // morphoAware: strip agglutinative suffixes
-      const stemA = morphoExtractNucleus(unitA.surface, 'AGG').stem;
-      const stemB = morphoExtractNucleus(unitB.surface, 'AGG').stem;
-      const mUnitA = extractLineEndingUnit(stemA, resolvedLangA);
-      const mUnitB = extractLineEndingUnit(stemB, resolvedLangB);
-      const nA = extractNucleusTRK(mUnitA, resolvedLangA) as TRKNucleus;
-      const nB = extractNucleusTRK(mUnitB, resolvedLangB) as TRKNucleus;
+      // algo-trk handles agglutinative suffix stripping internally.
+      // Pre-stripping with the generic 'AGG' morphoNucleus is destructive
+      // (strips too aggressively, can leave empty stems on short words).
+      const nA = extractNucleusTRK(unitA, resolvedLangA) as TRKNucleus;
+      const nB = extractNucleusTRK(unitB, resolvedLangB) as TRKNucleus;
       nucleusA = nA; nucleusB = nB;
       baseScore = scoreTRK(nA, nB);
       break;
     }
     case 'FIN': {
-      // FIN algorithm handles its own suffix stripping - don't pre-strip
+      // algo-fin handles FI/HU suffix stripping + vowel-harmony normalisation.
+      // Pre-stripping with the generic 'AGG' morphoNucleus would double-strip
+      // (e.g. 'maassa' -> 'maa' -> 'ma'), destroying the rhyme nucleus.
       const nA = extractNucleusFIN(unitA, resolvedLangA) as FINNucleus;
       const nB = extractNucleusFIN(unitB, resolvedLangB) as FINNucleus;
       nucleusA = nA; nucleusB = nB;
@@ -320,10 +355,11 @@ export function rhymeScore(
   }
 
   // ── Step 4: Tonal penalty ─────────────────────────────────────────────────
-  const tonalFamily = TONAL_FAMILY_MAP[family];
-  if (tonalFamily && nucleusA!.tone && nucleusB!.tone) {
+  // Use resolved language for per-language precision (yue ≠ zh, lo ≠ th, etc.)
+  const tonalLang = getTonalLang(resolvedLangA);
+  if (tonalLang && nucleusA!.tone && nucleusB!.tone) {
     baseScore = applyTonalPenalty(
-      baseScore, tonalFamily,
+      baseScore, tonalLang,
       nucleusA!.tone, nucleusB!.tone,
       opts.tonalWeight ?? 0.25
     );
@@ -341,11 +377,13 @@ export function rhymeScore(
   if (baseScore < threshold) warnings.push(`below-threshold:${position}:${threshold}`);
 
   const score = Math.max(0, Math.min(1, baseScore));
-  return build(score, family, resolvedLangA, resolvedLangB, unitA, unitB, nucleusA!, nucleusB!, lowResource, warnings);
+  return build(score, family, resolvedLangA, resolvedLangB, unitA, unitB, nucleusA!, nucleusB!, lowResource, warnings, position, resolvedLangA !== langA || resolvedLangB !== langB);
 }
 
 /**
  * Async variant — runs full level-4 embedding blend for eligible families.
+ * Uses the LID-resolved languages from the sync result to ensure embedding
+ * eligibility is evaluated on the same language as the sync scoring path.
  */
 export async function rhymeScoreAsync(
   lineA: string,
@@ -355,14 +393,15 @@ export async function rhymeScoreAsync(
   opts: RhymeScoreOptions = {}
 ): Promise<RhymeResult> {
   const syncResult = rhymeScore(lineA, lineB, langA, langB, { ...opts, useEmbedding: false });
-  const { family } = routeToFamily(langA);
+  // Use LID-resolved language (stored in syncResult.langA after rhymeScore)
+  const { family } = routeToFamily(syncResult.langA);
 
   if (!EMBEDDING_FAMILIES.has(family)) return syncResult;
 
-  const phonesA = syncResult.nucleusA.vowels.split('') .concat(syncResult.nucleusA.coda.split(''));
+  const phonesA = syncResult.nucleusA.vowels.split('').concat(syncResult.nucleusA.coda.split(''));
   const phonesB = syncResult.nucleusB.vowels.split('').concat(syncResult.nucleusB.coda.split(''));
 
-  const embResult = await embeddingScore(phonesA, phonesB, family as any, langA);
+  const embResult = await embeddingScore(phonesA, phonesB, family as any, syncResult.langA);
   const blended = blendScores(syncResult.score, embResult.score, 0.4);
   const warnings = [...syncResult.warnings, `embedding:${embResult.backend}`];
 
@@ -375,7 +414,6 @@ export async function rhymeScoreAsync(
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function extractBestNucleus(
   unit: RhymeResult['unitA'],
   family: RhymeResult['family'],
@@ -414,11 +452,16 @@ function build(
   nucleusA: RhymeNucleus,
   nucleusB: RhymeNucleus,
   lowResourceFallback: boolean,
-  warnings: string[]
+  warnings: string[],
+  position?: RhymeResult['position'],
+  csDetected?: boolean
 ): RhymeResult {
-  return {
+  const result: RhymeResult = {
     score: Math.max(0, Math.min(1, score)),
     category: categorize(score),
     family, langA, langB, unitA, unitB, nucleusA, nucleusB, lowResourceFallback, warnings,
   };
+  if (position !== undefined) result.position = position;
+  if (csDetected !== undefined) result.csDetected = csDetected;
+  return result;
 }

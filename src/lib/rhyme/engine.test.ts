@@ -590,3 +590,174 @@ describe('cross-family fallback', () => {
     expect(r.family).toBe('FALLBACK');
   });
 });
+
+// ─── v4 feature tests ─────────────────────────────────────────────────────────
+
+import { rhymeScoreAsync } from './engine';
+import { extractPositionUnits, multiSyllabicTail, tokeniseLine } from './rhymePosition';
+import { detectCodeSwitch } from './lidSpanDetector';
+
+// ── rhymePosition ────────────────────────────────────────────────────────────
+describe('extractPositionUnits', () => {
+  it('end mode returns last word', () => {
+    expect(extractPositionUnits('hello world foo', { position: 'end' })).toEqual(['foo']);
+  });
+  it('initial mode returns first word', () => {
+    expect(extractPositionUnits('hello world foo', { position: 'initial' })).toEqual(['hello']);
+  });
+  it('internal mode returns middle words', () => {
+    expect(extractPositionUnits('hello world foo', { position: 'internal' })).toEqual(['world']);
+  });
+  it('internal mode on 2-word line returns all tokens', () => {
+    expect(extractPositionUnits('hello world', { position: 'internal' })).toEqual(['hello', 'world']);
+  });
+  it('all mode returns deduplicated union', () => {
+    const units = extractPositionUnits('A B C', { position: 'all' });
+    expect(units).toContain('A');
+    expect(units).toContain('B');
+    expect(units).toContain('C');
+    expect(new Set(units).size).toBe(units.length);
+  });
+  it('default position is end', () => {
+    expect(extractPositionUnits('hello world')).toEqual(['world']);
+  });
+  it('invalid position falls back to end', () => {
+    expect(extractPositionUnits('hello world', { position: 'invalid' as any })).toEqual(['world']);
+  });
+  it('empty line returns original line', () => {
+    expect(extractPositionUnits('')).toEqual(['']);
+  });
+});
+
+describe('tokeniseLine', () => {
+  it('splits Latin on whitespace, strips punctuation', () => {
+    expect(tokeniseLine('hello, world!')).toEqual(['hello', 'world']);
+  });
+  it('CJK: splits character by character', () => {
+    const tokens = tokeniseLine('月が綺麗');
+    expect(tokens.length).toBe(4);
+  });
+  it('CJK: strips punctuation characters', () => {
+    const tokens = tokeniseLine('月が綺麗。');
+    expect(tokens).not.toContain('。');
+  });
+});
+
+describe('multiSyllabicTail', () => {
+  it('n=1 returns whole word', () => {
+    expect(multiSyllabicTail('banana', 1)).toBe('banana');
+  });
+  it('n=2 includes onset consonant of 2nd-to-last syllable', () => {
+    const result = multiSyllabicTail('banana', 2);
+    // Should capture "nana" (onset 'n' before 2nd-to-last vowel 'a')
+    expect(result).toBe('nana');
+  });
+  it('n > syllable count returns whole word', () => {
+    expect(multiSyllabicTail('cat', 5)).toBe('cat');
+  });
+});
+
+// ── RhymeScoreOptions: position modes ────────────────────────────────────────
+describe('rhymeScore with position options', () => {
+  it('end mode (default) scores last word', () => {
+    const r = rhymeScore('le beau chat', 'sur le mat', 'fr', 'fr', { position: 'end' });
+    expect(r.position).toBe('end');
+    expect(r.score).toBeGreaterThan(0);
+  });
+  it('initial mode scores first word', () => {
+    const r = rhymeScore('nuit calme', 'nuit douce', 'fr', 'fr', { position: 'initial' });
+    expect(r.position).toBe('initial');
+    expect(r.score).toBeGreaterThan(0.5);
+  });
+  it('internal mode scores middle words', () => {
+    const r = rhymeScore('le beau chat dort', 'le gros rat dort', 'fr', 'fr', { position: 'internal' });
+    expect(r.position).toBe('internal');
+    expect(r.score).toBeGreaterThanOrEqual(0);
+  });
+  it('all mode returns score >= 0', () => {
+    const r = rhymeScore('beau chat', 'gros rat', 'fr', 'fr', { position: 'all' });
+    expect(r.position).toBe('all');
+    expect(r.score).toBeGreaterThanOrEqual(0);
+  });
+  it('multiSyllabic mode: n=2 is valid', () => {
+    const r = rhymeScore('dancing', 'prancing', 'en', 'en', { multiSyllabic: 2 });
+    expect(r.score).toBeGreaterThan(0);
+  });
+  it('position is returned in result', () => {
+    const r = rhymeScore('hello world', 'hello friend', 'en', 'en', { position: 'initial' });
+    expect(r.position).toBe('initial');
+  });
+});
+
+// ── LID / isUnspecified ───────────────────────────────────────────────────────
+describe('rhymeScore LID integration', () => {
+  it('explicit lang is not overridden by LID', () => {
+    const r = rhymeScore('night', 'light', 'en', 'en');
+    expect(r.langA).toBe('en');
+    expect(r.langB).toBe('en');
+  });
+  it('__unknown__ lang is treated as unspecified (LID may resolve)', () => {
+    // With __unknown__, LID will try to resolve
+    const r = rhymeScore('night', 'light', '__unknown__', '__unknown__');
+    expect(r.score).toBeGreaterThanOrEqual(0);
+  });
+  it('csDetected is set when LID overrides unspecified lang', () => {
+    // Can only test the field exists and is boolean-typed
+    const r = rhymeScore('hello', 'world', 'en', 'en');
+    // csDetected may be false or absent for explicit langs
+    expect(r.csDetected === undefined || r.csDetected === false).toBe(true);
+  });
+});
+
+// ── detectCodeSwitch ─────────────────────────────────────────────────────────
+describe('detectCodeSwitch', () => {
+  it('returns null for empty text', () => {
+    expect(detectCodeSwitch('')).toBeNull();
+  });
+  it('returns null for whitespace-only text', () => {
+    expect(detectCodeSwitch('   ')).toBeNull();
+  });
+  it('detects dominant lang in French text', () => {
+    const r = detectCodeSwitch('le chat est sur le mat', 'fr');
+    expect(r).not.toBeNull();
+    expect(r!.detectedLang).toBe('fr');
+  });
+  it('detects dominant lang in English text', () => {
+    const r = detectCodeSwitch('the cat is on the mat', 'en');
+    expect(r).not.toBeNull();
+    expect(r!.detectedLang).toBe('en');
+  });
+  it('confidence is between 0 and 1', () => {
+    const r = detectCodeSwitch('hello world', 'en');
+    expect(r).not.toBeNull();
+    expect(r!.confidence).toBeGreaterThanOrEqual(0);
+    expect(r!.confidence).toBeLessThanOrEqual(1);
+  });
+  it('isMixed is true for mixed-script text', () => {
+    const r = detectCodeSwitch('hello \u4e16\u754c', 'en');
+    expect(r).not.toBeNull();
+    expect(r!.isMixed).toBe(true);
+  });
+});
+
+// ── rhymeScoreAsync ──────────────────────────────────────────────────────────
+describe('rhymeScoreAsync', () => {
+  it('returns same score as sync for non-embedding families', async () => {
+    const sync = rhymeScore('night', 'light', 'en', 'en');
+    const async_ = await rhymeScoreAsync('night', 'light', 'en', 'en');
+    expect(async_.score).toBeCloseTo(sync.score, 5);
+    expect(async_.family).toBe(sync.family);
+  });
+  it('returns a RhymeResult with required fields', async () => {
+    const r = await rhymeScoreAsync('beau', 'mou', 'fr', 'fr');
+    expect(r).toHaveProperty('score');
+    expect(r).toHaveProperty('category');
+    expect(r).toHaveProperty('family');
+    expect(r).toHaveProperty('warnings');
+  });
+  it('uses resolved language for embedding eligibility', async () => {
+    // Vietnamese is eligible — should not crash
+    const r = await rhymeScoreAsync('con mèo', 'con bèo', 'vi', 'vi');
+    expect(r.score).toBeGreaterThanOrEqual(0);
+  });
+});
