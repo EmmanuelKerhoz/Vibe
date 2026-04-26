@@ -7,6 +7,7 @@
 
 import type { FamilyId, LangCode, RhymeCategory, RhymeNucleus } from './types';
 import { getTonePenalty } from './toneMatrix';
+import { meanPoolPhoible, cosineSimilarity } from './phoible';
 
 export function phonemeEditDistance(a: string, b: string): number {
   if (a === b) return 0;
@@ -28,50 +29,8 @@ export function phonemeEditDistance(a: string, b: string): number {
   return dp[la * cols + lb]! / Math.max(la, lb);
 }
 
-// ─── PHOIBLE mean-pool embedding (L4, offline, 14 dims) ───────────────────────
-
-const PHOIBLE_VOWELS: Record<string, readonly number[]> = {
-  'a':  [1,0,1,1,0,1,0,0,1,0,1,0,0,0],
-  'e':  [1,0,1,1,0,1,0,0,1,1,0,1,0,0],
-  'i':  [1,0,1,1,0,1,0,0,1,1,0,1,0,0],
-  'o':  [1,0,1,1,0,1,1,0,1,1,0,0,1,1],
-  'u':  [1,0,1,1,0,1,1,0,1,1,0,0,1,1],
-  'ɑ':  [1,0,1,1,0,1,0,0,1,0,1,0,1,0],
-  'æ':  [1,0,1,1,0,1,0,0,1,0,1,1,0,0],
-  'ɛ':  [1,0,1,1,0,1,0,0,1,0,0,1,0,0],
-  'ɔ':  [1,0,1,1,0,1,1,0,1,0,0,0,1,1],
-  'ə':  [1,0,1,1,0,1,0,0,1,0,0,0,0,0],
-  'ɪ':  [1,0,1,1,0,1,0,0,1,1,0,1,0,0],
-  'ʊ':  [1,0,1,1,0,1,1,0,1,1,0,0,1,1],
-  'y':  [1,0,1,1,0,1,1,0,1,1,0,1,0,1],
-  'ø':  [1,0,1,1,0,1,1,0,1,1,0,1,0,1],
-  'ü':  [1,0,1,1,0,1,1,0,1,1,0,1,0,1],
-  'ö':  [1,0,1,1,0,1,1,0,1,1,0,1,0,1],
-  'ä':  [1,0,1,1,0,1,0,0,1,0,1,1,0,0],
-};
-const DIM = 14;
-const ZERO_VEC: readonly number[] = new Array(DIM).fill(0);
-
-function meanPool(str: string): Float32Array {
-  const acc = new Float32Array(DIM);
-  let count = 0;
-  for (const ch of str) {
-    const vec = PHOIBLE_VOWELS[ch] ?? ZERO_VEC;
-    for (let d = 0; d < DIM; d++) acc[d]! += vec[d]!;
-    count++;
-  }
-  if (count > 0) for (let d = 0; d < DIM; d++) acc[d]! /= count;
-  return acc;
-}
-
-function cosineSimilarity(a: Float32Array, b: Float32Array): number {
-  let dot = 0, normA = 0, normB = 0;
-  for (let d = 0; d < DIM; d++) { dot += a[d]! * b[d]!; normA += a[d]! ** 2; normB += b[d]! ** 2; }
-  return normA === 0 || normB === 0 ? 0 : dot / (Math.sqrt(normA) * Math.sqrt(normB));
-}
-
 function embeddingScore(vA: string, vB: string): number {
-  return !vA || !vB ? 0 : cosineSimilarity(meanPool(vA), meanPool(vB));
+  return !vA || !vB ? 0 : cosineSimilarity(meanPoolPhoible(vA), meanPoolPhoible(vB));
 }
 
 // ─── Family config ────────────────────────────────────────────────────────────

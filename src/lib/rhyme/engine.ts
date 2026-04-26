@@ -11,7 +11,7 @@
  *  - rhymePosition mode: end | internal | initial | all
  */
 
-import type { LangCode, RhymeNucleus, RhymeResult, SchemeResult } from './types';
+import type { LangCode, RhymeNucleus, RhymeResult, SchemeResult, FamilyId } from './types';
 import { extractLineEndingUnit, normalizeInput } from './normalize';
 import { routeToFamily } from './router';
 import { categorize, scoreKWANormalized, scoreCRV, phonemeEditDistance } from './scoring';
@@ -37,7 +37,7 @@ import { detectRhymeSchemeMultiLang } from './rhymeSchemeDetector';
 import { extractNucleus as morphoExtractNucleus } from './morphoNucleus';
 import { detectCodeSwitch } from './lidSpanDetector';
 import { embeddingScore, blendScores } from './embeddingScorer';
-import { applyTonalPenalty, type TonalLang as TonalFamily } from './tonalDistance';
+import { applyTonalPenalty } from './toneMatrix';
 import {
   extractPositionUnits,
   multiSyllabicTail,
@@ -65,12 +65,7 @@ export interface BlockAnalysis {
   lines: Array<{ text: string; lang: LangCode }>;
 }
 
-// ─── Per-language tonal family lookup ────────────────────────────────────────
-// Keyed by resolved LangCode for per-language precision (e.g. yue ≠ zh).
-const TONAL_LANG_SET = new Set<string>(['zh', 'yue', 'th', 'lo', 'vi', 'ha', 'kwa', 'yo']);
-function getTonalLang(lang: LangCode): TonalFamily | undefined {
-  return TONAL_LANG_SET.has(lang) ? (lang as TonalFamily) : undefined;
-}
+
 
 // ─── Embedding-eligible families ─────────────────────────────────────────────
 // CJK excluded: Han/kana/jamo graphemic proxies are not in PHOIBLE vectors.
@@ -355,11 +350,9 @@ export function rhymeScore(
   }
 
   // ── Step 4: Tonal penalty ─────────────────────────────────────────────────
-  // Use resolved language for per-language precision (yue ≠ zh, lo ≠ th, etc.)
-  const tonalLang = getTonalLang(resolvedLangA);
-  if (tonalLang && nucleusA!.tone && nucleusB!.tone) {
+  if (nucleusA!.tone && nucleusB!.tone) {
     baseScore = applyTonalPenalty(
-      baseScore, tonalLang,
+      baseScore, family as FamilyId, resolvedLangA,
       nucleusA!.tone, nucleusB!.tone,
       opts.tonalWeight ?? 0.25
     );

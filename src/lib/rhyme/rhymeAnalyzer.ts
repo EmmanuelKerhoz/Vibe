@@ -20,7 +20,7 @@ import {
 } from './verseSegmenter';
 import { detectSpanLangs } from './lidSpanDetector';
 import { extractNucleus, type LangFamily } from './morphoNucleus';
-import { applyTonalPenalty, type TonalLang } from './tonalDistance';
+import { applyTonalPenalty } from './toneMatrix';
 import { embeddingScore, blendScores } from './embeddingScorer';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -96,16 +96,7 @@ function featureWeightedScore(nucleusA: string, nucleusB: string): number {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const TONAL_LANGS = new Set<string>(['zh', 'yue', 'th', 'lo', 'vi', 'ha', 'kwa', 'yo', 'bam', 'dyu', 'ee', 'twi']);
 
-function toTonalLang(lc: string): TonalLang | null {
-  const map: Record<string, TonalLang> = {
-    zh: 'zh', yue: 'yue', th: 'th', lo: 'lo', vi: 'vi',
-    ha: 'ha', kwa: 'kwa', yo: 'yo', bam: 'kwa', dyu: 'kwa',
-    ee: 'kwa', twi: 'kwa', mi: 'kwa',
-  };
-  return map[lc] ?? null;
-}
 
 function familyFromLangcode(lc: string): LangFamily {
   const map: Record<string, LangFamily> = {
@@ -214,15 +205,10 @@ export async function analyzeBlock(
     // Tonal penalty
     let penalizedScore = rawScore;
     if (toneSensitive) {
-      const tlA = toTonalLang(langcodeA);
-      const tlB = toTonalLang(langcodeB);
-      const tl = tlA ?? tlB;
-      if (tl) {
-        // Tone extraction: look for trailing digit or diacritic marker
-        const toneA = wordA.match(/[0-9]$/)?.[0] ?? 'UNKNOWN';
-        const toneB = wordB.match(/[0-9]$/)?.[0] ?? 'UNKNOWN';
-        penalizedScore = applyTonalPenalty(rawScore, tl, toneA, toneB);
-      }
+      // Tone extraction: look for trailing digit or diacritic marker
+      const toneA = wordA.match(/[0-9]$/)?.[0] ?? 'UNKNOWN';
+      const toneB = wordB.match(/[0-9]$/)?.[0] ?? 'UNKNOWN';
+      penalizedScore = applyTonalPenalty(rawScore, familyA as any, langcodeA, toneA, toneB);
     }
 
     // Step 5 — Embedding blend (async)

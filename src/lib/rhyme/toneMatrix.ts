@@ -104,3 +104,18 @@ export function getTonePenalty(
     default:    return 0;
   }
 }
+
+export function applyTonalPenalty(
+  baseScore: number,
+  family: FamilyId,
+  lang: string,
+  toneA: string,
+  toneB: string,
+  weight = 0.25
+): number {
+  if (!toneA || !toneB) return baseScore;
+  const penalty = getTonePenalty(toneA, toneB, family, lang);
+  if (penalty === 0) return baseScore;
+  const clampedWeight = Math.max(0, Math.min(1, weight));
+  return baseScore * (1 - clampedWeight * penalty);
+}
