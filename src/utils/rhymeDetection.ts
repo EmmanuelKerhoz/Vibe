@@ -86,7 +86,6 @@ const extractLastWord = (text: string, langCode?: string): WordMatch | null => {
  */
 const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
   const vowelGroups: VowelSpan[] = [];
-  // Iterate over Unicode code points (handles multi-char IPA glyphs if any)
   const chars = [...normalizedWord];
   let i = 0;
   while (i < chars.length) {
@@ -219,15 +218,11 @@ const extendToVowelOnset = (normalizedWord: string, suffixStart: number): number
 
   let pos = suffixStart;
 
-  // When the suffix starts on a consonant, walk backwards to find the
-  // nearest vowel — this becomes the vowel nucleus of the rime.
   if (!isVowel(normalizedWord[pos]!)) {
     while (pos >= 0 && !isVowel(normalizedWord[pos]!)) pos--;
-    if (pos < 0) return suffixStart; // no preceding vowel found
+    if (pos < 0) return suffixStart;
   }
 
-  // pos is now at a vowel. Check whether the preceding character forms a
-  // recognised French diphthong (e.g. "ai" in défaite). If so, include it.
   if (pos >= 1 && isVowel(normalizedWord[pos - 1]!)) {
     const digraph = normalizedWord[pos - 1]! + normalizedWord[pos]!;
     if (FRENCH_DIGRAPHS.has(digraph)) {
@@ -255,8 +250,6 @@ const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, lan
   const suffixStart = word.normalizedWord.lastIndexOf(normalizedSuffix);
   if (suffixStart < 0) return null;
 
-  // Extend highlight to the vowel onset for complete rime marking.
-  // Skip extension for tonal languages where diacritics carry meaning.
   const effectiveStart = isTonalLanguage(langCode || '')
     ? suffixStart
     : extendToVowelOnset(word.normalizedWord, suffixStart);
@@ -314,6 +307,173 @@ export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langC
  */
 export const doLinesRhymeGraphemic = (a: string, b: string, langCode?: string): boolean =>
   findBestSharedRhymeSuffix(a, b, langCode) !== null;
+
+// ─── Step-0: verse segmentation ──────────────────────────────────────────────
+
+/**
+ * Type of rhyme position within a line.
+ * - 'end'      : classical end-of-line rhyme (default)
+ * - 'internal' : rhyming unit found mid-line (caesura / internal rhyme)
+ * - 'enjambed' : last token is syntactically incomplete (enjambement detected
+ *                heuristically via trailing connector words)
+ */
+export type RhymePosition = 'end' | 'internal' | 'enjambed';
+
+/**
+ * Result of segmenting a verse line into its rhyming unit.
+ * `rhymingUnit` is the normalized token passed to the IPA/graphemic pipeline.
+ * `position` describes the structural role of that unit within the line.
+ * `syllableIndex` is set for agglutinative families (TRK/FIN/KOR) and
+ * indicates which syllable of the last word carries the rhyme (0-based from
+ * the end, so 0 = final syllable).
+ */
+export type VerseRhymingSegment = {
+  rhymingUnit: string;
+  position: RhymePosition;
+  originalText: string;
+  syllableIndex: number;
+};
+
+/**
+ * Connector words that suggest a line is syntactically incomplete
+ * (enjambement). Checked against the normalized last token.
+ * Covers the most frequent Romance + Germanic cases.
+ */
+const ENJAMBMENT_CONNECTORS = new Set([
+  // French
+  'et', 'ou', 'mais', 'donc', 'or', 'ni', 'car', 'que', 'qui', 'dont',
+  'de', 'du', 'des', 'le', 'la', 'les', 'un', 'une', 'en', 'dans', 'par',
+  'pour', 'sur', 'sous', 'avec', 'sans', 'vers', 'comme',
+  // English
+  'and', 'or', 'but', 'so', 'yet', 'nor', 'for', 'the', 'a', 'an',
+  'of', 'in', 'on', 'at', 'to', 'by', 'from', 'with', 'into', 'like',
+]);
+
+/**
+ * Families with agglutinative morphology where the last word of a line may
+ * carry multiple candidate stress positions. For these families, we pick the
+ * last stressed syllable (approximated as the last vowel-group boundary).
+ */
+const AGGLUTINATIVE_FAMILIES = new Set(['ALGO-TRK', 'ALGO-FIN', 'ALGO-KOR']);
+
+/**
+ * Detect whether a line contains an internal rhyme by scanning for a
+ * repeated vowel-group suffix pattern before the final word.
+ *
+ * Strategy: extract the last-word rhyme nucleus and check whether any token
+ * in the pre-final portion of the line shares the same normalized suffix.
+ * Returns the mid-line token that mirrors the end rhyme, or null if none.
+ */
+const detectInternalRhymeToken = (tokens: string[], lastWordSuffix: string, langCode?: string): string | null => {
+  if (tokens.length < 2) return null;
+  const candidates = tokens.slice(0, -1);
+  for (const token of candidates) {
+    const normalized = normalizeWord(token, langCode);
+    const suffix = normalized.length > 0
+      ? canonicalizeRhymeSuffix(normalized.slice(Math.max(0, normalized.length - lastWordSuffix.length)), langCode)
+      : '';
+    if (suffix && suffix === lastWordSuffix && suffix.length >= 2) return token;
+  }
+  return null;
+};
+
+/**
+ * Step-0 of the rhyme pipeline: segment a raw verse line into its rhyming
+ * unit before passing to G2P / IPA scoring.
+ *
+ * Rules applied in order:
+ * 1. Strip trailing punctuation; tokenize on whitespace.
+ * 2. For agglutinative families (TRK/FIN/KOR): take the last word, extract
+ *    its last stressed syllable (last vowel-group), use that as rhymingUnit.
+ * 3. Enjambement heuristic: if the last normalized token is a known connector
+ *    word, mark position as 'enjambed' and use the penultimate content word.
+ * 4. Internal rhyme detection: check whether any pre-final token shares the
+ *    end-rhyme suffix. If found, mark position as 'internal'.
+ * 5. Default: last word of line → position 'end'.
+ *
+ * Tonal languages (KWA/CRV/BNT/SIN/TAI/VIET): extractLastWord is called
+ * without diacritic stripping so tone marks are preserved in rhymingUnit.
+ *
+ * @param line       Raw verse line text
+ * @param langCode   ISO 639 code; undefined → ALGO-ROM rules
+ * @returns          VerseRhymingSegment ready for pipeline step 1
+ */
+export const segmentVerseToRhymingUnit = (line: string, langCode?: string): VerseRhymingSegment => {
+  const family = langCode ? getAlgoFamily(langCode) : undefined;
+
+  // Tokenize: strip trailing punctuation then split on whitespace
+  const stripped = line.trimEnd().replace(/[^\p{L}\p{N}\s]+$/u, '').trim();
+  const tokens = stripped.split(/\s+/).filter(Boolean);
+
+  if (tokens.length === 0) {
+    return { rhymingUnit: '', position: 'end', originalText: line, syllableIndex: 0 };
+  }
+
+  // ── Agglutinative: pick last stressed syllable of last word ──────────────
+  if (family && AGGLUTINATIVE_FAMILIES.has(family)) {
+    const lastToken = tokens[tokens.length - 1]!;
+    const normalized = normalizeWord(lastToken, langCode);
+    const vowelGroups = getVowelGroups(normalized);
+    // Last vowel group onward = approximation of final stressed syllable
+    const rhymingUnit = vowelGroups.length > 0
+      ? normalized.slice(vowelGroups[vowelGroups.length - 1]!.start)
+      : normalized;
+    return {
+      rhymingUnit,
+      position: 'end',
+      originalText: line,
+      syllableIndex: 0,
+    };
+  }
+
+  // ── Enjambement heuristic ─────────────────────────────────────────────────
+  const lastToken = tokens[tokens.length - 1]!;
+  const lastNormalized = normalizeWord(lastToken, langCode);
+  if (ENJAMBMENT_CONNECTORS.has(lastNormalized) && tokens.length >= 2) {
+    const contentToken = tokens[tokens.length - 2]!;
+    const contentNormalized = normalizeWord(contentToken, langCode);
+    return {
+      rhymingUnit: contentNormalized,
+      position: 'enjambed',
+      originalText: line,
+      syllableIndex: 0,
+    };
+  }
+
+  // ── Internal rhyme detection ──────────────────────────────────────────────
+  const wordMatch = extractLastWord(stripped, langCode);
+  if (wordMatch) {
+    const vowelGroups = getVowelGroups(wordMatch.normalizedWord);
+    if (vowelGroups.length > 0) {
+      const lastSuffix = canonicalizeRhymeSuffix(
+        wordMatch.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start),
+        langCode,
+      );
+      const internalToken = detectInternalRhymeToken(tokens, lastSuffix, langCode);
+      if (internalToken) {
+        // Internal rhyme found — still use end word as rhymingUnit (canonical
+        // rhyme anchor) but flag position so the UI can highlight both tokens.
+        return {
+          rhymingUnit: wordMatch.normalizedWord,
+          position: 'internal',
+          originalText: line,
+          syllableIndex: 0,
+        };
+      }
+    }
+  }
+
+  // ── Default: end rhyme ────────────────────────────────────────────────────
+  const rhymingUnit = wordMatch ? wordMatch.normalizedWord : lastNormalized;
+  return {
+    rhymingUnit,
+    position: 'end',
+    originalText: line,
+    syllableIndex: 0,
+  };
+};
+
+// ─── Existing exports unchanged below ────────────────────────────────────────
 
 const tokenize = (text: string) =>
   normalizeText(text)

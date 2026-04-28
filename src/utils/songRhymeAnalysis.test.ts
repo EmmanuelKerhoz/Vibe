@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Section } from '../types';
 import { compareTextsWithIPA } from './ipaPipeline';
 import { analyzeSongRhymes } from './songRhymeAnalysis';
+import { segmentVerseToRhymingUnit } from './rhymeDetection';
 
 vi.mock('./ipaPipeline', () => ({
   compareTextsWithIPA: vi.fn(),
@@ -24,6 +25,8 @@ const makeSection = (id: string, name: string, language: string, lines: string[]
   lines: lines.map((line, index) => makeLine(`${id}-${index + 1}`, line)),
 });
 
+// ─── Existing regression tests (unchanged) ────────────────────────────────────
+
 describe('analyzeSongRhymes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,7 +43,7 @@ describe('analyzeSongRhymes', () => {
     const song = [
       makeSection('fr-verse', 'Verse 1', 'fr', [
         'Dans la nuit je marche encore',
-        'Sous la pluie je cherche l’or',
+        'Sous la pluie je cherche l\'or',
       ]),
     ];
 
@@ -113,5 +116,131 @@ describe('analyzeSongRhymes', () => {
     expect(exactSection?.pairs[0]?.confidenceScore).toBeGreaterThan(
       approximatedSection?.pairs[0]?.confidenceScore ?? 0,
     );
+  });
+});
+
+// ─── New tests: step-0 segmentation + tone_weight + code-switching ────────────
+
+describe('segmentVerseToRhymingUnit', () => {
+  it('returns end position for standard Romance line', () => {
+    const result = segmentVerseToRhymingUnit('Dans la nuit je marche encore', 'fr');
+    expect(result.position).toBe('end');
+    expect(result.rhymingUnit).toBe('encore');
+  });
+
+  it('returns enjambed position when last token is a connector', () => {
+    const result = segmentVerseToRhymingUnit('Je chante avec', 'fr');
+    expect(result.position).toBe('enjambed');
+    // rhymingUnit should be the penultimate content word
+    expect(result.rhymingUnit).toBe('chante');
+  });
+
+  it('returns internal position when mid-line token mirrors end rhyme', () => {
+    // 'nuit' and 'lui' share suffix 'ui'
+    const result = segmentVerseToRhymingUnit('Dans la nuit il pense à lui', 'fr');
+    expect(result.position).toBe('internal');
+    // end word is still the canonical rhymingUnit
+    expect(result.rhymingUnit).toBe('lui');
+  });
+
+  it('picks last vowel-group for agglutinative Turkish (ALGO-TRK)', () => {
+    // 'gidiyorum' → normalized 'gidiyorum' → last vowel group from 'u' onward → 'um'
+    const result = segmentVerseToRhymingUnit('Ben gidiyorum', 'tr');
+    expect(result.position).toBe('end');
+    // rhymingUnit should start at or after the last vowel group
+    expect(result.rhymingUnit.length).toBeGreaterThan(0);
+    expect(result.rhymingUnit).toMatch(/u/);
+  });
+
+  it('preserves tonal diacritics for KWA (ALGO-KWA)', () => {
+    // Yoruba-style: tones marked with diacritics should survive normalization
+    const result = segmentVerseToRhymingUnit('Mo fẹ́ràn rẹ', 'yo');
+    expect(result.position).toBe('end');
+    // rhymingUnit must NOT have diacritics stripped for tonal languages
+    expect(result.rhymingUnit).toMatch(/[\u0300-\u036f]/);
+  });
+});
+
+describe('analyzeSongRhymes — code-switching', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('routes cross-family pairs through their own langCode pipelines', async () => {
+    vi.mocked(compareTextsWithIPA).mockResolvedValue({
+      score: 0.78,
+      quality: 'sufficient',
+      distance: 0.22,
+      method: 'feature-weighted',
+    });
+
+    // Section language is 'fr'; second line overrides to 'nou' (nouchi ivoirien)
+    const song = [
+      makeSection('cs-verse', 'Couplet', 'fr', [
+        'Je marche dans la nuit',
+        '[lang:nou] Y a pas moyen ce soir',
+      ]),
+    ];
+
+    const [result] = await analyzeSongRhymes(song);
+    expect(result?.mode).toBe('ipa');
+
+    // compareTextsWithIPA must have been called with langCode2 for cross-family
+    const calls = vi.mocked(compareTextsWithIPA).mock.calls;
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    const crossFamilyCall = calls.find(([, , , opts]) => opts?.langCode2 !== undefined);
+    expect(crossFamilyCall).toBeDefined();
+    expect(crossFamilyCall?.[3]?.langCode2).toBe('nou');
+
+    // Pair should be marked crossFamily
+    const crossPair = result?.pairs.find(p => p.crossFamily);
+    expect(crossPair).toBeDefined();
+  });
+
+  it('does not set crossFamily flag for same-language pairs', async () => {
+    vi.mocked(compareTextsWithIPA).mockResolvedValue({
+      score: 0.85,
+      quality: 'rich',
+      distance: 0.15,
+      method: 'feature-weighted',
+    });
+
+    const song = [
+      makeSection('mono-verse', 'Verse', 'fr', [
+        'Le soleil brille encore',
+        'La lune tourne fort',
+      ]),
+    ];
+
+    const [result] = await analyzeSongRhymes(song);
+    const pair = result?.pairs[0];
+    expect(pair?.crossFamily).toBeUndefined();
+  });
+});
+
+describe('analyzeSongRhymes — rhymePosition forwarding', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('forwards rhymePosition from segmentation to pair analysis', async () => {
+    vi.mocked(compareTextsWithIPA).mockResolvedValue({
+      score: 0.88,
+      quality: 'rich',
+      distance: 0.12,
+      method: 'feature-weighted',
+    });
+
+    // 'avec' is a connector → enjambed position
+    const song = [
+      makeSection('pos-verse', 'Verse', 'fr', [
+        'Je danse avec',
+        'La nuit complète',
+      ]),
+    ];
+
+    const [result] = await analyzeSongRhymes(song);
+    const pair = result?.pairs[0];
+    expect(pair?.rhymePosition).toBe('enjambed');
   });
 });
