@@ -761,3 +761,102 @@ describe('rhymeScoreAsync', () => {
     expect(r.score).toBeGreaterThanOrEqual(0);
   });
 });
+
+// ── analyzeBlock ────────────────────────────────────────────────────────────
+import { analyzeBlock } from './engine';
+
+describe('analyzeBlock', () => {
+  it('splits on newlines into separate lines', () => {
+    const r = analyzeBlock('night\nlight\nfight', 'en');
+    expect(r.lines).toHaveLength(3);
+    expect(r.lines.map(l => l.text)).toEqual(['night', 'light', 'fight']);
+    expect(r.lines.every(l => l.lang === 'en')).toBe(true);
+  });
+
+  it('splits hemistich (//) into separate lines by default', () => {
+    const r = analyzeBlock('beau // mou\nclair // rare', 'fr');
+    // Each // should split, producing 4 lines total
+    expect(r.lines).toHaveLength(4);
+    expect(r.lines.map(l => l.text)).toEqual(['beau', 'mou', 'clair', 'rare']);
+  });
+
+  it('splitHemistich:false preserves hemistich on a single line', () => {
+    const r = analyzeBlock('beau // mou', 'fr', { splitHemistich: false });
+    // verseSegmenter still collapses // to a space, but does not split
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0]!.text).toContain('beau');
+    expect(r.lines[0]!.text).toContain('mou');
+  });
+
+  it('opts.langs aligned: applies per-line language', () => {
+    const r = analyzeBlock('night\nlight', 'fr', { langs: ['en', 'en'] });
+    expect(r.lines.map(l => l.lang)).toEqual(['en', 'en']);
+  });
+
+  it('opts.langs shorter than lines: falls back to default lang for missing entries', () => {
+    const r = analyzeBlock('night\nlight\nfight', 'fr', { langs: ['en'] });
+    expect(r.lines[0]!.lang).toBe('en');
+    expect(r.lines[1]!.lang).toBe('fr');
+    expect(r.lines[2]!.lang).toBe('fr');
+  });
+
+  it('opts.langs empty: every line uses the default lang', () => {
+    const r = analyzeBlock('night\nlight', 'en', { langs: [] });
+    expect(r.lines.map(l => l.lang)).toEqual(['en', 'en']);
+  });
+
+  it('opts.langs with empty-string entries: falls back to default lang', () => {
+    const r = analyzeBlock('night\nlight', 'en', { langs: ['' as any, 'fr'] });
+    expect(r.lines[0]!.lang).toBe('en');
+    expect(r.lines[1]!.lang).toBe('fr');
+  });
+
+  it('multilingual fr/en mix: per-line language preserved', () => {
+    const r = analyzeBlock('le chat\nthe cat\nles rats\nthe mats', 'fr', {
+      langs: ['fr', 'en', 'fr', 'en'],
+    });
+    expect(r.lines.map(l => l.lang)).toEqual(['fr', 'en', 'fr', 'en']);
+    expect(r.scheme).toBeDefined();
+  });
+
+  it('returns a scheme result', () => {
+    const r = analyzeBlock('night\nlight\nday\nway', 'en');
+    expect(r.scheme).toBeDefined();
+  });
+});
+
+// ── fallback-graphemic branch ───────────────────────────────────────────────
+describe('rhymeScore fallback-graphemic', () => {
+  it('produces a result with fallback-graphemic warning for unknown lang', () => {
+    // 'xx' is not in LANG_FAMILY_MAP → routeToFamily returns FALLBACK,
+    // ALGO_REGISTRY['FALLBACK'] is undefined → exercises the graphemic branch.
+    const r = rhymeScore('night', 'light', 'xx' as any, 'xx' as any);
+    expect(r.warnings).toContain('fallback-graphemic');
+    expect(r.score).toBeGreaterThanOrEqual(0);
+    expect(r.score).toBeLessThanOrEqual(1);
+    // family is the routed family (FALLBACK), not 'FALLBACK' literal from cross-family
+    expect(r.family).toBe('FALLBACK');
+  });
+
+  it('graphemic similarity reflects shared tail', () => {
+    const same = rhymeScore('night', 'night', 'xx' as any, 'xx' as any);
+    const diff = rhymeScore('night', 'queen', 'xx' as any, 'xx' as any);
+    expect(same.score).toBeGreaterThan(diff.score);
+  });
+});
+
+// ── csDetected reflects LID hints (regression for explicit-lang case) ───────
+describe('rhymeScore csDetected with explicit langs', () => {
+  it('explicit langs without code-switch hint → csDetected falsy', () => {
+    const r = rhymeScore('night', 'light', 'en', 'en');
+    expect(r.csDetected === undefined || r.csDetected === false).toBe(true);
+  });
+
+  it('explicit lang but foreign script in line → csDetected true (LID hint differs)', () => {
+    // langA explicitly 'en' but the line is Arabic script → LID will hint 'ar'
+    const r = rhymeScore('مرحبا', 'world', 'en', 'en');
+    expect(r.csDetected).toBe(true);
+    // The LID hint should also surface in warnings
+    expect(r.warnings.some(w => w.startsWith('lid-cs-hint:'))).toBe(true);
+  });
+});

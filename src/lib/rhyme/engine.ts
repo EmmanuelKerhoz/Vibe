@@ -107,7 +107,7 @@ export function analyzeBlock(
 
 // ─── Algorithm Registry ───────────────────────────────────────────────────────
 type NucleusExtractor = (unit: RhymeResult['unitA'], lang: LangCode, lowResource: boolean) => RhymeNucleus;
-type NucleusScorer = (nA: any, nB: any, langA: LangCode, langB: LangCode) => number;
+type NucleusScorer = (nA: RhymeNucleus, nB: RhymeNucleus, langA: LangCode, langB: LangCode) => number;
 
 interface AlgoRegistry {
   extract: NucleusExtractor;
@@ -119,14 +119,14 @@ const ALGO_REGISTRY: Partial<Record<string, AlgoRegistry>> = {
   CRV:  { extract: (u, _, lowRes) => extractNucleusCRV(u, lowRes, _), score: (nA, nB, lA) => scoreCRV(nA, nB, lA) },
   ROM:  { extract: (u, l) => extractNucleusROM(u, l), score: (nA, nB) => 0.6 * (1 - phonemeEditDistance(nA.vowels, nB.vowels)) + 0.4 * (1 - phonemeEditDistance(nA.coda, nB.coda)) },
   GER:  { extract: (u, l) => extractNucleusGER(u, l), score: (nA, nB) => scoreGER(nA, nB) },
-  YRB:  { extract: (u) => extractNucleusYRB(u), score: (nA, nB) => scoreYRB(nA, nB) },
+  YRB:  { extract: (u) => extractNucleusYRB(u), score: (nA, nB) => scoreYRB(nA as YRBNucleus, nB as YRBNucleus) },
   SLV:  { extract: (u, l) => extractNucleusSLV(u, l), score: (nA, nB) => scoreSLV(nA, nB) },
   SEM:  { extract: (u, l) => extractNucleusSEM(u, l), score: (nA, nB) => scoreSEM(nA, nB) },
   TAI:  { extract: (u, l) => extractNucleusTAI(u, l), score: (nA, nB) => scoreTAI(nA, nB) },
   VIET: { extract: (u, l) => extractNucleusVIET(u, l), score: (nA, nB) => scoreVIET(nA, nB) },
   CJK:  { extract: (u, l) => extractNucleusCJK(u, l), score: (nA, nB) => scoreCJK(nA, nB) },
-  TRK:  { extract: (u, l) => extractNucleusTRK(u, l), score: (nA, nB) => scoreTRK(nA, nB) },
-  FIN:  { extract: (u, l) => extractNucleusFIN(u, l), score: (nA, nB) => scoreFIN(nA, nB) },
+  TRK:  { extract: (u, l) => extractNucleusTRK(u, l), score: (nA, nB) => scoreTRK(nA as TRKNucleus, nB as TRKNucleus) },
+  FIN:  { extract: (u, l) => extractNucleusFIN(u, l), score: (nA, nB) => scoreFIN(nA as FINNucleus, nB as FINNucleus) },
   IIR:  { extract: (u, l) => extractNucleusIIR(u, l), score: (nA, nB) => scoreIIR(nA, nB) },
   AUS:  { extract: (u, l) => extractNucleusAUS(u, l), score: (nA, nB) => scoreAUS(nA, nB) },
   DRA:  { extract: (u, l) => extractNucleusDRA(u, l), score: (nA, nB) => scoreDRA(nA, nB) },
@@ -179,6 +179,13 @@ export function rhymeScore(
   if (csB?.detectedLang && csB.detectedLang !== langB) {
     warnings.push(`lid-cs-hint:${langB}->${csB.detectedLang}`);
   }
+
+  // csDetected reflects any LID hint of a language different from the
+  // caller-provided lang, regardless of whether resolution actually overrode
+  // the caller value (resolution only overrides when langA/langB is unspecified).
+  const csDetected =
+    (!!csA?.detectedLang && csA.detectedLang !== langA) ||
+    (!!csB?.detectedLang && csB.detectedLang !== langB);
 
   // ── Step 1: Extract position unit ────────────────────────────────────────
   const unitsA = extractPositionUnits(lineA, opts);
@@ -239,7 +246,7 @@ export function rhymeScore(
       lowResourceFallback: true,
       warnings,
       position,
-      csDetected: resolvedLangA !== langA || resolvedLangB !== langB,
+      csDetected,
     };
   }
 
@@ -288,7 +295,7 @@ export function rhymeScore(
   if (baseScore < threshold) warnings.push(`below-threshold:${position}:${threshold}`);
 
   const score = Math.max(0, Math.min(1, baseScore));
-  return build(score, family, resolvedLangA, resolvedLangB, unitA, unitB, nucleusA!, nucleusB!, lowResource, warnings, position, resolvedLangA !== langA || resolvedLangB !== langB);
+  return build(score, family, resolvedLangA, resolvedLangB, unitA, unitB, nucleusA!, nucleusB!, lowResource, warnings, position, csDetected);
 }
 
 /**

@@ -16,6 +16,26 @@ import type { LangFamily } from './morphoNucleus';
 
 import { meanPoolPhoible, cosineSimilarity } from './phoible';
 
+// ── Memoization for PHOIBLE mean-pool ─────────────────────────────────────────
+// meanPoolPhoible is pure over its phone sequence; cache by joined key.
+// FIFO eviction at MAX_CACHE entries — bounded memory, no timeout (sync code).
+const MEAN_POOL_CACHE_MAX = 256;
+const meanPoolCache = new Map<string, Float32Array>();
+
+function meanPoolPhoibleCached(phones: string[]): Float32Array {
+  const key = phones.join('|');
+  const hit = meanPoolCache.get(key);
+  if (hit) return hit;
+  const vec = meanPoolPhoible(phones);
+  if (meanPoolCache.size >= MEAN_POOL_CACHE_MAX) {
+    // FIFO eviction: drop the oldest insertion (Map preserves insertion order)
+    const firstKey = meanPoolCache.keys().next().value;
+    if (firstKey !== undefined) meanPoolCache.delete(firstKey);
+  }
+  meanPoolCache.set(key, vec);
+  return vec;
+}
+
 // ── CharsiuG2P stub (runtime) ─────────────────────────────────────────────────
 // When CharsiuG2P service is available, call it here.
 // Returns IPA string for supported langs (SIN/JAP/KOR).
@@ -59,15 +79,15 @@ export async function embeddingScore(
       charsiuG2P(phonesB.join(''), lang),
     ]);
     if (ipaA.length > 0 && ipaB.length > 0) {
-      const vecA = meanPoolPhoible(ipaA);
-      const vecB = meanPoolPhoible(ipaB);
+      const vecA = meanPoolPhoibleCached(ipaA);
+      const vecB = meanPoolPhoibleCached(ipaB);
       return { score: Math.max(0, cosineSimilarity(vecA, vecB)), backend: 'charsiu' };
     }
   }
 
   // PHOIBLE offline fallback — universal
-  const vecA = meanPoolPhoible(phonesA);
-  const vecB = meanPoolPhoible(phonesB);
+  const vecA = meanPoolPhoibleCached(phonesA);
+  const vecB = meanPoolPhoibleCached(phonesB);
   return { score: Math.max(0, cosineSimilarity(vecA, vecB)), backend: 'phoible' };
 }
 
