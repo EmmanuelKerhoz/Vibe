@@ -1,9 +1,10 @@
 /**
  * Rhyme Engine v2 — Indo-Iranian Family Algorithm
- * Languages: HI (Hindi), UR (Urdu), BN (Bengali), FA (Persian), PA (Punjabi)
+ * Languages: HI (Hindi), SA (Sanskrit), UR (Urdu), BN (Bengali), FA (Persian), PA (Punjabi)
  *
  * Strategy:
  * - HI: Devanagari vowel matras + inherent 'a', schwa deletion rule on final consonant
+ * - SA: Devanagari vowel matras + inherent 'a', final inherent vowel preserved
  * - UR: Perso-Arabic script, vowel letters (ا و ی) + harakat when present
  * - BN: Bengali script vowel map, final hasanta strips inherent vowel
  * - FA: Perso-Arabic, long vowels (آ ا و ی), short vowels ignored (unwritten)
@@ -23,15 +24,17 @@ import { phonemeEditDistance } from './scoring';
 
 const DEVA_VOWEL_MAP: Record<string, string> = {
   'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ii', 'उ': 'u', 'ऊ': 'uu',
-  'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au', 'ऋ': 'ri',
+  'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au', 'ऋ': 'ri', 'ॠ': 'rii',
+  'ऌ': 'li', 'ॡ': 'lii',
   // matras
   'ा': 'aa', 'ि': 'i', 'ी': 'ii', 'ु': 'u', 'ू': 'uu',
-  'े': 'e',  'ै': 'ai', 'ो': 'o', 'ौ': 'au', 'ृ': 'ri',
+  'े': 'e',  'ै': 'ai', 'ो': 'o', 'ौ': 'au', 'ृ': 'ri', 'ॄ': 'rii',
+  'ॢ': 'li', 'ॣ': 'lii',
 };
 
 // Matras (dependent vowel signs) — used to detect & cancel preceding inherent 'a'
 const DEVA_MATRAS = new Set([
-  'ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', 'ृ',
+  'ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', 'ृ', 'ॄ', 'ॢ', 'ॣ',
 ]);
 
 const DEVA_CONSONANT_MAP: Record<string, string> = {
@@ -43,11 +46,12 @@ const DEVA_CONSONANT_MAP: Record<string, string> = {
   'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh',
   'ष': 'sh', 'स': 's', 'ह': 'h',
   'ं': 'n', // anusvara
+  'ँ': 'n', // chandrabindu
   '्': '',  // halant/virama strips inherent vowel
-  'ः': '',  // visarga
+  'ः': 'h', // visarga
 };
 
-function transcribeDEVA(token: string): { vowels: string; coda: string; onset: string } {
+function transcribeDEVA(token: string, preserveFinalSchwa = false): { vowels: string; coda: string; onset: string } {
   const chars = [...token.normalize('NFC')];
   const phonemes: string[] = [];
 
@@ -66,7 +70,8 @@ function transcribeDEVA(token: string): { vowels: string; coda: string; onset: s
       // Add inherent 'a' unless next char is matra, halant, or end
       const next = chars[i + 1];
       const isHalant = next === '्';
-      if (!DEVA_MATRAS.has(next ?? '') && !isHalant && mapped !== '') {
+      const isCombiningConsonantSign = ch === 'ं' || ch === 'ँ' || ch === 'ः';
+      if (!DEVA_MATRAS.has(next ?? '') && !isHalant && mapped !== '' && !isCombiningConsonantSign) {
         phonemes.push('a');
       }
     }
@@ -77,6 +82,7 @@ function transcribeDEVA(token: string): { vowels: string; coda: string; onset: s
   // words like नार (naar) and सुबह (subah) both appear to end in 'a',
   // producing identical nuclei and indistinguishable scores.
   if (
+    !preserveFinalSchwa &&
     phonemes.length >= 2 &&
     phonemes.at(-1) === 'a' &&
     phonemes.at(-2) !== undefined &&
@@ -268,8 +274,8 @@ export function extractNucleusIIR(
 
   let vowels = '', coda = '', onset = '';
 
-  if (lang === 'hi') {
-    ({ vowels, coda, onset } = transcribeDEVA(surface));
+  if (lang === 'hi' || lang === 'sa') {
+    ({ vowels, coda, onset } = transcribeDEVA(surface, lang === 'sa'));
   } else if (lang === 'ur' || lang === 'fa') {
     ({ vowels, coda, onset } = transcribePERSO(surface));
   } else if (lang === 'bn') {
