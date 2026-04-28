@@ -78,11 +78,9 @@ const FAMILY_RHYME_THRESHOLDS: Partial<Record<AlgoFamily, number>> = {
  * Per-family tone weight ∈ [0.0, 1.0].
  *
  * Controls how much tonal mismatch penalises the rhyme score when
- * calculateRhymeSimilarity receives a toneWeight argument.
+ * compareTextsWithIPA applies post-score tone correction.
  *
  * 0.0  = tone is ignored (non-tonal families)
- * 0.5  = balanced (moderate tonal constraint, default for tonal families
- *         not listed here)
  * 0.55 = BNT/KWA/CRV: tone matters but vowel nucleus dominates
  * 0.65 = TAI: 5-tone system, tone is a strong discriminant
  * 0.70 = SIN/VIET: lexical tone = meaning; near-identical nuclei with
@@ -229,6 +227,29 @@ export interface CompareTextsOptions {
 }
 
 /**
+ * Apply post-score tone penalty.
+ *
+ * calculateRhymeSimilarity operates on raw IPA strings and has no tone
+ * awareness. When a tonal language pair is compared, the base score may
+ * over-estimate similarity because tone marks were stripped before scoring.
+ *
+ * Strategy: discount the base score by `toneWeight * (1 - baseScore)`.
+ * - Identical segments (score ≈ 1.0) receive no penalty regardless of weight.
+ * - Divergent segments already score low; the penalty adds a calibrated
+ *   reduction proportional to how tonal the language family is.
+ * - toneWeight = 0 → no-op (non-tonal families).
+ *
+ * @param baseScore      Raw IPA similarity score ∈ [0, 1]
+ * @param toneWeight     Effective tone weight ∈ [0, 1]
+ * @returns              Adjusted score ∈ [0, 1]
+ */
+const applyTonePenalty = (baseScore: number, toneWeight: number): number => {
+  if (toneWeight <= 0) return baseScore;
+  const penalty = toneWeight * (1 - baseScore);
+  return Math.max(0, baseScore - penalty);
+};
+
+/**
  * Compare two texts using the full IPA pipeline (step 5).
  *
  * toneWeight is resolved in priority order:
@@ -287,7 +308,21 @@ export const compareTextsWithIPA = async (
     return calculateRhymeSimilarityWithWeight(rn1, rn2, weight1, weight2, true);
   }
 
-  return calculateRhymeSimilarity(rn1, rn2, true, effectiveToneWeight > 0 ? effectiveToneWeight : undefined);
+  // Base similarity — calculateRhymeSimilarity accepts exactly 3 args.
+  // Tone penalty is applied as a post-score adjustment (see applyTonePenalty).
+  const base = calculateRhymeSimilarity(rn1, rn2, true);
+
+  if (effectiveToneWeight <= 0) return base;
+
+  const adjustedScore = applyTonePenalty(base.score, effectiveToneWeight);
+  if (adjustedScore === base.score) return base;
+
+  const { classifyRhymeQuality } = await import('./ipaUtils');
+  return {
+    ...base,
+    score: adjustedScore,
+    quality: classifyRhymeQuality(adjustedScore),
+  };
 };
 
 /**

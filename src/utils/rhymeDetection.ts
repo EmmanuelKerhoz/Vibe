@@ -357,11 +357,34 @@ const ENJAMBMENT_CONNECTORS = new Set([
 const AGGLUTINATIVE_FAMILIES = new Set(['ALGO-TRK', 'ALGO-FIN', 'ALGO-KOR']);
 
 /**
+ * Extract the phonetic suffix of a token starting from its last vowel group,
+ * canonicalized for rhyme comparison.
+ *
+ * This mirrors the end-word suffix extraction used in segmentVerseToRhymingUnit
+ * so that internal rhyme detection operates on the same phonetic basis as the
+ * main pipeline — rather than a fixed-length right-slice which yields the wrong
+ * characters for tokens like "nuit" (slice(-2) = "it", not "ui").
+ *
+ * @param token    A single normalized word token
+ * @param langCode Optional ISO 639 code for canonicalization gating
+ * @returns        Canonicalized phonetic suffix, or empty string if no vowel
+ */
+const extractTokenPhoneticSuffix = (token: string, langCode?: string): string => {
+  const vowelGroups = getVowelGroups(token);
+  if (vowelGroups.length === 0) return '';
+  const tail = token.slice(vowelGroups[vowelGroups.length - 1]!.start);
+  return canonicalizeRhymeSuffix(tail, langCode);
+};
+
+/**
  * Detect whether a line contains an internal rhyme by scanning for a
  * repeated vowel-group suffix pattern before the final word.
  *
- * Strategy: extract the last-word rhyme nucleus and check whether any token
- * in the pre-final portion of the line shares the same normalized suffix.
+ * Strategy: extract the canonicalized phonetic suffix of the last word
+ * (from its last vowel group) and compare it against the same extraction
+ * applied to every pre-final token. This ensures that tokens like "nuit"
+ * produce suffix "ui" rather than a fixed-length right-slice "it".
+ *
  * Returns the mid-line token that mirrors the end rhyme, or null if none.
  */
 const detectInternalRhymeToken = (tokens: string[], lastWordSuffix: string, langCode?: string): string | null => {
@@ -369,10 +392,9 @@ const detectInternalRhymeToken = (tokens: string[], lastWordSuffix: string, lang
   const candidates = tokens.slice(0, -1);
   for (const token of candidates) {
     const normalized = normalizeWord(token, langCode);
-    const suffix = normalized.length > 0
-      ? canonicalizeRhymeSuffix(normalized.slice(Math.max(0, normalized.length - lastWordSuffix.length)), langCode)
-      : '';
-    if (suffix && suffix === lastWordSuffix && suffix.length >= 2) return token;
+    if (!normalized) continue;
+    const tokenSuffix = extractTokenPhoneticSuffix(normalized, langCode);
+    if (tokenSuffix && tokenSuffix === lastWordSuffix && tokenSuffix.length >= 2) return token;
   }
   return null;
 };
@@ -414,7 +436,6 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
     const lastToken = tokens[tokens.length - 1]!;
     const normalized = normalizeWord(lastToken, langCode);
     const vowelGroups = getVowelGroups(normalized);
-    // Last vowel group onward = approximation of final stressed syllable
     const rhymingUnit = vowelGroups.length > 0
       ? normalized.slice(vowelGroups[vowelGroups.length - 1]!.start)
       : normalized;
@@ -451,8 +472,6 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
       );
       const internalToken = detectInternalRhymeToken(tokens, lastSuffix, langCode);
       if (internalToken) {
-        // Internal rhyme found — still use end word as rhymingUnit (canonical
-        // rhyme anchor) but flag position so the UI can highlight both tokens.
         return {
           rhymingUnit: wordMatch.normalizedWord,
           position: 'internal',
