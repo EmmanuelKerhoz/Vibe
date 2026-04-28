@@ -13,8 +13,13 @@ import { useSongContext } from '../contexts/SongContext';
 const DEBOUNCE_MS = 30_000;        // 30s after last keystroke
 const DELTA_THRESHOLD = 0.20;     // retrigger if text changed by >20%
 
-const textFingerprint = (title: string, sections: import('../types').Section[]): string =>
-  [title.trim(), ...sections.flatMap(s => s.lines.map(l => l.text))].join('\n');
+/**
+ * Fingerprint includes songLanguage so a language change alone (without
+ * editing lyrics) reschedules the debounce and triggers a fresh search
+ * with the correct language.
+ */
+const textFingerprint = (title: string, sections: import('../types').Section[], songLanguage: string): string =>
+  [title.trim(), songLanguage, ...sections.flatMap(s => s.lines.map(l => l.text))].join('\n');
 
 /**
  * Unicode-safe character delta: iterates over code points, not UTF-16 units.
@@ -105,8 +110,8 @@ export const useSimilarityEngine = ({ hasApiKey = true }: { hasApiKey?: boolean 
   }, []);
 
   const fingerprint = useMemo(
-    () => textFingerprint(effectiveTitle, sections),
-    [effectiveTitle, sections]
+    () => textFingerprint(effectiveTitle, sections, songLanguage),
+    [effectiveTitle, sections, songLanguage]
   );
 
   useEffect(() => {

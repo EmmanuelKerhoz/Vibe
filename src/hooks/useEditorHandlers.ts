@@ -42,7 +42,6 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   } = state;
 
   const {
-    activeTab: _activeTab,
     setActiveTab,
     setIsLeftPanelOpen,
     setIsStructureOpen,
@@ -65,7 +64,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     importInputRef,
   } = appState;
 
-  // ── Song editor (add/remove structure, file analysis) ───────────────────
+  // ── Song editor (add/remove structure, file analysis) ───────────────────────
   const { removeStructureItem, addStructureItem, normalizeStructure, loadFileForAnalysis } = useSongEditor({
     openPasteModalWithText: (text: string) => {
       setPastedText(text);
@@ -73,7 +72,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     },
   });
 
-  // ── App-level handlers ───────────────────────────────────────────────────
+  // ── App-level handlers ────────────────────────────────────────────
   // generateTitle is passed as a no-op stub: title generation has been migrated
   // to ComposerParamsContext. handleGenerateTitle is intentionally not exposed
   // in the return value — it remains internal to useAppHandlers.
@@ -97,7 +96,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     scrollToSection: scrollToSectionFn,
   });
 
-  // ── Modal handlers ───────────────────────────────────────────────────────
+  // ── Modal handlers ─────────────────────────────────────────────
   const {
     handleOpenPasteModal,
     handleOpenImport,
@@ -118,7 +117,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setSectionTargetLanguages,
   });
 
-  // ── Session actions ──────────────────────────────────────────────────────
+  // ── Session actions ──────────────────────────────────────────────
   const { handleCreateEmptySong } = useSessionActions({
     song,
     structure,
@@ -133,7 +132,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setIsResetModalOpen,
   });
 
-  // ── Library actions ──────────────────────────────────────────────────────
+  // ── Library actions ──────────────────────────────────────────────
   const { handleOpenSaveToLibraryModal } = useLibraryActions({
     song,
     replaceStateWithoutHistory,
@@ -145,7 +144,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setIsSaveToLibraryModalOpen,
   });
 
-  // ── Import handlers ──────────────────────────────────────────────────────
+  // ── Import handlers ──────────────────────────────────────────────
   const { handleImportInputChange, handleImportChooseFile } = useImportHandlers({
     importInputRef,
     loadFileForAnalysis,
@@ -155,7 +154,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setSongLanguage,
   });
 
-  // ── Derived composite callbacks ──────────────────────────────────────────
+  // ── Derived composite callbacks ───────────────────────────────────────
   /**
    * Closes the left panel then triggers a full song regeneration.
    * Layout intent: belongs here, not in ComposerParamsContext.
