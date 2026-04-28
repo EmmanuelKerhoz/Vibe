@@ -17,6 +17,14 @@ describe('adaptation language dialects', () => {
     expect(getLanguageDisplay('ko')).toMatchObject({ label: '한국어', sign: '🇰🇷' });
   });
 
+  it('offers Sanskrit for adaptation and display lookups', () => {
+    expect(SUPPORTED_ADAPTATION_LANGUAGES).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'SA', aiName: 'Sanskrit', sign: '🕉️' }),
+    ]));
+    expect(getLanguageDisplay('SA')).toMatchObject({ label: 'Sanskrit', sign: '🕉️' });
+    expect(getLanguageDisplay('Sanskrit')).toMatchObject({ label: 'Sanskrit', sign: '🕉️' });
+  });
+
   it('includes Korean in supported UI locales', () => {
     expect(SUPPORTED_UI_LOCALES).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'ko', label: '한국어', flag: '🇰🇷', dir: 'ltr' }),

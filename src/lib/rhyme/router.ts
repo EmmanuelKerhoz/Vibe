@@ -33,7 +33,7 @@ const LANG_FAMILY_MAP: Record<string, FamilyId> = {
   // FIN (Finno-Ugric)
   fi: 'FIN', hu: 'FIN', et: 'FIN',
   // Indo-Iranian
-  hi: 'IIR', ur: 'IIR', bn: 'IIR', fa: 'IIR', pa: 'IIR',
+  hi: 'IIR', sa: 'IIR', ur: 'IIR', bn: 'IIR', fa: 'IIR', pa: 'IIR',
   // Austronesian
   id: 'AUS', ms: 'AUS', tl: 'AUS', mg: 'AUS',
   // Dravidian

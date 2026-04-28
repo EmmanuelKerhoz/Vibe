@@ -137,6 +137,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'RO',  aiName: 'Romanian',         sign: '🇷🇴' },
   { code: 'RU',  aiName: 'Russian',          sign: '🇷🇺' },
   // S
+  { code: 'SA',  aiName: 'Sanskrit',         sign: '🕉️', region: 'Classical / Vedic', isEthnical: true },
   { code: 'SR',  aiName: 'Serbian',          sign: '🇷🇸' },
   { code: 'SK',  aiName: 'Slovak',           sign: '🇸🇰' },
   { code: 'ES',  aiName: 'Spanish',          sign: '🇪🇸' },

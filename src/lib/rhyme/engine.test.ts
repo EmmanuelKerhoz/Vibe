@@ -466,6 +466,13 @@ describe('IIR rhyme engine', () => {
     const r = rhymeScore('\u0A2A\u0A3F\u0A06\u0A30', '\u0A38\u0A70\u0A38\u0A3E\u0A30', 'pa', 'pa');
     expect(r.family).toBe('IIR');
   });
+  it('SA: routes to IIR and preserves final inherent Sanskrit vowel', () => {
+    const r = rhymeScore('देव', 'सेव', 'sa', 'sa');
+    expect(r.family).toBe('IIR');
+    expect(r.nucleusA.vowels).toBe('a');
+    expect(r.nucleusB.vowels).toBe('a');
+    expect(r.score).toBeGreaterThan(0.65);
+  });
 });
 // ─── Family: AUS ─────────────────────────────────────────────────────────────
 describe('AUS rhyme engine', () => {
