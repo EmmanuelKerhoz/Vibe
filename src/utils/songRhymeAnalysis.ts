@@ -141,7 +141,7 @@ export const analyzeSongRhymes = async (
       return {
         sectionId: section.id,
         sectionName: section.name,
-        ...(sectionLangCode !== undefined && { langCode: sectionLangCode }),
+        langCode: sectionLangCode,
         detectedScheme: graphemicScheme,
         mode: 'graphemic' as const,
         isProxied,
