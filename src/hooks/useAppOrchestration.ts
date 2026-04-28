@@ -5,7 +5,7 @@
  * previously inlined in AppInnerContent:
  *   - session persistence
  *   - audio feedback
- *   - markup editor
+ *   - scroll to section (atomic — no sync effect)
  *   - app handlers (generate, navigation)
  *   - modal handlers
  *   - session actions (reset, import, export)
@@ -24,7 +24,7 @@
  */
 import { useTranslation } from '../i18n';
 import { useAudioFeedback } from './useAudioFeedback';
-import { useMarkupEditor } from './useMarkupEditor';
+import { useScrollToSection } from './useScrollToSection';
 import { useAppHandlers } from './useAppHandlers';
 import { useModalHandlers } from './useModalHandlers';
 import { useSessionActions } from './useSessionActions';
@@ -42,8 +42,8 @@ export interface AppOrchestrationResult {
   // Audio
   playAudioFeedback: ReturnType<typeof useAudioFeedback>['playAudioFeedback'];
   playAudioFeedbackRef: ReturnType<typeof useAudioFeedback>['playAudioFeedbackRef'];
-  // Markup / editor
-  scrollToSection: ReturnType<typeof useMarkupEditor>['scrollToSection'];
+  // Scroll
+  scrollToSection: ReturnType<typeof useScrollToSection>['scrollToSection'];
   // Handlers
   handleGlobalRegenerate: ReturnType<typeof useAppHandlers>['handleGlobalRegenerate'];
   handleOpenSettings: ReturnType<typeof useModalHandlers>['handleOpenSettings'];
@@ -91,8 +91,6 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
   });
 
   // ── Audio feedback ───────────────────────────────────────────────────────
-  // playAudioFeedbackRef is sourced directly from useAudioFeedback — the hook
-  // owns the stable ref to avoid duplicating the ref management here.
   const { playAudioFeedback, playAudioFeedbackRef } = useAudioFeedback(audioFeedback);
 
   // ── Analysis bridge ──────────────────────────────────────────────────────
@@ -106,10 +104,11 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
   const { index: webSimilarityIndex, resetIndex: resetWebSimilarityIndex } = useSimilarityContext();
   const { resetSuggestionCycle } = useTopicMoodSuggester({ hasApiKey });
 
-  // ── Markup editor ────────────────────────────────────────────────────────
-  const { scrollToSection } = useMarkupEditor({
-    editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
-    updateSongAndStructureWithHistory,
+  // ── Scroll to section (atomic — no sync effect) ──────────────────────────
+  const { scrollToSection } = useScrollToSection({
+    editMode,
+    markupText,
+    markupTextareaRef,
   });
 
   // ── Derived state ────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import { useAppStateContext } from '../../contexts/AppStateContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSongContext } from '../../contexts/SongContext';
-import { useMarkupEditor } from '../../hooks/useMarkupEditor';
+import { useSwitchEditMode } from '../../hooks/useSwitchEditMode';
 import { useDerivedAppState } from '../../hooks/useDerivedAppState';
 import { useSimilarityContext } from '../../contexts/SimilarityContext';
 
@@ -17,16 +17,20 @@ export function AppPanelOrchestrator() {
   const {
     activeTab, isStructureOpen, setIsStructureOpen,
     setIsLeftPanelOpen,
-    editMode, setEditMode, markupText, markupTextareaRef, setMarkupText,
+    editMode, setEditMode, markupText, setMarkupText,
     defaultEditMode, isSessionHydrated,
+    updateSongAndStructureWithHistory,
   } = appState;
 
   const { selectedLineId } = useComposerContext();
-  const { updateSongAndStructureWithHistory } = useSongContext();
+  const { updateSongAndStructureWithHistory: songCtxUpdate } = useSongContext();
 
-  const { switchEditMode } = useMarkupEditor({
-    editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
-    updateSongAndStructureWithHistory,
+  const { switchEditMode } = useSwitchEditMode({
+    editMode,
+    markupText,
+    setEditMode,
+    setMarkupText,
+    updateSongAndStructureWithHistory: updateSongAndStructureWithHistory ?? songCtxUpdate,
   });
 
   const { index: webSimilarityIndex } = useSimilarityContext();
@@ -69,12 +73,6 @@ export function AppPanelOrchestrator() {
   }, [isSuggestionsOpen, isStructureOpen, setIsStructureOpen]);
 
   // ── Effect 4: Auto-open left panel after initial hydration only ───────
-  // Intent: respect the author's intentionality. We only auto-open the
-  // composer panel on initial mount when the hydrated session has no real
-  // lyric content. We do NOT re-open it when the user manually empties
-  // their lyrics — that would surprise them. Explicit reset flows
-  // (useSessionActions.resetSong) already toggle isLeftPanelOpen
-  // themselves via the reset payload.
   const hasSyncedInitialLeftPanelRef = useRef(false);
   useEffect(() => {
     if (!isSessionHydrated) return;
@@ -85,4 +83,3 @@ export function AppPanelOrchestrator() {
 
   return null;
 }
-

@@ -1,7 +1,15 @@
+/**
+ * useMarkupEditor
+ * Composes useScrollToSection + useSwitchEditMode + the song→markup sync effect.
+ * Use this hook when you need the full markup editor (sync + scroll + mode switch).
+ * For lighter consumers, use useScrollToSection or useSwitchEditMode directly.
+ */
 import { useCallback, useEffect, useRef } from 'react';
-import { serializeSongToMarkup, parseMarkupToSections } from '../utils/markupParser';
+import { serializeSongToMarkup } from '../utils/markupParser';
 import { languageNameToCode } from '../constants/langFamilyMap';
 import { useSongContext } from '../contexts/SongContext';
+import { useScrollToSection } from './useScrollToSection';
+import { useSwitchEditMode } from './useSwitchEditMode';
 import type { EditMode } from '../types';
 
 interface UseMarkupEditorParams {
@@ -40,60 +48,27 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     ? 'rtl'
     : 'ltr';
 
-  // ── Stable callbacks wrapping the pure utils ──────────────────────────────
   const serialize = useCallback(
     () => serializeSongToMarkup(song),
     [song],
   );
 
-  const parse = useCallback(
-    () => parseMarkupToSections(markupText, song),
-    [markupText, song],
-  );
+  // ── Atomic sub-hooks ─────────────────────────────────────────────────────
+  const { scrollToSection } = useScrollToSection({
+    editMode,
+    markupText,
+    markupTextareaRef,
+  });
 
-  // ── Scroll helper ──────────────────────────────────────────────────
-  const scrollToSection = useCallback(
-    (section: import('../types').Section) => {
-      if (editMode !== 'section') {
-        if (!markupTextareaRef.current) return;
-        let searchStr = `**[${section.name}]**`;
-        let index = markupText.indexOf(searchStr);
-        if (index === -1) {
-          searchStr = `[${section.name}]`;
-          index = markupText.indexOf(searchStr);
-        }
-        if (index !== -1) {
-          const ta = markupTextareaRef.current;
-          ta.focus();
-          ta.setSelectionRange(index, index + searchStr.length);
-          const rawLineHeight = window.getComputedStyle(ta).lineHeight;
-          const lineHeight = parseFloat(rawLineHeight);
-          const resolvedLineHeight = isFinite(lineHeight) ? lineHeight : 20;
-          ta.scrollTop =
-            (markupText.substring(0, index).split('\n').length - 2) *
-            resolvedLineHeight;
-        }
-      } else {
-        const el = document.getElementById(`section-${section.id}`);
-        if (el) {
-          const container = el.closest('.overflow-y-auto');
-          if (container) {
-            const containerRect = container.getBoundingClientRect();
-            const elRect = el.getBoundingClientRect();
-            container.scrollTo({
-              top: container.scrollTop + elRect.top - containerRect.top - 20,
-              behavior: 'smooth',
-            });
-          } else {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }
-      }
-    },
-    [editMode, markupText, markupTextareaRef],
-  );
+  const { switchEditMode, handleMarkupToggle } = useSwitchEditMode({
+    editMode,
+    markupText,
+    setEditMode,
+    setMarkupText,
+    updateSongAndStructureWithHistory,
+  });
 
-  // ── Sync song → markupText ───────────────────────────────────────────
+  // ── Sync song → markupText ───────────────────────────────────────────────
   useEffect(() => {
     const songChanged = previousSongRef.current !== song;
     previousSongRef.current = song;
@@ -109,9 +84,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
       return;
     }
 
-    // Guard against race condition: only hydrate when the editor is empty.
-    // If the user has content in the editor (even a single non-whitespace
-    // character), we never clobber it with the serialized song.
     if (markupText.trim() !== '') {
       lastHydratedMarkupRef.current = serializedSong;
       return;
@@ -122,66 +94,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     lastHydratedMarkupRef.current = serializedSong;
     setMarkupText(serializedSong);
   }, [editMode, markupText, serialize, setMarkupText, song]);
-
-  // ── Mode switching ───────────────────────────────────────────────
-  const switchEditMode = useCallback(
-    (target: EditMode) => {
-      if (target === editMode) return;
-
-      if (
-        (editMode === 'section' || editMode === 'phonetic') &&
-        (target === 'text' || target === 'markdown')
-      ) {
-        setMarkupText(serialize());
-        setEditMode(target);
-        return;
-      }
-
-      if (
-        target === 'section' &&
-        (editMode === 'text' || editMode === 'markdown')
-      ) {
-        const newSections = parse();
-        if (newSections.length > 0)
-          updateSongAndStructureWithHistory(
-            newSections,
-            newSections.map(s => s.name),
-          );
-        setEditMode('section');
-        return;
-      }
-
-      if (
-        target === 'phonetic' &&
-        (editMode === 'text' || editMode === 'markdown')
-      ) {
-        const newSections = parse();
-        if (newSections.length > 0)
-          updateSongAndStructureWithHistory(
-            newSections,
-            newSections.map(s => s.name),
-          );
-        setEditMode('phonetic');
-        return;
-      }
-
-      // text ↔ markdown: same buffer, no conversion needed
-      setEditMode(target);
-    },
-    [
-      editMode,
-      serialize,
-      parse,
-      setEditMode,
-      setMarkupText,
-      updateSongAndStructureWithHistory,
-    ],
-  );
-
-  /** Convenience toggle: markdown ↔ section */
-  const handleMarkupToggle = useCallback(() => {
-    switchEditMode(editMode === 'markdown' ? 'section' : 'markdown');
-  }, [editMode, switchEditMode]);
 
   return { scrollToSection, handleMarkupToggle, switchEditMode, markupDirection };
 }
