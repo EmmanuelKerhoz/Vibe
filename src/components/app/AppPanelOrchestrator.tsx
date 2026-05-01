@@ -19,18 +19,17 @@ export function AppPanelOrchestrator() {
     setIsLeftPanelOpen,
     editMode, setEditMode, markupText, setMarkupText,
     defaultEditMode, isSessionHydrated,
-    updateSongAndStructureWithHistory,
   } = appState;
 
   const { selectedLineId } = useComposerContext();
-  const { updateSongAndStructureWithHistory: songCtxUpdate } = useSongContext();
+  const { updateSongAndStructureWithHistory } = useSongContext();
 
   const { switchEditMode } = useSwitchEditMode({
     editMode,
     markupText,
     setEditMode,
     setMarkupText,
-    updateSongAndStructureWithHistory: updateSongAndStructureWithHistory ?? songCtxUpdate,
+    updateSongAndStructureWithHistory,
   });
 
   const { index: webSimilarityIndex } = useSimilarityContext();
