@@ -4,7 +4,7 @@
  * Use this hook when you need the full markup editor (sync + scroll + mode switch).
  * For lighter consumers, use useScrollToSection or useSwitchEditMode directly.
  */
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { languageNameToCode } from '../constants/langFamilyMap';
 import { useSongContext } from '../contexts/SongContext';
 import type { UpdateSongAndStructureWithHistory } from './useSongHistoryState';

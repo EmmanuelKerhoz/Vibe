@@ -76,6 +76,10 @@ describe('useScrollToSection', () => {
     Object.defineProperty(container, 'scrollTop', { value: 5, writable: true });
     vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({ top: 10 } as DOMRect);
     vi.spyOn(element, 'getBoundingClientRect').mockReturnValue({ top: 70 } as DOMRect);
+    Object.defineProperty(container, 'scrollTo', {
+      value: vi.fn(),
+      configurable: true,
+    });
     const scrollTo = vi.spyOn(container, 'scrollTo').mockImplementation(() => undefined);
 
     const { result } = renderHook(() => useScrollToSection({
