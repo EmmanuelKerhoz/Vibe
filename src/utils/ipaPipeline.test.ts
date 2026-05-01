@@ -69,7 +69,7 @@ describe('ipaPipeline', () => {
 // ─── getToneWeightForLangCode + TONE_WEIGHT_DEFAULTS ─────────────────────────
 
 describe('getToneWeightForLangCode', () => {
-  it('returns the default weight for a tonal language (Sinhalese family → SIN)', () => {
+  it('returns the default weight for a tonal language (Vietnamese/ALGO-VIET)', () => {
     // Vietnamese is in ALGO-VIET with weight 0.70
     const weight = getToneWeightForLangCode('vi');
     expect(weight).toBe(TONE_WEIGHT_DEFAULTS['ALGO-VIET']);
