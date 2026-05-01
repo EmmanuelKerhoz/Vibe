@@ -73,7 +73,7 @@ const detectLineLang = (
   lineText: string,
   sectionLang: string,
 ): { text: string; langCode: string } => {
-  const INLINE_TAG = /^\[lang:([a-z]{2,3})\]\s*/i;
+  const INLINE_TAG = /^\[lang:([a-z]{2,3}(?:-[a-z]{2})?)\]\s*/i;
   const match = INLINE_TAG.exec(lineText);
   if (match) {
     return {
@@ -94,8 +94,8 @@ const detectLineLang = (
  * - rhymePosition from segmentation is forwarded to LocalRhymePairAnalysis.
  * - Per-line language override via detectLineLang() enables cross-family
  *   code-switching pairs. When line A and line B resolve to different langCodes,
- *   compareTextsWithIPA is called with { langCode2 } so each line goes through
- *   its own G2P family. The effective threshold is min(th_A, th_B).
+ *   its own G2P family, and this stage records the resulting similarity-based
+ *   diagnostics without applying any thresholding.
  *
  * @param song - The song sections to analyze
  * @param detectCrossSectionBoundary - When true, also compares the last line of
@@ -141,7 +141,7 @@ export const analyzeSongRhymes = async (
       return {
         sectionId: section.id,
         sectionName: section.name,
-        langCode: sectionLangCode,
+        ...(sectionLangCode !== undefined ? { langCode: sectionLangCode } : {}),
         detectedScheme: graphemicScheme,
         mode: 'graphemic' as const,
         isProxied,
@@ -195,7 +195,7 @@ export const analyzeSongRhymes = async (
       return {
         sectionId: section.id,
         sectionName: section.name,
-        langCode: sectionLangCode,
+        ...(sectionLangCode !== undefined ? { langCode: sectionLangCode } : {}),
         detectedScheme: ipaScheme ?? graphemicScheme,
         mode: 'ipa' as const,
         isProxied,
@@ -208,7 +208,7 @@ export const analyzeSongRhymes = async (
       return {
         sectionId: section.id,
         sectionName: section.name,
-        langCode: sectionLangCode,
+        ...(sectionLangCode !== undefined ? { langCode: sectionLangCode } : {}),
         detectedScheme: graphemicScheme,
         mode: 'graphemic' as const,
         isProxied,

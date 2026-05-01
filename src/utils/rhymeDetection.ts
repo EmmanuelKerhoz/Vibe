@@ -323,15 +323,15 @@ export type RhymePosition = 'end' | 'internal' | 'enjambed';
  * Result of segmenting a verse line into its rhyming unit.
  * `rhymingUnit` is the normalized token passed to the IPA/graphemic pipeline.
  * `position` describes the structural role of that unit within the line.
- * `syllableIndex` is set for agglutinative families (TRK/FIN/KOR) and
- * indicates which syllable of the last word carries the rhyme (0-based from
- * the end, so 0 = final syllable).
+ * `syllableIndex`, when present, indicates which syllable of the last word
+ * carries the rhyme (0-based from the end, so 0 = final syllable). It is
+ * only provided when a meaningful syllable-level rhyme position is known.
  */
 export type VerseRhymingSegment = {
   rhymingUnit: string;
   position: RhymePosition;
   originalText: string;
-  syllableIndex: number;
+  syllableIndex?: number;
 };
 
 /**
@@ -360,17 +360,51 @@ const AGGLUTINATIVE_FAMILIES = new Set(['ALGO-TRK', 'ALGO-FIN', 'ALGO-KOR']);
  * Detect whether a line contains an internal rhyme by scanning for a
  * repeated rhyme suffix pattern before the final word.
  *
- * Strategy: check if any pre-final token forms a valid graphemic rhyme
- * with the last word. This handles trailing silent consonants correctly
- * (e.g. "nuit" / "lui").
+ * Strategy: derive the last-vowel-group suffix for each candidate token and
+ * for the end word, then check whether one suffix is a prefix of the other
+ * (which handles trailing silent consonants, e.g. "nuit" suffix "uit" matches
+ * "lui" suffix "ui" because "uit" starts with "ui"). The shared nucleus must
+ * be at least 2 characters to avoid false positives on common single-vowel
+ * endings like "e".
  *
  * Returns the mid-line token that mirrors the end rhyme, or null if none.
  */
 const detectInternalRhymeToken = (tokens: string[], lastWord: string, langCode?: string): string | null => {
   if (tokens.length < 2) return null;
+
+  // Derive last-vowel-group suffix for the end word.
+  const lwVowelGroups = getVowelGroups(lastWord);
+  const lwLastVG = lwVowelGroups.length > 0 ? lwVowelGroups[lwVowelGroups.length - 1]! : null;
+  const lwSuffix = lwLastVG !== null
+    ? canonicalizeRhymeSuffix(lastWord.slice(lwLastVG.start), langCode)
+    : canonicalizeRhymeSuffix(lastWord, langCode);
+
+  // A single-character nucleus is too common to be a meaningful internal rhyme.
+  if (!lwSuffix || lwSuffix.length < 2) return null;
+
   const candidates = tokens.slice(0, -1);
   for (const token of candidates) {
-    if (doLinesRhymeGraphemic(token, lastWord, langCode)) return token;
+    const normalized = normalizeWord(token, langCode);
+    if (!normalized) continue;
+
+    const vowelGroups = getVowelGroups(normalized);
+    const lastVG = vowelGroups.length > 0 ? vowelGroups[vowelGroups.length - 1]! : null;
+    const suffix = lastVG !== null
+      ? canonicalizeRhymeSuffix(normalized.slice(lastVG.start), langCode)
+      : canonicalizeRhymeSuffix(normalized, langCode);
+
+    if (!suffix) continue;
+
+    // One suffix must be a leading prefix of the other so that "uit"/"ui"
+    // (nuit/lui) and "oir"/"oir" (soir/avoir) both match, while "e"/"are"
+    // (marche/encore) do not. Require >= 2 shared characters.
+    const shared = suffix.startsWith(lwSuffix)
+      ? lwSuffix
+      : lwSuffix.startsWith(suffix)
+        ? suffix
+        : null;
+
+    if (shared && shared.length >= 2) return token;
   }
   return null;
 };
@@ -404,7 +438,7 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
   const tokens = stripped.split(/\s+/).filter(Boolean);
 
   if (tokens.length === 0) {
-    return { rhymingUnit: '', position: 'end', originalText: line, syllableIndex: 0 };
+    return { rhymingUnit: '', position: 'end', originalText: line };
   }
 
   // ── Agglutinative: pick last stressed syllable of last word ──────────────
@@ -412,14 +446,15 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
     const lastToken = tokens[tokens.length - 1]!;
     const normalized = normalizeWord(lastToken, langCode);
     const vowelGroups = getVowelGroups(normalized);
+    // For non-Latin scripts (e.g. Hangul) normalizeWord may strip everything;
+    // fall back to the original token so rhymingUnit is never empty.
     const rhymingUnit = vowelGroups.length > 0
       ? normalized.slice(vowelGroups[vowelGroups.length - 1]!.start)
-      : normalized;
+      : (normalized || lastToken);
     return {
       rhymingUnit,
       position: 'end',
       originalText: line,
-      syllableIndex: 0,
     };
   }
 
@@ -433,7 +468,6 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
       rhymingUnit: contentNormalized,
       position: 'enjambed',
       originalText: line,
-      syllableIndex: 0,
     };
   }
 
@@ -446,7 +480,6 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
         rhymingUnit: wordMatch.normalizedWord,
         position: 'internal',
         originalText: line,
-        syllableIndex: 0,
       };
     }
   }
@@ -457,7 +490,6 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
     rhymingUnit,
     position: 'end',
     originalText: line,
-    syllableIndex: 0,
   };
 };
 
