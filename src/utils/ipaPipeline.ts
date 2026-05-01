@@ -99,15 +99,21 @@ export const TONE_WEIGHT_DEFAULTS: Partial<Record<AlgoFamily, number>> = {
 
 /**
  * Resolve the effective tone weight for a given language code.
- * Non-tonal families always return 0.0.
+ * Non-tonal families always return 0.0 — overrides are clamped to 0.0 for
+ * non-tonal families so callers cannot accidentally enable tonal penalties
+ * on languages that carry no lexical tone.
  * @param langCode - ISO 639 code
  * @param override - Optional caller-supplied value that takes precedence
+ *                   for tonal families
  */
 export const getToneWeightForLangCode = (langCode: string, override?: number): number => {
-  if (override !== undefined) return Math.max(0, Math.min(1, override));
   const family = getAlgoFamily(langCode);
   if (!family) return 0.0;
-  return TONE_WEIGHT_DEFAULTS[family] ?? 0.0;
+  const defaultWeight = TONE_WEIGHT_DEFAULTS[family] ?? 0.0;
+  // Non-tonal families: clamp to 0.0 regardless of any caller override.
+  if (defaultWeight === 0.0) return 0.0;
+  if (override !== undefined) return Math.max(0, Math.min(1, override));
+  return defaultWeight;
 };
 
 /**
@@ -313,6 +319,20 @@ export const compareTextsWithIPA = async (
   const base = calculateRhymeSimilarity(rn1, rn2, true);
 
   if (effectiveToneWeight <= 0) return base;
+
+  // Only penalise when tones are known AND differ — avoids penalising identical
+  // tones and prevents double-penalisation when tone marks are already encoded
+  // in the rhyme nucleus (e.g. KWA/CRV families with explicit tone diacritics).
+  const tone1 = result1.syllables.length > 0
+    ? result1.syllables[result1.syllables.length - 1]?.tone
+    : undefined;
+  const tone2 = result2.syllables.length > 0
+    ? result2.syllables[result2.syllables.length - 1]?.tone
+    : undefined;
+  const tonesKnown = tone1 !== undefined && tone2 !== undefined;
+  const tonesMismatch = tonesKnown && tone1 !== tone2;
+
+  if (!tonesMismatch) return base;
 
   const adjustedScore = applyTonePenalty(base.score, effectiveToneWeight);
   if (adjustedScore === base.score) return base;
