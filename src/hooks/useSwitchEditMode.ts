@@ -4,16 +4,18 @@
  * Use this when you need switchEditMode without the full useMarkupEditor overhead.
  */
 import { useCallback } from 'react';
-import { serializeSongToMarkup, parseMarkupToSections } from '../utils/markupParser';
-import { useSongContext } from '../contexts/SongContext';
-import type { EditMode, Section } from '../types';
+import { parseMarkupToSections } from '../utils/markupParser';
+import type { UpdateSongAndStructureWithHistory } from './useSongHistoryState';
+import { useSongMarkupSerializer } from './useSongMarkupSerializer';
+import type { EditMode } from '../types';
 
 interface UseSwitchEditModeParams {
   editMode: EditMode;
   markupText: string;
   setEditMode: (v: EditMode) => void;
   setMarkupText: (v: string) => void;
-  updateSongAndStructureWithHistory: (song: Section[], structure: string[]) => void;
+  serializeSong?: () => string;
+  updateSongAndStructureWithHistory: UpdateSongAndStructureWithHistory;
 }
 
 export function useSwitchEditMode({
@@ -21,11 +23,12 @@ export function useSwitchEditMode({
   markupText,
   setEditMode,
   setMarkupText,
+  serializeSong: serializeSongParam,
   updateSongAndStructureWithHistory,
 }: UseSwitchEditModeParams) {
-  const { song } = useSongContext();
+  const { song, serializeSong: serializeSongFromContext } = useSongMarkupSerializer();
 
-  const serialize = useCallback(() => serializeSongToMarkup(song), [song]);
+  const serializeSong = serializeSongParam ?? serializeSongFromContext;
   const parse = useCallback(
     () => parseMarkupToSections(markupText, song),
     [markupText, song],
@@ -39,7 +42,7 @@ export function useSwitchEditMode({
         (editMode === 'section' || editMode === 'phonetic') &&
         (target === 'text' || target === 'markdown')
       ) {
-        setMarkupText(serialize());
+        setMarkupText(serializeSong());
         setEditMode(target);
         return;
       }
@@ -77,7 +80,7 @@ export function useSwitchEditMode({
     },
     [
       editMode,
-      serialize,
+      serializeSong,
       parse,
       setEditMode,
       setMarkupText,
