@@ -12,6 +12,17 @@ interface UseScrollToSectionParams {
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
+export const resolveLineHeightPx = (element: HTMLElement): number => {
+  const computedStyle = window.getComputedStyle(element);
+  const lineHeight = Number.parseFloat(computedStyle.lineHeight);
+  if (Number.isFinite(lineHeight) && lineHeight > 0) return lineHeight;
+
+  const fontSize = Number.parseFloat(computedStyle.fontSize);
+  if (Number.isFinite(fontSize) && fontSize > 0) return fontSize * 1.2;
+
+  return 20;
+};
+
 export function useScrollToSection({
   editMode,
   markupText,
@@ -31,12 +42,9 @@ export function useScrollToSection({
           const ta = markupTextareaRef.current;
           ta.focus();
           ta.setSelectionRange(index, index + searchStr.length);
-          const rawLineHeight = window.getComputedStyle(ta).lineHeight;
-          const lineHeight = parseFloat(rawLineHeight);
-          const resolvedLineHeight = isFinite(lineHeight) ? lineHeight : 20;
           ta.scrollTop =
             (markupText.substring(0, index).split('\n').length - 2) *
-            resolvedLineHeight;
+            resolveLineHeightPx(ta);
         }
       } else {
         const el = document.getElementById(`section-${section.id}`);

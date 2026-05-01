@@ -4,12 +4,13 @@
  * Use this hook when you need the full markup editor (sync + scroll + mode switch).
  * For lighter consumers, use useScrollToSection or useSwitchEditMode directly.
  */
-import { useCallback, useEffect, useRef } from 'react';
-import { serializeSongToMarkup } from '../utils/markupParser';
+import { useEffect, useRef } from 'react';
 import { languageNameToCode } from '../constants/langFamilyMap';
 import { useSongContext } from '../contexts/SongContext';
+import type { UpdateSongAndStructureWithHistory } from './useSongHistoryState';
 import { useScrollToSection } from './useScrollToSection';
 import { useSwitchEditMode } from './useSwitchEditMode';
+import { useSongMarkupSerializer } from './useSongMarkupSerializer';
 import type { EditMode } from '../types';
 
 interface UseMarkupEditorParams {
@@ -18,14 +19,12 @@ interface UseMarkupEditorParams {
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
   setEditMode: (v: EditMode) => void;
   setMarkupText: (v: string) => void;
-  updateSongAndStructureWithHistory: (
-    song: import('../types').Section[],
-    structure: string[],
-  ) => void;
+  updateSongAndStructureWithHistory: UpdateSongAndStructureWithHistory;
 }
 
 export function useMarkupEditor(params: UseMarkupEditorParams) {
-  const { song, songLanguage } = useSongContext();
+  const { songLanguage } = useSongContext();
+  const { song, serializeSong } = useSongMarkupSerializer();
   const lastHydratedMarkupRef = useRef('');
   const previousSongRef = useRef(song);
   const {
@@ -48,11 +47,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     ? 'rtl'
     : 'ltr';
 
-  const serialize = useCallback(
-    () => serializeSongToMarkup(song),
-    [song],
-  );
-
   // ── Atomic sub-hooks ─────────────────────────────────────────────────────
   const { scrollToSection } = useScrollToSection({
     editMode,
@@ -65,6 +59,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     markupText,
     setEditMode,
     setMarkupText,
+    serializeSong,
     updateSongAndStructureWithHistory,
   });
 
@@ -75,7 +70,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
 
     if (editMode !== 'text' && editMode !== 'markdown') return;
 
-    const serializedSong = serialize();
+    const serializedSong = serializeSong();
     if (!serializedSong.trim()) return;
 
     if (songChanged) {
@@ -93,7 +88,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
 
     lastHydratedMarkupRef.current = serializedSong;
     setMarkupText(serializedSong);
-  }, [editMode, markupText, serialize, setMarkupText, song]);
+  }, [editMode, markupText, serializeSong, setMarkupText, song]);
 
   return { scrollToSection, handleMarkupToggle, switchEditMode, markupDirection };
 }

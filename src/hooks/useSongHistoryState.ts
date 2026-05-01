@@ -11,6 +11,11 @@ type SongHistorySnapshot = {
   structure: string[];
 };
 
+export type UpdateSongAndStructureWithHistory = (
+  newSong: Section[],
+  newStructure: string[],
+) => void;
+
 type SongHistoryState = SongHistorySnapshot & {
   past: SongHistorySnapshot[];
   future: SongHistorySnapshot[];
@@ -136,7 +141,7 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     updateState(current => ({ song: current.song, structure: newStructure }));
   }, [updateState]);
 
-  const updateSongAndStructureWithHistory = useCallback((newSong: Section[], newStructure: string[]) => {
+  const updateSongAndStructureWithHistory: UpdateSongAndStructureWithHistory = useCallback((newSong, newStructure) => {
     updateState(() => ({ song: newSong, structure: newStructure }));
   }, [updateState]);
 

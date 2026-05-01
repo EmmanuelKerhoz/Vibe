@@ -14,6 +14,9 @@ import { describe, it, expect } from 'vitest';
 import { useSongHistoryState } from '../useSongHistoryState';
 import { useSongEditor } from '../useSongEditor';
 import { useMarkupEditor } from '../useMarkupEditor';
+import { useScrollToSection } from '../useScrollToSection';
+import { useSwitchEditMode } from '../useSwitchEditMode';
+import { useSongMarkupSerializer } from '../useSongMarkupSerializer';
 import { useTitleGenerator } from '../useTitleGenerator';
 import { useSongAnalysis } from '../useSongAnalysis';
 import { useSongComposer } from '../useSongComposer';
@@ -91,6 +94,9 @@ describe('Hook import smoke-tests', () => {
       ['useSongHistoryState', useSongHistoryState],
       ['useSongEditor', useSongEditor],
       ['useMarkupEditor', useMarkupEditor],
+      ['useScrollToSection', useScrollToSection],
+      ['useSwitchEditMode', useSwitchEditMode],
+      ['useSongMarkupSerializer', useSongMarkupSerializer],
       ['useTitleGenerator', useTitleGenerator],
       ['useSongAnalysis', useSongAnalysis],
       ['useSongComposer', useSongComposer],
