@@ -22,7 +22,7 @@ export function AppPanelOrchestrator() {
   } = appState;
 
   const { selectedLineId } = useComposerContext();
-  const { updateSongAndStructureWithHistory } = useSongContext();
+  const { updateSongAndStructureWithHistory, serializeSong } = useSongContext();
 
   const { switchEditMode } = useSwitchEditMode({
     editMode,
@@ -30,6 +30,7 @@ export function AppPanelOrchestrator() {
     setEditMode,
     setMarkupText,
     updateSongAndStructureWithHistory,
+    serializeSong,
   });
 
   const { index: webSimilarityIndex } = useSimilarityContext();
