@@ -24,7 +24,7 @@ interface UseMarkupEditorParams {
 
 export function useMarkupEditor(params: UseMarkupEditorParams) {
   const { songLanguage } = useSongContext();
-  const { song, serializeSong } = useSongMarkupSerializer();
+  const { song } = useSongMarkupSerializer();
   const lastHydratedMarkupRef = useRef('');
   const previousSongRef = useRef(song);
   const {
@@ -59,7 +59,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     markupText,
     setEditMode,
     setMarkupText,
-    serializeSong,
     updateSongAndStructureWithHistory,
   });
 
@@ -88,7 +87,7 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
 
     lastHydratedMarkupRef.current = serializedSong;
     setMarkupText(serializedSong);
-  }, [editMode, markupText, serializeSong, setMarkupText, song]);
+  }, [editMode, markupText, setMarkupText, song]);
 
   return { scrollToSection, handleMarkupToggle, switchEditMode, markupDirection };
 }
