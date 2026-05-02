@@ -28,26 +28,13 @@ export const useSongEditor = ({
 }: UseSongEditorParams) => {
   const {
     song,
-    structure,
-    newSectionName,
-    setNewSectionName,
-    updateState,
-    updateStructureWithHistory,
-    updateSongAndStructureWithHistory,
     title,
     topic,
     mood,
     songLanguage,
-  } = useSongContext();
-  const { removeStructureItem, addStructureItem, normalizeStructure } = useSectionManager({
-    song,
-    structure,
-    newSectionName,
-    setNewSectionName,
-    updateState,
-    updateStructureWithHistory,
     updateSongAndStructureWithHistory,
-  });
+  } = useSongContext();
+  const { removeStructureItem, addStructureItem, normalizeStructure } = useSectionManager();
 
   // ── File operations ────────────────────────────────────────────────────────
   const exportSong = useCallback(async (format: ExportFormat) => {
