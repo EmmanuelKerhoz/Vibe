@@ -135,8 +135,6 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   // ── Library actions ──────────────────────────────────────────────
   const { handleOpenSaveToLibraryModal } = useLibraryActions({
     song,
-    replaceStateWithoutHistory,
-    clearHistory,
     setSimilarityMatches,
     setLibraryCount,
     setLibraryAssets,
