@@ -12,6 +12,10 @@ interface UseScrollToSectionParams {
   markupTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
+// -1 to convert line count to 0-based index, -1 more to keep the matched
+// header one line above the visible top edge for visual context.
+const SCROLL_HEADER_OFFSET_LINES = 2;
+
 export const resolveLineHeightPx = (element: HTMLElement): number => {
   const computedStyle = window.getComputedStyle(element);
   const lineHeight = Number.parseFloat(computedStyle.lineHeight);
@@ -43,7 +47,8 @@ export function useScrollToSection({
           ta.focus();
           ta.setSelectionRange(index, index + searchStr.length);
           ta.scrollTop =
-            (markupText.substring(0, index).split('\n').length - 2) *
+            (markupText.substring(0, index).split('\n').length -
+              SCROLL_HEADER_OFFSET_LINES) *
             resolveLineHeightPx(ta);
         }
       } else {

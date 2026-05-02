@@ -14,7 +14,7 @@ interface UseSwitchEditModeParams {
   markupText: string;
   setEditMode: (v: EditMode) => void;
   setMarkupText: (v: string) => void;
-  serializeSong?: () => string;
+  serializeSong: () => string;
   updateSongAndStructureWithHistory: UpdateSongAndStructureWithHistory;
 }
 
@@ -23,12 +23,13 @@ export function useSwitchEditMode({
   markupText,
   setEditMode,
   setMarkupText,
-  serializeSong: serializeSongParam,
+  serializeSong,
   updateSongAndStructureWithHistory,
 }: UseSwitchEditModeParams) {
-  const { song, serializeSong: serializeSongFromContext } = useSongMarkupSerializer();
+  // song is still needed as context for parseMarkupToSections.
+  // serializeSong is injected by the caller — no double SongContext subscription.
+  const { song } = useSongMarkupSerializer();
 
-  const serializeSong = serializeSongParam ?? serializeSongFromContext;
   const parse = useCallback(
     () => parseMarkupToSections(markupText, song),
     [markupText, song],
@@ -52,12 +53,13 @@ export function useSwitchEditMode({
         (editMode === 'text' || editMode === 'markdown')
       ) {
         const newSections = parse();
-        if (newSections.length > 0)
+        if (newSections.length > 0) {
           updateSongAndStructureWithHistory(
             newSections,
             newSections.map(s => s.name),
           );
-        setEditMode('section');
+          setEditMode('section');
+        }
         return;
       }
 
@@ -66,12 +68,13 @@ export function useSwitchEditMode({
         (editMode === 'text' || editMode === 'markdown')
       ) {
         const newSections = parse();
-        if (newSections.length > 0)
+        if (newSections.length > 0) {
           updateSongAndStructureWithHistory(
             newSections,
             newSections.map(s => s.name),
           );
-        setEditMode('phonetic');
+          setEditMode('phonetic');
+        }
         return;
       }
 

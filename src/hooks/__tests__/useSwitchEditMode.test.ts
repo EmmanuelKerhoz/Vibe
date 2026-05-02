@@ -16,6 +16,7 @@ const baseParams = () => ({
   markupText: '',
   setEditMode: vi.fn(),
   setMarkupText: vi.fn(),
+  serializeSong: vi.fn(() => ''),
   updateSongAndStructureWithHistory: vi.fn(),
 });
 
@@ -66,5 +67,26 @@ describe('useSwitchEditMode', () => {
       lines: [expect.objectContaining({ text: 'Neon lights' })],
     }));
     expect(setEditMode).toHaveBeenCalledWith('section');
+  });
+
+  it('does not update song or switch mode when markup yields no parseable sections', () => {
+    mockSongContextValues.song = [] as Section[];
+    const updateSongAndStructureWithHistory = vi.fn();
+    const setEditMode = vi.fn();
+
+    const { result } = renderHook(() => useSwitchEditMode({
+      ...baseParams(),
+      editMode: 'markdown',
+      markupText: '',
+      setEditMode,
+      updateSongAndStructureWithHistory,
+    }));
+
+    act(() => {
+      result.current.switchEditMode('section');
+    });
+
+    expect(updateSongAndStructureWithHistory).not.toHaveBeenCalled();
+    expect(setEditMode).not.toHaveBeenCalled();
   });
 });
