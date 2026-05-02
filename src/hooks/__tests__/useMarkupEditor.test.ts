@@ -277,7 +277,7 @@ describe('useMarkupEditor', () => {
     expect(song[0]?.lines[0]?.text).toBe('Neon lights');
   });
 
-  it('preserves the previous song state on malformed markdown without throwing', () => {
+  it('preserves the previous song state and current mode on malformed markdown without throwing', () => {
     const previousSong: Section[] = [{
       id: 'section-1',
       name: 'Verse',
@@ -312,7 +312,7 @@ describe('useMarkupEditor', () => {
     }).not.toThrow();
 
     expect(updateSongAndStructureWithHistory).not.toHaveBeenCalled();
-    expect(setEditMode).toHaveBeenCalledWith('section');
+    expect(setEditMode).not.toHaveBeenCalled();
   });
 
   it('serializes song into markup when switchEditMode is called from section to text', () => {

@@ -9,6 +9,7 @@ import { useAppStateContext } from '../../contexts/AppStateContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSongContext } from '../../contexts/SongContext';
 import { useSwitchEditMode } from '../../hooks/useSwitchEditMode';
+import { useSongMarkupSerializer } from '../../hooks/useSongMarkupSerializer';
 import { useDerivedAppState } from '../../hooks/useDerivedAppState';
 import { useSimilarityContext } from '../../contexts/SimilarityContext';
 
@@ -23,12 +24,14 @@ export function AppPanelOrchestrator() {
 
   const { selectedLineId } = useComposerContext();
   const { updateSongAndStructureWithHistory } = useSongContext();
+  const { serializeSong } = useSongMarkupSerializer();
 
   const { switchEditMode } = useSwitchEditMode({
     editMode,
     markupText,
     setEditMode,
     setMarkupText,
+    serializeSong,
     updateSongAndStructureWithHistory,
   });
 
