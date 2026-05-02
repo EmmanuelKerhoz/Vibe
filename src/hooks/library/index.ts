@@ -4,3 +4,4 @@
  */
 export { useLibraryState } from '../useLibraryState';
 export { useLibraryActions } from '../useLibraryActions';
+export { useLibrarySongActions } from '../useLibrarySongActions';

@@ -109,8 +109,6 @@ export function AppModalLayer() {
     handleDeleteLibraryAsset, handlePurgeLibrary,
   } = useLibraryActions({
     song,
-    replaceStateWithoutHistory,
-    clearHistory,
     setSimilarityMatches,
     setLibraryCount,
     setLibraryAssets,
