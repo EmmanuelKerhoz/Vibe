@@ -59,7 +59,6 @@ export function useMarkupEditor(params: UseMarkupEditorParams) {
     markupText,
     setEditMode,
     setMarkupText,
-    serializeSong,
     updateSongAndStructureWithHistory,
   });
 

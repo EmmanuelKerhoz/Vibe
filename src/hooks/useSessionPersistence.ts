@@ -11,26 +11,9 @@ import { SessionSchema } from '../schemas/sessionSchema';
 const SAVE_DEBOUNCE_MS = 500;
 
 interface UseSessionPersistenceParams {
-  song: Section[];
-  structure: string[];
-  title: string;
-  titleOrigin: 'user' | 'ai';
-  topic: string;
-  mood: string;
-  rhymeScheme: string;
-  targetSyllables: number;
-  genre: string;
-  tempo: number;
-  instrumentation: string;
-  rhythm: string;
-  narrative: string;
-  musicalPrompt: string;
-  songLanguage: string;
   isSessionHydrated: boolean;
   setIsSessionHydrated: (v: boolean) => void;
   setHasSavedSession: (v: boolean) => void;
-  replaceStateWithoutHistory: (song: Section[], structure: string[]) => void;
-  clearHistory: () => void;
 }
 
 /**
@@ -47,12 +30,12 @@ const normalizeStoredSection = (s: unknown): Section => normalizeLoadedSection(t
 
 export function useSessionPersistence(params: UseSessionPersistenceParams): void {
   const {
-    song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
-    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
-    replaceStateWithoutHistory, clearHistory,
   } = params;
   const {
+    song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
+    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
+    replaceStateWithoutHistory, clearHistory,
     setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme, setTargetSyllables,
     setGenre, setTempo, setInstrumentation, setRhythm, setNarrative, setMusicalPrompt,
     setSongLanguage,
