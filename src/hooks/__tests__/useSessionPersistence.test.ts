@@ -4,7 +4,8 @@ import { DEFAULT_STRUCTURE } from '../../constants/editor';
 import { useSessionPersistence } from '../useSessionPersistence';
 import { createEmptySong } from '../../utils/songDefaults';
 
-const songContextSetters = vi.hoisted(() => ({
+const songContextMock = vi.hoisted(() => ({
+  // Setters
   setTitle: vi.fn(),
   setTitleOrigin: vi.fn(),
   setTopic: vi.fn(),
@@ -18,10 +19,29 @@ const songContextSetters = vi.hoisted(() => ({
   setNarrative: vi.fn(),
   setMusicalPrompt: vi.fn(),
   setSongLanguage: vi.fn(),
+  // Actions
+  replaceStateWithoutHistory: vi.fn(),
+  clearHistory: vi.fn(),
+  // State
+  song: [] as ReturnType<typeof createEmptySong>,
+  structure: [] as string[],
+  title: '',
+  titleOrigin: 'user' as const,
+  topic: '',
+  mood: '',
+  rhymeScheme: 'AABB',
+  targetSyllables: 10,
+  genre: '',
+  tempo: 120,
+  instrumentation: '',
+  rhythm: '',
+  narrative: '',
+  musicalPrompt: '',
+  songLanguage: 'en',
 }));
 
 vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => songContextSetters,
+  useSongContext: () => songContextMock,
 }));
 
 const createMemoryStorage = (): Storage => {
@@ -46,38 +66,23 @@ const createMemoryStorage = (): Storage => {
 };
 
 const createParams = () => ({
-  song: createEmptySong(DEFAULT_STRUCTURE, 'AABB'),
-  structure: [...DEFAULT_STRUCTURE],
-  title: '',
-  titleOrigin: 'user' as const,
-  topic: '',
-  mood: '',
-  rhymeScheme: 'AABB',
-  targetSyllables: 10,
-  genre: '',
-  tempo: 120,
-  instrumentation: '',
-  rhythm: '',
-  narrative: '',
-  musicalPrompt: '',
-  songLanguage: 'en',
   isSessionHydrated: false,
   setIsSessionHydrated: vi.fn(),
   setHasSavedSession: vi.fn(),
-  replaceStateWithoutHistory: vi.fn(),
-  clearHistory: vi.fn(),
 });
 
 describe('useSessionPersistence', () => {
   beforeEach(() => {
     vi.stubGlobal('localStorage', createMemoryStorage());
     vi.stubGlobal('fetch', vi.fn());
+    songContextMock.song = createEmptySong(DEFAULT_STRUCTURE, 'AABB');
+    songContextMock.structure = [...DEFAULT_STRUCTURE];
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    Object.values(songContextSetters).forEach((spy) => spy.mockReset());
+    Object.values(songContextMock).forEach((v) => { if (typeof v === 'function') v.mockReset?.(); });
   });
 
   it('uses defaults when no stored session exists and hydrates the session', () => {
@@ -85,11 +90,11 @@ describe('useSessionPersistence', () => {
 
     renderHook(() => useSessionPersistence(params));
 
-    expect(params.replaceStateWithoutHistory).not.toHaveBeenCalled();
-    expect(params.clearHistory).not.toHaveBeenCalled();
-    expect(songContextSetters.setTitle).not.toHaveBeenCalled();
-    expect(songContextSetters.setTopic).not.toHaveBeenCalled();
-    expect(songContextSetters.setMood).not.toHaveBeenCalled();
+    expect(songContextMock.replaceStateWithoutHistory).not.toHaveBeenCalled();
+    expect(songContextMock.clearHistory).not.toHaveBeenCalled();
+    expect(songContextMock.setTitle).not.toHaveBeenCalled();
+    expect(songContextMock.setTopic).not.toHaveBeenCalled();
+    expect(songContextMock.setMood).not.toHaveBeenCalled();
     expect(params.setHasSavedSession).not.toHaveBeenCalled();
     expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
   });
@@ -129,7 +134,7 @@ describe('useSessionPersistence', () => {
     renderHook(() => useSessionPersistence(params));
 
     expect(params.setHasSavedSession).toHaveBeenCalledWith(true);
-    expect(params.replaceStateWithoutHistory).toHaveBeenCalledWith(
+    expect(songContextMock.replaceStateWithoutHistory).toHaveBeenCalledWith(
       [expect.objectContaining({
         id: 'stored-section',
         name: 'Verse 1',
@@ -142,20 +147,20 @@ describe('useSessionPersistence', () => {
       })],
       ['Verse 1'],
     );
-    expect(songContextSetters.setTitle).toHaveBeenCalledWith('Midnight Echo');
-    expect(songContextSetters.setTitleOrigin).toHaveBeenCalledWith('ai');
-    expect(songContextSetters.setTopic).toHaveBeenCalledWith('Night drive');
-    expect(songContextSetters.setMood).toHaveBeenCalledWith('Electric');
-    expect(songContextSetters.setRhymeScheme).toHaveBeenCalledWith('ABAB');
-    expect(songContextSetters.setTargetSyllables).toHaveBeenCalledWith(8);
-    expect(songContextSetters.setGenre).toHaveBeenCalledWith('Synthwave');
-    expect(songContextSetters.setTempo).toHaveBeenCalledWith(98);
-    expect(songContextSetters.setInstrumentation).toHaveBeenCalledWith('Analog synths');
-    expect(songContextSetters.setRhythm).toHaveBeenCalledWith('Pulse');
-    expect(songContextSetters.setNarrative).toHaveBeenCalledWith('Chasing neon');
-    expect(songContextSetters.setMusicalPrompt).toHaveBeenCalledWith('Wide cinematic chorus');
-    expect(songContextSetters.setSongLanguage).toHaveBeenCalledWith('fr');
-    expect(params.clearHistory).toHaveBeenCalledOnce();
+    expect(songContextMock.setTitle).toHaveBeenCalledWith('Midnight Echo');
+    expect(songContextMock.setTitleOrigin).toHaveBeenCalledWith('ai');
+    expect(songContextMock.setTopic).toHaveBeenCalledWith('Night drive');
+    expect(songContextMock.setMood).toHaveBeenCalledWith('Electric');
+    expect(songContextMock.setRhymeScheme).toHaveBeenCalledWith('ABAB');
+    expect(songContextMock.setTargetSyllables).toHaveBeenCalledWith(8);
+    expect(songContextMock.setGenre).toHaveBeenCalledWith('Synthwave');
+    expect(songContextMock.setTempo).toHaveBeenCalledWith(98);
+    expect(songContextMock.setInstrumentation).toHaveBeenCalledWith('Analog synths');
+    expect(songContextMock.setRhythm).toHaveBeenCalledWith('Pulse');
+    expect(songContextMock.setNarrative).toHaveBeenCalledWith('Chasing neon');
+    expect(songContextMock.setMusicalPrompt).toHaveBeenCalledWith('Wide cinematic chorus');
+    expect(songContextMock.setSongLanguage).toHaveBeenCalledWith('fr');
+    expect(songContextMock.clearHistory).toHaveBeenCalledOnce();
     expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
   });
 
@@ -169,8 +174,8 @@ describe('useSessionPersistence', () => {
     }).not.toThrow();
 
     expect(consoleErrorSpy).toHaveBeenCalled();
-    expect(params.replaceStateWithoutHistory).not.toHaveBeenCalled();
-    expect(params.clearHistory).not.toHaveBeenCalled();
+    expect(songContextMock.replaceStateWithoutHistory).not.toHaveBeenCalled();
+    expect(songContextMock.clearHistory).not.toHaveBeenCalled();
     expect(params.setHasSavedSession).not.toHaveBeenCalled();
     expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
   });
@@ -190,8 +195,8 @@ describe('useSessionPersistence', () => {
     }).not.toThrow();
 
     expect(consoleWarnSpy).toHaveBeenCalled();
-    expect(params.replaceStateWithoutHistory).not.toHaveBeenCalled();
-    expect(params.clearHistory).not.toHaveBeenCalled();
+    expect(songContextMock.replaceStateWithoutHistory).not.toHaveBeenCalled();
+    expect(songContextMock.clearHistory).not.toHaveBeenCalled();
     expect(params.setHasSavedSession).not.toHaveBeenCalled();
     expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
   });
@@ -207,9 +212,9 @@ describe('useSessionPersistence', () => {
 
     renderHook(() => useSessionPersistence(params));
 
-    expect(songContextSetters.setTitle).toHaveBeenCalledWith('');
-    expect(songContextSetters.setTopic).toHaveBeenCalledWith('');
-    expect(songContextSetters.setMood).toHaveBeenCalledWith('');
+    expect(songContextMock.setTitle).toHaveBeenCalledWith('');
+    expect(songContextMock.setTopic).toHaveBeenCalledWith('');
+    expect(songContextMock.setMood).toHaveBeenCalledWith('');
     expect(params.setIsSessionHydrated).toHaveBeenCalledWith(true);
   });
 });

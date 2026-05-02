@@ -63,9 +63,7 @@ export interface AppOrchestrationResult {
 export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestrationResult {
   const {
     song, structure,
-    title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
-    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
-    songLanguage,
+    rhymeScheme,
     replaceStateWithoutHistory, clearHistory,
     updateSongAndStructureWithHistory,
   } = useSongContext();
@@ -84,10 +82,7 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
 
   // ── Session persistence ──────────────────────────────────────────────────
   useSessionPersistence({
-    song, structure, title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
-    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt, songLanguage,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
-    replaceStateWithoutHistory, clearHistory,
   });
 
   // ── Audio feedback ───────────────────────────────────────────────────────
