@@ -11,6 +11,7 @@ import {
   type LibraryAsset,
 } from '../utils/libraryUtils';
 import { safeJsonParse } from '../utils/safeStorage';
+import { useSongContext } from '../contexts/SongContext';
 import { useLibrarySongActions } from './useLibrarySongActions';
 
 const lyricalKey = (song: Section[]): string => {
@@ -23,7 +24,6 @@ const lyricalKey = (song: Section[]): string => {
 const LibraryRawArraySchema = z.array(z.unknown());
 
 type UseLibraryActionsParams = {
-  song: Section[];
   setSimilarityMatches: Dispatch<SetStateAction<SimilarityMatch[]>>;
   setLibraryCount: Dispatch<SetStateAction<number>>;
   setLibraryAssets: Dispatch<SetStateAction<LibraryAsset[]>>;
@@ -32,13 +32,13 @@ type UseLibraryActionsParams = {
 };
 
 export const useLibraryActions = ({
-  song,
   setSimilarityMatches,
   setLibraryCount,
   setLibraryAssets,
   setIsSavingToLibrary,
   setIsSaveToLibraryModalOpen,
 }: UseLibraryActionsParams) => {
+  const { song } = useSongContext();
   const { handleSaveToLibrary, handleLoadLibraryAsset } = useLibrarySongActions({
     setIsSavingToLibrary,
     setIsSaveToLibraryModalOpen,
