@@ -38,6 +38,7 @@ import { useKeyboardShortcuts } from '../useKeyboardShortcuts';
 import { useSessionActions } from '../useSessionActions';
 import { useImportHandlers } from '../useImportHandlers';
 import { useLibraryActions } from '../useLibraryActions';
+import { useLibrarySongActions } from '../useLibrarySongActions';
 import { useSectionManager } from '../useSectionManager';
 import { useDragHandlers } from '../useDragHandlers';
 import { makeSongUpdater } from '../hookUtils';
@@ -118,6 +119,7 @@ describe('Hook import smoke-tests', () => {
       ['useSessionActions', useSessionActions],
       ['useImportHandlers', useImportHandlers],
       ['useLibraryActions', useLibraryActions],
+      ['useLibrarySongActions', useLibrarySongActions],
       ['useSectionManager', useSectionManager],
       ['useDragHandlers', useDragHandlers],
       ['makeSongUpdater', makeSongUpdater],
