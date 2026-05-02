@@ -14,7 +14,6 @@ interface UseSwitchEditModeParams {
   markupText: string;
   setEditMode: (v: EditMode) => void;
   setMarkupText: (v: string) => void;
-  serializeSong: () => string;
   updateSongAndStructureWithHistory: UpdateSongAndStructureWithHistory;
 }
 
@@ -23,12 +22,9 @@ export function useSwitchEditMode({
   markupText,
   setEditMode,
   setMarkupText,
-  serializeSong,
   updateSongAndStructureWithHistory,
 }: UseSwitchEditModeParams) {
-  // song is still needed as context for parseMarkupToSections.
-  // serializeSong is injected by the caller — no double SongContext subscription.
-  const { song } = useSongMarkupSerializer();
+  const { song, serializeSong } = useSongMarkupSerializer();
 
   const parse = useCallback(
     () => parseMarkupToSections(markupText, song),
