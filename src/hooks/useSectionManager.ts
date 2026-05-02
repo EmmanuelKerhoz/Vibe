@@ -1,4 +1,3 @@
-import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import type { Section } from '../types';
 import { cleanSectionName } from '../utils/songUtils';
@@ -14,16 +13,7 @@ import {
   isUniqueSectionType,
   shouldAutoNumberSection,
 } from '../constants/sections';
-
-type UseSectionManagerParams = {
-  song: Section[];
-  structure: string[];
-  newSectionName: string;
-  setNewSectionName: Dispatch<SetStateAction<string>>;
-  updateState: (recipe: (current: { song: Section[]; structure: string[] }) => { song: Section[]; structure: string[] }) => void;
-  updateStructureWithHistory: (newStructure: string[]) => void;
-  updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
-};
+import { useSongContext } from '../contexts/SongContext';
 
 export const makeEmptyLines = () =>
   Array(4).fill(null).map(() => ({
@@ -54,15 +44,15 @@ export const getTiedSectionRange = (items: string[], index: number) => {
   return { start: index, end: index };
 };
 
-export const useSectionManager = ({
-  song,
-  structure,
-  newSectionName,
-  setNewSectionName,
-  updateState,
-  updateStructureWithHistory,
-  updateSongAndStructureWithHistory,
-}: UseSectionManagerParams) => {
+export const useSectionManager = () => {
+  const {
+    song,
+    structure,
+    newSectionName,
+    setNewSectionName,
+    updateStructureWithHistory,
+    updateSongAndStructureWithHistory,
+  } = useSongContext();
   const removeStructureItem = useCallback((index: number) => {
     const newStructure = structure.filter((_, i) => i !== index);
     if (song.length > index) {
