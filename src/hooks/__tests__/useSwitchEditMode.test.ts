@@ -3,12 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Section } from '../../types';
 import { useSwitchEditMode } from '../useSwitchEditMode';
 
-const mockSongContextValues = vi.hoisted(() => ({
+const mockSerializer = vi.hoisted(() => ({
   song: [] as Section[],
+  serializeSong: vi.fn(() => ''),
 }));
 
-vi.mock('../../contexts/SongContext', () => ({
-  useSongContext: () => mockSongContextValues,
+vi.mock('../useSongMarkupSerializer', () => ({
+  useSongMarkupSerializer: () => mockSerializer,
 }));
 
 const baseParams = () => ({
@@ -16,7 +17,6 @@ const baseParams = () => ({
   markupText: '',
   setEditMode: vi.fn(),
   setMarkupText: vi.fn(),
-  serializeSong: vi.fn(() => ''),
   updateSongAndStructureWithHistory: vi.fn(),
 });
 
@@ -24,26 +24,25 @@ describe('useSwitchEditMode', () => {
   it('uses the shared serializer when switching from section to markup text', () => {
     const setEditMode = vi.fn();
     const setMarkupText = vi.fn();
-    const serializeSong = vi.fn(() => '[Verse]\nShared serializer');
+    mockSerializer.serializeSong.mockReturnValue('[Verse]\nShared serializer');
 
     const { result } = renderHook(() => useSwitchEditMode({
       ...baseParams(),
       setEditMode,
       setMarkupText,
-      serializeSong,
     }));
 
     act(() => {
       result.current.switchEditMode('markdown');
     });
 
-    expect(serializeSong).toHaveBeenCalledOnce();
+    expect(mockSerializer.serializeSong).toHaveBeenCalledOnce();
     expect(setMarkupText).toHaveBeenCalledWith('[Verse]\nShared serializer');
     expect(setEditMode).toHaveBeenCalledWith('markdown');
   });
 
   it('parses markup and updates song plus structure when returning to section mode', () => {
-    mockSongContextValues.song = [] as Section[];
+    mockSerializer.song = [] as Section[];
     const updateSongAndStructureWithHistory = vi.fn();
     const setEditMode = vi.fn();
 
@@ -70,7 +69,7 @@ describe('useSwitchEditMode', () => {
   });
 
   it('does not update song or switch mode when markup yields no parseable sections', () => {
-    mockSongContextValues.song = [] as Section[];
+    mockSerializer.song = [] as Section[];
     const updateSongAndStructureWithHistory = vi.fn();
     const setEditMode = vi.fn();
 
