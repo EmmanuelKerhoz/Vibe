@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom';
 import { Loader2, ScanText } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
 import { EmojiSign } from '../../ui/EmojiSign';
-import { getLanguageDisplay, useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
+import { getLanguageDisplay, useTranslation, SUPPORTED_ADAPTATION_LANGUAGES } from '../../../i18n';
 
 type LanguageDisplay = ReturnType<typeof getLanguageDisplay>;
 
-const POPOVER_WIDTH = 220;
+const POPOVER_WIDTH = 240;
 const POPOVER_GAP = 6;
 
 interface DetectLanguageButtonProps {
@@ -53,13 +53,11 @@ export function DetectLanguageButton({
   const openPicker = () => {
     if (!triggerRef.current) return;
     const r = triggerRef.current.getBoundingClientRect();
-    const POPOVER_MAX_H = 220; // max-h-52 (208px) + header (~32px)
+    const POPOVER_MAX_H = 260;
     const spaceBelow = window.innerHeight - r.bottom - POPOVER_GAP;
     if (spaceBelow >= POPOVER_MAX_H) {
-      // Enough room below — open downward
       setCoords({ top: r.bottom + POPOVER_GAP, left: r.left });
     } else {
-      // Not enough room below — flip above
       setCoords({ bottom: window.innerHeight - r.top + POPOVER_GAP, left: r.left });
     }
     setPickerOpen(true);
@@ -96,14 +94,14 @@ export function DetectLanguageButton({
       );
     }
     if (!hasLyrics) {
-      const defLocale = defaultLanguage
-        ? SUPPORTED_UI_LOCALES.find(l => l.code === defaultLanguage)
+      const defLang = defaultLanguage
+        ? SUPPORTED_ADAPTATION_LANGUAGES.find(l => l.code.toLowerCase() === defaultLanguage.toLowerCase())
         : null;
       return (
         <>
           <ScanText className="w-3 h-3" aria-hidden="true" />
-          {defLocale
-            ? (<><EmojiSign sign={defLocale.flag} /><span className="hidden sm:inline">{defLocale.code.toUpperCase()}</span></>)
+          {defLang
+            ? (<><EmojiSign sign={defLang.sign} /><span className="hidden sm:inline">{defLang.code.toUpperCase()}</span></>)
             : (<><EmojiSign sign="🌐" /><span className="hidden sm:inline">{t.editor?.detect ?? 'Lang'}</span></>)}
         </>
       );
@@ -150,24 +148,24 @@ export function DetectLanguageButton({
             <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.18em] opacity-50">
               Default language
             </div>
-            <div className="max-h-52 overflow-y-auto">
-              {SUPPORTED_UI_LOCALES.map(loc => (
+            <div className="max-h-64 overflow-y-auto">
+              {SUPPORTED_ADAPTATION_LANGUAGES.map(lang => (
                 <button
-                  key={loc.code}
+                  key={lang.code}
                   role="option"
-                  aria-selected={loc.code === defaultLanguage}
-                  onClick={() => { onSetDefaultLanguage(loc.code); setPickerOpen(false); }}
+                  aria-selected={lang.code.toLowerCase() === defaultLanguage?.toLowerCase()}
+                  onClick={() => { onSetDefaultLanguage(lang.code.toLowerCase()); setPickerOpen(false); }}
                   className={[
                     'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors',
-                    loc.code === defaultLanguage
+                    lang.code.toLowerCase() === defaultLanguage?.toLowerCase()
                       ? 'bg-white/10 text-white'
                       : 'text-white/60 hover:bg-white/5 hover:text-white/90',
                   ].join(' ')}
                 >
-                  <EmojiSign sign={loc.flag} />
-                  <span className="uppercase font-semibold text-[10px] tracking-wider">{loc.code}</span>
-                  <span className="text-[10px] truncate">{loc.label}</span>
-                  {loc.code === defaultLanguage && (
+                  <EmojiSign sign={lang.sign} />
+                  <span className="uppercase font-semibold text-[10px] tracking-wider flex-shrink-0">{lang.code}</span>
+                  <span className="text-[10px] truncate">{lang.aiName}{lang.region ? ` – ${lang.region}` : ''}</span>
+                  {lang.code.toLowerCase() === defaultLanguage?.toLowerCase() && (
                     <span className="ml-auto w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                   )}
                 </button>
