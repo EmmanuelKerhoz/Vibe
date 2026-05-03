@@ -8,7 +8,6 @@
  *   - scroll to section (atomic — no sync effect)
  *   - app handlers (generate, navigation)
  *   - modal handlers
- *   - session actions (reset, import, export)
  *   - analysis context bridge
  *   - web similarity index
  *   - topic/mood suggestions
@@ -21,13 +20,15 @@
  * isMobileOrTablet is received as a parameter (computed once in
  * AppInnerContent via useMobileLayout) to avoid a duplicate matchMedia
  * listener that would otherwise fire on every breakpoint change.
+ *
+ * Note: useSessionActions (resetSong) is intentionally NOT called here.
+ * It is instantiated in AppModalLayer which is the sole consumer of resetSong.
  */
 import { useTranslation } from '../i18n';
 import { useAudioFeedback } from './useAudioFeedback';
 import { useScrollToSection } from './useScrollToSection';
 import { useAppHandlers } from './useAppHandlers';
 import { useModalHandlers } from './useModalHandlers';
-import { useSessionActions } from './useSessionActions';
 import { useSessionPersistence } from './useSessionPersistence';
 import { useDerivedAppState } from './useDerivedAppState';
 import { useTopicMoodSuggester } from './useTopicMoodSuggester';
@@ -42,8 +43,6 @@ export interface AppOrchestrationResult {
   // Audio
   playAudioFeedback: ReturnType<typeof useAudioFeedback>['playAudioFeedback'];
   playAudioFeedbackRef: ReturnType<typeof useAudioFeedback>['playAudioFeedbackRef'];
-  // Scroll
-  scrollToSection: ReturnType<typeof useScrollToSection>['scrollToSection'];
   // Handlers
   handleGlobalRegenerate: ReturnType<typeof useAppHandlers>['handleGlobalRegenerate'];
   handleOpenSettings: ReturnType<typeof useModalHandlers>['handleOpenSettings'];
@@ -62,7 +61,7 @@ export interface AppOrchestrationResult {
 
 export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestrationResult {
   const {
-    song, structure,
+    song,
     rhymeScheme,
     replaceStateWithoutHistory, clearHistory,
     updateSongAndStructureWithHistory,
@@ -75,7 +74,6 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
     audioFeedback,
     editMode, markupText, markupTextareaRef, setEditMode, setMarkupText,
     isSessionHydrated, setIsSessionHydrated, setHasSavedSession,
-    setIsResetModalOpen,
     hasApiKey,
     setActiveTab, setIsLeftPanelOpen, setIsStructureOpen,
   } = appState;
@@ -96,7 +94,7 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
   } = useAnalysisContext();
 
   // ── Similarity + suggestions ─────────────────────────────────────────────
-  const { index: webSimilarityIndex, resetIndex: resetWebSimilarityIndex } = useSimilarityContext();
+  const { index: webSimilarityIndex } = useSimilarityContext();
   const { resetSuggestionCycle } = useTopicMoodSuggester({ hasApiKey });
 
   // ── Scroll to section (atomic — no sync effect) ──────────────────────────
@@ -111,14 +109,14 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
 
   // ── Title generator ──────────────────────────────────────────────────────
   const { generateTitle } = useTitleGenerator();
-  const { t } = useTranslation();
 
   // ── App handlers ─────────────────────────────────────────────────────────
   const { handleGlobalRegenerate } = useAppHandlers({
-    t, hasRealLyricContent, isMobileOrTablet,
+    t: useTranslation().t,
+    hasRealLyricContent, isMobileOrTablet,
     setApiErrorModal: appState.setApiErrorModal, setConfirmModal: appState.setConfirmModal,
     setActiveTab, setIsLeftPanelOpen, setIsStructureOpen,
-    generateTitle, generateSong, scrollToSection,
+    generateSong, scrollToSection,
   });
 
   // ── Modal handlers ───────────────────────────────────────────────────────
@@ -133,18 +131,9 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
     setSectionTargetLanguages,
   });
 
-  // ── Session actions ──────────────────────────────────────────────────────
-  useSessionActions({
-    song, structure, rhymeScheme, appState,
-    replaceStateWithoutHistory, clearHistory, clearSelection,
-    resetWebSimilarityIndex, resetSuggestionCycle,
-    updateSongAndStructureWithHistory, setIsResetModalOpen,
-  });
-
   return {
     playAudioFeedback,
     playAudioFeedbackRef,
-    scrollToSection,
     handleGlobalRegenerate,
     handleOpenSettings,
     handleOpenAbout,

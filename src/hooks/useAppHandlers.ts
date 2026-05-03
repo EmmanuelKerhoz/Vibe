@@ -15,13 +15,6 @@ interface UseAppHandlersParams {
   setActiveTab: (tab: 'lyrics' | 'musical') => void;
   setIsLeftPanelOpen: (open: boolean) => void;
   setIsStructureOpen: (open: boolean) => void;
-  /**
-   * Title generation has been migrated to ComposerParamsContext.
-   * This param is kept for interface stability but the generated
-   * handleGenerateTitle is intentionally not returned — pass `async () => null`.
-   * @deprecated Pass no-op stub; do not wire to real generator from this hook.
-   */
-  generateTitle: () => Promise<string | null>;
   generateSong: () => Promise<void>;
   scrollToSection: (section: Section) => void;
 }
