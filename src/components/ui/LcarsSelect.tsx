@@ -153,7 +153,8 @@ export function LcarsSelect({
     const minDropdownHeight = 120;
     const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
     const spaceAbove = rect.top - viewportPadding;
-    const openUpward = spaceBelow < minDropdownHeight && spaceAbove > spaceBelow;
+    // Flip upward whenever there is more room above than below.
+    const openUpward = spaceAbove > spaceBelow;
     const availableHeight = openUpward ? spaceAbove : spaceBelow;
     const maxDropdownWidth = window.innerWidth - viewportPadding * 2;
     const dropdownWidth = Math.min(maxDropdownWidth, Math.max(rect.width, 320));
@@ -415,7 +416,7 @@ export function LcarsSelect({
                 value={effectiveSearch}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder={searchPlaceholder ?? 'Filter…'}
+                placeholder={searchPlaceholder ?? 'Filter\u2026'}
                 aria-label={searchPlaceholder ?? 'Filter options'}
                 aria-controls={listboxId}
                 style={{
