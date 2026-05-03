@@ -88,6 +88,7 @@ export const useLibraryActions = ({
       setLibraryCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Failed to delete library asset:', error);
+      setSaveLibraryError('Failed to delete asset from library');
     }
   }, [setLibraryAssets, setLibraryCount, setSimilarityMatches]);
 
@@ -99,6 +100,7 @@ export const useLibraryActions = ({
       setLibraryCount(0);
     } catch (error) {
       console.error('Failed to purge library:', error);
+      setSaveLibraryError('Failed to purge library');
     }
   }, [setLibraryAssets, setLibraryCount, setSimilarityMatches]);
 
