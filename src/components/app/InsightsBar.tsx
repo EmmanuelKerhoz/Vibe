@@ -1,5 +1,5 @@
 import React from 'react';
-import { getLanguageDisplay } from '../../i18n';
+import { getLanguageDisplay, SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useInsightsBarContext } from '../../contexts/InsightsBarContext';
@@ -29,7 +29,7 @@ export const InsightsBar = React.memo(function InsightsBar() {
     onOpenSearch, onToggleAnalysisPanel, isAnalysisPanelOpen,
   } = useInsightsBarContext();
 
-  const { song, songLanguage, detectedLanguages } = useSongContext();
+  const { song, songLanguage, setSongLanguage, detectedLanguages } = useSongContext();
   const { isGenerating } = useComposerContext();
   const { showTranslationFeatures } = useTranslationAdaptationContext();
   const { showBanner, dismissBanner } = useAdaptationBannerVisibility(adaptationProgress);
@@ -39,6 +39,29 @@ export const InsightsBar = React.memo(function InsightsBar() {
     .filter((lang, i, arr) => arr.indexOf(lang) === i)
     .slice(0, 3)
     .map(getLanguageDisplay);
+
+  /**
+   * Called when the user picks a default generation language in no-lyrics mode.
+   * Receives the lang.code (e.g. "SA") and resolves it to the aiName (e.g. "Sanskrit")
+   * that useAiGeneration expects in its prompt.
+   */
+  const handleSetDefaultLanguage = (langCode: string) => {
+    const match = SUPPORTED_ADAPTATION_LANGUAGES.find(
+      l => l.code.toLowerCase() === langCode.toLowerCase(),
+    );
+    const aiName = match?.aiName ?? langCode;
+    setSongLanguage(aiName);
+  };
+
+  // The defaultLanguage prop is used by DetectLanguageButton to show a checkmark
+  // next to the currently selected language. It expects a lang.code (lowercase).
+  const songLanguageCode = (() => {
+    if (!songLanguage) return undefined;
+    const match = SUPPORTED_ADAPTATION_LANGUAGES.find(
+      l => l.aiName.toLowerCase() === songLanguage.toLowerCase(),
+    );
+    return match ? match.code.toLowerCase() : undefined;
+  })();
 
   // exactOptionalPropertyTypes: only spread optional props when value is defined
   const metronomeOptional = {
@@ -56,8 +79,8 @@ export const InsightsBar = React.memo(function InsightsBar() {
           isDetectingLanguage={isDetectingLanguage}
           onDetect={detectLanguage}
           hasApiKey={hasApiKey}
-          onSetDefaultLanguage={setTargetLanguage}
-          defaultLanguage={targetLanguage}
+          onSetDefaultLanguage={handleSetDefaultLanguage}
+          defaultLanguage={songLanguageCode}
         />
       }
       translationControls={<TranslateGroup targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage} isAdaptingLanguage={isAdaptingLanguage} song={song} adaptSongLanguage={adaptSongLanguage} showTranslationFeatures={showTranslationFeatures} hasApiKey={hasApiKey} />}
