@@ -12,16 +12,20 @@ import {
   fence,
   fenceLong,
 } from './promptSanitization';
+import { sanitizeLangName } from './sanitizeLangInput';
 
-const APPLY_PROMPT_RULES = (uiLanguage: string): string => `IMPORTANT:
+const APPLY_PROMPT_RULES = (uiLanguage: string): string => {
+  const safeLang = sanitizeLangName(uiLanguage);
+  return `IMPORTANT:
 1. Maintain the existing section structure (Intro, Verse, Chorus, etc.).
 2. Only update the lyrics as suggested.
 3. Return the FULL updated song in the same JSON format as the input.
 4. Do not change the section names unless specifically requested.
 5. Preserve the original song language in all lyric text fields.
-6. Write the "concept" field for each line in ${uiLanguage}.
+6. Write the "concept" field for each line in ${safeLang}.
 
 Current Song Data:`;
+};
 
 type BuildAdaptSongPromptParams = {
   sourceSong: Section[];
@@ -256,6 +260,7 @@ export const buildThemeAnalysisPrompt = ({
   mood,
   uiLanguage,
 }: BuildThemeAnalysisPromptParams): string => {
+  const safeLang = sanitizeLangName(uiLanguage);
   const lyrics = song
     .map(section => `${section.name}\n${getSectionText(section)}`)
     .join('\n\n');
@@ -266,7 +271,7 @@ Current Topic (untrusted user data): see the TOPIC fence below.
 Current Mood (untrusted user data): see the MOOD fence below.
 
 If the lyrics have significantly deviated from the current topic or mood, provide an updated topic and mood. If they still fit, return the current ones.
-IMPORTANT: Return the topic and mood values in ${uiLanguage}.
+IMPORTANT: Return the topic and mood values in ${safeLang}.
 Return JSON with "topic" and "mood" strings.
 
 ${fence('TOPIC', topic)}
@@ -282,6 +287,8 @@ export const buildAdaptSongPrompt = ({
   ipaEnhancedPrompt = '',
   ipaSyllableCounts,
 }: BuildAdaptSongPromptParams): string => {
+  const safeLang = sanitizeLangName(newLanguage);
+  const safeUiLang = sanitizeLangName(uiLanguage);
   const songRhymeScheme = sourceSong
     .map(section => `${section.name}: ${section.rhymeScheme || 'FREE'}`)
     .join(', ');
@@ -292,15 +299,15 @@ export const buildAdaptSongPrompt = ({
 
 You are an expert lyricist specializing in creative song adaptation across languages.
 
-Your task: Adapt the following song lyrics to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.
+Your task: Adapt the following song lyrics to ${safeLang} with CREATIVE ADAPTATION, not literal translation.
 
 CRITICAL GUIDELINES:
 
 1. AUTHENTIC WRITING SYSTEM
-   - Return the adapted lyrics using the authentic writing system and orthography of ${newLanguage}
+   - Return the adapted lyrics using the authentic writing system and orthography of ${safeLang}
    - Do NOT use phonetic transcription, romanization, or IPA notation
-   - Use the real native script, diacritics, and character set of ${newLanguage} (e.g. Arabic script for Arabic, Cyrillic for Russian, proper accented characters for Haitian Creole or Yoruba, etc.)
-   - Phonetic or romanized output is only acceptable if ${newLanguage} has no native script of its own
+   - Use the real native script, diacritics, and character set of ${safeLang} (e.g. Arabic script for Arabic, Cyrillic for Russian, proper accented characters for Haitian Creole or Yoruba, etc.)
+   - Phonetic or romanized output is only acceptable if ${safeLang} has no native script of its own
 
 2. EMOTIONAL IMPACT FIRST
    - Preserve the emotional journey and core message
@@ -308,34 +315,34 @@ CRITICAL GUIDELINES:
    - Maintain the song's vibe, tone, and artistic intent
 
 3. NATURAL LANGUAGE
-   - Write as if the song was originally composed in ${newLanguage}
-   - Use idioms, expressions, and cultural references native to ${newLanguage}
+   - Write as if the song was originally composed in ${safeLang}
+   - Use idioms, expressions, and cultural references native to ${safeLang}
    - Avoid "translation-speak" - make it sound authentic and poetic
-   - Respect ${newLanguage} grammar, syntax, and natural word order
+   - Respect ${safeLang} grammar, syntax, and natural word order
 
 4. POETIC STRUCTURE
-   - Maintain rhyme scheme quality (e.g., if AABB, keep clean rhymes in ${newLanguage})
+   - Maintain rhyme scheme quality (e.g., if AABB, keep clean rhymes in ${safeLang})
    - Maintain section rhyme schemes: ${songRhymeScheme}
    - STRICTLY respect the per-line syllable counts listed below — singability depends on it
    - Preserve rhythm and singability
    - Adapt imagery and metaphors to resonate in the target culture
 
 5. CULTURAL ADAPTATION
-   - Replace culture-specific references with equivalent concepts in ${newLanguage} culture
+   - Replace culture-specific references with equivalent concepts in ${safeLang} culture
    - Adapt humor, wordplay, and double meanings creatively
-   - Ensure themes and stories make sense to ${newLanguage} speakers
+   - Ensure themes and stories make sense to ${safeLang} speakers
 
 6. TECHNICAL REQUIREMENTS
    - Maintain the existing section structure (same section names)
    - Return the FULL updated song in the same JSON format as input
-   - Update rhymingSyllables to reflect actual ${newLanguage} rhymes
+   - Update rhymingSyllables to reflect actual ${safeLang} rhymes
    - Set the syllables field to the actual syllable count of each adapted line
-   - Write the "concept" field for each line in ${uiLanguage}
+   - Write the "concept" field for each line in ${safeUiLang}
 ${syllableConstraints}
 
 ${fenceLong('CURRENT_SONG_DATA', JSON.stringify(sourceSong))}${ipaEnhancedPrompt}
 
-Return the fully adapted song that feels native to ${newLanguage} speakers while preserving the soul of the original.`;
+Return the fully adapted song that feels native to ${safeLang} speakers while preserving the soul of the original.`;
 };
 
 export const buildAdaptSectionPrompt = ({
@@ -345,6 +352,8 @@ export const buildAdaptSectionPrompt = ({
   ipaEnhancedPrompt = '',
   ipaSyllableCounts,
 }: BuildAdaptSectionPromptParams): string => {
+  const safeLang = sanitizeLangName(newLanguage);
+  const safeUiLang = sanitizeLangName(uiLanguage);
   const sourceLanguage = section.language || 'unknown';
   const sectionRhymeScheme = section.rhymeScheme || 'FREE';
   const syllableConstraints = buildSyllableConstraintsBlockFromSection(section, ipaSyllableCounts);
@@ -354,13 +363,13 @@ export const buildAdaptSectionPrompt = ({
 You are an expert lyricist specializing in creative song adaptation across languages.
 
 Source language detected: ${sourceLanguage}.
-Adapt the following song section to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.
+Adapt the following song section to ${safeLang} with CREATIVE ADAPTATION, not literal translation.
 Keep section name unchanged. Update rhymingSyllables. Set syllables to the actual count of each adapted line.
-Write the "concept" field for each line in ${uiLanguage}.
+Write the "concept" field for each line in ${safeUiLang}.
 Maintain rhyme scheme: ${sectionRhymeScheme}.
 STRICTLY respect the per-line syllable counts listed below — singability depends on it.
 
-IMPORTANT: Return the adapted lyrics using the authentic writing system and orthography of ${newLanguage}. Do NOT use phonetic transcription, romanization, or IPA notation. Use the real native script, diacritics, and character set of ${newLanguage}. Phonetic or romanized output is only acceptable if ${newLanguage} has no native script of its own.
+IMPORTANT: Return the adapted lyrics using the authentic writing system and orthography of ${safeLang}. Do NOT use phonetic transcription, romanization, or IPA notation. Use the real native script, diacritics, and character set of ${safeLang}. Phonetic or romanized output is only acceptable if ${safeLang} has no native script of its own.
 ${syllableConstraints}
 
 ${fenceLong('CURRENT_SECTION_DATA', JSON.stringify(section))}${ipaEnhancedPrompt}`;
@@ -372,6 +381,8 @@ export const buildAdaptLinePrompt = ({
   uiLanguage,
   ipaEnhancedPrompt = '',
 }: BuildAdaptLinePromptParams): string => {
+  const safeLang = sanitizeLangName(newLanguage);
+  const safeUiLang = sanitizeLangName(uiLanguage);
   const sourceLanguage = 'language' in line && typeof line.language === 'string' && line.language.trim() !== ''
     ? line.language
     : 'unknown';
@@ -385,9 +396,9 @@ export const buildAdaptLinePrompt = ({
 You are an expert lyricist specializing in creative song adaptation across languages.
 
 Source language detected: ${sourceLanguage}.
-Adapt the following single lyric line to ${newLanguage} with CREATIVE ADAPTATION, not literal translation.
+Adapt the following single lyric line to ${safeLang} with CREATIVE ADAPTATION, not literal translation.
 Preserve the emotional impact and singability. Update rhymingSyllables, rhyme, and syllables to reflect the adapted text.
-Write the "concept" field in ${uiLanguage}.${syllableHint}
+Write the "concept" field in ${safeUiLang}.${syllableHint}
 
 ${fence('LINE_DATA', JSON.stringify(line), { maxLength: DEFAULT_LONG_FIELD_MAX_LENGTH })}${ipaEnhancedPrompt}`;
 };
@@ -421,8 +432,9 @@ ${fenceLong('CURRENT_SONG_DATA', JSON.stringify(song))}`;
 export const buildSongAnalysisPrompt = ({
   songText,
   uiLanguage,
-}: BuildSongAnalysisPromptParams): string =>
-  `${UNTRUSTED_INPUT_PREAMBLE}
+}: BuildSongAnalysisPromptParams): string => {
+  const safeLang = sanitizeLangName(uiLanguage);
+  return `${UNTRUSTED_INPUT_PREAMBLE}
 
 Thoroughly analyze the following song lyrics.
       Provide a detailed report including:
@@ -433,9 +445,10 @@ Thoroughly analyze the following song lyrics.
       5. Actionable Improvements: Specific suggestions to improve the lyrics, structure, or impact.
       6. Musical Suggestions: Ideas for instrumentation or vocal delivery based on the lyrics.
 
-      IMPORTANT: Write the ENTIRE analysis report in ${uiLanguage}.
+      IMPORTANT: Write the ENTIRE analysis report in ${safeLang}.
 
       ${fenceLong('SONG_LYRICS', songText)}`;
+};
 
 /**
  * Builds a rhyme-constrained prompt from a Section object
