@@ -69,6 +69,11 @@ export const InsightsBar = React.memo(function InsightsBar() {
     ...(toggleMetronome !== undefined ? { toggleMetronome } : {}),
   };
 
+  // exactOptionalPropertyTypes: defaultLanguage must be string, not string | undefined
+  const defaultLanguageOptional = songLanguageCode !== undefined
+    ? { defaultLanguage: songLanguageCode }
+    : {};
+
   return (
     <InsightsBarLayout
       viewSelector={<ViewModeSelector editMode={editMode} switchEditMode={switchEditMode} disabled={isGenerating || isAnalyzing} />}
@@ -80,7 +85,7 @@ export const InsightsBar = React.memo(function InsightsBar() {
           onDetect={detectLanguage}
           hasApiKey={hasApiKey}
           onSetDefaultLanguage={handleSetDefaultLanguage}
-          defaultLanguage={songLanguageCode}
+          {...defaultLanguageOptional}
         />
       }
       translationControls={<TranslateGroup targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage} isAdaptingLanguage={isAdaptingLanguage} song={song} adaptSongLanguage={adaptSongLanguage} showTranslationFeatures={showTranslationFeatures} hasApiKey={hasApiKey} />}
