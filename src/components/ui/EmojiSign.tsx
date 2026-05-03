@@ -5,22 +5,34 @@ interface EmojiSignProps {
   sign: string;
 }
 
+const FALLBACK = '🔤';
+
 /**
  * Renders an emoji as a local Twemoji SVG for consistent cross-platform display.
  * Covers both pictograms and flag sequences (regional indicator pairs).
- * Returns null on load failure to prevent Windows globe substitution.
+ * Falls back to 🔤 when sign is empty or the Twemoji URL fails to load.
  */
 export function EmojiSign({ sign }: EmojiSignProps) {
-  const [error, setError] = React.useState(false);
+  const resolved = sign?.trim() || FALLBACK;
+  const [src, setSrc] = React.useState(() => emojiToTwemojiUrl(resolved));
 
-  if (error) return null;
+  // Reset src when sign changes
+  React.useEffect(() => {
+    setSrc(emojiToTwemojiUrl(sign?.trim() || FALLBACK));
+  }, [sign]);
+
+  const handleError = () => {
+    if (resolved !== FALLBACK) {
+      setSrc(emojiToTwemojiUrl(FALLBACK));
+    }
+  };
 
   return (
     <img
-      src={emojiToTwemojiUrl(sign)}
-      alt={sign}
+      src={src}
+      alt={resolved}
       aria-hidden="true"
-      onError={() => setError(true)}
+      onError={handleError}
       style={{
         width: '1em',
         height: '1em',
