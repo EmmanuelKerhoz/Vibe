@@ -33,7 +33,7 @@ export function DetectLanguageButton({
 }: DetectLanguageButtonProps) {
   const { t } = useTranslation();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [coords, setCoords] = useState<{ bottom: number; left: number } | null>(null);
+  const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +53,15 @@ export function DetectLanguageButton({
   const openPicker = () => {
     if (!triggerRef.current) return;
     const r = triggerRef.current.getBoundingClientRect();
-    setCoords({ bottom: window.innerHeight - r.top + POPOVER_GAP, left: r.left });
+    const POPOVER_MAX_H = 220; // max-h-52 (208px) + header (~32px)
+    const spaceBelow = window.innerHeight - r.bottom - POPOVER_GAP;
+    if (spaceBelow >= POPOVER_MAX_H) {
+      // Enough room below — open downward
+      setCoords({ top: r.bottom + POPOVER_GAP, left: r.left });
+    } else {
+      // Not enough room below — flip above
+      setCoords({ bottom: window.innerHeight - r.top + POPOVER_GAP, left: r.left });
+    }
     setPickerOpen(true);
   };
 
@@ -127,7 +135,7 @@ export function DetectLanguageButton({
           ref={popoverRef}
           style={{
             position: 'fixed',
-            bottom: coords.bottom,
+            ...(coords.top !== undefined ? { top: coords.top } : { bottom: coords.bottom }),
             left: coords.left,
             zIndex: 9999,
             width: `${POPOVER_WIDTH}px`,
