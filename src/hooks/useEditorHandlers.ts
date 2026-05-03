@@ -73,9 +73,6 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   });
 
   // ── App-level handlers ────────────────────────────────────────────
-  // generateTitle is passed as a no-op stub: title generation has been migrated
-  // to ComposerParamsContext. handleGenerateTitle is intentionally not exposed
-  // in the return value — it remains internal to useAppHandlers.
   const {
     handleApiKeyHelp,
     handleTitleChange,
@@ -91,7 +88,6 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setActiveTab,
     setIsLeftPanelOpen,
     setIsStructureOpen,
-    generateTitle: async () => null,
     generateSong,
     scrollToSection: scrollToSectionFn,
   });
