@@ -158,9 +158,11 @@ function AppInnerContent() {
       showTranslationFeatures={appState.showTranslationFeatures}
     >
       <DragHandlersProvider playAudioFeedbackRef={playAudioFeedbackRef}>
-        <Suspense fallback={<PanelFallback />}>
-          <AppPanelOrchestrator />
-        </Suspense>
+        <ErrorBoundary label="Panels">
+          <Suspense fallback={<PanelFallback />}>
+            <AppPanelOrchestrator />
+          </Suspense>
+        </ErrorBoundary>
         <ModalShortcutBindings
           isMobileOrTablet={isMobileOrTablet}
           closeMobilePanels={closeMobilePanels}
@@ -174,13 +176,15 @@ function AppInnerContent() {
           isGenerating={isGenerating}
           onBackdropClick={closeMobilePanels}
         >
-          <Suspense fallback={<PanelFallback />}>
-            <AppEditorLayout
-              isMobileOrTablet={isMobileOrTablet}
-              playAudioFeedback={playAudioFeedback}
-              setIsStructureOpenAndClearLine={setIsStructureOpenAndClearLine}
-            />
-          </Suspense>
+          <ErrorBoundary label="Editor">
+            <Suspense fallback={<PanelFallback />}>
+              <AppEditorLayout
+                isMobileOrTablet={isMobileOrTablet}
+                playAudioFeedback={playAudioFeedback}
+                setIsStructureOpenAndClearLine={setIsStructureOpenAndClearLine}
+              />
+            </Suspense>
+          </ErrorBoundary>
 
           <StatusBar
             className="lcars-status-bar-desktop"
@@ -206,9 +210,11 @@ function AppInnerContent() {
             />
           )}
 
-          <Suspense fallback={<PanelFallback />}>
-            <AppModalLayer />
-          </Suspense>
+          <ErrorBoundary label="Modals">
+            <Suspense fallback={<PanelFallback />}>
+              <AppModalLayer />
+            </Suspense>
+          </ErrorBoundary>
         </AppShell>
       </DragHandlersProvider>
     </TranslationAdaptationProvider>
