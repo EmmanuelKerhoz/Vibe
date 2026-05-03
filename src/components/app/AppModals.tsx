@@ -99,6 +99,8 @@ interface Props {
   handleLoadLibraryAsset: (asset: LibraryAsset) => void;
   handlePurgeLibrary: () => Promise<void>;
   isSavingToLibrary: boolean;
+  saveLibraryError: string | null;
+  clearSaveLibraryError: () => void;
   title: string;
   libraryAssets: LibraryAsset[];
   hasCurrentSong: boolean;
@@ -118,13 +120,15 @@ export const AppModals = React.memo(function AppModals({
   toggleAnalysisItemSelection, applyAnalysisItem, applySelectedAnalysisItems, clearAppliedAnalysisItems,
   versions, rollbackToVersion, saveVersion, handleRequestVersionName,
   similarityMatches, libraryCount, webSimilarityIndex, triggerWebSimilarity, handleDeleteLibraryAsset,
-  handleSaveToLibrary, handleLoadLibraryAsset, handlePurgeLibrary, isSavingToLibrary, title, libraryAssets, hasCurrentSong,
+  handleSaveToLibrary, handleLoadLibraryAsset, handlePurgeLibrary, isSavingToLibrary,
+  saveLibraryError, clearSaveLibraryError,
+  title, libraryAssets, hasCurrentSong,
   resetSong,
 }: Props) {
   const { t } = useTranslation();
   // Split hooks: dispatch (stable) + state (reactive).
   // React.memo on AppModals is now effective for dispatch-only interactions
-  // because closeModal/openModal refs don’t change on modal state changes.
+  // because closeModal/openModal refs don't change on modal state changes.
   const { closeModal, openModal } = useModalDispatch();
   const { uiState: ui } = useModalState();
   const { importInputRef } = ui;
@@ -196,6 +200,7 @@ export const AppModals = React.memo(function AppModals({
         onSave={handleSaveToLibrary} onLoadAsset={handleLoadLibraryAsset}
         onDeleteAsset={handleDeleteLibraryAsset} onPurgeLibrary={handlePurgeLibrary}
         isSaving={isSavingToLibrary}
+        saveError={saveLibraryError} onDismissError={clearSaveLibraryError}
         currentTitle={title} libraryAssets={libraryAssets} hasCurrentSong={hasCurrentSong}
       />
       <VersionsModal

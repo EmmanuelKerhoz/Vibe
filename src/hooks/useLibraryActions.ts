@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { z } from 'zod';
 import type { Section } from '../types';
@@ -39,11 +39,14 @@ export const useLibraryActions = ({
   setIsSaveToLibraryModalOpen,
 }: UseLibraryActionsParams) => {
   const { song } = useSongContext();
+  const [saveLibraryError, setSaveLibraryError] = useState<string | null>(null);
+
   const { handleSaveToLibrary, handleLoadLibraryAsset } = useLibrarySongActions({
     setIsSavingToLibrary,
     setIsSaveToLibraryModalOpen,
     setLibraryCount,
     setLibraryAssets,
+    setSaveError: setSaveLibraryError,
   });
 
   const currentLyricalKey = useMemo(() => lyricalKey(song), [song]);
@@ -110,5 +113,7 @@ export const useLibraryActions = ({
     handleDeleteLibraryAsset,
     handlePurgeLibrary,
     handleOpenSaveToLibraryModal,
+    saveLibraryError,
+    clearSaveLibraryError: () => setSaveLibraryError(null),
   };
 };

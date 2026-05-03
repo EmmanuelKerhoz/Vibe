@@ -107,6 +107,7 @@ export function AppModalLayer() {
   const {
     handleSaveToLibrary, handleLoadLibraryAsset,
     handleDeleteLibraryAsset, handlePurgeLibrary,
+    saveLibraryError, clearSaveLibraryError,
   } = useLibraryActions({
     setSimilarityMatches,
     setLibraryCount,
@@ -172,6 +173,7 @@ export function AppModalLayer() {
           webSimilarityIndex={webSimilarityIndex} triggerWebSimilarity={triggerWebSimilarity}
           handleDeleteLibraryAsset={handleDeleteLibraryAsset}
           handleSaveToLibrary={handleSaveToLibrary} isSavingToLibrary={isSavingToLibrary}
+          saveLibraryError={saveLibraryError} clearSaveLibraryError={clearSaveLibraryError}
           title={title} libraryAssets={libraryAssets} hasCurrentSong={song.length > 0}
           handleLoadLibraryAsset={handleLoadLibraryAsset}
           handlePurgeLibrary={handlePurgeLibrary}

@@ -24,6 +24,7 @@ type UseLibrarySongActionsParams = {
   setIsSaveToLibraryModalOpen: (v: boolean) => void;
   setLibraryCount: Dispatch<SetStateAction<number>>;
   setLibraryAssets: Dispatch<SetStateAction<LibraryAsset[]>>;
+  setSaveError: (msg: string | null) => void;
 };
 
 export const useLibrarySongActions = ({
@@ -31,6 +32,7 @@ export const useLibrarySongActions = ({
   setIsSaveToLibraryModalOpen,
   setLibraryCount,
   setLibraryAssets,
+  setSaveError,
 }: UseLibrarySongActionsParams) => {
   const {
     song,
@@ -62,6 +64,7 @@ export const useLibrarySongActions = ({
   const handleSaveToLibrary = useCallback(async () => {
     if (song.length === 0) return;
     setIsSavingToLibrary(true);
+    setSaveError(null);
     try {
       await saveAssetToLibrary({
         title: title || 'Untitled Song',
@@ -83,6 +86,7 @@ export const useLibrarySongActions = ({
       setLibraryAssets(updated);
     } catch (error) {
       console.error('Failed to save to library:', error);
+      setSaveError('Failed to save to library. Please try again.');
     } finally {
       setIsSavingToLibrary(false);
     }
@@ -96,6 +100,7 @@ export const useLibrarySongActions = ({
     setIsSavingToLibrary,
     setLibraryAssets,
     setLibraryCount,
+    setSaveError,
     song,
     tempo,
     title,

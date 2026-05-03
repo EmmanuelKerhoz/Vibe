@@ -13,6 +13,8 @@ type Props = {
   onDeleteAsset?: (assetId: string) => void;
   onPurgeLibrary?: () => Promise<void>;
   isSaving: boolean;
+  saveError?: string | null;
+  onDismissError?: () => void;
   currentTitle: string;
   libraryAssets: LibraryAsset[];
   hasCurrentSong?: boolean;
@@ -26,6 +28,8 @@ export function SaveToLibraryModal({
   onDeleteAsset,
   onPurgeLibrary,
   isSaving,
+  saveError,
+  onDismissError,
   currentTitle,
   libraryAssets,
   hasCurrentSong = true,
@@ -95,7 +99,7 @@ export function SaveToLibraryModal({
 
           {/* Save current song section */}
           {hasCurrentSong && (
-            <div className="p-6 border-b border-[var(--border-color)]">
+            <div className="p-6 border-b border-[var(--border-color)] space-y-3">
               <div className="flex items-center justify-between gap-4 p-4 rounded-[12px_4px_12px_4px] bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20">
                 <div className="flex items-center gap-3 min-w-0">
                   <Music className="w-4 h-4 text-[var(--accent-color)] flex-shrink-0" />
@@ -121,6 +125,27 @@ export function SaveToLibraryModal({
                   {isSaving ? t.saveToLibrary.saving : t.saveToLibrary.save}
                 </button>
               </div>
+
+              {/* Inline save error banner */}
+              {saveError && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400"
+                >
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span className="text-xs flex-1">{saveError}</span>
+                  {onDismissError && (
+                    <button
+                      type="button"
+                      onClick={onDismissError}
+                      aria-label="Dismiss error"
+                      className="flex-shrink-0 hover:text-red-300 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
