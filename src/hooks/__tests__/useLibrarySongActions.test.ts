@@ -74,6 +74,7 @@ function buildHook(
     setIsSaveToLibraryModalOpen: vi.fn(),
     setLibraryCount: vi.fn(),
     setLibraryAssets: vi.fn(),
+    setSaveError: vi.fn(),
   },
 ) {
   const wrapper = ({ children }: { children: React.ReactNode }) =>
@@ -135,6 +136,48 @@ describe('useLibrarySongActions', () => {
       expect(params.setLibraryCount).toHaveBeenCalledWith(1);
       expect(params.setLibraryAssets).toHaveBeenCalledWith([mockSavedAsset]);
     });
+
+    it('does not call setSaveError on success', async () => {
+      const section = makeSection('s1', 'Verse 1');
+      const { result, params } = buildHook([section], ['Verse 1']);
+
+      await act(async () => {
+        await result.current.hook.handleSaveToLibrary();
+      });
+
+      expect(params.setSaveError).not.toHaveBeenCalledWith(expect.stringContaining('Failed'));
+    });
+
+    it('guarantees setIsSavingToLibrary(false) via finally when save rejects', async () => {
+      const { saveAssetToLibrary } = await import('../../utils/libraryUtils');
+      vi.mocked(saveAssetToLibrary).mockRejectedValueOnce(new Error('network error'));
+
+      const section = makeSection('s1', 'Verse 1');
+      const { result, params } = buildHook([section], ['Verse 1']);
+
+      await act(async () => {
+        await result.current.hook.handleSaveToLibrary();
+      });
+
+      expect(params.setIsSavingToLibrary).toHaveBeenCalledWith(true);
+      expect(params.setIsSavingToLibrary).toHaveBeenLastCalledWith(false);
+      expect(params.setLibraryCount).not.toHaveBeenCalled();
+      expect(params.setLibraryAssets).not.toHaveBeenCalled();
+    });
+
+    it('calls setSaveError with a message when save rejects', async () => {
+      const { saveAssetToLibrary } = await import('../../utils/libraryUtils');
+      vi.mocked(saveAssetToLibrary).mockRejectedValueOnce(new Error('network error'));
+
+      const section = makeSection('s1', 'Verse 1');
+      const { result, params } = buildHook([section], ['Verse 1']);
+
+      await act(async () => {
+        await result.current.hook.handleSaveToLibrary();
+      });
+
+      expect(params.setSaveError).toHaveBeenCalledWith(expect.stringContaining('Failed'));
+    });
   });
 
   describe('handleLoadLibraryAsset', () => {
@@ -164,7 +207,6 @@ describe('useLibrarySongActions', () => {
         result.current.hook.handleLoadLibraryAsset(assetToLoad);
       });
 
-      // The SongProvider replaces state — song should come from loadAssetIntoEditor mock
       expect(result.current.context.song).toEqual(assetToLoad.sections);
       expect(result.current.context.title).toBe('Loaded Song');
     });
@@ -180,6 +222,41 @@ describe('useLibrarySongActions', () => {
       expect(result.current.context.mood).toBe('test-mood');
       expect(result.current.context.rhymeScheme).toBe('ABAB');
       expect(result.current.context.genre).toBe('pop');
+    });
+
+    it('handles legacy asset without metadata without throwing', async () => {
+      const { loadAssetIntoEditor } = await import('../../utils/libraryUtils');
+      vi.mocked(loadAssetIntoEditor).mockReturnValueOnce({
+        song: [],
+        structure: [],
+        title: 'Legacy',
+        topic: undefined,
+        mood: undefined,
+        rhymeScheme: undefined,
+        targetSyllables: undefined,
+        genre: undefined,
+        tempo: undefined,
+        instrumentation: undefined,
+        rhythm: undefined,
+        narrative: undefined,
+        musicalPrompt: undefined,
+      });
+
+      const legacyAsset: LibraryAsset = {
+        id: 'legacy-1',
+        title: 'Legacy',
+        timestamp: 0,
+        type: 'song',
+        sections: [],
+      };
+
+      const { result } = buildHook([], []);
+
+      expect(() =>
+        act(() => {
+          result.current.hook.handleLoadLibraryAsset(legacyAsset);
+        }),
+      ).not.toThrow();
     });
   });
 });
