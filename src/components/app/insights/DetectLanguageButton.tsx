@@ -148,7 +148,9 @@ export function DetectLanguageButton({
       case ' ':
         e.preventDefault();
         if (activeIndex >= 0 && onSetDefaultLanguage) {
-          onSetDefaultLanguage(SUPPORTED_ADAPTATION_LANGUAGES[activeIndex].code.toLowerCase());
+          const selectedLanguage = SUPPORTED_ADAPTATION_LANGUAGES[activeIndex];
+          if (!selectedLanguage) return;
+          onSetDefaultLanguage(selectedLanguage.code.toLowerCase());
           closePicker();
         }
         break;
