@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, ScanText } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
@@ -33,12 +33,17 @@ export function DetectLanguageButton({
   defaultLanguage,
 }: DetectLanguageButtonProps) {
   const { t } = useTranslation();
+  const listboxId = useId();
+
   const [pickerOpen, setPickerOpen] = useState(false);
   const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number } | null>(null);
+  // Fix #3: active index for keyboard navigation
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
+
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const listboxRef = useRef<HTMLDivElement>(null);
 
-  // Disabled only when AI unavailable or currently detecting — NOT when hasLyrics is false
   const isDisabled = !hasApiKey || isDetectingLanguage;
 
   const detectedLanguageList = detectedDisplays.slice(0, 3).map(d => `${d.sign} ${d.label}`).join(', ');
@@ -50,11 +55,15 @@ export function DetectLanguageButton({
         ? (t.tooltips?.redetectLanguage ?? 'Detected: {langs} — click to re-detect').replace('{langs}', detectedLanguageList)
         : (t.tooltips?.detectLanguage ?? 'Detect song language');
 
-  // ── Picker portal ────────────────────────────────────────────────────────
-  // Fix #1: receive the MouseEvent and call stopPropagation() so the
-  // document 'mousedown' listener (registered asynchronously after React's
-  // flush) never sees the originating click and immediately closes the picker.
-  const openPicker = (e: React.MouseEvent) => {
+  // ── Picker open / close ──────────────────────────────────────────────────
+  const closePicker = useCallback(() => {
+    setPickerOpen(false);
+    setActiveIndex(-1);
+    // Fix #4: return focus to trigger on close
+    triggerRef.current?.focus();
+  }, []);
+
+  const openPicker = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (!triggerRef.current) return;
     const r = triggerRef.current.getBoundingClientRect();
@@ -65,34 +74,92 @@ export function DetectLanguageButton({
     } else {
       setCoords({ bottom: window.innerHeight - r.top + POPOVER_GAP, left: r.left });
     }
+    // Pre-select currently active language, or default to 0
+    const preselect = defaultLanguage
+      ? SUPPORTED_ADAPTATION_LANGUAGES.findIndex(l => l.code.toLowerCase() === defaultLanguage.toLowerCase())
+      : 0;
+    setActiveIndex(preselect >= 0 ? preselect : 0);
     setPickerOpen(true);
-  };
+  }, [defaultLanguage]);
 
   const handleClick = (e: React.MouseEvent) => {
     if (!hasLyrics && onSetDefaultLanguage) {
       openPicker(e);
     } else {
-      // Fix #2: explicit catch so async rejections from the detect pipeline
-      // are not silently swallowed. The type `void | Promise<void>` means
-      // the result may be undefined (sync) or a Promise — Promise.resolve()
-      // wraps both safely before chaining .catch().
       Promise.resolve(onDetect()).catch((err: unknown) => {
         console.error('[DetectLanguageButton] onDetect failed:', err);
       });
     }
   };
 
+  // Fix #4: move focus into listbox after open
+  useEffect(() => {
+    if (!pickerOpen) return;
+    // rAF lets the portal render before we attempt focus
+    const raf = requestAnimationFrame(() => {
+      const items = listboxRef.current?.querySelectorAll<HTMLElement>('[role="option"]');
+      items?.[activeIndex >= 0 ? activeIndex : 0]?.focus();
+    });
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickerOpen]);
+
+  // Scroll active item into view when activeIndex changes via keyboard
+  useEffect(() => {
+    if (!pickerOpen || activeIndex < 0) return;
+    const items = listboxRef.current?.querySelectorAll<HTMLElement>('[role="option"]');
+    items?.[activeIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex, pickerOpen]);
+
+  // Close on outside mousedown
   useEffect(() => {
     if (!pickerOpen) return;
     const handler = (e: MouseEvent) => {
       const target = e.target as Node;
       if (!triggerRef.current?.contains(target) && !popoverRef.current?.contains(target)) {
-        setPickerOpen(false);
+        closePicker();
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [pickerOpen]);
+  }, [pickerOpen, closePicker]);
+
+  // Fix #3: keyboard navigation inside the listbox
+  const handleListboxKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const count = SUPPORTED_ADAPTATION_LANGUAGES.length;
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setActiveIndex(i => (i + 1) % count);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setActiveIndex(i => (i - 1 + count) % count);
+        break;
+      case 'Home':
+        e.preventDefault();
+        setActiveIndex(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        setActiveIndex(count - 1);
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (activeIndex >= 0 && onSetDefaultLanguage) {
+          onSetDefaultLanguage(SUPPORTED_ADAPTATION_LANGUAGES[activeIndex].code.toLowerCase());
+          closePicker();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        closePicker();
+        break;
+      default:
+        break;
+    }
+  }, [activeIndex, closePicker, onSetDefaultLanguage]);
 
   // ── Button label ─────────────────────────────────────────────────────────
   const buttonContent = (() => {
@@ -124,7 +191,8 @@ export function DetectLanguageButton({
           {detectedDisplays.slice(0, 3).map((d, i) => (
             <EmojiSign key={i} sign={d.sign} />
           ))}
-          <span className="hidden sm:inline">{detectedDisplays[0]!.label}</span>
+          {/* Fix #7: guard via optional chaining instead of non-null assertion */}
+          <span className="hidden sm:inline">{detectedDisplays.at(0)?.label}</span>
         </>
       );
     }
@@ -151,36 +219,45 @@ export function DetectLanguageButton({
           }}
         >
           <div
+            ref={listboxRef}
+            id={listboxId}
             className="w-full rounded shadow-xl text-[11px] overflow-hidden"
             style={{ background: 'var(--bg-app, #1a1a2e)', border: '1px solid var(--border-subtle, rgba(255,255,255,0.1))' }}
             role="listbox"
             aria-label="Default language"
+            aria-activedescendant={activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined}
+            onKeyDown={handleListboxKeyDown}
           >
-            <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.18em] opacity-50">
+            <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.18em] opacity-50" aria-hidden="true">
               Default language
             </div>
             <div className="max-h-64 overflow-y-auto">
-              {SUPPORTED_ADAPTATION_LANGUAGES.map(lang => (
-                <button
-                  key={lang.code}
-                  role="option"
-                  aria-selected={lang.code.toLowerCase() === defaultLanguage?.toLowerCase()}
-                  onClick={() => { onSetDefaultLanguage(lang.code.toLowerCase()); setPickerOpen(false); }}
-                  className={[
-                    'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors',
-                    lang.code.toLowerCase() === defaultLanguage?.toLowerCase()
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/60 hover:bg-white/5 hover:text-white/90',
-                  ].join(' ')}
-                >
-                  <EmojiSign sign={lang.sign} />
-                  <span className="uppercase font-semibold text-[10px] tracking-wider flex-shrink-0">{lang.code}</span>
-                  <span className="text-[10px] truncate">{lang.aiName}{lang.region ? ` – ${lang.region}` : ''}</span>
-                  {lang.code.toLowerCase() === defaultLanguage?.toLowerCase() && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
-                  )}
-                </button>
-              ))}
+              {SUPPORTED_ADAPTATION_LANGUAGES.map((lang, idx) => {
+                const isSelected = lang.code.toLowerCase() === defaultLanguage?.toLowerCase();
+                const isActive = idx === activeIndex;
+                return (
+                  <button
+                    key={lang.code}
+                    id={`${listboxId}-opt-${idx}`}
+                    role="option"
+                    aria-selected={isSelected}
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => { onSetDefaultLanguage(lang.code.toLowerCase()); closePicker(); }}
+                    className={[
+                      'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors outline-none',
+                      isSelected ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white/90',
+                      isActive ? 'ring-1 ring-inset ring-white/30' : '',
+                    ].join(' ')}
+                  >
+                    <EmojiSign sign={lang.sign} />
+                    <span className="uppercase font-semibold text-[10px] tracking-wider flex-shrink-0">{lang.code}</span>
+                    <span className="text-[10px] truncate">{lang.aiName}{lang.region ? ` – ${lang.region}` : ''}</span>
+                    {isSelected && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>,
@@ -197,6 +274,9 @@ export function DetectLanguageButton({
           disabled={isDisabled}
           aria-disabled={isDisabled}
           aria-busy={isDetectingLanguage}
+          aria-haspopup={!hasLyrics && !!onSetDefaultLanguage ? 'listbox' : undefined}
+          aria-expanded={!hasLyrics && !!onSetDefaultLanguage ? pickerOpen : undefined}
+          aria-controls={pickerOpen ? listboxId : undefined}
           className="ux-interactive px-2.5 py-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 text-[11px] font-bold rounded flex items-center gap-1.5 disabled:opacity-50 border border-black/10 dark:border-white/10 whitespace-nowrap shrink-0"
         >
           {buttonContent}
