@@ -50,7 +50,11 @@ export function DetectLanguageButton({
         : (t.tooltips?.detectLanguage ?? 'Detect song language');
 
   // ── Picker portal ────────────────────────────────────────────────────────
-  const openPicker = () => {
+  // Fix #1: receive the MouseEvent and call stopPropagation() so the
+  // document 'mousedown' listener (registered asynchronously after React's
+  // flush) never sees the originating click and immediately closes the picker.
+  const openPicker = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!triggerRef.current) return;
     const r = triggerRef.current.getBoundingClientRect();
     const POPOVER_MAX_H = 260;
@@ -63,11 +67,16 @@ export function DetectLanguageButton({
     setPickerOpen(true);
   };
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     if (!hasLyrics && onSetDefaultLanguage) {
-      openPicker();
+      openPicker(e);
     } else {
-      void onDetect();
+      // Fix #2: explicit catch so async rejections from the detect pipeline
+      // are not silently swallowed (void suppresses the floating-promise
+      // warning but also hides errors from DevTools and error reporters).
+      onDetect().catch((err: unknown) => {
+        console.error('[DetectLanguageButton] onDetect failed:', err);
+      });
     }
   };
 
