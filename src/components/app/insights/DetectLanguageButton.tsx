@@ -15,7 +15,8 @@ interface DetectLanguageButtonProps {
   hasLyrics: boolean;
   isDetectingLanguage: boolean;
   hasApiKey: boolean;
-  onDetect: () => void;
+  /** Sync or async — both accepted. Rejections are caught and logged. */
+  onDetect: () => void | Promise<void>;
   /** Called when user picks a default language (no-lyrics mode). */
   onSetDefaultLanguage?: (langCode: string) => void;
   /** Current default/target language code (shown in no-lyrics mode). */
@@ -72,9 +73,10 @@ export function DetectLanguageButton({
       openPicker(e);
     } else {
       // Fix #2: explicit catch so async rejections from the detect pipeline
-      // are not silently swallowed (void suppresses the floating-promise
-      // warning but also hides errors from DevTools and error reporters).
-      onDetect().catch((err: unknown) => {
+      // are not silently swallowed. The type `void | Promise<void>` means
+      // the result may be undefined (sync) or a Promise — Promise.resolve()
+      // wraps both safely before chaining .catch().
+      Promise.resolve(onDetect()).catch((err: unknown) => {
         console.error('[DetectLanguageButton] onDetect failed:', err);
       });
     }
