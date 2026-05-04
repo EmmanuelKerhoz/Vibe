@@ -37,7 +37,6 @@ export function DetectLanguageButton({
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number } | null>(null);
-  // Fix #3: active index for keyboard navigation
   const [activeIndex, setActiveIndex] = useState<number>(-1);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -59,7 +58,6 @@ export function DetectLanguageButton({
   const closePicker = useCallback(() => {
     setPickerOpen(false);
     setActiveIndex(-1);
-    // Fix #4: return focus to trigger on close
     triggerRef.current?.focus();
   }, []);
 
@@ -74,7 +72,6 @@ export function DetectLanguageButton({
     } else {
       setCoords({ bottom: window.innerHeight - r.top + POPOVER_GAP, left: r.left });
     }
-    // Pre-select currently active language, or default to 0
     const preselect = defaultLanguage
       ? SUPPORTED_ADAPTATION_LANGUAGES.findIndex(l => l.code.toLowerCase() === defaultLanguage.toLowerCase())
       : 0;
@@ -92,17 +89,17 @@ export function DetectLanguageButton({
     }
   };
 
-  // Fix #4: move focus into listbox after open
+  // Move focus into listbox after open. activeIndex intentionally omitted from
+  // deps: we only want to focus on *open*, not on every arrow key press.
   useEffect(() => {
     if (!pickerOpen) return;
-    // rAF lets the portal render before we attempt focus
     const raf = requestAnimationFrame(() => {
       const items = listboxRef.current?.querySelectorAll<HTMLElement>('[role="option"]');
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       items?.[activeIndex >= 0 ? activeIndex : 0]?.focus();
     });
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickerOpen]);
+  }, [pickerOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll active item into view when activeIndex changes via keyboard
   useEffect(() => {
@@ -124,7 +121,6 @@ export function DetectLanguageButton({
     return () => document.removeEventListener('mousedown', handler);
   }, [pickerOpen, closePicker]);
 
-  // Fix #3: keyboard navigation inside the listbox
   const handleListboxKeyDown = useCallback((e: React.KeyboardEvent) => {
     const count = SUPPORTED_ADAPTATION_LANGUAGES.length;
     switch (e.key) {
@@ -193,7 +189,6 @@ export function DetectLanguageButton({
           {detectedDisplays.slice(0, 3).map((d, i) => (
             <EmojiSign key={i} sign={d.sign} />
           ))}
-          {/* Fix #7: guard via optional chaining instead of non-null assertion */}
           <span className="hidden sm:inline">{detectedDisplays.at(0)?.label}</span>
         </>
       );
@@ -238,15 +233,24 @@ export function DetectLanguageButton({
                 const isSelected = lang.code.toLowerCase() === defaultLanguage?.toLowerCase();
                 const isActive = idx === activeIndex;
                 return (
-                  <button
+                  // ARIA 1.1 §6.32: role=option must not be on a native interactive
+                  // element. Using div with roving tabIndex + onClick is compliant.
+                  <div
                     key={lang.code}
                     id={`${listboxId}-opt-${idx}`}
                     role="option"
                     aria-selected={isSelected}
                     tabIndex={isActive ? 0 : -1}
                     onClick={() => { onSetDefaultLanguage(lang.code.toLowerCase()); closePicker(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSetDefaultLanguage(lang.code.toLowerCase());
+                        closePicker();
+                      }
+                    }}
                     className={[
-                      'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors outline-none',
+                      'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors outline-none cursor-pointer',
                       isSelected ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white/90',
                       isActive ? 'ring-1 ring-inset ring-white/30' : '',
                     ].join(' ')}
@@ -257,7 +261,7 @@ export function DetectLanguageButton({
                     {isSelected && (
                       <span className="ml-auto w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
