@@ -12,7 +12,7 @@ export interface PickerCoords {
 }
 
 interface UsePickerCoordsOptions {
-  defaultLanguage?: string;
+  defaultLanguage?: string | undefined;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
