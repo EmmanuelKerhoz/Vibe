@@ -14,6 +14,7 @@ import {
   type ComboboxProps,
 } from '@fluentui/react-components';
 import { FAMILY_CONFIG, type AlgoFamily } from '../../constants/langFamilyMap';
+import { FlagSign } from '../FlagSign';
 
 const useStyles = makeStyles({
   root: {
@@ -85,7 +86,7 @@ export const LanguageFamilyDropdown = React.memo(function LanguageFamilyDropdown
       {FAMILY_ENTRIES.map(cfg => (
         <Option key={cfg.family} value={cfg.family} text={`${cfg.flag} ${cfg.label}`}>
           <span className={styles.option}>
-            <span className={styles.flag}>{cfg.flag}</span>
+            <FlagSign sign={cfg.flag} alt={cfg.label} />
             <span className={styles.label}>{cfg.label}</span>
             <span className={styles.code}>{cfg.family}</span>
           </span>

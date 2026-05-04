@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { FlagEmoji } from '../ui/FlagEmoji';
+import { FlagSign } from '../FlagSign';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../i18n';
 
@@ -126,7 +126,7 @@ export function StatusBarLanguagePicker() {
                   : 'text-[var(--text-secondary)] hover:bg-[var(--accent-color)]/5 hover:text-[var(--text-primary)]'
               }`}
             >
-              <FlagEmoji flag={loc.flag} code={loc.code} size="1rem" />
+              <FlagSign sign={loc.flag} alt={loc.label} size={16} />
               <span className="uppercase font-semibold text-[10px] tracking-wider">{loc.code}</span>
               <span className="text-[10px] truncate">{loc.label}</span>
               {loc.code === language && (
@@ -150,7 +150,7 @@ export function StatusBarLanguagePicker() {
           aria-expanded={open}
           className="lcars-meta-btn min-h-[44px] lg:min-h-0 flex items-center gap-1.5"
         >
-          <FlagEmoji flag={currentLocale.flag} code={currentLocale.code} size="0.875rem" />
+          <FlagSign sign={currentLocale.flag} alt={currentLocale.label} size={14} />
           <span className="uppercase font-semibold text-[10px] tracking-wider">{currentLocale.code}</span>
         </button>
       </Tooltip>

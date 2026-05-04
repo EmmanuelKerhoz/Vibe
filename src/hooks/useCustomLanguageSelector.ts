@@ -4,7 +4,7 @@ import {
   CUSTOM_LANGUAGE_VALUE,
   isCustomAdaptationLanguage,
 } from '../i18n';
-import { EmojiSign } from '../components/ui/EmojiSign';
+import { FlagSign } from '../components/FlagSign';
 
 // ─── Language grouping ────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
       value: lang.aiName,
       label: (
         React.createElement('span', { className: 'flex items-center gap-1.5 min-w-0 w-full' },
-          React.createElement(EmojiSign, { sign: lang.sign }),
+          React.createElement(FlagSign, { sign: lang.sign, alt: lang.aiName }),
           React.createElement('span', { className: 'truncate text-[11px]' },
             lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName
           )

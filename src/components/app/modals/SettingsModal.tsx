@@ -3,7 +3,7 @@ import { X, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCod
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';
-import { FlagEmoji } from '../../ui/FlagEmoji';
+import { FlagSign } from '../../FlagSign';
 
 interface Props {
   isOpen: boolean;
@@ -227,7 +227,7 @@ export function SettingsModal({
                             : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-color)]/20 hover:text-[var(--text-primary)]'
                         }`}
                       >
-                        <FlagEmoji flag={loc.flag} code={loc.code} />
+                        <FlagSign sign={loc.flag} alt={loc.label} />
                         <span className="font-medium truncate">{loc.label}</span>
                         {loc.code === draftLanguage && (
                           <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] flex-shrink-0" />

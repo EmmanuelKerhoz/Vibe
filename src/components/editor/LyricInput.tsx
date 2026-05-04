@@ -4,7 +4,7 @@ import type { Line } from '../../types';
 import { useDrag } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { Tooltip } from '../ui/Tooltip';
-import { EmojiSign } from '../ui/EmojiSign';
+import { FlagSign } from '../FlagSign';
 import { useTranslation } from '../../i18n';
 import { getLanguageDisplay } from '../../i18n';
 import { getRhymeTextColor } from '../../utils/songUtils';
@@ -201,7 +201,7 @@ export const LyricInput = React.memo(function LyricInput({
       {lineLanguageDisplay && (
         <Tooltip title={lineLanguageDisplay.label}>
           <span className="flex-shrink-0 flex items-center justify-center w-3.5">
-            <EmojiSign sign={lineLanguageDisplay.sign} />
+            <FlagSign sign={lineLanguageDisplay.sign} alt={lineLanguageDisplay.label} />
           </span>
         </Tooltip>
       )}

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Loader2, ScanText } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
-import { EmojiSign } from '../../ui/EmojiSign';
+import { FlagSign } from '../../FlagSign';
 import { getLanguageDisplay, useTranslation, SUPPORTED_ADAPTATION_LANGUAGES } from '../../../i18n';
 import { usePickerCoords } from './usePickerCoords';
 import { LanguagePicker } from './LanguagePicker';
@@ -114,12 +114,12 @@ export function DetectLanguageButton({
           <ScanText className="w-3 h-3" aria-hidden="true" />
           {defLang ? (
             <>
-              <EmojiSign sign={defLang.sign} />
+              <FlagSign sign={defLang.sign} alt={defLang.aiName} />
               <span className="hidden sm:inline">{defLang.code.toUpperCase()}</span>
             </>
           ) : (
             <>
-              <EmojiSign sign="🌐" />
+              <FlagSign sign="🌐" />
               <span className="hidden sm:inline">{t.editor?.detect ?? 'Lang'}</span>
             </>
           )}
@@ -131,7 +131,7 @@ export function DetectLanguageButton({
         <>
           <ScanText className="w-3 h-3" aria-hidden="true" />
           {detectedDisplays.slice(0, 3).map((d, i) => (
-            <EmojiSign key={i} sign={d.sign} />
+            <FlagSign key={i} sign={d.sign} alt={d.label} />
           ))}
           {/* Fix #7: guard via optional chaining — detectedDisplays may be empty */}
           <span className="hidden sm:inline">{detectedDisplays.at(0)?.label}</span>
@@ -141,7 +141,7 @@ export function DetectLanguageButton({
     return (
       <>
         <ScanText className="w-3 h-3" aria-hidden="true" />
-        <EmojiSign sign="🌐" />
+        <FlagSign sign="🌐" />
         <span className="hidden sm:inline">{t.editor?.detect ?? 'Detect'}</span>
       </>
     );
