@@ -32,9 +32,9 @@ describe('adaptation language dialects', () => {
   });
 
   it('applies Feature 4 language flag corrections', () => {
-    // English: keeps 🇬🇧, gains region: 'United Kingdom'
+    // English: uses the requested US flag and region.
     expect(SUPPORTED_ADAPTATION_LANGUAGES).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'EN', sign: '🇬🇧', region: 'United Kingdom' }),
+      expect.objectContaining({ code: 'EN', sign: '🇺🇸', region: 'United States' }),
     ]));
 
     // Swahili: changed to 🌍 with isEthnical: true
@@ -83,5 +83,23 @@ describe('adaptation language dialects', () => {
     const signs = ethnicalEntries.map(l => l.sign);
     const uniqueSigns = new Set(signs);
     expect(uniqueSigns.size).toBe(signs.length);
+  });
+
+  it('keeps English and French unique with the expected flags in UI locales', () => {
+    expect(SUPPORTED_UI_LOCALES.filter(l => l.label === 'English')).toEqual([
+      expect.objectContaining({ code: 'en', flag: '🇺🇸' }),
+    ]);
+    expect(SUPPORTED_UI_LOCALES.filter(l => l.label === 'Français')).toEqual([
+      expect.objectContaining({ code: 'fr', flag: '🇫🇷' }),
+    ]);
+  });
+
+  it('keeps English and French unique with the expected signs in adaptation languages', () => {
+    expect(SUPPORTED_ADAPTATION_LANGUAGES.filter(l => l.aiName === 'English')).toEqual([
+      expect.objectContaining({ code: 'EN', sign: '🇺🇸' }),
+    ]);
+    expect(SUPPORTED_ADAPTATION_LANGUAGES.filter(l => l.aiName === 'French')).toEqual([
+      expect.objectContaining({ code: 'FR', sign: '🇫🇷' }),
+    ]);
   });
 });
