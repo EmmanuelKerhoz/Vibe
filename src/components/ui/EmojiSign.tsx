@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { emojiToTwemojiUrl } from '../../utils/emojiUtils';
 
 interface EmojiSignProps {
   sign: string;
 }
 
-const FALLBACK = '🔤';
+const FALLBACK = '\uD83D\uDD24';
 
 /**
  * Renders an emoji as a local Twemoji SVG for consistent cross-platform display.
@@ -21,11 +21,13 @@ export function EmojiSign({ sign }: EmojiSignProps) {
     setSrc(emojiToTwemojiUrl(sign?.trim() || FALLBACK));
   }, [sign]);
 
-  const handleError = () => {
+  // useCallback([sign]) ensures handleError always references the current
+  // `resolved` value — avoids stale closure if sign changes while loading.
+  const handleError = useCallback(() => {
     if (resolved !== FALLBACK) {
       setSrc(emojiToTwemojiUrl(FALLBACK));
     }
-  };
+  }, [resolved]);
 
   return (
     <img
