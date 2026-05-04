@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { getLanguageDisplay, SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
@@ -41,35 +41,45 @@ export const InsightsBar = React.memo(function InsightsBar() {
     .map(getLanguageDisplay);
 
   /**
-   * Called when the user picks a default generation language in no-lyrics mode.
-   * Receives the lang.code (e.g. "SA") and resolves it to the aiName (e.g. "Sanskrit")
-   * that useAiGeneration expects in its prompt.
+   * Fix #5 — memoized: the find() only re-runs when songLanguage changes.
+   * Resolves aiName → lang.code for DetectLanguageButton's checkmark display.
    */
-  const handleSetDefaultLanguage = (langCode: string) => {
-    const match = SUPPORTED_ADAPTATION_LANGUAGES.find(
-      l => l.code.toLowerCase() === langCode.toLowerCase(),
-    );
-    const aiName = match?.aiName ?? langCode;
-    setSongLanguage(aiName);
-  };
-
-  // The defaultLanguage prop is used by DetectLanguageButton to show a checkmark
-  // next to the currently selected language. It expects a lang.code (lowercase).
-  const songLanguageCode = (() => {
+  const songLanguageCode = useMemo(() => {
     if (!songLanguage) return undefined;
     const match = SUPPORTED_ADAPTATION_LANGUAGES.find(
       l => l.aiName.toLowerCase() === songLanguage.toLowerCase(),
     );
     return match ? match.code.toLowerCase() : undefined;
-  })();
+  }, [songLanguage]);
 
-  // exactOptionalPropertyTypes: only spread optional props when value is defined
+  /**
+   * Fix #5 — memoized: the find() only re-runs when setSongLanguage identity
+   * changes (stable context ref — effectively once per mount).
+   * Receives lang.code (e.g. "SA") and resolves to aiName (e.g. "Sanskrit")
+   * that useAiGeneration expects in its prompt.
+   */
+  const handleSetDefaultLanguage = useCallback((langCode: string) => {
+    const match = SUPPORTED_ADAPTATION_LANGUAGES.find(
+      l => l.code.toLowerCase() === langCode.toLowerCase(),
+    );
+    const aiName = match?.aiName ?? langCode;
+    setSongLanguage(aiName);
+  }, [setSongLanguage]);
+
+  /**
+   * exactOptionalPropertyTypes guard: MetronomeButton declares isMetronomeActive
+   * and toggleMetronome as `?: T`. Passing `prop={undefined}` is a TS error —
+   * the conditional spread omits the key entirely when the value is undefined.
+   */
   const metronomeOptional = {
     ...(isMetronomeActive !== undefined ? { isMetronomeActive } : {}),
     ...(toggleMetronome !== undefined ? { toggleMetronome } : {}),
   };
 
-  // exactOptionalPropertyTypes: defaultLanguage must be string, not string | undefined
+  /**
+   * exactOptionalPropertyTypes guard: DetectLanguageButton declares
+   * defaultLanguage as `?: string`. Same rationale as above.
+   */
   const defaultLanguageOptional = songLanguageCode !== undefined
     ? { defaultLanguage: songLanguageCode }
     : {};
