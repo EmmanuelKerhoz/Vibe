@@ -13,7 +13,7 @@ describe('adaptation language dialects', () => {
   it('exposes Bekwarra, Mina, Ewe, and Korean through display lookups', () => {
     expect(getLanguageDisplay('BK')).toMatchObject({ label: 'Bekwarra', sign: '🏹' });
     expect(getLanguageDisplay('Mina')).toMatchObject({ label: 'Mina', sign: '🌊' });
-    expect(getLanguageDisplay('EW')).toMatchObject({ label: 'Ewe', sign: '🎶' });
+    expect(getLanguageDisplay('EW')).toMatchObject({ label: 'Ewe', sign: '🪘' });
     expect(getLanguageDisplay('ko')).toMatchObject({ label: '한국어', sign: '🇰🇷' });
   });
 
@@ -29,5 +29,59 @@ describe('adaptation language dialects', () => {
     expect(SUPPORTED_UI_LOCALES).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'ko', label: '한국어', flag: '🇰🇷', dir: 'ltr' }),
     ]));
+  });
+
+  it('applies Feature 4 language flag corrections', () => {
+    // English: keeps 🇬🇧, gains region: 'United Kingdom'
+    expect(SUPPORTED_ADAPTATION_LANGUAGES).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'EN', sign: '🇬🇧', region: 'United Kingdom' }),
+    ]));
+
+    // Swahili: changed to 🌍 with isEthnical: true
+    expect(SUPPORTED_ADAPTATION_LANGUAGES).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'SW', sign: '🌍', isEthnical: true }),
+    ]));
+
+    // Kannada: region updated to 'Karnataka - South India'
+    expect(SUPPORTED_ADAPTATION_LANGUAGES).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'KN', region: 'Karnataka - South India' }),
+    ]));
+
+    // Nigerian Pidgin: isEthnical removed (flag stays 🇳🇬)
+    const pcm = SUPPORTED_ADAPTATION_LANGUAGES.find(l => l.code === 'PCM');
+    expect(pcm?.isEthnical).not.toBe(true);
+    expect(pcm?.sign).toBe('🇳🇬');
+
+    // Nouchi: isEthnical removed (flag stays 🇨🇮)
+    const nou = SUPPORTED_ADAPTATION_LANGUAGES.find(l => l.code === 'NOU');
+    expect(nou?.isEthnical).not.toBe(true);
+    expect(nou?.sign).toBe('🇨🇮');
+
+    // Camfranglais: isEthnical removed (flag stays 🇨🇲)
+    const cfg = SUPPORTED_ADAPTATION_LANGUAGES.find(l => l.code === 'CFG');
+    expect(cfg?.isEthnical).not.toBe(true);
+    expect(cfg?.sign).toBe('🇨🇲');
+
+    // Ewe: changed from 🎶 to 🪘
+    expect(SUPPORTED_ADAPTATION_LANGUAGES).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'EW', sign: '🪘', isEthnical: true }),
+    ]));
+
+    // Arabic: changed to 🌙 with isEthnical: true, region: 'Arab World'
+    expect(SUPPORTED_ADAPTATION_LANGUAGES).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'AR', sign: '🌙', isEthnical: true, region: 'Arab World' }),
+    ]));
+
+    // Farsi: unchanged (keeps 🇮🇷)
+    expect(SUPPORTED_ADAPTATION_LANGUAGES).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'FA', sign: '🇮🇷' }),
+    ]));
+  });
+
+  it('enforces picto uniqueness: no two isEthnical entries share the same sign', () => {
+    const ethnicalEntries = SUPPORTED_ADAPTATION_LANGUAGES.filter(l => l.isEthnical === true);
+    const signs = ethnicalEntries.map(l => l.sign);
+    const uniqueSigns = new Set(signs);
+    expect(uniqueSigns.size).toBe(signs.length);
   });
 });

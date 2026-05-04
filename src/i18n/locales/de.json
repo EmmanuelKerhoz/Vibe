@@ -29,7 +29,8 @@
     "undo": "Rückgängig",
     "redo": "Wiederholen",
     "reset": "Zurücksetzen",
-    "aiUnavailable": "KI NICHT VERFÜGBAR"
+    "aiUnavailable": "KI NICHT VERFÜGBAR",
+    "send_to_suno": "An SUNO senden"
   },
   "mobileNav": {
     "navigation": "Mobile Navigation",
@@ -131,7 +132,9 @@
     "moveLineUp": "Zeile nach oben",
     "moveLineDown": "Zeile nach unten",
     "deleteLine": "Zeile löschen",
-    "lyricsEditors": "Ansicht"
+    "lyricsEditors": "Ansicht",
+    "quantize_line": "Zeile quantisieren",
+    "quantize_line_done": "Zeile quantisiert"
   },
   "suggestions": {
     "title": "KI-Vorschläge",
@@ -407,7 +410,9 @@
     "generateTitle": "Titel aus Liedtext generieren",
     "aiGeneratedTitle": "KI-generierter Titel",
     "userEnteredTitle": "Vom Benutzer eingegebener Titel",
-    "openSearch": "Suche & Ersetzen in Liedtexten (Ctrl+F)"
+    "openSearch": "Suche & Ersetzen in Liedtexten (Ctrl+F)",
+    "sendToSuno": "SUNO mit Ihrem musikalischen Prompt öffnen",
+    "quantizeLineDone": "Zeile quantisiert"
   },
   "sections": {
     "intro": "Intro",
@@ -462,5 +467,17 @@
     "ABABAB": "ABABAB (6-zeiliger Kreuzreim)",
     "ABCABC": "ABCABC (6-zeilige Wiederholung)",
     "FREE": "Freier Vers"
+  },
+  "rhythmicCoherence": {
+    "title": "Rhythmische Kohärenzprüfung",
+    "scoreLabel": "Übereinstimmungswert",
+    "optionA": "Texte priorisieren",
+    "optionADescription": "Tempo/Stil des musikalischen Prompts an die Textdichte anpassen.",
+    "optionB": "Texte anpassen",
+    "optionBDescription": "Zu lange Zeilen anzeigen und kürzen.",
+    "apply": "Anwenden",
+    "skip": "Überspringen",
+    "suggestedBpm": "Vorgeschlagener BPM-Bereich: {min}–{max}",
+    "tooLongLines": "Möglicherweise zu dichte Zeilen:"
   }
 }

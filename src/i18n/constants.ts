@@ -71,7 +71,7 @@ export type SupportedUiLocaleCode = typeof SUPPORTED_UI_LOCALES[number]['code'];
 export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // A
   { code: 'AM',  aiName: 'Amharic',         sign: '🇪🇹', region: 'Ethiopia - East Africa' },
-  { code: 'AR',  aiName: 'Arabic',           sign: '🇸🇦' },
+  { code: 'AR',  aiName: 'Arabic',           sign: '🌙', region: 'Arab World', isEthnical: true },
   { code: 'AZ',  aiName: 'Azerbaijani',      sign: '🇦🇿' },
   // B
   { code: 'BA',  aiName: 'Baoulé',           sign: '🌿', region: 'Ivory Coast - West Africa', isEthnical: true },
@@ -82,7 +82,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // C
   { code: 'CB',  aiName: 'Calabari',         sign: '🐚', region: 'Niger Delta - Nigeria', isEthnical: true },
   { code: 'YUE', aiName: 'Cantonese',        sign: '🇭🇰', region: 'Hong Kong / Guangdong' },
-  { code: 'CFG', aiName: 'Camfranglais',     sign: '🇨🇲', region: 'Cameroon - Urban Creole', isEthnical: true },
+  { code: 'CFG', aiName: 'Camfranglais',     sign: '🇨🇲', region: 'Cameroon - Urban Creole' },
   { code: 'ZH',  aiName: 'Chinese',          sign: '🇨🇳', region: 'Mandarin' },
   { code: 'HR',  aiName: 'Croatian',         sign: '🇭🇷' },
   { code: 'CS',  aiName: 'Czech',            sign: '🇨🇿' },
@@ -90,9 +90,9 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'DA',  aiName: 'Danish',           sign: '🇩🇰' },
   { code: 'DI',  aiName: 'Dioula',           sign: '🧭', region: 'Ivory Coast/Burkina Faso - West Africa', isEthnical: true },
   // E
-  { code: 'EN',  aiName: 'English',          sign: '🇬🇧' },
+  { code: 'EN',  aiName: 'English',          sign: '🇬🇧', region: 'United Kingdom' },
   { code: 'ET',  aiName: 'Estonian',         sign: '🇪🇪' },
-  { code: 'EW',  aiName: 'Ewe',              sign: '🎶', region: 'Togo - Volta Region', isEthnical: true },
+  { code: 'EW',  aiName: 'Ewe',              sign: '🪘', region: 'Togo - Volta Region', isEthnical: true },
   // F
   { code: 'FA',  aiName: 'Farsi',            sign: '🇮🇷', region: 'Persian - Iran' },
   { code: 'FI',  aiName: 'Finnish',          sign: '🇫🇮' },
@@ -113,7 +113,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'JA',  aiName: 'Japanese',         sign: '🇯🇵' },
   { code: 'JV',  aiName: 'Javanese',         sign: '🎭', region: 'Java - Indonesia', isEthnical: true },
   // K
-  { code: 'KN',  aiName: 'Kannada',          sign: '🇮🇳', region: 'Karnataka' },
+  { code: 'KN',  aiName: 'Kannada',          sign: '🇮🇳', region: 'Karnataka - South India' },
   { code: 'KK',  aiName: 'Kazakh',           sign: '🇰🇿' },
   { code: 'KM',  aiName: 'Khmer',            sign: '🇰🇭', region: 'Cambodia' },
   { code: 'KO',  aiName: 'Korean',           sign: '🇰🇷', region: 'South Korea' },
@@ -125,8 +125,8 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'ML',  aiName: 'Malayalam',        sign: '🇮🇳', region: 'Kerala' },
   { code: 'MI',  aiName: 'Mina',             sign: '🌊', region: 'Togo - Maritime Region', isEthnical: true },
   // N
-  { code: 'PCM', aiName: 'Nigerian Pidgin',  sign: '🇳🇬', region: 'Nigeria - Urban Creole', isEthnical: true },
-  { code: 'NOU', aiName: 'Nouchi',           sign: '🇨🇮', region: 'Ivory Coast - Urban Creole', isEthnical: true },
+  { code: 'PCM', aiName: 'Nigerian Pidgin',  sign: '🇳🇬', region: 'Nigeria - Urban Creole' },
+  { code: 'NOU', aiName: 'Nouchi',           sign: '🇨🇮', region: 'Ivory Coast - Urban Creole' },
   { code: 'NO',  aiName: 'Norwegian',        sign: '🇳🇴' },
   // O
   { code: 'OG',  aiName: 'Ogoja',            sign: '🗿', region: 'Cross River - Nigeria', isEthnical: true },
@@ -141,7 +141,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'SR',  aiName: 'Serbian',          sign: '🇷🇸' },
   { code: 'SK',  aiName: 'Slovak',           sign: '🇸🇰' },
   { code: 'ES',  aiName: 'Spanish',          sign: '🇪🇸' },
-  { code: 'SW',  aiName: 'Swahili',          sign: '🇹🇿', region: 'East Africa' },
+  { code: 'SW',  aiName: 'Swahili',          sign: '🌍', region: 'East Africa', isEthnical: true },
   { code: 'SV',  aiName: 'Swedish',          sign: '🇸🇪' },
   // T
   { code: 'TL',  aiName: 'Tagalog',          sign: '🇵🇭' },
