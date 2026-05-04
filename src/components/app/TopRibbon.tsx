@@ -1,14 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { Sparkles, Undo2, Redo2, PanelRight, Menu, KeyboardRegular, WandSparkles } from '../ui/icons';
+import { Sparkles, Undo2, Redo2, PanelRight, Menu, KeyboardRegular, WandSparkles, Music, Check } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
 import { useTranslation } from '../../i18n';
-import { useSongHistoryContext } from '../../contexts/SongContext';
+import { useSongHistoryContext, useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppNavigationContext } from '../../contexts/AppStateContext';
 import { useTopRibbonActions } from '../../hooks/useTopRibbonActions';
 import { RibbonMenuPanel } from './RibbonMenuPanel';
 import { RibbonTabs } from './RibbonTabs';
+import { SUNO_CREATE_URL } from '../../constants/externalUrls';
 
 /**
  * TopRibbon — assembly component (~100 lines).
@@ -25,6 +26,7 @@ interface Props {
 export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, onOpenNewEmpty }: Props) {
   const { past, future, undo, redo } = useSongHistoryContext();
   const { isGenerating, clearSelection } = useComposerContext();
+  const { musicalPrompt } = useSongContext();
   const { activeTab, setActiveTab, isLeftPanelOpen, setIsLeftPanelOpen, isStructureOpen, setIsStructureOpen } = useAppNavigationContext();
   const { openKeyboardShortcuts, isAnalyzing } = useTopRibbonActions();
   const { t } = useTranslation();
@@ -39,6 +41,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const [sunoSent, setSunoSent] = useState(false);
 
   const toggleLeftPanel = () => {
     if (!isLeftPanelOpen) { setActiveTab('lyrics'); setIsStructureOpen(false); }
@@ -48,6 +51,16 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
     const next = !isStructureOpen;
     if (next) clearSelection();
     setIsStructureOpen(next);
+  };
+
+  const handleSendToSuno = () => {
+    const prompt = musicalPrompt.trim();
+    const url = prompt
+      ? `${SUNO_CREATE_URL}?prompt=${encodeURIComponent(prompt)}`
+      : SUNO_CREATE_URL;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setSunoSent(true);
+    setTimeout(() => setSunoSent(false), 2000);
   };
 
   return (
@@ -93,6 +106,26 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
             </button>
           </Tooltip>
         )}
+        {/* Send to SUNO button */}
+        <Tooltip title={sunoSent ? (t.tooltips.quantizeLineDone ?? 'Opening SUNO…') : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt')}>
+          <button
+            onClick={handleSendToSuno}
+            aria-label={t.ribbon.send_to_suno ?? 'Send to SUNO'}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all"
+            style={{
+              background: sunoSent
+                ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 12%, transparent)'
+                : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 12%, transparent)',
+              color: sunoSent ? 'var(--lcars-cyan, #4f98a3)' : 'var(--lcars-violet, #a86fdf)',
+              border: `1px solid ${sunoSent ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 25%, transparent)' : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 25%, transparent)'}`,
+            }}
+          >
+            {sunoSent
+              ? <Check className="w-3.5 h-3.5" />
+              : <Music className="w-3.5 h-3.5" />}
+            <span className="hidden lg:inline">{t.ribbon.send_to_suno ?? 'Send to SUNO'}</span>
+          </button>
+        </Tooltip>
         <div className="w-px h-4 bg-[var(--border-color)] mx-1 hidden lg:block" />
         <Tooltip title={t.tooltips.undo}>
           <IconButton onClick={undo} disabled={!canUndo} size="small" style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 36, minHeight: 36 }} className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'} aria-disabled={!canUndo} aria-label={t.tooltips.undo}>

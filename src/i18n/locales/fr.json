@@ -55,7 +55,8 @@
     "reset": "Réinitialiser",
     "aiUnavailable": "IA INDISPONIBLE",
     "menu": "Menu",
-    "menuAria": "Ouvrir le menu principal"
+    "menuAria": "Ouvrir le menu principal",
+    "send_to_suno": "Envoyer à SUNO"
   },
   "mobileNav": {
     "navigation": "Navigation mobile",
@@ -182,7 +183,9 @@
     "checkingSimilarityLabel": "Vérification de la similarité…",
     "lyricsEditors": "Paroles",
     "lyricsInsights": "Aperçus des paroles",
-    "detect": "Détecter"
+    "detect": "Détecter",
+    "quantize_line": "Quantifier la ligne",
+    "quantize_line_done": "Ligne quantifiée"
   },
   "suggestions": {
     "title": "Suggestions IA",
@@ -493,7 +496,9 @@
     "pasteUnavailable": "Aucune parole détectée dans le presse-papier",
     "browseLibrary": "Enregistrer ou parcourir votre bibliothèque de chansons",
     "openSettings": "Ouvrir les paramètres de l'application",
-    "sponsor": "Soutenir le développeur"
+    "sponsor": "Soutenir le développeur",
+    "sendToSuno": "Ouvrir SUNO avec votre prompt musical",
+    "quantizeLineDone": "Ligne quantifiée"
   },
   "sections": {
     "intro": "Intro",
@@ -574,5 +579,17 @@
     "saveVersionPlaceholder": "Nom de la version",
     "saveVersionConfirm": "Enregistrer",
     "cancel": "Annuler"
+  },
+  "rhythmicCoherence": {
+    "title": "Vérification de la cohérence rythmique",
+    "scoreLabel": "Score de correspondance",
+    "optionA": "Prioriser les paroles",
+    "optionADescription": "Ajuster le tempo/style du prompt musical pour correspondre à la densité des paroles.",
+    "optionB": "Ajuster les paroles",
+    "optionBDescription": "Voir les lignes trop longues et les raccourcir.",
+    "apply": "Appliquer",
+    "skip": "Ignorer",
+    "suggestedBpm": "Plage BPM suggérée : {min}–{max}",
+    "tooLongLines": "Lignes potentiellement trop denses :"
   }
 }

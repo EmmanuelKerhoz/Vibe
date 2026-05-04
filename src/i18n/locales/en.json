@@ -55,7 +55,8 @@
     "reset": "Reset",
     "aiUnavailable": "AI UNAVAILABLE",
     "menu": "Menu",
-    "menuAria": "Open main menu"
+    "menuAria": "Open main menu",
+    "send_to_suno": "Send to SUNO"
   },
   "mobileNav": {
     "navigation": "Mobile navigation",
@@ -182,7 +183,9 @@
     "checkingSimilarityLabel": "Checking similarity…",
     "lyricsEditors": "View",
     "lyricsInsights": "INSIGHTS",
-    "detect": "Detect"
+    "detect": "Detect",
+    "quantize_line": "Quantize line",
+    "quantize_line_done": "Line quantized"
   },
   "suggestions": {
     "title": "AI Suggestions",
@@ -493,7 +496,9 @@
     "pasteUnavailable": "No lyrics detected in clipboard",
     "browseLibrary": "Save or browse your song library",
     "openSettings": "Open application settings",
-    "sponsor": "Support the developer"
+    "sponsor": "Support the developer",
+    "sendToSuno": "Open SUNO with your musical prompt",
+    "quantizeLineDone": "Line quantized"
   },
   "sections": {
     "intro": "Intro",
@@ -574,5 +579,17 @@
     "saveVersionPlaceholder": "Version name",
     "saveVersionConfirm": "Save",
     "cancel": "Cancel"
+  },
+  "rhythmicCoherence": {
+    "title": "Rhythmic Coherence Check",
+    "scoreLabel": "Match Score",
+    "optionA": "Prioritise Lyrics",
+    "optionADescription": "Adjust the musical prompt tempo/style to match the lyrics density.",
+    "optionB": "Adjust Lyrics",
+    "optionBDescription": "View lines that are too long and trim them.",
+    "apply": "Apply",
+    "skip": "Skip",
+    "suggestedBpm": "Suggested BPM range: {min}–{max}",
+    "tooLongLines": "Lines that may be too dense:"
   }
 }

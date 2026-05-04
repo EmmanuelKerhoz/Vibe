@@ -29,7 +29,8 @@
     "undo": "Deshacer",
     "redo": "Rehacer",
     "reset": "Restablecer",
-    "aiUnavailable": "IA NO DISPONIBLE"
+    "aiUnavailable": "IA NO DISPONIBLE",
+    "send_to_suno": "Enviar a SUNO"
   },
   "mobileNav": {
     "navigation": "Navegación móvil",
@@ -131,7 +132,9 @@
     "moveLineUp": "Subir línea",
     "moveLineDown": "Bajar línea",
     "deleteLine": "Eliminar línea",
-    "lyricsEditors": "Vista"
+    "lyricsEditors": "Vista",
+    "quantize_line": "Cuantizar línea",
+    "quantize_line_done": "Línea cuantizada"
   },
   "suggestions": {
     "title": "Sugerencias IA",
@@ -407,7 +410,9 @@
     "generateTitle": "Generar título desde la letra",
     "aiGeneratedTitle": "Título generado por IA",
     "userEnteredTitle": "Título introducido por el usuario",
-    "openSearch": "Buscar y reemplazar en las letras (Ctrl+F)"
+    "openSearch": "Buscar y reemplazar en las letras (Ctrl+F)",
+    "sendToSuno": "Abrir SUNO con tu prompt musical",
+    "quantizeLineDone": "Línea cuantizada"
   },
   "sections": {
     "intro": "Intro",
@@ -462,5 +467,17 @@
     "ABABAB": "ABABAB (Alterna de 6 líneas)",
     "ABCABC": "ABCABC (Repetición de 6 líneas)",
     "FREE": "Verso libre"
+  },
+  "rhythmicCoherence": {
+    "title": "Verificación de coherencia rítmica",
+    "scoreLabel": "Puntuación de coincidencia",
+    "optionA": "Priorizar letras",
+    "optionADescription": "Ajustar el tempo/estilo del prompt musical para que coincida con la densidad de las letras.",
+    "optionB": "Ajustar letras",
+    "optionBDescription": "Ver líneas demasiado largas y recortarlas.",
+    "apply": "Aplicar",
+    "skip": "Omitir",
+    "suggestedBpm": "Rango BPM sugerido: {min}–{max}",
+    "tooLongLines": "Líneas que pueden ser demasiado densas:"
   }
 }

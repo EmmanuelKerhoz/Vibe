@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2, Bot, User, Languages, Loader2 } from '../ui/icons';
+import React, { useRef, useEffect, useState } from 'react';
+import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2, Bot, User, Languages, Loader2, Ruler, Check } from '../ui/icons';
 import type { Line } from '../../types';
 import { useDrag } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
@@ -38,6 +38,8 @@ export interface LyricInputProps {
   sectionTargetLanguage?: string;
   isAdaptingLine?: boolean;
   onLineBlur?: () => void;
+  /** Quantize the line against current song BPM + time signature. */
+  onQuantizeLine?: (sectionId: string, lineId: string) => void;
 }
 
 export const LyricInput = React.memo(function LyricInput({
@@ -67,6 +69,7 @@ export const LyricInput = React.memo(function LyricInput({
   sectionTargetLanguage,
   isAdaptingLine = false,
   onLineBlur,
+  onQuantizeLine,
 }: LyricInputProps) {
   const { t } = useTranslation();
   const { setDraggedLineInfo, setDragOverLineInfo } = useDrag();
@@ -76,6 +79,7 @@ export const LyricInput = React.memo(function LyricInput({
   const isSelected = selectedLineId === line.id;
   const rhymeTextColor = getRhymeTextColor(schemeLabel);
   const lineLanguageDisplay = lineLanguage ? getLanguageDisplay(lineLanguage) : null;
+  const [quantized, setQuantized] = useState(false);
 
   useEffect(() => {
     if (isSelected && inputRef.current && document.activeElement !== inputRef.current) {
@@ -229,7 +233,7 @@ export const LyricInput = React.memo(function LyricInput({
       </div>
 
       {/* Line controls — visible on hover */}
-      <div className={`flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${adaptLineLanguage ? 'w-20' : 'w-16'}`}>
+      <div className={`flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${adaptLineLanguage ? (onQuantizeLine ? 'w-24' : 'w-20') : (onQuantizeLine ? 'w-20' : 'w-16')}`}>
         {adaptLineLanguage && (
           <Tooltip title={hasApiKey ? (t.editor?.adaptLine ?? `Adapt line to ${sectionTargetLanguage ?? 'target language'}`) : (t.tooltips.aiUnavailable ?? 'AI unavailable')}>
             <button
@@ -241,6 +245,25 @@ export const LyricInput = React.memo(function LyricInput({
               {isAdaptingLine
                 ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
                 : <Languages className="h-2.5 w-2.5" />}
+            </button>
+          </Tooltip>
+        )}
+        {onQuantizeLine && (
+          <Tooltip title={quantized ? (t.editor?.quantize_line_done ?? 'Line quantized') : (t.editor?.quantize_line ?? 'Quantize line')}>
+            <button
+              type="button"
+              onClick={() => {
+                onQuantizeLine(sectionId, line.id);
+                playAudioFeedback('success');
+                setQuantized(true);
+                setTimeout(() => setQuantized(false), 1500);
+              }}
+              disabled={isGenerating || !line.text.trim()}
+              className="flex h-4 w-4 items-center justify-center text-violet-500 hover:text-violet-300 disabled:opacity-20 disabled:cursor-not-allowed transition"
+            >
+              {quantized
+                ? <Check className="h-2.5 w-2.5" />
+                : <Ruler className="h-2.5 w-2.5" />}
             </button>
           </Tooltip>
         )}

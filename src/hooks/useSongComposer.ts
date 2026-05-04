@@ -110,7 +110,7 @@ export const useSongComposer = ({
     setSuggestions,
   });
 
-  const { isGeneratingMusicalPrompt, isAnalyzingLyrics, generateMusicalPrompt, analyzeLyricsForMusic } =
+  const { isGeneratingMusicalPrompt, isAnalyzingLyrics, generateMusicalPrompt, analyzeLyricsForMusic, coherenceResult, dismissCoherenceResult } =
     useMusicalPrompt({
       song,
       title,
@@ -153,6 +153,8 @@ export const useSongComposer = ({
     addInstruction,
     removeInstruction,
     clearSelection,
+    coherenceResult,
+    dismissCoherenceResult,
   }), [
     isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
     selectedLineId, setSelectedLineId, suggestions, isSuggesting,
@@ -160,5 +162,6 @@ export const useSongComposer = ({
     updateLineText, handleLineKeyDown, applySuggestion,
     generateMusicalPrompt, analyzeLyricsForMusic,
     handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
+    coherenceResult, dismissCoherenceResult,
   ]);
 };

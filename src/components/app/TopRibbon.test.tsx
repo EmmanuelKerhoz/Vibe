@@ -27,6 +27,9 @@ vi.mock('../../contexts/SongContext', () => ({
     undo: mockUndo,
     redo: mockRedo,
   }),
+  useSongContext: () => ({
+    musicalPrompt: '',
+  }),
 }));
 
 vi.mock('../../contexts/ComposerContext', () => ({
@@ -67,8 +70,15 @@ vi.mock('../../i18n', () => ({
         openLeftPanel: 'Open panel',
         collapseRight: 'Collapse',
         showSidebar: 'Show sidebar',
+        sendToSuno: 'Open SUNO with your musical prompt',
+        quantizeLineDone: 'Line quantized',
       },
-      ribbon: { aiUnavailable: 'AI unavailable' },
+      ribbon: {
+        aiUnavailable: 'AI unavailable',
+        send_to_suno: 'Send to SUNO',
+        menu: 'Menu',
+        menuAria: 'Open main menu',
+      },
     },
   }),
 }));
@@ -83,6 +93,9 @@ vi.mock('./RibbonMenuPanel', () => ({
 }));
 vi.mock('./RibbonTabs', () => ({
   RibbonTabs: () => <div data-testid="ribbon-tabs" />,
+}));
+vi.mock('../../constants/externalUrls', () => ({
+  SUNO_CREATE_URL: 'https://suno.com/create',
 }));
 
 // ── Default props ────────────────────────────────────────────────────────────

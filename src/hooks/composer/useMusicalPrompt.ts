@@ -10,6 +10,7 @@ import {
   sanitizeForPrompt,
   wrapUntrusted,
 } from '../../utils/promptSanitization';
+import { checkRhythmicCoherence, type CoherenceResult } from '../../lib/rhythmicCoherence';
 
 const MusicalAnalysisSchema = z.object({
   genre: z.string().optional(),
@@ -81,6 +82,7 @@ export const useMusicalPrompt = ({
 }: UseMusicalPromptParams) => {
   const [isGeneratingMusicalPrompt, setIsGeneratingMusicalPrompt] = useState(false);
   const [isAnalyzingLyrics, setIsAnalyzingLyrics] = useState(false);
+  const [coherenceResult, setCoherenceResult] = useState<CoherenceResult | null>(null);
   const promptAbortRef = useRef<AbortController | null>(null);
   const analysisAbortRef = useRef<AbortController | null>(null);
 
@@ -155,7 +157,19 @@ Keep the response in English (required by music AI tools) and avoid markdown or 
         });
 
         if (nextSignal.aborted) return;
-        setMusicalPrompt(response.text || '');
+        const promptText = response.text || '';
+        setMusicalPrompt(promptText);
+
+        // Rhythmic coherence check — surface a dialog when score < 70
+        const fullLyrics = getSongText(song);
+        if (fullLyrics.trim() && promptText.trim()) {
+          const coherence = checkRhythmicCoherence(fullLyrics, {
+            bpm: tempo,
+            durationSeconds: 180,
+            timeSignature: [4, 4],
+          });
+          setCoherenceResult(coherence.needsReview ? coherence : null);
+        }
       });
     } catch (error) {
       if (isAbortError(error)) return;
@@ -246,5 +260,7 @@ Return only valid JSON, no markdown, no explanations.`,
     isAnalyzingLyrics,
     generateMusicalPrompt,
     analyzeLyricsForMusic,
+    coherenceResult,
+    dismissCoherenceResult: () => setCoherenceResult(null),
   };
 };

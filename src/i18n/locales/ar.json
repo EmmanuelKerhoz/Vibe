@@ -29,7 +29,8 @@
     "undo": "تراجع",
     "redo": "إعادة",
     "reset": "إعادة تعيين",
-    "aiUnavailable": "الذكاء الاصطناعي غير متاح"
+    "aiUnavailable": "الذكاء الاصطناعي غير متاح",
+    "send_to_suno": "إرسال إلى SUNO"
   },
   "mobileNav": {
     "navigation": "التنقل على الجوال",
@@ -131,7 +132,9 @@
     "moveLineUp": "تحريك السطر لأعلى",
     "moveLineDown": "تحريك السطر لأسفل",
     "deleteLine": "حذف السطر",
-    "lyricsEditors": "عرض"
+    "lyricsEditors": "عرض",
+    "quantize_line": "Quantize line",
+    "quantize_line_done": "Line quantized"
   },
   "suggestions": {
     "title": "اقتراحات الذكاء الاصطناعي",
@@ -407,7 +410,9 @@
     "generateTitle": "توليد عنوان من كلمات الأغنية",
     "aiGeneratedTitle": "عنوان مُولَّد بالذكاء الاصطناعي",
     "userEnteredTitle": "عنوان أدخله المستخدم",
-    "openSearch": "بحث واستبدال في الكلمات (Ctrl+F)"
+    "openSearch": "بحث واستبدال في الكلمات (Ctrl+F)",
+    "sendToSuno": "Open SUNO with your musical prompt",
+    "quantizeLineDone": "Line quantized"
   },
   "sections": {
     "intro": "مقدمة",
@@ -462,5 +467,17 @@
     "ABABAB": "ABABAB (تناوب 6 أسطر)",
     "ABCABC": "ABCABC (تكرار 6 أسطر)",
     "FREE": "شعر حر"
+  },
+  "rhythmicCoherence": {
+    "title": "Rhythmic Coherence Check",
+    "scoreLabel": "Match Score",
+    "optionA": "Prioritise Lyrics",
+    "optionADescription": "Adjust the musical prompt tempo/style to match the lyrics density.",
+    "optionB": "Adjust Lyrics",
+    "optionBDescription": "View lines that are too long and trim them.",
+    "apply": "Apply",
+    "skip": "Skip",
+    "suggestedBpm": "Suggested BPM range: {min}–{max}",
+    "tooLongLines": "Lines that may be too dense:"
   }
 }

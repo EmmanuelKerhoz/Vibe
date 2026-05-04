@@ -84,6 +84,8 @@ export interface Translations {
     menu?: string;
     /** Aria-label for the burger menu trigger */
     menuAria?: string;
+    /** Label for the "Send to SUNO" button in the ribbon */
+    send_to_suno?: string;
   };
 
   mobileNav: {
@@ -239,6 +241,10 @@ export interface Translations {
     detect?: string;
     /** Button label to apply the language adaptation */
     adaptApply?: string;
+    /** Tooltip for the per-line quantize button */
+    quantize_line?: string;
+    /** Brief confirmation message shown after a line is quantized */
+    quantize_line_done?: string;
   };
 
   suggestions: {
@@ -592,6 +598,10 @@ export interface Translations {
     openSettings?: string;
     /** Tooltip for the sponsor menu item */
     sponsor?: string;
+    /** Tooltip for the "Send to SUNO" ribbon button */
+    sendToSuno?: string;
+    /** Brief confirmation shown after the quantize-line action */
+    quantizeLineDone?: string;
   };
 
   sections: {
@@ -702,5 +712,19 @@ export interface Translations {
     saveVersionPlaceholder: string;
     saveVersionConfirm: string;
     cancel: string;
+  };
+
+  /** Labels for the Rhythmic Coherence Check dialog. */
+  rhythmicCoherence?: {
+    title: string;
+    scoreLabel: string;
+    optionA: string;
+    optionADescription: string;
+    optionB: string;
+    optionBDescription: string;
+    apply: string;
+    skip: string;
+    suggestedBpm: string;
+    tooLongLines: string;
   };
 }

@@ -16,6 +16,8 @@ import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSuno } from '../../hooks/useSuno';
 import { copyToClipboard } from '../../utils/clipboard';
 import { computeCompleteness } from '../../utils/musicalPromptCompleteness';
+import { RhythmicCoherenceDialog } from './modals/RhythmicCoherenceDialog';
+import type { CoherenceResult } from '../../lib/rhythmicCoherence';
 import {
   MusicNote2Regular,
   CopyRegular,
@@ -139,6 +141,8 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
     isGenerating,
     isGeneratingMusicalPrompt,
     generateMusicalPrompt,
+    coherenceResult,
+    dismissCoherenceResult,
   } = useComposerContext();
 
   // ── Suno ────────────────────────────────────────────────────────────────────
@@ -196,8 +200,27 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
     URL.revokeObjectURL(url);
   }, [musicalPrompt]);
 
+  // ── Coherence dialog handler ─────────────────────────────────────────────────
+  const handleCoherenceApply = useCallback((option: 'a' | 'b', result: CoherenceResult) => {
+    if (option === 'a') {
+      // Option A: adjust BPM to the suggested range lower bound
+      const [suggestedMin] = result.suggestedBpmRange;
+      setTempo(suggestedMin);
+    }
+    // Option B: we just show which lines are too long (already shown in the dialog)
+    dismissCoherenceResult?.();
+  }, [setTempo, dismissCoherenceResult]);
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
+    <>
+      {coherenceResult && (
+        <RhythmicCoherenceDialog
+          result={coherenceResult}
+          onApply={handleCoherenceApply}
+          onSkip={() => dismissCoherenceResult?.()}
+        />
+      )}
     <div
       role="toolbar"
       aria-label="Musical generation controls"
@@ -367,5 +390,6 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
         <CompletenessScore pct={pct} filled={filled} total={total} />
       </div>
     </div>
+    </>
   );
 });
