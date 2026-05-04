@@ -10,7 +10,7 @@ interface FlagSignProps {
 /**
  * Renders a country flag using a flagcdn.com PNG image for consistent
  * cross-platform display (avoids Windows regional-indicator rendering bugs).
- * Ethnical picto signs (not in FLAG_EMOJI_TO_ISO) fall back to emoji text.
+ * Ethnic picto signs (not in FLAG_EMOJI_TO_ISO) fall back to emoji text.
  * On image load error, also falls back to emoji text.
  */
 export const FlagSign: React.FC<FlagSignProps> = ({ sign, size = 18, alt = '' }) => {
@@ -23,9 +23,9 @@ export const FlagSign: React.FC<FlagSignProps> = ({ sign, size = 18, alt = '' })
   }, [sign]);
 
   if (!url || errored) {
-    // Ethnical picto or load error — render as text
+    // Ethnic picto or load error — render as text
     return (
-      <span style={{ fontSize: size, lineHeight: 1 }} aria-label={alt} aria-hidden={!alt || undefined}>
+      <span style={{ fontSize: size, lineHeight: 1 }} aria-label={alt} aria-hidden={!alt ? true : undefined}>
         {sign}
       </span>
     );

@@ -26,7 +26,7 @@ export const FLAG_EMOJI_TO_ISO: Readonly<Record<string, string>> = {
   '🇿🇦': 'za',
 };
 
-/** Returns the flagcdn PNG URL for a sign emoji, or null if it's an ethnical picto. */
+/** Returns the flagcdn PNG URL for a sign emoji, or null if it's an ethnic picto. */
 export function getFlagUrlFromSign(sign: string): string | null {
   const iso = FLAG_EMOJI_TO_ISO[sign];
   return iso ? getFlagUrl(iso) : null;
