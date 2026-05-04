@@ -11,10 +11,10 @@ interface LanguagePickerProps {
   popoverWidth: number;
   activeIndex: number;
   setActiveIndex: React.Dispatch<React.SetStateAction<number>>;
-  defaultLanguage?: string;
+  defaultLanguage?: string | undefined;
   onSetDefaultLanguage: (langCode: string) => void;
   closePicker: () => void;
-  popoverRef: React.RefObject<HTMLDivElement | null>;
+  popoverRef: React.RefObject<HTMLDivElement>;
 }
 
 export function LanguagePicker({
