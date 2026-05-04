@@ -233,7 +233,14 @@ export const LyricInput = React.memo(function LyricInput({
       </div>
 
       {/* Line controls — visible on hover */}
-      <div className={`flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${adaptLineLanguage ? (onQuantizeLine ? 'w-24' : 'w-20') : (onQuantizeLine ? 'w-20' : 'w-16')}`}>
+      {(() => {
+        const controlsWidth =
+          adaptLineLanguage && onQuantizeLine ? 'w-24'
+          : adaptLineLanguage ? 'w-20'
+          : onQuantizeLine ? 'w-20'
+          : 'w-16';
+        return (
+        <div className={`flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${controlsWidth}`}>
         {adaptLineLanguage && (
           <Tooltip title={hasApiKey ? (t.editor?.adaptLine ?? `Adapt line to ${sectionTargetLanguage ?? 'target language'}`) : (t.tooltips.aiUnavailable ?? 'AI unavailable')}>
             <button
@@ -292,6 +299,8 @@ export const LyricInput = React.memo(function LyricInput({
           </button>
         </Tooltip>
       </div>
+        );
+      })()}
 
       {/* COL: COUNT */}
       <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-500 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-400 transition-colors w-[2.75rem] text-right">

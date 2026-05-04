@@ -119,10 +119,8 @@ export function checkRhythmicCoherence(
     score = Math.round(Math.min(1, ratio) * 100);
   }
 
-  // Per-line analysis: flag lines that exceed single-bar capacity
-  const beatsPerSecond = bpm / 60;
-  const secondsPerBar = beatsPerBar / beatsPerSecond;
-  // At 1 syllable per beat, max syllables per bar = beatsPerBar
+  // Per-line analysis: flag lines that exceed single-bar capacity.
+  // At 1 syllable per beat, max syllables per bar = beatsPerBar.
   const maxSyllablesPerBar = beatsPerBar;
 
   const lineDiffs: LineDiff[] = lyrics
@@ -141,10 +139,12 @@ export function checkRhythmicCoherence(
     .filter(d => d.isTooLong);
 
   // Suggested BPM range: if lyrics are denser than capacity, increase BPM
-  // so that capacity >= totalSyllables
+  // so that capacity >= totalSyllables.
+  // Formula: (syllables ÷ durationSeconds) × 60 = syllables-per-minute →
+  // multiply by 1.1 for 10% headroom so the new tempo comfortably fits the lyrics.
   const minRequiredBpm =
     totalSyllables > 0
-      ? Math.ceil((totalSyllables / duration) * 60 * 1.1)  // 10% headroom
+      ? Math.ceil((totalSyllables / duration) * 60 * 1.1)
       : bpm;
   const suggestedBpmRange: [number, number] = [
     Math.min(bpm, minRequiredBpm),

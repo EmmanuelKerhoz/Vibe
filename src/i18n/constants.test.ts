@@ -49,17 +49,17 @@ describe('adaptation language dialects', () => {
 
     // Nigerian Pidgin: isEthnical removed (flag stays 🇳🇬)
     const pcm = SUPPORTED_ADAPTATION_LANGUAGES.find(l => l.code === 'PCM');
-    expect(pcm?.isEthnical).toBeFalsy();
+    expect(pcm?.isEthnical).not.toBe(true);
     expect(pcm?.sign).toBe('🇳🇬');
 
     // Nouchi: isEthnical removed (flag stays 🇨🇮)
     const nou = SUPPORTED_ADAPTATION_LANGUAGES.find(l => l.code === 'NOU');
-    expect(nou?.isEthnical).toBeFalsy();
+    expect(nou?.isEthnical).not.toBe(true);
     expect(nou?.sign).toBe('🇨🇮');
 
     // Camfranglais: isEthnical removed (flag stays 🇨🇲)
     const cfg = SUPPORTED_ADAPTATION_LANGUAGES.find(l => l.code === 'CFG');
-    expect(cfg?.isEthnical).toBeFalsy();
+    expect(cfg?.isEthnical).not.toBe(true);
     expect(cfg?.sign).toBe('🇨🇲');
 
     // Ewe: changed from 🎶 to 🪘

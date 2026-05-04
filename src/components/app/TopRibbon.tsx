@@ -107,7 +107,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
           </Tooltip>
         )}
         {/* Send to SUNO button */}
-        <Tooltip title={sunoSent ? (t.tooltips.quantizeLineDone ?? 'Opening SUNO…') : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt')}>
+        <Tooltip title={sunoSent ? (t.tooltips.sendToSuno ?? 'Opening SUNO…') : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt')}>
           <button
             onClick={handleSendToSuno}
             aria-label={t.ribbon.send_to_suno ?? 'Send to SUNO'}
