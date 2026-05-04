@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Pre-commit: typecheck..."
+npx tsc --noEmit
+if [ $? -ne 0 ]; then
+  echo "❌ tsc failed — commit aborted."
+  exit 1
+fi
+
+echo "🔍 Pre-commit: eslint..."
+npx eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0
+if [ $? -ne 0 ]; then
+  echo "❌ eslint failed — commit aborted."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed."
