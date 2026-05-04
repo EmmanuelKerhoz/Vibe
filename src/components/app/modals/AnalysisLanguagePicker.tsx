@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { FlagEmoji } from '../../ui/FlagEmoji';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 
 const POPOVER_WIDTH = 180;
@@ -124,8 +123,7 @@ export function AnalysisLanguagePicker() {
                   : 'text-[var(--text-secondary)] hover:bg-[var(--accent-color)]/5 hover:text-[var(--text-primary)]'
               }`}
             >
-              <FlagEmoji flag={loc.flag} code={loc.code} size="1rem" />
-              <span className="uppercase font-semibold text-[10px] tracking-wider">{loc.code}</span>
+              <span aria-hidden="true">{loc.flag}</span>
               <span className="text-[10px] truncate">{loc.label}</span>
               {loc.code === language && (
                 <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] flex-shrink-0" />
@@ -148,7 +146,7 @@ export function AnalysisLanguagePicker() {
         aria-expanded={open}
         className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-color)]/5 transition-colors"
       >
-        <FlagEmoji flag={currentLocale.flag} code={currentLocale.code} size="0.875rem" />
+        <span aria-hidden="true">{currentLocale.flag}</span>
         <span className="uppercase font-semibold text-[10px] tracking-wider">{currentLocale.code}</span>
       </button>
       {popover}
