@@ -43,7 +43,7 @@ export interface AdaptationLanguage {
 // ---------------------------------------------------------------------------
 
 export const SUPPORTED_UI_LOCALES: readonly UiLocaleInfo[] = [
-  { code: 'en', label: 'English',    flag: '🇬🇧', dir: 'ltr' },
+  { code: 'en', label: 'English',    flag: '🇺🇸', dir: 'ltr' },
   { code: 'fr', label: 'Français',   flag: '🇫🇷', dir: 'ltr' },
   { code: 'es', label: 'Español',    flag: '🇪🇸', dir: 'ltr' },
   { code: 'de', label: 'Deutsch',    flag: '🇩🇪', dir: 'ltr' },
@@ -90,7 +90,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'DA',  aiName: 'Danish',           sign: '🇩🇰' },
   { code: 'DI',  aiName: 'Dioula',           sign: '🧭', region: 'Ivory Coast/Burkina Faso - West Africa', isEthnical: true },
   // E
-  { code: 'EN',  aiName: 'English',          sign: '🇬🇧', region: 'United Kingdom' },
+  { code: 'EN',  aiName: 'English',          sign: '🇺🇸', region: 'United States' },
   { code: 'ET',  aiName: 'Estonian',         sign: '🇪🇪' },
   { code: 'EW',  aiName: 'Ewe',              sign: '🪘', region: 'Togo - Volta Region', isEthnical: true },
   // F
