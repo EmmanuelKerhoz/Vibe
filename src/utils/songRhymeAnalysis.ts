@@ -1,285 +1,186 @@
-import { languageNameToCode } from '../constants/langFamilyMap';
+/**
+ * songRhymeAnalysis.ts
+ *
+ * Song-level rhyme analysis: groups lines by rhyme family, computes overlay
+ * split points, and detects rhyme scheme per section.
+ *
+ * langCode is threaded through all public functions so family-specific
+ * graphemic rules (tonal preservation, agglutinative syllable selection,
+ * extended enjambment connectors) are applied consistently.
+ */
+
+import { doLinesRhymeGraphemic, splitRhymingSuffix } from './rhymeDetection';
 import type { Section } from '../types';
-import { compareTextsWithIPA } from './ipaPipeline';
-import { detectRhymeSchemeFromIPAPairs, detectRhymeSchemeLocally } from './rhymeSchemeUtils';
-import { segmentVerseToRhymingUnit } from './rhymeDetection';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface RhymeGroup {
+  /** Canonical suffix shared by all lines in the group (canonicalized). */
+  suffix: string;
+  /** 0-based indices into the section's lines array. */
+  lineIndices: number[];
+}
+
+export interface RhymeOverlaySegment {
+  /** Text before the rhyming portion (before + whitespace from original). */
+  before: string;
+  /** The rhyming tail of the line as it should be highlighted in the UI. */
+  rhyme: string;
+  /** Structural position detected by Step-0 segmentation. */
+  position: 'end' | 'internal' | 'enjambed';
+}
+
+export interface SectionRhymeAnalysis {
+  /** Rhyme groups found in this section. */
+  groups: RhymeGroup[];
+  /** Per-line overlay data (parallel array to section.lines). */
+  overlays: (RhymeOverlaySegment | null)[];
+  /** Detected rhyme scheme string (e.g. "ABAB"), null when undetermined. */
+  scheme: string | null;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Local rhyme comparison for a pair of lyric lines.
- * `quality` mirrors the IPA rhyme classifier, `confidenceScore` is the normalized
- * 0–100 score used by the hook, and `isApproximated` flags mocked or downgraded
- * near-matches that should count below an exact pair of the same base similarity.
- * `crossSection` is true when the two lines come from different sections.
- * `rhymePosition` reflects the structural role detected by segmentVerseToRhymingUnit
- * ('end' | 'internal' | 'enjambed') so the UI can highlight accordingly.
- * `crossFamily` is true when the two lines were analyzed through different
- * language pipelines (code-switching pair).
- */
-export type LocalRhymePairAnalysis = {
-  lineIndexes: [number, number];
-  lines: [string, string];
-  quality: string;
-  confidenceScore: number;
-  usedIpa: boolean;
-  isApproximated: boolean;
-  crossSection?: boolean;
-  rhymePosition?: 'end' | 'internal' | 'enjambed';
-  crossFamily?: boolean;
-};
-
-/**
- * Per-section rhyme diagnostics built locally before any AI analysis.
- * `mode: "ipa"` means a supported language was analyzed through compareTextsWithIPA,
- * while `mode: "graphemic"` indicates an unsupported language or graceful fallback.
- * `isProxied` is true when the G2P family is handled by a proxy stub.
- */
-export type LocalRhymeSectionAnalysis = {
-  sectionId: string;
-  sectionName: string;
-  langCode?: string;
-  detectedScheme: string | null;
-  mode: 'ipa' | 'graphemic';
-  isProxied: boolean;
-  pairs: LocalRhymePairAnalysis[];
-};
-
-/** Families with a native G2P implementation (non-proxy). */
-const NATIVE_G2P_FAMILIES = new Set(['ALGO-ROM', 'ALGO-GER', 'ALGO-KWA', 'ALGO-CRV', 'ALGO-SEM']);
-
-const toPairConfidenceScore = (similarity: { score?: number; isApproximated?: boolean }) => {
-  const baseScore = typeof similarity.score === 'number' ? similarity.score : 0;
-  const adjustedScore = similarity.isApproximated ? baseScore * 0.85 : baseScore;
-  return Math.round(adjustedScore * 1000) / 10;
-};
-
-/**
- * Detect the language of a single line when it may differ from the section
- * language (code-switching). Returns the section langCode as default when
- * no override is detected.
+ * Build rhyme groups for a flat list of line texts.
  *
- * Strategy (lightweight, no external call):
- * - If the line contains a per-line language annotation in the form
- *   «[lang:xx]» at the start, use that code (stripped before analysis).
- * - Otherwise return the section langCode unchanged.
+ * Strategy: for each unassigned line, find all later lines that rhyme with it
+ * (via doLinesRhymeGraphemic, which now applies Step-0 segmentation). Lines
+ * that share a rhyme are placed in the same group.
  *
- * This intentionally avoids a full LID call per-line to keep the pipeline
- * synchronous-friendly. A future upgrade can inject a real LID result here.
- *
- * @param lineText    Raw line text (may contain inline lang tag)
- * @param sectionLang Section-level ISO 639 code
- * @returns           { text: cleaned text, langCode: resolved code }
+ * @param lines    Raw line texts
+ * @param langCode ISO 639 code — propagated to all graphemic comparisons
  */
-const detectLineLang = (
-  lineText: string,
-  sectionLang: string,
-): { text: string; langCode: string } => {
-  const INLINE_TAG = /^\[lang:([a-z]{2,3}(?:-[a-z]{2})?)\]\s*/i;
-  const match = INLINE_TAG.exec(lineText);
-  if (match) {
-    return {
-      text: lineText.slice(match[0].length),
-      langCode: match[1]!.toLowerCase(),
-    };
+export const buildRhymeGroups = (lines: string[], langCode?: string): RhymeGroup[] => {
+  const n = lines.length;
+  const groupIndex = new Array<number | null>(n).fill(null);
+  const groups: RhymeGroup[] = [];
+
+  for (let i = 0; i < n; i++) {
+    if (groupIndex[i] !== null) continue;
+    if (!lines[i]?.trim()) continue;
+
+    const members: number[] = [i];
+    for (let j = i + 1; j < n; j++) {
+      if (!lines[j]?.trim()) continue;
+      if (doLinesRhymeGraphemic(lines[i]!, lines[j]!, langCode)) {
+        members.push(j);
+      }
+    }
+
+    if (members.length < 2) continue; // singleton — not a rhyme group
+
+    const gIdx = groups.length;
+    for (const idx of members) groupIndex[idx] = gIdx;
+
+    // Derive a representative suffix for the group: use the split from the
+    // first line against the second rhyming peer.
+    const split = splitRhymingSuffix(lines[i]!, [lines[members[1]]!], langCode);
+    groups.push({
+      suffix: split?.rhyme ?? '',
+      lineIndices: members,
+    });
   }
-  return { text: lineText, langCode: sectionLang };
+
+  return groups;
 };
 
 /**
- * Builds lightweight, local rhyme diagnostics for each song section.
+ * Compute overlay segments for every line in a section.
  *
- * Changes vs. previous version:
- * - Each line is passed through segmentVerseToRhymingUnit() (step-0) before
- *   IPA comparison so the pipeline receives the correct rhyming unit rather
- *   than the raw full line.
- * - rhymePosition from segmentation is forwarded to LocalRhymePairAnalysis.
- * - Per-line language override via detectLineLang() enables cross-family
- *   code-switching pairs. When line A and line B resolve to different langCodes,
- *   its own G2P family, and this stage records the resulting similarity-based
- *   diagnostics without applying any thresholding.
+ * Each line receives a split point derived from its rhyme peers inside the
+ * same section. Lines with no rhyme peer receive null.
  *
- * @param song - The song sections to analyze
- * @param detectCrossSectionBoundary - When true, also compares the last line of
- *   each section against the first line of the next (rime bridges).
+ * @param lines    Raw line texts
+ * @param groups   Pre-computed RhymeGroup[] for this section
+ * @param langCode ISO 639 code — propagated to splitRhymingSuffix
  */
-export const analyzeSongRhymes = async (
-  song: Section[],
-  detectCrossSectionBoundary = false,
-): Promise<LocalRhymeSectionAnalysis[]> => {
-  const results = await Promise.all(song.map(async (section, sectionIndex) => {
-    const rawLyricLines = section.lines
-      .filter(line => !line.isMeta)
-      .map(line => line.text.trim())
+export const buildRhymeOverlays = (
+  lines: string[],
+  groups: RhymeGroup[],
+  langCode?: string,
+): (RhymeOverlaySegment | null)[] => {
+  // Build a reverse map: lineIndex → group
+  const lineToGroup = new Map<number, RhymeGroup>();
+  for (const group of groups) {
+    for (const idx of group.lineIndices) lineToGroup.set(idx, group);
+  }
+
+  return lines.map((line, i) => {
+    const group = lineToGroup.get(i);
+    if (!group) return null;
+
+    // Peer lines = all other members of the same group
+    const peerLines = group.lineIndices
+      .filter(idx => idx !== i)
+      .map(idx => lines[idx]!)
       .filter(Boolean);
 
-    const sectionLangCode = languageNameToCode(section.language ?? '');
+    const split = splitRhymingSuffix(line, peerLines, langCode);
+    if (!split) return null;
 
-    const { getAlgoFamily } = await import('../constants/langFamilyMap');
-    const family = sectionLangCode ? getAlgoFamily(sectionLangCode) : undefined;
-    const isProxied = family ? !NATIVE_G2P_FAMILIES.has(family) : false;
+    // Resolve position from segmentation metadata
+    // (doLinesRhymeGraphemic already ran segmentation; we derive position
+    // from the split result — if rhyme === whole line it's likely enjambed)
+    const position: RhymeOverlaySegment['position'] =
+      split.before.trim() === '' ? 'enjambed' : 'end';
 
-    // Step-0 segmentation: resolve rhyming unit + position for each line.
-    // Also apply per-line language detection for code-switching.
-    const segmented = rawLyricLines.map(rawLine => {
-      const resolved = sectionLangCode
-        ? detectLineLang(rawLine, sectionLangCode)
-        : { text: rawLine, langCode: sectionLangCode ?? '' };
-      const segment = segmentVerseToRhymingUnit(resolved.text, resolved.langCode || undefined);
-      return {
-        rawText: resolved.text,
-        langCode: resolved.langCode,
-        rhymingUnit: segment.rhymingUnit,
-        position: segment.position,
-      };
-    });
+    return { before: split.before, rhyme: split.rhyme, position };
+  });
+};
 
-    // Use raw texts for graphemic fallback (scheme detection operates on full lines)
-    const lyricLines = segmented.map(s => s.rawText);
+/**
+ * Derive a letter-based rhyme scheme string from groups and line count.
+ * Returns null when fewer than 2 rhyming groups are present.
+ *
+ * @param lineCount Total lines in the section
+ * @param groups    RhymeGroup[] for the section
+ */
+export const buildRhymeScheme = (lineCount: number, groups: RhymeGroup[]): string | null => {
+  if (groups.length < 1) return null;
 
-    const graphemicScheme = detectRhymeSchemeLocally(lyricLines, sectionLangCode);
+  const letters = new Array<string>(lineCount).fill('');
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let nextLetter = 0;
 
-    if (!sectionLangCode || lyricLines.length < 2) {
-      return {
-        sectionId: section.id,
-        sectionName: section.name,
-        ...(sectionLangCode !== undefined ? { langCode: sectionLangCode } : {}),
-        detectedScheme: graphemicScheme,
-        mode: 'graphemic' as const,
-        isProxied,
-        pairs: [] as LocalRhymePairAnalysis[],
-        _sectionIndex: sectionIndex,
-        _lyricLines: lyricLines,
-        _segmented: segmented,
-      };
-    }
-
-    try {
-      const pairs: LocalRhymePairAnalysis[] = [];
-
-      for (let firstIndex = 0; firstIndex < segmented.length; firstIndex++) {
-        for (let secondIndex = firstIndex + 1; secondIndex < segmented.length; secondIndex++) {
-          const first = segmented[firstIndex]!;
-          const second = segmented[secondIndex]!;
-
-          // Determine if this is a cross-family (code-switching) pair
-          const isCrossFamily = first.langCode !== second.langCode;
-
-          // Use rhymingUnit for IPA input; fall back to rawText if empty
-          const inputA = first.rhymingUnit || first.rawText;
-          const inputB = second.rhymingUnit || second.rawText;
-
-          const similarity = await compareTextsWithIPA(
-            inputA,
-            inputB,
-            first.langCode,
-            isCrossFamily ? { langCode2: second.langCode } : undefined,
-          );
-
-          // Position is that of the first line (dominant structural signal)
-          const rhymePosition = first.position;
-
-          pairs.push({
-            lineIndexes: [firstIndex, secondIndex],
-            lines: [first.rawText, second.rawText],
-            quality: similarity.quality,
-            confidenceScore: toPairConfidenceScore(similarity as { score?: number; isApproximated?: boolean }),
-            usedIpa: true,
-            isApproximated: Boolean((similarity as { isApproximated?: boolean }).isApproximated),
-            rhymePosition,
-            ...(isCrossFamily && { crossFamily: true }),
-          });
-        }
-      }
-
-      const ipaScheme = detectRhymeSchemeFromIPAPairs(lyricLines.length, pairs);
-
-      return {
-        sectionId: section.id,
-        sectionName: section.name,
-        ...(sectionLangCode !== undefined ? { langCode: sectionLangCode } : {}),
-        detectedScheme: ipaScheme ?? graphemicScheme,
-        mode: 'ipa' as const,
-        isProxied,
-        pairs,
-        _sectionIndex: sectionIndex,
-        _lyricLines: lyricLines,
-        _segmented: segmented,
-      };
-    } catch {
-      return {
-        sectionId: section.id,
-        sectionName: section.name,
-        ...(sectionLangCode !== undefined ? { langCode: sectionLangCode } : {}),
-        detectedScheme: graphemicScheme,
-        mode: 'graphemic' as const,
-        isProxied,
-        pairs: [] as LocalRhymePairAnalysis[],
-        _sectionIndex: sectionIndex,
-        _lyricLines: lyricLines,
-        _segmented: segmented,
-      };
-    }
-  }));
-
-  // Cross-section boundary detection
-  if (detectCrossSectionBoundary && results.length >= 2) {
-    for (let i = 0; i < results.length - 1; i++) {
-      const current = results[i]!;
-      const next = results[i + 1]!;
-      const lastLine = current._lyricLines[current._lyricLines.length - 1];
-      const firstLine = next._lyricLines[0];
-
-      if (!lastLine || !firstLine) continue;
-
-      const langCode = current.langCode;
-
-      try {
-        if (langCode) {
-          const lastSeg = current._segmented[current._segmented.length - 1];
-          const firstSeg = next._segmented?.[0];
-          const isCrossFamily = lastSeg && firstSeg && lastSeg.langCode !== firstSeg.langCode;
-
-          const inputA = lastSeg?.rhymingUnit || lastLine;
-          const inputB = firstSeg?.rhymingUnit || firstLine;
-          const langA = lastSeg?.langCode || langCode;
-          const langB = firstSeg?.langCode || next.langCode || langCode;
-
-          const similarity = await compareTextsWithIPA(
-            inputA,
-            inputB,
-            langA,
-            isCrossFamily ? { langCode2: langB } : undefined,
-          );
-          current.pairs.push({
-            lineIndexes: [current._lyricLines.length - 1, -1],
-            lines: [lastLine, firstLine],
-            quality: similarity.quality,
-            confidenceScore: toPairConfidenceScore(similarity as { score?: number; isApproximated?: boolean }),
-            usedIpa: true,
-            isApproximated: Boolean((similarity as { isApproximated?: boolean }).isApproximated),
-            crossSection: true,
-            rhymePosition: lastSeg?.position ?? 'end',
-            ...(isCrossFamily && { crossFamily: true }),
-          });
-        } else {
-          const { doLinesRhymeGraphemic } = await import('./rhymeDetection');
-          if (doLinesRhymeGraphemic(lastLine, firstLine)) {
-            current.pairs.push({
-              lineIndexes: [current._lyricLines.length - 1, -1],
-              lines: [lastLine, firstLine],
-              quality: 'graphemic',
-              confidenceScore: 70,
-              usedIpa: false,
-              isApproximated: true,
-              crossSection: true,
-              rhymePosition: 'end',
-            });
-          }
-        }
-      } catch {
-        // Cross-section comparison is best-effort — never throw to caller.
-      }
+  for (const group of groups) {
+    const letter = alphabet[nextLetter % alphabet.length] ?? String.fromCharCode(65 + nextLetter);
+    nextLetter++;
+    for (const idx of group.lineIndices) {
+      if (idx < lineCount) letters[idx] = letter;
     }
   }
 
-  return results.map(({ _sectionIndex: _si, _lyricLines: _ll, _segmented: _sg, ...rest }) => rest);
+  const scheme = letters.join('');
+  // A scheme with fewer than 2 distinct non-empty letters is not meaningful
+  const distinctLetters = new Set(letters.filter(Boolean));
+  return distinctLetters.size >= 2 ? scheme : null;
 };
+
+/**
+ * Full analysis for a single section.
+ *
+ * @param section  Section object from the song data model
+ * @param langCode ISO 639 code for the song's primary language
+ */
+export const analyseSection = (
+  section: Section,
+  langCode?: string,
+): SectionRhymeAnalysis => {
+  const lines = (section.lines ?? []).map(l => l.text ?? '');
+  const groups = buildRhymeGroups(lines, langCode);
+  const overlays = buildRhymeOverlays(lines, groups, langCode);
+  const scheme = buildRhymeScheme(lines.length, groups);
+  return { groups, overlays, scheme };
+};
+
+/**
+ * Full analysis for an entire song (all sections).
+ *
+ * @param sections Song sections
+ * @param langCode ISO 639 code for the song's primary language
+ */
+export const analyseSong = (
+  sections: Section[],
+  langCode?: string,
+): SectionRhymeAnalysis[] => sections.map(section => analyseSection(section, langCode));
