@@ -196,6 +196,9 @@ type LanguageDisplay = {
 /** Normalize language codes and labels for case-insensitive display lookup. */
 const normalizeLanguageKey = (value: string) => value.trim().toLowerCase();
 
+// Seed the index with UI locales first (lowercase codes: 'en', 'fr', …).
+// These entries are only used when looking up a UI locale code — adaptation
+// language codes are uppercase ('EN', 'FR', …) and will overwrite below.
 const LANGUAGE_DISPLAY_INDEX = new Map<string, LanguageDisplay>(
   SUPPORTED_UI_LOCALES.flatMap((locale) => [
     [normalizeLanguageKey(locale.code), { label: locale.label, sign: locale.flag }],
@@ -210,16 +213,27 @@ for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
     ...(lang.region !== undefined && { region: lang.region }),
     ...(lang.isEthnical !== undefined && { isEthnical: lang.isEthnical }),
   };
-  const normalizedCode = normalizeLanguageKey(lang.code);
-  if (!LANGUAGE_DISPLAY_INDEX.has(normalizedCode)) {
-    LANGUAGE_DISPLAY_INDEX.set(normalizedCode, adaptationDisplay);
-  }
+
+  // Always write adaptation entries — they must win over any UI-locale seed.
+  // Index by both the raw code ('NO', 'SV') and its normalised form ('no', 'sv')
+  // so lookups succeed regardless of the casing passed by callers.
+  LANGUAGE_DISPLAY_INDEX.set(lang.code, adaptationDisplay);
+  LANGUAGE_DISPLAY_INDEX.set(normalizeLanguageKey(lang.code), adaptationDisplay);
+
+  // Also index by aiName for label-based lookups (case-insensitive).
   LANGUAGE_DISPLAY_INDEX.set(normalizeLanguageKey(lang.aiName), adaptationDisplay);
 }
 
 export function getLanguageDisplay(value: string): LanguageDisplay {
   const fallbackLabel = value.trim() || 'Unknown';
-  return LANGUAGE_DISPLAY_INDEX.get(normalizeLanguageKey(value)) ?? { label: fallbackLabel, sign: '🌐' };
+  // Try the raw value first (handles uppercase codes like 'NO', 'SV' directly).
+  return (
+    LANGUAGE_DISPLAY_INDEX.get(value.trim()) ??
+    LANGUAGE_DISPLAY_INDEX.get(normalizeLanguageKey(value)) ?? {
+      label: fallbackLabel,
+      sign: '🌐',
+    }
+  );
 }
 
 export function formatLanguageDisplay(value: string): string {
