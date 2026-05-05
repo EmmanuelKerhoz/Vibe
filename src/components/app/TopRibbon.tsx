@@ -110,8 +110,9 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
         <Tooltip title={sunoSent ? (t.tooltips.sendToSuno ?? 'Opening SUNO…') : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt')}>
           <button
             onClick={handleSendToSuno}
+            disabled={sunoSent}
             aria-label={t.ribbon.send_to_suno ?? 'Send to SUNO'}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all disabled:cursor-not-allowed disabled:opacity-70"
             style={{
               background: sunoSent
                 ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 12%, transparent)'
