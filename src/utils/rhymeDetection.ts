@@ -280,10 +280,12 @@ const getFallbackRhymingSuffix = (text: string, langCode?: string): { before: st
   return splitLineAtNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start), langCode);
 };
 
+const removeTrailingToken = (text: string): string => text.trimEnd().replace(/\s+\S+$/, '');
+
 export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langCode?: string): { before: string; rhyme: string } | null => {
   const segment = segmentVerseToRhymingUnit(text, langCode);
   const effectiveText = segment.position === 'enjambed'
-    ? text.trimEnd().replace(/\s+\S+$/, '')
+    ? removeTrailingToken(text)
     : text;
   let bestSuffix: string | null = null;
 
@@ -364,7 +366,7 @@ const ENJAMBMENT_CONNECTORS = new Set([
   // German / Dutch
   'und', 'oder', 'aber', 'weil', 'mit', 'ohne', 'von', 'en', 'maar', 'van',
   // Yoruba (ALGO-BNT)
-  'ati', 'àti', 'àti', 'tabi', 'tàbí', 'tàbí', 'nitori', 'bi', 'ti', 'ni', 'si', 'fun',
+  'ati', 'àti', 'tabi', 'tàbí', 'nitori', 'bi', 'ti', 'ni', 'si', 'fun',
   // Swahili (ALGO-BNT)
   'na', 'ya', 'wa', 'za', 'la', 'kwa', 'bila', 'hadi', 'au',
   // Dioula / Bambara (ALGO-KWA)
@@ -380,6 +382,9 @@ const ENJAMBMENT_CONNECTORS = new Set([
   // Bekwarra / Ijaw (ALGO-CRV)
   'ma', 'be',
 ]);
+
+const isEnjambmentConnector = (normalizedToken: string): boolean =>
+  ENJAMBMENT_CONNECTORS.has(normalizedToken) || ENJAMBMENT_CONNECTORS.has(normalizedToken.normalize('NFC'));
 
 /**
  * Families with agglutinative morphology where the last word of a line may
@@ -493,7 +498,7 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
   // ── Enjambement heuristic ─────────────────────────────────────────────────
   const lastToken = tokens[tokens.length - 1]!;
   const lastNormalized = normalizeWord(lastToken, langCode);
-  if (ENJAMBMENT_CONNECTORS.has(lastNormalized) && tokens.length >= 2) {
+  if (isEnjambmentConnector(lastNormalized) && tokens.length >= 2) {
     const contentToken = tokens[tokens.length - 2]!;
     const contentNormalized = normalizeWord(contentToken, langCode);
     return {
