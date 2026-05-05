@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Section } from '../types';
 import { compareTextsWithIPA } from './ipaPipeline';
 import { analyzeSongRhymes } from './songRhymeAnalysis';
-import { segmentVerseToRhymingUnit } from './rhymeDetection';
+import { doLinesRhymeGraphemic, segmentVerseToRhymingUnit, splitRhymingSuffix } from './rhymeDetection';
 
 vi.mock('./ipaPipeline', () => ({
   compareTextsWithIPA: vi.fn(),
@@ -158,6 +158,33 @@ describe('segmentVerseToRhymingUnit', () => {
     expect(result.position).toBe('end');
     // rhymingUnit must NOT have diacritics stripped for tonal languages
     expect(result.rhymingUnit).toMatch(/[\u0300-\u036f]/);
+  });
+
+  it('detects extended Bantu and Kwa enjambment connectors', () => {
+    expect(segmentVerseToRhymingUnit('Mo kọ orin àti', 'yo')).toEqual(
+      expect.objectContaining({
+        position: 'enjambed',
+        rhymingUnit: 'orin',
+      }),
+    );
+    expect(segmentVerseToRhymingUnit('N bɛ taa ani', 'dyu')).toEqual(
+      expect.objectContaining({
+        position: 'enjambed',
+        rhymingUnit: 'taa',
+      }),
+    );
+  });
+});
+
+describe('rhymeDetection Step-0 matching', () => {
+  it('uses the segmented content word for enjambed graphemic rhyme matching', () => {
+    expect(doLinesRhymeGraphemic('Je chante avec', 'La nuit complète', 'fr')).toBe(true);
+  });
+
+  it('does not include a trailing enjambment connector in suffix highlights', () => {
+    const split = splitRhymingSuffix('Je chante avec', ['La nuit complète'], 'fr');
+    expect(split?.before + split?.rhyme).toBe('Je chante');
+    expect(split?.rhyme).not.toContain('avec');
   });
 });
 

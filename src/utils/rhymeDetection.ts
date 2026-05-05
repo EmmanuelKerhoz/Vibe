@@ -280,22 +280,37 @@ const getFallbackRhymingSuffix = (text: string, langCode?: string): { before: st
   return splitLineAtNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start), langCode);
 };
 
+/**
+ * Remove the last whitespace-separated token from a line so suffix highlighting
+ * can ignore a trailing connector already classified as enjambment.
+ */
+const removeTrailingToken = (text: string): string => text.trimEnd().replace(/\s+\S+$/, '');
+
 export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langCode?: string): { before: string; rhyme: string } | null => {
+  const segment = segmentVerseToRhymingUnit(text, langCode);
+  const effectiveText = segment.position === 'enjambed'
+    ? removeTrailingToken(text)
+    : text;
   let bestSuffix: string | null = null;
 
   for (const peerLine of peerLines) {
-    const sharedSuffix = findBestSharedRhymeSuffix(text, peerLine, langCode);
+    const peerSegment = segmentVerseToRhymingUnit(peerLine, langCode);
+    const sharedSuffix = findBestSharedRhymeSuffix(
+      segment.rhymingUnit,
+      peerSegment.rhymingUnit,
+      langCode,
+    );
     if (sharedSuffix && (!bestSuffix || sharedSuffix.length > bestSuffix.length)) {
       bestSuffix = sharedSuffix;
     }
   }
 
   if (bestSuffix) {
-    const split = splitLineAtNormalizedSuffix(text, bestSuffix, langCode);
+    const split = splitLineAtNormalizedSuffix(effectiveText, bestSuffix, langCode);
     if (split) return split;
   }
 
-  return getFallbackRhymingSuffix(text, langCode);
+  return getFallbackRhymingSuffix(effectiveText, langCode);
 };
 
 /**
@@ -305,8 +320,11 @@ export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langC
  * allowed for short words such as "zéro" / "ego", while longer matches use a
  * suffix overlap.
  */
-export const doLinesRhymeGraphemic = (a: string, b: string, langCode?: string): boolean =>
-  findBestSharedRhymeSuffix(a, b, langCode) !== null;
+export const doLinesRhymeGraphemic = (a: string, b: string, langCode?: string): boolean => {
+  const segA = segmentVerseToRhymingUnit(a, langCode);
+  const segB = segmentVerseToRhymingUnit(b, langCode);
+  return findBestSharedRhymeSuffix(segA.rhymingUnit, segB.rhymingUnit, langCode) !== null;
+};
 
 // ─── Step-0: verse segmentation ──────────────────────────────────────────────
 
@@ -347,7 +365,34 @@ const ENJAMBMENT_CONNECTORS = new Set([
   // English
   'and', 'or', 'but', 'so', 'yet', 'nor', 'for', 'the', 'a', 'an',
   'of', 'in', 'on', 'at', 'to', 'by', 'from', 'with', 'into', 'like',
+  // Spanish / Italian / Portuguese
+  'y', 'e', 'o', 'pero', 'sino', 'porque', 'con', 'sin', 'por',
+  // German / Dutch
+  'und', 'oder', 'aber', 'weil', 'mit', 'ohne', 'von', 'en', 'maar', 'van',
+  // Yoruba (ALGO-BNT)
+  'ati', 'àti', 'tabi', 'tàbí', 'nitori', 'bi', 'ti', 'ni', 'si', 'fun',
+  // Swahili (ALGO-BNT)
+  'na', 'ya', 'wa', 'za', 'la', 'kwa', 'bila', 'hadi', 'au',
+  // Dioula / Bambara (ALGO-KWA)
+  'ani', 'walima', 'nka', 'fo', 'kɔ',
+  // Baoulé (ALGO-KWA)
+  'mɔ', 'kɛ', 'yɛ',
+  // Ewe / Mina (ALGO-KWA)
+  'kple', 'eye', 'ke', 'ne', 'le',
+  // Lingala (ALGO-BNT)
+  'mpe', 'to', 'kasi', 'po',
+  // Nigerian Pidgin / Nouchi (ALGO-CRE)
+  'pis', 'kon', 'sof', 'den', 'dem', 'wit',
+  // Bekwarra / Ijaw (ALGO-CRV)
+  'ma', 'be',
 ]);
+
+/**
+ * Check connector words in their current Unicode form and in NFC so tonal
+ * connector spellings match whether they arrive precomposed or decomposed.
+ */
+const isEnjambmentConnector = (normalizedToken: string): boolean =>
+  ENJAMBMENT_CONNECTORS.has(normalizedToken) || ENJAMBMENT_CONNECTORS.has(normalizedToken.normalize('NFC'));
 
 /**
  * Families with agglutinative morphology where the last word of a line may
@@ -461,7 +506,7 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
   // ── Enjambement heuristic ─────────────────────────────────────────────────
   const lastToken = tokens[tokens.length - 1]!;
   const lastNormalized = normalizeWord(lastToken, langCode);
-  if (ENJAMBMENT_CONNECTORS.has(lastNormalized) && tokens.length >= 2) {
+  if (isEnjambmentConnector(lastNormalized) && tokens.length >= 2) {
     const contentToken = tokens[tokens.length - 2]!;
     const contentNormalized = normalizeWord(contentToken, langCode);
     return {
