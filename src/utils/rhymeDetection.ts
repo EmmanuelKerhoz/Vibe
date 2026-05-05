@@ -280,6 +280,10 @@ const getFallbackRhymingSuffix = (text: string, langCode?: string): { before: st
   return splitLineAtNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start), langCode);
 };
 
+/**
+ * Remove the last whitespace-separated token from a line so suffix highlighting
+ * can ignore a trailing connector already classified as enjambment.
+ */
 const removeTrailingToken = (text: string): string => text.trimEnd().replace(/\s+\S+$/, '');
 
 export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langCode?: string): { before: string; rhyme: string } | null => {
@@ -383,6 +387,10 @@ const ENJAMBMENT_CONNECTORS = new Set([
   'ma', 'be',
 ]);
 
+/**
+ * Check connector words in their current Unicode form and in NFC so tonal
+ * connector spellings match whether they arrive precomposed or decomposed.
+ */
 const isEnjambmentConnector = (normalizedToken: string): boolean =>
   ENJAMBMENT_CONNECTORS.has(normalizedToken) || ENJAMBMENT_CONNECTORS.has(normalizedToken.normalize('NFC'));
 
