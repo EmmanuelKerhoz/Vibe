@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { emojiToTwemojiUrl } from '../../utils/emojiUtils';
 
 interface EmojiSignProps {
@@ -13,13 +13,13 @@ const FALLBACK = '\uD83D\uDD24';
  * Falls back to 🔤 when sign is empty or the Twemoji URL fails to load.
  */
 export function EmojiSign({ sign }: EmojiSignProps) {
-  const resolved = sign?.trim() || FALLBACK;
+  const resolved = useMemo(() => sign?.trim() || FALLBACK, [sign]);
   const [src, setSrc] = React.useState(() => emojiToTwemojiUrl(resolved));
 
-  // Reset src when sign changes
+  // Reset src when resolved changes
   React.useEffect(() => {
-    setSrc(emojiToTwemojiUrl(sign?.trim() || FALLBACK));
-  }, [sign]);
+    setSrc(emojiToTwemojiUrl(resolved));
+  }, [resolved]);
 
   // useCallback([sign]) ensures handleError always references the current
   // `resolved` value — avoids stale closure if sign changes while loading.
