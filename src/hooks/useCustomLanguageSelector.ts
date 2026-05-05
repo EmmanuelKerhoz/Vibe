@@ -46,6 +46,7 @@ export interface GroupedLanguageOption {
 }
 
 export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
+  // Build a map of groupLabel → options, keyed by code for O(1) lookup.
   const grouped = new Map<string, GroupedLanguageOption[]>();
 
   for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
@@ -91,7 +92,13 @@ export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
     },
   );
 
-  for (const [groupLabel, items] of grouped.entries()) {
+  // Emit groups in the declared LANGUAGE_GROUPS order so flags always appear
+  // under the correct section header. Using grouped.entries() would emit in
+  // Map insertion order (alphabetical by first-seen aiName), which caused
+  // Norwegian/Swedish to appear under Romance, French under Germanic, etc.
+  for (const { label: groupLabel } of LANGUAGE_GROUPS) {
+    const items = grouped.get(groupLabel);
+    if (!items || items.length === 0) continue;
     result.push({
       value: `__group__${groupLabel}`,
       label: (
@@ -102,6 +109,21 @@ export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
       disabled: true,
     });
     result.push(...items);
+  }
+
+  // Append any ungrouped languages (codes not listed in LANGUAGE_GROUPS) last.
+  const otherItems = grouped.get('Other');
+  if (otherItems && otherItems.length > 0) {
+    result.push({
+      value: '__group__Other',
+      label: (
+        React.createElement('span', {
+          className: 'text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-500 select-none'
+        }, 'Other')
+      ) as React.ReactNode,
+      disabled: true,
+    });
+    result.push(...otherItems);
   }
 
   return result;
