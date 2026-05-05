@@ -15,33 +15,17 @@ type RhymeCandidate = {
   normalizedSuffix: string;
 };
 
-/**
- * Full IPA vowel inventory covering Latin, Germanic umlauts, Slavic, Uralic,
- * Austronesian, Dravidian and Sinitic vowel characters encountered after NFD
- * normalization. Extending beyond 'aeiouy' fixes getVowelGroups for
- * ALGO-GER, ALGO-FIN, ALGO-DRV, ALGO-AUS, ALGO-SLV, ALGO-SIN, ALGO-KOR.
- */
 const VOWELS = new Set([
-  // Basic Latin
   'a', 'e', 'i', 'o', 'u', 'y',
-  // IPA close / mid vowels
-  'ɑ', 'ɒ', 'ɔ', 'ɛ', 'œ', 'ø', 'ɪ', 'ʊ', 'ʌ', 'ə', 'ɨ', 'ɵ', 'ɜ', 'ɞ', 'ɐ', 'ʉ', 'ɯ', 'ɤ',
-  // Germanic / Uralic umlauts (post-NFD base chars)
-  'ä', 'ö', 'ü', 'å',
-  // Scandinavian / Uralic
-  'æ', 'ø',
-  // Slavic / IIR
-  'ы', 'э', 'я', 'ю', 'е', 'ё', 'и',
-  // Dravidian vowel letters (Tamil, Kannada, Malayalam — post-transliteration)
-  'ā', 'ī', 'ū', 'ṛ', 'ḷ', 'ē', 'ō', 'ai', 'au',
+  '\u0251', '\u0252', '\u0254', '\u025b', '\u0153', '\u00f8', '\u026a', '\u028a', '\u028c', '\u0259', '\u0268', '\u0275', '\u025c', '\u025e', '\u0250', '\u0289', '\u026f', '\u0264',
+  '\u00e4', '\u00f6', '\u00fc', '\u00e5',
+  '\u00e6', '\u00f8',
+  '\u044b', '\u044d', '\u044f', '\u044e', '\u0435', '\u0451', '\u0438',
+  '\u0101', '\u012b', '\u016b', '\u1e5b', '\u1e37', '\u0113', '\u014d', 'ai', 'au',
 ]);
 
 const isVowel = (ch: string) => VOWELS.has(ch);
 
-/**
- * Strip Unicode accents and lowercase — with optional tonal preservation.
- * For tonal languages (KWA, CRV families), tone diacritics are preserved.
- */
 const normalizeWord = (s: string, langCode?: string): string => {
   const normalized = s.normalize('NFD');
   const stripDiacritics = isTonalLanguage(langCode || '')
@@ -50,9 +34,6 @@ const normalizeWord = (s: string, langCode?: string): string => {
   return stripDiacritics.toLowerCase().replace(/[^a-z\u0300-\u036f]/g, '');
 };
 
-/**
- * Extract the final word-like token from a lyric line.
- */
 const extractLastWord = (text: string, langCode?: string): WordMatch | null => {
   const trimmedText = text.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
   if (!trimmedText) return null;
@@ -64,9 +45,6 @@ const extractLastWord = (text: string, langCode?: string): WordMatch | null => {
   return { lastWord, normalizedWord, wordStart: lastWordMatch.index };
 };
 
-/**
- * Identify contiguous vowel groups inside a normalized word.
- */
 const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
   const vowelGroups: VowelSpan[] = [];
   const chars = [...normalizedWord];
@@ -83,12 +61,6 @@ const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
   return vowelGroups;
 };
 
-/**
- * Canonicalize rhyme suffix.
- * Romance-specific orthographic rules are gated on ALGO-ROM.
- * All other families return the raw suffix for IPA pipeline handling.
- * When langCode is absent the Romance rules apply as a safe default.
- */
 const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
   const s = suffix.length <= 3 ? suffix : suffix.replace(/[sx]$/, '');
   const family = langCode ? getAlgoFamily(langCode) : undefined;
@@ -199,7 +171,7 @@ const getFallbackRhymingSuffix = (
   );
 };
 
-// ─── Step-0: verse segmentation ──────────────────────────────────────────────
+// ─── Step-0: verse segmentation ───────────────────────────────────────────────
 
 export type RhymePosition = 'end' | 'internal' | 'enjambed';
 
@@ -210,17 +182,6 @@ export type VerseRhymingSegment = {
   syllableIndex?: number;
 };
 
-/**
- * Connector words that suggest a line is syntactically incomplete
- * (enjambement). Checked against the normalized last token.
- *
- * Covers:
- * - Romance/Germanic (FR, EN, ES, IT, PT, DE, NL)
- * - KWA (Baoulé, Dioula, Ewe, Mina)
- * - BNT (Yoruba, Swahili, Zulu, Lingala)
- * - CRV (Bekwarra, Ijaw)
- * - CRE / Pidgin (Nouchi, Nigerian Pidgin)
- */
 const ENJAMBMENT_CONNECTORS = new Set([
   // French
   'et', 'ou', 'mais', 'donc', 'or', 'ni', 'car', 'que', 'qui', 'dont',
@@ -234,13 +195,13 @@ const ENJAMBMENT_CONNECTORS = new Set([
   // German / Dutch
   'und', 'oder', 'aber', 'weil', 'mit', 'ohne', 'von', 'en', 'maar', 'van',
   // Yoruba (ALGO-BNT)
-  'ati', 'àti', 'tabi', 'tàbí', 'nitori', 'bi', 'ti', 'ni', 'si', 'fun',
+  'ati', '\u00e0ti', 'tabi', 't\u00e0b\u00ed', 'nitori', 'bi', 'ti', 'ni', 'si', 'fun',
   // Swahili (ALGO-BNT)
   'na', 'ya', 'wa', 'za', 'la', 'kwa', 'bila', 'hadi', 'au',
   // Dioula / Bambara (ALGO-KWA)
-  'ni', 'ka', 'ani', 'walima', 'nka', 'fo', 'kɔ',
-  // Baoulé (ALGO-KWA)
-  'mɔ', 'kɛ', 'yɛ',
+  'ni', 'ka', 'ani', 'walima', 'nka', 'fo', 'k\u0254',
+  // Baoul\u00e9 (ALGO-KWA)
+  'm\u0254', 'k\u025b', 'y\u025b',
   // Ewe / Mina (ALGO-KWA)
   'kple', 'eye', 'ke', 'ne', 'le',
   // Lingala (ALGO-BNT)
@@ -253,11 +214,6 @@ const ENJAMBMENT_CONNECTORS = new Set([
 
 const AGGLUTINATIVE_FAMILIES = new Set(['ALGO-TRK', 'ALGO-FIN', 'ALGO-KOR']);
 
-/**
- * Detect whether a line contains an internal rhyme.
- * Uses last-vowel-group suffix of each token vs end word.
- * Requires >= 2 shared characters to avoid false positives.
- */
 const detectInternalRhymeToken = (
   tokens: string[],
   lastWord: string,
@@ -292,17 +248,6 @@ const detectInternalRhymeToken = (
   return null;
 };
 
-/**
- * Step-0: segment a raw verse line into its rhyming unit.
- *
- * Rules (in order):
- * 1. Agglutinative families (TRK/FIN/KOR): last stressed syllable of last word.
- * 2. Enjambement: last token is a known connector → use penultimate content word.
- * 3. Internal rhyme: pre-final token mirrors end-word suffix → mark 'internal'.
- * 4. Default: last word → position 'end'.
- *
- * Tonal languages: diacritic stripping is suppressed so tone marks survive.
- */
 export const segmentVerseToRhymingUnit = (
   line: string,
   langCode?: string,
@@ -313,7 +258,7 @@ export const segmentVerseToRhymingUnit = (
   if (tokens.length === 0) {
     return { rhymingUnit: '', position: 'end', originalText: line };
   }
-  // ── Agglutinative: last stressed syllable ────────────────────────────────
+  // Agglutinative: last stressed syllable
   if (family && AGGLUTINATIVE_FAMILIES.has(family)) {
     const lastToken = tokens[tokens.length - 1]!;
     const normalized = normalizeWord(lastToken, langCode);
@@ -324,7 +269,7 @@ export const segmentVerseToRhymingUnit = (
         : normalized || lastToken;
     return { rhymingUnit, position: 'end', originalText: line };
   }
-  // ── Enjambement ──────────────────────────────────────────────────────────
+  // Enjambement
   const lastToken = tokens[tokens.length - 1]!;
   const lastNormalized = normalizeWord(lastToken, langCode);
   if (ENJAMBMENT_CONNECTORS.has(lastNormalized) && tokens.length >= 2) {
@@ -335,7 +280,7 @@ export const segmentVerseToRhymingUnit = (
       originalText: line,
     };
   }
-  // ── Internal rhyme ───────────────────────────────────────────────────────
+  // Internal rhyme
   const wordMatch = extractLastWord(stripped, langCode);
   if (wordMatch) {
     const internalToken = detectInternalRhymeToken(tokens, wordMatch.normalizedWord, langCode);
@@ -343,35 +288,34 @@ export const segmentVerseToRhymingUnit = (
       return { rhymingUnit: wordMatch.normalizedWord, position: 'internal', originalText: line };
     }
   }
-  // ── Default: end rhyme ───────────────────────────────────────────────────
+  // Default: end rhyme
   const rhymingUnit = wordMatch ? wordMatch.normalizedWord : lastNormalized;
   return { rhymingUnit, position: 'end', originalText: line };
 };
 
 /**
- * Split a line at the start of a rhyming suffix, using Step-0 segmentation
- * to resolve agglutinative, enjambed and internal cases first.
+ * Split a line at the start of a rhyming suffix.
  *
- * When peerLines are supplied the best shared suffix across all peers is
- * used; otherwise falls back to the last vowel group of the rhymingUnit.
+ * FIX (enjambed): when Step-0 detects an enjambed line, the trailing connector
+ * token is stripped from `text` before calling splitLineAtNormalizedSuffix so
+ * the highlight targets the content word, not the connector.
  */
 export const splitRhymingSuffix = (
   text: string,
   peerLines: string[] = [],
   langCode?: string,
 ): { before: string; rhyme: string } | null => {
-  // Step-0: resolve rhyming unit for the target line
   const segment = segmentVerseToRhymingUnit(text, langCode);
-  // For enjambed lines the rhymingUnit is the penultimate word — we still
-  // split the *original* text at the suffix position of that word.
+
+  // FIX: for enjambed lines, strip the trailing connector so the split
+  // operates on the text up to (and including) the content word.
   const effectiveText =
     segment.position === 'enjambed'
-      ? text // splitLineAtNormalizedSuffix will locate the word inside text
+      ? text.trimEnd().replace(/\s+\S+$/, '') // strip last token (the connector)
       : text;
 
   let bestSuffix: string | null = null;
   for (const peerLine of peerLines) {
-    // Step-0 on each peer as well so we compare rhymingUnits, not raw lines
     const peerSegment = segmentVerseToRhymingUnit(peerLine, langCode);
     const sharedSuffix = findBestSharedRhymeSuffix(
       segment.rhymingUnit,
@@ -391,18 +335,13 @@ export const splitRhymingSuffix = (
   return getFallbackRhymingSuffix(effectiveText, langCode);
 };
 
-/**
- * Two lines rhyme when they share a strong enough rime suffix.
- * Uses Step-0 segmentation so agglutinative/tonal/enjambed lines are
- * correctly normalised before comparison.
- */
 export const doLinesRhymeGraphemic = (a: string, b: string, langCode?: string): boolean => {
   const segA = segmentVerseToRhymingUnit(a, langCode);
   const segB = segmentVerseToRhymingUnit(b, langCode);
   return findBestSharedRhymeSuffix(segA.rhymingUnit, segB.rhymingUnit, langCode) !== null;
 };
 
-// ─── Similarity / song-level utilities ───────────────────────────────────────
+// ─── Similarity / song-level utilities ────────────────────────────────────────
 
 const tokenize = (text: string) =>
   normalizeText(text)
