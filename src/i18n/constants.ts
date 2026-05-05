@@ -71,7 +71,7 @@ export type SupportedUiLocaleCode = typeof SUPPORTED_UI_LOCALES[number]['code'];
 export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // A
   { code: 'AM',  aiName: 'Amharic',         sign: '🇪🇹', region: 'Ethiopia - East Africa' },
-  { code: 'AR',  aiName: 'Arabic',           sign: '🌙', region: 'Arab World', isEthnical: true },
+  { code: 'AR',  aiName: 'Arabic',           sign: '🇸🇦', region: 'Arab World' },
   { code: 'AZ',  aiName: 'Azerbaijani',      sign: '🇦🇿' },
   // B
   { code: 'BA',  aiName: 'Baoulé',           sign: '🌿', region: 'Ivory Coast - West Africa', isEthnical: true },
@@ -102,7 +102,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // G
   { code: 'DE',  aiName: 'German',           sign: '🇩🇪' },
   // H
-  { code: 'HA',  aiName: 'Hausa',            sign: '🏺', region: 'Nigeria/Niger - West Africa', isEthnical: true },
+  { code: 'HA',  aiName: 'Hausa',            sign: '🇳🇬', region: 'Nigeria/Niger - West Africa' },
   { code: 'HE',  aiName: 'Hebrew',           sign: '🇮🇱' },
   { code: 'HI',  aiName: 'Hindi',            sign: '🇮🇳' },
   { code: 'HU',  aiName: 'Hungarian',        sign: '🇭🇺' },
@@ -143,7 +143,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { code: 'SR',  aiName: 'Serbian',          sign: '🇷🇸' },
   { code: 'SK',  aiName: 'Slovak',           sign: '🇸🇰' },
   { code: 'ES',  aiName: 'Spanish',          sign: '🇪🇸' },
-  { code: 'SW',  aiName: 'Swahili',          sign: '🌍', region: 'East Africa', isEthnical: true },
+  { code: 'SW',  aiName: 'Swahili',          sign: '🇰🇪', region: 'East Africa' },
   { code: 'SV',  aiName: 'Swedish',          sign: '🇸🇪' },
   // T
   { code: 'TL',  aiName: 'Tagalog',          sign: '🇵🇭' },
