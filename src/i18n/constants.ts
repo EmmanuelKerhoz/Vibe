@@ -89,6 +89,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // D
   { code: 'DA',  aiName: 'Danish',           sign: '🇩🇰' },
   { code: 'DI',  aiName: 'Dioula',           sign: '🧭', region: 'Ivory Coast/Burkina Faso - West Africa', isEthnical: true },
+  { code: 'NL',  aiName: 'Dutch',            sign: '🇳🇱' },
   // E
   { code: 'EN',  aiName: 'English',          sign: '🇺🇸', region: 'United States' },
   { code: 'ET',  aiName: 'Estonian',         sign: '🇪🇪' },
@@ -131,6 +132,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // O
   { code: 'OG',  aiName: 'Ogoja',            sign: '🗿', region: 'Cross River - Nigeria', isEthnical: true },
   // P
+  { code: 'PL',  aiName: 'Polish',           sign: '🇵🇱' },
   { code: 'PA',  aiName: 'Punjabi',          sign: '🇮🇳', region: 'Punjab' },
   { code: 'PT',  aiName: 'Portuguese',       sign: '🇵🇹' },
   // R

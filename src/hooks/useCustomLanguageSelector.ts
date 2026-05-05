@@ -13,9 +13,9 @@ import { EmojiSign } from '../components/ui/EmojiSign';
 // display with the wrong grouping/flag in the adaptation dropdown.
 // Run `npx ts-node scripts/validateLanguageGroups.ts` to verify after any change.
 
-type LangGroup = { label: string; codes: string[] };
+export type LangGroup = { label: string; codes: string[] };
 
-const LANGUAGE_GROUPS: LangGroup[] = [
+export const LANGUAGE_GROUPS: LangGroup[] = [
   { label: 'Romance',          codes: ['ES', 'FR', 'IT', 'PT', 'RO'] },
   { label: 'Germanic',         codes: ['EN', 'DE', 'NL', 'SV', 'DA', 'NO', 'IS'] },
   { label: 'Slavic',           codes: ['RU', 'PL', 'CS', 'SK', 'UK', 'BG', 'SR', 'HR'] },
