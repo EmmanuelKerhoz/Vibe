@@ -31,6 +31,11 @@ for (const g of LANGUAGE_GROUPS) {
   for (const c of g.codes) CODE_TO_GROUP.set(c, g.label);
 }
 
+// Build a code→lang lookup for O(1) access in buildGroupedLanguageOptions.
+const CODE_TO_LANG = new Map(
+  SUPPORTED_ADAPTATION_LANGUAGES.map(l => [l.code.toUpperCase(), l])
+);
+
 function getGroupLabel(code: string): string {
   return CODE_TO_GROUP.get(code.toUpperCase()) ?? 'Other';
 }
@@ -45,31 +50,31 @@ export interface GroupedLanguageOption {
   searchText?: string;
 }
 
-export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
-  // Build a map of groupLabel → options, keyed by code for O(1) lookup.
-  const grouped = new Map<string, GroupedLanguageOption[]>();
-
-  for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
-    const group = getGroupLabel(lang.code);
-    if (!grouped.has(group)) grouped.set(group, []);
-    grouped.get(group)!.push({
-      value: lang.aiName,
-      label: (
-        React.createElement('span', { className: 'flex items-center gap-1.5 min-w-0 w-full' },
-          React.createElement(EmojiSign, { sign: lang.sign }),
-          React.createElement('span', { className: 'truncate text-[11px]' },
-            lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName
-          )
+function makeLangOption(lang: ReturnType<typeof CODE_TO_LANG.get> & {}): GroupedLanguageOption {
+  return {
+    value: lang.aiName,
+    // key on the wrapper span ensures React never reuses an EmojiSign instance
+    // from a different language when the list is reordered or re-rendered.
+    label: (
+      React.createElement(
+        'span',
+        { key: lang.code, className: 'flex items-center gap-1.5 min-w-0 w-full' },
+        React.createElement(EmojiSign, { key: `sign-${lang.code}`, sign: lang.sign }),
+        React.createElement(
+          'span',
+          { className: 'truncate text-[11px]' },
+          lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName
         )
-      ) as React.ReactNode,
-      searchText: lang.aiName,
-    });
-  }
+      )
+    ) as React.ReactNode,
+    searchText: lang.aiName,
+  };
+}
 
+export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
   const result: GroupedLanguageOption[] = [];
 
-  // "Free input" entry sits at the very top so users can immediately access the
-  // custom-language slot or type a value into the searchable dropdown filter.
+  // "Free input" entry sits at the very top.
   result.push(
     {
       value: '__group__other_lang',
@@ -92,13 +97,21 @@ export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
     },
   );
 
-  // Emit groups in the declared LANGUAGE_GROUPS order so flags always appear
-  // under the correct section header. Using grouped.entries() would emit in
-  // Map insertion order (alphabetical by first-seen aiName), which caused
-  // Norwegian/Swedish to appear under Romance, French under Germanic, etc.
-  for (const { label: groupLabel } of LANGUAGE_GROUPS) {
-    const items = grouped.get(groupLabel);
-    if (!items || items.length === 0) continue;
+  // Emit groups in the LANGUAGE_GROUPS declared order, iterating codes within
+  // each group in their declared order (not alphabetical aiName order).
+  // This guarantees flags always appear under the correct section header and
+  // in the intended sequence regardless of SUPPORTED_ADAPTATION_LANGUAGES order.
+  const seenCodes = new Set<string>();
+
+  for (const { label: groupLabel, codes } of LANGUAGE_GROUPS) {
+    const items: GroupedLanguageOption[] = [];
+    for (const code of codes) {
+      const lang = CODE_TO_LANG.get(code.toUpperCase());
+      if (!lang) continue; // phantom code — skip gracefully
+      seenCodes.add(code.toUpperCase());
+      items.push(makeLangOption(lang));
+    }
+    if (items.length === 0) continue;
     result.push({
       value: `__group__${groupLabel}`,
       label: (
@@ -111,9 +124,11 @@ export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
     result.push(...items);
   }
 
-  // Append any ungrouped languages (codes not listed in LANGUAGE_GROUPS) last.
-  const otherItems = grouped.get('Other');
-  if (otherItems && otherItems.length > 0) {
+  // Append languages not present in any group (safety net).
+  const ungrouped = SUPPORTED_ADAPTATION_LANGUAGES.filter(
+    l => !seenCodes.has(l.code.toUpperCase())
+  );
+  if (ungrouped.length > 0) {
     result.push({
       value: '__group__Other',
       label: (
@@ -123,7 +138,7 @@ export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
       ) as React.ReactNode,
       disabled: true,
     });
-    result.push(...otherItems);
+    for (const lang of ungrouped) result.push(makeLangOption(lang));
   }
 
   return result;
@@ -178,13 +193,9 @@ export function useCustomLanguageSelector({
       if (lang.startsWith('__group__')) return;
       setSelectValue(lang);
       if (!isCustomAdaptationLanguage(lang)) {
-        // Picking a real language clears any pending custom text so the search
-        // box doesn't keep stale input next time the user opens the dropdown.
         setCustomText('');
         onValueChange(lang);
       } else {
-        // Always reset customText when entering free-input mode so a stale
-        // storedValue does not pre-fill the field and trigger an immediate adaptation.
         setCustomText('');
         requestAnimationFrame(() => customInputRef.current?.focus());
       }
@@ -192,7 +203,6 @@ export function useCustomLanguageSelector({
     [onValueChange],
   );
 
-  // Updates local state only — does NOT call onValueChange on every keystroke.
   const handleCustomTextChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setCustomText(e.target.value);
@@ -200,7 +210,6 @@ export function useCustomLanguageSelector({
     [],
   );
 
-  // Commits the current customText to onValueChange (Enter / blur / Apply).
   const handleCustomConfirm = useCallback(() => {
     const trimmed = customText.trim();
     if (trimmed) onValueChange(trimmed);
