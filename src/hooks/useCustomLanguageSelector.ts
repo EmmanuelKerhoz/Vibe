@@ -7,18 +7,23 @@ import {
 import { EmojiSign } from '../components/ui/EmojiSign';
 
 // ─── Language grouping ────────────────────────────────────────────────────────
+//
+// IMPORTANT: every code listed here MUST exist in SUPPORTED_ADAPTATION_LANGUAGES.
+// Phantom codes cause the language to fall into the 'Other' catch-all group and
+// display with the wrong grouping/flag in the adaptation dropdown.
+// Run `npx ts-node scripts/validateLanguageGroups.ts` to verify after any change.
 
 type LangGroup = { label: string; codes: string[] };
 
 const LANGUAGE_GROUPS: LangGroup[] = [
-  { label: 'Romance',          codes: ['AR_ROM', 'ES', 'FR', 'IT', 'PT', 'RO', 'CA'] },
+  { label: 'Romance',          codes: ['ES', 'FR', 'IT', 'PT', 'RO'] },
   { label: 'Germanic',         codes: ['EN', 'DE', 'NL', 'SV', 'DA', 'NO', 'IS'] },
   { label: 'Slavic',           codes: ['RU', 'PL', 'CS', 'SK', 'UK', 'BG', 'SR', 'HR'] },
   { label: 'Semitic',          codes: ['AR', 'HE', 'AM'] },
   { label: 'South & SE Asian', codes: ['HI', 'SA', 'UR', 'BN', 'PA', 'FA', 'TA', 'TE', 'KN', 'ML', 'TH', 'LO', 'VI', 'KM', 'ID', 'MS', 'TL'] },
   { label: 'CJK & Altaic',     codes: ['ZH', 'YUE', 'JA', 'KO', 'JV', 'TR', 'AZ', 'UZ', 'KK', 'FI', 'HU', 'ET'] },
   { label: 'African',          codes: ['SW', 'YO', 'HA', 'FF', 'BM', 'BA', 'DI', 'EW', 'MI', 'LN', 'ZU', 'WO', 'BK', 'CB', 'OG'] },
-  { label: 'Creole & Other',   codes: ['NOU', 'PCM', 'CFG', 'MG', 'IS_ETC'] },
+  { label: 'Creole & Other',   codes: ['NOU', 'PCM', 'CFG'] },
 ];
 
 const CODE_TO_GROUP = new Map<string, string>();
