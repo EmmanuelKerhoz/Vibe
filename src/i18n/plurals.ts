@@ -1,3 +1,5 @@
+import { stripInternalPrefix } from './constants';
+
 /**
  * Returns the correctly pluralised label for a given count using Intl.PluralRules.
  *
@@ -17,7 +19,7 @@ export function tPlural(
 ): string {
   // Strip the internal `ui:` namespace prefix (e.g. "ui:en" → "en") before
   // passing to Intl.PluralRules which validates BCP-47 tags.
-  const bcp47 = language.startsWith('ui:') ? language.slice(3) : language;
+  const bcp47 = stripInternalPrefix(language);
   const form = new Intl.PluralRules(bcp47).select(count);
   return dict[`${baseKey}_${form}`] ?? dict[baseKey] ?? baseKey;
 }
