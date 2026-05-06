@@ -8,6 +8,8 @@ export {
   adaptationLanguageLabel,
   getLanguageDisplay,
   formatLanguageDisplay,
+  migrateToLangId,
+  langIdToLocaleCode,
   CUSTOM_LANGUAGE_VALUE,
   isCustomAdaptationLanguage,
 } from './constants';

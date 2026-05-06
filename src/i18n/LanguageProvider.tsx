@@ -1,6 +1,6 @@
 import React, { createContext, useState, useMemo, useEffect, useCallback, type ReactNode } from 'react';
 import type { Translations } from './locales/types';
-import { SUPPORTED_UI_LOCALES } from './constants';
+import { SUPPORTED_UI_LOCALES, migrateToLangId, langIdToLocaleCode } from './constants';
 
 // Re-export legacy alias so existing consumers don't break
 export { SUPPORTED_UI_LOCALES as SUPPORTED_LANGUAGES } from './constants';
@@ -16,28 +16,19 @@ const _localeLoaders = import.meta.glob<Translations>(
 // Cache for loaded locales to avoid re-fetching
 const localeCache: Record<string, Translations> = {};
 
-// Async loader function that returns a promise for a locale
 async function loadLocale(lang: string): Promise<Translations | null> {
-  // Check cache first
-  if (localeCache[lang]) {
-    return localeCache[lang];
-  }
+  if (localeCache[lang]) return localeCache[lang]!;
 
-  // Find matching loader
   const loaderKey = Object.keys(_localeLoaders).find(path => {
     const match = path.match(/\/([A-Za-z0-9-]+)\.json$/);
     return match?.[1]?.toLowerCase() === lang.toLowerCase();
   });
 
-  if (!loaderKey) {
-    return null;
-  }
+  if (!loaderKey) return null;
 
   try {
     const loader = _localeLoaders[loaderKey];
-    if (!loader) {
-      return null;
-    }
+    if (!loader) return null;
     const locale = await loader();
     localeCache[lang] = locale;
     return locale;
@@ -51,8 +42,6 @@ async function loadLocale(lang: string): Promise<Translations | null> {
 let en: Translations | null = null;
 const enPromise = loadLocale('en').then(locale => {
   if (!locale || Object.keys(locale).length === 0) {
-    // Log but do NOT throw — throwing here would cause an unhandled rejection
-    // that surfaces as "English base locale not loaded yet" on first render.
     console.error('[i18n] en.json is missing or empty.');
     return null;
   }
@@ -60,10 +49,6 @@ const enPromise = loadLocale('en').then(locale => {
   return locale;
 });
 
-// ---------------------------------------------------------------------------
-// Missing-key safety: deep-merge any locale over the English base so that
-// incomplete or AI-generated locale packs can never break rendering.
-// ---------------------------------------------------------------------------
 function deepMerge<T extends object>(base: T, override: Partial<T>): T {
   const result: T = { ...base };
   for (const key in override) {
@@ -82,24 +67,37 @@ function deepMerge<T extends object>(base: T, override: Partial<T>): T {
   return result;
 }
 
-/**
- * Returns merged translations, or null while the English base is not yet
- * available. Callers must handle the null case (LanguageProvider blocks render).
- * Never throws — a synchronous throw from useMemo crashes React on first render.
- */
-function buildSafeTranslations(language: string, locale: Translations | null): Translations | null {
-  if (!en) {
-    // English not loaded yet — caller will wait for enPromise to resolve
-    return null;
-  }
-  if (language === 'en' || !locale) return en;
-  // Deep-merge: any key missing in `locale` falls back to the English value.
+function buildSafeTranslations(localeCode: string, locale: Translations | null): Translations | null {
+  if (!en) return null;
+  if (localeCode === 'en' || !locale) return en;
   return deepMerge(en, locale as Partial<Translations>);
 }
 
+// ---------------------------------------------------------------------------
+// Storage key — stores a canonical langId ("ui:fr", "ui:ar").
+// On read, legacy bare codes are migrated transparently.
+// ---------------------------------------------------------------------------
+const STORAGE_KEY = 'lyricist_language';
+
+function readStoredLangId(): string {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY) ?? 'ui:en';
+    const migrated = migrateToLangId(raw);
+    // If migration changed the value, persist the canonical form immediately.
+    if (migrated !== raw) {
+      try { localStorage.setItem(STORAGE_KEY, migrated); } catch { /* ignore */ }
+    }
+    // Ensure we only accept UI locale langIds here (adapter langIds are for content, not UI).
+    return migrated.startsWith('ui:') ? migrated : 'ui:en';
+  } catch {
+    return 'ui:en';
+  }
+}
+
 export interface LanguageContextValue {
+  /** Canonical UI locale langId, e.g. "ui:fr" */
   language: string;
-  setLanguage: (lang: string) => void;
+  setLanguage: (langId: string) => void;
   t: Translations;
   dir: 'ltr' | 'rtl';
   isLoading: boolean;
@@ -108,75 +106,58 @@ export interface LanguageContextValue {
 export const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<string>(() => {
-    try {
-      return localStorage.getItem('lyricist_language') || 'en';
-    } catch {
-      return 'en';
-    }
-  });
+  const [langId, setLangIdState] = useState<string>(readStoredLangId);
 
   const [currentLocale, setCurrentLocale] = useState<Translations | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const setLanguage = useCallback((lang: string) => {
-    setLanguageState(lang);
-    try {
-      localStorage.setItem('lyricist_language', lang);
-    } catch {
-      // ignore storage errors
-    }
+  const setLanguage = useCallback((newLangId: string) => {
+    const canonical = migrateToLangId(newLangId);
+    const safeId = canonical.startsWith('ui:') ? canonical : 'ui:en';
+    setLangIdState(safeId);
+    try { localStorage.setItem(STORAGE_KEY, safeId); } catch { /* ignore */ }
   }, []);
 
-  // Load the selected locale asynchronously
+  // Derive BCP-47 code from langId for locale loading
+  const localeCode = useMemo(() => langIdToLocaleCode(langId), [langId]);
+
   useEffect(() => {
     let cancelled = false;
-
     const loadLanguage = async () => {
       setIsLoading(true);
-
-      // Ensure English base is loaded first
       await enPromise;
-
       if (cancelled) return;
-
-      if (language === 'en') {
+      if (localeCode === 'en') {
         setCurrentLocale(en);
         setIsLoading(false);
       } else {
-        const locale = await loadLocale(language);
+        const locale = await loadLocale(localeCode);
         if (!cancelled) {
           setCurrentLocale(locale);
           setIsLoading(false);
         }
       }
     };
-
     loadLanguage();
+    return () => { cancelled = true; };
+  }, [localeCode]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [language]);
-
-  // null while English base is still loading — never throws
-  const t = useMemo(() => buildSafeTranslations(language, currentLocale), [language, currentLocale]);
+  const t = useMemo(() => buildSafeTranslations(localeCode, currentLocale), [localeCode, currentLocale]);
 
   const dir = useMemo(
-    () => SUPPORTED_UI_LOCALES.find(l => l.code === language)?.dir ?? 'ltr',
-    [language],
+    () => SUPPORTED_UI_LOCALES.find(l => l.code === localeCode)?.dir ?? 'ltr',
+    [localeCode],
   );
 
   useEffect(() => {
-    document.documentElement.setAttribute('lang', language);
+    document.documentElement.setAttribute('lang', localeCode);
     document.documentElement.setAttribute('dir', dir);
-  }, [language, dir]);
+  }, [localeCode, dir]);
 
-  // Block children until translations are ready — avoids propagating t=null
-  // to consumers and prevents "useTranslation" crashes downstream.
   if (!t) return null;
 
-  const value: LanguageContextValue = { language, setLanguage, t, dir, isLoading };
+  // Expose `language` as the langId for consumers that need to store/compare it.
+  const value: LanguageContextValue = { language: langId, setLanguage, t, dir, isLoading };
 
   return (
     <LanguageContext.Provider value={value}>

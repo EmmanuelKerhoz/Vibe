@@ -3,6 +3,8 @@
  * These are static, versioned, human-reviewed translation packs.
  */
 export interface UiLocaleInfo {
+  /** Stable opaque identifier — use as storage key. Format: "ui:<code>" */
+  langId: string;
   /** BCP-47 language code used as locale key (e.g. 'en', 'fr') */
   code: string;
   /** Native display name of the language */
@@ -26,6 +28,8 @@ export interface UiLocaleInfo {
  * NOT affect the interface strings.
  */
 export interface AdaptationLanguage {
+  /** Stable opaque identifier — use as storage key. Format: "adapt:<CODE>" */
+  langId: string;
   /** Short display code shown in compact selectors (e.g. 'AR', 'ZH') */
   code: string;
   /** Full language name passed verbatim to the AI adaptation prompt */
@@ -40,17 +44,18 @@ export interface AdaptationLanguage {
 
 // ---------------------------------------------------------------------------
 // UI Locales — static, versioned, reviewed packs
+// langId format: "ui:<code>" — stable across renames, never store raw code.
 // ---------------------------------------------------------------------------
 
 export const SUPPORTED_UI_LOCALES: readonly UiLocaleInfo[] = [
-  { code: 'en', label: 'English',    flag: '🇺🇸', dir: 'ltr' },
-  { code: 'fr', label: 'Français',   flag: '🇫🇷', dir: 'ltr' },
-  { code: 'es', label: 'Español',    flag: '🇪🇸', dir: 'ltr' },
-  { code: 'de', label: 'Deutsch',    flag: '🇩🇪', dir: 'ltr' },
-  { code: 'pt', label: 'Português',  flag: '🇵🇹', dir: 'ltr' },
-  { code: 'ar', label: 'العربية',    flag: '🇸🇦', dir: 'rtl' },
-  { code: 'zh', label: '中文',        flag: '🇨🇳', dir: 'ltr' },
-  { code: 'ko', label: '한국어',      flag: '🇰🇷', dir: 'ltr' },
+  { langId: 'ui:en', code: 'en', label: 'English',    flag: '🇺🇸', dir: 'ltr' },
+  { langId: 'ui:fr', code: 'fr', label: 'Français',   flag: '🇫🇷', dir: 'ltr' },
+  { langId: 'ui:es', code: 'es', label: 'Español',    flag: '🇪🇸', dir: 'ltr' },
+  { langId: 'ui:de', code: 'de', label: 'Deutsch',    flag: '🇩🇪', dir: 'ltr' },
+  { langId: 'ui:pt', code: 'pt', label: 'Português',  flag: '🇵🇹', dir: 'ltr' },
+  { langId: 'ui:ar', code: 'ar', label: 'العربية',    flag: '🇸🇦', dir: 'rtl' },
+  { langId: 'ui:zh', code: 'zh', label: '中文',        flag: '🇨🇳', dir: 'ltr' },
+  { langId: 'ui:ko', code: 'ko', label: '한국어',      flag: '🇰🇷', dir: 'ltr' },
 ] as const;
 
 export type SupportedUiLocaleCode = typeof SUPPORTED_UI_LOCALES[number]['code'];
@@ -58,6 +63,8 @@ export type SupportedUiLocaleCode = typeof SUPPORTED_UI_LOCALES[number]['code'];
 // ---------------------------------------------------------------------------
 // Adaptation Languages — for AI creative lyric adaptation
 // Sorted alphabetically by aiName for consistent dropdown order.
+//
+// langId format: "adapt:<CODE>" — stable opaque key for storage and lookup.
 //
 // sign conventions:
 //   - Nation flag   : language tied to a sovereign state (standard)
@@ -70,99 +77,99 @@ export type SupportedUiLocaleCode = typeof SUPPORTED_UI_LOCALES[number]['code'];
 
 export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // A
-  { code: 'AM',  aiName: 'Amharic',         sign: '🇪🇹', region: 'Ethiopia - East Africa' },
-  { code: 'AR',  aiName: 'Arabic',           sign: '🇸🇦', region: 'Arab World' },
-  { code: 'AZ',  aiName: 'Azerbaijani',      sign: '🇦🇿' },
+  { langId: 'adapt:AM',  code: 'AM',  aiName: 'Amharic',         sign: '🇪🇹', region: 'Ethiopia - East Africa' },
+  { langId: 'adapt:AR',  code: 'AR',  aiName: 'Arabic',           sign: '🌙', region: 'Arab World', isEthnical: true },
+  { langId: 'adapt:AZ',  code: 'AZ',  aiName: 'Azerbaijani',      sign: '🇦🇿' },
   // B
-  { code: 'BA',  aiName: 'Baoulé',           sign: '🌿', region: 'Ivory Coast - West Africa', isEthnical: true },
-  { code: 'BK',  aiName: 'Bekwarra',         sign: '🏹', region: 'Nigeria - Cross River', isEthnical: true },
-  { code: 'BN',  aiName: 'Bengali',          sign: '🇧🇩', region: 'Bangladesh / West Bengal' },
-  { code: 'BG',  aiName: 'Bulgarian',        sign: '🇧🇬' },
-  { code: 'BM',  aiName: 'Bambara',          sign: '🦅', region: 'Mali - West Africa', isEthnical: true },
+  { langId: 'adapt:BA',  code: 'BA',  aiName: 'Baoulé',           sign: '🌿', region: 'Ivory Coast - West Africa', isEthnical: true },
+  { langId: 'adapt:BK',  code: 'BK',  aiName: 'Bekwarra',         sign: '🏹', region: 'Nigeria - Cross River', isEthnical: true },
+  { langId: 'adapt:BN',  code: 'BN',  aiName: 'Bengali',          sign: '🇧🇩', region: 'Bangladesh / West Bengal' },
+  { langId: 'adapt:BG',  code: 'BG',  aiName: 'Bulgarian',        sign: '🇧🇬' },
+  { langId: 'adapt:BM',  code: 'BM',  aiName: 'Bambara',          sign: '🦅', region: 'Mali - West Africa', isEthnical: true },
   // C
-  { code: 'CB',  aiName: 'Calabari',         sign: '🐚', region: 'Niger Delta - Nigeria', isEthnical: true },
-  { code: 'YUE', aiName: 'Cantonese',        sign: '🇭🇰', region: 'Hong Kong / Guangdong' },
-  { code: 'CFG', aiName: 'Camfranglais',     sign: '🇨🇲', region: 'Cameroon - Urban Creole' },
-  { code: 'ZH',  aiName: 'Chinese',          sign: '🇨🇳', region: 'Mandarin' },
-  { code: 'HR',  aiName: 'Croatian',         sign: '🇭🇷' },
-  { code: 'CS',  aiName: 'Czech',            sign: '🇨🇿' },
+  { langId: 'adapt:CB',  code: 'CB',  aiName: 'Calabari',         sign: '🐚', region: 'Niger Delta - Nigeria', isEthnical: true },
+  { langId: 'adapt:YUE', code: 'YUE', aiName: 'Cantonese',        sign: '🇭🇰', region: 'Hong Kong / Guangdong' },
+  { langId: 'adapt:CFG', code: 'CFG', aiName: 'Camfranglais',     sign: '🇨🇲', region: 'Cameroon - Urban Creole' },
+  { langId: 'adapt:ZH',  code: 'ZH',  aiName: 'Chinese',          sign: '🇨🇳', region: 'Mandarin' },
+  { langId: 'adapt:HR',  code: 'HR',  aiName: 'Croatian',         sign: '🇭🇷' },
+  { langId: 'adapt:CS',  code: 'CS',  aiName: 'Czech',            sign: '🇨🇿' },
   // D
-  { code: 'DA',  aiName: 'Danish',           sign: '🇩🇰' },
-  { code: 'DI',  aiName: 'Dioula',           sign: '🧭', region: 'Ivory Coast/Burkina Faso - West Africa', isEthnical: true },
-  { code: 'NL',  aiName: 'Dutch',            sign: '🇳🇱' },
+  { langId: 'adapt:DA',  code: 'DA',  aiName: 'Danish',           sign: '🇩🇰' },
+  { langId: 'adapt:DI',  code: 'DI',  aiName: 'Dioula',           sign: '🧭', region: 'Ivory Coast/Burkina Faso - West Africa', isEthnical: true },
+  { langId: 'adapt:NL',  code: 'NL',  aiName: 'Dutch',            sign: '🇳🇱' },
   // E
-  { code: 'EN',  aiName: 'English',          sign: '🇺🇸', region: 'United States' },
-  { code: 'ET',  aiName: 'Estonian',         sign: '🇪🇪' },
-  { code: 'EW',  aiName: 'Ewe',              sign: '🪘', region: 'Togo - Volta Region', isEthnical: true },
+  { langId: 'adapt:EN',  code: 'EN',  aiName: 'English',          sign: '🇺🇸', region: 'United States' },
+  { langId: 'adapt:ET',  code: 'ET',  aiName: 'Estonian',         sign: '🇪🇪' },
+  { langId: 'adapt:EW',  code: 'EW',  aiName: 'Ewe',              sign: '🪘', region: 'Togo - Volta Region', isEthnical: true },
   // F
-  { code: 'FA',  aiName: 'Farsi',            sign: '🇮🇷', region: 'Persian - Iran' },
-  { code: 'FI',  aiName: 'Finnish',          sign: '🇫🇮' },
-  { code: 'FF',  aiName: 'Fula',             sign: '🐄', region: 'West Africa (Sahel)', isEthnical: true },
-  { code: 'FR',  aiName: 'French',           sign: '🇫🇷' },
+  { langId: 'adapt:FA',  code: 'FA',  aiName: 'Farsi',            sign: '🇮🇷', region: 'Persian - Iran' },
+  { langId: 'adapt:FI',  code: 'FI',  aiName: 'Finnish',          sign: '🇫🇮' },
+  { langId: 'adapt:FF',  code: 'FF',  aiName: 'Fula',             sign: '🐄', region: 'West Africa (Sahel)', isEthnical: true },
+  { langId: 'adapt:FR',  code: 'FR',  aiName: 'French',           sign: '🇫🇷' },
   // G
-  { code: 'DE',  aiName: 'German',           sign: '🇩🇪' },
+  { langId: 'adapt:DE',  code: 'DE',  aiName: 'German',           sign: '🇩🇪' },
   // H
-  { code: 'HA',  aiName: 'Hausa',            sign: '🇳🇬', region: 'Nigeria/Niger - West Africa' },
-  { code: 'HE',  aiName: 'Hebrew',           sign: '🇮🇱' },
-  { code: 'HI',  aiName: 'Hindi',            sign: '🇮🇳' },
-  { code: 'HU',  aiName: 'Hungarian',        sign: '🇭🇺' },
+  { langId: 'adapt:HA',  code: 'HA',  aiName: 'Hausa',            sign: '🇳🇬', region: 'Nigeria/Niger - West Africa' },
+  { langId: 'adapt:HE',  code: 'HE',  aiName: 'Hebrew',           sign: '🇮🇱' },
+  { langId: 'adapt:HI',  code: 'HI',  aiName: 'Hindi',            sign: '🇮🇳' },
+  { langId: 'adapt:HU',  code: 'HU',  aiName: 'Hungarian',        sign: '🇭🇺' },
   // I
-  { code: 'IS',  aiName: 'Icelandic',        sign: '🇮🇸' },
-  { code: 'ID',  aiName: 'Indonesian',       sign: '🇮🇩' },
-  { code: 'IT',  aiName: 'Italian',          sign: '🇮🇹' },
+  { langId: 'adapt:IS',  code: 'IS',  aiName: 'Icelandic',        sign: '🇮🇸' },
+  { langId: 'adapt:ID',  code: 'ID',  aiName: 'Indonesian',       sign: '🇮🇩' },
+  { langId: 'adapt:IT',  code: 'IT',  aiName: 'Italian',          sign: '🇮🇹' },
   // J
-  { code: 'JA',  aiName: 'Japanese',         sign: '🇯🇵' },
-  { code: 'JV',  aiName: 'Javanese',         sign: '🎭', region: 'Java - Indonesia', isEthnical: true },
+  { langId: 'adapt:JA',  code: 'JA',  aiName: 'Japanese',         sign: '🇯🇵' },
+  { langId: 'adapt:JV',  code: 'JV',  aiName: 'Javanese',         sign: '🎭', region: 'Java - Indonesia', isEthnical: true },
   // K
-  { code: 'KN',  aiName: 'Kannada',          sign: '🇮🇳', region: 'Karnataka - South India' },
-  { code: 'KK',  aiName: 'Kazakh',           sign: '🇰🇿' },
-  { code: 'KM',  aiName: 'Khmer',            sign: '🇰🇭', region: 'Cambodia' },
-  { code: 'KO',  aiName: 'Korean',           sign: '🇰🇷', region: 'South Korea' },
+  { langId: 'adapt:KN',  code: 'KN',  aiName: 'Kannada',          sign: '🇮🇳', region: 'Karnataka - South India' },
+  { langId: 'adapt:KK',  code: 'KK',  aiName: 'Kazakh',           sign: '🇰🇿' },
+  { langId: 'adapt:KM',  code: 'KM',  aiName: 'Khmer',            sign: '🇰🇭', region: 'Cambodia' },
+  { langId: 'adapt:KO',  code: 'KO',  aiName: 'Korean',           sign: '🇰🇷', region: 'South Korea' },
   // L
-  { code: 'LO',  aiName: 'Lao',              sign: '🇱🇦' },
-  { code: 'LN',  aiName: 'Lingala',          sign: '🥁', region: 'Congo - Central Africa', isEthnical: true },
+  { langId: 'adapt:LO',  code: 'LO',  aiName: 'Lao',              sign: '🇱🇦' },
+  { langId: 'adapt:LN',  code: 'LN',  aiName: 'Lingala',          sign: '🥁', region: 'Congo - Central Africa', isEthnical: true },
   // M
-  { code: 'MS',  aiName: 'Malay',            sign: '🇲🇾' },
-  { code: 'ML',  aiName: 'Malayalam',        sign: '🇮🇳', region: 'Kerala' },
-  { code: 'MI',  aiName: 'Mina',             sign: '🌊', region: 'Togo - Maritime Region', isEthnical: true },
+  { langId: 'adapt:MS',  code: 'MS',  aiName: 'Malay',            sign: '🇲🇾' },
+  { langId: 'adapt:ML',  code: 'ML',  aiName: 'Malayalam',        sign: '🇮🇳', region: 'Kerala' },
+  { langId: 'adapt:MI',  code: 'MI',  aiName: 'Mina',             sign: '🌊', region: 'Togo - Maritime Region', isEthnical: true },
   // N
-  { code: 'PCM', aiName: 'Nigerian Pidgin',  sign: '🇳🇬', region: 'Nigeria - Urban Creole' },
-  { code: 'NOU', aiName: 'Nouchi',           sign: '🇨🇮', region: 'Ivory Coast - Urban Creole' },
-  { code: 'NO',  aiName: 'Norwegian',        sign: '🇳🇴' },
+  { langId: 'adapt:PCM', code: 'PCM', aiName: 'Nigerian Pidgin',  sign: '🇳🇬', region: 'Nigeria - Urban Creole' },
+  { langId: 'adapt:NOU', code: 'NOU', aiName: 'Nouchi',           sign: '🇨🇮', region: 'Ivory Coast - Urban Creole' },
+  { langId: 'adapt:NO',  code: 'NO',  aiName: 'Norwegian',        sign: '🇳🇴' },
   // O
-  { code: 'OG',  aiName: 'Ogoja',            sign: '🗿', region: 'Cross River - Nigeria', isEthnical: true },
+  { langId: 'adapt:OG',  code: 'OG',  aiName: 'Ogoja',            sign: '🗿', region: 'Cross River - Nigeria', isEthnical: true },
   // P
-  { code: 'PL',  aiName: 'Polish',           sign: '🇵🇱' },
-  { code: 'PA',  aiName: 'Punjabi',          sign: '🇮🇳', region: 'Punjab' },
-  { code: 'PT',  aiName: 'Portuguese',       sign: '🇵🇹' },
+  { langId: 'adapt:PL',  code: 'PL',  aiName: 'Polish',           sign: '🇵🇱' },
+  { langId: 'adapt:PA',  code: 'PA',  aiName: 'Punjabi',          sign: '🇮🇳', region: 'Punjab' },
+  { langId: 'adapt:PT',  code: 'PT',  aiName: 'Portuguese',       sign: '🇵🇹' },
   // R
-  { code: 'RO',  aiName: 'Romanian',         sign: '🇷🇴' },
-  { code: 'RU',  aiName: 'Russian',          sign: '🇷🇺' },
+  { langId: 'adapt:RO',  code: 'RO',  aiName: 'Romanian',         sign: '🇷🇴' },
+  { langId: 'adapt:RU',  code: 'RU',  aiName: 'Russian',          sign: '🇷🇺' },
   // S
-  { code: 'SA',  aiName: 'Sanskrit',         sign: '🕉️', region: 'Classical / Vedic', isEthnical: true },
-  { code: 'SR',  aiName: 'Serbian',          sign: '🇷🇸' },
-  { code: 'SK',  aiName: 'Slovak',           sign: '🇸🇰' },
-  { code: 'ES',  aiName: 'Spanish',          sign: '🇪🇸' },
-  { code: 'SW',  aiName: 'Swahili',          sign: '🇰🇪', region: 'East Africa' },
-  { code: 'SV',  aiName: 'Swedish',          sign: '🇸🇪' },
+  { langId: 'adapt:SA',  code: 'SA',  aiName: 'Sanskrit',         sign: '🕉️', region: 'Classical / Vedic', isEthnical: true },
+  { langId: 'adapt:SR',  code: 'SR',  aiName: 'Serbian',          sign: '🇷🇸' },
+  { langId: 'adapt:SK',  code: 'SK',  aiName: 'Slovak',           sign: '🇸🇰' },
+  { langId: 'adapt:ES',  code: 'ES',  aiName: 'Spanish',          sign: '🇪🇸' },
+  { langId: 'adapt:SW',  code: 'SW',  aiName: 'Swahili',          sign: '🌍', region: 'East Africa', isEthnical: true },
+  { langId: 'adapt:SV',  code: 'SV',  aiName: 'Swedish',          sign: '🇸🇪' },
   // T
-  { code: 'TL',  aiName: 'Tagalog',          sign: '🇵🇭' },
-  { code: 'TA',  aiName: 'Tamil',            sign: '🇮🇳', region: 'Tamil Nadu / Sri Lanka' },
-  { code: 'TE',  aiName: 'Telugu',           sign: '🇮🇳', region: 'Andhra Pradesh' },
-  { code: 'TH',  aiName: 'Thai',             sign: '🇹🇭' },
-  { code: 'TR',  aiName: 'Turkish',          sign: '🇹🇷' },
+  { langId: 'adapt:TL',  code: 'TL',  aiName: 'Tagalog',          sign: '🇵🇭' },
+  { langId: 'adapt:TA',  code: 'TA',  aiName: 'Tamil',            sign: '🇮🇳', region: 'Tamil Nadu / Sri Lanka' },
+  { langId: 'adapt:TE',  code: 'TE',  aiName: 'Telugu',           sign: '🇮🇳', region: 'Andhra Pradesh' },
+  { langId: 'adapt:TH',  code: 'TH',  aiName: 'Thai',             sign: '🇹🇭' },
+  { langId: 'adapt:TR',  code: 'TR',  aiName: 'Turkish',          sign: '🇹🇷' },
   // U
-  { code: 'UK',  aiName: 'Ukrainian',        sign: '🇺🇦' },
-  { code: 'UR',  aiName: 'Urdu',             sign: '🇵🇰' },
-  { code: 'UZ',  aiName: 'Uzbek',            sign: '🇺🇿' },
+  { langId: 'adapt:UK',  code: 'UK',  aiName: 'Ukrainian',        sign: '🇺🇦' },
+  { langId: 'adapt:UR',  code: 'UR',  aiName: 'Urdu',             sign: '🇵🇰' },
+  { langId: 'adapt:UZ',  code: 'UZ',  aiName: 'Uzbek',            sign: '🇺🇿' },
   // V
-  { code: 'VI',  aiName: 'Vietnamese',       sign: '🇻🇳' },
+  { langId: 'adapt:VI',  code: 'VI',  aiName: 'Vietnamese',       sign: '🇻🇳' },
   // W
-  { code: 'WO',  aiName: 'Wolof',            sign: '🦁', region: 'Senegal - West Africa', isEthnical: true },
+  { langId: 'adapt:WO',  code: 'WO',  aiName: 'Wolof',            sign: '🦁', region: 'Senegal - West Africa', isEthnical: true },
   // Y
-  { code: 'YO',  aiName: 'Yoruba',           sign: '🎺', region: 'Nigeria - West Africa', isEthnical: true },
+  { langId: 'adapt:YO',  code: 'YO',  aiName: 'Yoruba',           sign: '🎺', region: 'Nigeria - West Africa', isEthnical: true },
   // Z
-  { code: 'ZU',  aiName: 'Zulu',             sign: '🛡️', region: 'South Africa', isEthnical: true },
+  { langId: 'adapt:ZU',  code: 'ZU',  aiName: 'Zulu',             sign: '🛡️', region: 'South Africa', isEthnical: true },
 ] as const;
 
 /**
@@ -174,8 +181,6 @@ export const CUSTOM_LANGUAGE_VALUE = '__custom__' as const;
 
 /**
  * Returns true when the stored language value is the custom-language sentinel.
- * Use this to decide whether to show/read the free-text input instead of the
- * drop-down selection, and to gate the AI call (must not fire with the sentinel).
  */
 export function isCustomAdaptationLanguage(value: string): boolean {
   return value === CUSTOM_LANGUAGE_VALUE;
@@ -186,6 +191,16 @@ export function adaptationLanguageLabel(lang: AdaptationLanguage): string {
   return `${lang.sign} ${lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName}`;
 }
 
+// ---------------------------------------------------------------------------
+// langId resolution — single source of truth for sign + label lookup.
+//
+// ALL components must store lang.langId ("ui:fr", "adapt:AR") and resolve
+// display metadata here at render time. Never persist sign/label strings.
+//
+// Migration: legacy bare codes ('fr', 'AR', 'French') are detected and
+// promoted to their canonical langId automatically.
+// ---------------------------------------------------------------------------
+
 type LanguageDisplay = {
   label: string;
   sign: string;
@@ -193,76 +208,67 @@ type LanguageDisplay = {
   isEthnical?: boolean;
 };
 
-/** Normalize language codes and labels for case-insensitive display lookup. */
-const normalizeLanguageKey = (value: string) => value.trim().toLowerCase();
+/** Index keyed by langId ("ui:fr", "adapt:AR") — the authoritative lookup. */
+const LANG_ID_INDEX = new Map<string, LanguageDisplay>();
 
-// ---------------------------------------------------------------------------
-// LANGUAGE_DISPLAY_INDEX — shared flag/label resource for both spaces
-//
-// Key spaces:
-//   - Lowercase BCP-47 code ('fr', 'en', …) → UI locale entry (native label)
-//   - Uppercase adaptation code ('FR', 'EN', …) → adaptation entry (aiName)
-//   - Lowercase adaptation code: UI locale wins; adaptation normalization must
-//     NOT overwrite these seeds (see guard below).
-//   - Lowercase aiName ('french', 'arabic', …) → adaptation entry
-//
-// Rule: getLanguageDisplay('fr') → { label: 'Français', sign: '🇫🇷' }
-//       getLanguageDisplay('FR') → { label: 'French',   sign: '🇫🇷' }
-// ---------------------------------------------------------------------------
+/** Legacy fallback index keyed by normalised bare code/aiName for migration. */
+const LEGACY_INDEX = new Map<string, string>(); // bare key → langId
 
-// Seed with UI locales first (lowercase codes: 'en', 'fr', …).
-const LANGUAGE_DISPLAY_INDEX = new Map<string, LanguageDisplay>(
-  SUPPORTED_UI_LOCALES.flatMap((locale) => [
-    [normalizeLanguageKey(locale.code), { label: locale.label, sign: locale.flag }],
-    [normalizeLanguageKey(locale.label), { label: locale.label, sign: locale.flag }],
-  ] as const),
-);
+const norm = (v: string) => v.trim().toLowerCase();
+
+for (const locale of SUPPORTED_UI_LOCALES) {
+  const display: LanguageDisplay = { label: locale.label, sign: locale.flag };
+  LANG_ID_INDEX.set(locale.langId, display);
+  // Legacy: bare BCP-47 lowercase code
+  LEGACY_INDEX.set(norm(locale.code), locale.langId);
+  // Legacy: native label
+  LEGACY_INDEX.set(norm(locale.label), locale.langId);
+}
 
 for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
-  const adaptationDisplay: LanguageDisplay = {
+  const display: LanguageDisplay = {
     label: lang.aiName,
     sign: lang.sign,
     ...(lang.region !== undefined && { region: lang.region }),
     ...(lang.isEthnical !== undefined && { isEthnical: lang.isEthnical }),
   };
-
-  // Uppercase code: always write — unambiguous adaptation identifier.
-  LANGUAGE_DISPLAY_INDEX.set(lang.code, adaptationDisplay);
-
-  // Lowercase code: only write when no UI locale seed already occupies this key.
-  // This preserves 'fr' → Français, 'en' → English, etc. against overwrite by
-  // the 'FR'/'EN' adaptation entries normalized to lowercase.
-  const lcCode = normalizeLanguageKey(lang.code);
-  if (!LANGUAGE_DISPLAY_INDEX.has(lcCode)) {
-    LANGUAGE_DISPLAY_INDEX.set(lcCode, adaptationDisplay);
+  LANG_ID_INDEX.set(lang.langId, display);
+  // Legacy: uppercase code ('AR', 'HA', 'YUE')
+  LEGACY_INDEX.set(lang.code, lang.langId);
+  // Legacy: normalized lowercase code (only if not already claimed by UI locale)
+  const lcCode = norm(lang.code);
+  if (!LEGACY_INDEX.has(lcCode)) {
+    LEGACY_INDEX.set(lcCode, lang.langId);
   }
-
-  // aiName lookup (case-insensitive) — always write, no collision risk.
-  LANGUAGE_DISPLAY_INDEX.set(normalizeLanguageKey(lang.aiName), adaptationDisplay);
+  // Legacy: aiName normalized
+  LEGACY_INDEX.set(norm(lang.aiName), lang.langId);
 }
 
 /**
- * Returns display metadata (label + sign) for a language value from either space:
+ * Resolve any language reference to its display metadata.
  *
- * - UI locale code lowercase (e.g. `'fr'`) → native label (`'Français'`)
- * - Adaptation code uppercase (e.g. `'FR'`) → English aiName (`'French'`)
- * - Adaptation aiName (e.g. `'French'`) → adaptation entry
+ * Accepts:
+ *   - canonical langId  : "ui:fr"   → Français 🇫🇷
+ *   - canonical langId  : "adapt:AR" → Arabic 🌙
+ *   - legacy bare code  : "fr", "AR", "HA"
+ *   - legacy aiName     : "French", "Arabic"
  *
- * Components that need the native label of a UI locale should use
- * `SUPPORTED_UI_LOCALES.find(l => l.code === code)?.label` directly rather
- * than this function, to avoid ambiguity when the same lowercase key could
- * theoretically match both spaces.
+ * Components should pass lang.langId. The legacy path exists solely for
+ * migration of persisted values and will be removed in a future cleanup.
  */
 export function getLanguageDisplay(value: string): LanguageDisplay {
-  const fallbackLabel = value.trim() || 'Unknown';
-  // Try the raw value first (handles uppercase codes like 'NO', 'SV' directly).
-  return (
-    LANGUAGE_DISPLAY_INDEX.get(value.trim()) ??
-    LANGUAGE_DISPLAY_INDEX.get(normalizeLanguageKey(value)) ?? {
-      label: fallbackLabel,
-      sign: '🌐',
-    }
-  );
+  const trimmed = value.trim();
+  // 1. Try canonical langId directly
+  const direct = LANG_ID_INDEX.get(trimmed);
+  if (direct) return direct;
+  // 2. Legacy: resolve bare code / aiName → langId → display
+  const resolvedId = LEGACY_INDEX.get(trimmed) ?? LEGACY_INDEX.get(norm(trimmed));
+  if (resolvedId) {
+    const display = LANG_ID_INDEX.get(resolvedId);
+    if (display) return display;
+  }
+  // 3. Unknown
+  return { label: trimmed || 'Unknown', sign: '🌐' };
 }
 
 export function formatLanguageDisplay(value: string): string {
@@ -271,9 +277,35 @@ export function formatLanguageDisplay(value: string): string {
 }
 
 /**
+ * Migrate a persisted bare language value to its canonical langId.
+ * Call once on app init when reading from localStorage / any storage.
+ *
+ * Examples:
+ *   migrateToLangId('fr')    → 'ui:fr'
+ *   migrateToLangId('AR')    → 'adapt:AR'
+ *   migrateToLangId('ui:fr') → 'ui:fr'  (no-op)
+ */
+export function migrateToLangId(stored: string): string {
+  const trimmed = stored.trim();
+  if (LANG_ID_INDEX.has(trimmed)) return trimmed; // already canonical
+  const resolvedId = LEGACY_INDEX.get(trimmed) ?? LEGACY_INDEX.get(norm(trimmed));
+  return resolvedId ?? trimmed;
+}
+
+/**
+ * Extract the BCP-47 locale code from a UI langId for use with loadLocale.
+ * Returns 'en' for any non-ui langId or unrecognised value.
+ *
+ * Example: langIdToLocaleCode('ui:fr') → 'fr'
+ */
+export function langIdToLocaleCode(langId: string): string {
+  if (langId.startsWith('ui:')) return langId.slice(3);
+  return 'en';
+}
+
+/**
  * Resolves a UI locale code (e.g. 'fr') to a language name suitable for AI prompts.
  * Returns the locale's native label (e.g. 'Français') or 'English' as a fallback.
- * AI models reliably understand native language names in prompt instructions.
  */
 export function getUiLanguageNameForAi(code: string): string {
   const locale = SUPPORTED_UI_LOCALES.find(l => l.code === code);
