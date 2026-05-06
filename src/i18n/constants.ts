@@ -304,6 +304,20 @@ export function langIdToLocaleCode(langId: string): string {
 }
 
 /**
+ * Strip the internal `ui:` namespace prefix from a language identifier
+ * before passing it to any BCP-47-validating API (Intl.*, toLocaleTimeString, etc.).
+ *
+ * Only the `ui:` prefix is stripped; all other values are returned unchanged
+ * so that plain BCP-47 codes passed by callers are preserved as-is.
+ *
+ * Example: stripInternalPrefix('ui:en') → 'en'
+ *          stripInternalPrefix('fr')    → 'fr'  (unchanged)
+ */
+export function stripInternalPrefix(code: string): string {
+  return code.startsWith('ui:') ? code.slice(3) : code;
+}
+
+/**
  * Resolves a UI locale code (e.g. 'fr') to a language name suitable for AI prompts.
  * Returns the locale's native label (e.g. 'Français') or 'English' as a fallback.
  */

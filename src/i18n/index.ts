@@ -10,6 +10,7 @@ export {
   formatLanguageDisplay,
   migrateToLangId,
   langIdToLocaleCode,
+  stripInternalPrefix,
   CUSTOM_LANGUAGE_VALUE,
   isCustomAdaptationLanguage,
 } from './constants';

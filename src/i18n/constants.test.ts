@@ -5,6 +5,7 @@ import {
   getLanguageDisplay,
   migrateToLangId,
   langIdToLocaleCode,
+  stripInternalPrefix,
 } from './constants';
 
 describe('langId — stable identifier', () => {
@@ -38,6 +39,22 @@ describe('langId — stable identifier', () => {
     expect(langIdToLocaleCode('ui:ar')).toBe('ar');
     expect(langIdToLocaleCode('adapt:AR')).toBe('en'); // not a UI locale
     expect(langIdToLocaleCode('garbage')).toBe('en');
+  });
+
+  it('stripInternalPrefix strips ui: prefix and leaves other values unchanged', () => {
+    expect(stripInternalPrefix('ui:en')).toBe('en');
+    expect(stripInternalPrefix('ui:fr')).toBe('fr');
+    expect(stripInternalPrefix('ui:ar')).toBe('ar');
+    expect(stripInternalPrefix('fr')).toBe('fr');
+    expect(stripInternalPrefix('en')).toBe('en');
+    expect(stripInternalPrefix('adapt:AR')).toBe('adapt:AR');
+  });
+
+  it('stripInternalPrefix: stripped value is a valid BCP-47 tag for Intl.PluralRules', () => {
+    for (const locale of SUPPORTED_UI_LOCALES) {
+      const stripped = stripInternalPrefix(locale.langId);
+      expect(() => new Intl.PluralRules(stripped)).not.toThrow();
+    }
   });
 });
 

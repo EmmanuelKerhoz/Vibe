@@ -3,7 +3,7 @@ import { Info, Moon, Settings, Sun } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { StorageGauge } from '../ui/StorageGauge';
 import { StatusBarLanguagePicker } from './StatusBarLanguagePicker';
-import { useTranslation } from '../../i18n';
+import { useTranslation, stripInternalPrefix } from '../../i18n';
 import { tPlural } from '../../i18n/plurals';
 import { APP_VERSION_LABEL } from '../../version';
 import { useComposerContext } from '../../contexts/ComposerContext';
@@ -69,7 +69,7 @@ export function StatusBar({
     : persistenceState === 'unsaved' ? (t.statusBar.unsaved ?? 'Unsaved changes')
     : persistenceState === 'error' ? (t.statusBar.saveError ?? 'Save error')
     : lastSavedAt
-      ? `${t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device'} — ${new Date(lastSavedAt).toLocaleTimeString(language)}`
+      ? `${t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device'} — ${new Date(lastSavedAt).toLocaleTimeString(stripInternalPrefix(language))}`
       : (t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device');
 
   const persistenceDotClass =
