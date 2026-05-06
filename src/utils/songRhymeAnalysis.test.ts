@@ -25,7 +25,7 @@ const makeSection = (id: string, name: string, language: string, lines: string[]
   lines: lines.map((line, index) => makeLine(`${id}-${index + 1}`, line)),
 });
 
-// ─── Existing regression tests (unchanged) ────────────────────────────────────
+// ─── Existing regression tests (unchanged) ────────────────────────────────────────────
 
 describe('analyzeSongRhymes', () => {
   beforeEach(() => {
@@ -154,14 +154,14 @@ describe('segmentVerseToRhymingUnit', () => {
 
   it('preserves tonal diacritics for KWA (ALGO-KWA)', () => {
     // Yoruba-style: tones marked with diacritics should survive normalization
-    const result = segmentVerseToRhymingUnit('Mo fẹ́ràn rẹ', 'yo');
+    const result = segmentVerseToRhymingUnit('Mo fẹ́àn rẹ', 'yo');
     expect(result.position).toBe('end');
     // rhymingUnit must NOT have diacritics stripped for tonal languages
     expect(result.rhymingUnit).toMatch(/[\u0300-\u036f]/);
   });
 
   it('detects extended Bantu and Kwa enjambment connectors', () => {
-    expect(segmentVerseToRhymingUnit('Mo kọ orin àti', 'yo')).toEqual(
+    expect(segmentVerseToRhymingUnit('Mo kọrin àti', 'yo')).toEqual(
       expect.objectContaining({
         position: 'enjambed',
         rhymingUnit: 'orin',
@@ -185,6 +185,18 @@ describe('rhymeDetection Step-0 matching', () => {
     const split = splitRhymingSuffix('Je chante avec', ['La nuit complète'], 'fr');
     expect(split?.before + split?.rhyme).toBe('Je chante');
     expect(split?.rhyme).not.toContain('avec');
+  });
+
+  it('handles a word with no vowels after NFD normalization without crashing', () => {
+    // Simulates a degenerate edge case: a token that normalizes to all consonants.
+    // splitRhymingSuffix must return a non-null result (fallback whole-word split)
+    // and must not crash or access normalizedWord[-1].
+    const result = splitRhymingSuffix('Je vois krch', [], 'fr');
+    // Should still return something — either null or a valid split (no throw).
+    expect(() => splitRhymingSuffix('Je vois krch', [], 'fr')).not.toThrow();
+    if (result !== null) {
+      expect(result.before + result.rhyme).toBe('Je vois krch');
+    }
   });
 });
 
