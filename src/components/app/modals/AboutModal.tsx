@@ -7,17 +7,23 @@ import { Button } from '../../ui/Button';
 import { AiAssistantPanel } from '../AiAssistantPanel';
 import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
 
+const SPLASH_DELAY_MS = 5000;
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  /** Quand true, ferme automatiquement après 5 secondes. */
+  isSplashScreen?: boolean;
 }
 
-export function AboutModal({ isOpen, onClose }: Props) {
+export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
   const { t } = useTranslation();
   const bodyRef = useRef<HTMLDivElement>(null);
   const sweepItemsRef = useRef<HTMLDivElement>(null);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [splashProgress, setSplashProgress] = useState(0);
 
+  // Sweep animation
   useEffect(() => {
     if (!isOpen) return;
     const container = sweepItemsRef.current;
@@ -30,6 +36,32 @@ export function AboutModal({ isOpen, onClose }: Props) {
       });
     }
   }, [isOpen]);
+
+  // Auto-close + progress bar when splash
+  useEffect(() => {
+    if (!isOpen || !isSplashScreen) {
+      setSplashProgress(0);
+      return;
+    }
+
+    setSplashProgress(0);
+    const startTime = performance.now();
+
+    let rafId: number;
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / SPLASH_DELAY_MS, 1);
+      setSplashProgress(progress);
+      if (progress < 1) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        onClose();
+      }
+    };
+    rafId = requestAnimationFrame(tick);
+
+    return () => cancelAnimationFrame(rafId);
+  }, [isOpen, isSplashScreen, onClose]);
 
   if (!isOpen) return null;
 
@@ -62,6 +94,15 @@ export function AboutModal({ isOpen, onClose }: Props) {
         aria-label={t.app.name}
         className="relative w-full h-full flex flex-col shadow-2xl overflow-hidden about-dialog-shimmer dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px]"
       >
+        {/* Splash progress bar */}
+        {isSplashScreen && (
+          <div
+            className="absolute top-0 left-0 h-[2px] bg-[var(--accent-color)] transition-none z-10"
+            style={{ width: `${splashProgress * 100}%`, opacity: 0.8 }}
+            aria-hidden="true"
+          />
+        )}
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0" style={{ background: 'var(--bg-sidebar)' }}>
           <div className="flex items-center gap-3">
