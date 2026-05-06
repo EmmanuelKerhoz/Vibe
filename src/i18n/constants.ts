@@ -78,7 +78,7 @@ export type SupportedUiLocaleCode = typeof SUPPORTED_UI_LOCALES[number]['code'];
 export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   // A
   { langId: 'adapt:AM',  code: 'AM',  aiName: 'Amharic',         sign: '🇪🇹', region: 'Ethiopia - East Africa' },
-  { langId: 'adapt:AR',  code: 'AR',  aiName: 'Arabic',           sign: '🌙', region: 'Arab World', isEthnical: true },
+  { langId: 'adapt:AR',  code: 'AR',  aiName: 'Arabic',           sign: '🇸🇦', region: 'Arab World' },
   { langId: 'adapt:AZ',  code: 'AZ',  aiName: 'Azerbaijani',      sign: '🇦🇿' },
   // B
   { langId: 'adapt:BA',  code: 'BA',  aiName: 'Baoulé',           sign: '🌿', region: 'Ivory Coast - West Africa', isEthnical: true },
@@ -150,7 +150,7 @@ export const SUPPORTED_ADAPTATION_LANGUAGES: readonly AdaptationLanguage[] = [
   { langId: 'adapt:SR',  code: 'SR',  aiName: 'Serbian',          sign: '🇷🇸' },
   { langId: 'adapt:SK',  code: 'SK',  aiName: 'Slovak',           sign: '🇸🇰' },
   { langId: 'adapt:ES',  code: 'ES',  aiName: 'Spanish',          sign: '🇪🇸' },
-  { langId: 'adapt:SW',  code: 'SW',  aiName: 'Swahili',          sign: '🌍', region: 'East Africa', isEthnical: true },
+  { langId: 'adapt:SW',  code: 'SW',  aiName: 'Swahili',          sign: '🇰🇪', region: 'Kenya / East Africa' },
   { langId: 'adapt:SV',  code: 'SV',  aiName: 'Swedish',          sign: '🇸🇪' },
   // T
   { langId: 'adapt:TL',  code: 'TL',  aiName: 'Tagalog',          sign: '🇵🇭' },
@@ -249,7 +249,7 @@ for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
  *
  * Accepts:
  *   - canonical langId  : "ui:fr"   → Français 🇫🇷
- *   - canonical langId  : "adapt:AR" → Arabic 🌙
+ *   - canonical langId  : "adapt:AR" → Arabic 🇸🇦
  *   - legacy bare code  : "fr", "AR", "HA"
  *   - legacy aiName     : "French", "Arabic"
  *
