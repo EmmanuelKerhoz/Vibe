@@ -133,6 +133,18 @@ const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
   return s;
 };
 
+/**
+ * Return the canonicalized suffix starting from the last vowel group of a
+ * normalized word. Falls back to canonicalizing the whole word when no vowel
+ * group is found (all-consonant edge case, e.g. after heavy NFD stripping).
+ */
+const getLastVowelGroupSuffix = (normalizedWord: string, langCode?: string): string => {
+  const vowelGroups = getVowelGroups(normalizedWord);
+  return vowelGroups.length > 0
+    ? canonicalizeRhymeSuffix(normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start), langCode)
+    : canonicalizeRhymeSuffix(normalizedWord, langCode);
+};
+
 const getRhymeCandidates = (text: string, langCode?: string): RhymeCandidate[] => {
   const word = extractLastWord(text, langCode);
   if (!word) return [];
@@ -212,6 +224,9 @@ const FRENCH_DIGRAPHS = new Set(['ai', 'ei', 'oi', 'ou', 'au', 'eu']);
  * onset so the UI highlights complete French rimes rather than bare consonant
  * overlaps. For example, shared suffix "te" in "miette" extends to "ette",
  * and in "défaite" extends to "aite" (recognising "ai" as a diphthong).
+ *
+ * The loop bound is `pos > 0` (not `pos >= 0`) to guarantee that
+ * normalizedWord[pos] is always a valid in-bounds access.
  */
 const extendToVowelOnset = (normalizedWord: string, suffixStart: number): number => {
   if (suffixStart <= 0) return suffixStart;
@@ -219,8 +234,9 @@ const extendToVowelOnset = (normalizedWord: string, suffixStart: number): number
   let pos = suffixStart;
 
   if (!isVowel(normalizedWord[pos]!)) {
-    while (pos >= 0 && !isVowel(normalizedWord[pos]!)) pos--;
-    if (pos < 0) return suffixStart;
+    while (pos > 0 && !isVowel(normalizedWord[pos]!)) pos--;
+    // pos === 0: check the first character; if still not a vowel, no onset found
+    if (!isVowel(normalizedWord[pos]!)) return suffixStart;
   }
 
   if (pos >= 1 && isVowel(normalizedWord[pos - 1]!)) {
@@ -269,15 +285,15 @@ const getFallbackRhymingSuffix = (text: string, langCode?: string): { before: st
   const word = extractLastWord(text, langCode);
   if (!word) return null;
 
-  const vowelGroups = getVowelGroups(word.normalizedWord);
-  if (vowelGroups.length === 0) {
+  const suffix = getLastVowelGroupSuffix(word.normalizedWord, langCode);
+  if (!suffix) {
     return {
       before: text.slice(0, word.wordStart),
       rhyme: text.slice(word.wordStart),
     };
   }
 
-  return splitLineAtNormalizedSuffix(text, word.normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start), langCode);
+  return splitLineAtNormalizedSuffix(text, suffix, langCode);
 };
 
 /**
@@ -417,12 +433,7 @@ const AGGLUTINATIVE_FAMILIES = new Set(['ALGO-TRK', 'ALGO-FIN', 'ALGO-KOR']);
 const detectInternalRhymeToken = (tokens: string[], lastWord: string, langCode?: string): string | null => {
   if (tokens.length < 2) return null;
 
-  // Derive last-vowel-group suffix for the end word.
-  const lwVowelGroups = getVowelGroups(lastWord);
-  const lwLastVG = lwVowelGroups.length > 0 ? lwVowelGroups[lwVowelGroups.length - 1]! : null;
-  const lwSuffix = lwLastVG !== null
-    ? canonicalizeRhymeSuffix(lastWord.slice(lwLastVG.start), langCode)
-    : canonicalizeRhymeSuffix(lastWord, langCode);
+  const lwSuffix = getLastVowelGroupSuffix(lastWord, langCode);
 
   // A single-character nucleus is too common to be a meaningful internal rhyme.
   if (!lwSuffix || lwSuffix.length < 2) return null;
@@ -432,12 +443,7 @@ const detectInternalRhymeToken = (tokens: string[], lastWord: string, langCode?:
     const normalized = normalizeWord(token, langCode);
     if (!normalized) continue;
 
-    const vowelGroups = getVowelGroups(normalized);
-    const lastVG = vowelGroups.length > 0 ? vowelGroups[vowelGroups.length - 1]! : null;
-    const suffix = lastVG !== null
-      ? canonicalizeRhymeSuffix(normalized.slice(lastVG.start), langCode)
-      : canonicalizeRhymeSuffix(normalized, langCode);
-
+    const suffix = getLastVowelGroupSuffix(normalized, langCode);
     if (!suffix) continue;
 
     // One suffix must be a leading prefix of the other so that "uit"/"ui"
@@ -665,7 +671,6 @@ export const calculateSimilarityWithMetadata = (
 export const getTopSimilarSongMatches = (
   currentSong: Section[],
   versions: SongVersion[],
-  _threshold = 0,
   limit = 3,
 ): SimilarityMatch[] => {
   if (currentSong.length === 0) return [];
