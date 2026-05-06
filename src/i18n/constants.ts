@@ -196,9 +196,21 @@ type LanguageDisplay = {
 /** Normalize language codes and labels for case-insensitive display lookup. */
 const normalizeLanguageKey = (value: string) => value.trim().toLowerCase();
 
-// Seed the index with UI locales first (lowercase codes: 'en', 'fr', …).
-// These entries are only used when looking up a UI locale code — adaptation
-// language codes are uppercase ('EN', 'FR', …) and will overwrite below.
+// ---------------------------------------------------------------------------
+// LANGUAGE_DISPLAY_INDEX — shared flag/label resource for both spaces
+//
+// Key spaces:
+//   - Lowercase BCP-47 code ('fr', 'en', …) → UI locale entry (native label)
+//   - Uppercase adaptation code ('FR', 'EN', …) → adaptation entry (aiName)
+//   - Lowercase adaptation code: UI locale wins; adaptation normalization must
+//     NOT overwrite these seeds (see guard below).
+//   - Lowercase aiName ('french', 'arabic', …) → adaptation entry
+//
+// Rule: getLanguageDisplay('fr') → { label: 'Français', sign: '🇫🇷' }
+//       getLanguageDisplay('FR') → { label: 'French',   sign: '🇫🇷' }
+// ---------------------------------------------------------------------------
+
+// Seed with UI locales first (lowercase codes: 'en', 'fr', …).
 const LANGUAGE_DISPLAY_INDEX = new Map<string, LanguageDisplay>(
   SUPPORTED_UI_LOCALES.flatMap((locale) => [
     [normalizeLanguageKey(locale.code), { label: locale.label, sign: locale.flag }],
@@ -214,16 +226,33 @@ for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
     ...(lang.isEthnical !== undefined && { isEthnical: lang.isEthnical }),
   };
 
-  // Always write adaptation entries — they must win over any UI-locale seed.
-  // Index by both the raw code ('NO', 'SV') and its normalised form ('no', 'sv')
-  // so lookups succeed regardless of the casing passed by callers.
+  // Uppercase code: always write — unambiguous adaptation identifier.
   LANGUAGE_DISPLAY_INDEX.set(lang.code, adaptationDisplay);
-  LANGUAGE_DISPLAY_INDEX.set(normalizeLanguageKey(lang.code), adaptationDisplay);
 
-  // Also index by aiName for label-based lookups (case-insensitive).
+  // Lowercase code: only write when no UI locale seed already occupies this key.
+  // This preserves 'fr' → Français, 'en' → English, etc. against overwrite by
+  // the 'FR'/'EN' adaptation entries normalized to lowercase.
+  const lcCode = normalizeLanguageKey(lang.code);
+  if (!LANGUAGE_DISPLAY_INDEX.has(lcCode)) {
+    LANGUAGE_DISPLAY_INDEX.set(lcCode, adaptationDisplay);
+  }
+
+  // aiName lookup (case-insensitive) — always write, no collision risk.
   LANGUAGE_DISPLAY_INDEX.set(normalizeLanguageKey(lang.aiName), adaptationDisplay);
 }
 
+/**
+ * Returns display metadata (label + sign) for a language value from either space:
+ *
+ * - UI locale code lowercase (e.g. `'fr'`) → native label (`'Français'`)
+ * - Adaptation code uppercase (e.g. `'FR'`) → English aiName (`'French'`)
+ * - Adaptation aiName (e.g. `'French'`) → adaptation entry
+ *
+ * Components that need the native label of a UI locale should use
+ * `SUPPORTED_UI_LOCALES.find(l => l.code === code)?.label` directly rather
+ * than this function, to avoid ambiguity when the same lowercase key could
+ * theoretically match both spaces.
+ */
 export function getLanguageDisplay(value: string): LanguageDisplay {
   const fallbackLabel = value.trim() || 'Unknown';
   // Try the raw value first (handles uppercase codes like 'NO', 'SV' directly).
