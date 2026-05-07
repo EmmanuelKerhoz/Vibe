@@ -7,5 +7,6 @@ coverage/
 .env*
 !.env.example
 sauvegardes/
-node_modules/
 tsconfig.tsbuildinfo
+# Generated Twemoji SVG assets — rebuilt at dev/build time via scripts/copy-twemoji.mjs
+public/twemoji/
