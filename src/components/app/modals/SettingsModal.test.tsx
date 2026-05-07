@@ -22,6 +22,7 @@ const createProps = () => ({
 describe('SettingsModal', () => {
   afterEach(() => {
     document.documentElement.style.fontSize = '';
+    localStorage.clear();
   });
 
   it('previews UI scale changes and reverts them when the dialog closes without saving', () => {
@@ -73,5 +74,23 @@ describe('SettingsModal', () => {
     );
 
     expect(screen.getAllByText(APP_VERSION_LABEL).length).toBeGreaterThan(0);
+  });
+
+  it('renders UI language options with flag icons and keeps the canonical locale selected', () => {
+    localStorage.setItem('lyricist_language', 'ui:fr');
+    const props = createProps();
+
+    render(
+      <LanguageProvider>
+        <SettingsModal {...props} />
+      </LanguageProvider>,
+    );
+
+    const frenchButton = screen.getByRole('button', { name: 'Français' });
+    const englishButton = screen.getByRole('button', { name: 'English' });
+
+    expect(frenchButton.className).toContain('bg-[var(--accent-color)]/10');
+    expect(englishButton.className).not.toContain('bg-[var(--accent-color)]/10');
+    expect(frenchButton.querySelector('img')).not.toBeNull();
   });
 });
