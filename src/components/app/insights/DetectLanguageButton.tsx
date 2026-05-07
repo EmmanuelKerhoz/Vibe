@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { Loader2, ScanText } from '../../ui/icons';
 import { Tooltip } from '../../ui/Tooltip';
 import { EmojiSign } from '../../ui/EmojiSign';
+import { LanguageBadge } from '../../ui/LanguageBadge';
 import { getLanguageDisplay, useTranslation, SUPPORTED_ADAPTATION_LANGUAGES } from '../../../i18n';
 import { usePickerCoords } from './usePickerCoords';
 import { LanguagePicker } from './LanguagePicker';
@@ -114,7 +115,7 @@ export function DetectLanguageButton({
           <ScanText className="w-3 h-3" aria-hidden="true" />
           {defLang ? (
             <>
-              <EmojiSign sign={defLang.sign} />
+              <LanguageBadge langId={defLang.langId} signOnly />
               <span className="hidden sm:inline">{defLang.code.toUpperCase()}</span>
             </>
           ) : (

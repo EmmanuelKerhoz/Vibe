@@ -44,9 +44,12 @@ export function TranslateGroup({
 
   const handleCustomSubmit = useCallback(() => {
     if (!effectiveLang || isBaseDisabled) return;
-    // Explicit synchronous store update before AI call — no stale closure risk.
-    setTargetLanguage(effectiveLang);
-    adaptSongLanguage(effectiveLang);
+    // Wrap the typed text in the canonical `custom:<text>` sentinel so the
+    // wire format is uniform across canonical and free-input languages. The
+    // resolver (`langIdToAiName`) unwraps it transparently before the AI call.
+    const customLangId = `custom:${effectiveLang}`;
+    setTargetLanguage(customLangId);
+    adaptSongLanguage(customLangId);
   }, [effectiveLang, isBaseDisabled, setTargetLanguage, adaptSongLanguage]);
 
   const tooltipTitle = !hasApiKey

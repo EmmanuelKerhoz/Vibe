@@ -1,4 +1,24 @@
 /**
+ * Branded `LangId` type — a canonical opaque identifier for a language entry.
+ *
+ * Format:
+ *   - "ui:<code>"     for SUPPORTED_UI_LOCALES        (e.g. "ui:fr")
+ *   - "adapt:<CODE>"  for SUPPORTED_ADAPTATION_LANGUAGES (e.g. "adapt:ES")
+ *   - "custom:<text>" for free-input adaptation languages (e.g. "custom:Scots Gaelic")
+ *
+ * The brand prevents arbitrary strings (bare codes, aiNames, sign emoji) from
+ * being silently passed where a langId is required — those would compile-error,
+ * forcing the caller to migrate via `migrateToLangId(value)` first.
+ *
+ * Use `asLangId()` for runtime-validated narrowing or `migrateToLangId()` for
+ * legacy-tolerant conversion at storage/transport boundaries.
+ */
+export type LangId = string & { readonly __brand: 'LangId' };
+
+/** Sentinel prefix for free-input adaptation languages. */
+export const CUSTOM_LANG_ID_PREFIX = 'custom:' as const;
+
+/**
  * Language metadata for the Lyricist Pro UI locale system.
  * These are static, versioned, human-reviewed translation packs.
  */
@@ -258,16 +278,22 @@ for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
  */
 export function getLanguageDisplay(value: string): LanguageDisplay {
   const trimmed = value.trim();
-  // 1. Try canonical langId directly
+  // 1. Custom free-input sentinel: "custom:<text>" — render as the typed text
+  //    with a globe icon. Components must not need to know about the prefix.
+  if (trimmed.startsWith(CUSTOM_LANG_ID_PREFIX)) {
+    const text = trimmed.slice(CUSTOM_LANG_ID_PREFIX.length).trim();
+    return { label: text || 'Custom', sign: '🌐' };
+  }
+  // 2. Try canonical langId directly
   const direct = LANG_ID_INDEX.get(trimmed);
   if (direct) return direct;
-  // 2. Legacy: resolve bare code / aiName → langId → display
+  // 3. Legacy: resolve bare code / aiName → langId → display
   const resolvedId = LEGACY_INDEX.get(trimmed) ?? LEGACY_INDEX.get(norm(trimmed));
   if (resolvedId) {
     const display = LANG_ID_INDEX.get(resolvedId);
     if (display) return display;
   }
-  // 3. Unknown
+  // 4. Unknown
   return { label: trimmed || 'Unknown', sign: '🌐' };
 }
 
@@ -324,4 +350,119 @@ export function stripInternalPrefix(code: string): string {
 export function getUiLanguageNameForAi(code: string): string {
   const locale = SUPPORTED_UI_LOCALES.find(l => l.code === code);
   return locale?.label || 'English';
+}
+
+// ---------------------------------------------------------------------------
+// LangId helpers — single canonical identifier for every language entry.
+// ---------------------------------------------------------------------------
+
+/** Index keyed by canonical adaptation langId for O(1) lookup. */
+const ADAPT_LANG_BY_ID = new Map<string, AdaptationLanguage>();
+for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
+  ADAPT_LANG_BY_ID.set(lang.langId, lang);
+}
+
+/**
+ * Lookup an adaptation language entry by its canonical `langId`.
+ * Returns undefined if the langId is unknown (e.g. custom: sentinel or garbage).
+ */
+export function getAdaptationLanguageByLangId(
+  langId: string,
+): AdaptationLanguage | undefined {
+  return ADAPT_LANG_BY_ID.get(langId);
+}
+
+/**
+ * Returns true when the given value is a free-input custom-language sentinel
+ * in the canonical `custom:<text>` form.
+ *
+ * NOTE: distinct from `isCustomAdaptationLanguage` (legacy `__custom__` UI
+ * sentinel used by the dropdown's "Other language…" picker entry).
+ */
+export function isCustomLangId(value: string): boolean {
+  return value.startsWith(CUSTOM_LANG_ID_PREFIX);
+}
+
+/**
+ * Wrap a free-text adaptation language name into a `custom:<text>` langId.
+ * The text is trimmed; whitespace-only inputs return undefined.
+ */
+export function buildCustomLangId(text: string): LangId | undefined {
+  const trimmed = text.trim();
+  if (!trimmed) return undefined;
+  return `${CUSTOM_LANG_ID_PREFIX}${trimmed}` as LangId;
+}
+
+/**
+ * Extract the free-text portion from a `custom:<text>` langId.
+ * Returns undefined for any non-custom value.
+ */
+export function readCustomLangText(value: string): string | undefined {
+  if (!isCustomLangId(value)) return undefined;
+  return value.slice(CUSTOM_LANG_ID_PREFIX.length);
+}
+
+/**
+ * Resolve a langId to the language name string passed to the AI adaptation
+ * prompt. This is the *only* sanctioned conversion point between the internal
+ * langId wire format and the human-readable name fed to the model.
+ *
+ * - "adapt:<CODE>"   → entry.aiName (e.g. "adapt:ES" → "Spanish")
+ * - "custom:<text>"  → text (verbatim, trimmed)
+ * - "ui:<code>"      → ui locale label (e.g. "ui:fr" → "Français")
+ * - legacy bare value → resolved via `migrateToLangId`, then recurses
+ * - unknown          → the trimmed input itself (preserves legacy free-form)
+ */
+export function langIdToAiName(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  // Custom free-input sentinel.
+  const customText = readCustomLangText(trimmed);
+  if (customText !== undefined) return customText.trim();
+  // Canonical adaptation langId.
+  const adapt = ADAPT_LANG_BY_ID.get(trimmed);
+  if (adapt) return adapt.aiName;
+  // Canonical UI langId.
+  if (trimmed.startsWith('ui:')) {
+    const locale = SUPPORTED_UI_LOCALES.find(l => l.langId === trimmed);
+    if (locale) return locale.label;
+  }
+  // Legacy: try to upgrade then resolve once.
+  const upgraded = migrateToLangId(trimmed);
+  if (upgraded !== trimmed) {
+    const adapt2 = ADAPT_LANG_BY_ID.get(upgraded);
+    if (adapt2) return adapt2.aiName;
+    if (upgraded.startsWith('ui:')) {
+      const locale = SUPPORTED_UI_LOCALES.find(l => l.langId === upgraded);
+      if (locale) return locale.label;
+    }
+  }
+  return trimmed;
+}
+
+/**
+ * Migrate any persisted/legacy adaptation-language reference to a canonical
+ * langId form suitable for storage and transport. Free-text entries that
+ * don't match a known language are wrapped in the `custom:` sentinel so the
+ * resolver pipeline can always tell them apart from canonical entries.
+ *
+ * Examples:
+ *   migrateAdaptationToLangId('Spanish')    → 'adapt:ES'
+ *   migrateAdaptationToLangId('adapt:ES')   → 'adapt:ES'
+ *   migrateAdaptationToLangId('Scots Gaelic') → 'custom:Scots Gaelic'
+ *   migrateAdaptationToLangId('')           → ''  (empty preserved)
+ */
+export function migrateAdaptationToLangId(stored: string): string {
+  const trimmed = stored.trim();
+  if (!trimmed) return '';
+  // Already a custom sentinel — preserve as-is.
+  if (isCustomLangId(trimmed)) return trimmed;
+  // Already a canonical adapt: langId.
+  if (ADAPT_LANG_BY_ID.has(trimmed)) return trimmed;
+  // Try the legacy resolver (covers bare codes + aiNames).
+  const upgraded = migrateToLangId(trimmed);
+  if (ADAPT_LANG_BY_ID.has(upgraded)) return upgraded;
+  // UI langIds aren't valid adaptation targets — fall through to custom wrap.
+  // Unknown free text → wrap as custom sentinel so resolvers stay consistent.
+  return `${CUSTOM_LANG_ID_PREFIX}${trimmed}`;
 }
