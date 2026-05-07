@@ -144,7 +144,7 @@ export function StatusBarLanguagePicker() {
 
   return (
     <>
-      <Tooltip content={t.settings.language.label} placement="top">
+      <Tooltip title={t.settings.language.label}>
         <div
           ref={triggerRef}
           role="button"
