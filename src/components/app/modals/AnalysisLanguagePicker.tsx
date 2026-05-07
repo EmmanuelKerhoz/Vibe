@@ -20,9 +20,9 @@ export function AnalysisLanguagePicker() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  // SUPPORTED_UI_LOCALES is never empty — no third fallback needed.
   const currentLocale = SUPPORTED_UI_LOCALES.find(l => l.langId === language)
-    ?? SUPPORTED_UI_LOCALES[0]
-    ?? { langId: 'ui:en', code: 'en', label: 'English', flag: '🇬🇧', dir: 'ltr' as const };
+    ?? SUPPORTED_UI_LOCALES[0]!;
 
   const updateCoords = useCallback(() => {
     if (triggerRef.current) {

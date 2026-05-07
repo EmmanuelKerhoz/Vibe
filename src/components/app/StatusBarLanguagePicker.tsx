@@ -21,9 +21,9 @@ export function StatusBarLanguagePicker() {
   const triggerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  // SUPPORTED_UI_LOCALES is never empty — no third fallback needed.
   const currentLocale = SUPPORTED_UI_LOCALES.find(l => l.langId === language)
-    ?? SUPPORTED_UI_LOCALES[0]
-    ?? { langId: 'ui:en', code: 'en', label: 'English', flag: '🇬🇧', dir: 'ltr' as const };
+    ?? SUPPORTED_UI_LOCALES[0]!;
 
   const updateCoords = useCallback(() => {
     if (triggerRef.current) {
@@ -143,20 +143,26 @@ export function StatusBarLanguagePicker() {
   ) : null;
 
   return (
-    <div ref={triggerRef} className="relative">
-      <Tooltip title={t.statusBar.language}>
-        <button
-          onClick={toggle}
-          aria-label={t.statusBar.language}
+    <>
+      <Tooltip content={t.settings.language.label} placement="top">
+        <div
+          ref={triggerRef}
+          role="button"
+          tabIndex={0}
+          aria-label={t.settings.language.label}
           aria-haspopup="listbox"
           aria-expanded={open}
-          className="lcars-meta-btn min-h-[44px] lg:min-h-0 flex items-center gap-1.5"
+          onClick={toggle}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggle()}
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-color)]/5 transition-colors"
         >
           <LanguageBadge langId={currentLocale.langId} signOnly />
-          <span className="uppercase font-semibold text-[10px] tracking-wider">{currentLocale.code}</span>
-        </button>
+          <span className="uppercase font-semibold text-[10px] tracking-wider">
+            {currentLocale.code}
+          </span>
+        </div>
       </Tooltip>
       {popover}
-    </div>
+    </>
   );
 }
