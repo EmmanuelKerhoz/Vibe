@@ -42,12 +42,9 @@ export function LanguageBadge({
     ? `${display.label} (${display.region})`
     : display.label;
 
-  // The wrapper key is intentionally tied to `langId` so React never reuses a
-  // mounted EmojiSign instance from a different language across re-orders or
-  // re-renders of the parent list.
   if (signOnly) {
     return (
-      <span key={langId} className={className} aria-label={display.label}>
+      <span className={className} aria-label={display.label}>
         <EmojiSign sign={display.sign} />
       </span>
     );
@@ -55,7 +52,7 @@ export function LanguageBadge({
 
   if (labelOnly) {
     return (
-      <span key={langId} className={[className, labelClassName].filter(Boolean).join(' ')}>
+      <span className={[className, labelClassName].filter(Boolean).join(' ')}>
         {label}
       </span>
     );
@@ -63,7 +60,6 @@ export function LanguageBadge({
 
   return (
     <span
-      key={langId}
       className={['flex items-center gap-1.5 min-w-0', className].filter(Boolean).join(' ')}
     >
       <EmojiSign sign={display.sign} />
