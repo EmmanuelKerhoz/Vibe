@@ -260,8 +260,12 @@ for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
   if (!LEGACY_INDEX.has(lcCode)) {
     LEGACY_INDEX.set(lcCode, lang.langId);
   }
-  // Legacy: aiName normalized
-  LEGACY_INDEX.set(norm(lang.aiName), lang.langId);
+  // Legacy: aiName normalized — guard against overwriting UI locale entries
+  // (e.g. adapt:EN/FR/ES/DE/PT share aiNames with ui:en/fr/es/de/pt labels).
+  const lcName = norm(lang.aiName);
+  if (!LEGACY_INDEX.has(lcName)) {
+    LEGACY_INDEX.set(lcName, lang.langId);
+  }
 }
 
 /**
