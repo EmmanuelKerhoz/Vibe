@@ -90,7 +90,7 @@ function buildInsightsBarContextValue(overrides?: Partial<InsightsBarContextValu
     error: null,
   };
   return {
-    targetLanguage: 'English',
+    targetLanguage: 'adapt:EN',
     setTargetLanguage: vi.fn(),
     isAdaptingLanguage: false,
     isDetectingLanguage: false,

@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { SUPPORTED_ADAPTATION_LANGUAGES } from '../../../i18n';
-import { EmojiSign } from '../../ui/EmojiSign';
+import { LanguageBadge } from '../../ui/LanguageBadge';
 import { type PickerCoords } from './usePickerCoords';
 import { useListboxKeyboard } from './useListboxKeyboard';
 
@@ -124,7 +124,7 @@ export function LanguagePicker({
                   isActive ? 'ring-1 ring-inset ring-white/30' : '',
                 ].join(' ')}
               >
-                <EmojiSign sign={lang.sign} />
+                <LanguageBadge langId={lang.langId} signOnly />
                 <span className="uppercase font-semibold text-[10px] tracking-wider flex-shrink-0">
                   {lang.code}
                 </span>

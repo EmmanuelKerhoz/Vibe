@@ -3,8 +3,12 @@ import {
   SUPPORTED_ADAPTATION_LANGUAGES,
   CUSTOM_LANGUAGE_VALUE,
   isCustomAdaptationLanguage,
+  migrateAdaptationToLangId,
+  isCustomLangId,
+  readCustomLangText,
+  type AdaptationLanguage,
 } from '../i18n';
-import { EmojiSign } from '../components/ui/EmojiSign';
+import { LanguageBadge } from '../components/ui/LanguageBadge';
 
 // ─── Language grouping ────────────────────────────────────────────────────────
 //
@@ -50,24 +54,18 @@ export interface GroupedLanguageOption {
   searchText?: string;
 }
 
-function makeLangOption(lang: ReturnType<typeof CODE_TO_LANG.get> & {}): GroupedLanguageOption {
+function makeLangOption(lang: AdaptationLanguage): GroupedLanguageOption {
+  // The option `value` is the canonical langId — the only identifier that
+  // crosses a component boundary. Every flag/label render is funnelled through
+  // <LanguageBadge langId=…/> so the sign and label can never get out of sync.
   return {
-    value: lang.aiName,
-    // key on the wrapper span ensures React never reuses an EmojiSign instance
-    // from a different language when the list is reordered or re-rendered.
-    label: (
-      React.createElement(
-        'span',
-        { key: lang.code, className: 'flex items-center gap-1.5 min-w-0 w-full' },
-        React.createElement(EmojiSign, { key: `sign-${lang.code}`, sign: lang.sign }),
-        React.createElement(
-          'span',
-          { className: 'truncate text-[11px]' },
-          lang.region ? `${lang.aiName} (${lang.region})` : lang.aiName
-        )
-      )
-    ) as React.ReactNode,
-    searchText: lang.aiName,
+    value: lang.langId,
+    label: React.createElement(LanguageBadge, {
+      langId: lang.langId,
+      showRegion: true,
+      labelClassName: 'text-[11px]',
+    }) as React.ReactNode,
+    searchText: lang.region ? `${lang.aiName} ${lang.region}` : lang.aiName,
   };
 }
 
@@ -170,16 +168,23 @@ export function useCustomLanguageSelector({
   storedValue,
   onValueChange,
 }: UseCustomLanguageSelectorOptions): UseCustomLanguageSelectorResult {
-  // Only treat storedValue as custom when it was explicitly saved as such —
-  // unknown/unmatched values must NOT pre-fill customText, which would make
-  // canAdapt=true before the user has typed anything ("Other language" regression).
-  const isStoredCustom = isCustomAdaptationLanguage(storedValue);
+  // Migrate any legacy stored value (bare aiName like "English", uppercase
+  // code like "ES", or a "custom:<text>" sentinel) into the canonical wire
+  // format used by the picker: a langId or a custom: sentinel.
+  const migrated = migrateAdaptationToLangId(storedValue);
+  const isStoredCustomSentinel = isCustomAdaptationLanguage(storedValue);
+  const isStoredCustomLangId = isCustomLangId(migrated);
+  const isStoredCustom = isStoredCustomSentinel || isStoredCustomLangId;
 
   const [selectValue, setSelectValue] = useState<string>(
-    isStoredCustom ? CUSTOM_LANGUAGE_VALUE : storedValue,
+    isStoredCustom ? CUSTOM_LANGUAGE_VALUE : migrated,
   );
   const [customText, setCustomText] = useState<string>(
-    isStoredCustom ? storedValue : '',
+    isStoredCustomLangId
+      ? (readCustomLangText(migrated) ?? '')
+      : isStoredCustomSentinel
+        ? storedValue
+        : '',
   );
   const customInputRef = useRef<HTMLInputElement>(null);
 
@@ -194,6 +199,8 @@ export function useCustomLanguageSelector({
       setSelectValue(lang);
       if (!isCustomAdaptationLanguage(lang)) {
         setCustomText('');
+        // `lang` is already a canonical langId because every dropdown option's
+        // `value` is set to `lang.langId` (see makeLangOption above).
         onValueChange(lang);
       } else {
         setCustomText('');
@@ -212,7 +219,9 @@ export function useCustomLanguageSelector({
 
   const handleCustomConfirm = useCallback(() => {
     const trimmed = customText.trim();
-    if (trimmed) onValueChange(trimmed);
+    // Wrap the typed text in the `custom:<text>` sentinel so downstream
+    // resolvers can always tell custom values apart from canonical entries.
+    if (trimmed) onValueChange(`custom:${trimmed}`);
   }, [customText, onValueChange]);
 
   return {

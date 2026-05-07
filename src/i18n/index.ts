@@ -13,8 +13,15 @@ export {
   stripInternalPrefix,
   CUSTOM_LANGUAGE_VALUE,
   isCustomAdaptationLanguage,
+  CUSTOM_LANG_ID_PREFIX,
+  isCustomLangId,
+  buildCustomLangId,
+  readCustomLangText,
+  langIdToAiName,
+  migrateAdaptationToLangId,
+  getAdaptationLanguageByLangId,
 } from './constants';
-export type { UiLocaleInfo, AdaptationLanguage, SupportedUiLocaleCode } from './constants';
+export type { UiLocaleInfo, AdaptationLanguage, SupportedUiLocaleCode, LangId } from './constants';
 export type { Translations } from './locales/types';
 export type { LanguageContextValue } from './LanguageProvider';
 

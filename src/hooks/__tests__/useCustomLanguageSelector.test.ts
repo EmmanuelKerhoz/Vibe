@@ -37,18 +37,19 @@ describe('LANGUAGE_GROUPS ↔ SUPPORTED_ADAPTATION_LANGUAGES integrity', () => {
 
   it('surfaces Dutch under Germanic and Polish under Slavic in the grouped picker options', () => {
     const opts = buildGroupedLanguageOptions();
-    const findGroupOf = (aiName: string): string | undefined => {
+    const findGroupOf = (langId: string): string | undefined => {
       let currentGroup: string | undefined;
       for (const opt of opts) {
         if (typeof opt.value === 'string' && opt.value.startsWith('__group__')) {
           currentGroup = opt.value.replace('__group__', '');
           continue;
         }
-        if (opt.value === aiName) return currentGroup;
+        if (opt.value === langId) return currentGroup;
       }
       return undefined;
     };
-    expect(findGroupOf('Dutch')).toBe('Germanic');
-    expect(findGroupOf('Polish')).toBe('Slavic');
+    // Options are now keyed by langId — the canonical opaque identifier.
+    expect(findGroupOf('adapt:NL')).toBe('Germanic');
+    expect(findGroupOf('adapt:PL')).toBe('Slavic');
   });
 });

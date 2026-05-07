@@ -5,6 +5,7 @@ import { mergeAiSectionIntoCurrent } from '../../utils/songMergeUtils';
 import { isSectionHeader } from '../../utils/metaUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { sanitizeLangName } from '../../utils/sanitizeLangInput';
+import { langIdToAiName } from '../../i18n';
 import type { Line, Section } from '../../types';
 import { makeSongUpdater } from '../hookUtils';
 import {
@@ -50,7 +51,10 @@ export const useLanguageAdapter = ({
   setLineLanguages,
   hasApiKey,
 }: UseLanguageAdapterParams) => {
-  const [targetLanguage, setTargetLanguage] = useState<string>('English');
+  // Initial value uses the canonical langId for English so that the dropdown
+  // (whose options are keyed by langId) renders the correct flag/label pair
+  // on first paint without needing migration.
+  const [targetLanguage, setTargetLanguage] = useState<string>('adapt:EN');
   const [sectionTargetLanguages, setSectionTargetLanguages] = useState<Record<string, string>>({});
   const [isDetectingLanguage, setIsDetectingLanguage] = useState(false);
   const [isAdaptingLanguage, setIsAdaptingLanguage] = useState(false);
@@ -259,7 +263,11 @@ export const useLanguageAdapter = ({
   };
 
   const adaptSongLanguage = useCallback(async (rawLanguage: string) => {
-    const newLanguage = sanitizeLangName(rawLanguage);
+    // SINGLE conversion point: incoming `rawLanguage` may be a canonical langId
+    // ("adapt:ES"), a custom sentinel ("custom:Scots Gaelic") or a legacy bare
+    // value ("English"). `langIdToAiName` resolves each case to the human-readable
+    // name fed to the AI prompt; `sanitizeLangName` strips control chars.
+    const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
     const currentSong = songRef.current;
     const currentSongLanguage = songLanguageRef.current;
     const currentUiLang = resolveUiLanguageName(uiLanguageRef.current);
@@ -287,7 +295,8 @@ export const useLanguageAdapter = ({
   }, []);
 
   const adaptSectionLanguage = async (sectionId: string, rawLanguage: string) => {
-    const newLanguage = sanitizeLangName(rawLanguage);
+    // Same conversion contract as adaptSongLanguage — see comment there.
+    const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
 
@@ -313,7 +322,8 @@ export const useLanguageAdapter = ({
   };
 
   const adaptLineLanguage = async (sectionId: string, lineId: string, rawLanguage: string) => {
-    const newLanguage = sanitizeLangName(rawLanguage);
+    // Same conversion contract as adaptSongLanguage — see comment there.
+    const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
     const line = section.lines.find(l => l.id === lineId);
