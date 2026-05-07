@@ -164,7 +164,7 @@ describe('segmentVerseToRhymingUnit', () => {
     expect(segmentVerseToRhymingUnit('Mo kọrin àti', 'yo')).toEqual(
       expect.objectContaining({
         position: 'enjambed',
-        rhymingUnit: 'orin',
+        rhymingUnit: 'kọrin',
       }),
     );
     expect(segmentVerseToRhymingUnit('N bɛ taa ani', 'dyu')).toEqual(
