@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Tooltip } from '../ui/Tooltip';
+import { LanguageBadge } from '../ui/LanguageBadge';
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../i18n';
 
 const POPOVER_WIDTH = 180;
@@ -20,9 +21,9 @@ export function StatusBarLanguagePicker() {
   const triggerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  const currentLocale = SUPPORTED_UI_LOCALES.find(l => l.code === language)
+  const currentLocale = SUPPORTED_UI_LOCALES.find(l => l.langId === language)
     ?? SUPPORTED_UI_LOCALES[0]
-    ?? { code: 'en', label: 'English', flag: '🇬🇧', dir: 'ltr' as const };
+    ?? { langId: 'ui:en', code: 'en', label: 'English', flag: '🇬🇧', dir: 'ltr' as const };
 
   const updateCoords = useCallback(() => {
     if (triggerRef.current) {
@@ -66,8 +67,8 @@ export function StatusBarLanguagePicker() {
     return () => window.removeEventListener('resize', onResize);
   }, [open, updateCoords]);
 
-  const handleSelect = (code: string) => {
-    setLanguage(code);
+  const handleSelect = (langId: string) => {
+    setLanguage(langId);
     setOpen(false);
   };
 
@@ -117,17 +118,20 @@ export function StatusBarLanguagePicker() {
             <button
               key={loc.code}
               role="option"
-              aria-selected={loc.code === language}
-              onClick={() => handleSelect(loc.code)}
+              aria-selected={loc.langId === language}
+              onClick={() => handleSelect(loc.langId)}
               className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
-                loc.code === language
+                loc.langId === language
                   ? 'bg-[var(--accent-color)]/10 text-[var(--accent-color)]'
                   : 'text-[var(--text-secondary)] hover:bg-[var(--accent-color)]/5 hover:text-[var(--text-primary)]'
               }`}
             >
-              <span aria-hidden="true">{loc.flag}</span>
-              <span className="text-[10px] truncate">{loc.label}</span>
-              {loc.code === language && (
+              <LanguageBadge
+                langId={loc.langId}
+                className="min-w-0"
+                labelClassName="text-[10px] truncate"
+              />
+              {loc.langId === language && (
                 <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] flex-shrink-0" />
               )}
             </button>

@@ -3,6 +3,7 @@ import { X, Monitor, Sun, Moon, Volume2, VolumeX, Globe, Settings, Type, FileCod
 import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';
+import { LanguageBadge } from '../../ui/LanguageBadge';
 
 interface Props {
   isOpen: boolean;
@@ -95,7 +96,7 @@ export function SettingsModal({
   const handleDefault = () => {
     setDraftTheme('dark');
     setDraftAudioFeedback(true);
-    setDraftLanguage('en');
+    setDraftLanguage('ui:en');
     setDraftUiScale('large');
     setDraftDefaultEditMode('section');
     setDraftShowTranslation(true);
@@ -219,16 +220,19 @@ export function SettingsModal({
                     {SUPPORTED_UI_LOCALES.map((loc) => (
                       <button
                         key={loc.code}
-                        onClick={() => setDraftLanguage(loc.code)}
+                        onClick={() => setDraftLanguage(loc.langId)}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs transition-all ${
-                          draftLanguage === loc.code
+                          draftLanguage === loc.langId
                             ? 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/40 text-[var(--accent-color)]'
                             : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-color)]/20 hover:text-[var(--text-primary)]'
                         }`}
                       >
-                        <span aria-hidden="true">{loc.flag}</span>
-                        <span className="font-medium truncate">{loc.label}</span>
-                        {loc.code === draftLanguage && (
+                        <LanguageBadge
+                          langId={loc.langId}
+                          className="min-w-0"
+                          labelClassName="font-medium truncate"
+                        />
+                        {loc.langId === draftLanguage && (
                           <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] flex-shrink-0" />
                         )}
                       </button>
