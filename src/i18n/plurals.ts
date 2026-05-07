@@ -19,7 +19,10 @@ export function tPlural(
 ): string {
   // Strip the internal `ui:` namespace prefix (e.g. "ui:en" → "en") before
   // passing to Intl.PluralRules which validates BCP-47 tags.
-  const bcp47 = stripInternalPrefix(language);
+  // Guard: fall back to 'en' if the result is empty or otherwise invalid to
+  // prevent a RangeError crash from Intl.PluralRules('').
+  const stripped = stripInternalPrefix(language);
+  const bcp47 = stripped.length > 0 ? stripped : 'en';
   const form = new Intl.PluralRules(bcp47).select(count);
   return dict[`${baseKey}_${form}`] ?? dict[baseKey] ?? baseKey;
 }

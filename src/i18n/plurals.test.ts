@@ -38,4 +38,18 @@ describe('tPlural', () => {
   it('falls back to baseKey string when neither form nor base key exists', () => {
     expect(tPlural({}, 'missing_key', 1, 'ui:en')).toBe('missing_key');
   });
+
+  it('does not throw when language is an empty string (RangeError guard)', () => {
+    expect(() => tPlural(dict, 'sections', 1, '')).not.toThrow();
+    expect(tPlural(dict, 'sections', 1, '')).toBe('section');
+  });
+
+  it('does not throw when language is a malformed prefix-only string', () => {
+    expect(() => tPlural(dict, 'sections', 2, 'ui:')).not.toThrow();
+    expect(tPlural(dict, 'sections', 2, 'ui:')).toBe('sections');
+  });
+
+  it('does not throw on completely unknown/garbage langId', () => {
+    expect(() => tPlural(dict, 'sections', 1, '###invalid###')).not.toThrow();
+  });
 });

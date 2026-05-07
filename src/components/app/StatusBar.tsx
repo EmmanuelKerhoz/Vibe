@@ -29,6 +29,15 @@ interface Props {
   className?: string;
 }
 
+/**
+ * Returns a safe BCP-47 locale code for use with Intl APIs.
+ * Falls back to 'en' when the stripped code is empty or invalid.
+ */
+function safeLocale(language: string): string {
+  const stripped = stripInternalPrefix(language);
+  return stripped.length > 0 ? stripped : 'en';
+}
+
 export function StatusBar({
   hasApiKey,
   isAnalyzing,
@@ -69,7 +78,7 @@ export function StatusBar({
     : persistenceState === 'unsaved' ? (t.statusBar.unsaved ?? 'Unsaved changes')
     : persistenceState === 'error' ? (t.statusBar.saveError ?? 'Save error')
     : lastSavedAt
-      ? `${t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device'} — ${new Date(lastSavedAt).toLocaleTimeString(stripInternalPrefix(language))}`
+      ? `${t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device'} — ${new Date(lastSavedAt).toLocaleTimeString(safeLocale(language))}`
       : (t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device');
 
   const persistenceDotClass =
