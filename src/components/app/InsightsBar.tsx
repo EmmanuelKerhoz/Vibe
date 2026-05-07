@@ -38,23 +38,25 @@ export const InsightsBar = React.memo(function InsightsBar() {
   const detectedDisplays = (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : []))
     .filter((lang, i, arr) => arr.indexOf(lang) === i)
     .slice(0, 3)
-    .map(getLanguageDisplay);
+    .map((lang) => {
+      const match = SUPPORTED_ADAPTATION_LANGUAGES.find(
+        l => l.aiName.toLowerCase() === lang.toLowerCase(),
+      );
+      return getLanguageDisplay(match?.langId ?? lang);
+    });
 
   /**
-   * Fix #5 — memoized: the find() only re-runs when songLanguage changes.
-   * Resolves aiName → lang.code for DetectLanguageButton's checkmark display.
+   * Resolve aiName → canonical langId for DetectLanguageButton's selected state.
    */
   const songLanguageCode = useMemo(() => {
     if (!songLanguage) return undefined;
     const match = SUPPORTED_ADAPTATION_LANGUAGES.find(
       l => l.aiName.toLowerCase() === songLanguage.toLowerCase(),
     );
-    return match ? match.code.toLowerCase() : undefined;
+    return match ? match.langId : undefined;
   }, [songLanguage]);
 
   /**
-   * Fix #5 — memoized: the find() only re-runs when setSongLanguage identity
-   * changes (stable context ref — effectively once per mount).
    * Receives lang.code (e.g. "SA") and resolves to aiName (e.g. "Sanskrit")
    * that useAiGeneration expects in its prompt.
    */
@@ -66,20 +68,11 @@ export const InsightsBar = React.memo(function InsightsBar() {
     setSongLanguage(aiName);
   }, [setSongLanguage]);
 
-  /**
-   * exactOptionalPropertyTypes guard: MetronomeButton declares isMetronomeActive
-   * and toggleMetronome as `?: T`. Passing `prop={undefined}` is a TS error —
-   * the conditional spread omits the key entirely when the value is undefined.
-   */
   const metronomeOptional = {
     ...(isMetronomeActive !== undefined ? { isMetronomeActive } : {}),
     ...(toggleMetronome !== undefined ? { toggleMetronome } : {}),
   };
 
-  /**
-   * exactOptionalPropertyTypes guard: DetectLanguageButton declares
-   * defaultLanguage as `?: string`. Same rationale as above.
-   */
   const defaultLanguageOptional = songLanguageCode !== undefined
     ? { defaultLanguage: songLanguageCode }
     : {};
