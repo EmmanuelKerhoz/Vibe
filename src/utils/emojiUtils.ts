@@ -1,5 +1,5 @@
 /**
- * Converts a Unicode emoji string into its Twemoji SVG URL.
+ * Converts a Unicode emoji string into its local Twemoji SVG URL.
  *
  * Uses locally-bundled SVGs in `/twemoji/` so flag rendering is reliable even
  * when external CDNs are blocked by ad-blockers or corporate firewalls.
@@ -14,14 +14,25 @@
  * O(n) on ≤8 chars — negligible compared to an <img> paint.
  */
 
-export function emojiToTwemojiUrl(emoji: string): string {
-  const codepoints = [...emoji]
+function emojiToCodepoints(emoji: string): string {
+  return [...emoji]
     .map(char => char.codePointAt(0)!)
     .filter(cp => cp !== 0xfe0f) // strip variation selector only
     .map(cp => cp.toString(16))
     .join('-');
+}
 
-  return `/twemoji/${codepoints}.svg`;
+export function emojiToTwemojiUrl(emoji: string): string {
+  return `/twemoji/${emojiToCodepoints(emoji)}.svg`;
+}
+
+/**
+ * Returns the jsDelivr-hosted Twemoji CDN URL for the given emoji.
+ * Used as a fallback when the local /twemoji/ bundle is missing the SVG
+ * (e.g. for recently-added flags not yet copied into the bundle).
+ */
+export function emojiToTwemojiCdnUrl(emoji: string): string {
+  return `https://cdn.jsdelivr.net/npm/twemoji@latest/assets/svg/${emojiToCodepoints(emoji)}.svg`;
 }
 
 /**
