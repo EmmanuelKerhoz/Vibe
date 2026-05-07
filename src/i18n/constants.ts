@@ -253,9 +253,9 @@ for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
     ...(lang.isEthnical !== undefined && { isEthnical: lang.isEthnical }),
   };
   LANG_ID_INDEX.set(lang.langId, display);
-  // Legacy: uppercase code ('AR', 'HA', 'YUE')
+  // Legacy: uppercase code ('AR', 'HA', 'YUE') — always authoritative for adapt
   LEGACY_INDEX.set(lang.code, lang.langId);
-  // Legacy: normalized lowercase code (only if not already claimed by UI locale)
+  // Legacy: normalized lowercase code — only if not already claimed by UI locale
   const lcCode = norm(lang.code);
   if (!LEGACY_INDEX.has(lcCode)) {
     LEGACY_INDEX.set(lcCode, lang.langId);
@@ -450,6 +450,11 @@ export function langIdToAiName(value: string): string {
  * don't match a known language are wrapped in the `custom:` sentinel so the
  * resolver pipeline can always tell them apart from canonical entries.
  *
+ * Fix: explicitly search SUPPORTED_ADAPTATION_LANGUAGES by aiName and code
+ * before falling back to the shared legacy resolver, which can resolve
+ * adapt:FR/EN/ES/DE/PT to their ui: counterparts due to aiName collisions
+ * in LEGACY_INDEX (e.g. 'french' → 'ui:fr' instead of 'adapt:FR').
+ *
  * Examples:
  *   migrateAdaptationToLangId('Spanish')    → 'adapt:ES'
  *   migrateAdaptationToLangId('adapt:ES')   → 'adapt:ES'
@@ -463,10 +468,31 @@ export function migrateAdaptationToLangId(stored: string): string {
   if (isCustomLangId(trimmed)) return trimmed;
   // Already a canonical adapt: langId.
   if (ADAPT_LANG_BY_ID.has(trimmed)) return trimmed;
-  // Try the legacy resolver (covers bare codes + aiNames).
+  // Search adaptation table directly by uppercase code or normalized aiName.
+  // This takes priority over the shared LEGACY_INDEX to prevent adapt:FR/EN/ES/
+  // DE/PT from resolving to ui:fr/en/es/de/pt (same aiName, different namespace).
+  const normed = norm(trimmed);
+  const byDirect = SUPPORTED_ADAPTATION_LANGUAGES.find(
+    l => l.code === trimmed ||
+         l.code === trimmed.toUpperCase() ||
+         norm(l.aiName) === normed ||
+         norm(l.code) === normed
+  );
+  if (byDirect) return byDirect.langId;
+  // Try the legacy resolver as a last resort (covers edge cases).
   const upgraded = migrateToLangId(trimmed);
-  if (ADAPT_LANG_BY_ID.has(upgraded)) return upgraded;
+  if (upgraded && upgraded.startsWith('adapt:') && ADAPT_LANG_BY_ID.has(upgraded)) return upgraded;
   // UI langIds aren't valid adaptation targets — fall through to custom wrap.
   // Unknown free text → wrap as custom sentinel so resolvers stay consistent.
   return `${CUSTOM_LANG_ID_PREFIX}${trimmed}`;
+}
+
+/**
+ * asLangId — runtime-validated narrowing from string to LangId brand.
+ * Throws if the value is not a recognised canonical langId.
+ * Use migrateToLangId() first when the source may be legacy.
+ */
+export function asLangId(value: string): LangId {
+  if (LANG_ID_INDEX.has(value)) return value as LangId;
+  throw new Error(`asLangId: unknown langId "${value}"`);
 }

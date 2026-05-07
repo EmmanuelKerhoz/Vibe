@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { emojiToTwemojiUrl } from '../../utils/emojiUtils';
 
 interface EmojiSignProps {
@@ -13,29 +13,30 @@ const FALLBACK_SRC = emojiToTwemojiUrl(FALLBACK);
  * Covers both pictograms and flag sequences (regional indicator pairs).
  * Falls back to 🔤 when sign is empty or the Twemoji URL fails to load.
  *
- * Error handling is performed via a direct DOM mutation (imgRef) instead of
- * useState so there is never a stale-render frame showing the wrong flag when
- * the parent reuses this component with a different sign (e.g. list reorder,
- * scroll virtualisation, search filter).
+ * Error handling uses useState so React correctly re-evaluates the src on every
+ * sign change, eliminating stale DOM nodes when the component is reused during
+ * list reorder, virtualised scroll, or search filter. The previous useRef
+ * approach mutated the DOM directly and could leave the wrong flag visible for
+ * one render frame before the new src was applied.
  */
 export function EmojiSign({ sign }: EmojiSignProps) {
   const resolved = useMemo(() => sign?.trim() || FALLBACK, [sign]);
   const src = useMemo(() => emojiToTwemojiUrl(resolved), [resolved]);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const [errored, setErrored] = useState(false);
 
-  const handleError = useCallback(() => {
-    if (imgRef.current && imgRef.current.src !== FALLBACK_SRC) {
-      imgRef.current.src = FALLBACK_SRC;
-    }
-  }, []);
+  // Reset error state when the sign changes so the new src gets a clean attempt.
+  const prevSign = useRef(resolved);
+  if (prevSign.current !== resolved) {
+    prevSign.current = resolved;
+    if (errored) setErrored(false);
+  }
 
   return (
     <img
-      ref={imgRef}
-      src={src}
+      src={errored ? FALLBACK_SRC : src}
       alt={resolved}
       aria-hidden="true"
-      onError={handleError}
+      onError={() => setErrored(true)}
       style={{
         width: '1em',
         height: '1em',
