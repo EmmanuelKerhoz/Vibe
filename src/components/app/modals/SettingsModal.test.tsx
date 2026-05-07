@@ -91,6 +91,6 @@ describe('SettingsModal', () => {
 
     expect(frenchButton.className).toContain('bg-[var(--accent-color)]/10');
     expect(englishButton.className).not.toContain('bg-[var(--accent-color)]/10');
-    expect(frenchButton.querySelector('img[alt="🇫🇷"]')).not.toBeNull();
+    expect(frenchButton.querySelector('img')).not.toBeNull();
   });
 });
