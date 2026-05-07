@@ -152,7 +152,7 @@ export function StatusBarLanguagePicker() {
           aria-expanded={open}
           className="lcars-meta-btn min-h-[44px] lg:min-h-0 flex items-center gap-1.5"
         >
-          <span aria-hidden="true">{currentLocale.flag}</span>
+          <LanguageBadge langId={currentLocale.langId} signOnly />
           <span className="uppercase font-semibold text-[10px] tracking-wider">{currentLocale.code}</span>
         </button>
       </Tooltip>

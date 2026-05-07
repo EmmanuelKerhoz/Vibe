@@ -150,7 +150,7 @@ export function AnalysisLanguagePicker() {
         aria-expanded={open}
         className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-color)]/5 transition-colors"
       >
-        <span aria-hidden="true">{currentLocale.flag}</span>
+        <LanguageBadge langId={currentLocale.langId} signOnly />
         <span className="uppercase font-semibold text-[10px] tracking-wider">{currentLocale.code}</span>
       </button>
       {popover}
