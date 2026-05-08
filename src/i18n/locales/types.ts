@@ -598,4 +598,98 @@ export interface Translations {
     sendToSuno?: string;
     quantizeLineDone?: string;
   };
+
+  /** Section type labels (Intro, Verse, Chorus, etc.) */
+  sections?: {
+    intro?: string;
+    verse?: string;
+    preChorus?: string;
+    chorus?: string;
+    bridge?: string;
+    breakdown?: string;
+    finalChorus?: string;
+    outro?: string;
+    [key: string]: string | undefined;
+  };
+
+  /** Preset mood labels */
+  moods?: {
+    [key: string]: string;
+  };
+
+  /** Insights / stats bar labels */
+  insights?: {
+    title?: string;
+    sections?: string;
+    words?: string;
+    characters?: string;
+    [key: string]: string | undefined;
+  };
+
+  /** Rhyme scheme option labels */
+  rhymeSchemes?: {
+    AABB?: string;
+    ABAB?: string;
+    AAAA?: string;
+    ABCB?: string;
+    AAABBB?: string;
+    AABBCC?: string;
+    ABABAB?: string;
+    ABCABC?: string;
+    FREE?: string;
+    [key: string]: string | undefined;
+  };
+
+  /** API error modal */
+  apiError?: {
+    title?: string;
+    close?: string;
+    [key: string]: string | undefined;
+  };
+
+  /** Multi-step adaptation progress banner */
+  adaptationProgress?: {
+    adapting?: string;
+    reversing?: string;
+    reviewing?: string;
+    done?: string;
+    fidelityScore?: string;
+    reviewRecommended?: string;
+    pipelineFailed?: string;
+    dismissResult?: string;
+    [key: string]: string | undefined;
+  };
+
+  /** Confirm dialog (regenerate, etc.) */
+  confirmModal?: {
+    regenerateTitle?: string;
+    regenerateConfirm?: string;
+    cancel?: string;
+    [key: string]: string | undefined;
+  };
+
+  /** Prompt/input dialog (save version, etc.) */
+  promptModal?: {
+    saveVersionTitle?: string;
+    saveVersionMessage?: string;
+    saveVersionPlaceholder?: string;
+    saveVersionConfirm?: string;
+    cancel?: string;
+    [key: string]: string | undefined;
+  };
+
+  /** Rhythmic coherence check dialog */
+  rhythmicCoherence?: {
+    title?: string;
+    scoreLabel?: string;
+    optionA?: string;
+    optionADescription?: string;
+    optionB?: string;
+    optionBDescription?: string;
+    apply?: string;
+    skip?: string;
+    suggestedBpm?: string;
+    tooLongLines?: string;
+    [key: string]: string | undefined;
+  };
 }
