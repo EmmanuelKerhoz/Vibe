@@ -372,7 +372,8 @@
     "licenseLabel": "License",
     "close": "Close",
     "github": "GitHub Repository",
-    "docs": "Documentation"
+    "docs": "Documentation",
+    "splashAutoClose": "This window will close automatically in {seconds} seconds."
   },
   "aiAssistant": {
     "title": "AI Assistant",
