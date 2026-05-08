@@ -4,6 +4,7 @@ import { LcarsSelect } from '../../ui/LcarsSelect';
 import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
 import { useCustomLanguageSelector } from '../../../hooks/useCustomLanguageSelector';
+import type { AdaptationLangId } from '../../../i18n/constants';
 import type { Section } from '../../../types';
 
 interface TranslateGroupProps {
@@ -11,7 +12,7 @@ interface TranslateGroupProps {
   setTargetLanguage: (lang: string) => void;
   isAdaptingLanguage: boolean;
   song: Section[];
-  adaptSongLanguage: (lang: string) => void;
+  adaptSongLanguage: (lang: AdaptationLangId) => void;
   showTranslationFeatures: boolean;
   hasApiKey: boolean;
 }
@@ -44,10 +45,7 @@ export function TranslateGroup({
 
   const handleCustomSubmit = useCallback(() => {
     if (!effectiveLang || isBaseDisabled) return;
-    // Wrap the typed text in the canonical `custom:<text>` sentinel so the
-    // wire format is uniform across canonical and free-input languages. The
-    // resolver (`langIdToAiName`) unwraps it transparently before the AI call.
-    const customLangId = `custom:${effectiveLang}`;
+    const customLangId = `custom:${effectiveLang}` as AdaptationLangId;
     setTargetLanguage(customLangId);
     adaptSongLanguage(customLangId);
   }, [effectiveLang, isBaseDisabled, setTargetLanguage, adaptSongLanguage]);
@@ -79,7 +77,7 @@ export function TranslateGroup({
             value={selectValue}
             onChange={(lang) => {
               setTargetLanguage(lang);
-              if (!isBaseDisabled) adaptSongLanguage(lang);
+              if (!isBaseDisabled) adaptSongLanguage(lang as AdaptationLangId);
               handleLanguageSelect(lang);
             }}
             options={languageOptions}

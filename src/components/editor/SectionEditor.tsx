@@ -13,6 +13,7 @@ import { useRhymeProxyContext } from '../../contexts/RhymeProxyContext';
 import { useSongContext } from '../../contexts/SongContext';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { useRhymeSchemeMultiLang } from '../../hooks/useRhymeSchemeMultiLang';
+import type { AdaptationLangId } from '../../i18n/constants';
 
 interface SectionEditorProps {
   section: Section;
@@ -24,7 +25,7 @@ interface SectionEditorProps {
   isAdaptingLanguage?: boolean;
   sectionTargetLanguage?: string;
   onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
-  adaptSectionLanguage?: (sectionId: string, lang: string) => void;
+  adaptSectionLanguage?: (sectionId: string, lang: AdaptationLangId) => void;
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
   adaptingLineIds?: Set<string>;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
@@ -54,8 +55,6 @@ export const SectionEditor = React.memo(function SectionEditor({
   const sectionName: string = section.name ?? '';
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
 
-  // True when the section contains at least one non-meta line with non-empty text.
-  // Used to gate lyrics-processing actions (adapt, regenerate).
   const hasLyrics = useMemo(
     () => section.lines.some(
       l => !(l.isMeta ?? isPureMetaLine(l.text)) && l.text.trim().length > 0,
@@ -150,7 +149,6 @@ export const SectionEditor = React.memo(function SectionEditor({
           />
         </div>
 
-        {/* Column headers */}
         <div className="flex items-center gap-1.5 pl-1 pr-8 mb-0.5 select-none" aria-hidden="true">
           <span className="flex-shrink-0 w-6" />
           <span className="flex-shrink-0 w-3.5" />

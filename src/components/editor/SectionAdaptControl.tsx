@@ -4,6 +4,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
 import { useCustomLanguageSelector } from '../../hooks/useCustomLanguageSelector';
+import type { AdaptationLangId } from '../../i18n/constants';
 
 interface SectionAdaptControlProps {
   sectionId: string;
@@ -14,7 +15,7 @@ interface SectionAdaptControlProps {
   isAnalyzing: boolean;
   isAdaptingLanguage: boolean;
   onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
-  adaptSectionLanguage?: (sectionId: string, lang: string) => void;
+  adaptSectionLanguage?: (sectionId: string, lang: AdaptationLangId) => void;
 }
 
 export const SectionAdaptControl = React.memo(function SectionAdaptControl({
@@ -63,7 +64,7 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
   const handleApply = useCallback(() => {
     if (!canAdapt) return;
     handleCustomConfirm();
-    adaptSectionLanguage!(sectionId, effectiveLang);
+    adaptSectionLanguage!(sectionId, effectiveLang as AdaptationLangId);
   }, [canAdapt, handleCustomConfirm, adaptSectionLanguage, sectionId, effectiveLang]);
 
   const handleSearchEnter = useCallback((): boolean => {
