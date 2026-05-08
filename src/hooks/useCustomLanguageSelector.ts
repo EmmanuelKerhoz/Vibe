@@ -16,6 +16,14 @@ import { LanguageBadge } from '../components/ui/LanguageBadge';
 // Phantom codes cause the language to fall into the 'Other' catch-all group and
 // display with the wrong grouping/flag in the adaptation dropdown.
 // Run `npx ts-node scripts/validateLanguageGroups.ts` to verify after any change.
+//
+// Invariance (adaptation):
+// - The only identifier that may cross component boundaries is the canonical
+//   `langId` ("adapt:*" or "custom:*").
+// - All visual rendering (flag / ethnic picto / label / region) MUST go
+//   through <LanguageBadge langId={…}/> which itself resolves from the
+//   central i18n registry. No consumer may derive a flag or label from codes
+//   or names directly.
 
 export type LangGroup = { label: string; codes: string[] };
 
@@ -95,17 +103,13 @@ export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
     },
   );
 
-  // Emit groups in the LANGUAGE_GROUPS declared order, iterating codes within
-  // each group in their declared order (not alphabetical aiName order).
-  // This guarantees flags always appear under the correct section header and
-  // in the intended sequence regardless of SUPPORTED_ADAPTATION_LANGUAGES order.
   const seenCodes = new Set<string>();
 
   for (const { label: groupLabel, codes } of LANGUAGE_GROUPS) {
     const items: GroupedLanguageOption[] = [];
     for (const code of codes) {
       const lang = CODE_TO_LANG.get(code.toUpperCase());
-      if (!lang) continue; // phantom code — skip gracefully
+      if (!lang) continue;
       seenCodes.add(code.toUpperCase());
       items.push(makeLangOption(lang));
     }
@@ -122,7 +126,6 @@ export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
     result.push(...items);
   }
 
-  // Append languages not present in any group (safety net).
   const ungrouped = SUPPORTED_ADAPTATION_LANGUAGES.filter(
     l => !seenCodes.has(l.code.toUpperCase())
   );
@@ -199,8 +202,6 @@ export function useCustomLanguageSelector({
       setSelectValue(lang);
       if (!isCustomAdaptationLanguage(lang)) {
         setCustomText('');
-        // `lang` is already a canonical langId because every dropdown option's
-        // `value` is set to `lang.langId` (see makeLangOption above).
         onValueChange(lang);
       } else {
         setCustomText('');

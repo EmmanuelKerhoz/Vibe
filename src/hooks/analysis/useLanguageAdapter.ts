@@ -263,10 +263,10 @@ export const useLanguageAdapter = ({
   };
 
   const adaptSongLanguage = useCallback(async (rawLanguage: string) => {
-    // SINGLE conversion point: incoming `rawLanguage` may be a canonical langId
-    // ("adapt:ES"), a custom sentinel ("custom:Scots Gaelic") or a legacy bare
-    // value ("English"). `langIdToAiName` resolves each case to the human-readable
-    // name fed to the AI prompt; `sanitizeLangName` strips control chars.
+    // SINGLE conversion point: incoming `rawLanguage` MUST be a canonical
+    // adaptation langId ("adapt:*" or "custom:*"). Any legacy or free-form
+    // value must be normalised upstream via migrateAdaptationToLangId so that
+    // the whole adapter pipeline never sees bare codes or aiNames.
     const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
     const currentSong = songRef.current;
     const currentSongLanguage = songLanguageRef.current;
@@ -295,7 +295,9 @@ export const useLanguageAdapter = ({
   }, []);
 
   const adaptSectionLanguage = async (sectionId: string, rawLanguage: string) => {
-    // Same conversion contract as adaptSongLanguage — see comment there.
+    // Same contract as adaptSongLanguage: `rawLanguage` is expected to be a
+    // canonical adaptation langId. The UI selector enforces this by emitting
+    // only langId values (or custom: sentinels) across the component boundary.
     const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
@@ -322,7 +324,10 @@ export const useLanguageAdapter = ({
   };
 
   const adaptLineLanguage = async (sectionId: string, lineId: string, rawLanguage: string) => {
-    // Same conversion contract as adaptSongLanguage — see comment there.
+    // Same contract as adaptSongLanguage: `rawLanguage` is a canonical
+    // adaptation langId. The line-level prompt uses the human-readable
+    // name resolved from langIdToAiName(newLanguage) so that changes to the
+    // central registry automatically propagate to LLM calls.
     const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
