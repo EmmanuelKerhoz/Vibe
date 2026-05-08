@@ -12,7 +12,7 @@
  * Auto: hooked into `prebuild` and `dev` in package.json.
  */
 
-import { createWriteStream, mkdirSync, existsSync } from 'fs';
+import { createWriteStream, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import https from 'https';
@@ -117,7 +117,6 @@ function toCodepoints(emoji) {
 
 function download(url, dest) {
   return new Promise((resolve, reject) => {
-    if (existsSync(dest)) { resolve('cached'); return; }
     const file = createWriteStream(dest);
     https.get(url, res => {
       if (res.statusCode !== 200) {
@@ -150,7 +149,6 @@ const tasks = unique.map(emoji => {
 const results = await Promise.all(tasks);
 
 const errors = results.filter(r => r.status === 'error');
-const cached = results.filter(r => r.status === 'cached').length;
 const fetched = results.filter(r => r.status === 'ok').length;
 
 if (errors.length) {
@@ -161,5 +159,5 @@ if (errors.length) {
 }
 
 console.log(
-  `✓ copy-twemoji: ${fetched} downloaded, ${cached} already cached — public/twemoji/ ready.`,
+  `✓ copy-twemoji: ${fetched} downloaded — public/twemoji/ ready.`,
 );
