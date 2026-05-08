@@ -24,9 +24,11 @@ export const SectionHeader = React.memo(function SectionHeader({
   const sectionName: string = section.name ?? '';
   const sectionColor = getSectionColorHex(sectionName);
 
+  const rhymeSchemes = t.rhymeSchemes ?? {};
+
   const RHYME_KEYS = useMemo(
-    () => ['FREE', ...Object.keys(t.rhymeSchemes).filter((key) => key !== 'FREE')],
-    [t.rhymeSchemes]
+    () => ['FREE', ...Object.keys(rhymeSchemes).filter((key) => key !== 'FREE')],
+    [rhymeSchemes]
   );
 
   const safeSectionTypeOptions = SECTION_TYPE_OPTIONS.filter((opt): opt is string => typeof opt === 'string');
@@ -79,7 +81,7 @@ export const SectionHeader = React.memo(function SectionHeader({
                 onChange={(v) => setSectionRhymeScheme(section.id, v)}
                 options={RHYME_KEYS.filter((k): k is string => typeof k === 'string').map(key => ({
                   value: key,
-                  label: t.rhymeSchemes[key as keyof typeof t.rhymeSchemes] ?? key,
+                  label: rhymeSchemes[key as keyof typeof rhymeSchemes] ?? key,
                 }))}
                 accentColor="var(--lcars-cyan)"
               />

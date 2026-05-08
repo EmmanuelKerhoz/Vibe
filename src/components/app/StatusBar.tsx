@@ -59,8 +59,6 @@ export function StatusBar({
   const statusBarDict = t.statusBar as Record<string, string | undefined>;
 
   // ── Persistence indicator ────────────────────────────────────────────────
-  // Show inline status whenever an autosave activity has occurred, or fall
-  // back to the static "saved" badge when a hydrated session is present.
   const isPersistenceActive = saveStatus !== 'idle';
   const persistenceVisible = isPersistenceActive || hasSavedSession;
   const persistenceState: SaveStatus = isPersistenceActive
@@ -96,6 +94,8 @@ export function StatusBar({
   const themeAriaLabel = theme === 'dark'
     ? (t.statusBar.themeSwitchToLight ?? `${t.statusBar.theme} — ${t.settings.theme.light}`)
     : (t.statusBar.themeSwitchToDark ?? `${t.statusBar.theme} — ${t.settings.theme.dark}`);
+
+  const insights = t.insights ?? {};
 
   return (
     <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
@@ -141,7 +141,7 @@ export function StatusBar({
         <span className="hidden lg:inline telemetry-text text-zinc-700 dark:text-zinc-400">
           {charCount}{' '}
           <span className="text-zinc-500 dark:text-zinc-600 uppercase">
-            {t.insights.characters}
+            {insights.characters}
           </span>
         </span>
       </div>
