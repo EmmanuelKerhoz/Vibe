@@ -214,10 +214,10 @@ async function searchGenius(
               ...similarity,
               title: song.title || 'Unknown',
               artist: song.primary_artist?.name || 'Unknown',
-              album: song.album?.name,
-              year: song.release_date_components?.year,
+              ...(song.album?.name !== undefined && { album: song.album.name }),
+              ...(song.release_date_components?.year !== undefined && { year: song.release_date_components.year }),
               source: 'genius',
-              copyrightHolder: song.primary_artist?.name,
+              ...(song.primary_artist?.name !== undefined && { copyrightHolder: song.primary_artist.name }),
               riskLevel: calculateRiskLevel(similarity.score),
             });
           }

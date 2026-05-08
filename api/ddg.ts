@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     req.headers as Record<string, string | string[] | undefined>,
     req.socket?.remoteAddress
   );
-  const rl = checkRateLimit(ip);
+  const rl = await checkRateLimit(ip);
   if (!rl.allowed) {
     res.setHeader('Retry-After', String(rl.retryAfterSec));
     res.status(429).json({ error: `Rate limit exceeded. Retry after ${rl.retryAfterSec}s.` });
