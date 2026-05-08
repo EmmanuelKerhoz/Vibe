@@ -48,7 +48,7 @@ export function CompositionSection() {
             accentColor="var(--lcars-cyan)"
             options={RHYME_SCHEME_ORDER.map(value => ({
               value,
-              label: t.rhymeSchemes[value],
+              label: (t.rhymeSchemes ?? {})[value] ?? value,
             }))}
             {...rhymeSchemeButtonTitle}
           />

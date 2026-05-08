@@ -55,7 +55,7 @@ export function SongMetaForm({
   const primaryActionTooltip = isAiUnavailable
     ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
     : isGenerating
-      ? (t.tooltips.processing ?? 'Processing…')
+      ? (t.tooltips.processing ?? 'Processing\u2026')
       : (hasLyrics ? t.tooltips.regenerate : t.tooltips.generateSong);
   const primaryActionHandler = hasLyrics && onRegenerateSong ? onRegenerateSong : onGenerateSong;
   const primaryActionIcon = isGenerating
@@ -72,7 +72,7 @@ export function SongMetaForm({
   const suggestTooltip = isAiUnavailable
     ? (t.tooltips.aiUnavailable ?? 'AI unavailable')
     : (isSurprising || isGenerating)
-      ? (t.tooltips.processing ?? 'Processing…')
+      ? (t.tooltips.processing ?? 'Processing\u2026')
       : suggestTooltipBase;
   const newGenerationBadge = t.leftPanel.newGenerationBadge ?? 'New generation';
   const songInfoSectionLabel = t.leftPanel.songInfoSection ?? 'Song Info';
@@ -199,14 +199,14 @@ export function SongMetaForm({
                   value=""
                   onChange={(v) => { if (v) setMood(v); }}
                   placeholder={t.leftPanel.songMoodPresets}
-                  options={Object.entries(t.moods).map(([, moodOption]) => ({ value: moodOption, label: moodOption }))}
+                  options={Object.entries(t.moods ?? {}).map(([, moodOption]) => ({ value: moodOption, label: moodOption }))}
                   accentColor="var(--lcars-violet)"
                   {...moodPresetsButtonTitle}
                   style={{ textTransform: 'uppercase' }}
                 />
               </div>
               <datalist id="mood-suggestions">
-                {Object.entries(t.moods).map(([key, moodOption]) => <option key={key} value={moodOption} />)}
+                {Object.entries(t.moods ?? {}).map(([key, moodOption]) => <option key={key} value={moodOption} />)}
               </datalist>
             </div>
           </div>
