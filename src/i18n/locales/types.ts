@@ -447,6 +447,8 @@ export interface Translations {
     github: string;
     docs: string;
     close: string;
+    /** SR-only countdown text shown while the splash auto-closes. Use `{seconds}` as placeholder. */
+    splashAutoClose?: string;
   };
 
   /** AI assistant panel — optional; non-EN/FR locales fall back via deep-merge */
@@ -588,143 +590,12 @@ export interface Translations {
     newLyricsGeneration?: string;
     /** Tooltip for the "New Song" menu item */
     newSong?: string;
-    /** Tooltip for the paste button when lyrics are available in clipboard */
     pasteAvailable?: string;
-    /** Tooltip for the paste button when no lyrics are detected in clipboard */
     pasteUnavailable?: string;
-    /** Tooltip for the library menu item */
     browseLibrary?: string;
-    /** Tooltip for the settings menu item */
     openSettings?: string;
-    /** Tooltip for the sponsor menu item */
     sponsor?: string;
-    /** Tooltip for the "Send to SUNO" ribbon button */
     sendToSuno?: string;
-    /** Brief confirmation shown after the quantize-line action */
     quantizeLineDone?: string;
-  };
-
-  sections: {
-    intro: string;
-    verse: string;
-    preChorus: string;
-    chorus: string;
-    bridge: string;
-    breakdown: string;
-    finalChorus: string;
-    outro: string;
-  };
-
-  moods: {
-    aggressive: string;
-    calm: string;
-    dark: string;
-    energetic: string;
-    ethereal: string;
-    funky: string;
-    gloomy: string;
-    happy: string;
-    intense: string;
-    joyful: string;
-    lonely: string;
-    majestic: string;
-    melancholic: string;
-    nostalgic: string;
-    optimistic: string;
-    peaceful: string;
-    quirky: string;
-    romantic: string;
-    sad: string;
-    tense: string;
-    uplifting: string;
-    vibrant: string;
-    whimsical: string;
-    yearning: string;
-    zen: string;
-  };
-
-  insights: {
-    title: string;
-    sections: string;
-    words: string;
-    characters: string;
-  };
-
-  rhymeSchemes: {
-    AABB: string;
-    ABAB: string;
-    AAAA: string;
-    ABCB: string;
-    AAABBB: string;
-    AABBCC: string;
-    ABABAB: string;
-    ABCABC: string;
-    FREE: string;
-  };
-
-  /**
-   * Labels for the API-error modal.
-   */
-  apiError?: {
-    title: string;
-    close: string;
-  };
-
-  /**
-   * Labels for the adaptation progress banner.
-   */
-  adaptationProgress?: {
-    /** Step label while the "adapting" pipeline step is active */
-    adapting: string;
-    /** Step label while the "reversing" pipeline step is active */
-    reversing: string;
-    /** Step label while the "reviewing" pipeline step is active */
-    reviewing: string;
-    /** Step label when the pipeline is done */
-    done: string;
-    /** Label for the fidelity-score row in the result summary */
-    fidelityScore: string;
-    /** Inline note appended when the score is below the acceptance threshold */
-    reviewRecommended: string;
-    /** Error message displayed when the adaptation pipeline fails */
-    pipelineFailed: string;
-    /** Aria-label for the dismiss button on the adaptation-result banner */
-    dismissResult: string;
-  };
-
-  /**
-   * Labels for the regenerate confirmation modal.
-   * Previously hardcoded in AppModals.tsx — now fully i18n-aware.
-   */
-  confirmModal?: {
-    regenerateTitle: string;
-    regenerateConfirm: string;
-    cancel: string;
-  };
-
-  /**
-   * Labels for the save-version prompt modal.
-   * Previously hardcoded in AppModals.tsx — now fully i18n-aware.
-   */
-  promptModal?: {
-    saveVersionTitle: string;
-    saveVersionMessage: string;
-    saveVersionPlaceholder: string;
-    saveVersionConfirm: string;
-    cancel: string;
-  };
-
-  /** Labels for the Rhythmic Coherence Check dialog. */
-  rhythmicCoherence?: {
-    title: string;
-    scoreLabel: string;
-    optionA: string;
-    optionADescription: string;
-    optionB: string;
-    optionBDescription: string;
-    apply: string;
-    skip: string;
-    suggestedBpm: string;
-    tooLongLines: string;
   };
 }
