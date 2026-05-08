@@ -15,6 +15,22 @@
  */
 export type LangId = string & { readonly __brand: 'LangId' };
 
+/**
+ * Semantic alias for `LangId` scoped to the adaptation pipeline.
+ *
+ * Functionally identical to `LangId` — it IS `LangId` — but signals at call-
+ * sites that the value must be a canonical adaptation-domain identifier
+ * ("adapt:<CODE>" or "custom:<text>"). Using this alias on public function
+ * signatures makes TS error immediately when a raw `string` (bare code,
+ * aiName, legacy value) is passed without going through `asLangId()` or
+ * `migrateAdaptationToLangId()` first.
+ *
+ * Rollout strategy: start with the 2 central pipeline entry points
+ * (`langIdToAiName`, `getAdaptationLanguageByLangId`) and the 2 public hook
+ * methods (`adaptSongLanguage`, `adaptSectionLanguage`). Expand progressively.
+ */
+export type AdaptationLangId = LangId;
+
 /** Sentinel prefix for free-input adaptation languages. */
 export const CUSTOM_LANG_ID_PREFIX = 'custom:' as const;
 
@@ -369,9 +385,11 @@ for (const lang of SUPPORTED_ADAPTATION_LANGUAGES) {
 /**
  * Lookup an adaptation language entry by its canonical `langId`.
  * Returns undefined if the langId is unknown (e.g. custom: sentinel or garbage).
+ *
+ * Typed as `AdaptationLangId` to surface TS errors at call-sites passing raw strings.
  */
 export function getAdaptationLanguageByLangId(
-  langId: string,
+  langId: AdaptationLangId,
 ): AdaptationLanguage | undefined {
   return ADAPT_LANG_BY_ID.get(langId);
 }
@@ -411,13 +429,16 @@ export function readCustomLangText(value: string): string | undefined {
  * prompt. This is the *only* sanctioned conversion point between the internal
  * langId wire format and the human-readable name fed to the model.
  *
+ * Typed as `AdaptationLangId` on entry to surface TS errors at call-sites
+ * passing raw strings without prior branding.
+ *
  * - "adapt:<CODE>"   → entry.aiName (e.g. "adapt:ES" → "Spanish")
  * - "custom:<text>"  → text (verbatim, trimmed)
  * - "ui:<code>"      → ui locale label (e.g. "ui:fr" → "Français")
  * - legacy bare value → resolved via `migrateToLangId`, then recurses
  * - unknown          → the trimmed input itself (preserves legacy free-form)
  */
-export function langIdToAiName(value: string): string {
+export function langIdToAiName(value: AdaptationLangId): string {
   const trimmed = value.trim();
   if (!trimmed) return '';
   // Custom free-input sentinel.

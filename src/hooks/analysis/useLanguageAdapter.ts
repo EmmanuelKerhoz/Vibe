@@ -6,6 +6,7 @@ import { isSectionHeader } from '../../utils/metaUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { sanitizeLangName } from '../../utils/sanitizeLangInput';
 import { langIdToAiName } from '../../i18n';
+import type { AdaptationLangId } from '../../i18n/constants';
 import type { Line, Section } from '../../types';
 import { makeSongUpdater } from '../hookUtils';
 import {
@@ -262,11 +263,14 @@ export const useLanguageAdapter = ({
     }
   };
 
-  const adaptSongLanguage = useCallback(async (rawLanguage: string) => {
-    // SINGLE conversion point: incoming `rawLanguage` MUST be a canonical
-    // adaptation langId ("adapt:*" or "custom:*"). Any legacy or free-form
-    // value must be normalised upstream via migrateAdaptationToLangId so that
-    // the whole adapter pipeline never sees bare codes or aiNames.
+  /**
+   * Adapt the full song to a target language.
+   *
+   * `rawLanguage` must be a canonical `AdaptationLangId` ("adapt:*" or
+   * "custom:*"). Callers must normalise legacy values via
+   * `migrateAdaptationToLangId` before reaching this boundary.
+   */
+  const adaptSongLanguage = useCallback(async (rawLanguage: AdaptationLangId) => {
     const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
     const currentSong = songRef.current;
     const currentSongLanguage = songLanguageRef.current;
@@ -294,10 +298,14 @@ export const useLanguageAdapter = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const adaptSectionLanguage = async (sectionId: string, rawLanguage: string) => {
-    // Same contract as adaptSongLanguage: `rawLanguage` is expected to be a
-    // canonical adaptation langId. The UI selector enforces this by emitting
-    // only langId values (or custom: sentinels) across the component boundary.
+  /**
+   * Adapt a single section to a target language.
+   *
+   * Same contract as `adaptSongLanguage`: `rawLanguage` must be a canonical
+   * `AdaptationLangId`. The UI selector enforces this by emitting only langId
+   * values (or custom: sentinels) across the component boundary.
+   */
+  const adaptSectionLanguage = async (sectionId: string, rawLanguage: AdaptationLangId) => {
     const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
@@ -328,7 +336,7 @@ export const useLanguageAdapter = ({
     // adaptation langId. The line-level prompt uses the human-readable
     // name resolved from langIdToAiName(newLanguage) so that changes to the
     // central registry automatically propagate to LLM calls.
-    const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
+    const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage as AdaptationLangId));
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
     const line = section.lines.find(l => l.id === lineId);
