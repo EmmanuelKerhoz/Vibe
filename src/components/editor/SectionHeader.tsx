@@ -24,7 +24,7 @@ export const SectionHeader = React.memo(function SectionHeader({
   const sectionName: string = section.name ?? '';
   const sectionColor = getSectionColorHex(sectionName);
 
-  const rhymeSchemes = t.rhymeSchemes ?? {};
+  const rhymeSchemes = useMemo(() => t.rhymeSchemes ?? {}, [t.rhymeSchemes]);
 
   const RHYME_KEYS = useMemo(
     () => ['FREE', ...Object.keys(rhymeSchemes).filter((key) => key !== 'FREE')],
