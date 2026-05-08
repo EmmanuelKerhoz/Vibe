@@ -21,7 +21,11 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const sweepItemsRef = useRef<HTMLDivElement>(null);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const [splashProgress, setSplashProgress] = useState(0);
+
+  // Stable ref so the auto-close effect never needs onClose in its dep array,
+  // preventing the 5 s timer from restarting when the parent re-renders.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   // Sweep animation
   useEffect(() => {
@@ -37,31 +41,13 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
     }
   }, [isOpen]);
 
-  // Auto-close + progress bar when splash
+  // Auto-close when used as splash screen.
+  // Progress bar is CSS-animated — zero React re-renders during the countdown.
   useEffect(() => {
-    if (!isOpen || !isSplashScreen) {
-      setSplashProgress(0);
-      return;
-    }
-
-    setSplashProgress(0);
-    const startTime = performance.now();
-
-    let rafId: number;
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / SPLASH_DELAY_MS, 1);
-      setSplashProgress(progress);
-      if (progress < 1) {
-        rafId = requestAnimationFrame(tick);
-      } else {
-        onClose();
-      }
-    };
-    rafId = requestAnimationFrame(tick);
-
-    return () => cancelAnimationFrame(rafId);
-  }, [isOpen, isSplashScreen, onClose]);
+    if (!isOpen || !isSplashScreen) return;
+    const id = setTimeout(() => onCloseRef.current(), SPLASH_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [isOpen, isSplashScreen]);
 
   if (!isOpen) return null;
 
@@ -94,13 +80,29 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
         aria-label={t.app.name}
         className="relative w-full h-full flex flex-col shadow-2xl overflow-hidden about-dialog-shimmer dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px]"
       >
-        {/* Splash progress bar */}
+        {/* Splash progress bar — CSS animation, no React re-renders */}
         {isSplashScreen && (
-          <div
-            className="absolute top-0 left-0 h-[2px] bg-[var(--accent-color)] transition-none z-10"
-            style={{ width: `${splashProgress * 100}%`, opacity: 0.8 }}
-            aria-hidden="true"
-          />
+          <>
+            <div
+              className="absolute top-0 left-0 h-[2px] bg-[var(--accent-color)] z-10"
+              style={{
+                opacity: 0.8,
+                width: '100%',
+                transformOrigin: 'left center',
+                animation: `splash-progress ${SPLASH_DELAY_MS}ms linear forwards`,
+              }}
+              aria-hidden="true"
+            />
+            {/* SR-only: announce auto-close to screen readers */}
+            <div
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className="sr-only"
+            >
+              {t.about?.splashAutoClose ?? `This window will close automatically in ${SPLASH_DELAY_MS / 1000} seconds.`}
+            </div>
+          </>
         )}
 
         {/* Header */}
