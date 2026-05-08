@@ -1,7 +1,7 @@
 {
   "name": "vibe",
   "private": true,
-  "version": "1.21.0.6",
+  "version": "1.21.0.7",
   "type": "module",
   "scripts": {
     "copy-twemoji": "node scripts/copy-twemoji.mjs",

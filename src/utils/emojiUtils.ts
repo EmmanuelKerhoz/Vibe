@@ -27,12 +27,19 @@ export function emojiToTwemojiUrl(emoji: string): string {
 }
 
 /**
- * Returns the jsDelivr-hosted Twemoji CDN URL for the given emoji.
- * Used as a fallback when the local /twemoji/ bundle is missing the SVG
- * (e.g. for recently-added flags not yet copied into the bundle).
+ * Returns a pinned jsDelivr-hosted Twemoji CDN URL for the given emoji.
+ *
+ * Pinned to twemoji@14.1.2 — the last release that ships a complete
+ * `/assets/svg/` directory including all national flag sequences.
+ * `@latest` must NOT be used: it resolves to a version that no longer
+ * distributes flag SVGs, causing national flags to render as the browser's
+ * native Regional Indicator character blocks (coloured rectangles on Windows).
+ *
+ * Used as stage-2 fallback in EmojiSign when the local /twemoji/ bundle
+ * is missing the SVG for a given emoji.
  */
 export function emojiToTwemojiCdnUrl(emoji: string): string {
-  return `https://cdn.jsdelivr.net/npm/twemoji@latest/assets/svg/${emojiToCodepoints(emoji)}.svg`;
+  return `https://cdn.jsdelivr.net/npm/twemoji@14.1.2/assets/svg/${emojiToCodepoints(emoji)}.svg`;
 }
 
 /**
