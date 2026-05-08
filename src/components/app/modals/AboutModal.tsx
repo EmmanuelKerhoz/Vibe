@@ -100,7 +100,7 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
               aria-atomic="true"
               className="sr-only"
             >
-              {t.about?.splashAutoClose ?? `This window will close automatically in ${SPLASH_DELAY_MS / 1000} seconds.`}
+              {t.about.splashAutoClose ?? `This window will close automatically in ${SPLASH_DELAY_MS / 1000} seconds.`}
             </div>
           </>
         )}
