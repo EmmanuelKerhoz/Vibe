@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useMemo, useRef, type ReactNode } from 'react';
+import type { AdaptationLangId } from '../i18n/constants';
 
 export interface TranslationAdaptationContextValue {
   sectionTargetLanguages: Record<string, string>;
   onSectionTargetLanguageChange: (sectionId: string, lang: string) => void;
-  adaptSectionLanguage: (sectionId: string, newLanguage: string) => void;
+  adaptSectionLanguage: (sectionId: string, newLanguage: AdaptationLangId) => void;
   adaptLineLanguage: (sectionId: string, lineId: string, newLanguage: string) => void;
   adaptingLineIds: Set<string>;
   showTranslationFeatures: boolean;
@@ -15,10 +16,11 @@ interface TranslationAdaptationProviderProps extends Partial<TranslationAdaptati
 
 const EMPTY_SET = new Set<string>();
 const NOOP = () => {};
+const NOOP_ADAPT_SECTION = (_sectionId: string, _lang: AdaptationLangId) => {};
 const DEFAULT_CONTEXT_VALUE: TranslationAdaptationContextValue = {
   sectionTargetLanguages: {},
   onSectionTargetLanguageChange: NOOP,
-  adaptSectionLanguage: NOOP,
+  adaptSectionLanguage: NOOP_ADAPT_SECTION,
   adaptLineLanguage: NOOP,
   adaptingLineIds: EMPTY_SET,
   showTranslationFeatures: true,

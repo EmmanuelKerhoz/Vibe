@@ -13,6 +13,7 @@
  */
 import React, { createContext, useContext, type ReactNode } from 'react';
 import type { AdaptationProgress, AdaptationResult } from '../hooks/analysis/useLanguageAdapter';
+import type { AdaptationLangId } from '../i18n/constants';
 import type { EditMode } from '../types';
 
 export interface InsightsBarContextValue {
@@ -21,7 +22,7 @@ export interface InsightsBarContextValue {
   setTargetLanguage: (v: string) => void;
   isAdaptingLanguage: boolean;
   isDetectingLanguage: boolean;
-  adaptSongLanguage: (lang: string) => void;
+  adaptSongLanguage: (lang: AdaptationLangId) => void;
   detectLanguage: () => void;
   adaptationProgress: AdaptationProgress;
   adaptationResult: AdaptationResult | null;
