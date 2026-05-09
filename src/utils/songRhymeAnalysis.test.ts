@@ -299,4 +299,21 @@ describe('detectRhymeSchemeLocally — French schemes', () => {
     const scheme = detectRhymeSchemeLocally(lines, 'fr');
     expect(scheme).toBe('AABB');
   });
+
+  it('does not over-group French lines that only share a final mute -e', () => {
+    const lines = [
+      'Un instant éternel, venu d\'un autre espace,',
+      'Mon âme a senti cette étreinte qui passe,',
+      'Avec un inconnu, sans mots et sans visage,',
+      'Un secret partagé, au-delà de l\'âge.',
+    ];
+
+    const scheme = detectRhymeSchemeLocally(lines, 'fr');
+    // Expect two distinct rhyme families: espace/passe vs visage/âge
+    expect(scheme).toBe('AABB');
+  });
+
+  it('treats connaissance/effervescence as a valid Romance rhyme pair', () => {
+    expect(doLinesRhymeGraphemic('Sa forme défiait toute ma connaissance,', 'Une danse de lueurs, une douce effervescence', 'fr')).toBe(true);
+  });
 });
