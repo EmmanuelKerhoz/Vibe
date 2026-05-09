@@ -3,6 +3,7 @@ import type { Section } from '../types';
 import { compareTextsWithIPA } from './ipaPipeline';
 import { analyzeSongRhymes } from './songRhymeAnalysis';
 import { doLinesRhymeGraphemic, segmentVerseToRhymingUnit, splitRhymingSuffix } from './rhymeDetection';
+import { detectRhymeSchemeLocally } from './rhymeSchemeUtils';
 
 vi.mock('./ipaPipeline', () => ({
   compareTextsWithIPA: vi.fn(),
@@ -281,5 +282,21 @@ describe('analyzeSongRhymes — rhymePosition forwarding', () => {
     const [result] = await analyzeSongRhymes(song);
     const pair = result?.pairs[0];
     expect(pair?.rhymePosition).toBe('enjambed');
+  });
+});
+
+// ─── New tests: French rhyme schemes (graphemic fallback) ─────────────────────────────
+
+describe('detectRhymeSchemeLocally — French schemes', () => {
+  it('detects AABB for a simple French quatrain', () => {
+    const lines = [
+      'Une étoile filante a traversé ma nuit',
+      'Une rencontre étrange, loin de tout bruit',
+      'Un éclair illumine, un doux étranger',
+      'Un instant suspendu, je peux l\'oublier',
+    ];
+
+    const scheme = detectRhymeSchemeLocally(lines, 'fr');
+    expect(scheme).toBe('AABB');
   });
 });
