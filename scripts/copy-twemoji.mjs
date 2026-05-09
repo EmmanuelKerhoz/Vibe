@@ -12,7 +12,7 @@
  * Auto: hooked into `prebuild` and `dev` in package.json.
  */
 
-import { createWriteStream, mkdirSync, existsSync } from 'fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import https from 'https';
@@ -115,20 +115,43 @@ function toCodepoints(emoji) {
     .join('-');
 }
 
-function download(url, dest) {
+function fetchSvg(url) {
   return new Promise((resolve, reject) => {
-    if (existsSync(dest)) { resolve('cached'); return; }
-    const file = createWriteStream(dest);
-    https.get(url, res => {
-      if (res.statusCode !== 200) {
-        file.close();
-        reject(new Error(`HTTP ${res.statusCode}`));
-        return;
-      }
-      res.pipe(file);
-      file.on('finish', () => file.close(() => resolve('ok')));
-    }).on('error', reject);
+    https
+      .get(url, res => {
+        if (res.statusCode !== 200) {
+          res.resume();
+          reject(new Error(`HTTP ${res.statusCode}`));
+          return;
+        }
+        const chunks = [];
+        res.on('data', chunk => chunks.push(chunk));
+        res.on('end', () => resolve(Buffer.concat(chunks)));
+        res.on('error', reject);
+      })
+      .on('error', reject);
   });
+}
+
+/**
+ * Sync a single emoji's SVG to disk.
+ *
+ * History bug: a stale `existsSync` short-circuit kept corrupted local SVGs
+ * (wrong stripes, missing coats of arms — see issues about flag/language
+ * mismatches) from ever being repaired. We now always fetch the canonical
+ * SVG from the pinned CDN and only write to disk when the bytes actually
+ * differ from what's already on disk. This keeps the script idempotent and
+ * git-diff-friendly while making it self-healing if the local bundle drifts
+ * from upstream for any reason (manual edits, partial downloads, etc.).
+ */
+async function sync(url, dest) {
+  const fresh = await fetchSvg(url);
+  if (existsSync(dest)) {
+    const current = readFileSync(dest);
+    if (current.equals(fresh)) return 'cached';
+  }
+  writeFileSync(dest, fresh);
+  return 'ok';
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────
@@ -142,7 +165,7 @@ const tasks = unique.map(emoji => {
   const cp = toCodepoints(emoji);
   const url = `${CDN_BASE}/${cp}.svg`;
   const dest = `${destDir}/${cp}.svg`;
-  return download(url, dest)
+  return sync(url, dest)
     .then(status => ({ emoji, cp, status }))
     .catch(err => ({ emoji, cp, status: 'error', err }));
 });
@@ -161,5 +184,5 @@ if (errors.length) {
 }
 
 console.log(
-  `✓ copy-twemoji: ${fetched} downloaded, ${cached} already cached — public/twemoji/ ready.`,
+  `✓ copy-twemoji: ${fetched} written, ${cached} unchanged — public/twemoji/ ready.`,
 );
