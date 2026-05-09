@@ -146,7 +146,8 @@ export const LyricInput = React.memo(function LyricInput({
 
       const isLastPart = i === parts.length - 1;
       if (isLastPart && rhymeTextColor) {
-        const split = splitRhymingSuffix(part, rhymePeerTexts);
+        const langHint = lineLanguage || sectionTargetLanguage;
+        const split = splitRhymingSuffix(part, rhymePeerTexts, langHint);
         if (split) {
           return (
             <span key={i}>
