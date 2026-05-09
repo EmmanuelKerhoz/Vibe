@@ -82,42 +82,46 @@ export const detectRhymeSchemeFromIPAPairs = (
  *
  * Used in two scenarios:
  * 1. Primary path when the section language is unknown / unsupported by IPA.
- * 2. Fallback when the IPA pipeline throws or returns no pairs.
+ * 2. Fallback when the IPA pipeline fails for any reason.
  *
- * This is NOT deprecated: it is a deliberate, lightweight fallback that
- * intentionally stays graphemic so it works offline and for languages not
- * yet covered by a native G2P family. It should be maintained alongside
- * the IPA path, not removed.
- *
- * @param lines - Array of line texts to analyze
- * @param langCode - Optional language code for tonal preservation
+ * NOTE: language-specific graphemic tweaks (Romance nasal digraphs, etc.) are
+ * handled inside doLinesRhymeGraphemic / splitRhymingSuffix, which both
+ * accept an optional langCode. This utility therefore remains language-agnostic
+ * and must be passed the same langCode used by the rest of the pipeline to
+ * keep behaviour aligned.
  */
-export const detectRhymeSchemeLocally = (lines: string[], langCode?: string): string | null => {
-  const lyricLines = lines.filter(line => line.trim().length > 0);
-  const n = lyricLines.length;
-  if (n < 2) return null;
+export const detectRhymeSchemeLocally = (
+  lines: string[],
+  langCode?: string,
+): string | null => {
+  if (lines.length < 2) return null;
 
-  const letters: (string | null)[] = new Array(n).fill(null);
-  let nextLetter = 0;
+  const letters: (string | null)[] = new Array(lines.length).fill(null);
+  let nextLetterIndex = 0;
 
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < lines.length; i++) {
+    if (!lines[i]?.trim()) continue;
     if (letters[i] !== null) continue;
-    let matchedLetter: string | null = null;
+
+    let matchedExistingLetter: string | null = null;
     for (let j = 0; j < i; j++) {
-      if (doLinesRhymeGraphemic(lyricLines[i]!, lyricLines[j]!, langCode)) {
-        matchedLetter = letters[j] ?? null;
+      if (letters[j] && doLinesRhymeGraphemic(lines[i]!, lines[j]!, langCode)) {
+        matchedExistingLetter = letters[j]!;
         break;
       }
     }
-    if (matchedLetter) {
-      letters[i] = matchedLetter;
+
+    if (matchedExistingLetter) {
+      letters[i] = matchedExistingLetter;
     } else {
-      letters[i] = RHYME_SCHEME_LETTERS[nextLetter] ?? String.fromCharCode(65 + nextLetter);
-      nextLetter++;
+      letters[i] = RHYME_SCHEME_LETTERS[nextLetterIndex] ?? String.fromCharCode(65 + nextLetterIndex);
+      nextLetterIndex++;
     }
-    for (let k = i + 1; k < n; k++) {
-      if (letters[k] === null && doLinesRhymeGraphemic(lyricLines[i]!, lyricLines[k]!, langCode)) {
-        letters[k] = letters[i] ?? null;
+
+    for (let k = i + 1; k < lines.length; k++) {
+      if (!lines[k]?.trim() || letters[k] !== null) continue;
+      if (doLinesRhymeGraphemic(lines[i]!, lines[k]!, langCode)) {
+        letters[k] = letters[i];
       }
     }
   }
