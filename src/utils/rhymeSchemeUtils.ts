@@ -118,10 +118,11 @@ export const detectRhymeSchemeLocally = (
       nextLetterIndex++;
     }
 
+    const currentLetter = letters[i]!;
     for (let k = i + 1; k < lines.length; k++) {
       if (!lines[k]?.trim() || letters[k] !== null) continue;
       if (doLinesRhymeGraphemic(lines[i]!, lines[k]!, langCode)) {
-        letters[k] = letters[i];
+        letters[k] = currentLetter;
       }
     }
   }
