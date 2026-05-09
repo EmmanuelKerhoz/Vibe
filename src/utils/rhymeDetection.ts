@@ -182,8 +182,17 @@ const getLongestCommonSuffix = (a: string, b: string): string => {
  * exact one-vowel matches for short endings such as "zéro"/"ego" so we do not
  * discard valid monosyllabic vowel rhymes.
  */
-const isSharedRhymeStrongEnough = (suffix: string, exactMatch: boolean): boolean =>
-  suffix.length >= 2 || (exactMatch && suffix.length === 1 && isVowel(suffix));
+const isSharedRhymeStrongEnough = (suffix: string, exactMatch: boolean, langCode?: string, a?: string, b?: string): boolean => {
+  if (suffix.length >= 2) return true;
+
+  // For Romance languages (incl. default), disallow 1-letter matches on mute 'e'
+  // to avoid spurious rhymes like "espace"/"visage" that only share final -e.
+  const family = langCode ? getAlgoFamily(langCode) : undefined;
+  const isRomance = !family || family === 'ALGO-ROM';
+  if (isRomance) return false;
+
+  return exactMatch && suffix.length === 1 && isVowel(suffix);
+};
 
 /**
  * Compare every vowel-group-based candidate suffix from two lines and keep the
@@ -203,7 +212,7 @@ const findBestSharedRhymeSuffix = (a: string, b: string, langCode?: string): str
       const sharedSuffix = exactMatch
         ? aCandidate.normalizedSuffix
         : getLongestCommonSuffix(aCandidate.normalizedSuffix, bCandidate.normalizedSuffix);
-      if (!isSharedRhymeStrongEnough(sharedSuffix, exactMatch)) continue;
+      if (!isSharedRhymeStrongEnough(sharedSuffix, exactMatch, langCode, aCandidate.normalizedSuffix, bCandidate.normalizedSuffix)) continue;
       if (sharedSuffix.length > bestMatch.length) bestMatch = sharedSuffix;
     }
   }
