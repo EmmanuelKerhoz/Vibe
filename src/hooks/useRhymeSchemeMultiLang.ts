@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { detectRhymeSchemeMultiLang } from '../lib/rhyme/rhymeSchemeDetector';
+import { detectRhymeSchemeLocally } from '../utils/rhymeSchemeUtils';
 import type { LangCode, SchemeResult } from '../lib/rhyme/types';
 
 /**
@@ -69,6 +70,17 @@ export interface MultiLangLine {
   lang: string;
 }
 
+function labelFromLetters(letters: string[]): SchemeResult['label'] {
+  const pattern = letters.join('');
+  if (letters.length > 0 && new Set(letters).size === 1) return 'MONORHYME';
+  if (pattern === 'AABB' || /^([A-Z])\1([A-Z])\2(?:([A-Z])\3)*$/.test(pattern)) return 'AABB';
+  if (pattern === 'ABAB' || /^([A-Z])([A-Z])(?:\1\2)+$/.test(pattern)) return 'ABAB';
+  if (pattern === 'ABBA') return 'ABBA';
+  if (pattern === 'ABCABC') return 'ABCABC';
+  if (letters.filter(l => l === 'X').length > letters.length / 2) return 'FREE_VERSE';
+  return 'CUSTOM';
+}
+
 /**
  * Derives the rhyme scheme for a stanza where each line may have a different
  * language — useful for code-switching lyrics (rap, slam, multilingual songs).
@@ -117,7 +129,19 @@ export function useRhymeSchemeMultiLang(
     try {
       const raw = detectRhymeSchemeMultiLang(filtered);
       if (raw === null) return null;
-      return isProxied !== undefined ? { ...raw, isProxied } : raw;
+      const singleLang = filtered.every(line => line.lang === filtered[0]?.lang);
+      const localScheme = singleLang && filtered[0]?.lang !== '__unknown__'
+        ? detectRhymeSchemeLocally(filtered.map(line => line.text), filtered[0]?.lang)
+        : null;
+      const corrected = localScheme
+        ? {
+            ...raw,
+            letters: localScheme.split(''),
+            label: labelFromLetters(localScheme.split('')),
+            confidence: Math.max(raw.confidence, 0.7),
+          }
+        : raw;
+      return isProxied !== undefined ? { ...corrected, isProxied } : corrected;
     } catch (err) {
       if (process.env.NODE_ENV !== 'production') {
         console.warn('[useRhymeSchemeMultiLang] detection failed:', err);
