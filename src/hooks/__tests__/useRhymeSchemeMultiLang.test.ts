@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useRhymeSchemeMultiLang } from '../useRhymeSchemeMultiLang';
+import { getRhymeSchemeLabelFromLetters, useRhymeSchemeMultiLang } from '../useRhymeSchemeMultiLang';
 
 // --- A: too few lines --------------------------------------------------------
 
@@ -39,6 +39,20 @@ describe('useRhymeSchemeMultiLang - fewer than 2 usable lines', () => {
       ])
     );
     expect(result.current).toBeNull();
+  });
+});
+
+describe('getRhymeSchemeLabelFromLetters', () => {
+  it.each([
+    [['A', 'A', 'A'], 'MONORHYME'],
+    [['A', 'A', 'B', 'B'], 'AABB'],
+    [['A', 'B', 'A', 'B'], 'ABAB'],
+    [['A', 'B', 'B', 'A'], 'ABBA'],
+    [['A', 'B', 'C', 'A', 'B', 'C'], 'ABCABC'],
+    [['X', 'A', 'X', 'X'], 'FREE_VERSE'],
+    [['A', 'B', 'C', 'D'], 'CUSTOM'],
+  ] as const)('maps %j to %s', (letters, expected) => {
+    expect(getRhymeSchemeLabelFromLetters([...letters])).toBe(expected);
   });
 });
 

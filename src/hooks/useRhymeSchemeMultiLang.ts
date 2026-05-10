@@ -70,7 +70,7 @@ export interface MultiLangLine {
   lang: string;
 }
 
-function labelFromLetters(letters: string[]): SchemeResult['label'] {
+export function getRhymeSchemeLabelFromLetters(letters: string[]): SchemeResult['label'] {
   const pattern = letters.join('');
   if (letters.length > 0 && new Set(letters).size === 1) return 'MONORHYME';
   if (pattern === 'AABB' || /^([A-Z])\1([A-Z])\2(?:([A-Z])\3)*$/.test(pattern)) return 'AABB';
@@ -137,7 +137,7 @@ export function useRhymeSchemeMultiLang(
         ? {
             ...raw,
             letters: localScheme.split(''),
-            label: labelFromLetters(localScheme.split('')),
+            label: getRhymeSchemeLabelFromLetters(localScheme.split('')),
             confidence: Math.max(raw.confidence, 0.7),
           }
         : raw;
