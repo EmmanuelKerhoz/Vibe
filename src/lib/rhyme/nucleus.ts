@@ -111,7 +111,7 @@ function extractToneThai(syllable: string): string {
   return 'M';
 }
 
-// ─── IPA parser ───────────────────────────────────────────────────────────────
+// ─── IPA parser (only call with real IPA strings, not plain orthography) ─────
 function parseIPA(ipa: string): RhymeNucleus {
   let vowelStart = -1;
   let vowelEnd = -1;
@@ -141,26 +141,116 @@ function lastStressedVowelIndex(word: string): number {
   return last;
 }
 
-function extractSuffixFromIndex(word: string, idx: number): string {
+// ─── Shared graphemic extractor (for families without a G2P pipeline) ─────────
+// Works on plain orthography (NFC, lowercase). Does NOT call parseIPA.
+// Returns nucleus with charSpanStart/charSpanEnd relative to `surface`.
+const LATIN_VOWEL_RE = /[aeiouàèìòùáéíóúâêîôûäëïöüãõœæåø]/iu;
+const LATIN_VOWEL_RUN_RE = /[aeiouàèìòùáéíóúâêîôûäëïöüãõœæåø]+/iug;
+
+function graphemicNucleus(
+  surface: string,
+  cleanedLower: string,
+  idx: number,
+): RhymeNucleus {
   if (idx === -1) {
-    const m = word.match(/[aeiouàèìòùáéíóúâêîôûäëïöü][^aeiouàèìòùáéíóúâêîôûäëïöü]*$/iu);
-    return m?.[0] ?? word.slice(-3);
+    // No stressed vowel found — fall back to last vowel sequence
+    const allMatches = [...cleanedLower.matchAll(LATIN_VOWEL_RUN_RE)];
+    const lastMatch = allMatches.at(-1);
+    if (!lastMatch || lastMatch.index === undefined) {
+      return { vowels: cleanedLower.slice(-2), coda: '', tone: '', onset: '', moraCount: 1,
+               charSpanStart: -1, charSpanEnd: -1 };
+    }
+    idx = lastMatch.index;
   }
-  return word.slice(idx);
+
+  const suffix = cleanedLower.slice(idx);
+  const vowelMatch = suffix.match(/^([aeiouàèìòùáéíóúâêîôûäëïöüãõœæåø]+)(.*)/iu);
+  if (!vowelMatch) {
+    return { vowels: suffix, coda: '', tone: '', onset: cleanedLower.slice(0, idx),
+             moraCount: 1, charSpanStart: -1, charSpanEnd: -1 };
+  }
+
+  const vowels = vowelMatch[1]!;
+  const coda   = vowelMatch[2]!;
+  const onset  = cleanedLower.slice(0, idx);
+
+  // Map cleaned span back to original surface via substring search
+  const nucleusStr = cleanedLower.slice(idx);
+  const surfaceLower = surface.toLowerCase().normalize('NFC');
+  // Find rightmost occurrence of the nucleus substring in the original surface
+  const spanStart = surfaceLower.lastIndexOf(cleanedLower.slice(idx, idx + vowels.length + coda.length));
+  const spanEnd   = spanStart !== -1 ? spanStart + nucleusStr.length : -1;
+
+  return {
+    vowels,
+    coda,
+    tone:          '',
+    onset,
+    moraCount:     vowels.length,
+    charSpanStart: spanStart,
+    charSpanEnd:   spanEnd,
+  };
 }
 
 // ─── Family-specific nucleus extractors ──────────────────────────────────────
 
+/**
+ * ROM — Romance family (FR, ES, IT, PT, RO, CA).
+ *
+ * Previously called parseIPA on plain orthography, causing IPA vowel chars
+ * (ɑ æ ɛ ə…) to never match and the extractor to fall back to slice(-4).
+ * Now uses graphemic extraction with lang-specific terminal stripping.
+ */
 function nucleusROM(surface: string, lang: LangCode): RhymeNucleus {
-  let s = surface.toLowerCase();
-  if (lang === 'fr') s = s.replace(/(?<=[aeiouàâéèêëîïôùûü])(nt|s)?$/u, '').replace(/e(nt|s)?$/, '');
-  return parseIPA(extractSuffixFromIndex(s, lastStressedVowelIndex(s)));
+  let s = surface.toLowerCase().normalize('NFC');
+
+  // Strip terminal punctuation (common to all ROM)
+  s = s.replace(/[,;.!?…\u2026]+$/, '');
+
+  if (lang === 'fr') {
+    // Silent final consonants after a vowel (French mute endings)
+    s = s.replace(/(?<=[aeiouàâéèêëîïôùûü])(n?t|x|s|nt|nts|ts)?$/u, '');
+    // Mute final e (and inflected forms: -es, -ent, -ents)
+    s = s.replace(/e(?:n?t|s|nts)?$/u, '');
+  }
+
+  const idx = lastStressedVowelIndex(s);
+  return graphemicNucleus(surface, s, idx);
 }
 
+/**
+ * GER — Germanic family (EN, DE, NL, SV, DA, NO, IS).
+ *
+ * Same graphemic approach as ROM + DE Auslautverhärtung (final devoicing).
+ */
 function nucleusGER(surface: string, lang: LangCode): RhymeNucleus {
-  let s = surface.toLowerCase();
-  if (lang === 'de') s = s.replace(/[bdgvz]$/u, m => ({ b: 'p', d: 't', g: 'k', v: 'f', z: 's' }[m] ?? m));
-  return parseIPA(extractSuffixFromIndex(s, lastStressedVowelIndex(s)));
+  let s = surface.toLowerCase().normalize('NFC');
+  s = s.replace(/[,;.!?…\u2026]+$/, '');
+
+  if (lang === 'de') {
+    // Final obstruent devoicing
+    s = s
+      .replace(/b$/u, 'p')
+      .replace(/d$/u, 't')
+      .replace(/g$/u, 'k')
+      .replace(/v$/u, 'f')
+      .replace(/z$/u, 's');
+  }
+
+  const idx = lastStressedVowelIndex(s);
+  return graphemicNucleus(surface, s, idx);
+}
+
+/**
+ * SLV — Slavic family (RU, PL, CS, SK, UK, BG, SR, HR).
+ *
+ * Graphemic nucleus; stress via diacritics where present, else last vowel.
+ * Palatalisation handled in scoring layer, not here.
+ */
+function nucleusSLV(surface: string): RhymeNucleus {
+  const s = surface.toLowerCase().normalize('NFC').replace(/[,;.!?…\u2026]+$/, '');
+  const idx = lastStressedVowelIndex(s);
+  return graphemicNucleus(surface, s, idx);
 }
 
 function nucleusTRK(surface: string): RhymeNucleus {
@@ -168,7 +258,7 @@ function nucleusTRK(surface: string): RhymeNucleus {
   const idx = lastStressedVowelIndex(stripped) !== -1
     ? lastStressedVowelIndex(stripped)
     : stripped.search(/[aeiouıiuü]/iu);
-  return parseIPA(extractSuffixFromIndex(stripped, idx));
+  return parseIPA(stripped.slice(Math.max(idx, 0)));
 }
 
 function nucleusFIN(surface: string, lang: LangCode): RhymeNucleus {
@@ -217,11 +307,6 @@ function nucleusSEM(surface: string): RhymeNucleus {
   const m = surface.match(/[\u0600-\u06FF\u0590-\u05FF][^\u0600-\u06FF\u0590-\u05FF]*$/u);
   if (!m) return parseIPA(surface.slice(-4));
   return { vowels: m[0], coda: '', tone: '', onset: '', moraCount: 1 };
-}
-
-function nucleusSLV(surface: string): RhymeNucleus {
-  const s = surface.toLowerCase();
-  return parseIPA(extractSuffixFromIndex(s, lastStressedVowelIndex(s)));
 }
 
 function nucleusKWA(surface: string, lang: LangCode): RhymeNucleus {
