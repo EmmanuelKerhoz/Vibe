@@ -15,6 +15,10 @@ type RhymeCandidate = {
   normalizedSuffix: string;
 };
 
+type RhymeMatchOptions = {
+  forScheme?: boolean;
+};
+
 /**
  * Full IPA vowel inventory covering Latin, Germanic umlauts, Slavic, Uralic,
  * Austronesian, Dravidian and Sinitic vowel characters encountered after NFD
@@ -120,6 +124,7 @@ const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
   const isRomance = !family || family === 'ALGO-ROM';
 
   if (isRomance) {
+    if (/^(?:ace|asse)$/.test(s)) return 'as';
     if (/^oi/.test(s)) return 'oi';
     if (/^(?:an|en|am|em)/.test(s)) return 'an';
     if (/^(?:in|ain|ein|im|yn|ym)/.test(s)) return 'in';
@@ -182,16 +187,25 @@ const getLongestCommonSuffix = (a: string, b: string): string => {
  * exact one-vowel matches for short endings such as "zéro"/"ego" so we do not
  * discard valid monosyllabic vowel rhymes.
  */
-const isSharedRhymeStrongEnough = (suffix: string, exactMatch: boolean, langCode?: string, a?: string, b?: string): boolean => {
+const isSharedRhymeStrongEnough = (
+  suffix: string,
+  exactMatch: boolean,
+  langCode?: string,
+  options?: RhymeMatchOptions,
+): boolean => {
   if (suffix.length >= 2) return true;
 
-  // For Romance languages (incl. default), disallow 1-letter matches on mute 'e'
-  // to avoid spurious rhymes like "espace"/"visage" that only share final -e.
-  const family = langCode ? getAlgoFamily(langCode) : undefined;
-  const isRomance = !family || family === 'ALGO-ROM';
-  if (isRomance) return false;
+  if (!(exactMatch && suffix.length === 1 && isVowel(suffix))) return false;
 
-  return exactMatch && suffix.length === 1 && isVowel(suffix);
+  // For Romance scheme detection, mute-e-only matches are too permissive and
+  // create false families across unrelated endings.
+  if (options?.forScheme && suffix === 'e') {
+    const family = langCode ? getAlgoFamily(langCode) : undefined;
+    const isRomance = !family || family === 'ALGO-ROM';
+    if (isRomance) return false;
+  }
+
+  return true;
 };
 
 /**
@@ -201,7 +215,12 @@ const isSharedRhymeStrongEnough = (suffix: string, exactMatch: boolean, langCode
  * @param b - Second line text
  * @param langCode - Optional language code for tonal preservation
  */
-const findBestSharedRhymeSuffix = (a: string, b: string, langCode?: string): string | null => {
+const findBestSharedRhymeSuffix = (
+  a: string,
+  b: string,
+  langCode?: string,
+  options?: RhymeMatchOptions,
+): string | null => {
   const aCandidates = getRhymeCandidates(a, langCode);
   const bCandidates = getRhymeCandidates(b, langCode);
   let bestMatch = '';
@@ -212,7 +231,7 @@ const findBestSharedRhymeSuffix = (a: string, b: string, langCode?: string): str
       const sharedSuffix = exactMatch
         ? aCandidate.normalizedSuffix
         : getLongestCommonSuffix(aCandidate.normalizedSuffix, bCandidate.normalizedSuffix);
-      if (!isSharedRhymeStrongEnough(sharedSuffix, exactMatch, langCode, aCandidate.normalizedSuffix, bCandidate.normalizedSuffix)) continue;
+      if (!isSharedRhymeStrongEnough(sharedSuffix, exactMatch, langCode, options)) continue;
       if (sharedSuffix.length > bestMatch.length) bestMatch = sharedSuffix;
     }
   }
@@ -345,10 +364,15 @@ export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langC
  * allowed for short words such as "zéro" / "ego", while longer matches use a
  * suffix overlap.
  */
-export const doLinesRhymeGraphemic = (a: string, b: string, langCode?: string): boolean => {
+export const doLinesRhymeGraphemic = (
+  a: string,
+  b: string,
+  langCode?: string,
+  options?: RhymeMatchOptions,
+): boolean => {
   const segA = segmentVerseToRhymingUnit(a, langCode);
   const segB = segmentVerseToRhymingUnit(b, langCode);
-  return findBestSharedRhymeSuffix(segA.rhymingUnit, segB.rhymingUnit, langCode) !== null;
+  return findBestSharedRhymeSuffix(segA.rhymingUnit, segB.rhymingUnit, langCode, options) !== null;
 };
 
 // ─── Step-0: verse segmentation ──────────────────────────────────────────────
