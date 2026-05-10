@@ -76,7 +76,7 @@ function extractVowelNucleus(token: string, lang: LangCode): string {
   const last = matches[matches.length - 1] ?? '';
 
   if (lang === 'es') {
-    const stressedVowel = last.match(/[áéíóú]/u)?.[0];
+    const stressedVowel = last.match(/[áéíóúÁÉÍÓÚ]/u)?.[0];
     if (stressedVowel) return stressedVowel;
   }
 
