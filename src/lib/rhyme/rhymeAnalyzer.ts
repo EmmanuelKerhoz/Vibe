@@ -165,7 +165,7 @@ export async function analyzeBlock(
     const nucleusA = result.nucleusA.vowels + result.nucleusA.coda;
     const nucleusB = result.nucleusB.vowels + result.nucleusB.coda;
 
-    pairs.push({
+    const pair: RhymePair = {
       lineA: idxA,
       lineB: idxB,
       wordA,
@@ -179,9 +179,10 @@ export async function analyzeBlock(
       finalScore: result.score,
       rhymeType:  classifyScore(result.score, position),
       isCrossLingual: langcodeA !== langcodeB,
-      charSpanA: result.charSpanA,
-      charSpanB: result.charSpanB,
-    });
+    };
+    if (result.charSpanA) pair.charSpanA = result.charSpanA;
+    if (result.charSpanB) pair.charSpanB = result.charSpanB;
+    pairs.push(pair);
   }
 
   return {
