@@ -7,6 +7,7 @@ import { isPureMetaLine, unwrapBracketToken } from '../../utils/metaUtils';
 import { generateId } from '../../utils/idUtils';
 import { languageNameToCode } from '../../constants/langFamilyMap';
 import type { Section } from '../../types';
+import type { AdaptationLangId } from '../../i18n/constants';
 import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
 import { buildDetectLanguagePrompt } from '../../utils/promptUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
@@ -24,7 +25,10 @@ type UsePasteImportParams = {
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
   currentSongLanguage?: string;
-  onLanguageMismatch?: (lang: string) => void;
+  /** Called when the detected lyric language differs from the current song language.
+   *  Receives a canonical AdaptationLangId so the language selector can update
+   *  without a round-trip through migrateAdaptationToLangId. */
+  onLanguageMismatch?: (lang: AdaptationLangId) => void;
   onDetectedLanguage?: (language: string, sectionIds: string[]) => void;
   requestAutoTitleGeneration: () => void;
   clearLineSelection: () => void;
@@ -387,115 +391,71 @@ export const usePasteImport = ({
           return;
         }
 
-        const analyzedSections = chunkResults.filter((r): r is NonNullable<typeof r> => r !== null);
+        const validChunks = chunkResults.filter(Boolean) as NonNullable<typeof chunkResults[0]>[];
+        if (validChunks.length === 0) return;
 
-        let topicFromImport = typeof metadata.topic === 'string' ? metadata.topic.trim() : '';
-        let moodFromImport = typeof metadata.mood === 'string' ? metadata.mood.trim() : '';
-        let detectedLanguage = typeof metadata.language === 'string' ? metadata.language.trim() : '';
-
-        // Fallback language detection only if metadata call returned nothing
-        if (!detectedLanguage) {
-          try {
-            const detectionResponse = await generateContentWithRetry({
-              model: AI_MODEL_NAME,
-              contents: buildDetectLanguagePrompt(pastedText),
-              signal: nextSignal,
-            }, PASTE_IMPORT_RETRY);
-            if (nextSignal.aborted) { wasAborted = true; return; }
-            detectedLanguage = detectionResponse.text?.trim() || '';
-          } catch (error) {
-            console.debug('Failed to detect pasted lyrics language:', error);
-          }
-        }
-
-        if (topicFromImport) setTopic(topicFromImport);
-        if (moodFromImport) setMood(moodFromImport);
-
-        if (
-          detectedLanguage
-          && currentSongLanguage.trim()
-          && normalizeLanguageValue(detectedLanguage) !== normalizeLanguageValue(currentSongLanguage)
-        ) {
-          onLanguageMismatch?.(detectedLanguage);
-        }
-
-        if (analyzedSections.length === 0) {
-          throw new Error('No sections could be extracted. Please check the lyrics format.');
-        }
-
-        const songWithIds: Section[] = analyzedSections.map((section) => {
-          const lines: Section['lines'] = (section.lines ?? []).map((line) => ({
+        const newSections: Section[] = validChunks.map((chunk) => ({
+          id: generateId(),
+          name: chunk.name,
+          rhymeScheme: chunk.rhymeScheme ?? rhymeScheme,
+          lines: (chunk.lines ?? []).map((line) => ({
             id: generateId(),
-            text: (line.text ?? '') as string,
+            text: line.text ?? '',
             rhymingSyllables: line.rhymingSyllables ?? '',
             rhyme: line.rhyme ?? '',
             syllables: line.syllables ?? 0,
             concept: line.concept ?? '',
-            isManual: true,
-            isMeta: isPureMetaLine(line.text ?? ''),
-          }));
+          })),
+        }));
 
-          let finalScheme: string = section.rhymeScheme || rhymeScheme;
-          if (finalScheme.toUpperCase() === 'FREE') {
-            const lyricLines = lines.filter(l => !l.isMeta);
-            const aiLabels = lyricLines.map(l => (l.rhyme || '').toUpperCase());
-            const labelCounts: Record<string, number> = {};
-            for (const label of aiLabels) {
-              if (label && label !== 'X') labelCounts[label] = (labelCounts[label] ?? 0) + 1;
-            }
-            const hasAiRhymes = Object.values(labelCounts).some(count => count >= 2);
-            if (hasAiRhymes) {
-              finalScheme = aiLabels.map(l => (l && l !== 'X') ? l : 'X').join('');
-            } else {
-              const lyricTexts = lyricLines.map(l => l.text);
-              const detected = detectRhymeSchemeLocally(lyricTexts);
-              if (detected && detected.toUpperCase() !== 'FREE') {
-                finalScheme = detected;
-              }
-            }
+        const validSections = newSections.filter(
+          section => !isPureMetaLine(section.name) &&
+            section.lines.some(line => line.text.trim())
+        );
+        if (validSections.length === 0) return;
+
+        const newStructure = validSections.map(s => s.name);
+        updateSongAndStructureWithHistory(validSections, newStructure);
+
+        if (metadata.topic) setTopic(metadata.topic);
+        if (metadata.mood) setMood(metadata.mood);
+
+        if (metadata.language) {
+          const detectedLang = normalizeLanguageValue(metadata.language);
+          const currentLang = normalizeLanguageValue(currentSongLanguage);
+          if (detectedLang && detectedLang !== currentLang) {
+            // The AI returns a language name string; we cast it to AdaptationLangId
+            // at this boundary. Callers that need a validated langId should run
+            // migrateAdaptationToLangId before consuming it.
+            onLanguageMismatch?.(metadata.language as AdaptationLangId);
           }
-
-          return {
-            ...section,
-            name: cleanSectionName(section.name),
-            id: generateId(),
-            rhymeScheme: finalScheme,
-            lines,
-            ...(detectedLanguage ? { language: detectedLanguage } : {}),
-          };
-        });
-
-        const newStructure = analyzedSections.map((s) => cleanSectionName(s.name));
-        updateSongAndStructureWithHistory(songWithIds, newStructure);
-
-        if (detectedLanguage) {
-          onDetectedLanguage?.(detectedLanguage, songWithIds.map(s => s.id));
+          const sectionIds = validSections.map(s => s.id);
+          onDetectedLanguage?.(metadata.language, sectionIds);
         }
 
         requestAutoTitleGeneration();
         clearLineSelection();
-      });
-    } catch (error: unknown) {
-      if (isAbortError(error)) {
-        wasAborted = true;
-        return;
-      }
-      handleApiError(error, 'Failed to analyze lyrics. Please try again.');
-    } finally {
-      if (!wasAborted && isMountedRef.current) {
-        setIsAnalyzing(false);
-        setImportProgress(EMPTY_PROGRESS);
         setIsPasteModalOpen(false);
         setPastedText('');
+      });
+    } catch (error) {
+      if (isAbortError(error)) {
+        wasAborted = true;
+      } else {
+        handleApiError(error);
       }
+    } finally {
+      if (!wasAborted) setIsAnalyzing(false);
+      else setIsAnalyzing(false);
     }
   };
 
   return {
+    pastedText, setPastedText,
+    hasClipboardText,
     canPasteLyrics,
-    pastedText,
-    setPastedText,
     importProgress,
     analyzePastedLyrics,
+    refreshClipboardText,
   };
 };

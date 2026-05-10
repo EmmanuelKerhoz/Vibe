@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
 import type { Section } from '../types';
+import type { AdaptationLangId } from '../i18n/constants';
 import { usePasteImport } from './analysis/usePasteImport';
 import { useLanguageAdapter } from './analysis/useLanguageAdapter';
 import { useSongAnalysisEngine } from './analysis/useSongAnalysisEngine';
@@ -75,8 +76,11 @@ export const useSongAnalysis = ({
 
   const handleDetectedLanguage = useCallback((language: string, sectionIds: string[]) => {
     languageAdapter.setSongLanguage(language);
-    const mapping: Record<string, string> = {};
-    for (const id of sectionIds) { mapping[id] = language; }
+    // language is a plain string from AI detection; cast to AdaptationLangId so
+    // the sectionTargetLanguages map stays uniformly typed. Consumers that need
+    // a validated langId must run migrateAdaptationToLangId independently.
+    const mapping: Record<string, AdaptationLangId> = {};
+    for (const id of sectionIds) { mapping[id] = language as AdaptationLangId; }
     languageAdapter.setSectionTargetLanguages(prev => ({ ...prev, ...mapping }));
   }, [languageAdapter]);
 
