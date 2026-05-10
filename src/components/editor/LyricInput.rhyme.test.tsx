@@ -102,6 +102,23 @@ describe('detectRhymeSchemeLocally', () => {
   it('returns null when no two lines rhyme', () => {
     expect(detectRhymeSchemeLocally(['alpha', 'monde', 'soleil'])).toBeNull();
   });
+
+  it('AABBCC verse from screenshot — connaissance/effervescence + vibration/illumination + lueur/cœur', () => {
+    // Regression: the engine previously produced ABCCDE because:
+    //  - the romance "eu/oeu/oe → eu" rule dropped the coda, so lueur/cœur
+    //    couldn't match (and cœur was further broken by [a-z] stripping the œ);
+    //  - candidates from every internal vowel group caused
+    //    c**on**naissance to false-match vibrati**on**.
+    const result = detectRhymeSchemeLocally([
+      'Sa forme défaisait toute ma connaissance,',
+      'Une danse de lueurs, une douce effervescence.',
+      'Pas de corps ni de chair, juste une vibration,',
+      'Parler à la flamme, pure illumination.',
+      "Ses yeux sans regard, mais d'une profonde lueur,",
+      "Étaient un miroir doux, au fond de mon cœur.",
+    ], 'fr');
+    expect(result).toBe('AABBCC');
+  });
 });
 
 describe('splitRhymingSuffix', () => {

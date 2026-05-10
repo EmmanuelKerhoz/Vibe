@@ -45,6 +45,14 @@ const isVowel = (ch: string) => VOWELS.has(ch);
 /**
  * Strip Unicode accents and lowercase — with optional tonal preservation.
  * For tonal languages (KWA, CRV families), tone diacritics are preserved.
+ *
+ * Latin ligatures (œ, æ) are transliterated to digraphs (oe, ae) BEFORE the
+ * `[a-z]` filter so that words like `cœur`, `sœur`, `œuvre`, `æsir` keep
+ * their vowel content and the family-specific suffix-canonicalization tables
+ * (e.g. Romance `oeu → eu`) can normalize them as expected.
+ * Without this step the ligature is silently dropped (`cœur` → `cur`),
+ * producing spurious rhyme decisions.
+ *
  * @param s - The string to normalize
  * @param langCode - Optional language code for tonal language detection
  */
@@ -55,7 +63,13 @@ const normalizeWord = (s: string, langCode?: string): string => {
     ? normalized
     : normalized.replace(/[\u0300-\u036f]/g, '');
 
-  return stripDiacritics.toLowerCase().replace(/[^a-z\u0300-\u036f]/g, '');
+  const transliterated = stripDiacritics
+    .toLowerCase()
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
+    .replace(/ß/g, 'ss');
+
+  return transliterated.replace(/[^a-z\u0300-\u036f]/g, '');
 };
 
 /**
@@ -280,6 +294,33 @@ const applyFamilySuffixNorm = (suffix: string, table: SuffixTable): string => {
 };
 
 /**
+ * Romance vowel-sequence canonical mergers (orthographic, longest-first).
+ * Each entry maps a leading vowel pattern to its canonical 2-char digraph.
+ *
+ * Two output forms are emitted from canonicalizeRhymeSuffix when a pattern
+ * matches:
+ *   - the bare canonical digraph alone (e.g. "ent" → "an")
+ *     → handles silent-final-consonant words (vent, temps, sans → /ɑ̃/)
+ *   - the canonical digraph PLUS the remaining coda (e.g. "ent" → "ant")
+ *     → handles voiced-coda words where the coda IS pronounced
+ *       (eur/oeur/ueur → /œʁ/, ant/ent → distinguish from vent)
+ *
+ * Without the bare-digraph form, vent/temps would no longer rhyme.
+ * Without the coda-preserving form, lueur/cœur cannot rhyme because both
+ * collapse to "eu" and the shared /ʁ/ coda is lost.
+ */
+const ROMANCE_VOWEL_MERGERS: Array<[re: RegExp, canon: string]> = [
+  [/^oi/, 'oi'],
+  [/^(?:an|en|am|em)/, 'an'],
+  [/^(?:ain|ein|in|im|yn|ym)/, 'in'],
+  [/^(?:on|om)/, 'on'],
+  [/^(?:un|um)/, 'un'],
+  [/^(?:oeu|eu|oe|ueu)/, 'eu'],
+  [/^ou/, 'ou'],
+  [/^(?:eau|au)/, 'au'],
+];
+
+/**
  * Keep short endings intact, but normalise common trailing plural markers on
  * longer endings so pairs like "certitudes"/"servitude" and
  * "possessifs"/"adjectif" can still converge on the same rime family.
@@ -296,61 +337,123 @@ const applyFamilySuffixNorm = (suffix: string, table: SuffixTable): string => {
  *
  * When langCode is absent the Romance rules apply as a safe default,
  * preserving existing behaviour for callers that don't pass a language.
+ *
+ * Returns one or more canonical forms.  Multiple forms are emitted for
+ * Romance vowel patterns so that BOTH silent-final-consonant rhymes
+ * (vent/an → "an") AND voiced-coda rhymes (lueur/cœur → "eur") are
+ * detected by the downstream LCS comparison.
  */
-const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
-  const s = suffix.length <= 3 ? suffix : suffix.replace(/[sx]$/, '');
+const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string[] => {
+  // Strip trailing plural / verbal -s and orthographic -x.
+  // The previous threshold of `length <= 3` meant suffixes like "ifs" (from
+  // possessifs) were never stripped to "if", so they could not match the
+  // singular "if" (adjectif).  Lowering the guard to `length <= 2` keeps
+  // canonical 2-char digraphs (us, as, es) intact while stripping plural -s
+  // on every longer suffix.
+  const s = suffix.length <= 2 ? suffix : suffix.replace(/[sx]$/, '');
 
   const family = langCode ? getAlgoFamily(langCode) : undefined;
   const isRomance = !family || family === 'ALGO-ROM';
 
-  // Romance nasal/oral vowel canonical mergers (orthographic only).
   if (isRomance) {
-    if (/^oi/.test(s)) return 'oi';
-    if (/^(?:an|en|am|em)/.test(s)) return 'an';
-    if (/^(?:in|ain|ein|im|yn|ym)/.test(s)) return 'in';
-    if (/^(?:on|om)/.test(s)) return 'on';
-    if (/^(?:un|um)/.test(s)) return 'un';
-    if (/^(?:eu|oeu|oe)/.test(s)) return 'eu';
-    if (/^ou/.test(s)) return 'ou';
-    if (/^(?:au|eau)/.test(s)) return 'au';
+    for (const [re, canon] of ROMANCE_VOWEL_MERGERS) {
+      const match = re.exec(s);
+      if (match) {
+        const rest = s.slice(match[0].length);
+        // Emit both bare-digraph (silent-final convention) and digraph+coda
+        // (voiced-coda convention).  Deduplicated when rest is empty.
+        return rest ? [canon, canon + rest] : [canon];
+      }
+    }
   }
 
   // Apply per-family phonemic suffix normalization table.
   const familyKey = family ?? 'ALGO-ROM';
   const table = FAMILY_SUFFIX_TABLES[familyKey];
   if (table) {
-    return applyFamilySuffixNorm(s, table);
+    return [applyFamilySuffixNorm(s, table)];
   }
 
-  return s;
+  return [s];
 };
 
 /**
- * Return the canonicalized suffix starting from the last vowel group of a
- * normalized word. Falls back to canonicalizing the whole word when no vowel
- * group is found (all-consonant edge case, e.g. after heavy NFD stripping).
+ * Return the first canonicalized suffix starting from the last vowel group of
+ * a normalized word.  Used by the highlight fallback path where a single
+ * representative suffix is needed for `lastIndexOf` mapping back to original
+ * source positions.  When canonicalizeRhymeSuffix emits multiple forms the
+ * first (most-canonical, coda-stripped) is returned for stability.
  */
 const getLastVowelGroupSuffix = (normalizedWord: string, langCode?: string): string => {
   const vowelGroups = getVowelGroups(normalizedWord);
-  return vowelGroups.length > 0
-    ? canonicalizeRhymeSuffix(normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start), langCode)
-    : canonicalizeRhymeSuffix(normalizedWord, langCode);
+  const tail = vowelGroups.length > 0
+    ? normalizedWord.slice(vowelGroups[vowelGroups.length - 1]!.start)
+    : normalizedWord;
+  return canonicalizeRhymeSuffix(tail, langCode)[0] ?? tail;
 };
 
-const getRhymeCandidates = (text: string, langCode?: string): RhymeCandidate[] => {
+/**
+ * Build the candidate suffix list for a line.
+ *
+ * Each vowel group inside the last word produces one or more canonical
+ * candidate suffixes (canonicalizeRhymeSuffix may emit multiple forms — see
+ * its docstring).
+ *
+ * `forScheme: true` restricts candidates to the LAST vowel group only, which
+ * corresponds to the actual end-rime.  This prevents internal-syllable
+ * false positives in scheme detection (e.g. without it, "c**on**naissance"
+ * matches "vibrati**on**" via the internal `on` syllable, producing
+ * over-merged schemes like AAAABB instead of AABBCC).
+ *
+ * Romance mute-final-e exception: when the last vowel group of a Romance word
+ * is a bare `e` (the orthographic e-muet, e.g. "connaissance", "effervescence"),
+ * the previous vowel group is used instead — that is the actual stressed
+ * rime nucleus (e.g. "ance" / "ence" → both canonicalize to "an"/"ance").
+ *
+ * Highlight mode (forScheme: false / undefined) keeps every vowel group as a
+ * candidate so the UI overlay can find the longest shared substring across
+ * peer lines, including partial-rime / assonance overlaps.
+ */
+const getRhymeCandidates = (text: string, langCode?: string, options?: RhymeMatchOptions): RhymeCandidate[] => {
   const word = extractLastWord(text, langCode);
   if (!word) return [];
 
   const vowelGroups = getVowelGroups(word.normalizedWord);
   if (vowelGroups.length === 0) {
-    return [{
-      normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord, langCode),
-    }];
+    return canonicalizeRhymeSuffix(word.normalizedWord, langCode)
+      .map(normalizedSuffix => ({ normalizedSuffix }));
   }
 
-  return vowelGroups.map(({ start }) => ({
-    normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord.slice(start), langCode),
-  }));
+  let groupsToUse = vowelGroups;
+  if (options?.forScheme) {
+    // Default to the LAST vowel group as the rime nucleus.
+    let pickIndex = vowelGroups.length - 1;
+
+    // Romance silent-final tail: when the last vowel group is a bare `e`
+    // followed by nothing or only `s` (mute -e or -es plural), the actual
+    // rime nucleus is the PREVIOUS vowel group.  Without this, words like
+    // "connaissance"/"effervescence" (last vg is silent -e) and
+    // "certitudes"/"servitude" (last vg is silent -e with plural -s)
+    // would all collapse to suffix "e"/"es" and never match each other.
+    const family = langCode ? getAlgoFamily(langCode) : undefined;
+    const isRomance = !family || family === 'ALGO-ROM';
+    if (isRomance && pickIndex > 0) {
+      const last = vowelGroups[pickIndex]!;
+      const tail = word.normalizedWord.slice(last.end);
+      const isSilentFinal =
+        last.end - last.start === 1
+        && word.normalizedWord[last.start] === 'e'
+        && /^s?$/.test(tail);
+      if (isSilentFinal) pickIndex--;
+    }
+
+    groupsToUse = [vowelGroups[pickIndex]!];
+  }
+
+  return groupsToUse.flatMap(({ start }) =>
+    canonicalizeRhymeSuffix(word.normalizedWord.slice(start), langCode)
+      .map(normalizedSuffix => ({ normalizedSuffix })),
+  );
 };
 
 /**
@@ -447,8 +550,8 @@ const findBestSharedRhymeSuffix = (
   langCode?: string,
   options?: RhymeMatchOptions,
 ): string | null => {
-  const aCandidates = getRhymeCandidates(a, langCode);
-  const bCandidates = getRhymeCandidates(b, langCode);
+  const aCandidates = getRhymeCandidates(a, langCode, options);
+  const bCandidates = getRhymeCandidates(b, langCode, options);
   let bestMatch = '';
 
   for (const aCandidate of aCandidates) {
