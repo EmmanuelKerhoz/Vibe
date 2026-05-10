@@ -57,14 +57,16 @@ export interface RhymeNucleus {
    * LineEndingUnit.surface string.  Used by the UI to highlight exactly
    * the rhyming portion without any heuristic re-computation.
    * -1 when the span could not be determined.
+   * Optional: non-ROM algos may omit this field until charSpan is propagated.
    */
-  charSpanStart: number;
+  charSpanStart?: number;
   /**
    * End index (exclusive) of the rhyming nucleus within the original
    * LineEndingUnit.surface string.
    * -1 when the span could not be determined.
+   * Optional: non-ROM algos may omit this field until charSpan is propagated.
    */
-  charSpanEnd: number;
+  charSpanEnd?: number;
 }
 
 export interface RhymeResult {
