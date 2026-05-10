@@ -105,7 +105,7 @@ export const detectRhymeSchemeLocally = (
 
     let matchedExistingLetter: string | null = null;
     for (let j = 0; j < i; j++) {
-      if (letters[j] && doLinesRhymeGraphemic(lines[i]!, lines[j]!, langCode)) {
+      if (letters[j] && doLinesRhymeGraphemic(lines[i]!, lines[j]!, langCode, { forScheme: true })) {
         matchedExistingLetter = letters[j]!;
         break;
       }
@@ -121,7 +121,7 @@ export const detectRhymeSchemeLocally = (
     const currentLetter = letters[i]!;
     for (let k = i + 1; k < lines.length; k++) {
       if (!lines[k]?.trim() || letters[k] !== null) continue;
-      if (doLinesRhymeGraphemic(lines[i]!, lines[k]!, langCode)) {
+      if (doLinesRhymeGraphemic(lines[i]!, lines[k]!, langCode, { forScheme: true })) {
         letters[k] = currentLetter;
       }
     }
