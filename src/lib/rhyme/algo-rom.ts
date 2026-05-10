@@ -19,9 +19,34 @@ const FR_MUTE_FINALS = /[bcdghpqst]+$/i;
 // French e muet (schwa) — word-final silent e
 const FR_SILENT_E = /e$/i;
 
-// ─── Vowel extraction ─────────────────────────────────────────────────────────
+// ─── Whitelist: French loan-words whose final consonant IS pronounced ──────────
+// These must NOT have their final consonant stripped by FR_MUTE_FINALS.
+const FR_PRONOUNCED_FINALS = new Set([
+  // -t pronounced
+  'net', 'fat', 'test', 'toast', 'fast', 'cast', 'best', 'west', 'rest',
+  'trust', 'bust', 'dust', 'rust', 'gust', 'just', 'must', 'post', 'coast',
+  'ghost', 'host', 'most', 'roast', 'boost', 'frost', 'lost', 'cost',
+  'blast', 'last', 'past', 'vast', 'mast', 'contrast', 'podcast',
+  // -ct pronounced
+  'contact', 'impact', 'intact', 'exact', 'abstract', 'compact', 'extract',
+  'react', 'interact', 'attract', 'distract', 'subtract', 'contract',
+  // -c pronounced
+  'chic', 'tac', 'fac', 'lac', 'bac', 'mac',
+  // -p pronounced
+  'cap', 'rap', 'map', 'gap', 'clap', 'snap', 'trap', 'wrap', 'slap',
+  'step', 'rep', 'prep', 'dep',
+  // -d pronounced
+  'bid', 'did', 'kid', 'lid', 'rid', 'grid', 'slid',
+  'bad', 'dad', 'had', 'mad', 'sad', 'glad', 'grad',
+  'bed', 'fed', 'led', 'red', 'shed', 'sled', 'bled', 'bred', 'fled',
+  'god', 'rod', 'nod', 'pod', 'plod',
+  'bud', 'dud', 'mud', 'stud', 'thud',
+]);
 
-const VOWEL_RE = /[aeiouáàâäéèêëíìîïóòôöúùûüýÿæœ]+/giu;
+// ─── Vowel extraction ─────────────────────────────────────────────────────────
+// Order matters: multi-char digraphs/trigraphs must precede single vowels.
+// Covers the main French phonemic vowel clusters.
+const VOWEL_RE = /eau|oeu|œu|[ao]u|[aeo]i|eu|[aeo]u|[aeiouáàâäéèêëíìîïóòôöúùûüýÿæœ]+/giu;
 
 /**
  * Return the last whitespace-delimited token of a surface string,
@@ -39,7 +64,10 @@ function extractVowelNucleus(token: string, lang: LangCode): string {
   let t = token.toLowerCase().normalize('NFC');
 
   if (lang === 'fr' || lang === 'ca') {
-    t = t.replace(FR_MUTE_FINALS, '');
+    const tokenLower = t;
+    if (!FR_PRONOUNCED_FINALS.has(tokenLower)) {
+      t = t.replace(FR_MUTE_FINALS, '');
+    }
     t = t.replace(FR_SILENT_E, '');
   }
 
@@ -52,7 +80,10 @@ function extractCoda(token: string, lang: LangCode): string {
   let t = token.toLowerCase().normalize('NFC');
 
   if (lang === 'fr' || lang === 'ca') {
-    t = t.replace(FR_MUTE_FINALS, '');
+    const tokenLower = t;
+    if (!FR_PRONOUNCED_FINALS.has(tokenLower)) {
+      t = t.replace(FR_MUTE_FINALS, '');
+    }
     t = t.replace(FR_SILENT_E, '');
   }
 
