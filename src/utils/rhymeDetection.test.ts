@@ -70,6 +70,50 @@ describe('doLinesRhymeGraphemic — forScheme mode stricter rules', () => {
     // "chapeau" vs "bateau" share "au" (canonical digraph) → accepted
     expect(doLinesRhymeGraphemic('Un chapeau', 'Un bateau', 'fr', { forScheme: true })).toBe(true);
   });
+
+  it('rejects internal-syllable false matches (connaissance vs vibration)', () => {
+    // Without scheme-mode last-vowel-group restriction, "c**on**naissance"
+    // would falsely match "vibrati**on**" via the internal "on" syllable.
+    expect(doLinesRhymeGraphemic(
+      'Sa forme défaisait toute ma connaissance',
+      'Pas de corps ni de chair, juste une vibration',
+      'fr',
+      { forScheme: true },
+    )).toBe(false);
+  });
+});
+
+describe('doLinesRhymeGraphemic — œ ligature & nucleus handling (Romance)', () => {
+  it('matches lueur / cœur via œ→oe + ueu/oeu canonicalization (FR)', () => {
+    expect(doLinesRhymeGraphemic(
+      "Ses yeux sans regard, mais d'une profonde lueur",
+      'Étaient un miroir doux, au fond de mon cœur',
+      'fr',
+      { forScheme: true },
+    )).toBe(true);
+  });
+
+  it('matches connaissance / effervescence via mute-final-e nucleus shift', () => {
+    expect(doLinesRhymeGraphemic(
+      'Sa forme défaisait toute ma connaissance',
+      'Une danse de lueurs, une douce effervescence',
+      'fr',
+      { forScheme: true },
+    )).toBe(true);
+  });
+
+  it('matches sœur / heure via œ→oe + eu+coda preservation', () => {
+    expect(doLinesRhymeGraphemic('Ma petite sœur', 'À cette heure', 'fr', { forScheme: true })).toBe(true);
+  });
+
+  it('does NOT cross-match lueur with vibration', () => {
+    expect(doLinesRhymeGraphemic(
+      "Ses yeux sans regard, mais d'une profonde lueur",
+      'Pas de corps ni de chair, juste une vibration',
+      'fr',
+      { forScheme: true },
+    )).toBe(false);
+  });
 });
 
 describe('doLinesRhymeGraphemic — monosyllabic words', () => {

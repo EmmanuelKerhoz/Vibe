@@ -336,11 +336,48 @@ export const analyzeSongRhymes = async (
 
       const ipaScheme = detectRhymeSchemeFromIPAPairs(lyricLines.length, pairs);
 
+      // Combined IPA + graphemic scheme: when the IPA pipeline misses a real
+      // rhyme (e.g. the simple client-side romG2P fallback under-scores
+      // lueur/cœur or connaissance/effervescence in the screenshot's verse),
+      // the graphemic engine in scheme mode is a reliable safety net.  We
+      // OR-merge the two pair sets so a pair counts as rhyming when EITHER
+      // signal confirms it.  This preserves all existing IPA matches while
+      // recovering rhymes the romG2P fallback drops.
+      //
+      // Synthesized graphemic pairs are scoped to the local `combinedPairs`
+      // array used by detectRhymeSchemeFromIPAPairs (threshold 60); they are
+      // intentionally NOT pushed into the returned `pairs` so downstream
+      // consumers continue to see only IPA-derived confidence scores.
+      const graphemicPairs: LocalRhymePairAnalysis[] = [];
+      for (let i = 0; i < lyricLines.length; i++) {
+        for (let j = i + 1; j < lyricLines.length; j++) {
+          if (doLinesRhymeGraphemic(lyricLines[i]!, lyricLines[j]!, sectionLangCode, { forScheme: true })) {
+            graphemicPairs.push({
+              lineIndexes: [i, j],
+              lines: [lyricLines[i]!, lyricLines[j]!],
+              quality: 'sufficient',
+              confidenceScore: 100,
+              usedIpa: false,
+              isApproximated: false,
+            });
+          }
+        }
+      }
+      const combinedPairs = [...pairs];
+      const seenKeys = new Set(pairs
+        .filter(p => p.confidenceScore >= 60)
+        .map(p => `${p.lineIndexes[0]}-${p.lineIndexes[1]}`));
+      for (const gp of graphemicPairs) {
+        const key = `${gp.lineIndexes[0]}-${gp.lineIndexes[1]}`;
+        if (!seenKeys.has(key)) combinedPairs.push(gp);
+      }
+      const mergedScheme = detectRhymeSchemeFromIPAPairs(lyricLines.length, combinedPairs);
+
       return {
         sectionId: section.id,
         sectionName: section.name,
         ...(sectionLangCode !== undefined ? { langCode: sectionLangCode } : {}),
-        detectedScheme: ipaScheme ?? graphemicScheme,
+        detectedScheme: mergedScheme ?? ipaScheme ?? graphemicScheme,
         mode: 'ipa' as const,
         isProxied,
         pairs,
