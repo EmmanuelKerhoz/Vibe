@@ -163,4 +163,16 @@ describe('useRhymeSchemeMultiLang - toLangCode resilience', () => {
       renderHook(() => useRhymeSchemeMultiLang(lines))
     ).not.toThrow();
   });
+
+  it('resolves canonical adaptation langIds before detecting French schemes', () => {
+    const lines = [
+      { text: 'Un instant éternel, venu d’un autre espace,', lang: 'adapt:FR' },
+      { text: 'Mon âme a senti cette étreinte qui passe.', lang: 'adapt:FR' },
+      { text: 'Avec un inconnu, sans mots et sans visage,', lang: 'adapt:FR' },
+      { text: "Un secret partagé, au-delà de l'âge.", lang: 'adapt:FR' },
+    ];
+    const { result } = renderHook(() => useRhymeSchemeMultiLang(lines));
+    expect(result.current?.letters).toEqual(['A', 'A', 'B', 'B']);
+    expect(result.current?.label).toBe('AABB');
+  });
 });

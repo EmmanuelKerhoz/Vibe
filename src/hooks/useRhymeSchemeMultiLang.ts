@@ -9,6 +9,9 @@ import type { LangCode, SchemeResult } from '../lib/rhyme/types';
  */
 function toLangCode(lang: string): LangCode {
   const lower = lang.toLowerCase().trim();
+  const canonicalMatch = /^(?:adapt|ui):([a-z]{2,3})$/i.exec(lower);
+  if (canonicalMatch?.[1]) return toLangCode(canonicalMatch[1]);
+  if (lower.startsWith('custom:')) return toLangCode(lower.slice('custom:'.length));
 
   const VALID_CODES: readonly string[] = [
     'fr','es','it','pt','ro','ca',

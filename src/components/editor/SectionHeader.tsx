@@ -41,8 +41,8 @@ export const SectionHeader = React.memo(function SectionHeader({
   ], [sectionName, SECTION_TYPE_OPTIONS]);
 
   return (
-    <div className="mb-3 flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
-      <div className="flex items-center gap-3">
+    <div className="flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
+      <div className="flex items-start gap-3">
         <div className="flex flex-col gap-0.5">
           <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>
             <button type="button" onClick={() => moveSectionUp(section.id)}
@@ -59,7 +59,7 @@ export const SectionHeader = React.memo(function SectionHeader({
             </button>
           </Tooltip>
         </div>
-        <div>
+        <div className="min-w-0">
           <LcarsSelect
             value={sectionName}
             onChange={(v) => setSectionName(section.id, v)}
@@ -71,8 +71,8 @@ export const SectionHeader = React.memo(function SectionHeader({
             style={{ color: sectionColor }}
             buttonTitle={getSectionTooltipText(sectionName)}
           />
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+           <div className="mt-1.5 flex flex-wrap items-center gap-2">
+             <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-600 dark:text-zinc-300">
               {section.lines.filter(l => !l.isMeta).length} {t.editor.lines ?? 'lines'}
             </p>
             <div className="min-w-[15rem] max-w-full flex-1">

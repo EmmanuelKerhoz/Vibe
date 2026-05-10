@@ -129,9 +129,9 @@ export const SectionEditor = React.memo(function SectionEditor({
         style={{ flexShrink: 0 }}
       />
 
-      <div className="flex-1 pt-3 px-4 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
+      <div className="flex-1 pt-2.5 px-3.5 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
 
-        <div className="mb-3 flex items-center justify-between gap-4 flex-wrap">
+        <div className="mb-2 flex items-start justify-between gap-3 flex-wrap">
           <SectionHeader
             section={section}
             sectionIndex={sectionIndex}
@@ -149,16 +149,16 @@ export const SectionEditor = React.memo(function SectionEditor({
           />
         </div>
 
-        <div className="flex items-center gap-1.5 pl-1 pr-8 mb-0.5 select-none" aria-hidden="true">
+        <div className="flex items-center gap-1.5 pl-1 pr-8 mb-1 select-none" aria-hidden="true">
           <span className="flex-shrink-0 w-6" />
           <span className="flex-shrink-0 w-3.5" />
           <span className="flex-1 min-w-0" />
           <span className="flex-shrink-0 w-16" />
-          <span className="flex-shrink-0 w-[2.75rem] text-right text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-600">
+          <span className="flex-shrink-0 w-[2.75rem] text-right text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-600 dark:text-zinc-400">
             {t.editor?.syllableCount ?? 'Count'}
           </span>
           <span className="flex-shrink-0 w-2" />
-          <span className="flex-shrink-0 w-7 text-center text-[8px] font-semibold uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-600">
+          <span className="flex-shrink-0 w-7 text-center text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-600 dark:text-zinc-400">
             {t.editor?.schemaHeader ?? 'Sch.'}
           </span>
         </div>
