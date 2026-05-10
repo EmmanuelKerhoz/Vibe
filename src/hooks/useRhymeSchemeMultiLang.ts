@@ -14,8 +14,8 @@ function toLangCode(lang: string): LangCode {
   if (canonicalMatch?.[1]) {
     normalized = canonicalMatch[1];
   } else if (normalized.startsWith('custom:')) {
-    const customText = normalized.slice('custom:'.length).trim();
-    if (/^(?:adapt|ui|custom):/.test(customText)) return '__unknown__';
+    const customText = getSafeCustomLanguageText(normalized);
+    if (customText === null) return '__unknown__';
     normalized = customText;
   }
 
@@ -68,6 +68,11 @@ function toLangCode(lang: string): LangCode {
   return NAME_MAP[normalized] ?? '__unknown__';
 }
 
+function getSafeCustomLanguageText(value: string): string | null {
+  const customText = value.slice('custom:'.length).trim();
+  return /^(?:adapt|ui|custom):/.test(customText) ? null : customText;
+}
+
 export interface MultiLangLine {
   /** Raw lyric text for the line. */
   text: string;
@@ -75,13 +80,15 @@ export interface MultiLangLine {
   lang: string;
 }
 
+function isAABBPattern(letters: string[]): boolean {
+  return letters.length % 2 === 0
+    && letters.every((letter, index) => index % 2 === 0 || letter === letters[index - 1]);
+}
+
 export function getRhymeSchemeLabelFromLetters(letters: string[]): SchemeResult['label'] {
   const pattern = letters.join('');
   if (letters.length > 0 && new Set(letters).size === 1) return 'MONORHYME';
-  if (
-    pattern === 'AABB' ||
-    (pattern.length % 2 === 0 && letters.every((letter, index) => index % 2 === 0 || letter === letters[index - 1]))
-  ) return 'AABB';
+  if (pattern === 'AABB' || isAABBPattern(letters)) return 'AABB';
   if (pattern === 'ABAB' || /^([A-Z])([A-Z])(?:\1\2)+$/.test(pattern)) return 'ABAB';
   if (pattern === 'ABBA') return 'ABBA';
   if (pattern === 'ABCABC') return 'ABCABC';

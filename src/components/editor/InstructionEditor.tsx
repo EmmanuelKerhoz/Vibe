@@ -19,9 +19,10 @@ export const InstructionEditor = ({
   onAdd: (sectionId: string, type: 'pre' | 'post') => void,
   onRemove: (sectionId: string, type: 'pre' | 'post', index: number) => void,
   showAddButton?: boolean,
-  addButtonLabel: string,
+  addButtonLabel?: string,
 }) => {
   const hasInstructions = instructions && instructions.length > 0;
+  const resolvedAddButtonLabel = addButtonLabel ?? (type === 'pre' ? 'Add pre cue' : 'Add post cue');
 
   if (!hasInstructions && !showAddButton) return null;
 
@@ -57,7 +58,7 @@ export const InstructionEditor = ({
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-md transition-colors border border-dashed border-emerald-500/35 w-full justify-center"
         >
           <Plus className="w-3.5 h-3.5" />
-          {addButtonLabel}
+          {resolvedAddButtonLabel}
         </button>
       )}
     </div>
