@@ -149,6 +149,9 @@ export function buildGroupedLanguageOptions(): GroupedLanguageOption[] {
 
 export interface UseCustomLanguageSelectorOptions {
   storedValue: string;
+  // Accepts any string-based callback, including branded subtypes such as
+  // AdaptationLangId or LangId, to avoid contravariance errors at call-sites
+  // where the caller has already narrowed its callback to a branded type.
   onValueChange: (lang: string) => void;
 }
 

@@ -13,6 +13,7 @@ import { useTranslationAdaptationContext } from '../../contexts/TranslationAdapt
 import { MarkdownModePanel } from '../editor/modes/MarkdownModePanel';
 import { PhoneticModePanel } from '../editor/modes/PhoneticModePanel';
 import { TextModePanel } from '../editor/modes/TextModePanel';
+import type { AdaptationLangId } from '../../i18n/constants';
 
 interface LyricsViewProps {
   isAnalyzing: boolean;
@@ -124,7 +125,10 @@ export const LyricsView = memo(function LyricsView({
                 isAnalyzing={isAnalyzing}
                 hasApiKey={hasApiKey}
                 isAdaptingLanguage={showTranslationFeatures ? isAdaptingLanguage : false}
-                sectionTargetLanguage={sectionTargetLanguages[section.id] ?? (songLanguage || 'English')}
+                sectionTargetLanguage={
+                  sectionTargetLanguages[section.id] ??
+                  ((songLanguage || 'adapt:EN') as AdaptationLangId)
+                }
                 {...(showTranslationFeatures && onSectionTargetLanguageChange !== undefined
                   ? { onSectionTargetLanguageChange }
                   : {})}
