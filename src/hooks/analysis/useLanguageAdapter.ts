@@ -55,8 +55,8 @@ export const useLanguageAdapter = ({
   // Initial value uses the canonical langId for English so that the dropdown
   // (whose options are keyed by langId) renders the correct flag/label pair
   // on first paint without needing migration.
-  const [targetLanguage, setTargetLanguage] = useState<string>('adapt:EN');
-  const [sectionTargetLanguages, setSectionTargetLanguages] = useState<Record<string, string>>({});
+  const [targetLanguage, setTargetLanguage] = useState<AdaptationLangId>('adapt:EN' as AdaptationLangId);
+  const [sectionTargetLanguages, setSectionTargetLanguages] = useState<Record<string, AdaptationLangId>>({});
   const [isDetectingLanguage, setIsDetectingLanguage] = useState(false);
   const [isAdaptingLanguage, setIsAdaptingLanguage] = useState(false);
   const [adaptingLineIds, setAdaptingLineIds] = useState<Set<string>>(new Set());
