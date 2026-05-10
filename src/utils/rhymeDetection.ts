@@ -104,24 +104,198 @@ const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
   return vowelGroups;
 };
 
+// ─── Per-family phonemic normalization tables ────────────────────────────────
+//
+// Each table maps a graphemic suffix (after last-vowel-group extraction) to a
+// canonical phonemic form.  Entries are matched with String.startsWith so the
+// LONGEST key that matches wins — tables are ordered longest-first within each
+// family to guarantee greedy matching.
+//
+// Purpose: collapse graphemic variants that are phonemically identical BEFORE
+// the LCS comparison so that isSharedRhymeStrongEnough only needs a simple
+// length/vowel guard rather than a family-specific threshold.
+//
+// Rules applied here are purely suffix-level; they operate on the already-
+// extracted last-vowel-group string, not the full word.
+
+type SuffixTable = readonly [string, string][];
+
+/** ALGO-ROM: French / Spanish / Italian / Portuguese / Romanian / Catalan */
+const ROM_SUFFIX_TABLE: SuffixTable = [
+  // Longest patterns first
+  ['uitte', 'ui'],
+  ['oire',  'oir'],
+  ['eure',  'eur'],
+  ['ielle', 'iel'],
+  ['elle',  'el'],
+  ['ette',  'ete'],
+  ['tion',  'sion'],
+  ['asse',  'as'],
+  ['ace',   'as'],
+  ['ain',   'in'],
+  ['ein',   'in'],
+  ['uit',   'ui'],
+  ['oir',   'oir'],
+  ['iel',   'iel'],
+  ['eur',   'eur'],
+  ['ete',   'ete'],
+  ['ete',   'ete'],
+];
+
+/** ALGO-GER: English / German / Dutch / Scandinavian */
+const GER_SUFFIX_TABLE: SuffixTable = [
+  ['ight',  'ait'],
+  ['tion',  'shun'],
+  ['sion',  'shun'],
+  ['ough',  'of'],
+  ['ite',   'ait'],
+  ['ey',    'ay'],
+  ['ai',    'ay'],
+  ['ay',    'ay'],
+  ['ee',    'ee'],
+  ['ea',    'ee'],
+  ['ow',    'ow'],
+  ['oe',    'ow'],
+];
+
+/** ALGO-SLV: Russian / Polish / Czech / Slovak / Ukrainian / Bulgarian / Serbian / Croatian */
+const SLV_SUFFIX_TABLE: SuffixTable = [
+  ['ить',   'ит'],
+  ['ыть',   'ит'],
+  ['ий',    'и'],
+  ['ый',    'и'],
+  ['ей',    'ой'],
+];
+
+/** ALGO-FIN: Finnish / Estonian / Hungarian — long vowels and geminate consonants */
+const FIN_SUFFIX_TABLE: SuffixTable = [
+  ['aa', 'a'],
+  ['ee', 'e'],
+  ['ii', 'i'],
+  ['oo', 'o'],
+  ['uu', 'u'],
+  ['ll', 'l'],
+  ['nn', 'n'],
+  ['ss', 's'],
+  ['tt', 't'],
+];
+
+/** ALGO-KWA: Baoulé / Ewe / Dioula / Mina — long vowels (tone marks preserved upstream) */
+const KWA_SUFFIX_TABLE: SuffixTable = [
+  ['aa', 'a'],
+  ['ee', 'e'],
+  ['ii', 'i'],
+  ['oo', 'o'],
+  ['uu', 'u'],
+];
+
+/** ALGO-BNT: Swahili / Yoruba / Zulu / Xhosa / Bantu — long vowels */
+const BNT_SUFFIX_TABLE: SuffixTable = [
+  ['aa', 'a'],
+  ['ee', 'e'],
+  ['ii', 'i'],
+  ['oo', 'o'],
+  ['uu', 'u'],
+];
+
+/**
+ * ALGO-IIR: Hindi / Urdu / Bengali / Punjabi / Farsi / Sanskrit
+ * Long vowels and aspirated consonant digraphs.
+ */
+const IIR_SUFFIX_TABLE: SuffixTable = [
+  ['ph',  'f'],
+  ['bh',  'b'],
+  ['th',  't'],
+  ['dh',  'd'],
+  ['sh',  's'],
+  ['jh',  'j'],
+  ['ā',   'a'],
+  ['ī',   'i'],
+  ['ū',   'u'],
+  ['ṛ',   'ri'],
+];
+
+/** ALGO-DRV: Tamil / Telugu / Kannada / Malayalam — long vowels + diphthong collapse */
+const DRV_SUFFIX_TABLE: SuffixTable = [
+  ['ai',  'e'],
+  ['au',  'o'],
+  ['ā',   'a'],
+  ['ī',   'i'],
+  ['ū',   'u'],
+];
+
+/**
+ * ALGO-TRK: Turkish / Uzbek / Kazakh / Azerbaijani
+ * Vowel harmony: collapse back/front vowel pairs for scheme comparison.
+ * ı/i → i, ü/u → u, ö/o → o  (front form used as canonical)
+ */
+const TRK_SUFFIX_TABLE: SuffixTable = [
+  ['ı',   'i'],
+  ['ü',   'u'],
+  ['ö',   'o'],
+];
+
+/**
+ * ALGO-AUS: Indonesian / Malay / Tagalog / Javanese
+ * Final h is often silent; ng is a single phoneme.
+ */
+const AUS_SUFFIX_TABLE: SuffixTable = [
+  ['ngg', 'ng'],
+  ['ng',  'ng'],
+  ['h',   ''],
+];
+
+/** Map each family to its normalization table (undefined → no normalization) */
+const FAMILY_SUFFIX_TABLES: Partial<Record<string, SuffixTable>> = {
+  'ALGO-ROM': ROM_SUFFIX_TABLE,
+  'ALGO-GER': GER_SUFFIX_TABLE,
+  'ALGO-SLV': SLV_SUFFIX_TABLE,
+  'ALGO-FIN': FIN_SUFFIX_TABLE,
+  'ALGO-KWA': KWA_SUFFIX_TABLE,
+  'ALGO-BNT': BNT_SUFFIX_TABLE,
+  'ALGO-IIR': IIR_SUFFIX_TABLE,
+  'ALGO-DRV': DRV_SUFFIX_TABLE,
+  'ALGO-TRK': TRK_SUFFIX_TABLE,
+  'ALGO-AUS': AUS_SUFFIX_TABLE,
+};
+
+/**
+ * Apply the family-specific phonemic normalization table to a suffix.
+ * The table is scanned in declaration order (longest patterns first);
+ * the first matching key wins and the replacement is prepended to the
+ * remainder so that only the matched prefix is substituted.
+ *
+ * Example (ROM):
+ *   'asse' → matches 'asse'→'as'  ✓
+ *   'ace'  → matches 'ace' →'as'  ✓
+ *   'oir'  → matches 'oir' →'oir' (identity, kept for exact-match path)
+ */
+const applyFamilySuffixNorm = (suffix: string, table: SuffixTable): string => {
+  for (const [from, to] of table) {
+    if (suffix.startsWith(from)) {
+      return to + suffix.slice(from.length);
+    }
+  }
+  return suffix;
+};
+
 /**
  * Keep short endings intact, but normalise common trailing plural markers on
  * longer endings so pairs like "certitudes"/"servitude" and
  * "possessifs"/"adjectif" can still converge on the same rime family.
  *
+ * Then apply the per-family phonemic normalization table (if any) so that
+ * graphemic variants that are phonemically identical (e.g. "ace"/"asse" in
+ * French, "ight"/"ite" in English) share the same canonical form before the
+ * LCS comparison.
+ *
  * Canonical vowel-sequence substitutions (e.g. "an/en/am" → "an") are
- * Romance-specific orthographic conventions and are therefore gated on
- * ALGO-ROM. For all other families the raw suffix is returned as-is,
- * letting the IPA pipeline handle phonemic equivalence.
+ * Romance-specific orthographic conventions gated on ALGO-ROM.  For all
+ * other families the nasal/oral vowel normalization is omitted and handled
+ * by the per-family table instead.
  *
  * When langCode is absent the Romance rules apply as a safe default,
  * preserving existing behaviour for callers that don't pass a language.
- *
- * CHANGE: removed `ace/asse → 'as'` merger — these two endings represent
- * distinct phoneme sequences and their coercion into a shared bucket caused
- * spurious rhyme families (e.g. "espace"/"visage" both mapping to 'as'/'age'
- * and matching via suffix overlap). Each ending is now left as-is so that
- * suffix-overlap matching operates on accurate graphemic representations.
  */
 const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
   const s = suffix.length <= 3 ? suffix : suffix.replace(/[sx]$/, '');
@@ -129,8 +303,8 @@ const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
   const family = langCode ? getAlgoFamily(langCode) : undefined;
   const isRomance = !family || family === 'ALGO-ROM';
 
+  // Romance nasal/oral vowel canonical mergers (orthographic only).
   if (isRomance) {
-    // NOTE: ace/asse merger removed — see JSDoc above.
     if (/^oi/.test(s)) return 'oi';
     if (/^(?:an|en|am|em)/.test(s)) return 'an';
     if (/^(?:in|ain|ein|im|yn|ym)/.test(s)) return 'in';
@@ -139,6 +313,13 @@ const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
     if (/^(?:eu|oeu|oe)/.test(s)) return 'eu';
     if (/^ou/.test(s)) return 'ou';
     if (/^(?:au|eau)/.test(s)) return 'au';
+  }
+
+  // Apply per-family phonemic suffix normalization table.
+  const familyKey = family ?? 'ALGO-ROM';
+  const table = FAMILY_SUFFIX_TABLES[familyKey];
+  if (table) {
+    return applyFamilySuffixNorm(s, table);
   }
 
   return s;
@@ -189,23 +370,41 @@ const getLongestCommonSuffix = (a: string, b: string): string => {
 };
 
 /**
+ * Canonical digraphs per family — used by isSharedRhymeStrongEnough for the
+ * exact-match single-vowel fallback in scheme mode.
+ *
+ * These are the 2-char forms that remain after canonicalizeRhymeSuffix — i.e.
+ * the canonical output of the normalization table, not raw graphemes.
+ */
+const CANONICAL_DIGRAPHS_BY_FAMILY: Partial<Record<string, Set<string>>> = {
+  'ALGO-ROM': new Set(['an', 'in', 'on', 'un', 'ou', 'oi', 'eu', 'au', 'ui', 'ie', 'el', 'al', 'il']),
+  'ALGO-GER': new Set(['ay', 'ee', 'ow', 'ow', 'ai', 'oi', 'oo']),
+  'ALGO-SLV': new Set(['ой', 'ей', 'ий', 'ый', 'ый']),
+  'ALGO-FIN': new Set(['an', 'en', 'in', 'on', 'un', 'ai', 'oi', 'ui']),
+  'ALGO-KWA': new Set(['an', 'on', 'in', 'un', 'en']),
+  'ALGO-BNT': new Set(['an', 'on', 'in', 'un', 'en']),
+  'ALGO-IIR': new Set(['an', 'in', 'un', 'ai', 'au', 'ri']),
+  'ALGO-DRV': new Set(['an', 'in', 'un', 'ai', 'au', 'en', 'on']),
+  'ALGO-TRK': new Set(['an', 'in', 'on', 'un', 'en']),
+  'ALGO-AUS': new Set(['an', 'in', 'on', 'un', 'ng', 'ay', 'ai']),
+};
+
+/**
  * Determine whether a shared suffix is phonemically significant enough to
  * count as a rhyme match.
  *
- * General (highlight) mode — unchanged:
- * - >= 2 shared chars: always accepted.
- * - Exact single-vowel match: accepted except mute-e for Romance.
+ * For scheme detection (forScheme=true):
+ * - After per-family phonemic normalization in canonicalizeRhymeSuffix, a
+ *   2-char shared suffix is already a meaningful phonemic unit. The previous
+ *   >=3 guard was introduced to block spurious 1-char 'e' matches but was
+ *   too aggressive — it also blocked legitimate 2-char rimes like 'ui', 'ie',
+ *   'el', 'ay', 'ee', etc.
+ * - New rule: >= 2 chars accepted universally.
+ * - Exact 1-char vowel match accepted if the vowel is not mute-e (Romance).
+ * - The old CANONICAL_DIGRAPHS whitelist is retained for the 1-char exact
+ *   match fallback path only (not needed for 2-char threshold).
  *
- * Scheme detection mode (forScheme=true) for Romance languages:
- * - Require >= 3 shared chars to avoid spurious cross-family groupings
- *   (e.g. "ace" ∩ "age" = "e" — 1 char, correctly rejected;
- *        "asse" ∩ "age" = "e" — 1 char, correctly rejected;
- *        "ance" ∩ "ence" = "nce" — 3 chars, correctly accepted as [ɑ̃s]).
- * - Exact 2-char match is still accepted for the closed set of canonical
- *   nasal/oral digraphs ("an", "in", "on", "un", "ou", "oi", "eu", "au")
- *   since those are already collapsed to a single phoneme by
- *   canonicalizeRhymeSuffix and are unambiguous.
- * - Single-vowel exact match kept for monosyllabic words, mute-e still blocked.
+ * For highlight mode (forScheme=false): unchanged — >= 2 chars accepted.
  */
 const isSharedRhymeStrongEnough = (
   suffix: string,
@@ -215,25 +414,24 @@ const isSharedRhymeStrongEnough = (
 ): boolean => {
   const family = langCode ? getAlgoFamily(langCode) : undefined;
   const isRomance = !family || family === 'ALGO-ROM';
+  const familyKey = family ?? 'ALGO-ROM';
 
-  if (options?.forScheme && isRomance) {
-    if (suffix.length >= 3) return true;
-    // Exact match on a canonical 2-char digraph class is unambiguous.
-    const CANONICAL_DIGRAPHS = new Set(['an', 'in', 'on', 'un', 'ou', 'oi', 'eu', 'au']);
-    if (exactMatch && suffix.length === 2 && CANONICAL_DIGRAPHS.has(suffix)) return true;
-    // Single open vowel (not mute-e) for monosyllabic words.
-    if (exactMatch && suffix.length === 1 && isVowel(suffix) && suffix !== 'e') return true;
-    return false;
-  }
-
-  // Non-scheme or non-Romance: original behaviour.
+  // 2+ char shared suffix is always a meaningful phonemic unit after normalization.
   if (suffix.length >= 2) return true;
-  if (!(exactMatch && suffix.length === 1 && isVowel(suffix))) return false;
-  // Mute-e block for Romance scheme detection (legacy guard kept for safety).
-  if (options?.forScheme && suffix === 'e') {
-    if (isRomance) return false;
+
+  // Single-char exact match: accept open vowels, block mute-e for Romance.
+  if (exactMatch && suffix.length === 1 && isVowel(suffix)) {
+    if (options?.forScheme && isRomance && suffix === 'e') return false;
+    return true;
   }
-  return true;
+
+  // Exact match on a canonical 2-char digraph (post-normalization) is unambiguous.
+  // This path is reached only when suffix.length < 2, so it handles edge cases
+  // where normalization produced a 1-char result that is part of a known pair.
+  const digraphs = CANONICAL_DIGRAPHS_BY_FAMILY[familyKey];
+  if (exactMatch && digraphs?.has(suffix)) return true;
+
+  return false;
 };
 
 /**
