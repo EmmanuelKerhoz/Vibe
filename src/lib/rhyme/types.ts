@@ -54,6 +54,18 @@ export interface RhymeNucleus {
   moraCount: number;
 }
 
+/**
+ * Character span of the rhyming portion within the original line.
+ * Both indices are on the NFC-normalised line string, 0-based, end exclusive.
+ * The UI must underline line.slice(start, end).
+ */
+export interface RhymeCharSpan {
+  /** Inclusive start index in the original (NFC-normalised) line */
+  start: number;
+  /** Exclusive end index — underline line.slice(start, end) */
+  end: number;
+}
+
 export interface RhymeResult {
   score: number;
   category: RhymeCategory;
@@ -70,6 +82,13 @@ export interface RhymeResult {
   position?: RhymePosition;
   /** True when code-switching was detected and cross-lang scoring was applied */
   csDetected?: boolean;
+  /**
+   * Character span of the rhyming portion in lineA / lineB respectively.
+   * Indices are on the NFC-normalised line, end-exclusive.
+   * Absent when the surface token could not be located (e.g. FALLBACK family).
+   */
+  charSpanA?: RhymeCharSpan;
+  charSpanB?: RhymeCharSpan;
 }
 
 export type RhymeCategory =

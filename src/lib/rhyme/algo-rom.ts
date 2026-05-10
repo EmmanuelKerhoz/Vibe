@@ -1,83 +1,130 @@
 /**
  * Rhyme Engine v2 — Romance Family Algorithm
- * Languages: FR, ES, IT, PT
- * Strategy: rule-based G2P + silent-e handling + mute final consonants (FR)
+ * Languages: FR, ES, IT, PT, RO, CA
+ * Strategy: rule-based G2P + silent-e handling + mute final consonants (FR/CA)
+ *
+ * IMPORTANT: all extraction operates on the LAST WHITESPACE-DELIMITED TOKEN
+ * of unit.surface, not on the full surface string.  The engine passes the
+ * line-ending unit which may contain several words; rhyme lives in the last
+ * word only.
  */
 
 import type { LineEndingUnit, LangCode, RhymeNucleus } from './types';
 
-// ─── French mute final consonants ────────────────────────────────────────────
-
-// In French, these word-final consonants are typically silent.
+// ─── French / Catalan mute final consonants ───────────────────────────────────
 // NOTE: 'l' and 'r' are intentionally excluded — they are phonetically
-// realised in most French lyric words (ciel /sjɛl/, immortel /imɔʁtɛl/,
-// amour /amuʁ/). Including them would incorrectly destroy the vowel nucleus.
+// realised in most French lyric words (ciel /sjɛl/, amour /amuʁ/).
 const FR_MUTE_FINALS = /[bcdghpqst]+$/i;
 
-// French e muet (schwa) — word-final silent e (masculine/feminine rhyme parity)
+// French e muet (schwa) — word-final silent e
 const FR_SILENT_E = /e$/i;
 
-// ─── Vowel extraction (language-aware) ───────────────────────────────────────
+// ─── Vowel extraction ─────────────────────────────────────────────────────────
 
 const VOWEL_RE = /[aeiouáàâäéèêëíìîïóòôöúùûüýÿæœ]+/giu;
 
-function extractVowelNucleus(token: string, lang: LangCode): string {
-  let normalized = token.toLowerCase().normalize('NFC');
-
-  if (lang === 'fr') {
-    // Strip silent final consonants and e muet before vowel extraction
-    normalized = normalized.replace(FR_MUTE_FINALS, '');
-    normalized = normalized.replace(FR_SILENT_E, '');
-  }
-
-  // Find the last vowel cluster = the rhyming nucleus
-  const matches = normalized.match(VOWEL_RE);
-  if (!matches) return normalized.slice(-3); // graphemic fallback
-  return matches.at(-1) ?? '';
+/**
+ * Return the last whitespace-delimited token of a surface string,
+ * stripped of leading/trailing punctuation that is not part of the rhyme
+ * (commas, full stops, exclamation/question marks, ellipses, quotes).
+ */
+export function lastRhymingToken(surface: string): string {
+  const tokens = surface.trim().split(/\s+/);
+  const raw = tokens[tokens.length - 1] ?? '';
+  // Strip trailing punctuation that is never part of the rhyming nucleus
+  return raw.replace(/[.,!?;:…"'«»\u2018\u2019\u201C\u201D]+$/u, '');
 }
 
-// ─── Coda extraction ─────────────────────────────────────────────────────────
+function extractVowelNucleus(token: string, lang: LangCode): string {
+  let t = token.toLowerCase().normalize('NFC');
 
-function extractCoda(token: string, lang: LangCode): string {
-  let normalized = token.toLowerCase().normalize('NFC');
-
-  if (lang === 'fr') {
-    normalized = normalized.replace(FR_MUTE_FINALS, '');
-    normalized = normalized.replace(FR_SILENT_E, '');
+  if (lang === 'fr' || lang === 'ca') {
+    t = t.replace(FR_MUTE_FINALS, '');
+    t = t.replace(FR_SILENT_E, '');
   }
 
-  // After last vowel cluster, take remaining consonants
-  const lastVowelMatch = [...normalized.matchAll(VOWEL_RE)].at(-1);
-  if (!lastVowelMatch || lastVowelMatch.index === undefined) return '';
-  return normalized.slice(lastVowelMatch.index + lastVowelMatch[0].length);
+  const matches = t.match(VOWEL_RE);
+  if (!matches) return t.slice(-3); // graphemic fallback
+  return matches[matches.length - 1] ?? '';
+}
+
+function extractCoda(token: string, lang: LangCode): string {
+  let t = token.toLowerCase().normalize('NFC');
+
+  if (lang === 'fr' || lang === 'ca') {
+    t = t.replace(FR_MUTE_FINALS, '');
+    t = t.replace(FR_SILENT_E, '');
+  }
+
+  const allMatches = [...t.matchAll(VOWEL_RE)];
+  const lastMatch = allMatches[allMatches.length - 1];
+  if (!lastMatch || lastMatch.index === undefined) return '';
+  return t.slice(lastMatch.index + lastMatch[0].length);
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
+/**
+ * Extract the rhyme nucleus from a LineEndingUnit for the Romance family.
+ *
+ * Works on the LAST TOKEN of unit.surface so that multi-word tails like
+ * "au fond de mon cœur" correctly target "cœur".
+ *
+ * Also returns `rhymeToken` so engine.ts can compute charSpan without
+ * duplicating the last-token logic.
+ */
 export function extractNucleusROM(
   unit: LineEndingUnit,
   lang: LangCode
-): RhymeNucleus {
-  const { surface } = unit;
+): RhymeNucleus & { rhymeToken: string } {
+  const token = lastRhymingToken(unit.surface);
 
-  if (!surface) {
-    return { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
+  if (!token) {
+    return { vowels: '', coda: '', tone: '', onset: '', moraCount: 1, rhymeToken: '' };
   }
 
-  const vowels = extractVowelNucleus(surface, lang);
-  const coda   = extractCoda(surface, lang);
+  const vowels = extractVowelNucleus(token, lang);
+  const coda   = extractCoda(token, lang);
 
-  // Onset: everything before the last vowel cluster
-  const lastVowelMatch = [...surface.toLowerCase().matchAll(VOWEL_RE)].at(-1);
-  const onset = lastVowelMatch?.index !== undefined
-    ? surface.slice(0, lastVowelMatch.index).toLowerCase()
+  const allMatches = [...token.toLowerCase().matchAll(VOWEL_RE)];
+  const lastMatch = allMatches[allMatches.length - 1];
+  const onset = lastMatch?.index !== undefined
+    ? token.slice(0, lastMatch.index).toLowerCase()
     : '';
 
   return {
     vowels,
     coda,
-    tone:      '',
+    tone:       '',
     onset,
-    moraCount: vowels.length >= 2 ? 2 : 1,
+    moraCount:  vowels.length >= 2 ? 2 : 1,
+    rhymeToken: token,
   };
+}
+
+/**
+ * Language-aware Romance score.
+ *
+ * After FR/CA stripping, coda is almost always empty → give it little weight
+ * so two words that share a vowel nucleus still score high even if their
+ * stripped codas differ slightly.
+ *
+ * Weights:
+ *   FR / CA  → vowel 0.85, coda 0.15
+ *   ES/IT/PT → vowel 0.65, coda 0.35  (coda is more phonetically present)
+ *   others   → vowel 0.60, coda 0.40  (original conservative default)
+ */
+export function scoreROM(
+  nA: RhymeNucleus,
+  nB: RhymeNucleus,
+  lang: LangCode,
+  phonemeEditDistance: (a: string, b: string) => number
+): number {
+  const vowelW = (lang === 'fr' || lang === 'ca') ? 0.85
+    : (lang === 'es' || lang === 'it' || lang === 'pt') ? 0.65
+    : 0.60;
+  const codaW = 1 - vowelW;
+
+  return vowelW * (1 - phonemeEditDistance(nA.vowels, nB.vowels))
+       + codaW  * (1 - phonemeEditDistance(nA.coda,   nB.coda));
 }
