@@ -5,7 +5,7 @@ export interface TranslationAdaptationContextValue {
   sectionTargetLanguages: Record<string, string>;
   onSectionTargetLanguageChange: (sectionId: string, lang: string) => void;
   adaptSectionLanguage: (sectionId: string, newLanguage: AdaptationLangId) => void;
-  adaptLineLanguage: (sectionId: string, lineId: string, newLanguage: string) => void;
+  adaptLineLanguage: (sectionId: string, lineId: string, newLanguage: AdaptationLangId) => void;
   adaptingLineIds: Set<string>;
   showTranslationFeatures: boolean;
 }
@@ -17,11 +17,12 @@ interface TranslationAdaptationProviderProps extends Partial<TranslationAdaptati
 const EMPTY_SET = new Set<string>();
 const NOOP = () => {};
 const NOOP_ADAPT_SECTION = (_sectionId: string, _lang: AdaptationLangId) => {};
+const NOOP_ADAPT_LINE = (_sectionId: string, _lineId: string, _lang: AdaptationLangId) => {};
 const DEFAULT_CONTEXT_VALUE: TranslationAdaptationContextValue = {
   sectionTargetLanguages: {},
   onSectionTargetLanguageChange: NOOP,
   adaptSectionLanguage: NOOP_ADAPT_SECTION,
-  adaptLineLanguage: NOOP,
+  adaptLineLanguage: NOOP_ADAPT_LINE,
   adaptingLineIds: EMPTY_SET,
   showTranslationFeatures: true,
 };
