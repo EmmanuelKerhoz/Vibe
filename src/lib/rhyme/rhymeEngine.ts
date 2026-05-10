@@ -25,6 +25,13 @@ export interface CompareOptions {
 export interface BlockOptions extends CompareOptions {
   scanInternalRhymes?: boolean;
   detectCS?: boolean;
+  /**
+   * Minimum score for two lines to be considered rhyming and grouped into
+   * the same scheme family (A, B, C…).
+   * Default: 0.75 (previously 0.55 — raised to prevent weak assonances
+   * from polluting rhyme families).
+   */
+  minRhymeScore?: number;
 }
 
 export function compareWords(wordA: string, wordB: string, opts: CompareOptions = {}): RhymeResult {
@@ -53,12 +60,12 @@ export function compareWords(wordA: string, wordB: string, opts: CompareOptions 
   };
 }
 
-const MIN_RHYME_SCORE = 0.55;
+const DEFAULT_MIN_RHYME_SCORE = 0.75;
 
-function detectScheme(pairMap: Map<string, number>): SchemeLabel {
+function detectScheme(pairMap: Map<string, number>, minScore: number): SchemeLabel {
   const n = Math.max(...[...pairMap.keys()].flatMap(k => k.split(':').map(Number))) + 1;
   if (n < 2) return 'FREE_VERSE';
-  const rhymes = (i: number, j: number) => (pairMap.get(`${i}:${j}`) ?? 0) >= MIN_RHYME_SCORE;
+  const rhymes = (i: number, j: number) => (pairMap.get(`${i}:${j}`) ?? 0) >= minScore;
   let aabb = 0, abab = 0;
   for (let i = 0; i + 1 < n; i += 2) if (rhymes(i, i + 1)) aabb++;
   for (let i = 0; i + 2 < n; i++) if (rhymes(i, i + 2)) abab++;
@@ -74,13 +81,17 @@ function detectScheme(pairMap: Map<string, number>): SchemeLabel {
   return 'CUSTOM';
 }
 
-function assignSchemeLetters(pairs: Array<{ i: number; j: number; score: number }>, n: number): string[] {
+function assignSchemeLetters(
+  pairs: Array<{ i: number; j: number; score: number }>,
+  n: number,
+  minScore: number,
+): string[] {
   const groupOf = new Array<number>(n).fill(-1);
   let nextCode = 0;
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const ps = pairs.find(p => p.i === i && p.j === j);
-      if (ps && ps.score >= MIN_RHYME_SCORE) {
+      if (ps && ps.score >= minScore) {
         const gi = groupOf[i]!, gj = groupOf[j]!;
         if (gi === -1 && gj === -1) groupOf[i] = groupOf[j] = nextCode++;
         else if (gi !== -1) groupOf[j] = gi;
@@ -100,18 +111,27 @@ function assignSchemeLetters(pairs: Array<{ i: number; j: number; score: number 
 
 export function analyzeBlock(text: string, opts: BlockOptions = {}): BlockAnalysisResult {
   const lang = opts.lang ?? ('__unknown__' as LangCode);
+  const minScore = opts.minRhymeScore ?? DEFAULT_MIN_RHYME_SCORE;
   const { family } = routeToFamily(lang);
   const csWarnings: string[] = [];
   const lines = segmentBlock(text, lang);
   const n = lines.length;
 
   if (n === 0) return {
-    lines: [], csWarnings: [],
+    lines: [], lineSpans: [], csWarnings: [],
     scheme: { letters: [], label: 'FREE_VERSE', confidence: 0, pairScores: [], warnings: ['empty-block'], isProxied: false },
   };
 
   const units   = lines.map(l => extractLineEndingUnit(l, lang));
   const nuclei  = units.map(u => extractNucleus(u.surface || '', family, lang));
+
+  // Build per-line span data for UI highlighting
+  const lineSpans: BlockAnalysisResult['lineSpans'] = nuclei.map((nucleus, idx) => ({
+    lineIndex: idx,
+    surface: units[idx]!.surface,
+    charSpanStart: nucleus.charSpanStart ?? -1,
+    charSpanEnd:   nucleus.charSpanEnd   ?? -1,
+  }));
 
   if (opts.detectCS !== false) {
     lines.forEach((line, idx) => {
@@ -142,10 +162,10 @@ export function analyzeBlock(text: string, opts: BlockOptions = {}): BlockAnalys
     }
   }
 
-  const letters = assignSchemeLetters(rawPairs, n);
-  const label   = detectScheme(pairMap);
+  const letters = assignSchemeLetters(rawPairs, n, minScore);
+  const label   = detectScheme(pairMap, minScore);
   const confidence = rawPairs.length > 0
-    ? rawPairs.filter(p => p.score >= MIN_RHYME_SCORE).length / rawPairs.length : 0;
+    ? rawPairs.filter(p => p.score >= minScore).length / rawPairs.length : 0;
 
   const scheme: SchemeResult = {
     letters, label, confidence,
@@ -172,7 +192,7 @@ export function analyzeBlock(text: string, opts: BlockOptions = {}): BlockAnalys
             position: opts.position,
             ...(opts.toneSensitive !== undefined ? { toneSensitive: opts.toneSensitive } : {}),
           });
-          if (result.score >= MIN_RHYME_SCORE)
+          if (result.score >= minScore)
             lineRhymes.push({ tokenA: tokens[ti]!, tokenB: tokens[tj]!, result });
         }
       }
@@ -182,6 +202,7 @@ export function analyzeBlock(text: string, opts: BlockOptions = {}): BlockAnalys
 
   return {
     lines,
+    lineSpans,
     scheme,
     ...(positionRhymes !== undefined ? { positionRhymes } : {}),
     csWarnings,

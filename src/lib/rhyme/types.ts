@@ -54,17 +54,15 @@ export interface RhymeNucleus {
   moraCount: number;
   /**
    * Start index (inclusive) of the rhyming nucleus within the original
-   * LineEndingUnit.surface string.  Used by the UI to highlight exactly
+   * LineEndingUnit.surface string. Used by the UI to highlight exactly
    * the rhyming portion without any heuristic re-computation.
    * -1 when the span could not be determined.
-   * Optional: non-ROM algos may omit this field until charSpan is propagated.
    */
   charSpanStart?: number;
   /**
    * End index (exclusive) of the rhyming nucleus within the original
    * LineEndingUnit.surface string.
    * -1 when the span could not be determined.
-   * Optional: non-ROM algos may omit this field until charSpan is propagated.
    */
   charSpanEnd?: number;
 }
@@ -103,10 +101,32 @@ export interface SchemeResult {
   isProxied: boolean;
 }
 
+/**
+ * Per-line span data for UI highlighting.
+ * Produced by analyzeBlock; consumed directly by the RhymeSpan UI component.
+ */
+export interface LineRhymeSpan {
+  lineIndex: number;
+  /** The ending surface word/unit as extracted (e.g. last word of the line) */
+  surface: string;
+  /** Start index (inclusive) within `surface` of the rhyming nucleus. -1 if unknown. */
+  charSpanStart: number;
+  /** End index (exclusive) within `surface` of the rhyming nucleus. -1 if unknown. */
+  charSpanEnd: number;
+}
+
 /** Result of a full block (multi-line text) analysis */
 export interface BlockAnalysisResult {
   /** Cleaned verse lines extracted from the block */
   lines: string[];
+  /**
+   * Per-line span data for UI highlighting.
+   * Index i corresponds to lines[i].
+   * charSpanStart/End are relative to the `surface` field (last word/unit of the line),
+   * NOT the full line string. The UI must locate `surface` within the full line
+   * to compute the absolute highlight offset.
+   */
+  lineSpans: LineRhymeSpan[];
   /** End-of-line rhyme scheme */
   scheme: SchemeResult;
   /** Internal / initial rhymes when position !== 'end' */
