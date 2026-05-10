@@ -10,7 +10,7 @@ import type { LangCode, SchemeResult } from '../lib/rhyme/types';
  */
 function toLangCode(lang: string): LangCode {
   const lower = lang.toLowerCase().trim();
-  const canonicalMatch = /^(?:adapt|ui):([a-z]{2,3})$/i.exec(lower);
+  const canonicalMatch = /^(?:adapt|ui):([a-z]{2,3})$/.exec(lower);
   if (canonicalMatch?.[1]) return toLangCode(canonicalMatch[1]);
   if (lower.startsWith('custom:')) return toLangCode(lower.slice('custom:'.length));
 
@@ -129,9 +129,10 @@ export function useRhymeSchemeMultiLang(
     try {
       const raw = detectRhymeSchemeMultiLang(filtered);
       if (raw === null) return null;
-      const singleLang = filtered.every(line => line.lang === filtered[0]?.lang);
-      const localScheme = singleLang && filtered[0]?.lang !== '__unknown__'
-        ? detectRhymeSchemeLocally(filtered.map(line => line.text), filtered[0]?.lang)
+      const firstLang = filtered[0]?.lang;
+      const singleLang = filtered.every(line => line.lang === firstLang);
+      const localScheme = singleLang && firstLang !== undefined && firstLang !== '__unknown__'
+        ? detectRhymeSchemeLocally(filtered.map(line => line.text), firstLang)
         : null;
       const corrected = localScheme
         ? {
