@@ -52,6 +52,19 @@ export interface RhymeNucleus {
   tone: string;
   onset: string;
   moraCount: number;
+  /**
+   * Start index (inclusive) of the rhyming nucleus within the original
+   * LineEndingUnit.surface string.  Used by the UI to highlight exactly
+   * the rhyming portion without any heuristic re-computation.
+   * -1 when the span could not be determined.
+   */
+  charSpanStart: number;
+  /**
+   * End index (exclusive) of the rhyming nucleus within the original
+   * LineEndingUnit.surface string.
+   * -1 when the span could not be determined.
+   */
+  charSpanEnd: number;
 }
 
 export interface RhymeResult {
