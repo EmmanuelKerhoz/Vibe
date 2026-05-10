@@ -23,8 +23,8 @@ interface SectionEditorProps {
   isAnalyzing: boolean;
   hasApiKey: boolean;
   isAdaptingLanguage?: boolean;
-  sectionTargetLanguage?: string;
-  onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
+  sectionTargetLanguage?: AdaptationLangId;
+  onSectionTargetLanguageChange?: (sectionId: string, lang: AdaptationLangId) => void;
   adaptSectionLanguage?: (sectionId: string, lang: AdaptationLangId) => void;
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: AdaptationLangId) => void;
   adaptingLineIds?: Set<string>;
@@ -37,7 +37,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   lineNumberOffset = 0,
   isAnalyzing, hasApiKey,
   isAdaptingLanguage = false,
-  sectionTargetLanguage = 'English',
+  sectionTargetLanguage = 'adapt:EN' as AdaptationLangId,
   onSectionTargetLanguageChange,
   adaptSectionLanguage,
   adaptLineLanguage,

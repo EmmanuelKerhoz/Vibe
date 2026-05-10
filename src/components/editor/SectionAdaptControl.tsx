@@ -8,13 +8,13 @@ import type { AdaptationLangId } from '../../i18n/constants';
 
 interface SectionAdaptControlProps {
   sectionId: string;
-  sectionTargetLanguage: string;
+  sectionTargetLanguage: AdaptationLangId;
   hasApiKey: boolean;
   hasLyrics: boolean;
   isGenerating: boolean;
   isAnalyzing: boolean;
   isAdaptingLanguage: boolean;
-  onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
+  onSectionTargetLanguageChange?: (sectionId: string, lang: AdaptationLangId) => void;
   adaptSectionLanguage?: (sectionId: string, lang: AdaptationLangId) => void;
 }
 
@@ -32,7 +32,7 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
   const { t } = useTranslation();
 
   const handleValueChange = useCallback(
-    (lang: string) => onSectionTargetLanguageChange?.(sectionId, lang),
+    (lang: AdaptationLangId) => onSectionTargetLanguageChange?.(sectionId, lang),
     [sectionId, onSectionTargetLanguageChange],
   );
 

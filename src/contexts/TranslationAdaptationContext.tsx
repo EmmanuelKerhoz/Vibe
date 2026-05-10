@@ -2,8 +2,8 @@ import React, { createContext, useContext, useMemo, useRef, type ReactNode } fro
 import type { AdaptationLangId } from '../i18n/constants';
 
 export interface TranslationAdaptationContextValue {
-  sectionTargetLanguages: Record<string, string>;
-  onSectionTargetLanguageChange: (sectionId: string, lang: string) => void;
+  sectionTargetLanguages: Record<string, AdaptationLangId>;
+  onSectionTargetLanguageChange: (sectionId: string, lang: AdaptationLangId) => void;
   adaptSectionLanguage: (sectionId: string, newLanguage: AdaptationLangId) => void;
   adaptLineLanguage: (sectionId: string, lineId: string, newLanguage: AdaptationLangId) => void;
   adaptingLineIds: Set<string>;
