@@ -73,7 +73,19 @@ function extractVowelNucleus(token: string, lang: LangCode): string {
 
   const matches = t.match(VOWEL_RE);
   if (!matches) return t.slice(-3); // graphemic fallback
-  return matches[matches.length - 1] ?? '';
+  const last = matches[matches.length - 1] ?? '';
+
+  if (lang === 'es') {
+    const stressedVowel = last.match(/[áéíóúÁÉÍÓÚ]/u)?.[0];
+    if (stressedVowel) return stressedVowel;
+  }
+
+  if ((lang === 'fr' || lang === 'ca') && last === 'ie') {
+    const coda = extractCoda(token, lang);
+    if (coda === 'l' || coda === 'r') return 'e';
+  }
+
+  return last;
 }
 
 function extractCoda(token: string, lang: LangCode): string {
