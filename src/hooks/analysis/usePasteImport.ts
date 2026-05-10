@@ -96,7 +96,7 @@ const METADATA_RESPONSE_SCHEMA = {
 };
 
 const normalizeSectionHeaderCandidate = (line: string): string => {
-  const trimmed = line.trim().replace(/^#+\s*/, '').replace(/[::\u003a]\s*$/, '');
+  const trimmed = line.trim().replace(/^#+\s*/, '').replace(/[::：]\s*$/, '');
   const bracketValue = unwrapBracketToken(trimmed);
   return cleanSectionName(bracketValue ?? trimmed);
 };
@@ -176,6 +176,25 @@ const splitPastedLyricsIntoChunks = (text: string): PasteImportChunk[] => {
       text: fallbackText,
     }]
     : [];
+};
+
+/**
+ * Derive a canonical rhyme scheme from per-line rhyme labels when the AI
+ * returns FREE but each line carries an individual label (A/B/C…).
+ * Returns the joined label string if it matches a known scheme, else 'FREE'.
+ */
+const deriveSchemeFromLineLabels = (
+  lines: Array<{ rhyme?: string }>,
+  fallback: string,
+): string => {
+  const labels = lines.map(l => (l.rhyme ?? '').trim()).filter(Boolean);
+  if (labels.length === 0) return fallback;
+  const candidate = labels.join('');
+  const KNOWN = [
+    'AABB', 'ABAB', 'ABCB', 'AAAA', 'AABBA', 'AAABBB',
+    'AABBCC', 'ABABAB', 'ABCABC', 'AABCCB', 'ABACBC',
+  ];
+  return KNOWN.includes(candidate) ? candidate : fallback;
 };
 
 const buildSectionPrompt = (chunk: PasteImportChunk, uiLang: string): string => `${UNTRUSTED_INPUT_PREAMBLE}
@@ -394,19 +413,34 @@ export const usePasteImport = ({
         const validChunks = chunkResults.filter(Boolean) as NonNullable<typeof chunkResults[0]>[];
         if (validChunks.length === 0) return;
 
-        const newSections: Section[] = validChunks.map((chunk) => ({
-          id: generateId(),
-          name: chunk.name,
-          rhymeScheme: chunk.rhymeScheme ?? rhymeScheme,
-          lines: (chunk.lines ?? []).map((line) => ({
+        const detectedLanguage = metadata.language;
+
+        const newSections: Section[] = validChunks.map((chunk) => {
+          const rawScheme = chunk.rhymeScheme ?? rhymeScheme;
+          const resolvedScheme = rawScheme === 'FREE'
+            ? deriveSchemeFromLineLabels(chunk.lines ?? [], 'FREE')
+            : rawScheme;
+
+          const section: Section = {
             id: generateId(),
-            text: line.text ?? '',
-            rhymingSyllables: line.rhymingSyllables ?? '',
-            rhyme: line.rhyme ?? '',
-            syllables: line.syllables ?? 0,
-            concept: line.concept ?? '',
-          })),
-        }));
+            name: chunk.name,
+            rhymeScheme: resolvedScheme,
+            lines: (chunk.lines ?? []).map((line) => ({
+              id: generateId(),
+              text: line.text ?? '',
+              rhymingSyllables: line.rhymingSyllables ?? '',
+              rhyme: line.rhyme ?? '',
+              syllables: line.syllables ?? 0,
+              concept: line.concept ?? '',
+            })),
+          };
+
+          if (detectedLanguage) {
+            (section as Section & { language?: string }).language = detectedLanguage;
+          }
+
+          return section;
+        });
 
         const validSections = newSections.filter(
           section => !isPureMetaLine(section.name) &&
@@ -420,17 +454,14 @@ export const usePasteImport = ({
         if (metadata.topic) setTopic(metadata.topic);
         if (metadata.mood) setMood(metadata.mood);
 
-        if (metadata.language) {
-          const detectedLang = normalizeLanguageValue(metadata.language);
+        if (detectedLanguage) {
+          const detectedLang = normalizeLanguageValue(detectedLanguage);
           const currentLang = normalizeLanguageValue(currentSongLanguage);
           if (detectedLang && detectedLang !== currentLang) {
-            // The AI returns a language name string; we cast it to AdaptationLangId
-            // at this boundary. Callers that need a validated langId should run
-            // migrateAdaptationToLangId before consuming it.
-            onLanguageMismatch?.(metadata.language as AdaptationLangId);
+            onLanguageMismatch?.(detectedLanguage as AdaptationLangId);
           }
           const sectionIds = validSections.map(s => s.id);
-          onDetectedLanguage?.(metadata.language, sectionIds);
+          onDetectedLanguage?.(detectedLanguage, sectionIds);
         }
 
         requestAutoTitleGeneration();
@@ -443,10 +474,12 @@ export const usePasteImport = ({
         wasAborted = true;
       } else {
         handleApiError(error, 'Paste import error');
+        setIsPasteModalOpen(false);
+        setPastedText('');
       }
     } finally {
-      if (!wasAborted) setIsAnalyzing(false);
-      else setIsAnalyzing(false);
+      setIsAnalyzing(false);
+      if (!wasAborted) setImportProgress(EMPTY_PROGRESS);
     }
   };
 
