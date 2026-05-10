@@ -33,7 +33,6 @@ const AUS_VOWELS = /[aeiouàáâäèéêëìíîïòóôöùúûü]+/giu;
 
 function normalizeAUS(token: string): string {
   let s = token.toLowerCase().normalize('NFC');
-  // Strip diacritics used in some Tagalog romanisations
   s = s.replace(/[àáâä]/gu, 'a').replace(/[èéêë]/gu, 'e').replace(/[ìíîï]/gu, 'i')
         .replace(/[òóôö]/gu, 'o').replace(/[ùúûü]/gu, 'u');
   for (const [re, rep] of AUS_DIGRAPHS) s = s.replace(re, rep);
@@ -41,7 +40,6 @@ function normalizeAUS(token: string): string {
 }
 
 // ─── Malagasy specific normalisation ─────────────────────────────────────────
-// Final clusters -tra, -na, -ka are extremely common; collapse for rhyme
 
 const MG_ENDINGS: Array<[RegExp, string]> = [
   [/tra$/u,  'a'],
@@ -55,6 +53,27 @@ function normalizeMG(token: string): string {
   let s = token.toLowerCase().normalize('NFC');
   for (const [re, rep] of MG_ENDINGS) s = s.replace(re, rep);
   return normalizeAUS(s);
+}
+
+// ─── charSpan helper ──────────────────────────────────────────────────────────
+/**
+ * Finds the last vowel cluster in `surface` (NFC lowercase) and returns
+ * the exact character span (vowels + coda tail) within the original surface.
+ */
+function surfaceSpanAUS(surface: string): { charSpanStart: number; charSpanEnd: number } {
+  const nfc = surface.normalize('NFC').toLowerCase();
+  const SIMPLE_VOWELS = /[aeiouàáâäèéêëìíîïòóôöùúûü]+/giu;
+  SIMPLE_VOWELS.lastIndex = 0;
+  const matches = [...nfc.matchAll(SIMPLE_VOWELS)];
+  if (!matches.length) {
+    const start = Math.max(0, nfc.length - 2);
+    return { charSpanStart: start, charSpanEnd: nfc.length };
+  }
+  const last = matches.at(-1)!;
+  return {
+    charSpanStart: last.index!,
+    charSpanEnd:   nfc.length, // span through end of token (coda included)
+  };
 }
 
 // ─── Nucleus extractor ────────────────────────────────────────────────────────
@@ -79,17 +98,23 @@ export function extractNucleusAUS(
   lang: LangCode
 ): RhymeNucleus {
   const { surface } = unit;
-  if (!surface) return { vowels: '', coda: '', tone: '', onset: '', moraCount: 1 };
+  if (!surface) {
+    return { vowels: '', coda: '', tone: '', onset: '', moraCount: 1,
+             charSpanStart: -1, charSpanEnd: -1 };
+  }
 
   const normalized = lang === 'mg' ? normalizeMG(surface) : normalizeAUS(surface);
   const { vowels, coda, onset } = extractLatinNucleusAUS(normalized);
+  const { charSpanStart, charSpanEnd } = surfaceSpanAUS(surface);
 
   return {
     vowels,
     coda,
     tone:      '',
     onset,
-    moraCount: 1, // CV-dominant family; mora count less relevant
+    moraCount: 1,
+    charSpanStart,
+    charSpanEnd,
   };
 }
 

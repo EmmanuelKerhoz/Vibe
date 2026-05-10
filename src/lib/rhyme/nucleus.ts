@@ -111,8 +111,11 @@ function extractToneThai(syllable: string): string {
   return 'M';
 }
 
-// ─── IPA parser ───────────────────────────────────────────────────────────────
-function parseIPA(ipa: string): RhymeNucleus {
+// ─── IPA parser (only call with real IPA strings, not plain orthography) ─────
+// charSpanStart/End are set to the input string span of the nucleus when
+// the input is plain orthography (non-IPA families). When this is called
+// with actual IPA the span fields are -1 (no original surface available).
+function parseIPA(ipa: string, surfaceOffset = -1): RhymeNucleus {
   let vowelStart = -1;
   let vowelEnd = -1;
   for (let i = 0; i < ipa.length; i++) {
@@ -121,13 +124,25 @@ function parseIPA(ipa: string): RhymeNucleus {
       vowelEnd = i;
     }
   }
-  if (vowelStart === -1) return { vowels: '', coda: '', tone: '', onset: ipa, moraCount: 0 };
+  if (vowelStart === -1) return {
+    vowels: '', coda: '', tone: '', onset: ipa, moraCount: 0,
+    charSpanStart: -1, charSpanEnd: -1,
+  };
   const onset  = ipa.slice(0, vowelStart);
   const vowels = ipa.slice(vowelStart, vowelEnd + 1);
   const coda   = ipa.slice(vowelEnd + 1);
   const toneMatch = coda.match(/[0-9LFHRMrlfhm]$/);
   const tone = toneMatch?.[0] ?? '';
-  return { onset, vowels, coda: toneMatch ? coda.slice(0, -1) : coda, tone, moraCount: vowels.length };
+  // When surfaceOffset is provided, the span covers the full ipa fragment
+  // within the original surface string.
+  const charSpanStart = surfaceOffset >= 0 ? surfaceOffset + vowelStart : -1;
+  const charSpanEnd   = surfaceOffset >= 0 ? surfaceOffset + vowelEnd + 1 + (coda.length - (toneMatch ? 1 : 0)) : -1;
+  return {
+    onset, vowels,
+    coda: toneMatch ? coda.slice(0, -1) : coda,
+    tone, moraCount: vowels.length,
+    charSpanStart, charSpanEnd,
+  };
 }
 
 // ─── Stressed vowel helpers ───────────────────────────────────────────────────
@@ -141,130 +156,253 @@ function lastStressedVowelIndex(word: string): number {
   return last;
 }
 
-function extractSuffixFromIndex(word: string, idx: number): string {
+// ─── Shared graphemic extractor (for families without a G2P pipeline) ─────────
+// Works on plain orthography (NFC, lowercase). Does NOT call parseIPA.
+// Returns nucleus with charSpanStart/charSpanEnd relative to `surface`.
+// FIX: use direct `idx` offset instead of fragile lastIndexOf search.
+const LATIN_VOWEL_RUN_RE = /[aeiouàèìòùáéíóúâêîôûäëïöüãõœæåø]+/iug;
+
+function graphemicNucleus(
+  surface: string,
+  cleanedLower: string,
+  idx: number,
+): RhymeNucleus {
   if (idx === -1) {
-    const m = word.match(/[aeiouàèìòùáéíóúâêîôûäëïöü][^aeiouàèìòùáéíóúâêîôûäëïöü]*$/iu);
-    return m?.[0] ?? word.slice(-3);
+    // No stressed vowel found — fall back to last vowel sequence
+    const allMatches = [...cleanedLower.matchAll(LATIN_VOWEL_RUN_RE)];
+    const lastMatch = allMatches.at(-1);
+    if (!lastMatch || lastMatch.index === undefined) {
+      return { vowels: cleanedLower.slice(-2), coda: '', tone: '', onset: '', moraCount: 1,
+               charSpanStart: -1, charSpanEnd: -1 };
+    }
+    idx = lastMatch.index;
   }
-  return word.slice(idx);
+
+  const suffix = cleanedLower.slice(idx);
+  const vowelMatch = suffix.match(/^([aeiouàèìòùáéíóúâêîôûäëïöüãõœæåø]+)(.*)/iu);
+  if (!vowelMatch) {
+    return { vowels: suffix, coda: '', tone: '', onset: cleanedLower.slice(0, idx),
+             moraCount: 1, charSpanStart: -1, charSpanEnd: -1 };
+  }
+
+  const vowels = vowelMatch[1]!;
+  const coda   = vowelMatch[2]!;
+  const onset  = cleanedLower.slice(0, idx);
+
+  // FIX: use `idx` directly as the span start within cleanedLower.
+  // cleanedLower is surface.toLowerCase().normalize('NFC') — same length
+  // as surface, so character indices are 1:1 (NFC never changes code-unit
+  // count for Latin+diacritics when the source is already NFC).
+  const spanStart = idx;
+  const spanEnd   = idx + vowels.length + coda.length;
+
+  return {
+    vowels,
+    coda,
+    tone:          '',
+    onset,
+    moraCount:     vowels.length,
+    charSpanStart: spanStart,
+    charSpanEnd:   spanEnd,
+  };
 }
 
 // ─── Family-specific nucleus extractors ──────────────────────────────────────
 
+/**
+ * ROM — Romance family (FR, ES, IT, PT, RO, CA).
+ */
 function nucleusROM(surface: string, lang: LangCode): RhymeNucleus {
-  let s = surface.toLowerCase();
-  if (lang === 'fr') s = s.replace(/(?<=[aeiouàâéèêëîïôùûü])(nt|s)?$/u, '').replace(/e(nt|s)?$/, '');
-  return parseIPA(extractSuffixFromIndex(s, lastStressedVowelIndex(s)));
+  let s = surface.toLowerCase().normalize('NFC');
+
+  // Strip terminal punctuation (common to all ROM)
+  s = s.replace(/[,;.!?…\u2026]+$/, '');
+
+  if (lang === 'fr') {
+    // Silent final consonants after a vowel (French mute endings)
+    s = s.replace(/(?<=[aeiouàâéèêëîïôùûü])(n?t|x|s|nt|nts|ts)?$/u, '');
+    // Mute final e (and inflected forms: -es, -ent, -ents)
+    s = s.replace(/e(?:n?t|s|nts)?$/u, '');
+  }
+
+  const idx = lastStressedVowelIndex(s);
+  return graphemicNucleus(surface, s, idx);
 }
 
+/**
+ * GER — Germanic family (EN, DE, NL, SV, DA, NO, IS).
+ */
 function nucleusGER(surface: string, lang: LangCode): RhymeNucleus {
-  let s = surface.toLowerCase();
-  if (lang === 'de') s = s.replace(/[bdgvz]$/u, m => ({ b: 'p', d: 't', g: 'k', v: 'f', z: 's' }[m] ?? m));
-  return parseIPA(extractSuffixFromIndex(s, lastStressedVowelIndex(s)));
+  let s = surface.toLowerCase().normalize('NFC');
+  s = s.replace(/[,;.!?…\u2026]+$/, '');
+
+  if (lang === 'de') {
+    s = s
+      .replace(/b$/u, 'p')
+      .replace(/d$/u, 't')
+      .replace(/g$/u, 'k')
+      .replace(/v$/u, 'f')
+      .replace(/z$/u, 's');
+  }
+
+  const idx = lastStressedVowelIndex(s);
+  return graphemicNucleus(surface, s, idx);
+}
+
+/**
+ * SLV — Slavic family (RU, PL, CS, SK, UK, BG, SR, HR).
+ */
+function nucleusSLV(surface: string): RhymeNucleus {
+  const s = surface.toLowerCase().normalize('NFC').replace(/[,;.!?…\u2026]+$/, '');
+  const idx = lastStressedVowelIndex(s);
+  return graphemicNucleus(surface, s, idx);
 }
 
 function nucleusTRK(surface: string): RhymeNucleus {
-  const stripped = stripMorphoSuffix(surface.toLowerCase(), TRK_SUFFIXES);
+  const lower = surface.toLowerCase();
+  const stripped = stripMorphoSuffix(lower, TRK_SUFFIXES);
+  const offset = stripped.search(/[aeiouıiuüáéíóúàèìòùâêîôû]/iu);
   const idx = lastStressedVowelIndex(stripped) !== -1
     ? lastStressedVowelIndex(stripped)
-    : stripped.search(/[aeiouıiuü]/iu);
-  return parseIPA(extractSuffixFromIndex(stripped, idx));
+    : offset >= 0 ? offset : 0;
+  const fragment = stripped.slice(Math.max(idx, 0));
+  // surfaceOffset: position of fragment start within original surface
+  const surfaceOffset = lower.indexOf(stripped) + Math.max(idx, 0);
+  return parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1);
 }
 
 function nucleusFIN(surface: string, lang: LangCode): RhymeNucleus {
+  const lower = surface.toLowerCase();
   const suffixes = lang === 'hu' ? HU_SUFFIXES : FIN_SUFFIXES;
-  const stripped = stripMorphoSuffix(surface.toLowerCase(), suffixes);
+  const stripped = stripMorphoSuffix(lower, suffixes);
   const m = stripped.match(/([aeiouäöüy]{1,2})[^aeiouäöüy]*$/iu);
-  if (!m) return parseIPA(stripped.slice(-3));
-  return parseIPA(stripped.slice(stripped.lastIndexOf(m[1]!)));
+  const fragment = m ? stripped.slice(stripped.lastIndexOf(m[1]!)) : stripped.slice(-3);
+  const surfaceOffset = lower.lastIndexOf(fragment);
+  return parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1);
 }
 
 function nucleusBNT(surface: string): RhymeNucleus {
-  const deprefixed = stripBNTPrefix(surface.toLowerCase(), 3);
+  const lower = surface.toLowerCase();
+  const deprefixed = stripBNTPrefix(lower, 3);
   const m = deprefixed.match(/[aeiou][^aeiou]*$/iu);
-  return parseIPA(m ? m[0] : deprefixed.slice(-3));
+  const fragment = m ? m[0] : deprefixed.slice(-3);
+  const surfaceOffset = lower.lastIndexOf(fragment);
+  return parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1);
 }
 
 function nucleusCJK(surface: string, lang: LangCode): RhymeNucleus {
   if (lang === 'ja') {
     const morae = extractJapaneseMorae(surface);
-    return { vowels: morae, coda: '', tone: '', onset: '', moraCount: morae.length };
+    const surfaceOffset = surface.lastIndexOf(morae);
+    return {
+      vowels: morae, coda: '', tone: '', onset: '', moraCount: morae.length,
+      charSpanStart: surfaceOffset >= 0 ? surfaceOffset : -1,
+      charSpanEnd:   surfaceOffset >= 0 ? surfaceOffset + morae.length : -1,
+    };
   }
   const last = [...surface].at(-1) ?? '';
   const tone = last.match(/[0-9]/) ? last : '';
-  return { vowels: tone ? surface.slice(0, -1) : surface, coda: '', tone, onset: '', moraCount: 1 };
+  const vowelPart = tone ? surface.slice(0, -1) : surface;
+  const surfaceOffset = surface.lastIndexOf(vowelPart);
+  return {
+    vowels: vowelPart, coda: '', tone, onset: '', moraCount: 1,
+    charSpanStart: surfaceOffset >= 0 ? surfaceOffset : -1,
+    charSpanEnd:   surfaceOffset >= 0 ? surfaceOffset + vowelPart.length : -1,
+  };
 }
 
 function nucleusTAI(surface: string): RhymeNucleus {
   const tone = extractToneThai(surface);
   const stripped = surface.replace(/[\u0E48-\u0E4B]/gu, '');
   const m = stripped.match(/[\u0E40-\u0E44]?[\u0E01-\u0E2E][\u0E30-\u0E3A\u0E40-\u0E44\u0E4E]?[\u0E01-\u0E2E]?$/u);
-  return { vowels: m?.[0] ?? stripped.slice(-2), coda: '', tone, onset: '', moraCount: 1 };
+  const fragment = m?.[0] ?? stripped.slice(-2);
+  const surfaceOffset = surface.lastIndexOf(fragment);
+  return {
+    vowels: fragment, coda: '', tone, onset: '', moraCount: 1,
+    charSpanStart: surfaceOffset >= 0 ? surfaceOffset : -1,
+    charSpanEnd:   surfaceOffset >= 0 ? surfaceOffset + fragment.length : -1,
+  };
 }
 
 function nucleusVIET(surface: string, lang: LangCode): RhymeNucleus {
   if (lang !== 'vi') {
     const m = surface.match(/[aeiouảạàáâãă][^aeiouảạàáâãă]*$/iu);
-    return parseIPA(m ? m[0] : surface.slice(-3));
+    const fragment = m ? m[0] : surface.slice(-3);
+    const surfaceOffset = surface.lastIndexOf(fragment);
+    return { ...parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1) };
   }
   const tone = extractToneVietnamese(surface);
   const decomposed = surface.normalize('NFD').replace(TONE_DIACRITICS_LATIN, '').normalize('NFC');
   const m = decomposed.match(/[aeiouảạàáâãă][^aeiouảạàáâãă]*$/iu);
-  return { ...(m ? parseIPA(m[0]) : parseIPA(decomposed.slice(-3))), tone };
+  const fragment = m ? m[0] : decomposed.slice(-3);
+  const surfaceOffset = surface.lastIndexOf(fragment);
+  return { ...parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1), tone };
 }
 
 function nucleusSEM(surface: string): RhymeNucleus {
   const m = surface.match(/[\u0600-\u06FF\u0590-\u05FF][^\u0600-\u06FF\u0590-\u05FF]*$/u);
-  if (!m) return parseIPA(surface.slice(-4));
-  return { vowels: m[0], coda: '', tone: '', onset: '', moraCount: 1 };
-}
-
-function nucleusSLV(surface: string): RhymeNucleus {
-  const s = surface.toLowerCase();
-  return parseIPA(extractSuffixFromIndex(s, lastStressedVowelIndex(s)));
+  const fragment = m ? m[0] : surface.slice(-4);
+  const surfaceOffset = surface.lastIndexOf(fragment);
+  return { ...parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1) };
 }
 
 function nucleusKWA(surface: string, lang: LangCode): RhymeNucleus {
   const tone = (lang === 'ew' || lang === 'mi') ? extractToneVietnamese(surface) : '';
   const s = surface.normalize('NFD').replace(TONE_DIACRITICS_LATIN, '').normalize('NFC').toLowerCase();
   const m = s.match(/[aeiouɛɔ][^aeiouɛɔ]*$/iu);
-  return { ...(m ? parseIPA(m[0]) : parseIPA(s.slice(-3))), tone };
+  const fragment = m ? m[0] : s.slice(-3);
+  const surfaceOffset = surface.toLowerCase().lastIndexOf(fragment);
+  return { ...parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1), tone };
 }
 
 function nucleusCRV(surface: string, lang: LangCode): RhymeNucleus {
   const tone = (lang === 'ha') ? extractToneVietnamese(surface) : '';
   const s = surface.normalize('NFD').replace(TONE_DIACRITICS_LATIN, '').normalize('NFC').toLowerCase();
   const m = s.match(/[aeiouɛɔ][^aeiouɛɔ]*$/iu);
-  return { ...(m ? parseIPA(m[0]) : parseIPA(s.slice(-3))), tone };
+  const fragment = m ? m[0] : s.slice(-3);
+  const surfaceOffset = surface.toLowerCase().lastIndexOf(fragment);
+  return { ...parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1), tone };
 }
 
 function nucleusYRB(surface: string): RhymeNucleus {
   const tone = extractToneVietnamese(surface);
   const s = surface.normalize('NFD').replace(TONE_DIACRITICS_LATIN, '').normalize('NFC').toLowerCase();
   const m = s.match(/[aeiouọẹ][^aeiouọẹ]*$/iu);
-  return { ...(m ? parseIPA(m[0]) : parseIPA(s.slice(-3))), tone };
+  const fragment = m ? m[0] : s.slice(-3);
+  const surfaceOffset = surface.toLowerCase().lastIndexOf(fragment);
+  return { ...parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1), tone };
 }
 
 function nucleusIIR(surface: string): RhymeNucleus {
   const s = surface.normalize('NFD').replace(/[\u0300-\u036F]/gu, '').normalize('NFC').toLowerCase();
   const m = s.match(/[aeiouāīūẹ][^aeiouāīūẹ]*$/iu);
-  return parseIPA(m ? m[0] : s.slice(-3));
+  const fragment = m ? m[0] : s.slice(-3);
+  const surfaceOffset = surface.toLowerCase().lastIndexOf(fragment);
+  return parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1);
 }
 
 function nucleusAUS(surface: string): RhymeNucleus {
-  const m = surface.toLowerCase().match(/[aeiou][^aeiou]*$/iu);
-  return parseIPA(m ? m[0] : surface.slice(-3));
+  const lower = surface.toLowerCase();
+  const m = lower.match(/[aeiou][^aeiou]*$/iu);
+  const fragment = m ? m[0] : lower.slice(-3);
+  const surfaceOffset = lower.lastIndexOf(fragment);
+  return parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1);
 }
 
 function nucleusDRA(surface: string): RhymeNucleus {
   const s = surface.normalize('NFD').replace(/[\u0300-\u036F]/gu, '').normalize('NFC').toLowerCase();
   const m = s.match(/[aeiouāīū][^aeiouāīū]*$/iu);
-  return parseIPA(m ? m[0] : s.slice(-3));
+  const fragment = m ? m[0] : s.slice(-3);
+  const surfaceOffset = surface.toLowerCase().lastIndexOf(fragment);
+  return parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1);
 }
 
 function nucleusCRE(surface: string): RhymeNucleus {
-  const m = surface.toLowerCase().match(/[aeiou][^aeiou]*$/iu);
-  return parseIPA(m ? m[0] : surface.slice(-3));
+  const lower = surface.toLowerCase();
+  const m = lower.match(/[aeiou][^aeiou]*$/iu);
+  const fragment = m ? m[0] : lower.slice(-3);
+  const surfaceOffset = lower.lastIndexOf(fragment);
+  return parseIPA(fragment, surfaceOffset >= 0 ? surfaceOffset : -1);
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -289,6 +427,9 @@ export function extractNucleus(surface: string, family: FamilyId, lang: LangCode
     case 'DRA':      return nucleusDRA(surface);
     case 'CRE':      return nucleusCRE(surface);
     case 'FALLBACK':
-    default:         return parseIPA(surface.slice(-4));
+    default: {
+      const fragment = surface.slice(-4);
+      return parseIPA(fragment, surface.length - fragment.length);
+    }
   }
 }
