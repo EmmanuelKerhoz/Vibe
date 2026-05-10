@@ -442,7 +442,7 @@ export const usePasteImport = ({
       if (isAbortError(error)) {
         wasAborted = true;
       } else {
-        handleApiError(error);
+        handleApiError(error, 'Paste import error');
       }
     } finally {
       if (!wasAborted) setIsAnalyzing(false);
