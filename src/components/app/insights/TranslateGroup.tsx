@@ -40,7 +40,9 @@ export function TranslateGroup({
     handleCustomTextChange,
   } = useCustomLanguageSelector({
     storedValue: targetLanguage,
-    onValueChange: setTargetLanguage,
+    // Wrap to avoid TS2322 contravariance: hook types onValueChange as
+    // (lang: string) => void; setTargetLanguage is (lang: AdaptationLangId) => void.
+    onValueChange: (lang: string) => setTargetLanguage(lang as AdaptationLangId),
   });
 
   const handleCustomSubmit = useCallback(() => {

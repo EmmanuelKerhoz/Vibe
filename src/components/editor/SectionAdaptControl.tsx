@@ -47,7 +47,9 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
     handleCustomConfirm,
   } = useCustomLanguageSelector({
     storedValue: sectionTargetLanguage,
-    onValueChange: handleValueChange,
+    // Wrap to avoid TS2322 contravariance: hook types onValueChange as
+    // (lang: string) => void; handleValueChange is (lang: AdaptationLangId) => void.
+    onValueChange: (lang: string) => handleValueChange(lang as AdaptationLangId),
   });
 
   const canAdapt =
