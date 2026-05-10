@@ -8,10 +8,9 @@
  *
  * The brand prevents arbitrary strings (bare codes, aiNames, sign emoji) from
  * being silently passed where a langId is required — those would compile-error,
- * forcing the caller to migrate via `migrateToLangId(value)` first.
- *
- * Use `asLangId()` for runtime-validated narrowing or `migrateToLangId()` for
- * legacy-tolerant conversion at storage/transport boundaries.
+ * forcing the caller to migrate via `asLangId()` for runtime-validated narrowing
+ * or `migrateToLangId()` for legacy-tolerant conversion at storage/transport
+ * boundaries.
  */
 export type LangId = string & { readonly __brand: 'LangId' };
 
@@ -364,8 +363,17 @@ export function stripInternalPrefix(code: string): string {
 }
 
 /**
- * Resolves a UI locale code (e.g. 'fr') to a language name suitable for AI prompts.
- * Returns the locale's native label (e.g. 'Français') or 'English' as a fallback.
+ * Resolves a UI locale code (e.g. 'fr') to a language name suitable for
+ * AI prompts that concern the *interface* language (e.g. "explain this in
+ * Français"). Returns the locale's **native label** (e.g. 'Français'), NOT
+ * the English aiName ('French').
+ *
+ * This is intentional: UI-language prompts mirror the user's own interface
+ * language so the model can respond in kind. It is distinct from
+ * `langIdToAiName`, which returns the English aiName used for lyric
+ * adaptation targets (e.g. 'adapt:FR' → 'French').
+ *
+ * Falls back to 'English' for unknown codes.
  */
 export function getUiLanguageNameForAi(code: string): string {
   const locale = SUPPORTED_UI_LOCALES.find(l => l.code === code);
@@ -471,25 +479,32 @@ export function langIdToAiName(value: AdaptationLangId): string {
  * don't match a known language are wrapped in the `custom:` sentinel so the
  * resolver pipeline can always tell them apart from canonical entries.
  *
- * Fix: explicitly search SUPPORTED_ADAPTATION_LANGUAGES by aiName and code
- * before falling back to the shared legacy resolver, which can resolve
- * adapt:FR/EN/ES/DE/PT to their ui: counterparts due to aiName collisions
- * in LEGACY_INDEX (e.g. 'french' → 'ui:fr' instead of 'adapt:FR').
+ * Priority order (each step short-circuits):
+ *   1. Empty string → preserved as-is.
+ *   2. `custom:*` sentinel → preserved as-is.
+ *   3. Already a canonical `adapt:` langId → no-op.
+ *   4. Direct match by code or normalized aiName in SUPPORTED_ADAPTATION_LANGUAGES
+ *      (takes priority over LEGACY_INDEX to prevent adapt:EN/FR/ES/DE/PT
+ *      from resolving to their ui: counterparts due to aiName collisions).
+ *   5. Last resort: LEGACY_INDEX — only accepted when the resolved id starts
+ *      with `adapt:` AND is a known entry. `ui:` results are rejected here
+ *      to prevent namespace leakage.
+ *   6. Unknown free text → wrapped as `custom:<text>` sentinel.
  *
  * Examples:
- *   migrateAdaptationToLangId('Spanish')    → 'adapt:ES'
- *   migrateAdaptationToLangId('adapt:ES')   → 'adapt:ES'
+ *   migrateAdaptationToLangId('Spanish')      → 'adapt:ES'
+ *   migrateAdaptationToLangId('adapt:ES')     → 'adapt:ES'
  *   migrateAdaptationToLangId('Scots Gaelic') → 'custom:Scots Gaelic'
- *   migrateAdaptationToLangId('')           → ''  (empty preserved)
+ *   migrateAdaptationToLangId('')             → ''  (empty preserved)
  */
 export function migrateAdaptationToLangId(stored: string): string {
   const trimmed = stored.trim();
   if (!trimmed) return '';
-  // Already a custom sentinel — preserve as-is.
+  // Step 2: Already a custom sentinel — preserve as-is.
   if (isCustomLangId(trimmed)) return trimmed;
-  // Already a canonical adapt: langId.
+  // Step 3: Already a canonical adapt: langId.
   if (ADAPT_LANG_BY_ID.has(trimmed)) return trimmed;
-  // Search adaptation table directly by uppercase code or normalized aiName.
+  // Step 4: Search adaptation table directly by uppercase code or normalized aiName.
   // This takes priority over the shared LEGACY_INDEX to prevent adapt:FR/EN/ES/
   // DE/PT from resolving to ui:fr/en/es/de/pt (same aiName, different namespace).
   const normed = norm(trimmed);
@@ -500,11 +515,16 @@ export function migrateAdaptationToLangId(stored: string): string {
          norm(l.code) === normed
   );
   if (byDirect) return byDirect.langId;
-  // Try the legacy resolver as a last resort (covers edge cases).
-  const upgraded = migrateToLangId(trimmed);
-  if (upgraded && upgraded.startsWith('adapt:') && ADAPT_LANG_BY_ID.has(upgraded)) return upgraded;
-  // UI langIds aren't valid adaptation targets — fall through to custom wrap.
-  // Unknown free text → wrap as custom sentinel so resolvers stay consistent.
+  // Step 5: Legacy resolver — strictly adapt: namespace only.
+  // Reject ui: results to prevent namespace leakage (e.g. 'french' must not
+  // resolve to 'ui:fr' in the adaptation pipeline).
+  if (!trimmed.startsWith('ui:') && !trimmed.startsWith('adapt:')) {
+    const upgraded = migrateToLangId(trimmed);
+    if (upgraded !== trimmed && upgraded.startsWith('adapt:') && ADAPT_LANG_BY_ID.has(upgraded)) {
+      return upgraded;
+    }
+  }
+  // Step 6: Unknown free text → wrap as custom sentinel so resolvers stay consistent.
   return `${CUSTOM_LANG_ID_PREFIX}${trimmed}`;
 }
 
