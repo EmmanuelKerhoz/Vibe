@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { detectRhymeSchemeMultiLang } from '../lib/rhyme/rhymeSchemeDetector';
+import { detectRhymeSchemeLocally } from '../utils/rhymeSchemeUtils';
 import type { LangCode, SchemeResult } from '../lib/rhyme/types';
 
 /**
@@ -8,7 +9,15 @@ import type { LangCode, SchemeResult } from '../lib/rhyme/types';
  * a shared-state coupling between the two hooks.
  */
 function toLangCode(lang: string): LangCode {
-  const lower = lang.toLowerCase().trim();
+  let normalized = lang.toLowerCase().trim();
+  const canonicalMatch = /^(?:adapt|ui):([a-z]{2,3})$/.exec(normalized);
+  if (canonicalMatch?.[1]) {
+    normalized = canonicalMatch[1];
+  } else if (normalized.startsWith('custom:')) {
+    const customText = getSafeCustomLanguageText(normalized);
+    if (customText === null) return '__unknown__';
+    normalized = customText;
+  }
 
   const VALID_CODES: readonly string[] = [
     'fr','es','it','pt','ro','ca',
@@ -30,7 +39,7 @@ function toLangCode(lang: string): LangCode {
     'nou','pcm','cfg',
     '__unknown__',
   ];
-  if ((VALID_CODES as string[]).includes(lower)) return lower as LangCode;
+  if ((VALID_CODES as string[]).includes(normalized)) return normalized as LangCode;
 
   const NAME_MAP: Record<string, LangCode> = {
     french:'fr', spanish:'es', italian:'it', portuguese:'pt',
@@ -56,7 +65,12 @@ function toLangCode(lang: string): LangCode {
     indonesian:'id', malay:'ms', tagalog:'tl', malagasy:'mg',
     tamil:'ta', telugu:'te', kannada:'kn', malayalam:'ml',
   };
-  return NAME_MAP[lower] ?? '__unknown__';
+  return NAME_MAP[normalized] ?? '__unknown__';
+}
+
+function getSafeCustomLanguageText(value: string): string | null {
+  const customText = value.slice('custom:'.length).trim();
+  return /^(?:adapt|ui|custom):/.test(customText) ? null : customText;
 }
 
 export interface MultiLangLine {
@@ -64,6 +78,22 @@ export interface MultiLangLine {
   text: string;
   /** Language of this specific line (name or LangCode). */
   lang: string;
+}
+
+function isAABBPattern(letters: string[]): boolean {
+  return letters.length % 2 === 0
+    && letters.every((letter, index) => index % 2 === 0 || letter === letters[index - 1]);
+}
+
+export function getRhymeSchemeLabelFromLetters(letters: string[]): SchemeResult['label'] {
+  const pattern = letters.join('');
+  if (letters.length > 0 && new Set(letters).size === 1) return 'MONORHYME';
+  if (pattern === 'AABB' || isAABBPattern(letters)) return 'AABB';
+  if (pattern === 'ABAB' || /^([A-Z])([A-Z])(?:\1\2)+$/.test(pattern)) return 'ABAB';
+  if (pattern === 'ABBA') return 'ABBA';
+  if (pattern === 'ABCABC') return 'ABCABC';
+  if (letters.filter(l => l === 'X').length > letters.length / 2) return 'FREE_VERSE';
+  return 'CUSTOM';
 }
 
 /**
@@ -114,7 +144,20 @@ export function useRhymeSchemeMultiLang(
     try {
       const raw = detectRhymeSchemeMultiLang(filtered);
       if (raw === null) return null;
-      return isProxied !== undefined ? { ...raw, isProxied } : raw;
+      const firstLang = filtered[0]?.lang;
+      const singleLang = filtered.every(line => line.lang === firstLang);
+      const localScheme = singleLang && firstLang !== undefined && firstLang !== '__unknown__'
+        ? detectRhymeSchemeLocally(filtered.map(line => line.text), firstLang)
+        : null;
+      const corrected = localScheme
+        ? {
+            ...raw,
+            letters: localScheme.split(''),
+            label: getRhymeSchemeLabelFromLetters(localScheme.split('')),
+            confidence: Math.max(raw.confidence, 0.7),
+          }
+        : raw;
+      return isProxied !== undefined ? { ...corrected, isProxied } : corrected;
     } catch (err) {
       if (process.env.NODE_ENV !== 'production') {
         console.warn('[useRhymeSchemeMultiLang] detection failed:', err);

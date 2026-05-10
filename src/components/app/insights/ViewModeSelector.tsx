@@ -15,7 +15,7 @@ export function ViewModeSelector({ editMode, switchEditMode, disabled }: ViewMod
 
   return (
     <div className="flex items-center gap-1.5 shrink-0">
-      <Tooltip title={t.tooltips.viewMode ?? ''}>
+      <Tooltip title="Switch editor views" positioning={{ position: 'below', align: 'start' }}>
         <div style={{ minWidth: '110px', maxWidth: '150px' }}>
           <LcarsSelect
             value={editMode}

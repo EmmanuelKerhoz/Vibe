@@ -81,11 +81,11 @@ export const SectionFooter = React.memo(function SectionFooter({
     : (t.tooltips?.regenerateSection ?? 'Regenerate this section');
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-3">
+    <div className="mt-2 flex flex-wrap items-center gap-2.5">
       <button
         type="button"
         onClick={() => { addLineToSection(sectionId); playAudioFeedback('click'); }}
-        className="flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
+        className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
       >
         <Plus className="h-3 w-3" />
         {t.editor.addLine ?? '+ ADD LINE'}
@@ -98,6 +98,7 @@ export const SectionFooter = React.memo(function SectionFooter({
         onChange={handleInstructionChange}
         onAdd={addInstruction}
         onRemove={removeInstruction}
+        addButtonLabel="Add pre cue"
       />
       <InstructionEditor
         sectionId={sectionId}
@@ -106,6 +107,7 @@ export const SectionFooter = React.memo(function SectionFooter({
         onChange={handleInstructionChange}
         onAdd={addInstruction}
         onRemove={removeInstruction}
+        addButtonLabel="Add post cue"
       />
 
       {showBadge && schemeResult && (
@@ -130,8 +132,8 @@ export const SectionFooter = React.memo(function SectionFooter({
             disabled={!canRegenerate}
             aria-label={regenTooltip}
             className={`
-              flex items-center gap-1 text-[10px] uppercase tracking-[0.2em]
-              text-zinc-600 dark:text-zinc-500
+              flex items-center gap-1 text-[10px] uppercase tracking-[0.18em]
+              text-zinc-700 dark:text-zinc-400
               hover:text-zinc-900 dark:hover:text-zinc-200
               transition disabled:opacity-40 disabled:cursor-not-allowed
               ${showBadge ? '' : 'ml-auto'}

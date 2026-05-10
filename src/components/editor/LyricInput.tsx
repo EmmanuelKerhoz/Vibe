@@ -166,7 +166,7 @@ export const LyricInput = React.memo(function LyricInput({
   return (
     <div
       className={[
-        'group relative flex items-center gap-1.5 rounded pl-1 pr-8 py-0.5 transition-all',
+        'group relative flex items-center gap-1.5 rounded pl-1 pr-8 py-1 transition-all',
         isSelected ? 'bg-black/[0.03] dark:bg-white/5' : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.03]',
         isDraggedLine ? 'opacity-40' : '',
         isDragOverLine ? 'border-t border-[var(--accent-color)]/60' : '',
@@ -176,7 +176,7 @@ export const LyricInput = React.memo(function LyricInput({
       onDrop={handleDrop}
     >
       {/* Line number */}
-      <span className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-500 select-none" aria-hidden="true">
+      <span className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-600 dark:text-zinc-400 select-none" aria-hidden="true">
         {globalLineNumber ?? ''}
       </span>
 
@@ -311,7 +311,7 @@ export const LyricInput = React.memo(function LyricInput({
       })()}
 
       {/* COL: COUNT */}
-      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-500 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-400 transition-colors w-[2.75rem] text-right">
+      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors w-[2.75rem] text-right">
         {line.syllables > 0 ? line.syllables : ''}
       </span>
 

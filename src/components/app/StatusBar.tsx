@@ -98,7 +98,7 @@ export function StatusBar({
   const insights = t.insights ?? {};
 
   return (
-    <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[10px]${className ? ` ${className}` : ''}`}>
+    <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-[11px]${className ? ` ${className}` : ''}`}>
       {/* Left: system status + storage gauge + KPIs (desktop only) */}
       <div className="flex items-center gap-2 lg:gap-4">
         <div className="flex items-center gap-1.5">

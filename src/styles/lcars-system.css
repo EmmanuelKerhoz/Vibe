@@ -148,10 +148,13 @@
 .dialog-surface,
 .acrylic,
 .ui-fluent .fluent-card,
-.ui-fluent .lcars-panel,
-.lcars-band {
+.ui-fluent .lcars-panel {
   --lcars-gradient-border-opacity:      0.55;
   --lcars-gradient-border-hover-opacity: 0.82;
+}
+.lcars-band {
+  --lcars-gradient-border-opacity:      0.35;
+  --lcars-gradient-border-hover-opacity: 0.62;
 }
 
 /* Dark mode: transparent base borders */

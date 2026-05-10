@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useRhymeSchemeMultiLang } from '../useRhymeSchemeMultiLang';
+import { getRhymeSchemeLabelFromLetters, useRhymeSchemeMultiLang } from '../useRhymeSchemeMultiLang';
 
 // --- A: too few lines --------------------------------------------------------
 
@@ -39,6 +39,20 @@ describe('useRhymeSchemeMultiLang - fewer than 2 usable lines', () => {
       ])
     );
     expect(result.current).toBeNull();
+  });
+});
+
+describe('getRhymeSchemeLabelFromLetters', () => {
+  it.each([
+    [['A', 'A', 'A'], 'MONORHYME'],
+    [['A', 'A', 'B', 'B'], 'AABB'],
+    [['A', 'B', 'A', 'B'], 'ABAB'],
+    [['A', 'B', 'B', 'A'], 'ABBA'],
+    [['A', 'B', 'C', 'A', 'B', 'C'], 'ABCABC'],
+    [['X', 'A', 'X', 'X'], 'FREE_VERSE'],
+    [['A', 'B', 'C', 'D'], 'CUSTOM'],
+  ] as const)('maps %j to %s', (letters, expected) => {
+    expect(getRhymeSchemeLabelFromLetters([...letters])).toBe(expected);
   });
 });
 
@@ -162,5 +176,17 @@ describe('useRhymeSchemeMultiLang - toLangCode resilience', () => {
     expect(() =>
       renderHook(() => useRhymeSchemeMultiLang(lines))
     ).not.toThrow();
+  });
+
+  it('resolves canonical adaptation langIds before detecting French schemes', () => {
+    const lines = [
+      { text: 'Un instant éternel, venu d’un autre espace,', lang: 'adapt:FR' },
+      { text: 'Mon âme a senti cette étreinte qui passe.', lang: 'adapt:FR' },
+      { text: 'Avec un inconnu, sans mots et sans visage,', lang: 'adapt:FR' },
+      { text: "Un secret partagé, au-delà de l'âge.", lang: 'adapt:FR' },
+    ];
+    const { result } = renderHook(() => useRhymeSchemeMultiLang(lines));
+    expect(result.current?.letters).toEqual(['A', 'A', 'B', 'B']);
+    expect(result.current?.label).toBe('AABB');
   });
 });
