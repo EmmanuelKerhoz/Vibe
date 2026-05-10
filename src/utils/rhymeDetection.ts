@@ -45,16 +45,12 @@ const isVowel = (ch: string) => VOWELS.has(ch);
 /**
  * Strip Unicode accents and lowercase — with optional tonal preservation.
  * For tonal languages (KWA, CRV families), tone diacritics are preserved.
- * @param s - The string to normalize
- * @param langCode - Optional language code for tonal language detection
  */
 const normalizeWord = (s: string, langCode?: string): string => {
   const normalized = s.normalize('NFD');
-
   const stripDiacritics = isTonalLanguage(langCode || '')
     ? normalized
     : normalized.replace(/[\u0300-\u036f]/g, '');
-
   return stripDiacritics.toLowerCase().replace(/[^a-z\u0300-\u036f]/g, '');
 };
 
@@ -62,31 +58,20 @@ const normalizeWord = (s: string, langCode?: string): string => {
  * Extract the final word-like token from a lyric line, normalize it for
  * comparisons, and keep the original start offset so UI highlighting can be
  * mapped back onto the untouched line text.
- * @param text - The text to extract from
- * @param langCode - Optional language code for tonal preservation
  */
 const extractLastWord = (text: string, langCode?: string): WordMatch | null => {
   const trimmedText = text.trimEnd().replace(/[^\p{L}\p{N}]+$/u, '');
   if (!trimmedText) return null;
-
   const lastWordMatch = /[\p{L}\p{N}]+$/u.exec(trimmedText);
   if (!lastWordMatch) return null;
-
   const lastWord = lastWordMatch[0];
   const normalizedWord = normalizeWord(lastWord, langCode);
   if (!normalizedWord) return null;
-
-  return {
-    lastWord,
-    normalizedWord,
-    wordStart: lastWordMatch.index,
-  };
+  return { lastWord, normalizedWord, wordStart: lastWordMatch.index };
 };
 
 /**
- * Identify contiguous vowel groups inside a normalized word. These spans act
- * as the candidate starting points for rime comparisons and fallback splits.
- * Uses the extended IPA VOWELS set to correctly handle non-Latin families.
+ * Identify contiguous vowel groups inside a normalized word.
  */
 const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
   const vowelGroups: VowelSpan[] = [];
@@ -105,14 +90,17 @@ const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
 };
 
 /**
- * Keep short endings intact, but normalise common trailing plural markers on
- * longer endings so pairs like "certitudes"/"servitude" and
- * "possessifs"/"adjectif" can still converge on the same rime family.
+ * Canonicalize a Romance rhyme suffix to a phonemic equivalence class.
  *
- * Canonical vowel-sequence substitutions (e.g. "an/en/am" → "an") are
- * Romance-specific orthographic conventions and are therefore gated on
- * ALGO-ROM. For all other families the raw suffix is returned as-is,
- * letting the IPA pipeline handle phonemic equivalence.
+ * CHANGED from previous version:
+ * - Removed `ace/asse → 'as'`: those two endings don't rhyme with each other
+ *   cross-word (e.g. "espace" vs "passe") and merging them caused false
+ *   AABB groupings when the actual rhyme families were distinct.
+ * - Each nasal/vowel cluster is kept as a separate canonical form so that
+ *   suffix-overlap matching can still pair words within the same class
+ *   (e.g. "balance"/"chance" → both → 'an') without bleeding across classes.
+ * - Non-Romance families pass through unchanged; the IPA pipeline handles
+ *   their phonemic equivalences.
  *
  * When langCode is absent the Romance rules apply as a safe default,
  * preserving existing behaviour for callers that don't pass a language.
@@ -124,15 +112,20 @@ const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
   const isRomance = !family || family === 'ALGO-ROM';
 
   if (isRomance) {
-    if (/^(?:ace|asse)$/.test(s)) return 'as';
-    if (/^oi/.test(s)) return 'oi';
+    // Nasal vowels — kept separate so cross-class bleeding is prevented
     if (/^(?:an|en|am|em)/.test(s)) return 'an';
     if (/^(?:in|ain|ein|im|yn|ym)/.test(s)) return 'in';
     if (/^(?:on|om)/.test(s)) return 'on';
     if (/^(?:un|um)/.test(s)) return 'un';
+    // Oral vowel digraphs
+    if (/^oi/.test(s)) return 'oi';
     if (/^(?:eu|oeu|oe)/.test(s)) return 'eu';
     if (/^ou/.test(s)) return 'ou';
     if (/^(?:au|eau)/.test(s)) return 'au';
+    // NOTE: ace/asse merger intentionally removed — they represent different
+    // phoneme sequences ([as] vs [as(ə)]) and should not be coerced into the
+    // same bucket. Suffix-overlap via getLongestCommonSuffix already handles
+    // near-identical endings naturally.
   }
 
   return s;
@@ -140,8 +133,7 @@ const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string => {
 
 /**
  * Return the canonicalized suffix starting from the last vowel group of a
- * normalized word. Falls back to canonicalizing the whole word when no vowel
- * group is found (all-consonant edge case, e.g. after heavy NFD stripping).
+ * normalized word.
  */
 const getLastVowelGroupSuffix = (normalizedWord: string, langCode?: string): string => {
   const vowelGroups = getVowelGroups(normalizedWord);
@@ -153,14 +145,10 @@ const getLastVowelGroupSuffix = (normalizedWord: string, langCode?: string): str
 const getRhymeCandidates = (text: string, langCode?: string): RhymeCandidate[] => {
   const word = extractLastWord(text, langCode);
   if (!word) return [];
-
   const vowelGroups = getVowelGroups(word.normalizedWord);
   if (vowelGroups.length === 0) {
-    return [{
-      normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord, langCode),
-    }];
+    return [{ normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord, langCode) }];
   }
-
   return vowelGroups.map(({ start }) => ({
     normalizedSuffix: canonicalizeRhymeSuffix(word.normalizedWord.slice(start), langCode),
   }));
@@ -183,9 +171,16 @@ const getLongestCommonSuffix = (a: string, b: string): string => {
 };
 
 /**
- * Require at least 2 shared characters for general rhyme matching, but allow
- * exact one-vowel matches for short endings such as "zéro"/"ego" so we do not
- * discard valid monosyllabic vowel rhymes.
+ * Determine whether a shared suffix is strong enough to count as a rhyme.
+ *
+ * Rules (in order):
+ * 1. For scheme detection in Romance languages: require >= 3 shared chars.
+ *    This prevents single-vowel (`e`, `a`) and two-char consonant-final
+ *    overlaps (`ce`/`ge`, `se`/`ze`) from creating spurious rhyme families
+ *    across phonetically unrelated endings like -espace/-visage.
+ * 2. For non-scheme (highlight) mode: >= 2 chars suffices as before.
+ * 3. Single-vowel exact match allowed for monosyllabic words ("zéro"/"ego"),
+ *    but mute-e is still blocked for Romance scheme detection.
  */
 const isSharedRhymeStrongEnough = (
   suffix: string,
@@ -193,27 +188,32 @@ const isSharedRhymeStrongEnough = (
   langCode?: string,
   options?: RhymeMatchOptions,
 ): boolean => {
-  if (suffix.length >= 2) return true;
+  const family = langCode ? getAlgoFamily(langCode) : undefined;
+  const isRomance = !family || family === 'ALGO-ROM';
 
-  if (!(exactMatch && suffix.length === 1 && isVowel(suffix))) return false;
-
-  // For Romance scheme detection, mute-e-only matches are too permissive and
-  // create false families across unrelated endings.
-  if (options?.forScheme && suffix === 'e') {
-    const family = langCode ? getAlgoFamily(langCode) : undefined;
-    const isRomance = !family || family === 'ALGO-ROM';
-    if (isRomance) return false;
+  // Scheme detection: stricter minimum to avoid cross-family false positives
+  if (options?.forScheme && isRomance) {
+    if (suffix.length >= 3) return true;
+    // Allow exact canonical matches of length 2 for closed nasal/oral classes
+    // (e.g. 'an', 'in', 'on', 'un', 'ou', 'oi', 'eu', 'au') but block raw
+    // two-char overlaps like 'ce', 'se', 'ge' that appear across distinct endings.
+    const CANONICAL_DIGRAPHS = new Set(['an', 'in', 'on', 'un', 'ou', 'oi', 'eu', 'au']);
+    if (exactMatch && suffix.length === 2 && CANONICAL_DIGRAPHS.has(suffix)) return true;
+    // Block mute-e single-vowel exact match
+    if (exactMatch && suffix.length === 1 && isVowel(suffix) && suffix !== 'e') return true;
+    return false;
   }
 
+  // Non-scheme or non-Romance: original behaviour
+  if (suffix.length >= 2) return true;
+  if (!(exactMatch && suffix.length === 1 && isVowel(suffix))) return false;
+  if (options?.forScheme && suffix === 'e') return false;
   return true;
 };
 
 /**
  * Compare every vowel-group-based candidate suffix from two lines and keep the
  * longest shared rime that is strong enough to count as an actual rhyme.
- * @param a - First line text
- * @param b - Second line text
- * @param langCode - Optional language code for tonal preservation
  */
 const findBestSharedRhymeSuffix = (
   a: string,
@@ -241,63 +241,39 @@ const findBestSharedRhymeSuffix = (
 
 /**
  * Known French vowel digraphs — two-vowel sequences representing a single
- * phoneme. "ie" is intentionally excluded because it is graphemically a
- * hiatus in most contexts (e.g. "miette" where i and e belong to separate
- * syllable nuclei).
+ * phoneme.
  */
 const FRENCH_DIGRAPHS = new Set(['ai', 'ei', 'oi', 'ou', 'au', 'eu']);
 
 /**
  * Extend a shared-suffix position backward to include the preceding vowel
- * onset so the UI highlights complete French rimes rather than bare consonant
- * overlaps. For example, shared suffix "te" in "miette" extends to "ette",
- * and in "défaite" extends to "aite" (recognising "ai" as a diphthong).
- *
- * The loop bound is `pos > 0` (not `pos >= 0`) to guarantee that
- * normalizedWord[pos] is always a valid in-bounds access.
+ * onset so the UI highlights complete French rimes.
  */
 const extendToVowelOnset = (normalizedWord: string, suffixStart: number): number => {
   if (suffixStart <= 0) return suffixStart;
-
   let pos = suffixStart;
-
   if (!isVowel(normalizedWord[pos]!)) {
     while (pos > 0 && !isVowel(normalizedWord[pos]!)) pos--;
-    // pos === 0: check the first character; if still not a vowel, no onset found
     if (!isVowel(normalizedWord[pos]!)) return suffixStart;
   }
-
   if (pos >= 1 && isVowel(normalizedWord[pos - 1]!)) {
     const digraph = normalizedWord[pos - 1]! + normalizedWord[pos]!;
-    if (FRENCH_DIGRAPHS.has(digraph)) {
-      return pos - 1;
-    }
+    if (FRENCH_DIGRAPHS.has(digraph)) return pos - 1;
   }
-
   return pos;
 };
 
 /**
- * Split a line at the start of a normalized suffix found inside its last word,
- * preserving the original spelling and trailing punctuation in the rhyming
- * fragment returned to the UI overlay.
- *
- * For non-tonal languages the highlight is extended backward to include the
- * vowel onset preceding the shared consonant suffix, so that complete rhyming
- * syllables like "ette", "ête", "aite" are marked rather than just the bare
- * consonant overlap ("te").
+ * Split a line at the start of a normalized suffix found inside its last word.
  */
 const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, langCode?: string): { before: string; rhyme: string } | null => {
   const word = extractLastWord(text, langCode);
   if (!word) return null;
-
   const suffixStart = word.normalizedWord.lastIndexOf(normalizedSuffix);
   if (suffixStart < 0) return null;
-
   const effectiveStart = isTonalLanguage(langCode || '')
     ? suffixStart
     : extendToVowelOnset(word.normalizedWord, suffixStart);
-
   const absoluteStart = word.wordStart + effectiveStart;
   return {
     before: text.slice(0, absoluteStart),
@@ -306,37 +282,24 @@ const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, lan
 };
 
 /**
- * When no matching peer line is available, fall back to highlighting from the
- * last vowel group of the word so the UI still marks a plausible rhyming tail.
+ * Fallback: highlight from the last vowel group of the word.
  */
 const getFallbackRhymingSuffix = (text: string, langCode?: string): { before: string; rhyme: string } | null => {
   const word = extractLastWord(text, langCode);
   if (!word) return null;
-
   const suffix = getLastVowelGroupSuffix(word.normalizedWord, langCode);
   if (!suffix) {
-    return {
-      before: text.slice(0, word.wordStart),
-      rhyme: text.slice(word.wordStart),
-    };
+    return { before: text.slice(0, word.wordStart), rhyme: text.slice(word.wordStart) };
   }
-
   return splitLineAtNormalizedSuffix(text, suffix, langCode);
 };
 
-/**
- * Remove the last whitespace-separated token from a line so suffix highlighting
- * can ignore a trailing connector already classified as enjambment.
- */
 const removeTrailingToken = (text: string): string => text.trimEnd().replace(/\s+\S+$/, '');
 
 export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langCode?: string): { before: string; rhyme: string } | null => {
   const segment = segmentVerseToRhymingUnit(text, langCode);
-  const effectiveText = segment.position === 'enjambed'
-    ? removeTrailingToken(text)
-    : text;
+  const effectiveText = segment.position === 'enjambed' ? removeTrailingToken(text) : text;
   let bestSuffix: string | null = null;
-
   for (const peerLine of peerLines) {
     const peerSegment = segmentVerseToRhymingUnit(peerLine, langCode);
     const sharedSuffix = findBestSharedRhymeSuffix(
@@ -348,22 +311,13 @@ export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langC
       bestSuffix = sharedSuffix;
     }
   }
-
   if (bestSuffix) {
     const split = splitLineAtNormalizedSuffix(effectiveText, bestSuffix, langCode);
     if (split) return split;
   }
-
   return getFallbackRhymingSuffix(effectiveText, langCode);
 };
 
-/**
- * Two lines rhyme when they share a strong enough rime suffix derived from
- * vowel-group candidates. This keeps scheme detection aligned with the same
- * rime logic used by the UI highlight overlay. Exact one-vowel matches are
- * allowed for short words such as "zéro" / "ego", while longer matches use a
- * suffix overlap.
- */
 export const doLinesRhymeGraphemic = (
   a: string,
   b: string,
@@ -377,23 +331,8 @@ export const doLinesRhymeGraphemic = (
 
 // ─── Step-0: verse segmentation ──────────────────────────────────────────────
 
-/**
- * Type of rhyme position within a line.
- * - 'end'      : classical end-of-line rhyme (default)
- * - 'internal' : rhyming unit found mid-line (caesura / internal rhyme)
- * - 'enjambed' : last token is syntactically incomplete (enjambement detected
- *                heuristically via trailing connector words)
- */
 export type RhymePosition = 'end' | 'internal' | 'enjambed';
 
-/**
- * Result of segmenting a verse line into its rhyming unit.
- * `rhymingUnit` is the normalized token passed to the IPA/graphemic pipeline.
- * `position` describes the structural role of that unit within the line.
- * `syllableIndex`, when present, indicates which syllable of the last word
- * carries the rhyme (0-based from the end, so 0 = final syllable). It is
- * only provided when a meaningful syllable-level rhyme position is known.
- */
 export type VerseRhymingSegment = {
   rhymingUnit: string;
   position: RhymePosition;
@@ -401,11 +340,6 @@ export type VerseRhymingSegment = {
   syllableIndex?: number;
 };
 
-/**
- * Connector words that suggest a line is syntactically incomplete
- * (enjambement). Checked against the normalized last token.
- * Covers the most frequent Romance + Germanic cases.
- */
 const ENJAMBMENT_CONNECTORS = new Set([
   // French
   'et', 'ou', 'mais', 'donc', 'or', 'ni', 'car', 'que', 'qui', 'dont',
@@ -436,88 +370,33 @@ const ENJAMBMENT_CONNECTORS = new Set([
   'ma', 'be',
 ]);
 
-/**
- * Check connector words in their current Unicode form and in NFC so tonal
- * connector spellings match whether they arrive precomposed or decomposed.
- */
 const isEnjambmentConnector = (normalizedToken: string): boolean =>
   ENJAMBMENT_CONNECTORS.has(normalizedToken) || ENJAMBMENT_CONNECTORS.has(normalizedToken.normalize('NFC'));
 
-/**
- * Families with agglutinative morphology where the last word of a line may
- * carry multiple candidate stress positions. For these families, we pick the
- * last stressed syllable (approximated as the last vowel-group boundary).
- */
 const AGGLUTINATIVE_FAMILIES = new Set(['ALGO-TRK', 'ALGO-FIN', 'ALGO-KOR']);
 
-/**
- * Detect whether a line contains an internal rhyme by scanning for a
- * repeated rhyme suffix pattern before the final word.
- *
- * Strategy: derive the last-vowel-group suffix for each candidate token and
- * for the end word, then check whether one suffix is a prefix of the other
- * (which handles trailing silent consonants, e.g. "nuit" suffix "uit" matches
- * "lui" suffix "ui" because "uit" starts with "ui"). The shared nucleus must
- * be at least 2 characters to avoid false positives on common single-vowel
- * endings like "e".
- *
- * Returns the mid-line token that mirrors the end rhyme, or null if none.
- */
 const detectInternalRhymeToken = (tokens: string[], lastWord: string, langCode?: string): string | null => {
   if (tokens.length < 2) return null;
-
   const lwSuffix = getLastVowelGroupSuffix(lastWord, langCode);
-
-  // A single-character nucleus is too common to be a meaningful internal rhyme.
   if (!lwSuffix || lwSuffix.length < 2) return null;
-
   const candidates = tokens.slice(0, -1);
   for (const token of candidates) {
     const normalized = normalizeWord(token, langCode);
     if (!normalized) continue;
-
     const suffix = getLastVowelGroupSuffix(normalized, langCode);
     if (!suffix) continue;
-
-    // One suffix must be a leading prefix of the other so that "uit"/"ui"
-    // (nuit/lui) and "oir"/"oir" (soir/avoir) both match, while "e"/"are"
-    // (marche/encore) do not. Require >= 2 shared characters.
     const shared = suffix.startsWith(lwSuffix)
       ? lwSuffix
       : lwSuffix.startsWith(suffix)
         ? suffix
         : null;
-
     if (shared && shared.length >= 2) return token;
   }
   return null;
 };
 
-/**
- * Step-0 of the rhyme pipeline: segment a raw verse line into its rhyming
- * unit before passing to G2P / IPA scoring.
- *
- * Rules applied in order:
- * 1. Strip trailing punctuation; tokenize on whitespace.
- * 2. For agglutinative families (TRK/FIN/KOR): take the last word, extract
- *    its last stressed syllable (last vowel-group), use that as rhymingUnit.
- * 3. Enjambement heuristic: if the last normalized token is a known connector
- *    word, mark position as 'enjambed' and use the penultimate content word.
- * 4. Internal rhyme detection: check whether any pre-final token shares the
- *    end-rhyme suffix. If found, mark position as 'internal'.
- * 5. Default: last word of line → position 'end'.
- *
- * Tonal languages (KWA/CRV/BNT/SIN/TAI/VIET): extractLastWord is called
- * without diacritic stripping so tone marks are preserved in rhymingUnit.
- *
- * @param line       Raw verse line text
- * @param langCode   ISO 639 code; undefined → ALGO-ROM rules
- * @returns          VerseRhymingSegment ready for pipeline step 1
- */
 export const segmentVerseToRhymingUnit = (line: string, langCode?: string): VerseRhymingSegment => {
   const family = langCode ? getAlgoFamily(langCode) : undefined;
-
-  // Tokenize: strip trailing punctuation then split on whitespace
   const stripped = line.trimEnd().replace(/[^\p{L}\p{N}\s]+$/u, '').trim();
   const tokens = stripped.split(/\s+/).filter(Boolean);
 
@@ -525,59 +404,37 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
     return { rhymingUnit: '', position: 'end', originalText: line };
   }
 
-  // ── Agglutinative: pick last stressed syllable of last word ──────────────
   if (family && AGGLUTINATIVE_FAMILIES.has(family)) {
     const lastToken = tokens[tokens.length - 1]!;
     const normalized = normalizeWord(lastToken, langCode);
     const vowelGroups = getVowelGroups(normalized);
-    // For non-Latin scripts (e.g. Hangul) normalizeWord may strip everything;
-    // fall back to the original token so rhymingUnit is never empty.
     const rhymingUnit = vowelGroups.length > 0
       ? normalized.slice(vowelGroups[vowelGroups.length - 1]!.start)
       : (normalized || lastToken);
-    return {
-      rhymingUnit,
-      position: 'end',
-      originalText: line,
-    };
+    return { rhymingUnit, position: 'end', originalText: line };
   }
 
-  // ── Enjambement heuristic ─────────────────────────────────────────────────
   const lastToken = tokens[tokens.length - 1]!;
   const lastNormalized = normalizeWord(lastToken, langCode);
   if (isEnjambmentConnector(lastNormalized) && tokens.length >= 2) {
     const contentToken = tokens[tokens.length - 2]!;
     const contentNormalized = normalizeWord(contentToken, langCode);
-    return {
-      rhymingUnit: contentNormalized,
-      position: 'enjambed',
-      originalText: line,
-    };
+    return { rhymingUnit: contentNormalized, position: 'enjambed', originalText: line };
   }
 
-  // ── Internal rhyme detection ──────────────────────────────────────────────
   const wordMatch = extractLastWord(stripped, langCode);
   if (wordMatch) {
     const internalToken = detectInternalRhymeToken(tokens, wordMatch.normalizedWord, langCode);
     if (internalToken) {
-      return {
-        rhymingUnit: wordMatch.normalizedWord,
-        position: 'internal',
-        originalText: line,
-      };
+      return { rhymingUnit: wordMatch.normalizedWord, position: 'internal', originalText: line };
     }
   }
 
-  // ── Default: end rhyme ────────────────────────────────────────────────────
   const rhymingUnit = wordMatch ? wordMatch.normalizedWord : lastNormalized;
-  return {
-    rhymingUnit,
-    position: 'end',
-    originalText: line,
-  };
+  return { rhymingUnit, position: 'end', originalText: line };
 };
 
-// ─── Existing exports unchanged below ────────────────────────────────────────
+// ─── Similarity / song-level exports (unchanged) ─────────────────────────────
 
 const tokenize = (text: string) =>
   normalizeText(text)
@@ -602,21 +459,15 @@ const getSetOverlapRatio = (left: string[], right: string[]) => {
   return ratio(intersection, union);
 };
 
-const getSharedKeywords = (
-  currentTokens: string[],
-  candidateSong: Section[],
-) => {
+const getSharedKeywords = (currentTokens: string[], candidateSong: Section[]) => {
   const currentCounts = new Map<string, number>();
   const candidateCounts = new Map<string, number>();
-
   for (const token of currentTokens) {
     currentCounts.set(token, (currentCounts.get(token) || 0) + 1);
   }
-
   for (const token of getSongTokens(candidateSong)) {
     candidateCounts.set(token, (candidateCounts.get(token) || 0) + 1);
   }
-
   return [...currentCounts.entries()]
     .filter(([token]) => candidateCounts.has(token))
     .map(([token, count]) => ({
@@ -632,25 +483,18 @@ const getMatchedSections = (currentSong: Section[], candidateSong: Section[]) =>
   const candidateByName = new Map(
     candidateSong.map(section => [normalizeText(section.name), section] as const),
   );
-
   return currentSong
     .map((section) => {
       const candidateSection = candidateByName.get(normalizeText(section.name));
       if (!candidateSection) return null;
-
       const sectionScore = Math.round(
         getSetOverlapRatio(
           (section.lines ?? []).map(line => normalizeText(line.text ?? '')).filter(Boolean),
           (candidateSection.lines ?? []).map(line => normalizeText(line.text ?? '')).filter(Boolean),
         ) * 100,
       );
-
       if (sectionScore === 0) return null;
-
-      return {
-        name: section.name,
-        score: sectionScore,
-      };
+      return { name: section.name, score: sectionScore };
     })
     .filter((section): section is SimilaritySectionMatch => section !== null)
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
@@ -666,18 +510,12 @@ const calculateSimilarity = (
   const candidateTokens = getSongTokens(candidateSong);
   const currentSections = currentSong.map(section => normalizeText(section.name));
   const candidateSections = candidateSong.map(section => normalizeText(section.name));
-
   const lineScore = getSetOverlapRatio(currentLines, candidateLines);
   const tokenScore = getSetOverlapRatio(currentTokens, candidateTokens);
   const structureScore = getSetOverlapRatio(currentSections, candidateSections);
-
   return Math.round((tokenScore * 0.6 + lineScore * 0.3 + structureScore * 0.1) * 100);
 };
 
-/**
- * Section-level lyric similarity and rhyme metadata live here.
- * For IPA phoneme distance/scoring, use ipaUtils.ts through ipaPipeline.ts.
- */
 export const calculateSimilarityWithMetadata = (
   currentSong: Section[],
   candidateSong: Section[],
@@ -688,10 +526,8 @@ export const calculateSimilarityWithMetadata = (
   const candidateTokenSet = new Set(candidateTokens);
   const candidateLines = getSongLines(candidateSong);
   const candidateLineSet = new Set(candidateLines);
-
   const sharedWords = new Set(currentTokens.filter(token => candidateTokenSet.has(token))).size;
   const sharedLines = new Set(currentLines.filter(line => candidateLineSet.has(line))).size;
-
   return {
     score: calculateSimilarity(currentLines, currentTokens, candidateSong, currentSong),
     sharedWords,
@@ -707,10 +543,8 @@ export const getTopSimilarSongMatches = (
   limit = 3,
 ): SimilarityMatch[] => {
   if (currentSong.length === 0) return [];
-
   const currentTokens = getSongTokens(currentSong);
   const currentLines = getSongLines(currentSong);
-
   return versions
     .filter(version => (version.song ?? []).length > 0)
     .map((version) => {
@@ -718,10 +552,8 @@ export const getTopSimilarSongMatches = (
       const candidateTokenSet = new Set(candidateTokens);
       const candidateLines = getSongLines(version.song);
       const candidateLineSet = new Set(candidateLines);
-
       const sharedWords = new Set(currentTokens.filter(token => candidateTokenSet.has(token))).size;
       const sharedLines = new Set(currentLines.filter(line => candidateLineSet.has(line))).size;
-
       return {
         versionId: version.id,
         versionName: version.name,
