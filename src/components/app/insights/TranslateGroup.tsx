@@ -8,8 +8,8 @@ import type { AdaptationLangId } from '../../../i18n/constants';
 import type { Section } from '../../../types';
 
 interface TranslateGroupProps {
-  targetLanguage: string;
-  setTargetLanguage: (lang: string) => void;
+  targetLanguage: AdaptationLangId;
+  setTargetLanguage: (lang: AdaptationLangId) => void;
   isAdaptingLanguage: boolean;
   song: Section[];
   adaptSongLanguage: (lang: AdaptationLangId) => void;
@@ -76,7 +76,7 @@ export function TranslateGroup({
           <LcarsSelect
             value={selectValue}
             onChange={(lang) => {
-              setTargetLanguage(lang);
+              setTargetLanguage(lang as AdaptationLangId);
               if (!isBaseDisabled) adaptSongLanguage(lang as AdaptationLangId);
               handleLanguageSelect(lang);
             }}

@@ -18,8 +18,8 @@ import type { EditMode } from '../types';
 
 export interface InsightsBarContextValue {
   // Language adaptation
-  targetLanguage: string;
-  setTargetLanguage: (v: string) => void;
+  targetLanguage: AdaptationLangId;
+  setTargetLanguage: (v: AdaptationLangId) => void;
   isAdaptingLanguage: boolean;
   isDetectingLanguage: boolean;
   adaptSongLanguage: (lang: AdaptationLangId) => void;
