@@ -12,6 +12,7 @@ import { useRhymeSuggestions } from '../../hooks/useRhymeSuggestions';
 import { quantizeLine } from '../../lib/quantize';
 import type { Section } from '../../types';
 import type { SchemeResult } from '../../lib/rhyme/types';
+import type { AdaptationLangId } from '../../i18n/constants';
 
 type MetaGroup = { kind: 'meta'; lines: Section['lines']; physicalCount: number };
 type LyricItem = { kind: 'lyric'; line: Section['lines'][number]; index: number };
@@ -50,7 +51,7 @@ interface SectionLineListProps {
   section: Section;
   hasApiKey: boolean;
   lineNumberOffset?: number;
-  adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
+  adaptLineLanguage?: (sectionId: string, lineId: string, lang: AdaptationLangId) => void;
   adaptingLineIds?: Set<string>;
   sectionTargetLanguage: string;
   /** Pre-computed scheme result from parent SectionEditor (single hook instance). */

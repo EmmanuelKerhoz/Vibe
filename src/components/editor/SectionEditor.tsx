@@ -26,7 +26,7 @@ interface SectionEditorProps {
   sectionTargetLanguage?: string;
   onSectionTargetLanguageChange?: (sectionId: string, lang: string) => void;
   adaptSectionLanguage?: (sectionId: string, lang: AdaptationLangId) => void;
-  adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
+  adaptLineLanguage?: (sectionId: string, lineId: string, lang: AdaptationLangId) => void;
   adaptingLineIds?: Set<string>;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   onLineBlur?: () => void;

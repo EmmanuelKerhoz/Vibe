@@ -10,6 +10,7 @@ import { getLanguageDisplay } from '../../i18n';
 import { getRhymeTextColor } from '../../utils/songUtils';
 import { splitRhymingSuffix } from '../../utils/rhymeDetection';
 import { useRefs } from '../../contexts/RefsContext';
+import type { AdaptationLangId } from '../../i18n/constants';
 
 export interface LyricInputProps {
   line: Line;
@@ -34,7 +35,7 @@ export interface LyricInputProps {
   addLineToSection: (sectionId: string, afterLineId?: string) => void;
   deleteLineFromSection: (sectionId: string, lineId: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
-  adaptLineLanguage?: (sectionId: string, lineId: string, lang: string) => void;
+  adaptLineLanguage?: (sectionId: string, lineId: string, lang: AdaptationLangId) => void;
   sectionTargetLanguage?: string;
   isAdaptingLine?: boolean;
   onLineBlur?: () => void;
@@ -246,7 +247,13 @@ export const LyricInput = React.memo(function LyricInput({
           <Tooltip title={hasApiKey ? (t.editor?.adaptLine ?? `Adapt line to ${sectionTargetLanguage ?? 'target language'}`) : (t.tooltips.aiUnavailable ?? 'AI unavailable')}>
             <button
               type="button"
-              onClick={() => { adaptLineLanguage(sectionId, line.id, sectionTargetLanguage ?? 'English'); playAudioFeedback('click'); }}
+              onClick={() => {
+                // TODO: sectionTargetLanguage comes from the UI selector as a plain string.
+                // Replace this cast with a runtime guard (isSupportedAdaptationLangId)
+                // once the selector enforces AdaptationLangId at the source.
+                adaptLineLanguage(sectionId, line.id, (sectionTargetLanguage ?? 'English') as AdaptationLangId);
+                playAudioFeedback('click');
+              }}
               disabled={!hasApiKey || isAdaptingLine || isGenerating}
               className="flex h-4 w-4 items-center justify-center text-cyan-600 hover:text-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
