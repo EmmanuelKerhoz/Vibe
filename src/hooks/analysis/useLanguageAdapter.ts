@@ -331,12 +331,16 @@ export const useLanguageAdapter = ({
     void detectLanguage();
   };
 
-  const adaptLineLanguage = async (sectionId: string, lineId: string, rawLanguage: string) => {
-    // Same contract as adaptSongLanguage: `rawLanguage` is a canonical
-    // adaptation langId. The line-level prompt uses the human-readable
-    // name resolved from langIdToAiName(newLanguage) so that changes to the
-    // central registry automatically propagate to LLM calls.
-    const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage as AdaptationLangId));
+  /**
+   * Adapt a single line to a target language.
+   *
+   * Same contract as `adaptSongLanguage` and `adaptSectionLanguage`:
+   * `rawLanguage` must be a canonical `AdaptationLangId` ("adapt:*" or
+   * "custom:*"). Callers must normalise legacy values via
+   * `migrateAdaptationToLangId` before reaching this boundary.
+   */
+  const adaptLineLanguage = async (sectionId: string, lineId: string, rawLanguage: AdaptationLangId) => {
+    const newLanguage = sanitizeLangName(langIdToAiName(rawLanguage));
     const section = song.find(s => s.id === sectionId);
     if (!section) return;
     const line = section.lines.find(l => l.id === lineId);
