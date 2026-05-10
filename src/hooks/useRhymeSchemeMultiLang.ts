@@ -9,10 +9,15 @@ import type { LangCode, SchemeResult } from '../lib/rhyme/types';
  * a shared-state coupling between the two hooks.
  */
 function toLangCode(lang: string): LangCode {
-  const lower = lang.toLowerCase().trim();
-  const canonicalMatch = /^(?:adapt|ui):([a-z]{2,3})$/.exec(lower);
-  if (canonicalMatch?.[1]) return toLangCode(canonicalMatch[1]);
-  if (lower.startsWith('custom:')) return toLangCode(lower.slice('custom:'.length));
+  let normalized = lang.toLowerCase().trim();
+  const canonicalMatch = /^(?:adapt|ui):([a-z]{2,3})$/.exec(normalized);
+  if (canonicalMatch?.[1]) {
+    normalized = canonicalMatch[1];
+  } else if (normalized.startsWith('custom:')) {
+    const customText = normalized.slice('custom:'.length).trim();
+    if (/^(?:adapt|ui|custom):/.test(customText)) return '__unknown__';
+    normalized = customText;
+  }
 
   const VALID_CODES: readonly string[] = [
     'fr','es','it','pt','ro','ca',
@@ -34,7 +39,7 @@ function toLangCode(lang: string): LangCode {
     'nou','pcm','cfg',
     '__unknown__',
   ];
-  if ((VALID_CODES as string[]).includes(lower)) return lower as LangCode;
+  if ((VALID_CODES as string[]).includes(normalized)) return normalized as LangCode;
 
   const NAME_MAP: Record<string, LangCode> = {
     french:'fr', spanish:'es', italian:'it', portuguese:'pt',
@@ -60,7 +65,7 @@ function toLangCode(lang: string): LangCode {
     indonesian:'id', malay:'ms', tagalog:'tl', malagasy:'mg',
     tamil:'ta', telugu:'te', kannada:'kn', malayalam:'ml',
   };
-  return NAME_MAP[lower] ?? '__unknown__';
+  return NAME_MAP[normalized] ?? '__unknown__';
 }
 
 export interface MultiLangLine {
@@ -73,7 +78,10 @@ export interface MultiLangLine {
 export function getRhymeSchemeLabelFromLetters(letters: string[]): SchemeResult['label'] {
   const pattern = letters.join('');
   if (letters.length > 0 && new Set(letters).size === 1) return 'MONORHYME';
-  if (pattern === 'AABB' || /^([A-Z])\1([A-Z])\2(?:([A-Z])\3)*$/.test(pattern)) return 'AABB';
+  if (
+    pattern === 'AABB' ||
+    (pattern.length % 2 === 0 && letters.every((letter, index) => index % 2 === 0 || letter === letters[index - 1]))
+  ) return 'AABB';
   if (pattern === 'ABAB' || /^([A-Z])([A-Z])(?:\1\2)+$/.test(pattern)) return 'ABAB';
   if (pattern === 'ABBA') return 'ABBA';
   if (pattern === 'ABCABC') return 'ABCABC';
