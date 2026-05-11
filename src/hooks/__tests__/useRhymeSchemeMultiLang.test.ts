@@ -225,13 +225,4 @@ describe('useRhymeSchemeMultiLang - language-code resilience', () => {
     expect(result.current?.label).toBe('AABB');
   });
 
-  it('accepts Sanskrit as a supported rhyme language code', () => {
-    const lines = [
-      { text: 'dharma karma', lang: 'sa' },
-      { text: 'mantra tantra', lang: 'sa' },
-    ];
-    const { result } = renderHook(() => useRhymeSchemeMultiLang(lines));
-    expect(result.current).not.toBeNull();
-    expect(result.current?.warnings).not.toContain('cross-family');
-  });
 });

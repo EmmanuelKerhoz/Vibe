@@ -15,7 +15,7 @@ const RHYME_LANG_CODES: readonly LangCode[] = [
   'ru', 'pl', 'cs', 'sk', 'uk', 'bg', 'sr', 'hr',
   'tr', 'az', 'uz', 'kk',
   'fi', 'hu', 'et',
-  'hi', 'sa', 'ur', 'bn', 'fa', 'pa',
+  'hi', 'ur', 'bn', 'fa', 'pa',
   'id', 'ms', 'tl', 'mg', 'jv',
   'ta', 'te', 'kn', 'ml',
   'nou', 'pcm', 'cfg',
