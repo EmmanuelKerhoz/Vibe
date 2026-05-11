@@ -96,6 +96,30 @@ export function getRhymeSchemeLabelFromLetters(letters: string[]): SchemeResult[
   return 'CUSTOM';
 }
 
+export function applyLocalSchemeOverride(
+  raw: SchemeResult,
+  localScheme: string | null,
+  expectedLineCount: number,
+): SchemeResult {
+  if (!localScheme) return raw;
+
+  const localLetters = localScheme.split('');
+  const hasConsistentLength =
+    localLetters.length === expectedLineCount && raw.letters.length === expectedLineCount;
+  const hasConsistentPairIndexes = raw.pairScores.every(
+    ({ i, j }) => i >= 0 && j >= 0 && i < expectedLineCount && j < expectedLineCount,
+  );
+
+  if (!hasConsistentLength || !hasConsistentPairIndexes) return raw;
+
+  return {
+    ...raw,
+    letters: localLetters,
+    label: getRhymeSchemeLabelFromLetters(localLetters),
+    confidence: Math.max(raw.confidence, 0.7),
+  };
+}
+
 /**
  * Derives the rhyme scheme for a stanza where each line may have a different
  * language — useful for code-switching lyrics (rap, slam, multilingual songs).
@@ -149,14 +173,7 @@ export function useRhymeSchemeMultiLang(
       const localScheme = singleLang && firstLang !== undefined && firstLang !== '__unknown__'
         ? detectRhymeSchemeLocally(filtered.map(line => line.text), firstLang)
         : null;
-      const corrected = localScheme
-        ? {
-            ...raw,
-            letters: localScheme.split(''),
-            label: getRhymeSchemeLabelFromLetters(localScheme.split('')),
-            confidence: Math.max(raw.confidence, 0.7),
-          }
-        : raw;
+      const corrected = applyLocalSchemeOverride(raw, localScheme, filtered.length);
       return isProxied !== undefined ? { ...corrected, isProxied } : corrected;
     } catch (err) {
       if (process.env.NODE_ENV !== 'production') {
