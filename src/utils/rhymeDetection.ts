@@ -702,8 +702,9 @@ const getFallbackRhymingSuffix = (text: string, langCode?: string): { before: st
 };
 
 /**
- * Remove the last whitespace-separated token from a line so suffix highlighting
- * can ignore a trailing connector already classified as enjambment.
+ * Remove the last whitespace-separated token from a line after segmentation has
+ * classified that token as an enjambment connector, so suffix highlighting maps
+ * against the preceding content word rather than the connector.
  */
 const removeTrailingToken = (text: string): string => text.trimEnd().replace(/\s+\S+$/, '');
 
@@ -848,7 +849,9 @@ const detectInternalRhymeToken = (tokens: string[], lastWord: string, langCode?:
   const memoGet = makeMemoizedGetVowelGroups();
   const lwSuffix = getLastVowelGroupSuffix(lastWord, langCode, memoGet);
 
-  // A single-character nucleus is too common to be a meaningful internal rhyme.
+  // A single-character nucleus and Romance mute-final "-es" are too common to
+  // be meaningful internal rhymes, and they cause false positives such as
+  // "ces" being selected as the rhyming unit for "certitudes".
   if (!lwSuffix || lwSuffix.length < 2 || lwSuffix === 'es') return null;
 
   const candidates = tokens.slice(0, -1);
@@ -955,7 +958,7 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
     rhymingUnit,
     position: 'end',
     originalText: line,
-    ...(wordMatch && { lastWord: wordMatch.lastWord }),
+    ...(wordMatch ? { lastWord: wordMatch.lastWord } : {}),
   };
 };
 
