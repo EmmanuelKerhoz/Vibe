@@ -37,15 +37,26 @@ const RHYME_LANG_ALIASES: Record<string, LangCode> = {
   iko: 'og',
 };
 
+/**
+ * Extracts the text payload from a custom language id.
+ * Returns null when the payload is another reserved lang-id prefix to avoid
+ * recursively interpreting nested adapt/ui/custom markers as user text.
+ */
 function getSafeCustomLanguageText(value: string): string | null {
   const customText = value.slice('custom:'.length).trim();
   return /^(?:adapt|ui|custom):/.test(customText) ? null : customText;
 }
 
+/**
+ * Resolves a lowercased language code or name to a LangCode supported by the
+ * rhyme router, trying direct codes first, then shared name mapping, then
+ * router-specific aliases for canonical codes.
+ */
 function resolveSupportedRhymeLangCode(value: string): LangCode {
-  if (RHYME_LANG_CODE_SET.has(value)) return value as LangCode;
+  const normalized = value.toLowerCase();
+  if (RHYME_LANG_CODE_SET.has(normalized)) return normalized as LangCode;
 
-  const mapped = languageNameToCode(value);
+  const mapped = languageNameToCode(normalized);
   if (!mapped) return '__unknown__';
 
   const normalizedMapped = mapped.toLowerCase();
