@@ -671,7 +671,12 @@ const splitLineAtCanonicalSuffix = (
     const canonForms = canonicalizeRhymeSuffix(rawTail, langCode);
 
     const matches = canonForms.some(
-      f => f === canonicalSuffix || f.endsWith(canonicalSuffix),
+      f =>
+        f === canonicalSuffix ||
+        (
+          f.endsWith(canonicalSuffix) &&
+          !isVowel(f[f.length - canonicalSuffix.length - 1] ?? '')
+        ),
     );
     if (!matches) continue;
 
@@ -986,7 +991,7 @@ export const calculateSimilarityWithMetadata = (
   const currentLines = getSongLines(currentSong);
   const candidateTokens = getSongTokens(candidateSong);
   const candidateTokenSet = new Set(candidateTokens);
-  const candidateLines = getSongLines(candidateSong);
+  const candidateLines = getSongLines(currentSong);
   const candidateLineSet = new Set(candidateLines);
 
   const sharedWords = new Set(currentTokens.filter(token => candidateTokenSet.has(token))).size;
