@@ -118,6 +118,29 @@ const getVowelGroups = (normalizedWord: string): VowelSpan[] => {
   return vowelGroups;
 };
 
+/**
+ * Call-site-local memoization helper for getVowelGroups.
+ *
+ * getVowelGroups is a pure function but may be called 2-3× on the same
+ * normalizedWord string within a single scoring cycle (getRhymeCandidates,
+ * getLastVowelGroupSuffix, detectInternalRhymeToken).  Strings are not
+ * WeakMap-keyable so a Map<string, VowelSpan[]> is used instead.
+ *
+ * Usage: create one cache per top-level call frame, pass it through.
+ * The cache is intentionally NOT module-level to avoid stale state across
+ * song-version switches.
+ */
+const makeMemoizedGetVowelGroups = () => {
+  const cache = new Map<string, VowelSpan[]>();
+  return (word: string): VowelSpan[] => {
+    const cached = cache.get(word);
+    if (cached) return cached;
+    const result = getVowelGroups(word);
+    cache.set(word, result);
+    return result;
+  };
+};
+
 // ─── Per-family phonemic normalization tables ────────────────────────────────
 //
 // Each table maps a graphemic suffix (after last-vowel-group extraction) to a
@@ -389,9 +412,16 @@ const canonicalizeRhymeSuffix = (suffix: string, langCode?: string): string[] =>
  *
  * Uses Array.at(-1) instead of a non-null assertion so the function is safe
  * to call in any context, not just after an external length guard.
+ *
+ * Accepts an optional memoized getter to avoid redundant getVowelGroups calls
+ * when invoked from within a scored section cycle.
  */
-const getLastVowelGroupSuffix = (normalizedWord: string, langCode?: string): string => {
-  const vowelGroups = getVowelGroups(normalizedWord);
+const getLastVowelGroupSuffix = (
+  normalizedWord: string,
+  langCode?: string,
+  memoGet: (w: string) => VowelSpan[] = getVowelGroups,
+): string => {
+  const vowelGroups = memoGet(normalizedWord);
   const last = vowelGroups.at(-1);
   const tail = last ? normalizedWord.slice(last.start) : normalizedWord;
   return canonicalizeRhymeSuffix(tail, langCode)[0] ?? tail;
@@ -418,12 +448,20 @@ const getLastVowelGroupSuffix = (normalizedWord: string, langCode?: string): str
  * Highlight mode (forScheme: false / undefined) keeps every vowel group as a
  * candidate so the UI overlay can find the longest shared substring across
  * peer lines, including partial-rime / assonance overlaps.
+ *
+ * Accepts an optional memoized getter to avoid redundant getVowelGroups calls
+ * when invoked from within a scored section cycle.
  */
-const getRhymeCandidates = (text: string, langCode?: string, options?: RhymeMatchOptions): RhymeCandidate[] => {
+const getRhymeCandidates = (
+  text: string,
+  langCode?: string,
+  options?: RhymeMatchOptions,
+  memoGet: (w: string) => VowelSpan[] = getVowelGroups,
+): RhymeCandidate[] => {
   const word = extractLastWord(text, langCode);
   if (!word) return [];
 
-  const vowelGroups = getVowelGroups(word.normalizedWord);
+  const vowelGroups = memoGet(word.normalizedWord);
   if (vowelGroups.length === 0) {
     return canonicalizeRhymeSuffix(word.normalizedWord, langCode)
       .map(normalizedSuffix => ({ normalizedSuffix }));
@@ -545,6 +583,10 @@ const isSharedRhymeStrongEnough = (
 /**
  * Compare every vowel-group-based candidate suffix from two lines and keep the
  * longest shared rime that is strong enough to count as an actual rhyme.
+ *
+ * A shared memoized vowel-group getter is created once per call so that
+ * getRhymeCandidates does not recompute getVowelGroups for repeated words.
+ *
  * @param a - First line text
  * @param b - Second line text
  * @param langCode - Optional language code for tonal preservation
@@ -555,8 +597,9 @@ const findBestSharedRhymeSuffix = (
   langCode?: string,
   options?: RhymeMatchOptions,
 ): string | null => {
-  const aCandidates = getRhymeCandidates(a, langCode, options);
-  const bCandidates = getRhymeCandidates(b, langCode, options);
+  const memoGet = makeMemoizedGetVowelGroups();
+  const aCandidates = getRhymeCandidates(a, langCode, options, memoGet);
+  const bCandidates = getRhymeCandidates(b, langCode, options, memoGet);
   let bestMatch = '';
 
   for (const aCandidate of aCandidates) {
@@ -618,6 +661,9 @@ const extendToVowelOnset = (normalizedWord: string, suffixStart: number): number
  * Returns the matching internal token string (pre-normalization) when found,
  * or null when no internal rhyme exists or the verse has fewer than 3 tokens.
  * The end word itself is excluded from the scan.
+ *
+ * A shared memoized vowel-group getter is created once per call so that
+ * getRhymeCandidates does not recompute getVowelGroups for repeated tokens.
  */
 const detectInternalRhymeToken = (
   tokens: string[],
@@ -626,14 +672,16 @@ const detectInternalRhymeToken = (
 ): string | null => {
   if (tokens.length < 2) return null;
 
+  const memoGet = makeMemoizedGetVowelGroups();
+
   // Exclude the last token (that is the end-rhyme word) from the scan.
   const candidates = tokens.slice(0, -1);
-  const endCandidates = getRhymeCandidates(endWord.normalizedWord, langCode, { forScheme: true });
+  const endCandidates = getRhymeCandidates(endWord.normalizedWord, langCode, { forScheme: true }, memoGet);
 
   for (const token of candidates) {
     const normalizedToken = normalizeWord(token, langCode);
     if (!normalizedToken) continue;
-    const tokenCandidates = getRhymeCandidates(normalizedToken, langCode, { forScheme: true });
+    const tokenCandidates = getRhymeCandidates(normalizedToken, langCode, { forScheme: true }, memoGet);
     for (const tc of tokenCandidates) {
       for (const ec of endCandidates) {
         const exactMatch = tc.normalizedSuffix === ec.normalizedSuffix;
@@ -769,7 +817,8 @@ export const splitRhymingSuffix = (
     return { before: targetLine.slice(0, splitPos), rhyme: word.lastWord };
   }
 
-  const suffix = getLastVowelGroupSuffix(word.normalizedWord, langCode);
+  const memoGet = makeMemoizedGetVowelGroups();
+  const suffix = getLastVowelGroupSuffix(word.normalizedWord, langCode, memoGet);
   if (!suffix) return null;
 
   // Map normalized suffix back to the original word's spelling.
