@@ -13,7 +13,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { getRhymeSchemeLabelFromLetters, useRhymeSchemeMultiLang } from '../useRhymeSchemeMultiLang';
+import {
+  applyLocalSchemeOverride,
+  getRhymeSchemeLabelFromLetters,
+  useRhymeSchemeMultiLang,
+} from '../useRhymeSchemeMultiLang';
+import type { SchemeResult } from '../../lib/rhyme/types';
 
 // --- A: too few lines --------------------------------------------------------
 
@@ -53,6 +58,36 @@ describe('getRhymeSchemeLabelFromLetters', () => {
     [['A', 'B', 'C', 'D'], 'CUSTOM'],
   ] as const)('maps %j to %s', (letters, expected) => {
     expect(getRhymeSchemeLabelFromLetters([...letters])).toBe(expected);
+  });
+});
+
+describe('applyLocalSchemeOverride', () => {
+  const raw: SchemeResult = {
+    letters: ['A', 'B', 'C', 'D'],
+    label: 'CUSTOM',
+    confidence: 0.4,
+    pairScores: [],
+    warnings: [],
+    isProxied: false,
+  };
+
+  it('applies a local scheme only when its length matches detected lines', () => {
+    const corrected = applyLocalSchemeOverride(raw, 'AABB', 4);
+    expect(corrected.letters).toEqual(['A', 'A', 'B', 'B']);
+    expect(corrected.label).toBe('AABB');
+    expect(corrected.confidence).toBe(0.7);
+  });
+
+  it('keeps the multilingual detector result when the local scheme length differs', () => {
+    expect(applyLocalSchemeOverride(raw, 'AAB', 4)).toBe(raw);
+  });
+
+  it('keeps the multilingual detector result when pair score indexes are out of bounds', () => {
+    const inconsistentRaw: SchemeResult = {
+      ...raw,
+      pairScores: [{ i: 0, j: 4, result: {} as SchemeResult['pairScores'][number]['result'] }],
+    };
+    expect(applyLocalSchemeOverride(inconsistentRaw, 'AABB', 4)).toBe(inconsistentRaw);
   });
 });
 
