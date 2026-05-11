@@ -7,7 +7,7 @@
  * C. cross-language stanza -> non-null result with correct letter count
  * D. meta lines filtered out
  * E. isProxied stamp forwarded
- * F. toLangCode name resolution (via lang name string)
+ * F. shared language-code resolution (via lang name string)
  * G. unknown lang code falls back to __unknown__ without throwing
  */
 
@@ -200,9 +200,9 @@ describe('useRhymeSchemeMultiLang - isProxied forwarding', () => {
   });
 });
 
-// --- F: toLangCode resilience ------------------------------------------------
+// --- F: shared language-code resilience --------------------------------------
 
-describe('useRhymeSchemeMultiLang - toLangCode resilience', () => {
+describe('useRhymeSchemeMultiLang - language-code resilience', () => {
   it('does not throw on unknown lang string', () => {
     const lines = [
       { text: 'Gibberish florg', lang: 'klingon' },

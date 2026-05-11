@@ -180,7 +180,6 @@ export const SectionEditor = React.memo(function SectionEditor({
           postInstructions={section.postInstructions ?? []}
           playAudioFeedback={playAudioFeedback}
           schemeResult={schemeResult}
-          isProxied={isProxied}
         />
       </div>
     </section>
