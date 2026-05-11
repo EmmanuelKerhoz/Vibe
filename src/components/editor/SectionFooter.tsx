@@ -51,13 +51,6 @@ interface SectionFooterProps {
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
   /** Pre-computed scheme result from parent SectionEditor (single hook instance). */
   schemeResult: SchemeResult | null;
-  /**
-   * When true, the scheme badge displays a "~" prefix and italic style to
-   * indicate that the analysis relied on a graphemic proxy rather than a
-   * native G2P strategy.
-   * Typically forwarded from `SchemeResult.isProxied`.
-   */
-  isProxied?: boolean;
 }
 
 export const SectionFooter = React.memo(function SectionFooter({
@@ -66,14 +59,13 @@ export const SectionFooter = React.memo(function SectionFooter({
   preInstructions, postInstructions,
   playAudioFeedback,
   schemeResult,
-  isProxied,
 }: SectionFooterProps) {
   const { t } = useTranslation();
   const { isGenerating, isRegeneratingSection, handleInstructionChange, addInstruction, removeInstruction, regenerateSection } = useComposerContext();
   const { addLineToSection } = useSongMutation();
 
   const showBadge = schemeResult !== null && !(schemeResult.label === 'FREE_VERSE' && schemeResult.confidence < 0.25);
-  const proxied: boolean = (isProxied ?? schemeResult?.isProxied) === true;
+  const proxied: boolean = schemeResult?.isProxied === true;
 
   const canRegenerate = hasLyrics && !isRegeneratingSection(sectionId);
   const regenTooltip = !hasLyrics
