@@ -705,6 +705,8 @@ const getFallbackRhymingSuffix = (text: string, langCode?: string): { before: st
  * Remove the last whitespace-separated token from a line after segmentation has
  * classified that token as an enjambment connector, so suffix highlighting maps
  * against the preceding content word rather than the connector.
+ * The pattern matches the final whitespace sequence plus the final non-space
+ * token, preserving the rest of the line exactly as authored.
  */
 const removeTrailingToken = (text: string): string => text.trimEnd().replace(/\s+\S+$/, '');
 
@@ -931,6 +933,8 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
   if (isEnjambmentConnector(lastNormalized) && tokens.length >= 2) {
     const contentToken = tokens[tokens.length - 2]!;
     const contentNormalized = normalizeWord(contentToken, langCode);
+    // Enjambed content is returned for display/highlight matching, so compose
+    // tonal marks back to NFC; default tonal end-rhymes keep NFD for analysis.
     return {
       rhymingUnit: isTonalLanguage(langCode || '') ? contentNormalized.normalize('NFC') : contentNormalized,
       position: 'enjambed',
@@ -954,12 +958,13 @@ export const segmentVerseToRhymingUnit = (line: string, langCode?: string): Vers
 
   // ── Default: end rhyme ────────────────────────────────────────────────────
   const rhymingUnit = wordMatch ? wordMatch.normalizedWord : lastNormalized;
-  return {
+  const segment: VerseRhymingSegment = {
     rhymingUnit,
     position: 'end',
     originalText: line,
-    ...(wordMatch ? { lastWord: wordMatch.lastWord } : {}),
   };
+  if (wordMatch) segment.lastWord = wordMatch.lastWord;
+  return segment;
 };
 
 // ─── Existing exports unchanged below ────────────────────────────────────────
