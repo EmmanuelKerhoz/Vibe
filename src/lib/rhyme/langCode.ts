@@ -10,7 +10,9 @@ const RHYME_LANG_CODES: readonly LangCode[] = [
   'vi', 'km',
   'sw', 'lg', 'rw', 'sn', 'zu', 'xh', 'ny', 'bm', 'ff',
   'yo',
+  // Internal KWA aliases: Baoulé, Dioula, Ewe, Mina.
   'ba', 'di', 'ew', 'mi',
+  // Internal Cross River / Chadic aliases.
   'bk', 'cb', 'og',
   'ru', 'pl', 'cs', 'sk', 'uk', 'bg', 'sr', 'hr',
   'tr', 'az', 'uz', 'kk',
@@ -18,6 +20,7 @@ const RHYME_LANG_CODES: readonly LangCode[] = [
   'hi', 'ur', 'bn', 'fa', 'pa',
   'id', 'ms', 'tl', 'mg', 'jv',
   'ta', 'te', 'kn', 'ml',
+  // Creole / Pidgin codes used by the rhyme router.
   'nou', 'pcm', 'cfg',
   '__unknown__',
 ];

@@ -224,5 +224,4 @@ describe('useRhymeSchemeMultiLang - language-code resilience', () => {
     expect(result.current?.letters).toEqual(['A', 'A', 'B', 'B']);
     expect(result.current?.label).toBe('AABB');
   });
-
 });
