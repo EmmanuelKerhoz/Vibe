@@ -3,6 +3,14 @@ import type { LocalRhymePairAnalysis } from './songRhymeAnalysis';
 
 export const RHYME_SCHEME_LETTERS = 'ABCDEFGH';
 
+/**
+ * Return the scheme letter at `index`, falling back to a generated uppercase
+ * letter for indices beyond RHYME_SCHEME_LETTERS.
+ * Centralises the String.fromCharCode(65 + n) logic so it is never duplicated.
+ */
+const schemeLetterAt = (index: number): string =>
+  RHYME_SCHEME_LETTERS[index] ?? String.fromCharCode(65 + index);
+
 export const finalizeDetectedRhymeScheme = (letters: (string | null)[]): string | null => {
   const letterCounts: Record<string, number> = {};
   for (const letter of letters) {
@@ -15,7 +23,7 @@ export const finalizeDetectedRhymeScheme = (letters: (string | null)[]): string 
   const finalLetters = letters.map((letter) => {
     if (!letter || (counts.get(letter) ?? 0) < 2) return null;
     if (!remap.has(letter)) {
-      remap.set(letter, RHYME_SCHEME_LETTERS[remapIndex] ?? String.fromCharCode(65 + remapIndex));
+      remap.set(letter, schemeLetterAt(remapIndex));
       remapIndex++;
     }
     return remap.get(letter)!;
@@ -64,7 +72,7 @@ export const detectRhymeSchemeFromIPAPairs = (
     if (matchedLetter) {
       letters[i] = matchedLetter;
     } else {
-      letters[i] = RHYME_SCHEME_LETTERS[nextLetter] ?? String.fromCharCode(65 + nextLetter);
+      letters[i] = schemeLetterAt(nextLetter);
       nextLetter++;
     }
     for (let k = i + 1; k < lineCount; k++) {
@@ -114,7 +122,7 @@ export const detectRhymeSchemeLocally = (
     if (matchedExistingLetter) {
       letters[i] = matchedExistingLetter;
     } else {
-      letters[i] = RHYME_SCHEME_LETTERS[nextLetterIndex] ?? String.fromCharCode(65 + nextLetterIndex);
+      letters[i] = schemeLetterAt(nextLetterIndex);
       nextLetterIndex++;
     }
 

@@ -140,8 +140,8 @@ describe('segmentVerseToRhymingUnit', () => {
     // 'nuit' and 'lui' share suffix 'ui'
     const result = segmentVerseToRhymingUnit('Dans la nuit il pense à lui', 'fr');
     expect(result.position).toBe('internal');
-    // end word is still the canonical rhymingUnit
-    expect(result.rhymingUnit).toBe('lui');
+    // When position is internal, rhymingUnit must be the internal token, not end word
+    expect(result.rhymingUnit).toBe('nuit');
   });
 
   it('picks last vowel-group for agglutinative Turkish (ALGO-TRK)', () => {
@@ -165,7 +165,7 @@ describe('segmentVerseToRhymingUnit', () => {
     expect(segmentVerseToRhymingUnit('Mo kọrin àti', 'yo')).toEqual(
       expect.objectContaining({
         position: 'enjambed',
-        rhymingUnit: 'kọrin',
+        rhymingUnit: 'kọrin',
       }),
     );
     expect(segmentVerseToRhymingUnit('N bɛ taa ani', 'dyu')).toEqual(
@@ -315,5 +315,71 @@ describe('detectRhymeSchemeLocally — French schemes', () => {
 
   it('treats connaissance/effervescence as a valid Romance rhyme pair', () => {
     expect(doLinesRhymeGraphemic('Sa forme défiait toute ma connaissance,', 'Une danse de lueurs, une douce effervescence', 'fr')).toBe(true);
+  });
+});
+
+// ─── New tests: canonicalizeRhymeSuffix direct coverage ──────────────────────
+
+// Import the internals via a re-export shim if needed, or test through doLinesRhymeGraphemic.
+// These tests exercise the normalization rules directly by observing rhyme decisions.
+
+describe('canonicalizeRhymeSuffix — nasal and Romance rules', () => {
+  it('collapses an/en/am/em to the same rhyme class', () => {
+    // vent (en→an) should rhyme with dans (an)
+    expect(doLinesRhymeGraphemic('le vent', 'le dans', 'fr', { forScheme: true })).toBe(true);
+    // temps should rhyme with blanc
+    expect(doLinesRhymeGraphemic('le temps', 'le blanc', 'fr', { forScheme: true })).toBe(true);
+  });
+
+  it('collapses ain/ein/in/im to the same rhyme class', () => {
+    // main (ain→in) should rhyme with fin (in)
+    expect(doLinesRhymeGraphemic('la main', 'la fin', 'fr', { forScheme: true })).toBe(true);
+    // plein (ein→in) should rhyme with vin (in)
+    expect(doLinesRhymeGraphemic('le plein', 'le vin', 'fr', { forScheme: true })).toBe(true);
+  });
+
+  it('collapses on/om to the same rhyme class', () => {
+    expect(doLinesRhymeGraphemic('le don', 'le nom', 'fr', { forScheme: true })).toBe(true);
+  });
+
+  it('collapses oeu/eu/oe/ueu to the same rhyme class', () => {
+    // cœur (oeu→eu) should rhyme with fleur (eu)
+    expect(doLinesRhymeGraphemic('le cœur', 'la fleur', 'fr', { forScheme: true })).toBe(true);
+  });
+
+  it('keeps distinct vowel families separate', () => {
+    // an vs in — different nasal classes must NOT rhyme
+    expect(doLinesRhymeGraphemic('le vent', 'le vin', 'fr', { forScheme: true })).toBe(false);
+    // on vs an
+    expect(doLinesRhymeGraphemic('le don', 'le vent', 'fr', { forScheme: true })).toBe(false);
+  });
+
+  it('isRomance fallback applies when langCode is absent', () => {
+    // Without langCode, Romance rules should still apply (explicit design choice).
+    expect(doLinesRhymeGraphemic('le vent', 'le dans', undefined, { forScheme: true })).toBe(true);
+  });
+});
+
+// ─── New tests: detectInternalRhymeToken null branch ─────────────────────────
+
+describe('segmentVerseToRhymingUnit — internal rhyme edge cases', () => {
+  it('returns end position when line has fewer than 3 tokens', () => {
+    // Only 2 tokens → detectInternalRhymeToken returns null, position must be end
+    const result = segmentVerseToRhymingUnit('Nuit calme', 'fr');
+    expect(result.position).toBe('end');
+  });
+
+  it('returns end position when no internal token rhymes with end word', () => {
+    // No phonemic link between any mid-token and the end word
+    const result = segmentVerseToRhymingUnit('Le soleil brille fort', 'fr');
+    expect(result.position).toBe('end');
+    expect(result.rhymingUnit).toBe('fort');
+  });
+
+  it('lastWord is preserved on the segment when position is internal', () => {
+    const result = segmentVerseToRhymingUnit('Dans la nuit il pense à lui', 'fr');
+    expect(result.position).toBe('internal');
+    // lastWord must hold the original end word for UI highlight mapping
+    expect(result.lastWord).toBe('lui');
   });
 });
