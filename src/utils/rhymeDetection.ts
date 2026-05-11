@@ -690,6 +690,67 @@ const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, lan
 };
 
 /**
+ * Resolve the highlight split position for a word whose canonical suffix form
+ * differs from its raw normalized form (e.g. "ence" → canonical "ance" via
+ * ROMANCE_VOWEL_MERGERS; "ight" → canonical "ait" via GER_SUFFIX_TABLE).
+ *
+ * splitLineAtNormalizedSuffix performs lastIndexOf(canonicalSuffix) on the raw
+ * normalizedWord. When canonicalization has transformed the graphemic form, the
+ * canonical string is absent from the raw word and lastIndexOf returns -1.
+ *
+ * This function resolves the split structurally:
+ * 1. Iterate vowel groups of the word from last to first.
+ * 2. Extract the raw tail starting from each group's start position.
+ * 3. Canonicalize that tail via canonicalizeRhymeSuffix.
+ * 4. Accept the group whose canonical form equals canonicalSuffix OR ends with it.
+ * 5. Apply the identical extension logic as splitLineAtNormalizedSuffix
+ *    (extendToVowelOnset for vowel-onset suffixes, tonal bypass).
+ *
+ * Falls through to null when no vowel group canonicalizes to the target suffix,
+ * allowing the caller to fall back to splitLineAtNormalizedSuffix.
+ */
+const splitLineAtCanonicalSuffix = (
+  text: string,
+  canonicalSuffix: string,
+  langCode?: string,
+): { before: string; rhyme: string } | null => {
+  const word = extractLastWord(text, langCode);
+  if (!word) return null;
+
+  const vowelGroups = getVowelGroups(word.normalizedWord);
+
+  // Iterate from the last vowel group backward — shortest rime first.
+  // The first match is the tightest (most specific) split position.
+  for (let i = vowelGroups.length - 1; i >= 0; i--) {
+    const group = vowelGroups[i]!;
+    const rawTail = word.normalizedWord.slice(group.start);
+    const canonForms = canonicalizeRhymeSuffix(rawTail, langCode);
+
+    // Accept when any emitted canonical form equals the target OR ends with it
+    // (handles bare-digraph vs digraph+coda dual-emission from canonicalizeRhymeSuffix).
+    const matches = canonForms.some(
+      f => f === canonicalSuffix || f.endsWith(canonicalSuffix),
+    );
+    if (!matches) continue;
+
+    // Identical extension logic to splitLineAtNormalizedSuffix.
+    const suffixStartsWithVowel = isVowel(word.normalizedWord[group.start] ?? '');
+    const effectiveStart =
+      isTonalLanguage(langCode || '') || !suffixStartsWithVowel
+        ? group.start
+        : extendToVowelOnset(word.normalizedWord, group.start);
+
+    const absoluteStart = word.wordStart + effectiveStart;
+    return {
+      before: text.slice(0, absoluteStart),
+      rhyme: text.slice(absoluteStart),
+    };
+  }
+
+  return null;
+};
+
+/**
  * When no matching peer line is available, fall back to highlighting from the
  * last vowel group of the word so the UI still marks a plausible rhyming tail.
  */
@@ -737,7 +798,13 @@ export const splitRhymingSuffix = (text: string, peerLines: string[] = [], langC
   }
 
   if (bestSuffix) {
-    const split = splitLineAtNormalizedSuffix(effectiveText, bestSuffix, langCode);
+    // Try canonical-aware resolution first: handles words where canonicalization
+    // maps the graphemic form to a different string (ence→ance, ight→ait, etc.).
+    // Fall back to direct lastIndexOf for words where the canonical form is
+    // identical to the raw normalized form (no transformation applied).
+    const split =
+      splitLineAtCanonicalSuffix(effectiveText, bestSuffix, langCode)
+      ?? splitLineAtNormalizedSuffix(effectiveText, bestSuffix, langCode);
     if (split) return split;
   }
 
