@@ -663,6 +663,12 @@ const extendToVowelOnset = (normalizedWord: string, suffixStart: number): number
  * vowel onset preceding the shared consonant suffix, so that complete rhyming
  * syllables like "ette", "ête", "aite" are marked rather than just the bare
  * consonant overlap ("te").
+ *
+ * extendToVowelOnset is only called when normalizedSuffix begins with a vowel.
+ * When the LCS suffix starts with a consonant (e.g. 'ssage', 'eur' after
+ * coeur→coeur mapping), the split position is already at the correct boundary
+ * and backward extension would overshoot into the preceding vowel, producing
+ * wrong highlights like '-essage' instead of '-ssage' or '-oeur' instead of '-eur'.
  */
 const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, langCode?: string): { before: string; rhyme: string } | null => {
   const word = extractLastWord(text, langCode);
@@ -671,7 +677,8 @@ const splitLineAtNormalizedSuffix = (text: string, normalizedSuffix: string, lan
   const suffixStart = word.normalizedWord.lastIndexOf(normalizedSuffix);
   if (suffixStart < 0) return null;
 
-  const effectiveStart = isTonalLanguage(langCode || '')
+  const suffixStartsWithVowel = isVowel(normalizedSuffix[0] ?? '');
+  const effectiveStart = isTonalLanguage(langCode || '') || !suffixStartsWithVowel
     ? suffixStart
     : extendToVowelOnset(word.normalizedWord, suffixStart);
 
