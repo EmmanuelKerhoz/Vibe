@@ -41,9 +41,11 @@ function SynonymsSkeleton() {
     <div className="space-y-2" aria-busy="true" aria-label="Loading synonyms">
       <SkeletonBar className="h-3 w-20" />
       <div className="flex flex-wrap gap-1.5">
-        {[56, 72, 48, 64, 52].map((w, i) => (
-          <SkeletonBar key={i} className="h-6 rounded-md" style={{ width: w }} />
-        ))}
+        <SkeletonBar className="h-6 w-[56px] rounded-md" />
+        <SkeletonBar className="h-6 w-[72px] rounded-md" />
+        <SkeletonBar className="h-6 w-[48px] rounded-md" />
+        <SkeletonBar className="h-6 w-[64px] rounded-md" />
+        <SkeletonBar className="h-6 w-[52px] rounded-md" />
       </div>
     </div>
   );
