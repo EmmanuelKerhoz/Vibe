@@ -25,7 +25,7 @@ export interface QuantizeResult {
 // Syllable counting
 // ---------------------------------------------------------------------------
 
-const UNSUPPORTED_SYLLABLE_LANGUAGE_HINTS = [
+const NON_LATIN_LANGUAGE_HINTS = [
   'ar', 'arabic',
   'zh', 'chinese', 'mandarin', 'cantonese',
   'ko', 'korean',
@@ -35,7 +35,7 @@ const UNSUPPORTED_SYLLABLE_LANGUAGE_HINTS = [
   'hi', 'hindi',
   'th', 'thai',
 ] as const;
-const NON_LATIN_LANGUAGE_PATTERN = new RegExp(`\\b(${UNSUPPORTED_SYLLABLE_LANGUAGE_HINTS.join('|')})\\b`, 'i');
+const NON_LATIN_LANGUAGE_PATTERN = new RegExp(`\\b(${NON_LATIN_LANGUAGE_HINTS.join('|')})\\b`, 'i');
 const LATIN_VOWEL_GROUP_PATTERN = /[aeiouyàáâãäåæèéêëìíîïòóôõöœùúûüýÿ]+/g;
 const LATIN_SILENT_E_PATTERN = /[^aeiouyàáâãäåæèéêëìíîïòóôõöœùúûüýÿ]e$/;
 

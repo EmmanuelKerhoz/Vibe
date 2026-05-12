@@ -88,12 +88,11 @@ export const LyricInput = React.memo(function LyricInput({
   const quantizeTooltip = !isQuantizeSupported
     ? (t.editor?.quantize_line_unsupported ?? 'Quantize supports Latin-script lyrics only')
     : quantized ? (t.editor?.quantize_line_done ?? 'Line quantized') : (t.editor?.quantize_line ?? 'Quantize line');
-  const controlsWidth = useMemo(() =>
-    adaptLineLanguage && onQuantizeLine ? 'w-24'
-    : adaptLineLanguage ? 'w-20'
-    : onQuantizeLine ? 'w-20'
-    : 'w-16',
-  [adaptLineLanguage, onQuantizeLine]);
+  const controlsWidth = useMemo(() => {
+    if (adaptLineLanguage && onQuantizeLine) return 'w-24';
+    if (adaptLineLanguage || onQuantizeLine) return 'w-20';
+    return 'w-16';
+  }, [adaptLineLanguage, onQuantizeLine]);
 
   useEffect(() => {
     if (isSelected && inputRef.current && document.activeElement !== inputRef.current) {
