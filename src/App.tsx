@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useMemo, useState, useEffect, useRef } from 'react';
+import React, { lazy, Suspense, useMemo, useState, useEffect } from 'react';
 import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
@@ -9,7 +9,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAppOrchestration } from './hooks/useAppOrchestration';
 import { useEditorPanelState } from './hooks/useEditorPanelState';
 import { useMobileSession } from './hooks/useMobileSession';
-import { useSessionAutoSave } from './hooks/useSessionAutoSave';
+import { useAutoSaveCoordinator } from './hooks/useAutoSaveCoordinator';
 import { SimilarityProvider } from './contexts/SimilarityContext';
 import { ModalProvider } from './contexts/ModalContext';
 import { DragProvider } from './contexts/DragContext';
@@ -120,35 +120,12 @@ function AppInnerContent() {
     adaptingLineIds,
   } = useAppOrchestration(isMobileOrTablet);
 
-  // ── Auto-save to OPFS ─────────────────────────────────────────────────
-  const songCtx = useSongContext();
-  const onSavedRef = useRef<(() => void) | null>(null);
-  onSavedRef.current = hasSavedSession ? null : () => setHasSavedSession(true);
-
-  const onSaved = useRef(() => { onSavedRef.current?.(); }).current;
-
-  const { saveStatus, lastSavedAt } = useSessionAutoSave({
-    song: songCtx.song,
-    structure: songCtx.structure,
-    title: songCtx.title,
-    titleOrigin: songCtx.titleOrigin,
-    topic: songCtx.topic,
-    mood: songCtx.mood,
-    rhymeScheme: songCtx.rhymeScheme,
-    targetSyllables: songCtx.targetSyllables,
-    songLanguage: songCtx.songLanguage,
-    genre: songCtx.genre,
-    tempo: songCtx.tempo,
-    songDurationSeconds: songCtx.songDurationSeconds,
-    timeSignature: songCtx.timeSignature,
-    instrumentation: songCtx.instrumentation,
-    rhythm: songCtx.rhythm,
-    narrative: songCtx.narrative,
-    musicalPrompt: songCtx.musicalPrompt,
+  // ── Auto-save to OPFS — song fields read internally by the coordinator ─
+  const { saveStatus, lastSavedAt } = useAutoSaveCoordinator({
     activeTab,
     isStructureOpen,
     isLeftPanelOpen,
-    onSaved,
+    onSaved: hasSavedSession ? undefined : () => setHasSavedSession(true),
   });
 
   return (
