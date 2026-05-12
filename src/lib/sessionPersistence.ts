@@ -29,6 +29,8 @@ export interface SessionSnapshot {
   songLanguage: string;
   genre: string;
   tempo: number;
+  songDurationSeconds?: number;
+  timeSignature?: [number, number];
   instrumentation: string;
   rhythm: string;
   narrative: string;

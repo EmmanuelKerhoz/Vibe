@@ -7,7 +7,7 @@
  * No side-effects. Fully unit-testable.
  */
 
-import { countLineSyllables } from './quantize';
+import { countLineSyllables, supportsSyllableHeuristics } from './quantize';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,6 +22,8 @@ export interface MusicalPromptParams {
   timeSignature?: [number, number];
   /** Optional style string for display purposes */
   style?: string;
+  /** Song language hint used to skip unsupported non-Latin syllable heuristics */
+  language?: string;
 }
 
 export interface LineDiff {
@@ -53,6 +55,8 @@ export interface CoherenceResult {
   suggestedBpmRange: [number, number];
   /** Whether the score is below the 70-point threshold for user intervention */
   needsReview: boolean;
+  /** Why the check was skipped, when no meaningful syllable heuristic is available */
+  skippedReason?: 'unsupported-language';
 }
 
 // ---------------------------------------------------------------------------
@@ -104,8 +108,21 @@ export function checkRhythmicCoherence(
   const timeSignature = musicalPrompt.timeSignature ?? [4, 4];
   const beatsPerBar = timeSignature[0] > 0 ? timeSignature[0] : 4;
 
-  const totalSyllables = countLyricsSyllables(lyrics);
   const estimatedCapacity = estimateCapacity({ ...musicalPrompt, bpm, durationSeconds: duration });
+
+  if (!supportsSyllableHeuristics(lyrics, musicalPrompt.language)) {
+    return {
+      score: 100,
+      totalSyllables: 0,
+      estimatedCapacity,
+      lineDiffs: [],
+      suggestedBpmRange: [bpm, bpm + 20],
+      needsReview: false,
+      skippedReason: 'unsupported-language',
+    };
+  }
+
+  const totalSyllables = countLyricsSyllables(lyrics);
 
   // Score: ratio of capacity to syllables, clamped to 0–100.
   // If syllables <= capacity → full score; if syllables >> capacity → score → 0.

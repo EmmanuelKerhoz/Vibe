@@ -134,6 +134,7 @@
     "deleteLine": "Zeile löschen",
     "lyricsEditors": "Ansicht",
     "quantize_line": "Zeile quantisieren",
+    "quantize_line_unsupported": "Quantisieren unterstützt nur Liedtexte in lateinischer Schrift",
     "quantize_line_done": "Zeile quantisiert"
   },
   "suggestions": {
@@ -411,6 +412,7 @@
     "aiGeneratedTitle": "KI-generierter Titel",
     "userEnteredTitle": "Vom Benutzer eingegebener Titel",
     "openSearch": "Suche & Ersetzen in Liedtexten (Ctrl+F)",
+    "sendToSunoConfirm": "SUNO wird geöffnet…",
     "sendToSuno": "SUNO mit Ihrem musikalischen Prompt öffnen",
     "quantizeLineDone": "Zeile quantisiert"
   },

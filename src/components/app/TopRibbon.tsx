@@ -11,6 +11,8 @@ import { RibbonMenuPanel } from './RibbonMenuPanel';
 import { RibbonTabs } from './RibbonTabs';
 import { SUNO_CREATE_URL } from '../../constants/externalUrls';
 
+const MAX_SUNO_PROMPT_LENGTH = 1800;
+
 /**
  * TopRibbon — assembly component (~100 lines).
  * Owns: burger state, right-side actions.
@@ -55,8 +57,9 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
 
   const handleSendToSuno = () => {
     const prompt = musicalPrompt.trim();
-    const url = prompt
-      ? `${SUNO_CREATE_URL}?prompt=${encodeURIComponent(prompt)}`
+    const safePrompt = prompt.slice(0, MAX_SUNO_PROMPT_LENGTH);
+    const url = safePrompt
+      ? `${SUNO_CREATE_URL}?prompt=${encodeURIComponent(safePrompt)}`
       : SUNO_CREATE_URL;
     window.open(url, '_blank', 'noopener,noreferrer');
     setSunoSent(true);
@@ -107,7 +110,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
           </Tooltip>
         )}
         {/* Send to SUNO button */}
-        <Tooltip title={sunoSent ? (t.tooltips.sendToSuno ?? 'Opening SUNO…') : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt')}>
+        <Tooltip title={sunoSent ? (t.tooltips.sendToSunoConfirm ?? 'Opening SUNO…') : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt')}>
           <button
             onClick={handleSendToSuno}
             disabled={sunoSent}

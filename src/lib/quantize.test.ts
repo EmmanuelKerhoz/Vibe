@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countSyllables, countLineSyllables, snapToNearestBars, quantizeLine } from './quantize';
+import { countSyllables, countLineSyllables, snapToNearestBars, quantizeLine, supportsSyllableHeuristics } from './quantize';
 
 // ---------------------------------------------------------------------------
 // countSyllables
@@ -25,6 +25,22 @@ describe('countSyllables', () => {
   it('returns 0 for empty/non-alpha strings', () => {
     expect(countSyllables('')).toBe(0);
     expect(countSyllables('...')).toBe(0);
+  });
+
+  it('supports accented Latin-script words such as French', () => {
+    expect(countSyllables('lumière')).toBeGreaterThan(0);
+    expect(countLineSyllables('Sous les néons je rêve encore')).toBeGreaterThan(0);
+  });
+
+  it('documents the non-Latin fallback for Arabic, Korean, and Chinese', () => {
+    expect(supportsSyllableHeuristics('مرحبا يا عالم', 'Arabic')).toBe(false);
+    expect(supportsSyllableHeuristics('안녕하세요 세계', 'Korean')).toBe(false);
+    expect(supportsSyllableHeuristics('你好世界', 'Chinese')).toBe(false);
+    expect(quantizeLine('مرحبا يا عالم', 120, [4, 4], 'Arabic')).toMatchObject({
+      markedText: 'مرحبا يا عالم',
+      syllableCount: 0,
+      syllablesPerBeat: 0,
+    });
   });
 });
 
@@ -55,25 +71,25 @@ describe('snapToNearestBars', () => {
   const ts: [number, number] = [4, 4]; // 4/4 time
 
   it('snaps to 1 bar for short lines (≤ 4 syllables in 4/4)', () => {
-    expect(snapToNearestBars(4, 120, ts)).toBe(1);
-    expect(snapToNearestBars(1, 120, ts)).toBe(1);
+    expect(snapToNearestBars(4, ts)).toBe(1);
+    expect(snapToNearestBars(1, ts)).toBe(1);
   });
 
   it('snaps to 2 bars for medium lines (5–8 syllables in 4/4)', () => {
-    expect(snapToNearestBars(5, 120, ts)).toBe(2);
-    expect(snapToNearestBars(8, 120, ts)).toBe(2);
+    expect(snapToNearestBars(5, ts)).toBe(2);
+    expect(snapToNearestBars(8, ts)).toBe(2);
   });
 
   it('snaps to 4 bars for long lines (9+ syllables in 4/4)', () => {
-    expect(snapToNearestBars(9, 120, ts)).toBe(4);
-    expect(snapToNearestBars(16, 120, ts)).toBe(4);
+    expect(snapToNearestBars(9, ts)).toBe(4);
+    expect(snapToNearestBars(16, ts)).toBe(4);
   });
 
   it('handles 3/4 time signature', () => {
     const ts34: [number, number] = [3, 4];
     // 3 beats per bar: 1 bar = 3 beats
-    expect(snapToNearestBars(3, 120, ts34)).toBe(1);
-    expect(snapToNearestBars(4, 120, ts34)).toBe(2);
+    expect(snapToNearestBars(3, ts34)).toBe(1);
+    expect(snapToNearestBars(4, ts34)).toBe(2);
   });
 });
 

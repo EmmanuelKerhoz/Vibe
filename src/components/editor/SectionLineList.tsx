@@ -9,7 +9,7 @@ import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSongMutation } from '../../contexts/SongMutationContext';
 import { useRhymeSuggestions } from '../../hooks/useRhymeSuggestions';
-import { quantizeLine } from '../../lib/quantize';
+import { quantizeLine, supportsSyllableHeuristics } from '../../lib/quantize';
 import type { Section } from '../../types';
 import type { SchemeResult } from '../../lib/rhyme/types';
 import type { AdaptationLangId } from '../../i18n/constants';
@@ -93,7 +93,7 @@ export const SectionLineList = React.memo(function SectionLineList({
   schemeResult,
   playAudioFeedback, onLineBlur,
 }: SectionLineListProps) {
-  const { rhymeScheme, lineLanguages, tempo } = useSongContext();
+  const { rhymeScheme, lineLanguages, tempo, timeSignature } = useSongContext();
   const { selectedLineId, isGenerating, handleLineClick, updateLineText, handleLineKeyDown, clearSelection } = useComposerContext();
   const { moveLineUp, moveLineDown, addLineToSection, deleteLineFromSection } = useSongMutation();
   const { draggedLineInfo, dragOverLineInfo } = useDrag();
@@ -104,16 +104,18 @@ export const SectionLineList = React.memo(function SectionLineList({
     deleteLineFromSection(sectionId, lineId);
   }, [selectedLineId, clearSelection, deleteLineFromSection]);
 
-  // Quantize a lyric line against current song BPM + 4/4 time signature
+  // Quantize a lyric line against current song BPM + time signature
   const handleQuantizeLine = useCallback((sectionId: string, lineId: string) => {
     const line = section.lines.find(l => l.id === lineId);
     if (!line || !line.text.trim()) return;
+    const language = lineLanguages[line.id] ?? sectionTargetLanguage;
+    if (!supportsSyllableHeuristics(line.text, language)) return;
     const safeTempo = (tempo ?? 0) > 0 ? (tempo ?? 120) : 120;
-    const result = quantizeLine(line.text, safeTempo, [4, 4]);
+    const result = quantizeLine(line.text, safeTempo, timeSignature, language);
     if (result.markedText !== line.text) {
       updateLineText(sectionId, lineId, result.markedText);
     }
-  }, [section.lines, tempo, updateLineText]);
+  }, [lineLanguages, section.lines, sectionTargetLanguage, tempo, timeSignature, updateLineText]);
 
   const renderItems = useMemo(() => buildRenderItems(section.lines), [section.lines]);
   const effectiveRhymeScheme = section.rhymeScheme || rhymeScheme;

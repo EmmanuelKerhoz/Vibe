@@ -105,6 +105,8 @@ const createParams = (overrides: Partial<Parameters<typeof useSongComposer>[0]> 
     title: 'Midnight Echo',
     genre: '',
     tempo: 120,
+    songDurationSeconds: 180,
+    timeSignature: [4, 4] as [number, number],
     instrumentation: '',
     rhythm: '',
     narrative: '',
