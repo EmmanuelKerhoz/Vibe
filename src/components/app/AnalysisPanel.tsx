@@ -37,7 +37,7 @@ import type { DetectedSchema } from '../../lib/linguistics/core/types';
 // Panel width — ~25% larger than original 280
 const PANEL_WIDTH = 350;
 
-// ─── Skeleton shimmer ────────────────────────────────────────────────
+// ─── Skeleton primitives ─────────────────────────────────────────────
 function SkeletonBar({ className = '' }: { className?: string }) {
   return (
     <div
@@ -72,6 +72,7 @@ function SectionCardSkeleton() {
   );
 }
 
+/** Mirrors InsightsTab layout: 3 KPI cards + divider + 2 section cards. */
 function InsightsTabSkeleton() {
   return (
     <div className="flex flex-col gap-3" aria-busy="true" aria-label="Computing analysis">
@@ -87,7 +88,58 @@ function InsightsTabSkeleton() {
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────
+/** Mirrors AnalysisTab layout: section header + density bars + badge row + line list. */
+function AnalysisTabSkeleton() {
+  return (
+    <div className="flex flex-col gap-3" aria-busy="true" aria-label="Computing analysis">
+      {[0, 1].map(i => (
+        <div key={i} className="rounded-lg border border-[var(--border-color)] p-3 bg-[var(--bg-sidebar)] space-y-2">
+          {/* section name */}
+          <SkeletonBar className="h-3.5 w-24" />
+          {/* schema row */}
+          <div className="flex items-center gap-2">
+            <SkeletonBar className="h-3 w-16" />
+            <SkeletonBar className="h-5 w-10 rounded-full" />
+          </div>
+          {/* density bars */}
+          <SkeletonBar className="h-2.5 w-full rounded-full" />
+          <SkeletonBar className="h-2.5 w-4/5 rounded-full" />
+          {/* badge row */}
+          <div className="flex gap-1.5">
+            <SkeletonBar className="h-5 w-14 rounded-full" />
+            <SkeletonBar className="h-5 w-16 rounded-full" />
+          </div>
+          {/* line rows */}
+          <SkeletonBar className="h-4 w-full" />
+          <SkeletonBar className="h-4 w-11/12" />
+          <SkeletonBar className="h-4 w-4/5" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Mirrors SimilarityTab layout: header label + pair cards with progress bar. */
+function SimilarityTabSkeleton() {
+  return (
+    <div className="flex flex-col gap-1" aria-busy="true" aria-label="Computing similarity">
+      <SkeletonBar className="h-3 w-40 mb-2" />
+      {[0, 1, 2, 3].map(i => (
+        <div key={i} className="rounded border border-[var(--border-color)] p-2 bg-[var(--bg-sidebar)] space-y-1.5">
+          <div className="flex items-center gap-2">
+            <SkeletonBar className="h-5 w-16 rounded-full" />
+            <SkeletonBar className="h-3 w-8" />
+            <SkeletonBar className="h-2.5 flex-1 rounded-full" />
+          </div>
+          <SkeletonBar className="h-3 w-full" />
+          <SkeletonBar className="h-3 w-10/12" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Tab content components ───────────────────────────────────────────
 
 function InsightsTab({ sections }: { sections: SectionInsight[] }) {
   if (sections.length === 0) {
@@ -348,6 +400,33 @@ function rhymeTypeColor(type: string): 'success' | 'warning' | 'danger' | 'infor
   }
 }
 
+// ─── Tab content renderer ─────────────────────────────────────────────
+// Single decision point per tab: skeleton → content → empty (never mixed).
+
+function TabContent({
+  tab,
+  showSkeleton,
+  result,
+}: {
+  tab: string;
+  showSkeleton: boolean;
+  result: AnalysisResult | null;
+}) {
+  if (tab === 'insights') {
+    if (showSkeleton) return <InsightsTabSkeleton />;
+    return <InsightsTab sections={result?.sections ?? []} />;
+  }
+  if (tab === 'analysis') {
+    if (showSkeleton) return <AnalysisTabSkeleton />;
+    return <AnalysisTab sections={result?.sections ?? []} />;
+  }
+  if (tab === 'similarity') {
+    if (showSkeleton) return <SimilarityTabSkeleton />;
+    return <SimilarityTab pairs={result?.similarityPairs ?? []} />;
+  }
+  return null;
+}
+
 // ─── Main panel component ──────────────────────────────────────────────
 
 interface AnalysisPanelProps {
@@ -371,7 +450,8 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
     setSelectedTab(data.value as string);
   };
 
-  // Show skeleton when computing with no prior result
+  // Skeleton only on first computation (no prior result available).
+  // Recomputations keep previous result visible + ProgressBar/Spinner in header.
   const showSkeleton = isComputing && result === null;
 
   return (
@@ -440,8 +520,8 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
             {error && (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 mb-3">
-                <Text size={200} className="text-red-400">{error}</Text>
+              <div className="rounded-lg border border-[var(--color-error,theme(colors.red.500))]/30 bg-[var(--color-error,theme(colors.red.500))]/10 p-2 mb-3">
+                <Text size={200} className="text-[var(--color-error,theme(colors.red.400))]">{error}</Text>
               </div>
             )}
             {result && result.computeTimeMs > 0 && (
@@ -452,11 +532,7 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
                 </Text>
               </div>
             )}
-            {/* Skeleton state: computing + no prior result */}
-            {showSkeleton && selectedTab === 'insights' && <InsightsTabSkeleton />}
-            {!showSkeleton && selectedTab === 'insights' && <InsightsTab sections={result?.sections ?? []} />}
-            {selectedTab === 'analysis' && <AnalysisTab sections={result?.sections ?? []} />}
-            {selectedTab === 'similarity' && <SimilarityTab pairs={result?.similarityPairs ?? []} />}
+            <TabContent tab={selectedTab} showSkeleton={showSkeleton} result={result} />
           </div>
         </div>
       </motion.div>
