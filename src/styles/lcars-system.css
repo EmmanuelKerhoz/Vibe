@@ -359,11 +359,13 @@
   backdrop-filter: var(--layer2-blur);
   color: var(--text-primary);
 }
+/* WCAG 2.4.11 — visible focus indicator on keyboard navigation */
 .ui-fluent .fluent-input:focus-within {
   border-bottom-color: var(--accent-color);
   border-bottom-width: 2px;
-  outline: 2px solid transparent;
-  box-shadow: 0 0 0 2px oklch(from var(--accent-color) l c h / 0.35);
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px oklch(from var(--accent-color) l c h / 0.18);
 }
 
 .ui-fluent .lcars-panel {
@@ -487,7 +489,10 @@
 .lcars-ribbon { position: relative; }
 .lcars-ribbon::before { display: none; }
 
+/* WCAG 2.4.11 — visible focus indicator; glow enhancement retained */
 .lcars-glow-focus:focus {
-  outline: none;
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
   border-color: var(--accent-color);
+  box-shadow: 0 0 0 4px oklch(from var(--accent-color) l c h / 0.18);
 }
