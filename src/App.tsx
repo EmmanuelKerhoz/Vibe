@@ -4,6 +4,7 @@ import { ErrorBoundary } from './components/app/ErrorBoundary';
 import { AppShell } from './components/app/AppShell';
 import { StatusBar } from './components/app/StatusBar';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
+import { MobileStatusChip } from './components/app/MobileStatusChip';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAppOrchestration } from './hooks/useAppOrchestration';
 import { useEditorPanelState } from './hooks/useEditorPanelState';
@@ -202,14 +203,21 @@ function AppInnerContent() {
           />
 
           {isMobileOrTablet && (
-            <MobileBottomNav
-              isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
-              activeTab={activeTab}
-              hasApiKey={hasApiKey}
-              setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
-              setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
-              onOpenSettings={handleOpenSettings}
-            />
+            <>
+              <MobileStatusChip
+                hasApiKey={hasApiKey}
+                saveStatus={saveStatus}
+                lastSavedAt={lastSavedAt}
+              />
+              <MobileBottomNav
+                isLeftPanelOpen={isLeftPanelOpen} isStructureOpen={isStructureOpen}
+                activeTab={activeTab}
+                hasApiKey={hasApiKey}
+                setIsLeftPanelOpen={setIsLeftPanelOpen} setIsStructureOpen={setIsStructureOpenAndClearLine}
+                setActiveTab={setActiveTab} onGenerateSong={handleGlobalRegenerate}
+                onOpenSettings={handleOpenSettings}
+              />
+            </>
           )}
 
           <ErrorBoundary label="Modals">
