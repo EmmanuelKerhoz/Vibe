@@ -28,6 +28,8 @@ type UseMusicalPromptParams = {
   mood: string;
   genre: string;
   tempo: number;
+  durationSeconds?: number;
+  timeSignature?: [number, number];
   instrumentation: string;
   rhythm: string;
   narrative: string;
@@ -69,6 +71,8 @@ export const useMusicalPrompt = ({
   mood,
   genre,
   tempo,
+  durationSeconds = 180,
+  timeSignature = [4, 4],
   instrumentation,
   rhythm,
   narrative,
@@ -165,9 +169,11 @@ Keep the response in English (required by music AI tools) and avoid markdown or 
         if (fullLyrics.trim() && promptText.trim()) {
           const coherence = checkRhythmicCoherence(fullLyrics, {
             bpm: tempo,
-            durationSeconds: 180,
-            timeSignature: [4, 4],
+            durationSeconds,
+            timeSignature,
+            language: songLanguage,
           });
+          if (nextSignal.aborted) return;
           setCoherenceResult(coherence.needsReview ? coherence : null);
         }
       });

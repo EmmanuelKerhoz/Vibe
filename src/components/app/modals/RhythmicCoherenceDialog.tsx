@@ -5,11 +5,11 @@
  * Option A – Prioritise Lyrics: adjusts BPM suggestion.
  * Option B – Adjust Lyrics: shows which lines are too dense.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../../ui/Button';
 import { useTranslation } from '../../../i18n';
 import { Activity } from '../../ui/icons';
-import type { CoherenceResult } from '../../../lib/rhythmicCoherence';
+import type { CoherenceResult, LineDiff } from '../../../lib/rhythmicCoherence';
 
 interface Props {
   result: CoherenceResult;
@@ -57,6 +57,35 @@ export function RhythmicCoherenceDialog({ result, onApply, onSkip }: Props) {
   const skipLabel = rc?.skip ?? 'Skip';
   const suggestedBpmTemplate = rc?.suggestedBpm ?? 'Suggested BPM range: {min}–{max}';
   const tooLongLinesLabel = rc?.tooLongLines ?? 'Lines that may be too dense:';
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
+
+  const handleDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      onSkip();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    const items = Array.from(focusable ?? []).filter(item => !item.hasAttribute('disabled'));
+    if (items.length === 0) return;
+
+    const first = items[0]!;
+    const last = items[items.length - 1]!;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   const suggestedBpmText = suggestedBpmTemplate
     .replace('{min}', String(result.suggestedBpmRange[0]))
@@ -66,19 +95,19 @@ export function RhythmicCoherenceDialog({ result, onApply, onSkip }: Props) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        role="button"
-        tabIndex={0}
-        aria-label={t.tooltips.closeDialog ?? 'Close dialog'}
+        aria-hidden="true"
         className="absolute inset-0 bg-black/50 backdrop-blur-[2px] animate-in fade-in duration-200"
         onClick={onSkip}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSkip(); }}
       />
 
       {/* Dialog panel */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby="coherence-dialog-title"
+        tabIndex={-1}
+        onKeyDown={handleDialogKeyDown}
         className="relative w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         style={{ background: 'var(--bg-sidebar)', border: '1px solid var(--border-color)' }}
       >
@@ -93,7 +122,7 @@ export function RhythmicCoherenceDialog({ result, onApply, onSkip }: Props) {
           >
             <Activity className="w-4 h-4" style={{ color: 'var(--accent-color)' }} />
           </div>
-          <h2 className="text-sm font-bold tracking-widest uppercase" style={{ color: 'var(--text-primary)' }}>
+          <h2 id="coherence-dialog-title" className="text-sm font-bold tracking-widest uppercase" style={{ color: 'var(--text-primary)' }}>
             {title}
           </h2>
         </div>
@@ -151,7 +180,7 @@ export function RhythmicCoherenceDialog({ result, onApply, onSkip }: Props) {
                     <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-secondary)' }}>
                       {tooLongLinesLabel}
                     </p>
-                    {result.lineDiffs.slice(0, 5).map((d: { lineIndex: number; text: string; syllables: number }) => (
+                    {result.lineDiffs.slice(0, 5).map((d: LineDiff) => (
                       <p key={d.lineIndex} className="text-[11px] font-mono truncate" style={{ color: 'var(--text-primary)' }}>
                         <span style={{ color: 'var(--text-secondary)' }}>L{d.lineIndex + 1}: </span>
                         {d.text}

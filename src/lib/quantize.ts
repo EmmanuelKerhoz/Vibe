@@ -25,24 +25,47 @@ export interface QuantizeResult {
 // Syllable counting
 // ---------------------------------------------------------------------------
 
+const NON_LATIN_LANGUAGE_PATTERN = /\b(ar|arabic|zh|chinese|mandarin|cantonese|ko|korean|ja|japanese|ru|russian|he|hebrew|hi|hindi|th|thai)\b/i;
+const LATIN_VOWEL_GROUP_PATTERN = /[aeiouyàáâãäåæèéêëìíîïòóôõöœùúûüýÿ]+/g;
+const LATIN_SILENT_E_PATTERN = /[^aeiouyàáâãäåæèéêëìíîïòóôõöœùúûüýÿ]e$/;
+
+function hasUnsupportedLetters(text: string): boolean {
+  for (const char of text) {
+    if (/\p{L}/u.test(char) && !/\p{Script=Latin}/u.test(char)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
- * Lightweight English-biased syllable counter.
- * Counts vowel groups (a, e, i, o, u, y) as syllable nuclei.
- * Handles the common silent-e pattern.
+ * Whether the lightweight syllable heuristic can be used safely.
+ * It is intentionally limited to Latin-script lyrics; non-Latin scripts fall
+ * back to no quantization instead of producing misleading rhythmic scores.
+ */
+export function supportsSyllableHeuristics(text: string, language: string = ''): boolean {
+  if (NON_LATIN_LANGUAGE_PATTERN.test(language)) return false;
+  return !hasUnsupportedLetters(text);
+}
+
+/**
+ * Lightweight Latin-script syllable counter.
+ * Counts vowel groups (including common accented vowels) as syllable nuclei.
+ * Handles the common English silent-e pattern.
  */
 export function countSyllables(word: string): number {
-  const w = word.toLowerCase().replace(/[^a-z]/g, '');
+  const w = word.toLowerCase().replace(/[^\p{Script=Latin}]/gu, '');
   if (w.length === 0) return 0;
 
   // Count vowel groups
-  let count = (w.match(/[aeiouy]+/g) ?? []).length;
+  let count = (w.match(LATIN_VOWEL_GROUP_PATTERN) ?? []).length;
 
   // Subtract silent final 'e' if word is > 2 chars and ends with consonant+e
-  if (w.length > 2 && /[^aeiouy]e$/.test(w)) {
+  if (w.length > 2 && LATIN_SILENT_E_PATTERN.test(w)) {
     count -= 1;
   }
 
-  // Minimum 1 syllable per non-empty word
+  // Minimum 1 syllable per non-empty Latin-script word
   return Math.max(1, count);
 }
 
@@ -62,7 +85,7 @@ const BAR_OPTIONS = [1, 2, 4] as const;
 type BarCount = (typeof BAR_OPTIONS)[number];
 
 /**
- * Given BPM, time signature and syllable count, snap the line to the nearest
+ * Given a time signature and syllable count, snap the line to the nearest
  * standard bar subdivision (1, 2, or 4 bars).
  *
  * Heuristic: assume a comfortable delivery pace of ~1 syllable per beat.
@@ -70,7 +93,6 @@ type BarCount = (typeof BAR_OPTIONS)[number];
  */
 export function snapToNearestBars(
   syllableCount: number,
-  bpm: number,
   timeSignature: [number, number],
 ): BarCount {
   const beatsPerBar = timeSignature[0];
@@ -146,12 +168,22 @@ export function quantizeLine(
   line: string,
   bpm: number = 120,
   timeSignature: [number, number] = [4, 4],
+  language: string = '',
 ): QuantizeResult {
-  const safeBpm = bpm > 0 ? bpm : 120;
   const safeTs: [number, number] = timeSignature[0] > 0 ? timeSignature : [4, 4];
 
+  if (!supportsSyllableHeuristics(line, language)) {
+    return {
+      bars: 1,
+      beats: safeTs[0],
+      markedText: line,
+      syllableCount: 0,
+      syllablesPerBeat: 0,
+    };
+  }
+
   const syllableCount = countLineSyllables(line);
-  const bars = snapToNearestBars(syllableCount, safeBpm, safeTs);
+  const bars = snapToNearestBars(syllableCount, safeTs);
   const beats = bars * safeTs[0];
   const markedText = syllableCount > 0 ? insertMarkers(line, safeTs[0], bars) : line;
   const syllablesPerBeat = beats > 0 ? syllableCount / beats : 0;

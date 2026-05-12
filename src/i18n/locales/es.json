@@ -134,6 +134,7 @@
     "deleteLine": "Eliminar línea",
     "lyricsEditors": "Vista",
     "quantize_line": "Cuantizar línea",
+    "quantize_line_unsupported": "La cuantización solo admite letras en alfabeto latino",
     "quantize_line_done": "Línea cuantizada"
   },
   "suggestions": {
@@ -411,6 +412,7 @@
     "aiGeneratedTitle": "Título generado por IA",
     "userEnteredTitle": "Título introducido por el usuario",
     "openSearch": "Buscar y reemplazar en las letras (Ctrl+F)",
+    "sendToSunoConfirm": "Abriendo SUNO…",
     "sendToSuno": "Abrir SUNO con tu prompt musical",
     "quantizeLineDone": "Línea cuantizada"
   },

@@ -185,6 +185,7 @@
     "lyricsInsights": "Aperçus des paroles",
     "detect": "Détecter",
     "quantize_line": "Quantifier la ligne",
+    "quantize_line_unsupported": "La quantification prend uniquement en charge les paroles en alphabet latin",
     "quantize_line_done": "Ligne quantifiée"
   },
   "suggestions": {
@@ -497,6 +498,7 @@
     "browseLibrary": "Enregistrer ou parcourir votre bibliothèque de chansons",
     "openSettings": "Ouvrir les paramètres de l'application",
     "sponsor": "Soutenir le développeur",
+    "sendToSunoConfirm": "Ouverture de SUNO…",
     "sendToSuno": "Ouvrir SUNO avec votre prompt musical",
     "quantizeLineDone": "Ligne quantifiée"
   },

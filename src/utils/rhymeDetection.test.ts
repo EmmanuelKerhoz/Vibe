@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   doLinesRhymeGraphemic,
-  segmentVerseToRhymingUnit,
-  splitRhymingSuffix,
 } from './rhymeDetection';
 
 // ─── doLinesRhymeGraphemic ────────────────────────────────────────────────────
@@ -140,3 +138,5 @@ describe('doLinesRhymeGraphemic — empty / edge cases', () => {
 
   it('returns false for punctuation-only lines', () => {
     expect(doLinesRhymeGraphemic('...', '!!!', 'fr')).toBe(false);
+  });
+});

@@ -55,8 +55,9 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
 
   const handleSendToSuno = () => {
     const prompt = musicalPrompt.trim();
-    const url = prompt
-      ? `${SUNO_CREATE_URL}?prompt=${encodeURIComponent(prompt)}`
+    const safePrompt = prompt.slice(0, 1800);
+    const url = safePrompt
+      ? `${SUNO_CREATE_URL}?prompt=${encodeURIComponent(safePrompt)}`
       : SUNO_CREATE_URL;
     window.open(url, '_blank', 'noopener,noreferrer');
     setSunoSent(true);
@@ -107,7 +108,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
           </Tooltip>
         )}
         {/* Send to SUNO button */}
-        <Tooltip title={sunoSent ? (t.tooltips.sendToSuno ?? 'Opening SUNO…') : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt')}>
+        <Tooltip title={sunoSent ? (t.tooltips.sendToSunoConfirm ?? 'Opening SUNO…') : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt')}>
           <button
             onClick={handleSendToSuno}
             disabled={sunoSent}

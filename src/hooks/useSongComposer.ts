@@ -15,6 +15,8 @@ type UseSongComposerParams = {
   title: string;
   genre: string;
   tempo: number;
+  songDurationSeconds: number;
+  timeSignature: [number, number];
   instrumentation: string;
   rhythm: string;
   narrative: string;
@@ -43,6 +45,8 @@ export const useSongComposer = ({
   title,
   genre,
   tempo,
+  songDurationSeconds,
+  timeSignature,
   instrumentation,
   rhythm,
   narrative,
@@ -118,6 +122,8 @@ export const useSongComposer = ({
       mood,
       genre,
       tempo,
+      durationSeconds: songDurationSeconds,
+      timeSignature,
       instrumentation,
       rhythm,
       narrative,

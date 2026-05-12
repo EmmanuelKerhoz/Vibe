@@ -148,6 +148,7 @@
     "lyricsInsights": "洞察",
     "detect": "检测",
     "quantize_line": "Quantize line",
+    "quantize_line_unsupported": "Quantize supports Latin-script lyrics only",
     "quantize_line_done": "Line quantized"
   },
   "suggestions": {
@@ -451,6 +452,7 @@
     "rhymeScheme": "选择所有段落的默认押韵方案",
     "targetSyllables": "设置每行的目标音节数",
     "viewMode": "在不同歌词编辑器视图之间切换",
+    "sendToSunoConfirm": "Opening SUNO…",
     "sendToSuno": "Open SUNO with your musical prompt",
     "quantizeLineDone": "Line quantized"
   },

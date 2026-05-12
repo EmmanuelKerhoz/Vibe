@@ -138,6 +138,8 @@ function AppInnerContent() {
     songLanguage: songCtx.songLanguage,
     genre: songCtx.genre,
     tempo: songCtx.tempo,
+    songDurationSeconds: songCtx.songDurationSeconds,
+    timeSignature: songCtx.timeSignature,
     instrumentation: songCtx.instrumentation,
     rhythm: songCtx.rhythm,
     narrative: songCtx.narrative,
