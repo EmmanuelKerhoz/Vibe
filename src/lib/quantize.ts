@@ -25,6 +25,8 @@ export interface QuantizeResult {
 // Syllable counting
 // ---------------------------------------------------------------------------
 
+// ISO-like language hints and common language names used to bypass
+// Latin-script-only syllable heuristics for unsupported writing systems.
 const NON_LATIN_LANGUAGE_HINTS = [
   'ar', 'arabic',
   'zh', 'chinese', 'mandarin', 'cantonese',

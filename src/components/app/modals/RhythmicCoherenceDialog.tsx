@@ -76,8 +76,9 @@ export function RhythmicCoherenceDialog({ result, onApply, onSkip }: Props) {
     const items = Array.from(focusable ?? []).filter(item => !item.hasAttribute('disabled'));
     if (items.length === 0) return;
 
-    const first = items[0]!;
-    const last = items[items.length - 1]!;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (!first || !last) return;
     if (e.shiftKey && document.activeElement === first) {
       e.preventDefault();
       last.focus();
