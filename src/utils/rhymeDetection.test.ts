@@ -142,4 +142,3 @@ describe('doLinesRhymeGraphemic — empty / edge cases', () => {
     expect(doLinesRhymeGraphemic('...', '!!!', 'fr')).toBe(false);
   });
 });
-    expect(doLinesRhymeGraphemic('...', '!!!', 'fr')).toBe(false);
