@@ -11,6 +11,8 @@ import { RibbonMenuPanel } from './RibbonMenuPanel';
 import { RibbonTabs } from './RibbonTabs';
 import { SUNO_CREATE_URL } from '../../constants/externalUrls';
 
+const MAX_SUNO_PROMPT_LENGTH = 1800;
+
 /**
  * TopRibbon — assembly component (~100 lines).
  * Owns: burger state, right-side actions.
@@ -55,7 +57,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
 
   const handleSendToSuno = () => {
     const prompt = musicalPrompt.trim();
-    const safePrompt = prompt.slice(0, 1800);
+    const safePrompt = prompt.slice(0, MAX_SUNO_PROMPT_LENGTH);
     const url = safePrompt
       ? `${SUNO_CREATE_URL}?prompt=${encodeURIComponent(safePrompt)}`
       : SUNO_CREATE_URL;

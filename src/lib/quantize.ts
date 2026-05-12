@@ -25,7 +25,17 @@ export interface QuantizeResult {
 // Syllable counting
 // ---------------------------------------------------------------------------
 
-const NON_LATIN_LANGUAGE_PATTERN = /\b(ar|arabic|zh|chinese|mandarin|cantonese|ko|korean|ja|japanese|ru|russian|he|hebrew|hi|hindi|th|thai)\b/i;
+const UNSUPPORTED_SYLLABLE_LANGUAGE_HINTS = [
+  'ar', 'arabic',
+  'zh', 'chinese', 'mandarin', 'cantonese',
+  'ko', 'korean',
+  'ja', 'japanese',
+  'ru', 'russian',
+  'he', 'hebrew',
+  'hi', 'hindi',
+  'th', 'thai',
+] as const;
+const NON_LATIN_LANGUAGE_PATTERN = new RegExp(`\\b(${UNSUPPORTED_SYLLABLE_LANGUAGE_HINTS.join('|')})\\b`, 'i');
 const LATIN_VOWEL_GROUP_PATTERN = /[aeiouyàáâãäåæèéêëìíîïòóôõöœùúûüýÿ]+/g;
 const LATIN_SILENT_E_PATTERN = /[^aeiouyàáâãäåæèéêëìíîïòóôõöœùúûüýÿ]e$/;
 
@@ -54,7 +64,7 @@ export function supportsSyllableHeuristics(text: string, language: string = ''):
  * Handles the common English silent-e pattern.
  */
 export function countSyllables(word: string): number {
-  const w = word.toLowerCase().replace(/[^\p{Script=Latin}]/gu, '');
+  const w = word.toLowerCase().normalize('NFC').replace(/[^\p{Script=Latin}]/gu, '');
   if (w.length === 0) return 0;
 
   // Count vowel groups
