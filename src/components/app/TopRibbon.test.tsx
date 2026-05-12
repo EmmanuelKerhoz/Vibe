@@ -11,6 +11,7 @@ let mockIsGenerating = false;
 let mockIsAnalyzing = false;
 let mockIsLeftPanelOpen = false;
 let mockIsStructureOpen = false;
+let mockMusicalPrompt = '';
 
 const mockUndo = vi.fn();
 const mockRedo = vi.fn();
@@ -28,7 +29,7 @@ vi.mock('../../contexts/SongContext', () => ({
     redo: mockRedo,
   }),
   useSongContext: () => ({
-    musicalPrompt: '',
+    musicalPrompt: mockMusicalPrompt,
   }),
 }));
 
@@ -71,6 +72,7 @@ vi.mock('../../i18n', () => ({
         collapseRight: 'Collapse',
         showSidebar: 'Show sidebar',
         sendToSuno: 'Open SUNO with your musical prompt',
+        sendToSunoConfirm: 'Opening SUNO…',
         quantizeLineDone: 'Line quantized',
       },
       ribbon: {
@@ -83,9 +85,9 @@ vi.mock('../../i18n', () => ({
   }),
 }));
 
-// Tooltip: transparent passthrough so aria-label on inner buttons is reachable
+// Tooltip: transparent wrapper so aria-label on inner buttons is reachable
 vi.mock('../ui/Tooltip', () => ({
-  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  Tooltip: ({ children, title }: { children: React.ReactNode; title: string }) => <span title={title}>{children}</span>,
 }));
 
 vi.mock('./RibbonMenuPanel', () => ({
@@ -118,6 +120,7 @@ describe('TopRibbon', () => {
     mockFuture = [];
     mockIsGenerating = false;
     mockIsAnalyzing = false;
+    mockMusicalPrompt = '';
     mockIsLeftPanelOpen = false;
     mockIsStructureOpen = false;
   });
@@ -212,5 +215,31 @@ describe('TopRibbon', () => {
     mockIsAnalyzing = true;
     renderRibbon();
     expect(screen.getByLabelText('Processing')).toBeDefined();
+  });
+
+  it('truncates long SUNO prompts before encoding them into the URL', () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    mockMusicalPrompt = 'a'.repeat(2000);
+    renderRibbon();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send to SUNO' }));
+
+    expect(openSpy).toHaveBeenCalledWith(
+      `https://suno.com/create?prompt=${'a'.repeat(1800)}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+    openSpy.mockRestore();
+  });
+
+  it('uses a distinct confirmation tooltip after sending to SUNO', () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    renderRibbon();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send to SUNO' }));
+
+    expect(screen.getByTitle('Opening SUNO…')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send to SUNO' })).toBeDisabled();
+    openSpy.mockRestore();
   });
 });

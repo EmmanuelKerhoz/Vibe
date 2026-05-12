@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2, Bot, User, Languages, Loader2, Ruler, Check } from '../ui/icons';
 import type { Line } from '../../types';
 import { useDrag } from '../../contexts/DragContext';
@@ -11,6 +11,7 @@ import { getRhymeTextColor } from '../../utils/songUtils';
 import { splitRhymingSuffix } from '../../utils/rhymeDetection';
 import { useRefs } from '../../contexts/RefsContext';
 import type { AdaptationLangId } from '../../i18n/constants';
+import { supportsSyllableHeuristics } from '../../lib/quantize';
 
 export interface LyricInputProps {
   line: Line;
@@ -81,6 +82,17 @@ export const LyricInput = React.memo(function LyricInput({
   const rhymeTextColor = getRhymeTextColor(schemeLabel);
   const lineLanguageDisplay = lineLanguage ? getLanguageDisplay(lineLanguage) : null;
   const [quantized, setQuantized] = useState(false);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const quantizedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isQuantizeSupported = supportsSyllableHeuristics(line.text, lineLanguage || sectionTargetLanguage || '');
+  const quantizeTooltip = !isQuantizeSupported
+    ? (t.editor?.quantize_line_unsupported ?? 'Quantize supports Latin-script lyrics only')
+    : quantized ? (t.editor?.quantize_line_done ?? 'Line quantized') : (t.editor?.quantize_line ?? 'Quantize line');
+  const controlsWidth = useMemo(() => {
+    if (adaptLineLanguage && onQuantizeLine) return 'w-24';
+    if (adaptLineLanguage || onQuantizeLine) return 'w-20';
+    return 'w-16';
+  }, [adaptLineLanguage, onQuantizeLine]);
 
   useEffect(() => {
     if (isSelected && inputRef.current && document.activeElement !== inputRef.current) {
@@ -92,6 +104,16 @@ export const LyricInput = React.memo(function LyricInput({
     registerRef(line.id, inputRef.current);
     return () => registerRef(line.id, null);
   }, [line.id, registerRef]);
+
+  useEffect(() => {
+    if (quantizedTimeoutRef.current) clearTimeout(quantizedTimeoutRef.current);
+    setQuantized(false);
+  }, [line.id]);
+
+  useEffect(() => () => {
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    if (quantizedTimeoutRef.current) clearTimeout(quantizedTimeoutRef.current);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => updateLineText(sectionId, line.id, e.target.value);
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => handleLineKeyDown(e, sectionId, line.id);
@@ -107,7 +129,8 @@ export const LyricInput = React.memo(function LyricInput({
       if (related.closest('[data-suggestions-panel]')) return;
     }
     // Allow time for click handlers on suggestion items to fire before clearing selection
-    setTimeout(onLineBlur, 80);
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    blurTimeoutRef.current = setTimeout(onLineBlur, 80);
   };
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -235,14 +258,7 @@ export const LyricInput = React.memo(function LyricInput({
       </div>
 
       {/* Line controls — visible on hover */}
-      {(() => {
-        const controlsWidth =
-          adaptLineLanguage && onQuantizeLine ? 'w-24'
-          : adaptLineLanguage ? 'w-20'
-          : onQuantizeLine ? 'w-20'
-          : 'w-16';
-        return (
-        <div className={`flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${controlsWidth}`}>
+      <div className={`flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${controlsWidth}`}>
         {adaptLineLanguage && (
           <Tooltip title={hasApiKey ? (t.editor?.adaptLine ?? `Adapt line to ${sectionTargetLanguage ?? 'target language'}`) : (t.tooltips.aiUnavailable ?? 'AI unavailable')}>
             <button
@@ -264,16 +280,18 @@ export const LyricInput = React.memo(function LyricInput({
           </Tooltip>
         )}
         {onQuantizeLine && (
-          <Tooltip title={quantized ? (t.editor?.quantize_line_done ?? 'Line quantized') : (t.editor?.quantize_line ?? 'Quantize line')}>
+          <Tooltip title={quantizeTooltip}>
             <button
               type="button"
               onClick={() => {
+                if (!isQuantizeSupported) return;
                 onQuantizeLine(sectionId, line.id);
                 playAudioFeedback('success');
                 setQuantized(true);
-                setTimeout(() => setQuantized(false), 1500);
+                if (quantizedTimeoutRef.current) clearTimeout(quantizedTimeoutRef.current);
+                quantizedTimeoutRef.current = setTimeout(() => setQuantized(false), 1500);
               }}
-              disabled={isGenerating || !line.text.trim()}
+              disabled={isGenerating || !line.text.trim() || !isQuantizeSupported}
               className="flex h-4 w-4 items-center justify-center text-violet-500 hover:text-violet-300 disabled:opacity-20 disabled:cursor-not-allowed transition"
             >
               {quantized
@@ -307,8 +325,6 @@ export const LyricInput = React.memo(function LyricInput({
           </button>
         </Tooltip>
       </div>
-        );
-      })()}
 
       {/* COL: COUNT */}
       <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors w-[2.75rem] text-right">

@@ -104,12 +104,17 @@ describe('checkRhythmicCoherence', () => {
   });
 
   it('respects custom time signature in line analysis', () => {
-    const lyrics = 'one two three four five six';
+    const lyrics = 'one two three four five six seven eight nine';
     const r44 = checkRhythmicCoherence(lyrics, { bpm: 120, durationSeconds: 180, timeSignature: [4, 4] });
     const r34 = checkRhythmicCoherence(lyrics, { bpm: 120, durationSeconds: 180, timeSignature: [3, 4] });
-    // 4/4 has larger maxSyllablesPerBar than 3/4 → 3/4 is stricter
-    // Both results are valid CoherenceResult shapes
-    expect(r44.score).toBeDefined();
-    expect(r34.score).toBeDefined();
+    expect(r44.lineDiffs[0]?.maxSyllablesPerBar).toBe(4);
+    expect(r34.lineDiffs[0]?.maxSyllablesPerBar).toBe(3);
+  });
+
+  it('skips non-Latin lyrics instead of surfacing misleading review scores', () => {
+    const result = checkRhythmicCoherence('你好世界', { bpm: 120, durationSeconds: 180, language: 'Chinese' });
+    expect(result.needsReview).toBe(false);
+    expect(result.skippedReason).toBe('unsupported-language');
+    expect(result.totalSyllables).toBe(0);
   });
 });

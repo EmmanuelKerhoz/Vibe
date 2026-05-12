@@ -147,6 +147,7 @@
     "lyricsInsights": "INSIGHTS",
     "detect": "Detect",
     "quantize_line": "Quantize line",
+    "quantize_line_unsupported": "Quantize supports Latin-script lyrics only",
     "quantize_line_done": "Line quantized"
   },
   "suggestions": {
@@ -446,6 +447,7 @@
     "closeLeftPanel": "Close lyrics generation panel",
     "detectLanguage": "Detect song language",
     "redetectLanguage": "Detected: {langs} — click to re-detect",
+    "sendToSunoConfirm": "Opening SUNO…",
     "sendToSuno": "Open SUNO with your musical prompt",
     "quantizeLineDone": "Line quantized"
   },

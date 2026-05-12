@@ -177,6 +177,37 @@ describe('useMusicalPrompt', () => {
     expect(sent).not.toContain('Infinity');
   });
 
+  it('uses supplied song duration and time signature for rhythmic coherence', async () => {
+    generateContentWithRetry.mockReset();
+    generateContentWithRetry.mockResolvedValue({ text: 'STYLE: ok' });
+
+    const params = {
+      song,
+      title: 'T',
+      topic: 'X',
+      mood: '',
+      genre: '',
+      tempo: 120,
+      durationSeconds: 1,
+      timeSignature: [3, 4] as [number, number],
+      instrumentation: '',
+      rhythm: '',
+      narrative: '',
+      setMusicalPrompt: vi.fn(),
+      setGenre: vi.fn(),
+      setTempo: vi.fn(),
+      setInstrumentation: vi.fn(),
+      setRhythm: vi.fn(),
+      setNarrative: vi.fn(),
+    };
+
+    const { result } = renderHook(() => useMusicalPrompt(params));
+    await act(async () => { await result.current.generateMusicalPrompt(); });
+
+    expect(result.current.coherenceResult?.estimatedCapacity).toBe(2);
+    expect(result.current.coherenceResult?.lineDiffs[0]?.maxSyllablesPerBar).toBe(3);
+  });
+
   it('always releases the spinner when an in-flight run is aborted (no race)', async () => {
     generateContentWithRetry.mockReset();
     // Simulate a slow request that respects the abort signal.

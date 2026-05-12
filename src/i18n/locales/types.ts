@@ -245,6 +245,8 @@ export interface Translations {
     quantize_line?: string;
     /** Brief confirmation message shown after a line is quantized */
     quantize_line_done?: string;
+    /** Tooltip shown when quantize is disabled for unsupported scripts */
+    quantize_line_unsupported?: string;
   };
 
   suggestions: {
@@ -596,6 +598,7 @@ export interface Translations {
     openSettings?: string;
     sponsor?: string;
     sendToSuno?: string;
+    sendToSunoConfirm?: string;
     quantizeLineDone?: string;
   };
 

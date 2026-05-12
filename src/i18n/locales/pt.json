@@ -134,6 +134,7 @@
     "deleteLine": "Excluir linha",
     "lyricsEditors": "Vista",
     "quantize_line": "Quantize line",
+    "quantize_line_unsupported": "Quantize supports Latin-script lyrics only",
     "quantize_line_done": "Line quantized"
   },
   "suggestions": {
@@ -411,6 +412,7 @@
     "aiGeneratedTitle": "Título gerado por IA",
     "userEnteredTitle": "Título inserido pelo utilizador",
     "openSearch": "Buscar e substituir nas letras (Ctrl+F)",
+    "sendToSunoConfirm": "Opening SUNO…",
     "sendToSuno": "Open SUNO with your musical prompt",
     "quantizeLineDone": "Line quantized"
   },

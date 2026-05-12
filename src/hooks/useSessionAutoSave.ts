@@ -26,6 +26,8 @@ interface AutoSavePayload {
   songLanguage: string;
   genre: string;
   tempo: number;
+  songDurationSeconds: number;
+  timeSignature: [number, number];
   instrumentation: string;
   rhythm: string;
   narrative: string;
@@ -79,6 +81,8 @@ export function useSessionAutoSave(payload: AutoSavePayload): SessionAutoSaveRes
         songLanguage: p.songLanguage,
         genre: p.genre,
         tempo: p.tempo,
+        songDurationSeconds: p.songDurationSeconds,
+        timeSignature: p.timeSignature,
         instrumentation: p.instrumentation,
         rhythm: p.rhythm,
         narrative: p.narrative,
@@ -114,6 +118,8 @@ export function useSessionAutoSave(payload: AutoSavePayload): SessionAutoSaveRes
     payload.songLanguage,
     payload.genre,
     payload.tempo,
+    payload.songDurationSeconds,
+    payload.timeSignature,
     payload.instrumentation,
     payload.rhythm,
     payload.narrative,

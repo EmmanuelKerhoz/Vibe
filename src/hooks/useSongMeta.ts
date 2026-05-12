@@ -16,6 +16,8 @@ export function useSongMeta(initialSession?: Partial<SessionSnapshot>) {
   const [lineLanguages, setLineLanguages] = useState<Record<string, string>>({});
   const [genre, setGenre] = useState(initialSession?.genre ?? '');
   const [tempo, setTempo] = useState(initialSession?.tempo ?? 120);
+  const [songDurationSeconds, setSongDurationSeconds] = useState(initialSession?.songDurationSeconds ?? 180);
+  const [timeSignature, setTimeSignature] = useState<[number, number]>(initialSession?.timeSignature ?? [4, 4]);
   const [instrumentation, setInstrumentation] = useState(initialSession?.instrumentation ?? '');
   const [rhythm, setRhythm] = useState(initialSession?.rhythm ?? '');
   const [narrative, setNarrative] = useState(initialSession?.narrative ?? '');
@@ -35,6 +37,8 @@ export function useSongMeta(initialSession?: Partial<SessionSnapshot>) {
     lineLanguages, setLineLanguages,
     genre, setGenre,
     tempo, setTempo,
+    songDurationSeconds, setSongDurationSeconds,
+    timeSignature, setTimeSignature,
     instrumentation, setInstrumentation,
     rhythm, setRhythm,
     narrative, setNarrative,

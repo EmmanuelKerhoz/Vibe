@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   doLinesRhymeGraphemic,
-  segmentVerseToRhymingUnit,
-  splitRhymingSuffix,
 } from './rhymeDetection';
 
 // ─── doLinesRhymeGraphemic ────────────────────────────────────────────────────
