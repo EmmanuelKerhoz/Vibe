@@ -26,6 +26,7 @@ import {
   DataBarVertical24Regular,
   TextGrammarWand24Regular,
   ArrowSwap24Regular,
+  SearchRegular,
 } from '@fluentui/react-icons';
 import { X } from '../ui/icons';
 import { AnimatePresence, motion } from 'motion/react';
@@ -35,6 +36,56 @@ import type { DetectedSchema } from '../../lib/linguistics/core/types';
 
 // Panel width — ~25% larger than original 280
 const PANEL_WIDTH = 350;
+
+// ─── Skeleton shimmer ────────────────────────────────────────────────
+function SkeletonBar({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`rounded animate-pulse bg-black/[0.06] dark:bg-white/[0.06] ${className}`}
+      aria-hidden="true"
+    />
+  );
+}
+
+function KpiCardSkeleton() {
+  return (
+    <div className="rounded-lg border border-[var(--border-color)] p-2 bg-[var(--bg-sidebar)] text-center space-y-1.5">
+      <SkeletonBar className="h-6 w-10 mx-auto" />
+      <SkeletonBar className="h-3 w-14 mx-auto" />
+    </div>
+  );
+}
+
+function SectionCardSkeleton() {
+  return (
+    <div className="rounded-lg border border-[var(--border-color)] p-3 bg-[var(--bg-sidebar)] space-y-2">
+      <div className="flex items-center justify-between">
+        <SkeletonBar className="h-3.5 w-28" />
+        <SkeletonBar className="h-3 w-12" />
+      </div>
+      <div className="grid grid-cols-3 gap-1">
+        <SkeletonBar className="h-8 rounded" />
+        <SkeletonBar className="h-8 rounded" />
+        <SkeletonBar className="h-8 rounded" />
+      </div>
+    </div>
+  );
+}
+
+function InsightsTabSkeleton() {
+  return (
+    <div className="flex flex-col gap-3" aria-busy="true" aria-label="Computing analysis">
+      <div className="grid grid-cols-3 gap-2">
+        <KpiCardSkeleton />
+        <KpiCardSkeleton />
+        <KpiCardSkeleton />
+      </div>
+      <Divider />
+      <SectionCardSkeleton />
+      <SectionCardSkeleton />
+    </div>
+  );
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────
 
@@ -71,6 +122,7 @@ function AnalysisTab({ sections }: { sections: SectionInsight[] }) {
     <div className="flex flex-col gap-3">
       {sections.map(sec => (
         <div key={sec.sectionId} className="rounded-lg border border-[var(--border-color)] p-3 bg-[var(--bg-sidebar)]">
+          {/* text-xs = 12px minimum — font-size floor */}
           <Text weight="semibold" size={300} className="block mb-2 font-mono text-[var(--lcars-amber)]">
             {sec.sectionName}
           </Text>
@@ -128,6 +180,7 @@ function SimilarityTab({ pairs }: { pairs: SimilarityPair[] }) {
 
   return (
     <div className="flex flex-col gap-1">
+      {/* size={200} = Fluent SM ≈ 12px — minimum floor */}
       <Text size={200} className="text-[var(--text-muted)] mb-1">
         Top {Math.min(pairs.length, 30)} pairs by phonological similarity
       </Text>
@@ -173,7 +226,8 @@ function KpiCard({ label, value }: { label: string; value: number }) {
       <Text size={500} weight="bold" className="block font-mono text-[var(--lcars-amber)]">
         {value}
       </Text>
-      <Text size={100} className="text-[var(--text-muted)] uppercase tracking-wider">
+      {/* size={200} = Fluent SM ≈ 12px — was size={100} ≈ 10px (below floor) */}
+      <Text size={200} className="text-[var(--text-muted)] uppercase tracking-wider">
         {label}
       </Text>
     </div>
@@ -187,22 +241,24 @@ function SectionInsightCard({ section }: { section: SectionInsight }) {
         <Text weight="semibold" size={300} className="font-mono text-[var(--lcars-amber)]">
           {section.sectionName}
         </Text>
-        <Text size={100} className="text-[var(--text-muted)]">
+        {/* size={200} — was size={100} */}
+        <Text size={200} className="text-[var(--text-muted)]">
           {section.lineInsights.length} lines
         </Text>
       </div>
       <div className="grid grid-cols-3 gap-1 text-center text-xs">
         <div>
           <Text weight="bold" className="block font-mono">{section.totalSyllables}</Text>
-          <Text size={100} className="text-[var(--text-muted)]">σ total</Text>
+          {/* size={200} — was size={100} */}
+          <Text size={200} className="text-[var(--text-muted)]">σ total</Text>
         </div>
         <div>
           <Text weight="bold" className="block font-mono">{section.avgSyllablesPerLine.toFixed(1)}</Text>
-          <Text size={100} className="text-[var(--text-muted)]">σ/line</Text>
+          <Text size={200} className="text-[var(--text-muted)]">σ/line</Text>
         </div>
         <div>
           <Text weight="bold" className="block font-mono">{section.avgWordsPerLine.toFixed(1)}</Text>
-          <Text size={100} className="text-[var(--text-muted)]">w/line</Text>
+          <Text size={200} className="text-[var(--text-muted)]">w/line</Text>
         </div>
       </div>
     </div>
@@ -247,6 +303,7 @@ function SchemaDisplay({
           {detected || '—'}
         </Badge>
       </Tooltip>
+      {/* text-xs = 12px minimum */}
       {confidencePct && (
         <span className="text-[var(--text-muted)] text-xs font-mono">{confidencePct}</span>
       )}
@@ -274,7 +331,8 @@ function DensityBar({ label, value, color }: { label: string; value: number; col
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-8 text-center">
-      <DataBarVertical24Regular className="text-[var(--text-muted)] mb-2" />
+      {/* SearchRegular disambiguates from the DataBarVertical24Regular panel header icon */}
+      <SearchRegular className="text-[var(--text-muted)] mb-2 w-6 h-6" />
       <Text size={200} className="text-[var(--text-muted)]">{message}</Text>
     </div>
   );
@@ -313,6 +371,9 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
     setSelectedTab(data.value as string);
   };
 
+  // Show skeleton when computing with no prior result
+  const showSkeleton = isComputing && result === null;
+
   return (
     <AnimatePresence>
       <motion.div
@@ -344,7 +405,8 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
             }} />
             <div className="flex items-center gap-3">
               <DataBarVertical24Regular className="text-[var(--lcars-amber)] w-4 h-4" />
-              <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-semibold">
+              {/* text-xs = 12px — was text-[10px] (below floor) */}
+              <span className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-semibold">
                 Phonologic Analysis
               </span>
               {isComputing && <Spinner size="tiny" />}
@@ -384,12 +446,15 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
             )}
             {result && result.computeTimeMs > 0 && (
               <div className="text-right mb-2">
-                <Text size={100} className="text-[var(--text-muted)] font-mono">
+                {/* text-xs = 12px — was size={100} ≈ 10px */}
+                <Text size={200} className="text-[var(--text-muted)] font-mono">
                   ⚡ {result.computeTimeMs.toFixed(0)}ms
                 </Text>
               </div>
             )}
-            {selectedTab === 'insights' && <InsightsTab sections={result?.sections ?? []} />}
+            {/* Skeleton state: computing + no prior result */}
+            {showSkeleton && selectedTab === 'insights' && <InsightsTabSkeleton />}
+            {!showSkeleton && selectedTab === 'insights' && <InsightsTab sections={result?.sections ?? []} />}
             {selectedTab === 'analysis' && <AnalysisTab sections={result?.sections ?? []} />}
             {selectedTab === 'similarity' && <SimilarityTab pairs={result?.similarityPairs ?? []} />}
           </div>

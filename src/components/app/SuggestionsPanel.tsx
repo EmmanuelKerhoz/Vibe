@@ -10,6 +10,46 @@ interface Props {
   className?: string;
 }
 
+// ─── Skeleton shimmer ────────────────────────────────────────────────
+function SkeletonBar({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`rounded animate-pulse bg-black/[0.06] dark:bg-white/[0.06] ${className}`}
+      aria-hidden="true"
+    />
+  );
+}
+
+function SpellCheckSkeleton() {
+  return (
+    <div className="space-y-2" aria-busy="true" aria-label="Loading spell check">
+      <SkeletonBar className="h-3 w-24" />
+      <div className="p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-[var(--border-color)] space-y-2">
+        <SkeletonBar className="h-3.5 w-full" />
+        <SkeletonBar className="h-3.5 w-4/5" />
+        <div className="flex gap-2 pt-1">
+          <SkeletonBar className="h-6 w-20 rounded-lg" />
+          <SkeletonBar className="h-6 w-16 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SynonymsSkeleton() {
+  return (
+    <div className="space-y-2" aria-busy="true" aria-label="Loading synonyms">
+      <SkeletonBar className="h-3 w-20" />
+      <div className="flex flex-wrap gap-1.5">
+        {[56, 72, 48, 64, 52].map((w, i) => (
+          <SkeletonBar key={i} className="h-6 rounded-md" style={{ width: w }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────
 export function SuggestionsPanel({
   isMobileOverlay = false,
   className,
@@ -69,7 +109,8 @@ export function SuggestionsPanel({
           }} />
           <h3 className="micro-label text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-[var(--accent-warning)]" />
-            <span className="text-[10px] uppercase tracking-widest font-semibold">{t.suggestions.title}</span>
+            {/* text-xs = 12px — respects the 12px absolute floor */}
+            <span className="text-xs uppercase tracking-widest font-semibold">{t.suggestions.title}</span>
           </h3>
           <button
             onClick={() => setSelectedLineId(null)}
@@ -85,12 +126,10 @@ export function SuggestionsPanel({
           {/* ── Spell-check correction ── */}
           {(spellCheck?.isChecking || hasSpellCorrection) && (
             <div className="space-y-2">
-              <p className="text-[9px] uppercase tracking-widest text-zinc-600 dark:text-zinc-500">{t.suggestions.spellCheckTitle}</p>
+              {/* text-[11px] — minimum legible label size */}
+              <p className="text-[11px] uppercase tracking-widest text-zinc-600 dark:text-zinc-500">{t.suggestions.spellCheckTitle}</p>
               {spellCheck?.isChecking ? (
-                <div className="flex items-center gap-2 py-3 text-xs text-zinc-600 dark:text-zinc-500 animate-pulse">
-                  <Sparkles className="w-3 h-3 text-[var(--accent-color)]" />
-                  {t.suggestions.spellChecking}
-                </div>
+                <SpellCheckSkeleton />
               ) : hasSpellCorrection ? (
                 <div className="p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-[var(--accent-color)]/20 space-y-2">
                   <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">{spellCheck!.correction}</p>
@@ -98,7 +137,7 @@ export function SuggestionsPanel({
                     <button
                       type="button"
                       onClick={() => { spellCheck!.applyCorrection(spellCheck!.correction!); setSelectedLineId(null); }}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[10px] text-[var(--accent-color)] uppercase tracking-wider transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[11px] text-[var(--accent-color)] uppercase tracking-wider transition-colors"
                     >
                       <Check className="w-3 h-3" />
                       {t.suggestions.applyCorrection}
@@ -106,7 +145,7 @@ export function SuggestionsPanel({
                     <button
                       type="button"
                       onClick={spellCheck!.dismissCorrection}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-[10px] text-zinc-600 dark:text-zinc-500 uppercase tracking-wider transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-[11px] text-zinc-600 dark:text-zinc-500 uppercase tracking-wider transition-colors"
                     >
                       {t.suggestions.dismiss}
                     </button>
@@ -119,12 +158,9 @@ export function SuggestionsPanel({
           {/* ── Synonyms ── */}
           {(isSynonymsLoading || hasSynonyms) && (
             <div className="space-y-2">
-              <p className="text-[9px] uppercase tracking-widest text-zinc-600 dark:text-zinc-500">{t.suggestions.synonymsTitle}</p>
+              <p className="text-[11px] uppercase tracking-widest text-zinc-600 dark:text-zinc-500">{t.suggestions.synonymsTitle}</p>
               {isSynonymsLoading ? (
-                <div className="flex items-center gap-2 py-3 text-xs text-zinc-600 dark:text-zinc-500 animate-pulse">
-                  <Sparkles className="w-3 h-3 text-[var(--accent-color)]" />
-                  {t.suggestions.synonymsLoading}
-                </div>
+                <SynonymsSkeleton />
               ) : hasSynonyms ? (
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(synonyms!).map(([word, syns]) => (
@@ -132,6 +168,7 @@ export function SuggestionsPanel({
                       <button
                         type="button"
                         onClick={() => setOpenSynonymWord(openSynonymWord === word ? null : word)}
+                        aria-label={`Show synonyms for "${word}"`}
                         className="px-2 py-1 rounded-md text-[11px] bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.10] border border-black/10 dark:border-white/10 hover:border-[var(--accent-color)]/40 text-zinc-700 dark:text-zinc-300 transition-all"
                       >
                         {word}
@@ -192,13 +229,13 @@ export function SuggestionsPanel({
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white leading-relaxed flex-1">{suggestion}</p>
                       {syllables > 0 && (
-                        <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 dark:text-zinc-500 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 mt-0.5">
+                        <span className="flex-shrink-0 text-[11px] tabular-nums text-zinc-600 dark:text-zinc-500 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 mt-0.5">
                           {syllables} syll.
                         </span>
                       )}
                     </div>
                     <div className="mt-3 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[9px] text-[var(--accent-color)] uppercase tracking-wider">{t.suggestions.clickToApply}</span>
+                      <span className="text-[11px] text-[var(--accent-color)] uppercase tracking-wider">{t.suggestions.clickToApply}</span>
                       <Check className="w-3 h-3 text-[var(--accent-color)]" />
                     </div>
                   </button>
@@ -209,7 +246,7 @@ export function SuggestionsPanel({
                 onClick={() => generateSuggestions(selectedLineId)}
                 disabled={!hasApiKey}
                 aria-label="Generate more suggestions"
-                className="w-full py-3 mt-4 flex items-center justify-center gap-2 text-[10px] text-zinc-600 dark:text-zinc-500 uppercase tracking-widest hover:text-[var(--accent-color)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 mt-4 flex items-center justify-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-500 uppercase tracking-widest hover:text-[var(--accent-color)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RefreshCw className="w-3 h-3" />
                 {t.suggestions.moreOptions}
