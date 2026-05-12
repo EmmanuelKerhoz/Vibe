@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { GripVertical, ChevronUp, ChevronDown, Plus, Trash2, Bot, User, Languages, Loader2, Ruler, Check } from '../ui/icons';
 import type { Line } from '../../types';
 import { useDrag } from '../../contexts/DragContext';
@@ -88,11 +88,12 @@ export const LyricInput = React.memo(function LyricInput({
   const quantizeTooltip = !isQuantizeSupported
     ? (t.editor?.quantize_line_unsupported ?? 'Quantize supports Latin-script lyrics only')
     : quantized ? (t.editor?.quantize_line_done ?? 'Line quantized') : (t.editor?.quantize_line ?? 'Quantize line');
-  const controlsWidth =
+  const controlsWidth = useMemo(() =>
     adaptLineLanguage && onQuantizeLine ? 'w-24'
     : adaptLineLanguage ? 'w-20'
     : onQuantizeLine ? 'w-20'
-    : 'w-16';
+    : 'w-16',
+  [adaptLineLanguage, onQuantizeLine]);
 
   useEffect(() => {
     if (isSelected && inputRef.current && document.activeElement !== inputRef.current) {

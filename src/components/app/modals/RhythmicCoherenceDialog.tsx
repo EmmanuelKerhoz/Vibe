@@ -95,7 +95,7 @@ export function RhythmicCoherenceDialog({ result, onApply, onSkip }: Props) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        aria-hidden="true"
+        role="presentation"
         className="absolute inset-0 bg-black/50 backdrop-blur-[2px] animate-in fade-in duration-200"
         onClick={onSkip}
       />
