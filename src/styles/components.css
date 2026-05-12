@@ -47,6 +47,94 @@
 }
 
 /* ---------------------------------------------------------------------------
+   MOBILE STATUS CHIP
+   Thin telemetry bar rendered above MobileBottomNav on <1024px.
+   Hidden on desktop (lg: breakpoint) — StatusBar handles that context.
+   --------------------------------------------------------------------------- */
+
+.mobile-status-chip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 24px;
+  padding-inline: 12px;
+  background: var(--acrylic-bg);
+  backdrop-filter: blur(4px) saturate(180%);
+  -webkit-backdrop-filter: blur(4px) saturate(180%);
+  border-top: 1px solid var(--border-color);
+  overflow: hidden;
+  /* hidden above 1024px — StatusBar takes over */
+}
+
+@media (min-width: 1024px) {
+  .mobile-status-chip { display: none; }
+}
+
+.mobile-status-chip__item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline: 6px;
+  flex-shrink: 0;
+}
+
+.mobile-status-chip__item--busy {
+  margin-left: auto;
+}
+
+.mobile-status-chip__label {
+  font-size: 12px; /* WCAG floor — never below 12px */
+  font-family: var(--font-mono, 'Courier New', monospace);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mobile-status-chip__label--mono {
+  font-variant-numeric: tabular-nums;
+}
+
+.mobile-status-chip__divider {
+  display: block;
+  width: 1px;
+  height: 12px;
+  background: var(--border-color);
+  flex-shrink: 0;
+}
+
+.mobile-status-chip__spinner {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-color);
+  border-top-color: transparent;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Status dots */
+.mobile-status-dot {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+.mobile-status-dot--saved   { background: #10b981; opacity: 0.85; }
+.mobile-status-dot--saving  { background: #f59e0b; animation: lcars-pulse-anim 1s ease-in-out infinite; }
+.mobile-status-dot--unsaved { background: var(--text-secondary); opacity: 0.6; }
+.mobile-status-dot--error   { background: #ef4444; }
+
+/* ---------------------------------------------------------------------------
    MOBILE BOTTOM NAV
    --------------------------------------------------------------------------- */
 
@@ -71,7 +159,7 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  font-size: 10px;
+  font-size: 12px; /* was 10px — bumped to WCAG 12px floor */
   font-weight: 500;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
@@ -87,6 +175,7 @@
   color: var(--text-primary);
   background: rgba(128, 128, 128, 0.08);
 }
+.mobile-generate { color: var(--accent-color); }
 .mobile-bottom-nav-generate { color: var(--accent-color); }
 .mobile-bottom-nav-generate:disabled { opacity: 0.5; cursor: not-allowed; }
 
