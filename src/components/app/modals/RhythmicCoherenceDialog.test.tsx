@@ -77,9 +77,19 @@ describe('RhythmicCoherenceDialog', () => {
     const user = userEvent.setup();
     render(<RhythmicCoherenceDialog result={result} onApply={vi.fn()} onSkip={vi.fn()} />);
 
-    await user.click(screen.getByRole('button', { name: 'Apply' }));
-    await user.tab();
+    const firstRadio = screen.getByRole('radio', { name: /prioritise lyrics/i });
+    const skipButton = screen.getByRole('button', { name: 'Skip' });
+    const applyButton = screen.getByRole('button', { name: 'Apply' });
 
-    expect(screen.getByRole('radio', { name: /prioritise lyrics/i })).toHaveFocus();
+    await user.click(firstRadio);
+    await user.tab();
+    expect(skipButton).toHaveFocus();
+    await user.tab();
+    expect(applyButton).toHaveFocus();
+    await user.tab();
+    expect(firstRadio).toHaveFocus();
+
+    await user.tab({ shift: true });
+    expect(applyButton).toHaveFocus();
   });
 });

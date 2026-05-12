@@ -167,6 +167,7 @@ Keep the response in English (required by music AI tools) and avoid markdown or 
         // Rhythmic coherence check — surface a dialog when score < 70
         const fullLyrics = getSongText(song);
         if (fullLyrics.trim() && promptText.trim()) {
+          if (nextSignal.aborted) return;
           const coherence = checkRhythmicCoherence(fullLyrics, {
             bpm: tempo,
             durationSeconds,
