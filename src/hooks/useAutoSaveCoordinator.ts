@@ -18,7 +18,7 @@ interface AutoSaveCoordinatorOptions {
   isStructureOpen: boolean;
   isLeftPanelOpen: boolean;
   /** Called once after the first successful OPFS write. */
-  onSaved?: () => void;
+  onSaved?: (() => void) | undefined;
 }
 
 export function useAutoSaveCoordinator({
@@ -32,7 +32,10 @@ export function useAutoSaveCoordinator({
   // Stable ref so useSessionAutoSave's dep-array never sees a new function.
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
-  const stableOnSaved = useRef(() => onSavedRef.current?.()).current;
+  const stableOnSaved = useRef<(() => void) | undefined>(undefined);
+  if (!stableOnSaved.current) {
+    stableOnSaved.current = () => onSavedRef.current?.();
+  }
 
   return useSessionAutoSave({
     song:                songCtx.song,
@@ -55,6 +58,6 @@ export function useAutoSaveCoordinator({
     activeTab,
     isStructureOpen,
     isLeftPanelOpen,
-    onSaved: stableOnSaved,
+    onSaved: stableOnSaved.current,
   });
 }
