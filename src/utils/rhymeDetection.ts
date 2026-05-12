@@ -670,21 +670,23 @@ const splitLineAtCanonicalSuffix = (
     const rawTail = word.normalizedWord.slice(group.start);
     const canonForms = canonicalizeRhymeSuffix(rawTail, langCode);
 
-    const matches = canonForms.some(
-      f =>
-        f === canonicalSuffix ||
-        (
-          f.endsWith(canonicalSuffix) &&
-          !isVowel(f[f.length - canonicalSuffix.length - 1] ?? '')
-        ),
-    );
-    if (!matches) continue;
+    const isExactMatch = canonForms.some(f => f === canonicalSuffix);
+    const isEndsWithMatch = !isExactMatch && canonForms.some(f => f.endsWith(canonicalSuffix));
 
-    const suffixStartsWithVowel = isVowel(word.normalizedWord[group.start] ?? '');
-    const effectiveStart =
-      isTonalLanguage(langCode || '') || !suffixStartsWithVowel
-        ? group.start
-        : extendToVowelOnset(word.normalizedWord, group.start);
+    if (!isExactMatch && !isEndsWithMatch) continue;
+
+    // For exact canonical matches start from the vowel-group onset (current behaviour).
+    // For endsWith matches, locate the canonical suffix inside the raw tail so that
+    // the highlighted portion begins at the right boundary (e.g. "ition" not "tion",
+    // "ette" not "iette", "aite" not "te").
+    const rawSplitOffset = isExactMatch
+      ? 0
+      : Math.max(0, rawTail.lastIndexOf(canonicalSuffix));
+
+    const splitPos = group.start + rawSplitOffset;
+    const effectiveStart = isTonalLanguage(langCode || '')
+      ? splitPos
+      : extendToVowelOnset(word.normalizedWord, splitPos);
 
     const absoluteStart = word.wordStart + effectiveStart;
     return {

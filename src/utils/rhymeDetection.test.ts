@@ -140,3 +140,6 @@ describe('doLinesRhymeGraphemic — empty / edge cases', () => {
 
   it('returns false for punctuation-only lines', () => {
     expect(doLinesRhymeGraphemic('...', '!!!', 'fr')).toBe(false);
+  });
+});
+    expect(doLinesRhymeGraphemic('...', '!!!', 'fr')).toBe(false);
