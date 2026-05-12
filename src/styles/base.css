@@ -31,17 +31,18 @@ html, body, #root {
   ::-webkit-scrollbar { width: 0; height: 0; }
 }
 
-/* Telemetry / status bar typography */
+/* Telemetry / status bar typography — 12px floor (WCAG minimum) */
 .telemetry-text {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.06em;
 }
 
+/* micro-label: 12px floor, reduced tracking for legibility at small size */
 .micro-label {
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-secondary);
   opacity: 0.7;
