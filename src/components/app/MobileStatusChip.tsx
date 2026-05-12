@@ -42,7 +42,7 @@ export function MobileStatusChip({ hasApiKey, saveStatus = 'idle', lastSavedAt =
     : 'mobile-status-dot mobile-status-dot--error';
   const apiLabel = hasApiKey
     ? (t.statusBar?.ready ?? 'API')
-    : (t.settings?.apiKey?.missingShort ?? 'NO KEY');
+    : 'NO KEY';
 
   return (
     <div className="mobile-status-chip" role="status" aria-live="polite" aria-label="App status">
