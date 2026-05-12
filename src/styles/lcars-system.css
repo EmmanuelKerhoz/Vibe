@@ -98,7 +98,7 @@
   --lcars-gradient-border-render-opacity: var(--lcars-gradient-border-hover-opacity);
 }
 
-/* Animated conic spin on hover */
+/* Animated conic spin on hover — will-change: auto (correct pour @property animation) */
 .lcars-gradient-container:hover::after,
 .lcars-gb-panel:hover::after,
 .lcars-gradient-outline:hover::after,
@@ -119,7 +119,7 @@
     var(--lcars-amber)
   );
   animation: lcars-border-spin 2.5s linear infinite;
-  will-change: background;
+  will-change: auto;
 }
 
 /* Per-variant opacities */
@@ -362,7 +362,8 @@
 .ui-fluent .fluent-input:focus-within {
   border-bottom-color: var(--accent-color);
   border-bottom-width: 2px;
-  outline: none;
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 2px oklch(from var(--accent-color) l c h / 0.35);
 }
 
 .ui-fluent .lcars-panel {
@@ -450,7 +451,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  font-size: 10px;
+  font-size: 12px;
   font-family: var(--font-mono);
   letter-spacing: 0.06em;
   color: var(--text-secondary);

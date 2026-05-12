@@ -55,6 +55,9 @@
   );
   --accent-rail-outline-thickness: var(--accent-rail-thickness);
 
+  /* Fluent radius — promu ici pour usage hors .ui-fluent */
+  --fluent-radius: 24px 4px 24px 4px;
+
   /* Fluent light */
   --bg-app:            #f3f2f1;
   --bg-sidebar:        rgba(243, 242, 241, 0.75);
