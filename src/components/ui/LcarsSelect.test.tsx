@@ -19,15 +19,15 @@ describe('LcarsSelect', () => {
 
     fireEvent.mouseEnter(button);
     expect(button.style.boxShadow).toBe('');
-    expect(button.style.borderColor).toBe('var(--accent-color)');
+    expect(button.style.getPropertyValue('border-color')).toBe('var(--accent-color)');
 
     fireEvent.mouseLeave(button);
     expect(button.style.boxShadow).toBe('');
-    expect(button.style.borderColor).toBe('var(--border-color)');
+    expect(button.style.getPropertyValue('border-color')).toBe('var(--border-color)');
 
     fireEvent.focus(button);
     expect(button.style.boxShadow).toBe('');
-    expect(button.style.borderColor).toBe('var(--accent-color)');
+    expect(button.style.getPropertyValue('border-color')).toBe('var(--accent-color)');
   });
 
   it('renders the dropdown in a portal and closes on outside click', () => {
