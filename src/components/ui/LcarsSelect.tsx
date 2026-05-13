@@ -272,6 +272,14 @@ export function LcarsSelect({
         if (!isOpen) { setOpen(true); setFocusedIndex(nextEnabled(displayedOptions.length, -1)); }
         else setFocusedIndex((i) => nextEnabled(Math.max(i, 0), -1));
         break;
+      case 'Home':
+        e.preventDefault();
+        if (isOpen) setFocusedIndex(nextEnabled(-1, 1));
+        break;
+      case 'End':
+        e.preventDefault();
+        if (isOpen) setFocusedIndex(nextEnabled(displayedOptions.length, -1));
+        break;
       default:
         break;
     }
@@ -324,10 +332,6 @@ export function LcarsSelect({
         aria-label={resolvedAriaLabel}
         onClick={handleTriggerClick}
         onKeyDown={handleKeyDown}
-        onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.setProperty('border-color', accent); }}
-        onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus-visible') && !isOpen) e.currentTarget.style.setProperty('border-color', 'var(--border-color)'); }}
-        onFocus={(e) => { e.currentTarget.style.setProperty('border-color', accent); }}
-        onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) e.currentTarget.style.setProperty('border-color', 'var(--border-color)'); }}
         className={['ux-interactive', 'lcars-select-trigger', className].filter(Boolean).join(' ')}
         data-open={isOpen ? 'true' : undefined}
         style={{
