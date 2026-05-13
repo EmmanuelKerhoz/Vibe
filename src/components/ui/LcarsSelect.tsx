@@ -327,6 +327,7 @@ export function LcarsSelect({
         className={['ux-interactive', 'lcars-select-trigger', className].filter(Boolean).join(' ')}
         data-open={isOpen ? 'true' : undefined}
         style={{
+          '--lcars-select-accent': accentColor ?? 'var(--accent-color)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -348,7 +349,7 @@ export function LcarsSelect({
           position: 'relative',
           zIndex: 1,
           ...style,
-        }}
+        } as React.CSSProperties}
       >
         <div style={{
           flex: 1,

@@ -496,3 +496,30 @@
   border-color: var(--accent-color);
   box-shadow: 0 0 0 4px oklch(from var(--accent-color) l c h / 0.18);
 }
+
+/* ---------------------------------------------------------------------------
+   LCARS SELECT TRIGGER
+   --lcars-select-accent is set inline by LcarsSelect when accentColor prop
+   is provided; falls back to --accent-color for the default theme.
+   --------------------------------------------------------------------------- */
+
+.lcars-select-trigger {
+  --lcars-select-accent: var(--accent-color);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.lcars-select-trigger:hover:not(:disabled) {
+  border-color: var(--lcars-select-accent) !important;
+}
+
+.lcars-select-trigger:focus-visible {
+  border-color: var(--lcars-select-accent) !important;
+  outline: 2px solid var(--lcars-select-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px oklch(from var(--lcars-select-accent) l c h / 0.18);
+}
+
+.lcars-select-trigger[data-open="true"] {
+  border-color: var(--lcars-select-accent) !important;
+  box-shadow: 0 0 0 2px oklch(from var(--lcars-select-accent) l c h / 0.12);
+}
