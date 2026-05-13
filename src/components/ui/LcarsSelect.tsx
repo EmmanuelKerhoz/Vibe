@@ -428,7 +428,7 @@ export function LcarsSelect({
             );
           }
           return (
-            <Tooltip key={opt.value} content={opt.title} relationship="description">
+            <Tooltip key={opt.value} title={opt.title ?? ''} relationship="description">
               <li
                 role="option"
                 aria-selected={isSelected}
