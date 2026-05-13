@@ -324,6 +324,10 @@ export function LcarsSelect({
         aria-label={resolvedAriaLabel}
         onClick={handleTriggerClick}
         onKeyDown={handleKeyDown}
+        onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.setProperty('border-color', accent); }}
+        onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus-visible') && !isOpen) e.currentTarget.style.setProperty('border-color', 'var(--border-color)'); }}
+        onFocus={(e) => { e.currentTarget.style.setProperty('border-color', accent); }}
+        onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) e.currentTarget.style.setProperty('border-color', 'var(--border-color)'); }}
         className={['ux-interactive', 'lcars-select-trigger', className].filter(Boolean).join(' ')}
         data-open={isOpen ? 'true' : undefined}
         style={{
