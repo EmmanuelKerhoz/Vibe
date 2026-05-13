@@ -44,36 +44,60 @@ export function MobileStatusChip({ hasApiKey, saveStatus = 'idle', lastSavedAt =
     ? (t.statusBar?.ready ?? 'API')
     : 'NO KEY';
 
+  // ── A11y labels — give the visual-only dots and the bare language code
+  // explicit meaning for assistive technology. The outer container already
+  // has aria-live="polite", so updates to these labels are announced.
+  const saveStatusAria =
+    saveStatus === 'saving'  ? `Save status: ${t.statusBar?.saving ?? 'save in progress'}`
+    : saveStatus === 'unsaved' ? `Save status: ${t.statusBar?.unsaved ?? 'changes not saved'}`
+    : saveStatus === 'error'   ? `Save status: ${t.statusBar?.saveError ?? 'save failed'}`
+    : lastSavedAt
+      ? `Last saved at ${saveLabel}`
+      : `Save status: ${t.statusBar?.sessionSavedBadge ?? 'all changes saved'}`;
+
+  const languageAria = `${t.statusBar?.language ?? 'Language'}: ${langCode}`;
+
+  const apiKeyAria = hasApiKey
+    ? `API key: ${t.statusBar?.ready ?? 'ready'}`
+    : 'API key: missing';
+
+  const busyAria = isGenerating
+    ? (t.statusBar?.generating ?? 'Generating')
+    : (t.statusBar?.suggesting ?? 'Suggesting');
+
   return (
     <div className="mobile-status-chip" role="status" aria-live="polite" aria-label="App status">
       {/* Save status */}
-      <span className="mobile-status-chip__item">
-        <span className={dotClass} />
-        <span className="mobile-status-chip__label">{saveLabel}</span>
+      <span className="mobile-status-chip__item" aria-label={saveStatusAria}>
+        <span className={dotClass} aria-hidden="true" />
+        <span className="mobile-status-chip__label" aria-hidden="true">{saveLabel}</span>
       </span>
 
-      <span className="mobile-status-chip__divider" />
+      <span className="mobile-status-chip__divider" aria-hidden="true" />
 
       {/* Language */}
-      <span className="mobile-status-chip__item">
-        <span className="mobile-status-chip__label mobile-status-chip__label--mono">{langCode}</span>
+      <span className="mobile-status-chip__item" aria-label={languageAria}>
+        <span className="mobile-status-chip__label mobile-status-chip__label--mono" aria-hidden="true">{langCode}</span>
       </span>
 
-      <span className="mobile-status-chip__divider" />
+      <span className="mobile-status-chip__divider" aria-hidden="true" />
 
       {/* API key */}
-      <span className="mobile-status-chip__item">
-        <span className={apiDotClass} />
-        <span className="mobile-status-chip__label">{apiLabel}</span>
+      <span className="mobile-status-chip__item" aria-label={apiKeyAria}>
+        <span className={apiDotClass} aria-hidden="true" />
+        <span className="mobile-status-chip__label" aria-hidden="true">{apiLabel}</span>
       </span>
 
       {/* Busy indicator — right-aligned */}
       {isBusy && (
         <>
-          <span className="mobile-status-chip__divider" />
-          <span className="mobile-status-chip__item mobile-status-chip__item--busy">
+          <span className="mobile-status-chip__divider" aria-hidden="true" />
+          <span
+            className="mobile-status-chip__item mobile-status-chip__item--busy"
+            aria-label={busyAria}
+          >
             <span className="mobile-status-chip__spinner" aria-hidden="true" />
-            <span className="mobile-status-chip__label">
+            <span className="mobile-status-chip__label" aria-hidden="true">
               {isGenerating
                 ? (t.statusBar?.generating ?? 'GEN')
                 : (t.statusBar?.suggesting ?? 'AI')}
