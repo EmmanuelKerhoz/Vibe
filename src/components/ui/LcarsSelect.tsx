@@ -153,7 +153,6 @@ export function LcarsSelect({
     const minDropdownHeight = 120;
     const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
     const spaceAbove = rect.top - viewportPadding;
-    // Flip upward whenever there is more room above than below.
     const openUpward = spaceAbove > spaceBelow;
     const availableHeight = openUpward ? spaceAbove : spaceBelow;
     const maxDropdownWidth = window.innerWidth - viewportPadding * 2;
@@ -286,9 +285,6 @@ export function LcarsSelect({
           const opt = displayedOptions[focusedIndex];
           if (opt && !opt.disabled) handleSelect(opt.value);
         } else {
-          // Give the parent a chance to intercept Enter (e.g. to commit a
-          // custom-language value). If onSearchEnter returns true, the event
-          // is consumed and we do NOT fall through to auto-select.
           if (onSearchEnter?.()) break;
           selectFirstVisibleEnabled();
         }
@@ -328,8 +324,14 @@ export function LcarsSelect({
         aria-label={resolvedAriaLabel}
         onClick={handleTriggerClick}
         onKeyDown={handleKeyDown}
-        className={['ux-interactive', className].filter(Boolean).join(' ')}
+        onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.setProperty('border-color', accent); }}
+        onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus-visible') && !isOpen) e.currentTarget.style.setProperty('border-color', 'var(--border-color)'); }}
+        onFocus={(e) => { e.currentTarget.style.setProperty('border-color', accent); }}
+        onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) e.currentTarget.style.setProperty('border-color', 'var(--border-color)'); }}
+        className={['ux-interactive', 'lcars-select-trigger', className].filter(Boolean).join(' ')}
+        data-open={isOpen ? 'true' : undefined}
         style={{
+          '--lcars-select-accent': accentColor ?? 'var(--accent-color)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -351,11 +353,7 @@ export function LcarsSelect({
           position: 'relative',
           zIndex: 1,
           ...style,
-        }}
-        onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
-        onBlur={(e) => { if (!containerRef.current?.contains(e.relatedTarget as Node)) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
-        onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.borderColor = accent; } }}
-        onMouseLeave={(e) => { if (!e.currentTarget.matches(':focus')) { e.currentTarget.style.borderColor = 'var(--border-color)'; } }}
+        } as React.CSSProperties}
       >
         <div style={{
           flex: 1,
@@ -437,6 +435,8 @@ export function LcarsSelect({
             ref={listRef}
             id={listboxId}
             role="listbox"
+            dir="auto"
+            aria-label={resolvedAriaLabel ?? placeholder ?? 'Options'}
             aria-activedescendant={focusedIndex >= 0 ? `${listboxId}-opt-${focusedIndex}` : undefined}
             style={{
               position: 'relative',
@@ -514,7 +514,6 @@ export function LcarsSelect({
                     textAlign: 'start',
                     userSelect: 'none',
                   }}
-                  dir="auto"
                 >
                   {opt.label}
                 </li>
