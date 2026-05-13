@@ -1,4 +1,4 @@
-import { getAlgoFamily, isTonalLanguage } from '../constants/langFamilyMap';
+import { getAlgoFamily, isTonalLanguage, type AlgoFamily } from '../constants/langFamilyMap';
 import type { Section, SongVersion } from '../types';
 import type { SimilarityMatch, SimilaritySectionMatch } from './similarityUtils';
 import { normalizeText } from './similarityUtils';
@@ -402,7 +402,7 @@ const CRE_SUFFIX_TABLE: SuffixTable = [
 ];
 
 /** Map each family to its normalization table */
-const FAMILY_SUFFIX_TABLES: Partial<Record<string, SuffixTable>> = {
+const FAMILY_SUFFIX_TABLES: Partial<Record<AlgoFamily, SuffixTable>> = {
   'ALGO-ROM':  ROM_SUFFIX_TABLE,
   'ALGO-GER':  GER_SUFFIX_TABLE,
   'ALGO-SLV':  SLV_SUFFIX_TABLE,
@@ -545,7 +545,7 @@ const getLongestCommonSuffix = (a: string, b: string): string => {
 /**
  * Canonical digraphs per family — for the 1-char exact-match fallback.
  */
-const CANONICAL_DIGRAPHS_BY_FAMILY: Partial<Record<string, Set<string>>> = {
+const CANONICAL_DIGRAPHS_BY_FAMILY: Partial<Record<AlgoFamily, Set<string>>> = {
   'ALGO-ROM':  new Set(['an', 'in', 'on', 'un', 'ou', 'oi', 'eu', 'au', 'ui', 'ie', 'el', 'al', 'il']),
   'ALGO-GER':  new Set(['ay', 'ee', 'ow', 'ai', 'oi', 'oo']),
   'ALGO-SLV':  new Set(['ой', 'ей', 'ий', 'ый']),
@@ -800,7 +800,7 @@ const ENJAMBMENT_CONNECTORS = new Set([
 const isEnjambmentConnector = (normalizedToken: string): boolean =>
   ENJAMBMENT_CONNECTORS.has(normalizedToken) || ENJAMBMENT_CONNECTORS.has(normalizedToken.normalize('NFC'));
 
-const AGGLUTINATIVE_FAMILIES = new Set(['ALGO-TRK', 'ALGO-FIN', 'ALGO-KOR']);
+const AGGLUTINATIVE_FAMILIES: ReadonlySet<AlgoFamily> = new Set<AlgoFamily>(['ALGO-TRK', 'ALGO-FIN', 'ALGO-KOR']);
 
 const detectInternalRhymeToken = (tokens: string[], lastWord: string, langCode?: string): string | null => {
   if (tokens.length < 2) return null;
@@ -993,7 +993,7 @@ export const calculateSimilarityWithMetadata = (
   const currentLines = getSongLines(currentSong);
   const candidateTokens = getSongTokens(candidateSong);
   const candidateTokenSet = new Set(candidateTokens);
-  const candidateLines = getSongLines(currentSong);
+  const candidateLines = getSongLines(candidateSong);
   const candidateLineSet = new Set(candidateLines);
 
   const sharedWords = new Set(currentTokens.filter(token => candidateTokenSet.has(token))).size;

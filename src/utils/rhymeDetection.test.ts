@@ -1,7 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import {
   doLinesRhymeGraphemic,
+  calculateSimilarityWithMetadata,
 } from './rhymeDetection';
+import type { Section } from '../types';
+
+const makeSection = (name: string, lines: string[]): Section => ({
+  id: `section-${name}`,
+  name,
+  lines: lines.map((text, i) => ({
+    id: `${name}-${i}`,
+    text,
+    rhymingSyllables: '',
+    rhyme: '',
+    syllables: 0,
+    concept: '',
+  })),
+});
 
 // ─── doLinesRhymeGraphemic ────────────────────────────────────────────────────
 
@@ -138,5 +153,79 @@ describe('doLinesRhymeGraphemic — empty / edge cases', () => {
 
   it('returns false for punctuation-only lines', () => {
     expect(doLinesRhymeGraphemic('...', '!!!', 'fr')).toBe(false);
+  });
+});
+
+// ─── calculateSimilarityWithMetadata ─────────────────────────────────────────
+
+describe('calculateSimilarityWithMetadata', () => {
+  it('counts sharedLines from candidate, not current (regression: candidateLines bug)', () => {
+    const current: Section[] = [
+      makeSection('Verse 1', ['Line that matches', 'Unique current line']),
+    ];
+    const candidate: Section[] = [
+      makeSection('Verse 1', ['Line that matches', 'Totally different candidate line']),
+    ];
+
+    const result = calculateSimilarityWithMetadata(current, candidate);
+
+    // Only one line is actually shared between the two songs.
+    // Before the fix, candidateLines was built from currentSong, which made
+    // every current line "shared" and inflated this counter to 2.
+    expect(result.sharedLines).toBe(1);
+  });
+
+  it('returns sharedLines=0 when no lines overlap', () => {
+    const current: Section[] = [makeSection('A', ['Alpha one', 'Alpha two'])];
+    const candidate: Section[] = [makeSection('A', ['Beta one', 'Beta two'])];
+
+    const result = calculateSimilarityWithMetadata(current, candidate);
+
+    expect(result.sharedLines).toBe(0);
+  });
+
+  it('counts sharedWords across the two songs', () => {
+    const current: Section[] = [makeSection('V', ['midnight city lights'])];
+    const candidate: Section[] = [makeSection('V', ['midnight ocean lights'])];
+
+    const result = calculateSimilarityWithMetadata(current, candidate);
+
+    // 'midnight' and 'lights' overlap.
+    expect(result.sharedWords).toBe(2);
+  });
+
+  it('returns sharedKeywords ordered by combined frequency', () => {
+    const current: Section[] = [makeSection('V', ['rain rain rain night'])];
+    const candidate: Section[] = [makeSection('V', ['rain night night'])];
+
+    const result = calculateSimilarityWithMetadata(current, candidate);
+
+    expect(result.sharedKeywords).toEqual(['rain', 'night']);
+  });
+
+  it('returns matchedSections only for sections sharing a name and overlapping lines', () => {
+    const current: Section[] = [
+      makeSection('Verse', ['hello world']),
+      makeSection('Chorus', ['shared line']),
+    ];
+    const candidate: Section[] = [
+      makeSection('Verse', ['totally other']),
+      makeSection('Chorus', ['shared line']),
+    ];
+
+    const result = calculateSimilarityWithMetadata(current, candidate);
+
+    expect(result.matchedSections.map(s => s.name)).toEqual(['Chorus']);
+    expect(result.matchedSections[0]!.score).toBeGreaterThan(0);
+  });
+
+  it('returns zeroed metadata for two empty songs', () => {
+    const result = calculateSimilarityWithMetadata([], []);
+
+    expect(result.sharedLines).toBe(0);
+    expect(result.sharedWords).toBe(0);
+    expect(result.sharedKeywords).toEqual([]);
+    expect(result.matchedSections).toEqual([]);
+    expect(result.score).toBe(0);
   });
 });
