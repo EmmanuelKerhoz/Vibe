@@ -11,12 +11,6 @@ const TIER_COLOR: Record<StorageTier, string> = {
   red:    'var(--accent-error,   #ef4444)',
 };
 
-const TIER_BG: Record<StorageTier, string> = {
-  green:  'var(--accent-color)',
-  orange: 'var(--accent-warning, #f59e0b)',
-  red:    'var(--accent-error,   #ef4444)',
-};
-
 const POPOVER_WIDTH = 224;
 
 /** Small gauge widget for the StatusBar. */
@@ -30,7 +24,6 @@ export function StorageGauge() {
   const updateCoords = useCallback(() => {
     if (ref.current) {
       const r = ref.current.getBoundingClientRect();
-      // Anchor to the left edge of the trigger, clamped so popover stays in viewport
       const left = Math.min(
         Math.max(8, r.left),
         window.innerWidth - POPOVER_WIDTH - 8
@@ -42,10 +35,29 @@ export function StorageGauge() {
     }
   }, []);
 
-  const handleMouseEnter = () => {
+  const handleOpen = useCallback(() => {
     updateCoords();
     setOpen(true);
-  };
+  }, [updateCoords]);
+
+  const handleToggle = useCallback(() => {
+    if (open) {
+      setOpen(false);
+    } else {
+      handleOpen();
+    }
+  }, [open, handleOpen]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleToggle();
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setOpen(false);
+    }
+  }, [handleToggle]);
 
   useEffect(() => {
     if (!open) return;
@@ -54,6 +66,15 @@ export function StorageGauge() {
     return () => window.removeEventListener('resize', onResize);
   }, [open, updateCoords]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onOutside = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [open]);
+
   if (!est.supported) return null;
 
   const color = TIER_COLOR[est.tier];
@@ -61,7 +82,7 @@ export function StorageGauge() {
 
   const popover = open && coords ? createPortal(
     <div
-      onMouseEnter={() => setOpen(true)}
+      onMouseEnter={handleOpen}
       onMouseLeave={() => setOpen(false)}
       style={{
         position: 'fixed',
@@ -139,12 +160,16 @@ export function StorageGauge() {
     <div
       ref={ref}
       className="relative"
-      onMouseEnter={handleMouseEnter}
+      onMouseEnter={handleOpen}
       onMouseLeave={() => setOpen(false)}
     >
       <button
         aria-label={`${t.saveToLibrary.storageTitle}: ${pct}%`}
+        aria-expanded={open}
+        aria-haspopup="true"
         className="lcars-meta-btn min-h-[44px] lg:min-h-0 flex items-center gap-1"
+        onClick={handleToggle}
+        onKeyDown={handleKeyDown}
       >
         <span className="relative w-3.5 h-3.5 flex-shrink-0">
           <HardDrive className="absolute inset-0 w-full h-full" style={{ color }} />
@@ -152,7 +177,7 @@ export function StorageGauge() {
             className="absolute bottom-0 left-0 right-0 overflow-hidden rounded-sm"
             style={{
               height: `${pct}%`,
-              background: TIER_BG[est.tier],
+              background: color,
               opacity: 0.35,
               transition: 'height 0.6s ease',
             }}
