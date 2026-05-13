@@ -523,3 +523,84 @@
   border-color: var(--lcars-select-accent) !important;
   box-shadow: 0 0 0 2px oklch(from var(--lcars-select-accent) l c h / 0.12);
 }
+
+/* ---------------------------------------------------------------------------
+   LCARS SELECT DROPDOWN — enter / exit animations
+   Origin anchored to top (open-down) or bottom (open-up) via transform-origin
+   set inline in LcarsSelect.
+   --------------------------------------------------------------------------- */
+
+@keyframes lcarsDropdownIn {
+  from {
+    opacity: 0;
+    transform: scaleY(0.88) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+@keyframes lcarsDropdownInUp {
+  from {
+    opacity: 0;
+    transform: scaleY(0.88) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+@keyframes lcarsDropdownOut {
+  from {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0.88) translateY(-4px);
+  }
+}
+
+@keyframes lcarsDropdownOutUp {
+  from {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0.88) translateY(4px);
+  }
+}
+
+.lcars-dropdown-enter {
+  animation: lcarsDropdownIn 160ms cubic-bezier(0.1, 0.9, 0.2, 1) both;
+  transform-origin: top center;
+}
+
+.lcars-dropdown-enter-up {
+  animation: lcarsDropdownInUp 160ms cubic-bezier(0.1, 0.9, 0.2, 1) both;
+  transform-origin: bottom center;
+}
+
+.lcars-dropdown-exit {
+  animation: lcarsDropdownOut 120ms cubic-bezier(0.4, 0, 1, 1) both;
+  transform-origin: top center;
+  pointer-events: none;
+}
+
+.lcars-dropdown-exit-up {
+  animation: lcarsDropdownOutUp 120ms cubic-bezier(0.4, 0, 1, 1) both;
+  transform-origin: bottom center;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lcars-dropdown-enter,
+  .lcars-dropdown-enter-up,
+  .lcars-dropdown-exit,
+  .lcars-dropdown-exit-up {
+    animation: none;
+  }
+}
