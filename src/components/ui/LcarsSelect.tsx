@@ -67,6 +67,9 @@ function getOptionSearchText(opt: LcarsSelectOption): string {
   return opt.searchText ?? nodeToText(opt.label);
 }
 
+/** Duration (ms) the exit animation plays before the portal is unmounted. */
+const DROPDOWN_EXIT_MS = 120;
+
 export function LcarsSelect({
   value,
   onChange,
@@ -89,6 +92,7 @@ export function LcarsSelect({
 }: LcarsSelectProps) {
   const accent = accentColor ?? 'var(--accent-color)';
   const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [internalSearch, setInternalSearch] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,10 +100,15 @@ export function LcarsSelect({
   const listRef = useRef<HTMLUListElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>();
+  const [openUpward, setOpenUpward] = useState(false);
   const listboxId = useId();
   const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
   const effectiveSearch = searchValueProp ?? internalSearch;
+
+  // True when the portal should be in the DOM (open OR playing exit animation).
+  const portalVisible = isOpen || closing;
 
   const setOpen = useCallback((nextOpen: boolean) => {
     if (nextOpen === isOpen) return;
@@ -107,7 +116,7 @@ export function LcarsSelect({
       setUncontrolledIsOpen(nextOpen);
     }
     onOpenChange?.(nextOpen);
-  }, [controlledIsOpen, isOpen, onOpenChange, setUncontrolledIsOpen]);
+  }, [controlledIsOpen, isOpen, onOpenChange]);
 
   const displayedOptions = React.useMemo(() => {
     if (!searchable) return options;
@@ -125,10 +134,21 @@ export function LcarsSelect({
     placeholder ??
     options[0]?.label ?? '';
 
+  // Close: start exit animation, then unmount after DROPDOWN_EXIT_MS.
   const close = useCallback(() => {
-    setOpen(false);
-    setFocusedIndex(-1);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setClosing(true);
+    closeTimerRef.current = setTimeout(() => {
+      setClosing(false);
+      setOpen(false);
+      setFocusedIndex(-1);
+    }, DROPDOWN_EXIT_MS);
   }, [setOpen]);
+
+  // Cleanup timer on unmount.
+  useEffect(() => () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) setFocusedIndex(-1);
@@ -153,17 +173,18 @@ export function LcarsSelect({
     const minDropdownHeight = 120;
     const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
     const spaceAbove = rect.top - viewportPadding;
-    const openUpward = spaceAbove > spaceBelow;
-    const availableHeight = openUpward ? spaceAbove : spaceBelow;
+    const shouldOpenUpward = spaceAbove > spaceBelow;
+    const availableHeight = shouldOpenUpward ? spaceAbove : spaceBelow;
     const maxDropdownWidth = window.innerWidth - viewportPadding * 2;
     const dropdownWidth = Math.min(maxDropdownWidth, Math.max(rect.width, 320));
     const dropdownLeft = Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - viewportPadding - dropdownWidth));
+    setOpenUpward(shouldOpenUpward);
     setDropdownStyle({
       position: 'fixed',
       left: dropdownLeft,
       width: dropdownWidth,
       zIndex: 9999,
-      ...(openUpward
+      ...(shouldOpenUpward
         ? { bottom: window.innerHeight - rect.top + dropdownGap }
         : { top: rect.bottom + dropdownGap }),
       maxHeight: Math.max(minDropdownHeight, Math.min(maxDropdownHeight, availableHeight)),
@@ -171,7 +192,7 @@ export function LcarsSelect({
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!portalVisible) return;
     const handleOutside = (e: MouseEvent) => {
       const target = e.target as Node;
       if (
@@ -182,7 +203,7 @@ export function LcarsSelect({
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
-  }, [isOpen, close]);
+  }, [portalVisible, close]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -215,9 +236,15 @@ export function LcarsSelect({
 
   const handleTriggerClick = () => {
     if (disabled) return;
-    const nextOpen = !isOpen;
-    setOpen(nextOpen);
-    if (nextOpen) {
+    if (isOpen) {
+      close();
+    } else {
+      // Cancel any pending close animation before reopening.
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        setClosing(false);
+      }
+      setOpen(true);
       const idx = displayedOptions.findIndex((o) => o.value === value);
       setFocusedIndex(idx >= 0 ? idx : -1);
     }
@@ -253,48 +280,13 @@ export function LcarsSelect({
           const opt = displayedOptions[focusedIndex];
           if (opt && !opt.disabled) handleSelect(opt.value);
         } else {
+          if (closeTimerRef.current) {
+            clearTimeout(closeTimerRef.current);
+            setClosing(false);
+          }
           setOpen(true);
           const idx = displayedOptions.findIndex((o) => o.value === value);
-          setFocusedIndex(idx >= 0 ? idx : nextEnabled(-1, 1));
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        close();
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        if (!isOpen) { setOpen(true); setFocusedIndex(nextEnabled(-1, 1)); }
-        else setFocusedIndex((i) => nextEnabled(Math.min(i, displayedOptions.length - 1), 1));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        if (!isOpen) { setOpen(true); setFocusedIndex(nextEnabled(displayedOptions.length, -1)); }
-        else setFocusedIndex((i) => nextEnabled(Math.max(i, 0), -1));
-        break;
-      case 'Home':
-        e.preventDefault();
-        if (isOpen) setFocusedIndex(nextEnabled(-1, 1));
-        break;
-      case 'End':
-        e.preventDefault();
-        if (isOpen) setFocusedIndex(nextEnabled(displayedOptions.length, -1));
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    switch (e.key) {
-      case 'Enter':
-        e.preventDefault();
-        if (focusedIndex >= 0) {
-          const opt = displayedOptions[focusedIndex];
-          if (opt && !opt.disabled) handleSelect(opt.value);
-        } else {
-          if (onSearchEnter?.()) break;
-          selectFirstVisibleEnabled();
+          setFocusedIndex(idx >= 0 ? idx : -1);
         }
         break;
       case 'Escape':
@@ -304,229 +296,218 @@ export function LcarsSelect({
         break;
       case 'ArrowDown':
         e.preventDefault();
-        setFocusedIndex((i) => nextEnabled(Math.min(i, displayedOptions.length - 1), 1));
+        if (!isOpen) {
+          if (closeTimerRef.current) {
+            clearTimeout(closeTimerRef.current);
+            setClosing(false);
+          }
+          setOpen(true);
+        }
+        setFocusedIndex((prev) => nextEnabled(prev, 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setFocusedIndex((i) => nextEnabled(Math.max(i, 0), -1));
+        if (!isOpen) {
+          if (closeTimerRef.current) {
+            clearTimeout(closeTimerRef.current);
+            setClosing(false);
+          }
+          setOpen(true);
+        }
+        setFocusedIndex((prev) => nextEnabled(prev, -1));
         break;
-      default:
+      case 'Tab':
+        if (isOpen) { e.preventDefault(); close(); }
         break;
     }
   };
 
-  const resolvedAriaLabel = buttonAriaLabel ?? (typeof placeholder === 'string' ? placeholder : undefined);
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusedIndex((prev) => nextEnabled(prev, 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusedIndex((prev) => nextEnabled(prev, -1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (focusedIndex >= 0) {
+          const opt = displayedOptions[focusedIndex];
+          if (opt && !opt.disabled) { handleSelect(opt.value); return; }
+        }
+        if (onSearchEnter) {
+          const consumed = onSearchEnter();
+          if (consumed) return;
+        }
+        selectFirstVisibleEnabled();
+        break;
+      case 'Escape':
+        e.preventDefault();
+        close();
+        triggerRef.current?.focus();
+        break;
+    }
+  };
 
-  const triggerBlock = (
-    <div
-      className="lcars-gradient-outline"
-      style={{ borderRadius: '6px 2px 6px 2px', display: 'block', width: '100%' }}
-    >
-      <button
-        type="button"
-        ref={triggerRef}
-        disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-controls={isOpen ? listboxId : undefined}
-        aria-label={resolvedAriaLabel}
-        onClick={handleTriggerClick}
-        onKeyDown={handleKeyDown}
-        className={['ux-interactive', 'lcars-select-trigger', className].filter(Boolean).join(' ')}
-        data-open={isOpen ? 'true' : undefined}
+  // Animation class based on direction and closing state.
+  const animationClass = closing
+    ? (openUpward ? 'lcars-dropdown-exit-up' : 'lcars-dropdown-exit')
+    : (openUpward ? 'lcars-dropdown-enter-up' : 'lcars-dropdown-enter');
+
+  const dropdownContent = (
+    <div ref={portalRef} style={dropdownStyle}>
+      <ul
+        ref={listRef}
+        id={listboxId}
+        role="listbox"
+        aria-label={placeholder ?? 'Select'}
+        className={`lcars-dropdown-list ${animationClass}`}
         style={{
-          '--lcars-select-accent': accentColor ?? 'var(--accent-color)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          padding: '6px 10px',
-          borderRadius: '6px 2px 6px 2px',
-          border: '1px solid var(--border-color)',
-          background: 'var(--bg-card)',
-          color: 'var(--text-primary)',
-          cursor: disabled ? 'not-allowed' : 'pointer',
-          opacity: disabled ? 0.5 : 1,
-          transition: 'box-shadow 0.2s, border-color 0.2s',
-          outline: 'none',
-          gap: '6px',
-          fontSize: 'inherit',
-          fontFamily: EMOJI_FONT_STACK,
-          textAlign: 'left',
-          overflow: 'hidden',
-          position: 'relative',
-          zIndex: 1,
-          ...style,
-        } as React.CSSProperties}
+          overflowY: 'auto',
+          maxHeight: 'inherit',
+          backgroundColor: 'var(--bg-card)',
+          border: `1px solid ${accent}`,
+          borderRadius: '4px',
+          boxShadow: `0 4px 24px rgba(0,0,0,0.25), 0 0 0 1px ${accent}22`,
+          listStyle: 'none',
+          padding: '4px 0',
+          margin: 0,
+        }}
       >
-        <div style={{
-          flex: 1,
-          minWidth: 0,
-          display: 'flex',
-          alignItems: 'center',
-          fontFamily: EMOJI_FONT_STACK,
-          overflow: 'hidden',
-        }}>
-          {(() => {
-            const displayLabel = triggerLabel ?? selectedLabel;
-            return typeof displayLabel === 'string' ? (
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', width: '100%' }}>
-                {displayLabel}
-              </span>
-            ) : (
-              <>{displayLabel}</>
+        {searchable && (
+          <li
+            role="presentation"
+            style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-color)' }}
+          >
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={effectiveSearch}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder={searchPlaceholder ?? 'Search…'}
+              aria-label="Filter options"
+              style={{
+                width: '100%',
+                background: 'var(--input-bg)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '3px',
+                padding: '4px 8px',
+                fontSize: '13px',
+                color: 'var(--text-primary)',
+                outline: 'none',
+              }}
+            />
+          </li>
+        )}
+        {displayedOptions.map((opt, idx) => {
+          const isFocused = idx === focusedIndex;
+          const isSelected = opt.value === value;
+          if (opt.disabled) {
+            return (
+              <li
+                key={opt.value}
+                role="presentation"
+                style={{
+                  padding: '4px 12px',
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-mono)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-secondary)',
+                  borderTop: idx > 0 ? '1px solid var(--border-color)' : undefined,
+                  marginTop: idx > 0 ? '4px' : undefined,
+                  paddingTop: idx > 0 ? '8px' : undefined,
+                }}
+              >
+                {opt.label}
+              </li>
             );
-          })()}
-        </div>
-        <ChevronDown style={{ width: 14, height: 14, flexShrink: 0, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-      </button>
+          }
+          return (
+            <Tooltip key={opt.value} content={opt.title} relationship="description">
+              <li
+                role="option"
+                aria-selected={isSelected}
+                style={{
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontFamily: EMOJI_FONT_STACK,
+                  color: isSelected ? accent : 'var(--text-primary)',
+                  backgroundColor: isFocused
+                    ? `${accent}22`
+                    : isSelected
+                    ? `${accent}11`
+                    : 'transparent',
+                  transition: 'background-color 0.1s',
+                }}
+                onMouseEnter={() => setFocusedIndex(idx)}
+                onMouseLeave={() => setFocusedIndex(-1)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleSelect(opt.value);
+                }}
+              >
+                {opt.label}
+              </li>
+            </Tooltip>
+          );
+        })}
+      </ul>
     </div>
   );
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
-      {buttonTitle ? <Tooltip title={buttonTitle}>{triggerBlock}</Tooltip> : triggerBlock}
-
-      {isOpen && dropdownStyle && createPortal(
-        <div
-          ref={portalRef}
-          className="lcars-gradient-outline"
+    <div
+      ref={containerRef}
+      className={className}
+      style={{ position: 'relative', display: 'inline-block', ...style }}
+      onKeyDown={handleKeyDown}
+    >
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-label={buttonAriaLabel ?? placeholder}
+        data-open={isOpen ? 'true' : 'false'}
+        title={buttonTitle}
+        className="lcars-select-trigger"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          background: 'var(--bg-card)',
+          border: `1px solid var(--border-color)`,
+          borderRadius: '3px',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          color: 'var(--text-primary)',
+          fontSize: '13px',
+          fontFamily: EMOJI_FONT_STACK,
+          whiteSpace: 'nowrap',
+          opacity: disabled ? 0.5 : 1,
+          ['--lcars-select-accent' as string]: accent,
+        }}
+        onClick={handleTriggerClick}
+      >
+        <span style={{ flex: 1 }}>{triggerLabel ?? selectedLabel}</span>
+        <ChevronDown
+          size={12}
           style={{
-            ...dropdownStyle,
-            borderRadius: '2px 6px 6px 2px',
-            display: 'flex',
-            flexDirection: 'column',
+            transition: 'transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1)',
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            flexShrink: 0,
           }}
-        >
-          {searchable && (
-            <div
-              style={{
-                position: 'relative',
-                zIndex: 2,
-                padding: '6px 8px',
-                background: 'var(--bg-card)',
-                borderTopLeftRadius: '2px',
-                borderTopRightRadius: '6px',
-                borderBottom: `1px solid color-mix(in srgb, ${accent} 30%, var(--border-color))`,
-                flexShrink: 0,
-                fontFamily: EMOJI_FONT_STACK,
-              }}
-            >
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={effectiveSearch}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                placeholder={searchPlaceholder ?? 'Filter\u2026'}
-                aria-label={searchPlaceholder ?? 'Filter options'}
-                aria-controls={listboxId}
-                style={{
-                  width: '100%',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--bg-card)',
-                  color: 'var(--text-primary)',
-                  fontSize: 'inherit',
-                  outline: 'none',
-                  fontFamily: EMOJI_FONT_STACK,
-                }}
-              />
-            </div>
-          )}
-          <ul
-            ref={listRef}
-            id={listboxId}
-            role="listbox"
-            dir="auto"
-            aria-label={resolvedAriaLabel ?? placeholder ?? 'Options'}
-            aria-activedescendant={focusedIndex >= 0 ? `${listboxId}-opt-${focusedIndex}` : undefined}
-            style={{
-              position: 'relative',
-              zIndex: 1,
-              width: '100%',
-              flex: 1,
-              minHeight: 0,
-              fontFamily: EMOJI_FONT_STACK,
-              borderRadius: searchable ? '0 0 6px 2px' : '2px 6px 6px 2px',
-              border: '1px solid var(--border-color)',
-              borderTop: searchable ? 'none' : '1px solid var(--border-color)',
-              background: 'var(--bg-card)',
-              backdropFilter: 'blur(2px)',
-              boxShadow: `0 0 20px 2px color-mix(in srgb, ${accent} 30%, transparent)`,
-              overflowY: 'auto',
-              listStyle: 'none',
-              margin: 0,
-              padding: 0,
-              scrollbarWidth: 'thin',
-              scrollbarColor: `${accent} transparent`,
-            }}
-          >
-            {displayedOptions.length === 0 && (
-              <li
-                role="presentation"
-                style={{
-                  padding: '10px 14px',
-                  color: 'var(--text-muted, #888)',
-                  fontSize: '0.85em',
-                  opacity: 0.7,
-                  userSelect: 'none',
-                }}
-              >
-                No matches
-              </li>
-            )}
-            {displayedOptions.map((opt, idx) => {
-              const isSelected = opt.value === value;
-              const isFocused = idx === focusedIndex;
-              const isDisabled = opt.disabled === true;
-              return (
-                <li
-                  key={opt.value}
-                  id={`${listboxId}-opt-${idx}`}
-                  role={isDisabled ? 'presentation' : 'option'}
-                  aria-selected={isDisabled ? undefined : isSelected}
-                  aria-disabled={isDisabled ? true : undefined}
-                  title={opt.title}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    if (!isDisabled) handleSelect(opt.value);
-                  }}
-                  onMouseEnter={() => { if (!isDisabled) setFocusedIndex(idx); }}
-                  style={{
-                    padding: isDisabled ? '6px 14px 2px' : '10px 14px',
-                    cursor: isDisabled ? 'default' : 'pointer',
-                    fontFamily: EMOJI_FONT_STACK,
-                    color: isDisabled
-                      ? 'var(--text-muted, #888)'
-                      : isSelected || isFocused ? accent : 'var(--text-primary)',
-                    background: (!isDisabled && isFocused)
-                      ? `color-mix(in srgb, ${accent} 15%, transparent)`
-                      : 'transparent',
-                    borderLeft: (!isDisabled && isSelected)
-                      ? `3px solid ${accent}`
-                      : '3px solid transparent',
-                    opacity: isDisabled ? 0.5 : 1,
-                    pointerEvents: isDisabled ? 'none' : 'auto',
-                    transition: 'background 0.1s, color 0.1s',
-                    fontSize: isDisabled ? '0.7em' : 'inherit',
-                    whiteSpace: 'normal',
-                    overflow: 'visible',
-                    textOverflow: 'clip',
-                    lineHeight: 1.4,
-                    textAlign: 'start',
-                    userSelect: 'none',
-                  }}
-                >
-                  {opt.label}
-                </li>
-              );
-            })}
-          </ul>
-        </div>,
-        document.body,
-      )}
+        />
+      </button>
+      {portalVisible && dropdownStyle && createPortal(dropdownContent, document.body)}
     </div>
   );
 }
