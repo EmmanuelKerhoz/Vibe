@@ -9,18 +9,18 @@
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.65);
+  background: oklch(1 0 0 / 0.65);
   backdrop-filter: blur(8px) saturate(180%);
   -webkit-backdrop-filter: blur(8px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.06), inset 0 0 0 1px rgba(255,255,255,0.5);
+  border: 1px solid oklch(0 0 0 / 0.08);
+  box-shadow: 0 8px 32px 0 oklch(0 0 0 / 0.06), inset 0 0 0 1px oklch(1 0 0 / 0.5);
   position: relative;
   overflow: hidden;
 }
 .dark .glass-panel {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.02);
+  background: oklch(0 0 0 / 0.4);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  box-shadow: 0 8px 32px 0 oklch(0 0 0 / 0.3), inset 0 0 0 1px oklch(1 0 0 / 0.02);
 }
 .glass-panel::before {
   content: "";
@@ -39,7 +39,7 @@
 .acrylic[role="dialog"],
 .dialog-surface {
   background-image: none !important;
-  background: rgba(255, 255, 255, 0.88);
+  background: oklch(1 0 0 / 0.88);
   backdrop-filter: blur(8px) saturate(160%);
   -webkit-backdrop-filter: blur(8px) saturate(160%);
 }
@@ -48,7 +48,7 @@
 .dark .about-dialog-shimmer[role="dialog"],
 .dark .acrylic[role="dialog"],
 .dark .dialog-surface {
-  background: rgba(10, 10, 10, 0.88);
+  background: oklch(0.04 0 0 / 0.88);
   background-image: none !important;
 }
 .dialog-surface {
@@ -62,13 +62,13 @@
 .lcars-gradient-outline > .glass-panel::after { display: none !important; }
 
 .glass-button {
-  background: rgba(0, 0, 0, 0.04);
+  background: oklch(0 0 0 / 0.04);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid oklch(0 0 0 / 0.08);
   border-radius: 4px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.06);
   position: relative;
   overflow: hidden;
 }
@@ -77,25 +77,25 @@
   position: absolute;
   top: 0; left: -100%;
   width: 50%; height: 100%;
-  background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+  background: linear-gradient(to right, transparent, oklch(1 0 0 / 0.2), transparent);
   transform: skewX(-20deg);
   transition: all 0.5s ease;
 }
 .glass-button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.07);
-  border-color: rgba(0, 0, 0, 0.12);
+  background: oklch(0 0 0 / 0.07);
+  border-color: oklch(0 0 0 / 0.12);
   transform: translateY(-1px);
 }
 .glass-button:hover:not(:disabled)::after { left: 200%; }
 .dark .glass-button {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  background: oklch(1 0 0 / 0.03);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.1);
 }
 .dark .glass-button::after {
-  background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(to right, transparent, oklch(1 0 0 / 0.1), transparent);
 }
 .dark .glass-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: oklch(1 0 0 / 0.08);
+  border-color: oklch(1 0 0 / 0.15);
 }
