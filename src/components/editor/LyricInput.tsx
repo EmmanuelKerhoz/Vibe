@@ -155,7 +155,7 @@ export const LyricInput = React.memo(function LyricInput({
 
   /**
    * Renders the styled text overlay:
-   *  - Parenthesised stage directions: amber (intentional accent, both themes)
+   *  - Parenthesised stage directions: --lcars-amber (intentional accent, both themes)
    *  - Rhyming suffix of last word: rhymeTextColor
    *  - Everything else: var(--text-primary) — readable in both light and dark themes
    */
@@ -166,7 +166,7 @@ export const LyricInput = React.memo(function LyricInput({
 
     return parts.map((part, i) => {
       if (part.startsWith('(') && part.endsWith(')')) {
-        return <span key={i} className="text-amber-400">{part}</span>;
+        return <span key={i} className="text-[var(--lcars-amber)]">{part}</span>;
       }
 
       const isLastPart = i === parts.length - 1;
@@ -200,7 +200,7 @@ export const LyricInput = React.memo(function LyricInput({
       onDrop={handleDrop}
     >
       {/* Line number */}
-      <span className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-600 dark:text-zinc-400 select-none" aria-hidden="true">
+      <span className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-[var(--text-secondary)] select-none" aria-hidden="true">
         {globalLineNumber ?? ''}
       </span>
 
@@ -211,14 +211,14 @@ export const LyricInput = React.memo(function LyricInput({
         onDragEnd={handleDragEnd}
         className="cursor-grab opacity-0 group-hover:opacity-40 hover:!opacity-80 flex-shrink-0 touch-none transition-opacity"
       >
-        <GripVertical className="h-3.5 w-3.5 text-zinc-500" />
+        <GripVertical className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
       </div>
 
       {/* AI / Human origin indicator */}
       <Tooltip title={line.isManual ? (t.editor?.humanLine ?? 'Human line') : (t.editor?.aiLine ?? 'AI-generated line')}>
         <span className="flex-shrink-0 flex items-center justify-center w-3.5">
           {line.isManual
-            ? <User className="h-2.5 w-2.5 text-zinc-500 dark:text-zinc-400" />
+            ? <User className="h-2.5 w-2.5 text-[var(--text-secondary)]" />
             : <Bot className="h-2.5 w-2.5 text-[var(--accent-color)]" />}
         </span>
       </Tooltip>
@@ -226,122 +226,145 @@ export const LyricInput = React.memo(function LyricInput({
       {/* Per-line language flag */}
       {lineLanguageDisplay && (
         <Tooltip title={lineLanguageDisplay.label}>
-          <span className="flex-shrink-0 flex items-center justify-center w-3.5">
-            <EmojiSign sign={lineLanguageDisplay.sign} />
+          <span className="flex-shrink-0 text-[11px] leading-none select-none" aria-hidden="true">
+            {lineLanguageDisplay.flag}
           </span>
         </Tooltip>
       )}
 
-      {/* Text input with styled overlay */}
-      <div className="relative flex-1 min-w-0" onClick={handleClick}>
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 flex items-center text-sm font-mono overflow-hidden whitespace-pre"
-          style={{ font: 'inherit', letterSpacing: 'inherit' }}
-        >
-          {renderStyledOverlay(line.text)}
-        </div>
+      {/* Rhyme scheme label */}
+      {schemeLabel && (
+        <Tooltip title={`Rhyme scheme: ${schemeLabel}`}>
+          <EmojiSign
+            label={schemeLabel}
+            className="flex-shrink-0 w-5 h-5 text-[9px] font-bold font-mono select-none"
+          />
+        </Tooltip>
+      )}
+
+      {/* Input + overlay wrapper */}
+      <div className="relative flex-1 min-w-0">
         <input
           ref={inputRef}
-          data-line-id={line.id}
           type="text"
           value={line.text}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onClick={handleClick}
           onBlur={handleBlur}
-          disabled={isGenerating}
-          placeholder={t.editor?.linePlaceholder ?? 'Write a lyric line\u2026'}
-          className="w-full bg-transparent text-sm font-mono text-transparent caret-[color:var(--text-primary)] outline-none border-none focus:ring-0 placeholder:text-[var(--text-secondary)] disabled:cursor-not-allowed relative z-10"
-          style={{ font: 'inherit', letterSpacing: 'inherit' }}
-          spellCheck
+          data-line-id={line.id}
+          className="w-full bg-transparent border-none outline-none text-sm font-sans caret-[color:var(--text-primary)] text-transparent selection:bg-[var(--accent-color)]/20"
+          style={{ font: 'inherit' }}
+          aria-label={`Line ${(globalLineNumber ?? lineIndex + 1)}`}
+          spellCheck={false}
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
         />
+        {/* Styled overlay — positioned over the transparent input */}
+        <div
+          className="absolute inset-0 pointer-events-none text-sm font-sans flex items-center overflow-hidden whitespace-pre"
+          aria-hidden="true"
+          style={{ font: 'inherit' }}
+        >
+          {renderStyledOverlay(line.text)}
+        </div>
       </div>
 
-      {/* Line controls — visible on hover */}
-      <div className={`flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${controlsWidth}`}>
+      {/* Right controls */}
+      <div className={`absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-0.5 ${controlsWidth} justify-end pr-1`}>
+
+        {/* Adapt language button */}
         {adaptLineLanguage && (
-          <Tooltip title={hasApiKey ? (t.editor?.adaptLine ?? `Adapt line to ${sectionTargetLanguage ?? 'target language'}`) : (t.tooltips.aiUnavailable ?? 'AI unavailable')}>
+          <Tooltip title={t.editor?.adapt_line_language ?? 'Adapt line language'}>
             <button
-              type="button"
               onClick={() => {
-                adaptLineLanguage(
-                  sectionId,
-                  line.id,
-                  migrateAdaptationToLangId(sectionTargetLanguage ?? 'English') as AdaptationLangId,
-                );
+                const lang = (sectionTargetLanguage
+                  ? migrateAdaptationToLangId(sectionTargetLanguage)
+                  : null) ?? 'fr';
+                adaptLineLanguage(sectionId, line.id, lang);
                 playAudioFeedback('click');
               }}
-              disabled={!hasApiKey || isAdaptingLine || isGenerating}
-              className="flex h-4 w-4 items-center justify-center text-cyan-600 hover:text-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              disabled={isAdaptingLine || isGenerating}
+              className="opacity-0 group-hover:opacity-60 hover:!opacity-100 flex-shrink-0 p-0.5 rounded transition-opacity disabled:opacity-30"
+              aria-label={t.editor?.adapt_line_language ?? 'Adapt line language'}
             >
               {isAdaptingLine
-                ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                : <Languages className="h-2.5 w-2.5" />}
+                ? <Loader2 className="h-3 w-3 text-[var(--lcars-blue)] animate-spin" />
+                : <Languages className="h-3 w-3 text-[var(--lcars-blue)] hover:text-[var(--accent-color)]" />}
             </button>
           </Tooltip>
         )}
+
+        {/* Quantize button */}
         {onQuantizeLine && (
           <Tooltip title={quantizeTooltip}>
             <button
-              type="button"
               onClick={() => {
                 if (!isQuantizeSupported) return;
                 onQuantizeLine(sectionId, line.id);
-                playAudioFeedback('success');
                 setQuantized(true);
                 if (quantizedTimeoutRef.current) clearTimeout(quantizedTimeoutRef.current);
-                quantizedTimeoutRef.current = setTimeout(() => setQuantized(false), 1500);
+                quantizedTimeoutRef.current = setTimeout(() => setQuantized(false), 2000);
+                playAudioFeedback('click');
               }}
-              disabled={isGenerating || !line.text.trim() || !isQuantizeSupported}
-              className="flex h-4 w-4 items-center justify-center text-violet-500 hover:text-violet-300 disabled:opacity-20 disabled:cursor-not-allowed transition"
+              disabled={!isQuantizeSupported}
+              className="opacity-0 group-hover:opacity-60 hover:!opacity-100 flex-shrink-0 p-0.5 rounded transition-opacity disabled:opacity-20 disabled:cursor-not-allowed"
+              aria-label={quantizeTooltip}
             >
               {quantized
-                ? <Check className="h-2.5 w-2.5" />
-                : <Ruler className="h-2.5 w-2.5" />}
+                ? <Check className="h-3 w-3 text-[var(--accent-success)]" />
+                : <Ruler className="h-3 w-3 text-[var(--lcars-violet)]" />}
             </button>
           </Tooltip>
         )}
-        <Tooltip title={t.editor?.moveLineUp ?? 'Move line up'}>
-          <button type="button" onClick={() => { moveLineUp(sectionId, line.id); playAudioFeedback('click'); }} disabled={lineIndex === 0}
-            className="flex h-4 w-4 items-center justify-center text-zinc-500 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">
-            <ChevronUp className="h-2.5 w-2.5" />
+
+        {/* Move up */}
+        <Tooltip title={t.editor?.moveUp ?? 'Move up'}>
+          <button
+            onClick={() => { moveLineUp(sectionId, line.id); playAudioFeedback('click'); }}
+            disabled={lineIndex === 0}
+            className="opacity-0 group-hover:opacity-40 hover:!opacity-80 flex-shrink-0 p-0.5 rounded transition-opacity disabled:opacity-0"
+            aria-label={t.editor?.moveUp ?? 'Move up'}
+          >
+            <ChevronUp className="h-3 w-3 text-[var(--text-secondary)]" />
           </button>
         </Tooltip>
-        <Tooltip title={t.editor?.moveLineDown ?? 'Move line down'}>
-          <button type="button" onClick={() => { moveLineDown(sectionId, line.id); playAudioFeedback('click'); }} disabled={lineIndex === sectionLinesCount - 1}
-            className="flex h-4 w-4 items-center justify-center text-zinc-500 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed transition">
-            <ChevronDown className="h-2.5 w-2.5" />
+
+        {/* Move down */}
+        <Tooltip title={t.editor?.moveDown ?? 'Move down'}>
+          <button
+            onClick={() => { moveLineDown(sectionId, line.id); playAudioFeedback('click'); }}
+            disabled={lineIndex === sectionLinesCount - 1}
+            className="opacity-0 group-hover:opacity-40 hover:!opacity-80 flex-shrink-0 p-0.5 rounded transition-opacity disabled:opacity-0"
+            aria-label={t.editor?.moveDown ?? 'Move down'}
+          >
+            <ChevronDown className="h-3 w-3 text-[var(--text-secondary)]" />
           </button>
         </Tooltip>
-        <Tooltip title={t.editor?.addLineAfter ?? 'Add line after'}>
-          <button type="button" onClick={() => { addLineToSection(sectionId, line.id); playAudioFeedback('click'); }}
-            className="flex h-4 w-4 items-center justify-center text-zinc-500 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-200 transition">
-            <Plus className="h-2.5 w-2.5" />
+
+        {/* Add line */}
+        <Tooltip title={t.editor?.addLine ?? 'Add line'}>
+          <button
+            onClick={() => { addLineToSection(sectionId, line.id); playAudioFeedback('click'); }}
+            className="opacity-0 group-hover:opacity-40 hover:!opacity-80 flex-shrink-0 p-0.5 rounded transition-opacity"
+            aria-label={t.editor?.addLine ?? 'Add line'}
+          >
+            <Plus className="h-3 w-3 text-[var(--text-secondary)]" />
           </button>
         </Tooltip>
+
+        {/* Delete line */}
         <Tooltip title={t.editor?.deleteLine ?? 'Delete line'}>
-          <button type="button" onClick={() => { deleteLineFromSection(sectionId, line.id); playAudioFeedback('click'); }} disabled={sectionLinesCount <= 1}
-            className="flex h-4 w-4 items-center justify-center text-zinc-500 dark:text-zinc-600 hover:text-red-400 disabled:opacity-20 disabled:cursor-not-allowed transition">
-            <Trash2 className="h-2.5 w-2.5" />
+          <button
+            onClick={() => { deleteLineFromSection(sectionId, line.id); playAudioFeedback('error'); }}
+            className="opacity-0 group-hover:opacity-40 hover:!opacity-100 flex-shrink-0 p-0.5 rounded transition-opacity hover:text-[var(--accent-error)]"
+            aria-label={t.editor?.deleteLine ?? 'Delete line'}
+          >
+            <Trash2 className="h-3 w-3 text-[var(--text-secondary)]" />
           </button>
         </Tooltip>
       </div>
-
-      {/* COL: COUNT */}
-      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors w-[2.75rem] text-right">
-        {line.syllables > 0 ? line.syllables : ''}
-      </span>
-
-      {/* COL: SPACER */}
-      <span className="flex-shrink-0 w-2" />
-
-      {/* COL: SCHEMA */}
-      <span
-        className={`flex-shrink-0 inline-flex h-4 w-7 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
-      >
-        {schemeLabel ?? ''}
-      </span>
     </div>
   );
 });
