@@ -394,13 +394,15 @@
 .ui-fluent .fluent-animate-panel {
   animation: fluentPanelFloatIn var(--motion-duration-normal) var(--motion-ease-standard) both;
 }
+/* opacity removed: Fluent 2 reserves opacity transitions for disabled states
+   and overlay fade-ins, not pressable hover/active. Animating opacity here
+   triggers unnecessary repaints compounding backdrop-filter composite work. */
 .ui-fluent .fluent-animate-pressable {
   transition:
     transform          var(--motion-duration-fast) var(--motion-ease-standard),
     box-shadow         var(--motion-duration-fast) ease,
     border-color       var(--motion-duration-fast) ease,
-    background-color   var(--motion-duration-fast) ease,
-    opacity            var(--motion-duration-fast) ease;
+    background-color   var(--motion-duration-fast) ease;
 }
 .ui-fluent .fluent-animate-pressable:hover:not(:disabled)  { transform: translateY(-1px); }
 .ui-fluent .fluent-animate-pressable:active:not(:disabled) { transform: translateY(0) scale(0.985); }
