@@ -25,25 +25,48 @@
   white-space: nowrap;
 }
 
+/* ---------------------------------------------------------------------------
+   LYRIC AREA TEXTURE — design-system tokens for opacity values
+   Avoids duplicating magic numbers across light/dark variants.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Light texture: subtle cross-hatch on warm parchment */
+  --lyric-texture-hatch-a:    rgba(0,0,0,0.022);
+  --lyric-texture-hatch-b:    rgba(0,0,0,0.014);
+  --lyric-texture-highlight:  rgba(255,255,255,0.55);
+  --lyric-texture-vignette:   rgba(255,255,255,0.6);
+}
+
+.dark {
+  /* Dark texture: inverted cross-hatch on near-black */
+  --lyric-texture-hatch-a:    rgba(255,255,255,0.018);
+  --lyric-texture-hatch-b:    rgba(255,255,255,0.012);
+  --lyric-texture-highlight:  rgba(0,0,0,0.25);
+  --lyric-texture-vignette:   rgba(255,255,255,0.03);
+}
+
 .lcars-lyrics-area {
   background-color: #e8e6e3;
   background-image:
-    repeating-linear-gradient(62deg,  transparent 0px, transparent 3px, rgba(0,0,0,0.022)   3px, rgba(0,0,0,0.022)   4px),
-    repeating-linear-gradient(-62deg, transparent 0px, transparent 3px, rgba(0,0,0,0.022)   3px, rgba(0,0,0,0.022)   4px),
-    repeating-linear-gradient(62deg,  transparent 0px, transparent 7px, rgba(0,0,0,0.014)   7px, rgba(0,0,0,0.014)   8px, transparent 8px, transparent 15px),
-    repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, rgba(255,255,255,0.55) 7px, rgba(255,255,255,0.55) 8px, transparent 8px, transparent 15px),
-    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.6) 0%, transparent 70%);
+    repeating-linear-gradient(62deg,  transparent 0px, transparent 3px, var(--lyric-texture-hatch-a) 3px, var(--lyric-texture-hatch-a) 4px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 3px, var(--lyric-texture-hatch-a) 3px, var(--lyric-texture-hatch-a) 4px),
+    repeating-linear-gradient(62deg,  transparent 0px, transparent 7px, var(--lyric-texture-hatch-b) 7px, var(--lyric-texture-hatch-b) 8px, transparent 8px, transparent 15px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, var(--lyric-texture-highlight) 7px, var(--lyric-texture-highlight) 8px, transparent 8px, transparent 15px),
+    radial-gradient(ellipse at 50% 0%, var(--lyric-texture-vignette) 0%, transparent 70%);
   background-attachment: scroll;
   touch-action: pan-y;
 }
+
 .dark .lcars-lyrics-area {
   background-color: #080808;
+  /* tokens are already overridden on .dark — same property list, no duplication */
   background-image:
-    repeating-linear-gradient(62deg,  transparent 0px, transparent 3px, rgba(255,255,255,0.018) 3px, rgba(255,255,255,0.018) 4px),
-    repeating-linear-gradient(-62deg, transparent 0px, transparent 3px, rgba(255,255,255,0.018) 3px, rgba(255,255,255,0.018) 4px),
-    repeating-linear-gradient(62deg,  transparent 0px, transparent 7px, rgba(255,255,255,0.012) 7px, rgba(255,255,255,0.012) 8px, transparent 8px, transparent 15px),
-    repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, rgba(0,0,0,0.25)       7px, rgba(0,0,0,0.25)       8px, transparent 8px, transparent 15px),
-    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+    repeating-linear-gradient(62deg,  transparent 0px, transparent 3px, var(--lyric-texture-hatch-a) 3px, var(--lyric-texture-hatch-a) 4px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 3px, var(--lyric-texture-hatch-a) 3px, var(--lyric-texture-hatch-a) 4px),
+    repeating-linear-gradient(62deg,  transparent 0px, transparent 7px, var(--lyric-texture-hatch-b) 7px, var(--lyric-texture-hatch-b) 8px, transparent 8px, transparent 15px),
+    repeating-linear-gradient(-62deg, transparent 0px, transparent 7px, var(--lyric-texture-highlight) 7px, var(--lyric-texture-highlight) 8px, transparent 8px, transparent 15px),
+    radial-gradient(ellipse at 50% 0%, var(--lyric-texture-vignette) 0%, transparent 70%);
 }
 
 /* ---------------------------------------------------------------------------
@@ -120,19 +143,19 @@
   to { transform: rotate(360deg); }
 }
 
-/* Status dots */
+/* Status dots — shared between StatusBar and MobileBottomNav */
 .mobile-status-dot {
-  display: block;
+  display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
   transition: background-color 0.2s ease;
 }
-.mobile-status-dot--saved   { background: #10b981; opacity: 0.85; }
-.mobile-status-dot--saving  { background: #f59e0b; animation: lcars-pulse-anim 1s ease-in-out infinite; }
+.mobile-status-dot--saved   { background: var(--accent-success,   #10b981); opacity: 0.85; }
+.mobile-status-dot--saving  { background: var(--accent-warning,   #f59e0b); animation: lcars-pulse-anim 1s ease-in-out infinite; }
 .mobile-status-dot--unsaved { background: var(--text-secondary); opacity: 0.6; }
-.mobile-status-dot--error   { background: #ef4444; }
+.mobile-status-dot--error   { background: var(--accent-error,     #ef4444); }
 
 /* ---------------------------------------------------------------------------
    MOBILE BOTTOM NAV

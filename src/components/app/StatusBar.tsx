@@ -66,34 +66,41 @@ export function StatusBar({
     : (hasSavedSession ? 'saved' : 'idle');
 
   const persistenceLabel =
-    persistenceState === 'saving' ? (t.statusBar.saving ?? 'saving…')
-    : persistenceState === 'unsaved' ? (t.statusBar.unsaved ?? 'unsaved')
-    : persistenceState === 'error' ? (t.statusBar.saveError ?? 'save error')
+    persistenceState === 'saving'  ? (t.statusBar.saving   ?? 'saving…')
+    : persistenceState === 'unsaved' ? (t.statusBar.unsaved  ?? 'unsaved')
+    : persistenceState === 'error'   ? (t.statusBar.saveError ?? 'save error')
     : (t.statusBar.sessionSavedBadge ?? 'saved');
 
   const persistenceTooltip =
-    persistenceState === 'saving' ? (t.statusBar.saving ?? 'Saving…')
-    : persistenceState === 'unsaved' ? (t.statusBar.unsaved ?? 'Unsaved changes')
-    : persistenceState === 'error' ? (t.statusBar.saveError ?? 'Save error')
+    persistenceState === 'saving'  ? (t.statusBar.saving   ?? 'Saving…')
+    : persistenceState === 'unsaved' ? (t.statusBar.unsaved  ?? 'Unsaved changes')
+    : persistenceState === 'error'   ? (t.statusBar.saveError ?? 'Save error')
     : lastSavedAt
       ? `${t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device'} — ${new Date(lastSavedAt).toLocaleTimeString(safeLocale(language))}`
       : (t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device');
 
+  // ── Persistence dot / text — CSS tokens only (no Tailwind color classes) ──
+  // mobile-status-dot--* classes are already defined in components.css and use
+  // design-system tokens; we re-use them here for full consistency.
   const persistenceDotClass =
-    persistenceState === 'saving' ? 'bg-amber-500 animate-pulse'
-    : persistenceState === 'unsaved' ? 'bg-zinc-400 dark:bg-zinc-500'
-    : persistenceState === 'error' ? 'bg-red-500'
-    : 'bg-emerald-500 opacity-80';
+    persistenceState === 'saving'  ? 'mobile-status-dot mobile-status-dot--saving'
+    : persistenceState === 'unsaved' ? 'mobile-status-dot mobile-status-dot--unsaved'
+    : persistenceState === 'error'   ? 'mobile-status-dot mobile-status-dot--error'
+    : 'mobile-status-dot mobile-status-dot--saved';
 
-  const persistenceTextClass =
-    persistenceState === 'saving' ? 'text-amber-600 dark:text-amber-400'
-    : persistenceState === 'unsaved' ? 'text-zinc-600 dark:text-zinc-400'
-    : persistenceState === 'error' ? 'text-red-600 dark:text-red-400'
-    : 'text-emerald-600 dark:text-emerald-400';
+  // Text colour via CSS vars — no Tailwind colour utilities
+  const persistenceTextStyle: React.CSSProperties =
+    persistenceState === 'saving'
+      ? { color: 'var(--accent-warning)' }
+      : persistenceState === 'unsaved'
+      ? { color: 'var(--text-secondary)' }
+      : persistenceState === 'error'
+      ? { color: 'var(--accent-error, #ef4444)' }
+      : { color: 'var(--accent-success, #10b981)' };
 
   const themeAriaLabel = theme === 'dark'
     ? (t.statusBar.themeSwitchToLight ?? `${t.statusBar.theme} — ${t.settings.theme.light}`)
-    : (t.statusBar.themeSwitchToDark ?? `${t.statusBar.theme} — ${t.settings.theme.dark}`);
+    : (t.statusBar.themeSwitchToDark  ?? `${t.statusBar.theme} — ${t.settings.theme.dark}`);
 
   const insights = t.insights ?? {};
 
@@ -102,12 +109,18 @@ export function StatusBar({
       {/* Left: system status + storage gauge + KPIs (desktop only) */}
       <div className="flex items-center gap-2 lg:gap-4">
         <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isBusy || !hasApiKey ? 'bg-[var(--accent-warning)] animate-pulse' : 'bg-[var(--accent-color)] lcars-pulse'}`} />
-          <span className="telemetry-text uppercase tracking-wider text-zinc-900 dark:text-zinc-300">
+          <div className={`w-1.5 h-1.5 rounded-full transition-colors ${
+            isBusy || !hasApiKey
+              ? 'bg-[var(--accent-warning)] animate-pulse'
+              : 'bg-[var(--accent-color)] lcars-pulse'
+          }`} />
+          {/* status label — text-primary / text-secondary via token, not Tailwind colour */}
+          <span className="telemetry-text uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
             {statusLabel}
           </span>
           {isBusy && <span className="lcars-cursor-blink text-[var(--accent-warning)]" />}
         </div>
+
         {/* Session persistence indicator */}
         {persistenceVisible && (
           <Tooltip title={persistenceTooltip}>
@@ -116,31 +129,37 @@ export function StatusBar({
               role="status"
               aria-live="polite"
             >
-              <div className={`w-1.5 h-1.5 rounded-full transition-colors ${persistenceDotClass}`} />
-              <span className={`telemetry-text uppercase tracking-wider hidden sm:inline ${persistenceTextClass}`}>
+              <span className={persistenceDotClass} />
+              <span
+                className="telemetry-text uppercase tracking-wider hidden sm:inline"
+                style={persistenceTextStyle}
+              >
                 {persistenceLabel}
               </span>
             </div>
           </Tooltip>
         )}
+
         <div className="lcars-divider" />
         <StorageGauge />
         <div className="lcars-divider hidden lg:block" />
-        <span className="hidden lg:inline telemetry-text text-zinc-700 dark:text-zinc-400">
+
+        {/* KPI counters — secondary text via token */}
+        <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
           {sectionCount}{' '}
-          <span className="text-zinc-500 dark:text-zinc-600 uppercase">
+          <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
             {tPlural(statusBarDict, 'sections', sectionCount, language)}
           </span>
         </span>
-        <span className="hidden lg:inline telemetry-text text-zinc-700 dark:text-zinc-400">
+        <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
           {wordCount}{' '}
-          <span className="text-zinc-500 dark:text-zinc-600 uppercase">
+          <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
             {tPlural(statusBarDict, 'words', wordCount, language)}
           </span>
         </span>
-        <span className="hidden lg:inline telemetry-text text-zinc-700 dark:text-zinc-400">
+        <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
           {charCount}{' '}
-          <span className="text-zinc-500 dark:text-zinc-600 uppercase">
+          <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
             {insights.characters}
           </span>
         </span>
@@ -166,7 +185,9 @@ export function StatusBar({
             className="lcars-meta-btn min-h-[44px] lg:min-h-0"
           >
             {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{theme === 'dark' ? t.settings.theme.light : t.settings.theme.dark}</span>
+            <span className="hidden sm:inline">
+              {theme === 'dark' ? t.settings.theme.light : t.settings.theme.dark}
+            </span>
           </button>
         </Tooltip>
         <StatusBarLanguagePicker />
