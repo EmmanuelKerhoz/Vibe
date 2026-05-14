@@ -4,6 +4,7 @@ import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';
 import { LanguageBadge } from '../../ui/LanguageBadge';
+import { SunoKPIBar } from '../../SunoKPIBar';
 
 interface Props {
   isOpen: boolean;
@@ -323,6 +324,14 @@ export function SettingsModal({
                       </button>
                     ))}
                   </div>
+                </section>
+
+                {/* Suno Service Status */}
+                <section aria-labelledby="settings-suno-heading">
+                  <h3 id="settings-suno-heading" className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-3">
+                    Suno Service
+                  </h3>
+                  <SunoKPIBar />
                 </section>
               </div>
 
