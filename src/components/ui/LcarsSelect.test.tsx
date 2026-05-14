@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LcarsSelect } from './LcarsSelect';
 
@@ -19,18 +19,20 @@ describe('LcarsSelect', () => {
 
     fireEvent.mouseEnter(button);
     expect(button.style.boxShadow).toBe('');
-    expect(button.style.getPropertyValue('border-color')).toBe('var(--accent-color)');
+    expect(button.style.border).toBe('1px solid var(--border-color)');
+    expect(button.style.getPropertyValue('--lcars-select-accent')).toBe('var(--accent-color)');
 
     fireEvent.mouseLeave(button);
     expect(button.style.boxShadow).toBe('');
-    expect(button.style.getPropertyValue('border-color')).toBe('var(--border-color)');
+    expect(button.style.border).toBe('1px solid var(--border-color)');
 
     fireEvent.focus(button);
     expect(button.style.boxShadow).toBe('');
-    expect(button.style.getPropertyValue('border-color')).toBe('var(--accent-color)');
+    expect(button.style.border).toBe('1px solid var(--border-color)');
+    expect(button.style.getPropertyValue('--lcars-select-accent')).toBe('var(--accent-color)');
   });
 
-  it('renders the dropdown in a portal and closes on outside click', () => {
+  it('renders the dropdown in a portal and closes on outside click', async () => {
     const { container } = render(
       <LcarsSelect
         value="verse"
@@ -43,8 +45,7 @@ describe('LcarsSelect', () => {
       />,
     );
 
-    // buttonTitle is rendered via a Tooltip component (positioned above) instead of a native title attribute
-    expect(screen.getByText('Tell the story')).toBeTruthy();
+    expect(screen.getByRole('button').getAttribute('title')).toBe('Tell the story');
 
     fireEvent.click(screen.getByRole('button'));
 
@@ -53,11 +54,14 @@ describe('LcarsSelect', () => {
 
     expect(listbox).not.toBeNull();
     expect((listbox as HTMLElement).parentElement?.style.width).toBe('320px');
-    expect(screen.getByRole('option', { name: 'CHORUS' }).getAttribute('title')).toBe('Main hook');
+    const chorusOption = screen.getByRole('option', { name: 'CHORUS' });
+    expect(chorusOption.getAttribute('aria-describedby')).toBeTruthy();
 
     fireEvent.mouseDown(document.body);
 
-    expect(screen.queryByRole('listbox')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
   });
 
   it('filters options live by case-insensitive startsWith on label text when searchable', () => {

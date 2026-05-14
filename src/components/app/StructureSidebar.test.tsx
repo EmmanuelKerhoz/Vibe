@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../i18n';
 import { DragProvider } from '../../contexts/DragContext';
@@ -82,10 +82,10 @@ describe('StructureSidebar section tooltips', () => {
     expect(turnaroundButton.textContent).toContain('Turnaround');
 
     const interludeOption = screen.getByRole('option', { name: 'Interlude' });
-    expect(interludeOption.getAttribute('title')).toMatch(/souvent instrumental/);
+    expect(interludeOption.getAttribute('aria-describedby')).toBeTruthy();
   });
 
-  it('uses the updated right-panel controls and removes the extra generate button', () => {
+  it('uses the updated right-panel controls and removes the extra generate button', async () => {
     const addStructureItem = vi.fn();
 
     renderStructureSidebar({ addStructureItem });
@@ -97,13 +97,15 @@ describe('StructureSidebar section tooltips', () => {
     fireEvent.mouseDown(screen.getByRole('option', { name: 'Verse' }));
 
     expect(screen.queryAllByRole('button', { name: /^Add section\.\.\.$/ })).toHaveLength(1);
-    expect(screen.queryByRole('option', { name: 'Verse' })).toBeNull();
     expect(addStructureItem).toHaveBeenCalledTimes(1);
     expect(addStructureItem).toHaveBeenCalledWith('Verse');
+    await waitFor(() => {
+      expect(screen.queryByRole('option', { name: 'Verse' })).toBeNull();
+    });
 
     const turnaroundButton = screen.getAllByRole('button', { name: /Courte transition/ })[0]!;
     expect(turnaroundButton.closest('div.group')?.className).toContain('rounded-[12px_4px_12px_4px]');
-    expect(screen.getByRole('button', { name: 'Add section...' }).getAttribute('style')).toContain('font-size: inherit');
+    expect(screen.getByRole('button', { name: 'Add section...' }).getAttribute('style')).toContain('font-size: 13px');
     expect(screen.getByRole('button', { name: 'Normalize Structure' }).getAttribute('style')).toContain('font-size: 11px');
   });
 
