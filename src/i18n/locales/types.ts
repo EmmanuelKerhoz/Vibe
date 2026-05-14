@@ -599,6 +599,12 @@ export interface Translations {
     sponsor?: string;
     sendToSuno?: string;
     sendToSunoConfirm?: string;
+    /** Tooltip shown after the SUNO prompt was sent and was truncated to MAX_SUNO_PROMPT_LENGTH.
+     *  Use `{max}` as placeholder for the character limit. */
+    sendToSunoTruncated?: string;
+    /** Tooltip shown when the SUNO prompt exceeds MAX_SUNO_PROMPT_LENGTH and will be trimmed on send.
+     *  Use `{max}` as placeholder for the character limit. */
+    sendToSunoWillTruncate?: string;
     quantizeLineDone?: string;
   };
 
