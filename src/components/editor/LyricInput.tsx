@@ -227,7 +227,7 @@ export const LyricInput = React.memo(function LyricInput({
       {lineLanguageDisplay && (
         <Tooltip title={lineLanguageDisplay.label}>
           <span className="flex-shrink-0 text-[11px] leading-none select-none" aria-hidden="true">
-            {lineLanguageDisplay.flag}
+            {lineLanguageDisplay.sign}
           </span>
         </Tooltip>
       )}
@@ -235,10 +235,7 @@ export const LyricInput = React.memo(function LyricInput({
       {/* Rhyme scheme label */}
       {schemeLabel && (
         <Tooltip title={`Rhyme scheme: ${schemeLabel}`}>
-          <EmojiSign
-            label={schemeLabel}
-            className="flex-shrink-0 w-5 h-5 text-[9px] font-bold font-mono select-none"
-          />
+          <EmojiSign sign={schemeLabel} />
         </Tooltip>
       )}
 
