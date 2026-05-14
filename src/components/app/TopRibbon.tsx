@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Sparkles, Undo2, Redo2, PanelRight, Menu, KeyboardRegular, WandSparkles, Music, Check } from '../ui/icons';
+import { Sparkles, Undo2, Redo2, PanelRight, Menu, KeyboardRegular, WandSparkles, Music, Check, AlertTriangle } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
 import { useTranslation } from '../../i18n';
@@ -44,6 +44,9 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [sunoSent, setSunoSent] = useState(false);
+  const [sunoTruncated, setSunoTruncated] = useState(false);
+
+  const isPromptTruncated = musicalPrompt.trim().length > MAX_SUNO_PROMPT_LENGTH;
 
   const toggleLeftPanel = () => {
     if (!isLeftPanelOpen) { setActiveTab('lyrics'); setIsStructureOpen(false); }
@@ -57,6 +60,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
 
   const handleSendToSuno = () => {
     const prompt = musicalPrompt.trim();
+    const wasTruncated = prompt.length > MAX_SUNO_PROMPT_LENGTH;
     const safePrompt = prompt.slice(0, MAX_SUNO_PROMPT_LENGTH);
     const url = safePrompt
       ? `${SUNO_CREATE_URL}?prompt=${encodeURIComponent(safePrompt)}`
@@ -64,7 +68,19 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
     window.open(url, '_blank', 'noopener,noreferrer');
     setSunoSent(true);
     setTimeout(() => setSunoSent(false), 2000);
+    if (wasTruncated) {
+      setSunoTruncated(true);
+      setTimeout(() => setSunoTruncated(false), 3000);
+    }
   };
+
+  const sunoTooltip = sunoSent
+    ? (t.tooltips.sendToSunoConfirm ?? 'Opening SUNO\u2026')
+    : sunoTruncated
+      ? (t.tooltips.sendToSunoTruncated ?? `Prompt truncated to ${MAX_SUNO_PROMPT_LENGTH} chars`).replace('{max}', String(MAX_SUNO_PROMPT_LENGTH))
+      : isPromptTruncated
+        ? (t.tooltips.sendToSunoWillTruncate ?? `Prompt exceeds ${MAX_SUNO_PROMPT_LENGTH} chars — will be trimmed`).replace('{max}', String(MAX_SUNO_PROMPT_LENGTH))
+        : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt');
 
   return (
     <div
@@ -110,7 +126,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
           </Tooltip>
         )}
         {/* Send to SUNO button */}
-        <Tooltip title={sunoSent ? (t.tooltips.sendToSunoConfirm ?? 'Opening SUNO…') : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt')}>
+        <Tooltip title={sunoTooltip}>
           <button
             onClick={handleSendToSuno}
             disabled={sunoSent}
@@ -119,14 +135,28 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
             style={{
               background: sunoSent
                 ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 12%, transparent)'
-                : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 12%, transparent)',
-              color: sunoSent ? 'var(--lcars-cyan, #4f98a3)' : 'var(--lcars-violet, #a86fdf)',
-              border: `1px solid ${sunoSent ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 25%, transparent)' : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 25%, transparent)'}`,
+                : sunoTruncated || isPromptTruncated
+                  ? 'color-mix(in srgb, var(--lcars-amber, #f59e0b) 12%, transparent)'
+                  : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 12%, transparent)',
+              color: sunoSent
+                ? 'var(--lcars-cyan, #4f98a3)'
+                : sunoTruncated || isPromptTruncated
+                  ? 'var(--lcars-amber, #f59e0b)'
+                  : 'var(--lcars-violet, #a86fdf)',
+              border: `1px solid ${
+                sunoSent
+                  ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 25%, transparent)'
+                  : sunoTruncated || isPromptTruncated
+                    ? 'color-mix(in srgb, var(--lcars-amber, #f59e0b) 25%, transparent)'
+                    : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 25%, transparent)'
+              }`,
             }}
           >
             {sunoSent
               ? <Check className="w-3.5 h-3.5" />
-              : <Music className="w-3.5 h-3.5" />}
+              : sunoTruncated || isPromptTruncated
+                ? <AlertTriangle className="w-3.5 h-3.5" />
+                : <Music className="w-3.5 h-3.5" />}
             <span className="hidden lg:inline">{t.ribbon.send_to_suno ?? 'Send to SUNO'}</span>
           </button>
         </Tooltip>
