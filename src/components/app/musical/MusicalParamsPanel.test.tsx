@@ -2,7 +2,8 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../../../i18n';
-import { buildGenreTooltip, MusicalParamsPanel } from './MusicalParamsPanel';
+import { buildGenreTooltip } from '../../../constants/musicalData';
+import { MusicalParamsPanel } from './MusicalParamsPanel';
 
 describe('MusicalParamsPanel', () => {
   it('shows category summaries beneath the category title and builds genre hover details', () => {
