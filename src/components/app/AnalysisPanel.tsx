@@ -520,8 +520,8 @@ export const AnalysisPanel = React.memo(function AnalysisPanel({
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
             {error && (
-              <div className="rounded-lg border border-[var(--color-error,theme(colors.red.500))]/30 bg-[var(--color-error,theme(colors.red.500))]/10 p-2 mb-3">
-                <Text size={200} className="text-[var(--color-error,theme(colors.red.400))]">{error}</Text>
+              <div className="rounded-lg border border-[var(--accent-error)]/30 bg-[var(--accent-error)]/10 p-2 mb-3">
+                <Text size={200} className="text-[var(--accent-error)]">{error}</Text>
               </div>
             )}
             {result && result.computeTimeMs > 0 && (
