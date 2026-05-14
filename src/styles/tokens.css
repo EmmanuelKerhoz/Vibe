@@ -75,7 +75,7 @@
   --accent-critical:   #a4262c;
   --on-accent-critical:#ffffff;
   --acrylic-bg:        rgba(243, 242, 241, 0.8);
-  --scrollbar-thumb:   rgba(0, 0, 0, 0.1);
+  --scrollbar-thumb:   oklch(0 0 0 / 0.10);
   --input-bg:          rgba(255, 255, 255, 0.55);
 
   /* Safe-area insets */
@@ -94,14 +94,19 @@
   }
 }
 
-/* Fluent UI overrides (light) — uniquement les valeurs qui divergent de :root */
+/* Fluent UI overrides (light) — valeurs divergentes + tokens sémantiques explicites */
 .ui-fluent {
   --bg-card:           rgba(255, 255, 255, 0.65);
   --border-color:      #e1dfdd;
   --acrylic-bg:        rgba(255, 255, 255, 0.6);
-  --scrollbar-thumb:   rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb:   oklch(0 0 0 / 0.20);
 
-  --fluent-shadow:      0 4px 8px rgba(0,0,0,0.04), 0 0 2px rgba(0,0,0,0.06);
+  /* Explicités pour éviter une divergence silencieuse si :root est modifié */
+  --accent-success:    #107c10;
+  --accent-error:      #a4262c;
+  --accent-warning:    #d83b01;
+
+  --fluent-shadow:      0 4px 8px oklch(0 0 0 / 0.04), 0 0 2px oklch(0 0 0 / 0.06);
   --fluent-radius:      24px 4px 24px 4px;
   --glow-accent:        0 0 8px  oklch(from var(--accent-color) l c h / 0.3);
   --glow-accent-strong: 0 0 16px oklch(from var(--accent-color) l c h / 0.5);
@@ -135,7 +140,7 @@
   --accent-critical:   #f1707b;
   --on-accent-critical:#210307;
   --acrylic-bg:        rgba(27, 26, 25, 0.8);
-  --scrollbar-thumb:   rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb:   oklch(1 0 0 / 0.10);
   --input-bg:          rgba(50, 49, 48, 0.55);
   color-scheme: dark;
 }
@@ -158,7 +163,7 @@
   --accent-critical:   var(--lcars-red);
   --on-accent-critical:#ffffff;
   --acrylic-bg:        rgba(12, 12, 12, 0.65);
-  --scrollbar-thumb:   rgba(255, 255, 255, 0.12);
+  --scrollbar-thumb:   oklch(1 0 0 / 0.12);
   --input-bg:          rgba(22, 22, 22, 0.50);
 
   --fluent-shadow:      0 0 6px oklch(from var(--lcars-sage) l c h / 0.12);
@@ -173,7 +178,7 @@
   background-image: none;
 }
 
-/* Tailwind @theme bridge */
+/* Tailwind @theme bridge — tokens sémantiques complets */
 @theme {
   --font-sans: var(--font-sans, "Inter", ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, monospace);
@@ -187,4 +192,6 @@
   --color-fluent-acrylic:    var(--acrylic-bg);
   --color-fluent-success:    var(--accent-success);
   --color-fluent-error:      var(--accent-error);
+  --color-fluent-warning:    var(--accent-warning);
+  --color-fluent-input:      var(--input-bg);
 }
