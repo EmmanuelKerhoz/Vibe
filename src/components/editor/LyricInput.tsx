@@ -273,18 +273,18 @@ export const LyricInput = React.memo(function LyricInput({
 
         {/* Adapt language button */}
         {adaptLineLanguage && (
-          <Tooltip title={t.editor?.adapt_line_language ?? 'Adapt line language'}>
+          <Tooltip title={t.editor?.adaptLine ?? 'Adapt line language'}>
             <button
               onClick={() => {
                 const lang = (sectionTargetLanguage
                   ? migrateAdaptationToLangId(sectionTargetLanguage)
-                  : null) ?? 'fr';
+                  : null) ?? ('fr' as AdaptationLangId);
                 adaptLineLanguage(sectionId, line.id, lang);
                 playAudioFeedback('click');
               }}
               disabled={isAdaptingLine || isGenerating}
               className="opacity-0 group-hover:opacity-60 hover:!opacity-100 flex-shrink-0 p-0.5 rounded transition-opacity disabled:opacity-30"
-              aria-label={t.editor?.adapt_line_language ?? 'Adapt line language'}
+              aria-label={t.editor?.adaptLine ?? 'Adapt line language'}
             >
               {isAdaptingLine
                 ? <Loader2 className="h-3 w-3 text-[var(--lcars-blue)] animate-spin" />
@@ -317,24 +317,24 @@ export const LyricInput = React.memo(function LyricInput({
         )}
 
         {/* Move up */}
-        <Tooltip title={t.editor?.moveUp ?? 'Move up'}>
+        <Tooltip title={t.editor?.moveLineUp ?? 'Move up'}>
           <button
             onClick={() => { moveLineUp(sectionId, line.id); playAudioFeedback('click'); }}
             disabled={lineIndex === 0}
             className="opacity-0 group-hover:opacity-40 hover:!opacity-80 flex-shrink-0 p-0.5 rounded transition-opacity disabled:opacity-0"
-            aria-label={t.editor?.moveUp ?? 'Move up'}
+            aria-label={t.editor?.moveLineUp ?? 'Move up'}
           >
             <ChevronUp className="h-3 w-3 text-[var(--text-secondary)]" />
           </button>
         </Tooltip>
 
         {/* Move down */}
-        <Tooltip title={t.editor?.moveDown ?? 'Move down'}>
+        <Tooltip title={t.editor?.moveLineDown ?? 'Move down'}>
           <button
             onClick={() => { moveLineDown(sectionId, line.id); playAudioFeedback('click'); }}
             disabled={lineIndex === sectionLinesCount - 1}
             className="opacity-0 group-hover:opacity-40 hover:!opacity-80 flex-shrink-0 p-0.5 rounded transition-opacity disabled:opacity-0"
-            aria-label={t.editor?.moveDown ?? 'Move down'}
+            aria-label={t.editor?.moveLineDown ?? 'Move down'}
           >
             <ChevronDown className="h-3 w-3 text-[var(--text-secondary)]" />
           </button>
