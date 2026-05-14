@@ -26,7 +26,7 @@ html, body, #root {
   background-color: var(--scrollbar-thumb);
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.3); }
+::-webkit-scrollbar-thumb:hover { background-color: oklch(from var(--text-secondary) l c h / 0.3); }
 @media (pointer: coarse) {
   ::-webkit-scrollbar { width: 0; height: 0; }
 }
