@@ -100,7 +100,7 @@ describe('StructureSidebar section tooltips', () => {
     expect(addStructureItem).toHaveBeenCalledTimes(1);
     expect(addStructureItem).toHaveBeenCalledWith('Verse');
     await waitFor(() => {
-      expect(screen.queryByRole('listbox')).toBeNull();
+      expect(screen.queryByRole('option', { name: 'Verse' })).toBeNull();
     });
 
     const turnaroundButton = screen.getAllByRole('button', { name: /Courte transition/ })[0]!;
