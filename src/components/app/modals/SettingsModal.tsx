@@ -4,7 +4,7 @@ import { useTranslation, SUPPORTED_UI_LOCALES } from '../../../i18n';
 import { APP_VERSION_LABEL } from '../../../version';
 import { Button } from '../../ui/Button';
 import { LanguageBadge } from '../../ui/LanguageBadge';
-import { SunoKPIBar } from '../../SunoKPIBar';
+import { SunoKPIBar } from '../status/SunoKPIBar';
 
 interface Props {
   isOpen: boolean;
