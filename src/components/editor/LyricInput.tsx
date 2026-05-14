@@ -11,6 +11,7 @@ import { getRhymeTextColor } from '../../utils/songUtils';
 import { splitRhymingSuffix } from '../../utils/rhymeDetection';
 import { useRefs } from '../../contexts/RefsContext';
 import type { AdaptationLangId } from '../../i18n/constants';
+import { migrateAdaptationToLangId } from '../../i18n/constants';
 import { supportsSyllableHeuristics } from '../../lib/quantize';
 
 export interface LyricInputProps {
@@ -249,7 +250,7 @@ export const LyricInput = React.memo(function LyricInput({
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           disabled={isGenerating}
-          placeholder={t.editor?.linePlaceholder ?? 'Write a lyric line…'}
+          placeholder={t.editor?.linePlaceholder ?? 'Write a lyric line\u2026'}
           className="w-full bg-transparent text-sm font-mono text-transparent caret-[color:var(--text-primary)] outline-none border-none focus:ring-0 placeholder:text-[var(--text-secondary)] disabled:cursor-not-allowed relative z-10"
           style={{ font: 'inherit', letterSpacing: 'inherit' }}
           spellCheck
@@ -264,10 +265,11 @@ export const LyricInput = React.memo(function LyricInput({
             <button
               type="button"
               onClick={() => {
-                // TODO: sectionTargetLanguage comes from the UI selector as a plain string.
-                // Replace this cast with a runtime guard (isSupportedAdaptationLangId)
-                // once the selector enforces AdaptationLangId at the source.
-                adaptLineLanguage(sectionId, line.id, (sectionTargetLanguage ?? 'English') as AdaptationLangId);
+                adaptLineLanguage(
+                  sectionId,
+                  line.id,
+                  migrateAdaptationToLangId(sectionTargetLanguage ?? 'English') as AdaptationLangId,
+                );
                 playAudioFeedback('click');
               }}
               disabled={!hasApiKey || isAdaptingLine || isGenerating}
