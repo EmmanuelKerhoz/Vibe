@@ -68,6 +68,8 @@
   --accent-color:      #0f7b0f;
   --accent-color-rgb:  15, 123, 15;
   --on-accent-color:   #ffffff;
+  --accent-success:    #107c10;
+  --accent-error:      #a4262c;
   --accent-warning:    #d83b01;
   --on-accent-warning: #ffffff;
   --accent-critical:   #a4262c;
@@ -103,6 +105,8 @@
   --accent-color:      #0f7b0f;
   --accent-color-rgb:  15, 123, 15;
   --on-accent-color:   #ffffff;
+  --accent-success:    #107c10;
+  --accent-error:      #a4262c;
   --accent-warning:    #d83b01;
   --on-accent-warning: #ffffff;
   --accent-critical:   #a4262c;
@@ -138,6 +142,8 @@
   --accent-color:      #8FDE8B;
   --accent-color-rgb:  143, 222, 139;
   --on-accent-color:   #003912;
+  --accent-success:    #6daa45;
+  --accent-error:      #f1707b;
   --accent-warning:    #fce100;
   --on-accent-warning: #1a1a00;
   --accent-critical:   #f1707b;
@@ -159,6 +165,8 @@
   --accent-color:      var(--lcars-sage);
   --accent-color-rgb:  76, 175, 115;
   --on-accent-color:   #000000;
+  --accent-success:    var(--lcars-sage);
+  --accent-error:      var(--lcars-red);
   --accent-warning:    var(--lcars-tangerine);
   --on-accent-warning: #000000;
   --accent-critical:   var(--lcars-red);
@@ -183,9 +191,14 @@
 @theme {
   --font-sans: var(--font-sans, "Inter", ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, monospace);
-  --color-fluent-bg:      var(--bg-app);
-  --color-fluent-sidebar: var(--bg-sidebar);
-  --color-fluent-card:    var(--bg-card);
-  --color-fluent-border:  var(--border-color);
-  --color-fluent-accent:  var(--accent-color);
+  --color-fluent-bg:         var(--bg-app);
+  --color-fluent-sidebar:    var(--bg-sidebar);
+  --color-fluent-card:       var(--bg-card);
+  --color-fluent-border:     var(--border-color);
+  --color-fluent-accent:     var(--accent-color);
+  --color-fluent-text:       var(--text-primary);
+  --color-fluent-text-muted: var(--text-secondary);
+  --color-fluent-acrylic:    var(--acrylic-bg);
+  --color-fluent-success:    var(--accent-success);
+  --color-fluent-error:      var(--accent-error);
 }
