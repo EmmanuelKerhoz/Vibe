@@ -21,9 +21,16 @@
  * Note: webSimilarityIndex is intentionally excluded from InsightsBarContext
  * to prevent re-rendering the entire InsightsBar subtree on every similarity
  * engine run. SimilarityButton reads index directly from SimilarityContext.
+ *
+ * Right-panel Suspense strategy:
+ *   Each right panel (Analysis, Suggestions, Structure) has its own
+ *   <Suspense> boundary so that a lazy-loading chunk never blocks the
+ *   other two. AnimatePresence mode="wait" at the zone level ensures the
+ *   exit animation completes before the next panel mounts.
  */
 import React, { Suspense, lazy, useMemo } from 'react';
 import { Spinner } from '@fluentui/react-components';
+import { AnimatePresence } from 'motion/react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useEditorState } from '../../hooks/useEditorState';
 import { useEditorHandlers } from '../../hooks/useEditorHandlers';
@@ -264,9 +271,12 @@ export function AppEditorLayout({
             </div>
 
             {/* ── Right panels ─────────────────────────────────────────────────── */}
-            <Suspense fallback={<LazyFallback />}>
-              {isAnalysisPanelOpen ? (
+            {/* AnimatePresence at zone level: exit animation fires before next panel mounts. */}
+            {/* Each panel has its own Suspense so a loading chunk never blocks the others. */}
+            <AnimatePresence mode="wait">
+              {isAnalysisPanelOpen && (
                 <ErrorBoundary
+                  key="analysis"
                   label="Analysis panel"
                   fallback={
                     <PanelErrorFallback
@@ -275,44 +285,54 @@ export function AppEditorLayout({
                     />
                   }
                 >
-                  <AnalysisPanel
-                    result={linguisticsWorker.result}
-                    isComputing={linguisticsWorker.isComputing}
-                    error={linguisticsWorker.error}
-                    onClose={handleCloseAnalysisPanel}
-                    isMobileOverlay={isMobileOrTablet}
-                  />
+                  <Suspense fallback={<LazyFallback />}>
+                    <AnalysisPanel
+                      result={linguisticsWorker.result}
+                      isComputing={linguisticsWorker.isComputing}
+                      error={linguisticsWorker.error}
+                      onClose={handleCloseAnalysisPanel}
+                      isMobileOverlay={isMobileOrTablet}
+                    />
+                  </Suspense>
                 </ErrorBoundary>
-              ) : isSuggestionsOpen ? (
+              )}
+              {!isAnalysisPanelOpen && isSuggestionsOpen && (
                 <ErrorBoundary
+                  key="suggestions"
                   label="Suggestions panel"
                   fallback={<PanelErrorFallback label="Suggestions panel" />}
                 >
-                  <SuggestionsPanel
-                    isMobileOverlay={isMobileOrTablet}
-                    {...mobileOverlayClass}
-                  />
+                  <Suspense fallback={<LazyFallback />}>
+                    <SuggestionsPanel
+                      isMobileOverlay={isMobileOrTablet}
+                      {...mobileOverlayClass}
+                    />
+                  </Suspense>
                 </ErrorBoundary>
-              ) : (
+              )}
+              {!isAnalysisPanelOpen && !isSuggestionsOpen && (
                 <ErrorBoundary
+                  key="structure"
                   label="Structure sidebar"
                   fallback={<PanelErrorFallback label="Structure sidebar" />}
                 >
-                  <StructureSidebar
-                    isMobileOverlay={isMobileOrTablet}
-                    {...mobileOverlayClass}
-                    isStructureOpen={isStructureOpen}
-                    setIsStructureOpen={setIsStructureOpenAndClearLine}
-                    isSectionDropdownOpen={isSectionDropdownOpen}
-                    setIsSectionDropdownOpen={setIsSectionDropdownOpen}
-                    addStructureItem={addStructureItem}
-                    removeStructureItem={removeStructureItem}
-                    normalizeStructure={normalizeStructure}
-                    onScrollToSection={handleScrollToSection}
-                  />
+                  <Suspense fallback={<LazyFallback />}>
+                    <StructureSidebar
+                      isMobileOverlay={isMobileOrTablet}
+                      {...mobileOverlayClass}
+                      isStructureOpen={isStructureOpen}
+                      setIsStructureOpen={setIsStructureOpenAndClearLine}
+                      isSectionDropdownOpen={isSectionDropdownOpen}
+                      setIsSectionDropdownOpen={setIsSectionDropdownOpen}
+                      addStructureItem={addStructureItem}
+                      removeStructureItem={removeStructureItem}
+                      normalizeStructure={normalizeStructure}
+                      onScrollToSection={handleScrollToSection}
+                    />
+                  </Suspense>
                 </ErrorBoundary>
               )}
-            </Suspense>
+            </AnimatePresence>
           </div>
         </SuggestionsProvider>
       </InsightsBarProvider>
