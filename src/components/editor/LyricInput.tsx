@@ -13,6 +13,8 @@ import { LyricDragHandle } from './LyricDragHandle';
 import { LyricTextArea } from './LyricTextArea';
 import { LyricLineControls } from './LyricLineControls';
 
+const SYLLABLE_GAUGE_TARGET = 16;
+
 interface LyricInputRhymeProps {
   peerTexts: string[];
   schemeLabel: string | null;
@@ -101,6 +103,9 @@ export const LyricInput = React.memo(function LyricInput({
   const rhymeColor = getRhymeColor(schemeLabel);
   const rhymeHexColor = getRhymeTextColor(schemeLabel);
   const isSelected = selectedLineId === line.id;
+  const syllableGaugeWidth = line.syllables > 0
+    ? `${Math.min((line.syllables / SYLLABLE_GAUGE_TARGET) * 100, 100)}%`
+    : '0%';
   const dragEndRef = useRef<() => void>(() => setDraggedLineInfo(null));
   dragEndRef.current = () => setDraggedLineInfo(null);
   const textAreaOptionalProps = {
@@ -141,6 +146,15 @@ export const LyricInput = React.memo(function LyricInput({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      <span
+        aria-hidden="true"
+        data-syllable-gauge={line.id}
+        className="pointer-events-none absolute inset-y-0 left-0 rounded bg-[var(--accent-color)]/10 dark:bg-[var(--accent-color)]/15 transition-[width]"
+        style={{ width: syllableGaugeWidth }}
+      />
+      <span className="sr-only">
+        {line.syllables > 0 ? `${line.syllables} syllables` : 'No syllables counted'}
+      </span>
       <span
         className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-600 dark:text-zinc-400 select-none"
         aria-hidden="true"
@@ -200,12 +214,6 @@ export const LyricInput = React.memo(function LyricInput({
         playAudioFeedback={playAudioFeedback}
         {...controlsOptionalProps}
       />
-
-      <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors w-[2.75rem] text-right">
-        {line.syllables > 0 ? line.syllables : ''}
-      </span>
-
-      <span className="flex-shrink-0 w-2" />
 
       <span
         className={`flex-shrink-0 inline-flex h-4 w-7 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}

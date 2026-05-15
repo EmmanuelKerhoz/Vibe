@@ -155,10 +155,6 @@ export const SectionEditor = React.memo(function SectionEditor({
           <span className="flex-shrink-0 w-3.5" />
           <span className="flex-1 min-w-0" />
           <span className="flex-shrink-0 w-16" />
-          <span className="flex-shrink-0 w-[2.75rem] text-right text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-600 dark:text-zinc-400">
-            {t.editor?.syllableCount ?? 'Count'}
-          </span>
-          <span className="flex-shrink-0 w-2" />
           <span className="flex-shrink-0 w-7 text-center text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-600 dark:text-zinc-400">
             {t.editor?.schemaHeader ?? 'Sch.'}
           </span>

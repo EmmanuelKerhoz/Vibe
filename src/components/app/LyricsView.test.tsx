@@ -302,4 +302,56 @@ describe('LyricsView empty state', () => {
 
     mockSong.length = 0;
   });
+
+  it('uses a light row background gauge for lyric syllable counts', () => {
+    mockEditMode = 'section';
+    mockMarkupText = '';
+    mockSong.length = 0;
+    mockSong.push({
+      id: 'section-1',
+      name: 'Verse',
+      lines: [{
+        id: 'line-1',
+        text: 'Eight syllable line',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 8,
+        concept: '',
+      }, {
+        id: 'line-2',
+        text: 'Four syllables',
+        rhymingSyllables: '',
+        rhyme: '',
+        syllables: 4,
+        concept: '',
+      }],
+      preInstructions: [],
+      postInstructions: [],
+    });
+
+    const { container } = render(
+      <DragProvider>
+        <LanguageProvider>
+          <RefsProvider>
+            <SongMutationProvider>
+              <LyricsView
+                isAnalyzing={false}
+                hasApiKey
+                playAudioFeedback={() => {}}
+                canPasteLyrics={true}
+                onOpenLibrary={() => {}}
+                onPasteLyrics={() => {}}
+              />
+            </SongMutationProvider>
+          </RefsProvider>
+        </LanguageProvider>
+      </DragProvider>,
+    );
+
+    expect((container.querySelector('[data-syllable-gauge="line-1"]') as HTMLElement).style.width).toBe('50%');
+    expect((container.querySelector('[data-syllable-gauge="line-2"]') as HTMLElement).style.width).toBe('25%');
+    expect(screen.queryByText('Count')).toBeNull();
+
+    mockSong.length = 0;
+  });
 });
