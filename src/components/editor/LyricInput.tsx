@@ -8,38 +8,62 @@ import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
 import { getLanguageDisplay } from '../../i18n';
 import type { AdaptationLangId } from '../../i18n/constants';
+import { getRhymeColor } from '../../utils/songUtils';
 import { LyricDragHandle } from './LyricDragHandle';
 import { LyricTextArea } from './LyricTextArea';
 import { LyricLineControls } from './LyricLineControls';
+
+interface LyricInputRhymeProps {
+  peerTexts: string[];
+  schemeLabel: string | null;
+}
+
+interface LyricInputSelectionProps {
+  selectedLineId: string | null;
+  onLineClick: (lineId: string) => void;
+  onLineBlur?: () => void;
+}
+
+interface LyricInputEditingProps {
+  updateLineText: (sectionId: string, lineId: string, text: string) => void;
+  handleLineKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => void;
+}
+
+interface LyricInputControlsProps {
+  sectionLinesCount: number;
+  isGenerating: boolean;
+  hasApiKey: boolean;
+  moveLineUp: (sectionId: string, lineId: string) => void;
+  moveLineDown: (sectionId: string, lineId: string) => void;
+  addLineToSection: (sectionId: string, afterLineId?: string) => void;
+  deleteLineFromSection: (sectionId: string, lineId: string) => void;
+  playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
+  onQuantizeLine?: (sectionId: string, lineId: string) => void;
+}
+
+interface LyricInputLanguageProps {
+  lineLanguage?: string;
+  sectionTargetLanguage?: string;
+  adaptLineLanguage?: (sectionId: string, lineId: string, lang: AdaptationLangId) => void;
+  isAdaptingLine: boolean;
+}
+
+interface LyricInputDragStateProps {
+  isDraggedLine: boolean;
+  isDragOverLine: boolean;
+}
 
 export interface LyricInputProps {
   line: Line;
   lineIndex: number;
   globalLineNumber?: number;
   sectionId: string;
-  sectionLinesCount: number;
-  rhymePeerTexts: string[];
-  selectedLineId: string | null;
-  schemeLabel: string | null;
-  rhymeColor: string;
-  isGenerating: boolean;
-  hasApiKey: boolean;
-  isDraggedLine: boolean;
-  isDragOverLine: boolean;
-  lineLanguage?: string;
-  handleLineClick: (lineId: string) => void;
-  updateLineText: (sectionId: string, lineId: string, text: string) => void;
-  handleLineKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => void;
-  moveLineUp: (sectionId: string, lineId: string) => void;
-  moveLineDown: (sectionId: string, lineId: string) => void;
-  addLineToSection: (sectionId: string, afterLineId?: string) => void;
-  deleteLineFromSection: (sectionId: string, lineId: string) => void;
-  playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
-  adaptLineLanguage?: (sectionId: string, lineId: string, lang: AdaptationLangId) => void;
-  sectionTargetLanguage?: string;
-  isAdaptingLine?: boolean;
-  onLineBlur?: () => void;
-  onQuantizeLine?: (sectionId: string, lineId: string) => void;
+  rhyme: LyricInputRhymeProps;
+  selection: LyricInputSelectionProps;
+  editing: LyricInputEditingProps;
+  controls: LyricInputControlsProps;
+  language: LyricInputLanguageProps;
+  dragState: LyricInputDragStateProps;
 }
 
 export const LyricInput = React.memo(function LyricInput({
@@ -47,37 +71,48 @@ export const LyricInput = React.memo(function LyricInput({
   lineIndex,
   globalLineNumber,
   sectionId,
-  sectionLinesCount,
-  rhymePeerTexts,
-  selectedLineId,
-  schemeLabel,
-  rhymeColor,
-  isGenerating,
-  hasApiKey,
-  isDraggedLine,
-  isDragOverLine,
-  lineLanguage,
-  handleLineClick,
-  updateLineText,
-  handleLineKeyDown,
-  moveLineUp,
-  moveLineDown,
-  addLineToSection,
-  deleteLineFromSection,
-  playAudioFeedback,
-  adaptLineLanguage,
-  sectionTargetLanguage,
-  isAdaptingLine = false,
-  onLineBlur,
-  onQuantizeLine,
+  rhyme,
+  selection,
+  editing,
+  controls,
+  language,
+  dragState,
 }: LyricInputProps) {
   const { t } = useTranslation();
   const { setDraggedLineInfo, setDragOverLineInfo } = useDrag();
   const { handleLineDrop } = useDragHandlersContext();
+  const { peerTexts: rhymePeerTexts, schemeLabel } = rhyme;
+  const { selectedLineId, onLineClick, onLineBlur } = selection;
+  const { updateLineText, handleLineKeyDown } = editing;
+  const {
+    sectionLinesCount,
+    isGenerating,
+    hasApiKey,
+    moveLineUp,
+    moveLineDown,
+    addLineToSection,
+    deleteLineFromSection,
+    playAudioFeedback,
+    onQuantizeLine,
+  } = controls;
+  const { lineLanguage, sectionTargetLanguage, adaptLineLanguage, isAdaptingLine } = language;
+  const { isDraggedLine, isDragOverLine } = dragState;
   const lineLanguageDisplay = lineLanguage ? getLanguageDisplay(lineLanguage) : null;
+  const rhymeColor = getRhymeColor(schemeLabel);
   const isSelected = selectedLineId === line.id;
   const dragEndRef = useRef<() => void>(() => setDraggedLineInfo(null));
   dragEndRef.current = () => setDraggedLineInfo(null);
+  const textAreaOptionalProps = {
+    ...(lineLanguage ? { lineLanguage } : {}),
+    ...(sectionTargetLanguage ? { sectionTargetLanguage } : {}),
+    ...(onLineBlur ? { onBlur: onLineBlur } : {}),
+  };
+  const controlsOptionalProps = {
+    ...(lineLanguage ? { lineLanguage } : {}),
+    ...(sectionTargetLanguage ? { sectionTargetLanguage } : {}),
+    ...(adaptLineLanguage ? { adaptLineLanguage } : {}),
+    ...(onQuantizeLine ? { onQuantizeLine } : {}),
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -144,12 +179,10 @@ export const LyricInput = React.memo(function LyricInput({
         rhymePeerTexts={rhymePeerTexts}
         schemeLabel={schemeLabel}
         rhymeColor={rhymeColor}
-        lineLanguage={lineLanguage}
-        sectionTargetLanguage={sectionTargetLanguage}
         onUpdate={updateLineText}
         onKeyDown={handleLineKeyDown}
-        onClick={() => handleLineClick(line.id)}
-        onBlur={onLineBlur}
+        onClick={() => onLineClick(line.id)}
+        {...textAreaOptionalProps}
       />
 
       <LyricLineControls
@@ -160,15 +193,12 @@ export const LyricInput = React.memo(function LyricInput({
         hasApiKey={hasApiKey}
         isGenerating={isGenerating}
         isAdaptingLine={isAdaptingLine}
-        lineLanguage={lineLanguage}
-        sectionTargetLanguage={sectionTargetLanguage}
-        adaptLineLanguage={adaptLineLanguage}
-        onQuantizeLine={onQuantizeLine}
         moveLineUp={moveLineUp}
         moveLineDown={moveLineDown}
         addLineToSection={addLineToSection}
         deleteLineFromSection={deleteLineFromSection}
         playAudioFeedback={playAudioFeedback}
+        {...controlsOptionalProps}
       />
 
       {/* Syllable count */}

@@ -53,6 +53,7 @@ interface SectionLineListProps {
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: AdaptationLangId) => void;
   adaptingLineIds?: Set<string>;
   sectionTargetLanguage: string;
+  hasApiKey: boolean;
   /** Pre-computed scheme result from parent SectionEditor (single hook instance). */
   schemeResult: SchemeResult | null;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
@@ -88,7 +89,7 @@ function LineRhymePanel({ line, lang, updateLineText, sectionId, onClose }: Line
 export const SectionLineList = React.memo(function SectionLineList({
   section,
   lineNumberOffset = 0,
-  adaptLineLanguage, adaptingLineIds, sectionTargetLanguage,
+  adaptLineLanguage, adaptingLineIds, sectionTargetLanguage, hasApiKey,
   schemeResult,
   playAudioFeedback, onLineBlur,
 }: SectionLineListProps) {
@@ -215,6 +216,7 @@ export const SectionLineList = React.memo(function SectionLineList({
               controls={{
                 sectionLinesCount,
                 isGenerating,
+                hasApiKey,
                 moveLineUp,
                 moveLineDown,
                 addLineToSection,
