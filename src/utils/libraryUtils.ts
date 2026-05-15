@@ -222,7 +222,7 @@ export const findSimilarAssetsInLibrary = async (
 type ExtractedTextMetadata = {
   title?: string;
   artist?: string;
-  metadata: LibraryAsset['metadata'];
+  metadata: LibraryAsset_Metadata;
   body: string;
 };
 
@@ -230,7 +230,7 @@ type ExtractedTextMetadata = {
 const applyMetaKey = (
   key: string,
   value: string,
-  meta: LibraryAsset['metadata'],
+  meta: LibraryAsset_Metadata,
   titleRef: { v?: string },
   artistRef: { v?: string },
 ): void => {
@@ -238,23 +238,23 @@ const applyMetaKey = (
   switch (k) {
     case 'title':            titleRef.v = value; break;
     case 'artist':           artistRef.v = value; break;
-    case 'topic':            meta!.topic = value; break;
-    case 'mood':             meta!.mood = value; break;
-    case 'genre':            meta!.genre = value; break;
+    case 'topic':            meta.topic = value; break;
+    case 'mood':             meta.mood = value; break;
+    case 'genre':            meta.genre = value; break;
     case 'language':
-    case 'lang':             meta!.language = value; break;
-    case 'tempo':            { const n = parseInt(value, 10); if (!isNaN(n)) meta!.tempo = n; break; }
-    case 'instrumentation':  meta!.instrumentation = value; break;
-    case 'rhythm':           meta!.rhythm = value; break;
-    case 'narrative':        meta!.narrative = value; break;
-    case 'musical_prompt':   meta!.musicalPrompt = value; break;
+    case 'lang':             meta.language = value; break;
+    case 'tempo':            { const n = parseInt(value, 10); if (!isNaN(n)) meta.tempo = n; break; }
+    case 'instrumentation':  meta.instrumentation = value; break;
+    case 'rhythm':           meta.rhythm = value; break;
+    case 'narrative':        meta.narrative = value; break;
+    case 'musical_prompt':   meta.musicalPrompt = value; break;
     default: break;
   }
 };
 
 export const extractMetadataFromText = (rawText: string): ExtractedTextMetadata => {
   const lines = rawText.split(/\r?\n/);
-  const meta: LibraryAsset['metadata'] = {};
+  const meta: LibraryAsset_Metadata = {};
   const titleRef: { v?: string } = {};
   const artistRef: { v?: string } = {};
 
@@ -435,13 +435,14 @@ export const extractImportPayloadFromOdt = async (file: Blob): Promise<ImportedS
 const buildAssetFromText = (rawText: string, filenameFallback: string): LibraryAsset => {
   const { title, artist, metadata, body } = extractMetadataFromText(rawText);
   const resolvedTitle = title?.trim() || filenameFallback;
+  const hasMetadata = Object.keys(metadata).length > 0;
   const asset: LibraryAsset = {
     id: `import_${Date.now()}`,
     title: resolvedTitle,
     timestamp: Date.now(),
     type: 'lyrics',
     sections: parseTextToSections(body || rawText),
-    ...(Object.keys(metadata).length > 0 && { metadata }),
+    ...(hasMetadata && { metadata }),
   };
   if (artist !== undefined) asset.artist = artist;
   return asset;
