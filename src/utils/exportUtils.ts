@@ -129,7 +129,7 @@ const buildDocxBlob = (song: Section[], title: string, topic: string, mood: stri
 </cp:coreProperties>`),
   };
 
-  return new Blob([zipSync(files, { level: 0 }) as Uint8Array<ArrayBuffer>], { type: DOCX_MIME });
+  return new Blob([zipSync(files, { level: 0 }) as Uint8Array], { type: DOCX_MIME });
 };
 
 // ---------------------------------------------------------------------------
@@ -216,7 +216,7 @@ const buildOdtBlob = (song: Section[], title: string, topic: string, mood: strin
 </manifest:manifest>`),
   };
 
-  return new Blob([zipSync(files, { level: 0 }) as Uint8Array<ArrayBuffer>], { type: ODT_MIME });
+  return new Blob([zipSync(files, { level: 0 }) as Uint8Array], { type: ODT_MIME });
 };
 
 export const createSongExport = ({
