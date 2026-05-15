@@ -75,9 +75,3 @@ export function useDragActions(): DragActionsContextValue {
   if (!context) throw new Error('useDragActions must be used inside <DragProvider>');
   return context;
 }
-
-export function useDrag(): DragContextValue {
-  const state = useDragState();
-  const actions = useDragActions();
-  return useMemo(() => ({ ...state, ...actions }), [state, actions]);
-}
