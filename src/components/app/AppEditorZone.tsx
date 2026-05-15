@@ -15,7 +15,7 @@ import { InsightsBar } from './InsightsBar';
 import { MusicalInsightsBar } from './MusicalInsightsBar';
 import { LyricsView } from './LyricsView';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
-import { useInsightsBarContext } from '../../contexts/InsightsBarContext';
+import { useInsightsBarStateContext } from '../../contexts/InsightsBarContext';
 import { useTranslation } from '../../i18n';
 
 const MusicalTab = lazy(() =>
@@ -60,7 +60,7 @@ export function AppEditorZone({
   onPasteLyrics,
   onOpenSearch: _onOpenSearch,
 }: AppEditorZoneProps) {
-  const { isAnalyzing, isAdaptingLanguage, targetLanguage } = useInsightsBarContext();
+  const { isAnalyzing, isAdaptingLanguage, targetLanguage } = useInsightsBarStateContext();
 
   return (
     <>
