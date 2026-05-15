@@ -168,6 +168,7 @@ export const SectionEditor = React.memo(function SectionEditor({
           section={section}
           lineNumberOffset={lineNumberOffset}
           sectionTargetLanguage={sectionTargetLanguage}
+          hasApiKey={hasApiKey}
           schemeResult={schemeResult}
           playAudioFeedback={playAudioFeedback}
           {...lineListOptional}
