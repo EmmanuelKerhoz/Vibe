@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { LanguageProvider } from '../../i18n';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LanguageProvider, SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import type { WebSimilarityIndex } from '../../types/webSimilarity';
 import { InsightsBarProvider, type InsightsBarContextValue } from '../../contexts/InsightsBarContext';
 import { InsightsBar } from './InsightsBar';
@@ -115,6 +115,11 @@ function buildInsightsBarContextValue(overrides?: Partial<InsightsBarContextValu
 }
 
 describe('InsightsBar', () => {
+  beforeEach(() => {
+    songContextConfig.detectedLanguages = ['English'];
+    songContextConfig.songLanguage = 'English';
+  });
+
   it('renders single-row layout with adaptation, editor toggles, detect, analyze, and similarity buttons', () => {
     const ctxValue = buildInsightsBarContextValue();
 
@@ -196,5 +201,46 @@ describe('InsightsBar', () => {
     expect(tooltipTitle).toContain('French');
     expect(tooltipTitle).toContain('English');
     expect(tooltipTitle).toContain('Spanish');
+  });
+
+  it('does not recalculate songLanguageCode when songLanguage is unchanged', () => {
+    songContextConfig.detectedLanguages = ['French'];
+    songContextConfig.songLanguage = 'English';
+    let englishResolutions = 0;
+
+    const findSpy = vi.spyOn(SUPPORTED_ADAPTATION_LANGUAGES, 'find');
+    findSpy.mockImplementation(((predicate, thisArg) => (
+      Array.prototype.find.call(
+        SUPPORTED_ADAPTATION_LANGUAGES,
+        (lang, index, array) => {
+          const result = predicate.call(thisArg, lang, index, array);
+          if (lang.aiName === 'English' && result) {
+            englishResolutions += 1;
+          }
+          return result;
+        },
+      )
+    )) as typeof SUPPORTED_ADAPTATION_LANGUAGES.find);
+
+    const { rerender } = render(
+      <LanguageProvider>
+        <InsightsBarProvider value={buildInsightsBarContextValue()}>
+          <InsightsBar />
+        </InsightsBarProvider>
+      </LanguageProvider>,
+    );
+
+    expect(englishResolutions).toBe(1);
+
+    rerender(
+      <LanguageProvider>
+        <InsightsBarProvider value={buildInsightsBarContextValue({ isAnalyzing: true })}>
+          <InsightsBar />
+        </InsightsBarProvider>
+      </LanguageProvider>,
+    );
+
+    expect(englishResolutions).toBe(1);
+    findSpy.mockRestore();
   });
 });
