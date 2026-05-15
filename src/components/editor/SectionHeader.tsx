@@ -41,53 +41,54 @@ export const SectionHeader = React.memo(function SectionHeader({
   ], [sectionName, SECTION_TYPE_OPTIONS]);
 
   return (
-    <div className="flex items-center justify-between gap-4 flex-wrap lcars-section-header" style={{ color: sectionColor }}>
-      <div className="flex items-start gap-3">
-        <div className="flex flex-col gap-0.5">
-          <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>
-            <button type="button" onClick={() => moveSectionUp(section.id)}
-              disabled={sectionIndex === 0 || isAnchoredStartSection(sectionName)}
-              className="flex h-5 w-5 items-center justify-center text-zinc-500 dark:text-zinc-600 transition hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
-              <ChevronUp className="h-3 w-3" />
-            </button>
-          </Tooltip>
-          <Tooltip title={t.editor.moveSectionDown ?? 'Move section down'}>
-            <button type="button" onClick={() => moveSectionDown(section.id)}
-              disabled={sectionIndex === songLength - 1 || isAnchoredEndSection(sectionName)}
-              className="flex h-5 w-5 items-center justify-center text-zinc-500 dark:text-zinc-600 transition hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
-              <ChevronDown className="h-3 w-3" />
-            </button>
-          </Tooltip>
-        </div>
-        <div className="min-w-0">
-          <LcarsSelect
-            value={sectionName}
-            onChange={(v) => setSectionName(section.id, v)}
-            options={sectionTypeSelectOptions.map(option => ({
-              ...option,
-              title: getSectionTooltipText(option.value),
-            }))}
-            accentColor={sectionColor}
-            style={{ color: sectionColor }}
-            buttonTitle={getSectionTooltipText(sectionName)}
-          />
-           <div className="mt-1.5 flex flex-wrap items-center gap-2">
-             <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-600 dark:text-zinc-300">
-              {section.lines.filter(l => !l.isMeta).length} {t.editor.lines ?? 'lines'}
-            </p>
-            <div className="min-w-[15rem] max-w-full flex-1">
-              <LcarsSelect
-                value={section.rhymeScheme || rhymeScheme}
-                onChange={(v) => setSectionRhymeScheme(section.id, v)}
-                options={RHYME_KEYS.filter((k): k is string => typeof k === 'string').map(key => ({
-                  value: key,
-                  label: rhymeSchemes[key as keyof typeof rhymeSchemes] ?? key,
-                }))}
-                accentColor="var(--lcars-cyan)"
-              />
-            </div>
-          </div>
-        </div>
+    <div className="flex items-center gap-3 lcars-section-header" style={{ color: sectionColor }}>
+      {/* Move up/down chevrons */}
+      <div className="flex flex-col gap-0.5 flex-shrink-0">
+        <Tooltip title={t.editor.moveSectionUp ?? 'Move section up'}>
+          <button type="button" onClick={() => moveSectionUp(section.id)}
+            disabled={sectionIndex === 0 || isAnchoredStartSection(sectionName)}
+            className="flex h-5 w-5 items-center justify-center text-zinc-500 dark:text-zinc-600 transition hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+            <ChevronUp className="h-3 w-3" />
+          </button>
+        </Tooltip>
+        <Tooltip title={t.editor.moveSectionDown ?? 'Move section down'}>
+          <button type="button" onClick={() => moveSectionDown(section.id)}
+            disabled={sectionIndex === songLength - 1 || isAnchoredEndSection(sectionName)}
+            className="flex h-5 w-5 items-center justify-center text-zinc-500 dark:text-zinc-600 transition hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-20 disabled:cursor-not-allowed">
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        </Tooltip>
+      </div>
+
+      {/* Section name */}
+      <LcarsSelect
+        value={sectionName}
+        onChange={(v) => setSectionName(section.id, v)}
+        options={sectionTypeSelectOptions.map(option => ({
+          ...option,
+          title: getSectionTooltipText(option.value),
+        }))}
+        accentColor={sectionColor}
+        style={{ color: sectionColor }}
+        buttonTitle={getSectionTooltipText(sectionName)}
+      />
+
+      {/* Lines count */}
+      <p className="flex-shrink-0 text-[11px] uppercase tracking-[0.18em] text-zinc-600 dark:text-zinc-300">
+        {section.lines.filter(l => !l.isMeta).length} {t.editor.lines ?? 'lines'}
+      </p>
+
+      {/* Rhyme scheme */}
+      <div className="min-w-[15rem] max-w-xs flex-shrink-0">
+        <LcarsSelect
+          value={section.rhymeScheme || rhymeScheme}
+          onChange={(v) => setSectionRhymeScheme(section.id, v)}
+          options={RHYME_KEYS.filter((k): k is string => typeof k === 'string').map(key => ({
+            value: key,
+            label: rhymeSchemes[key as keyof typeof rhymeSchemes] ?? key,
+          }))}
+          accentColor="var(--lcars-cyan)"
+        />
       </div>
     </div>
   );
