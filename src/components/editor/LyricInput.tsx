@@ -64,6 +64,8 @@ export interface LyricInputProps {
   controls: LyricInputControlsProps;
   language: LyricInputLanguageProps;
   dragState: LyricInputDragStateProps;
+  /** Max syllables in the section — used to compute the background gauge fill. */
+  sectionMaxSyllables: number;
 }
 
 export const LyricInput = React.memo(function LyricInput({
@@ -77,6 +79,7 @@ export const LyricInput = React.memo(function LyricInput({
   controls,
   language,
   dragState,
+  sectionMaxSyllables,
 }: LyricInputProps) {
   const { t } = useTranslation();
   const { setDraggedLineInfo, setDragOverLineInfo } = useDragActions();
@@ -115,6 +118,11 @@ export const LyricInput = React.memo(function LyricInput({
     ...(onQuantizeLine ? { onQuantizeLine } : {}),
   };
 
+  // Syllable gauge — fill ratio capped at 1, hidden when no data
+  const gaugePct = sectionMaxSyllables > 0 && line.syllables > 0
+    ? Math.min(line.syllables / sectionMaxSyllables, 1)
+    : 0;
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     setDragOverLineInfo({ sectionId, lineId: line.id });
@@ -132,7 +140,7 @@ export const LyricInput = React.memo(function LyricInput({
   return (
     <div
       className={[
-        'group relative flex items-center gap-1.5 rounded pl-1 pr-8 py-1 transition-all',
+        'group relative flex items-center gap-1.5 rounded pl-1 pr-8 py-1 transition-all overflow-hidden',
         isSelected ? 'bg-black/[0.03] dark:bg-white/5' : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.03]',
         isDraggedLine ? 'opacity-40' : '',
         isDragOverLine ? 'border-t border-[var(--accent-color)]/60' : '',
@@ -141,6 +149,19 @@ export const LyricInput = React.memo(function LyricInput({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {/* Syllable gauge — background fill */}
+      {gaugePct > 0 && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 rounded transition-all duration-300"
+          style={{
+            width: `${gaugePct * 100}%`,
+            background: 'var(--accent-color)',
+            opacity: 0.06,
+          }}
+        />
+      )}
+
       <span
         className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-600 dark:text-zinc-400 select-none"
         aria-hidden="true"

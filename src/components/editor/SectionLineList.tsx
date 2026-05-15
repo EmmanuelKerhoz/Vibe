@@ -120,6 +120,17 @@ export const SectionLineList = React.memo(function SectionLineList({
   const renderItems = useMemo(() => buildRenderItems(section.lines), [section.lines]);
   const effectiveRhymeScheme = section.rhymeScheme || rhymeScheme;
 
+  // Max syllable count across lyric lines — drives the background gauge fill
+  const sectionMaxSyllables = useMemo(() => {
+    let max = 0;
+    for (const item of renderItems) {
+      if (item.kind === 'lyric' && item.line.syllables > max) {
+        max = item.line.syllables;
+      }
+    }
+    return max;
+  }, [renderItems]);
+
   // Derive per-lyric-index letters from the hoisted schemeResult prop.
   // Falls back to static scheme when schemeResult is null (< 2 lines, error).
   const dynamicLetters = useMemo<string[]>(() => {
@@ -137,10 +148,6 @@ export const SectionLineList = React.memo(function SectionLineList({
     return item?.line ?? null;
   }, [selectedLineId, renderItems]);
 
-  // panelLang: prefer the resolved line object; fall back to lineLanguages map
-  // (keyed by ID, survives section mutations) so the rhyme panel keeps the
-  // correct language when selectedLine temporarily becomes null.
-  // Use || (not ??) to guard against empty string sectionTargetLanguage.
   const panelLang = selectedLine
     ? (lineLanguages[selectedLine.id] || sectionTargetLanguage || 'auto')
     : selectedLineId
@@ -188,7 +195,6 @@ export const SectionLineList = React.memo(function SectionLineList({
         const isDraggedLine = draggedLineInfo?.sectionId === section.id && draggedLineInfo?.lineId === line.id;
         const isDragOverLine = dragOverLineInfo?.sectionId === section.id && dragOverLineInfo?.lineId === line.id;
 
-        // sectionLinesCount: exclude meta lines consistently using both flags
         const sectionLinesCount = section.lines.filter(l => !(l.isMeta ?? isPureMetaLine(l.text))).length;
 
         const resolvedLineLanguage = lineLanguages[line.id] ?? sectionTargetLanguage;
@@ -226,6 +232,7 @@ export const SectionLineList = React.memo(function SectionLineList({
               }}
               language={languageProps}
               dragState={{ isDraggedLine, isDragOverLine }}
+              sectionMaxSyllables={sectionMaxSyllables}
             />
             {isActive && selectedLine && (
               <LineRhymePanel
