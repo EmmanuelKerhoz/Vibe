@@ -319,11 +319,11 @@ const LyricLineControls = React.memo(function LyricLineControls({
         </button>
       </Tooltip>
 
-      <Tooltip title={t.editor?.addLine ?? 'Add line'}>
+      <Tooltip title={`${t.editor?.addLine ?? 'Add line'} after current line`}>
         <button
           onClick={() => { addLineToSection(sectionId, line.id); playAudioFeedback('click'); }}
           className="opacity-0 group-hover:opacity-40 hover:!opacity-80 flex-shrink-0 p-0.5 rounded transition-opacity"
-          aria-label={t.editor?.addLine ?? 'Add line'}
+          aria-label={`${t.editor?.addLine ?? 'Add line'} after current line`}
         >
           <Plus className="h-3 w-3 text-[var(--text-secondary)]" />
         </button>
