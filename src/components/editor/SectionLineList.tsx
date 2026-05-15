@@ -2,9 +2,9 @@ import React, { useMemo, useCallback } from 'react';
 import { LyricInput } from './LyricInput';
 import { MetaLine } from './MetaLine';
 import { RhymeSuggestPanel } from './RhymeSuggestPanel';
-import { getRhymeColor, getSchemaLabelForLine, getSchemeLetterForLine } from '../../utils/songUtils';
+import { getSchemaLabelForLine, getSchemeLetterForLine } from '../../utils/songUtils';
 import { isPureMetaLine } from '../../utils/metaUtils';
-import { useDrag } from '../../contexts/DragContext';
+import { useDragState } from '../../contexts/DragContext';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSongMutation } from '../../contexts/SongMutationContext';
@@ -49,7 +49,6 @@ export function countSectionRenderItems(lines: Section['lines']): number {
 
 interface SectionLineListProps {
   section: Section;
-  hasApiKey: boolean;
   lineNumberOffset?: number;
   adaptLineLanguage?: (sectionId: string, lineId: string, lang: AdaptationLangId) => void;
   adaptingLineIds?: Set<string>;
@@ -87,7 +86,7 @@ function LineRhymePanel({ line, lang, updateLineText, sectionId, onClose }: Line
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export const SectionLineList = React.memo(function SectionLineList({
-  section, hasApiKey,
+  section,
   lineNumberOffset = 0,
   adaptLineLanguage, adaptingLineIds, sectionTargetLanguage,
   schemeResult,
@@ -96,7 +95,7 @@ export const SectionLineList = React.memo(function SectionLineList({
   const { rhymeScheme, lineLanguages, tempo, timeSignature } = useSongContext();
   const { selectedLineId, isGenerating, handleLineClick, updateLineText, handleLineKeyDown, clearSelection } = useComposerContext();
   const { moveLineUp, moveLineDown, addLineToSection, deleteLineFromSection } = useSongMutation();
-  const { draggedLineInfo, dragOverLineInfo } = useDrag();
+  const { draggedLineInfo, dragOverLineInfo } = useDragState();
 
   // Wrap delete to clear selection when the deleted line is active
   const handleDeleteLine = useCallback((sectionId: string, lineId: string) => {
@@ -175,8 +174,6 @@ export const SectionLineList = React.memo(function SectionLineList({
         const dynamicLetter = dynamicLetters[lyricIndex] ?? null;
         const schemeLabel = dynamicLetter || getSchemaLabelForLine(section, lyricIndex, effectiveRhymeScheme);
         const rhymeFamily = dynamicLetter || getSchemeLetterForLine(section, lyricIndex, effectiveRhymeScheme);
-        const rhymeColor = getRhymeColor(schemeLabel);
-
         const rhymePeerTexts = rhymeFamily
           ? renderItems
             .filter((candidate): candidate is LyricItem =>
@@ -194,10 +191,11 @@ export const SectionLineList = React.memo(function SectionLineList({
         const sectionLinesCount = section.lines.filter(l => !(l.isMeta ?? isPureMetaLine(l.text))).length;
 
         const resolvedLineLanguage = lineLanguages[line.id] ?? sectionTargetLanguage;
-        const lineOptional = {
+        const language = {
           ...(resolvedLineLanguage ? { lineLanguage: resolvedLineLanguage } : {}),
+          sectionTargetLanguage,
           ...(adaptLineLanguage ? { adaptLineLanguage } : {}),
-          ...(onLineBlur ? { onLineBlur } : {}),
+          isAdaptingLine: adaptingLineIds?.has(line.id) ?? false,
         };
 
         return (
@@ -207,27 +205,25 @@ export const SectionLineList = React.memo(function SectionLineList({
               lineIndex={lyricIndex}
               globalLineNumber={globalLineNumber}
               sectionId={section.id}
-              sectionLinesCount={sectionLinesCount}
-              rhymePeerTexts={rhymePeerTexts}
-              selectedLineId={selectedLineId}
-              schemeLabel={schemeLabel}
-              rhymeColor={rhymeColor}
-              isGenerating={isGenerating}
-              hasApiKey={hasApiKey}
-              isDraggedLine={isDraggedLine}
-              isDragOverLine={isDragOverLine}
-              handleLineClick={handleLineClick}
-              updateLineText={updateLineText}
-              handleLineKeyDown={handleLineKeyDown}
-              moveLineUp={moveLineUp}
-              moveLineDown={moveLineDown}
-              addLineToSection={addLineToSection}
-              deleteLineFromSection={handleDeleteLine}
-              playAudioFeedback={playAudioFeedback}
-              sectionTargetLanguage={sectionTargetLanguage}
-              isAdaptingLine={adaptingLineIds?.has(line.id) ?? false}
-              onQuantizeLine={handleQuantizeLine}
-              {...lineOptional}
+              rhyme={{ peerTexts: rhymePeerTexts, schemeLabel }}
+              selection={{
+                selectedLineId,
+                onLineClick: handleLineClick,
+                ...(onLineBlur ? { onLineBlur } : {}),
+              }}
+              editing={{ updateLineText, handleLineKeyDown }}
+              controls={{
+                sectionLinesCount,
+                isGenerating,
+                moveLineUp,
+                moveLineDown,
+                addLineToSection,
+                deleteLineFromSection: handleDeleteLine,
+                playAudioFeedback,
+                onQuantizeLine: handleQuantizeLine,
+              }}
+              language={language}
+              dragState={{ isDraggedLine, isDragOverLine }}
             />
             {isActive && selectedLine && (
               <LineRhymePanel

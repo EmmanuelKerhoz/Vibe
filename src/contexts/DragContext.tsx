@@ -22,7 +22,18 @@ export interface DragContextValue {
   setDragOverLineInfo: Dispatch<SetStateAction<LineDragInfo>>;
 }
 
-const DragContext = createContext<DragContextValue | null>(null);
+export type DragStateContextValue = Pick<
+  DragContextValue,
+  'draggedItemIndex' | 'dragOverIndex' | 'draggedLineInfo' | 'dragOverLineInfo'
+>;
+
+export type DragActionsContextValue = Pick<
+  DragContextValue,
+  'setDraggedItemIndex' | 'setDragOverIndex' | 'setDraggedLineInfo' | 'setDragOverLineInfo'
+>;
+
+const DragStateContext = createContext<DragStateContextValue | null>(null);
+const DragActionsContext = createContext<DragActionsContextValue | null>(null);
 
 export function DragProvider({ children }: { children: ReactNode }) {
   const [draggedItemIndex, setDraggedItemIndex] = useState<DragIndexState>(null);
@@ -30,26 +41,43 @@ export function DragProvider({ children }: { children: ReactNode }) {
   const [draggedLineInfo, setDraggedLineInfo] = useState<LineDragInfo>(null);
   const [dragOverLineInfo, setDragOverLineInfo] = useState<LineDragInfo>(null);
 
-  const value = useMemo(() => ({
+  const state = useMemo(() => ({
     draggedItemIndex,
-    setDraggedItemIndex,
     dragOverIndex,
-    setDragOverIndex,
     draggedLineInfo,
-    setDraggedLineInfo,
     dragOverLineInfo,
-    setDragOverLineInfo,
   }), [draggedItemIndex, dragOverIndex, draggedLineInfo, dragOverLineInfo]);
 
+  const actions = useMemo(() => ({
+    setDraggedItemIndex,
+    setDragOverIndex,
+    setDraggedLineInfo,
+    setDragOverLineInfo,
+  }), []);
+
   return (
-    <DragContext.Provider value={value}>
-      {children}
-    </DragContext.Provider>
+    <DragActionsContext.Provider value={actions}>
+      <DragStateContext.Provider value={state}>
+        {children}
+      </DragStateContext.Provider>
+    </DragActionsContext.Provider>
   );
 }
 
-export function useDrag(): DragContextValue {
-  const context = useContext(DragContext);
-  if (!context) throw new Error('useDrag must be used inside <DragProvider>');
+export function useDragState(): DragStateContextValue {
+  const context = useContext(DragStateContext);
+  if (!context) throw new Error('useDragState must be used inside <DragProvider>');
   return context;
+}
+
+export function useDragActions(): DragActionsContextValue {
+  const context = useContext(DragActionsContext);
+  if (!context) throw new Error('useDragActions must be used inside <DragProvider>');
+  return context;
+}
+
+export function useDrag(): DragContextValue {
+  const state = useDragState();
+  const actions = useDragActions();
+  return useMemo(() => ({ ...state, ...actions }), [state, actions]);
 }

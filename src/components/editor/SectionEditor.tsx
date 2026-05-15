@@ -6,7 +6,7 @@ import { SectionAdaptControl } from './SectionAdaptControl';
 import { SectionLineList } from './SectionLineList';
 import { SectionFooter } from './SectionFooter';
 import { useTranslation } from '../../i18n';
-import { useDrag } from '../../contexts/DragContext';
+import { useDragActions, useDragState } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useRhymeProxyContext } from '../../contexts/RhymeProxyContext';
@@ -48,7 +48,8 @@ export const SectionEditor = React.memo(function SectionEditor({
   const { t } = useTranslation();
   const { isGenerating } = useComposerContext();
   const { handleDrop } = useDragHandlersContext();
-  const { draggedItemIndex, dragOverIndex, setDragOverIndex } = useDrag();
+  const { draggedItemIndex, dragOverIndex } = useDragState();
+  const { setDragOverIndex } = useDragActions();
   const { isProxiedForSection } = useRhymeProxyContext();
   const { lineLanguages } = useSongContext();
 
@@ -165,7 +166,6 @@ export const SectionEditor = React.memo(function SectionEditor({
 
         <SectionLineList
           section={section}
-          hasApiKey={hasApiKey}
           lineNumberOffset={lineNumberOffset}
           sectionTargetLanguage={sectionTargetLanguage}
           schemeResult={schemeResult}
