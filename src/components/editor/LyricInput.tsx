@@ -118,7 +118,10 @@ export const LyricInput = React.memo(function LyricInput({
     ...(onQuantizeLine ? { onQuantizeLine } : {}),
   };
 
-  // Syllable gauge — fill ratio capped at 1, hidden when no data
+  // Syllable gauge — fill ratio capped at 1, hidden when no data.
+  // Right offset accounts for: pr-8 (2rem) + COUNT w-[2.75rem] + spacer w-2 (0.5rem) + SCHEMA w-7 (1.75rem) = 7rem
+  // Keeps the gauge within the lyric text zone only, columns on the right remain unaffected.
+  const GAUGE_RIGHT_OFFSET = '7rem';
   const gaugePct = sectionMaxSyllables > 0 && line.syllables > 0
     ? Math.min(line.syllables / sectionMaxSyllables, 1)
     : 0;
@@ -149,15 +152,15 @@ export const LyricInput = React.memo(function LyricInput({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Syllable gauge — background fill */}
+      {/* Syllable gauge — clipped to the lyric text zone, right columns excluded */}
       {gaugePct > 0 && (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-y-0 left-0 rounded transition-all duration-300"
           style={{
-            width: `${gaugePct * 100}%`,
+            width: `calc(${gaugePct} * (100% - ${GAUGE_RIGHT_OFFSET}))`,
             background: 'var(--accent-color)',
-            opacity: 0.06,
+            opacity: 0.07,
           }}
         />
       )}
