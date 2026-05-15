@@ -438,6 +438,7 @@ const buildAssetFromText = (rawText: string, filenameFallback: string): LibraryA
   const { title, artist, metadata, body } = extractMetadataFromText(rawText);
   const resolvedTitle = title?.trim() || filenameFallback;
   const hasMetadata = Object.keys(metadata).length > 0;
+  // exactOptionalPropertyTypes: use conditional spread for optional props
   const asset: LibraryAsset = {
     id: `import_${Date.now()}`,
     title: resolvedTitle,
@@ -445,8 +446,8 @@ const buildAssetFromText = (rawText: string, filenameFallback: string): LibraryA
     type: 'lyrics',
     sections: parseTextToSections(body || rawText),
     ...(hasMetadata && { metadata }),
+    ...(artist !== undefined && { artist }),
   };
-  if (artist !== undefined) asset.artist = artist;
   return asset;
 };
 
