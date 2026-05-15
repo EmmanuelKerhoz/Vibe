@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useDrag } from '../contexts/DragContext';
+import { useDragActions, useDragState } from '../contexts/DragContext';
 import { useDragHandlersContext } from '../contexts/DragHandlersContext';
 import { isAnchoredStartSection, isAnchoredEndSection } from '../constants/sections';
 
@@ -18,12 +18,8 @@ interface UseStructureDragHandlersArgs {
  */
 export function useStructureDragHandlers({ structure }: UseStructureDragHandlersArgs) {
   const { handleDrop } = useDragHandlersContext();
-  const {
-    draggedItemIndex,
-    setDraggedItemIndex,
-    dragOverIndex,
-    setDragOverIndex,
-  } = useDrag();
+  const { draggedItemIndex, dragOverIndex } = useDragState();
+  const { setDraggedItemIndex, setDragOverIndex } = useDragActions();
 
   const structureLength = structure.length;
   const hasAnchoredStart = isAnchoredStartSection(structure[0] ?? '');

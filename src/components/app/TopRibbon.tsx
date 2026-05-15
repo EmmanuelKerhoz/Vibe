@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Sparkles, Undo2, Redo2, PanelRight, Menu, KeyboardRegular, WandSparkles, Music, Check, AlertTriangle } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
@@ -43,6 +43,8 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const sunoSentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sunoTruncatedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sunoSent, setSunoSent] = useState(false);
   const [sunoTruncated, setSunoTruncated] = useState(false);
 
@@ -58,6 +60,11 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
     setIsStructureOpen(next);
   };
 
+  useEffect(() => () => {
+    if (sunoSentTimeoutRef.current) clearTimeout(sunoSentTimeoutRef.current);
+    if (sunoTruncatedTimeoutRef.current) clearTimeout(sunoTruncatedTimeoutRef.current);
+  }, []);
+
   const handleSendToSuno = () => {
     const prompt = musicalPrompt.trim();
     const wasTruncated = prompt.length > MAX_SUNO_PROMPT_LENGTH;
@@ -66,11 +73,19 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
       ? `${SUNO_CREATE_URL}?prompt=${encodeURIComponent(safePrompt)}`
       : SUNO_CREATE_URL;
     window.open(url, '_blank', 'noopener,noreferrer');
+    if (sunoSentTimeoutRef.current) clearTimeout(sunoSentTimeoutRef.current);
+    if (sunoTruncatedTimeoutRef.current) clearTimeout(sunoTruncatedTimeoutRef.current);
     setSunoSent(true);
-    setTimeout(() => setSunoSent(false), 2000);
+    sunoSentTimeoutRef.current = setTimeout(() => {
+      setSunoSent(false);
+    }, 2000);
     if (wasTruncated) {
       setSunoTruncated(true);
-      setTimeout(() => setSunoTruncated(false), 3000);
+      sunoTruncatedTimeoutRef.current = setTimeout(() => {
+        setSunoTruncated(false);
+      }, 3000);
+    } else {
+      setSunoTruncated(false);
     }
   };
 

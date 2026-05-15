@@ -1,6 +1,6 @@
 import { useCallback, type MutableRefObject } from 'react';
 import type { Section } from '../types';
-import { useDrag } from '../contexts/DragContext';
+import { useDragActions, useDragState } from '../contexts/DragContext';
 import { useSongContext } from '../contexts/SongContext';
 import {
   isAnchoredEndSection,
@@ -18,14 +18,13 @@ export const useDragHandlers = ({
   playAudioFeedbackRef,
 }: UseDragHandlersParams) => {
   const { song, structure, updateState, updateSongAndStructureWithHistory } = useSongContext();
+  const { draggedItemIndex, draggedLineInfo } = useDragState();
   const {
-    draggedItemIndex,
     setDraggedItemIndex,
     setDragOverIndex,
-    draggedLineInfo,
     setDraggedLineInfo,
     setDragOverLineInfo,
-  } = useDrag();
+  } = useDragActions();
 
   const updateSong = useCallback((transform: (currentSong: Section[]) => Section[]) => {
     updateState(current => ({
