@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Bot, User } from '../ui/icons';
 import type { Line } from '../../types';
-import { useDrag } from '../../contexts/DragContext';
+import { useDragActions } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { Tooltip } from '../ui/Tooltip';
 import { EmojiSign } from '../ui/EmojiSign';
@@ -79,7 +79,8 @@ export const LyricInput = React.memo(function LyricInput({
   dragState,
 }: LyricInputProps) {
   const { t } = useTranslation();
-  const { setDraggedLineInfo, setDragOverLineInfo } = useDrag();
+  // Use actions-only hook: stable reference, never re-renders on drag state changes.
+  const { setDraggedLineInfo, setDragOverLineInfo } = useDragActions();
   const { handleLineDrop } = useDragHandlersContext();
   const { peerTexts: rhymePeerTexts, schemeLabel } = rhyme;
   const { selectedLineId, onLineClick, onLineBlur } = selection;
