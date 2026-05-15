@@ -230,6 +230,76 @@ export const findSimilarAssetsInLibrary = async (
     .slice(0, limit);
 };
 
+// ---------------------------------------------------------------------------
+// Text-file metadata extraction
+//
+// Recognises frontmatter-style comment lines at the top of a plain-text
+// import (txt / md / docx / odt raw text).  Lines must appear *before* the
+// first non-comment, non-blank line and follow the pattern:
+//
+//   # key: value
+//
+// Supported keys (case-insensitive):
+//   title, topic, mood, genre, tempo, instrumentation, rhythm,
+//   narrative, musicalPrompt (aliases: musical_prompt, musical-prompt),
+//   artist, language (alias: lang — already handled by extractImportPayloadFromText)
+//
+// Returns an object with the extracted fields and the remaining body text
+// (everything after the header block).
+// ---------------------------------------------------------------------------
+
+type ExtractedTextMetadata = {
+  title?: string;
+  artist?: string;
+  metadata: LibraryAsset['metadata'];
+  body: string;
+};
+
+export const extractMetadataFromText = (rawText: string): ExtractedTextMetadata => {
+  const lines = rawText.split(/\r?\n/);
+  const meta: LibraryAsset['metadata'] = {};
+  let titleOut: string | undefined;
+  let artistOut: string | undefined;
+  let headerEnd = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? '';
+    // Stop at first non-comment, non-blank line
+    if (line.trim() === '') {
+      // blank line inside header block: keep scanning
+      headerEnd = i + 1;
+      continue;
+    }
+    const match = line.match(/^#\s*([\w-]+)\s*:\s*(.+?)\s*$/i);
+    if (!match) {
+      // Not a header comment — body starts here
+      headerEnd = i;
+      break;
+    }
+    headerEnd = i + 1;
+    const key = (match[1] ?? '').toLowerCase().replace(/-/g, '_');
+    const value = match[2] ?? '';
+    switch (key) {
+      case 'title':       titleOut = value; break;
+      case 'artist':      artistOut = value; break;
+      case 'topic':       meta.topic = value; break;
+      case 'mood':        meta.mood = value; break;
+      case 'genre':       meta.genre = value; break;
+      case 'language':
+      case 'lang':        meta.language = value; break;
+      case 'tempo':       { const n = parseInt(value, 10); if (!isNaN(n)) meta.tempo = n; break; }
+      case 'instrumentation': meta.instrumentation = value; break;
+      case 'rhythm':      meta.rhythm = value; break;
+      case 'narrative':   meta.narrative = value; break;
+      case 'musical_prompt': meta.musicalPrompt = value; break;
+      default: break;
+    }
+  }
+
+  const body = lines.slice(headerEnd).join('\n');
+  return { title: titleOut, artist: artistOut, metadata: meta, body };
+};
+
 /**
  * Extract plain text from a .docx file (Office Open XML).
  */
@@ -331,6 +401,25 @@ export const extractImportPayloadFromOdt = async (file: Blob): Promise<ImportedS
   }
 };
 
+/**
+ * Build a LibraryAsset from raw text + file-derived fallback title.
+ * Extracts frontmatter metadata headers then parses the remaining body.
+ */
+const buildAssetFromText = (rawText: string, filenameFallback: string): LibraryAsset => {
+  const { title, artist, metadata, body } = extractMetadataFromText(rawText);
+  const resolvedTitle = title?.trim() || filenameFallback;
+  const asset: LibraryAsset = {
+    id: `import_${Date.now()}`,
+    title: resolvedTitle,
+    timestamp: Date.now(),
+    type: 'lyrics',
+    sections: parseTextToSections(body || rawText),
+    ...(Object.keys(metadata).length > 0 && { metadata }),
+  };
+  if (artist !== undefined) asset.artist = artist;
+  return asset;
+};
+
 export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> => {
   const assets: LibraryAsset[] = [];
   try {
@@ -359,34 +448,16 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
     } else if (file.name.endsWith('.docx')) {
       const text = await extractTextFromDocx(file);
       if (text) {
-        assets.push({
-          id: `import_${Date.now()}`,
-          title: file.name.replace(/\.docx$/, ''),
-          timestamp: Date.now(),
-          type: 'lyrics',
-          sections: parseTextToSections(text),
-        });
+        assets.push(buildAssetFromText(text, file.name.replace(/\.docx$/, '')));
       }
     } else if (file.name.endsWith('.odt')) {
       const text = await extractTextFromOdt(file);
       if (text) {
-        assets.push({
-          id: `import_${Date.now()}`,
-          title: file.name.replace(/\.odt$/, ''),
-          timestamp: Date.now(),
-          type: 'lyrics',
-          sections: parseTextToSections(text),
-        });
+        assets.push(buildAssetFromText(text, file.name.replace(/\.odt$/, '')));
       }
     } else {
       const text = await file.text();
-      assets.push({
-        id: `import_${Date.now()}`,
-        title: file.name.replace(/\.(txt|md)$/, ''),
-        timestamp: Date.now(),
-        type: 'lyrics',
-        sections: parseTextToSections(text),
-      });
+      assets.push(buildAssetFromText(text, file.name.replace(/\.(txt|md)$/, '')));
     }
   } catch (error) {
     console.error('Failed to import assets:', error);
