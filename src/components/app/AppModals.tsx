@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AboutModal } from './modals/AboutModal';
 import { SettingsModal } from './modals/SettingsModal';
 import { ImportModal } from './modals/ImportModal';
@@ -132,6 +132,25 @@ export const AppModals = React.memo(function AppModals({
   const { closeModal, openModal } = useModalDispatch();
   const { uiState: ui } = useModalState();
   const { importInputRef } = ui;
+
+  // Splash: show About once at app startup, with auto-close after 5 s.
+  const [hasShownSplash, setHasShownSplash] = useState(false);
+  const [showSplashMode, setShowSplashMode] = useState(false);
+
+  useEffect(() => {
+    if (!hasShownSplash) {
+      setHasShownSplash(true);
+      setShowSplashMode(true);
+      openModal('about');
+    }
+  }, [hasShownSplash, openModal]);
+
+  useEffect(() => {
+    if (!ui.isAboutOpen && showSplashMode) {
+      setShowSplashMode(false);
+    }
+  }, [ui.isAboutOpen, showSplashMode]);
+
   const openLibraryFromImport = () => { closeModal('import'); openModal('saveToLibrary'); };
   const openLibraryFromExport = () => { closeModal('export'); openModal('saveToLibrary'); };
 
@@ -147,7 +166,11 @@ export const AppModals = React.memo(function AppModals({
 
   return (
     <>
-      <AboutModal isOpen={ui.isAboutOpen} onClose={() => closeModal('about')} />
+      <AboutModal
+        isOpen={ui.isAboutOpen}
+        onClose={() => closeModal('about')}
+        isSplashScreen={showSplashMode}
+      />
       <SettingsModal
         isOpen={ui.isSettingsOpen} onClose={() => closeModal('settings')}
         theme={theme} setTheme={setTheme}
