@@ -40,14 +40,6 @@ export type LibrarySearchResult = SimilarityMatch & {
 
 // ---------------------------------------------------------------------------
 // M2 fix: version-stamp + merge strategy for atomic-safe writes.
-//
-// localStorage is synchronous but JS is single-threaded *per tab*.
-// The race condition arises across tabs: Tab A and Tab B both read v=5,
-// both push an asset, both write v=6 — one write is lost.
-//
-// Solution: each write reads the *current* store immediately before
-// committing, merges any assets added by other tabs (by id), increments
-// the version stamp, then writes. No external lock needed.
 // ---------------------------------------------------------------------------
 
 type LibraryStore = {
@@ -62,8 +54,6 @@ const readStore = (): LibraryStore => {
     const raw = safeGetItem(LIBRARY_KEY);
     if (!raw) return { version: 0, assets: [] };
     const json = JSON.parse(raw) as unknown;
-    // P4: validate through Zod — catches corrupt / migrated payloads at the
-    // storage boundary so the rest of the app always receives typed data.
     const result = LibraryStoreSchema.safeParse(json);
     if (!result.success) {
       console.warn(
@@ -72,9 +62,6 @@ const readStore = (): LibraryStore => {
       );
       return { version: 0, assets: [] };
     }
-    // Zod passthrough on SectionSchema produces objectOutputType which diverges
-    // from Section (missing rhymingSyllables, concept). Cast via unknown at this
-    // storage boundary — normalizeLoadedSection re-validates fields downstream.
     return result.data as unknown as LibraryStore;
   } catch {
     return { version: 0, assets: [] };
@@ -91,7 +78,7 @@ const writeStore = (store: LibraryStore): boolean =>
 export const mergeAssets = (base: LibraryAsset[], incoming: LibraryAsset[]): LibraryAsset[] => {
   const map = new Map<string, LibraryAsset>();
   for (const a of base) map.set(a.id, a);
-  for (const a of incoming) map.set(a.id, a); // incoming overwrites
+  for (const a of incoming) map.set(a.id, a);
   return [...map.values()].sort((a, b) => b.timestamp - a.timestamp);
 };
 
@@ -115,21 +102,12 @@ export type LoadedLibraryAssetState = {
   musicalPrompt: string;
 };
 
-/**
- * Safely coerce an unknown value to Record<string, unknown>.
- * If the value is already a plain object, return it directly.
- * Otherwise return an empty record — normalizeLoadedSection handles
- * all missing fields with safe defaults.
- */
 const toRecord = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
 
 export const loadAssetIntoEditor = (asset: LibraryAsset): LoadedLibraryAssetState => {
-  // P2a fix: validate each section through SectionSchema.
-  // On parse failure, toRecord() provides a safe empty-record fallback
-  // — no cast, normalizeLoadedSection fills all missing fields with defaults.
   const song = asset.sections.map(section => {
     const parsed = SectionSchema.safeParse(section);
     return normalizeLoadedSection(parsed.success ? parsed.data : toRecord(section));
@@ -163,7 +141,6 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
     timestamp: Date.now(),
   };
   try {
-    // M2: re-read immediately before writing to capture concurrent tab writes.
     const current = readStore();
     const merged = mergeAssets(current.assets, [newAsset]);
     writeStore({ version: current.version + 1, assets: merged });
@@ -176,7 +153,6 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
 
 export const deleteAssetFromLibrary = async (assetId: string): Promise<void> => {
   try {
-    // M2: re-read immediately before writing.
     const current = readStore();
     const updated = current.assets.filter(a => a.id !== assetId);
     writeStore({ version: current.version + 1, assets: updated });
@@ -186,9 +162,6 @@ export const deleteAssetFromLibrary = async (assetId: string): Promise<void> => 
   }
 };
 
-/**
- * Purge all library assets (clear entire library).
- */
 export const purgeLibrary = async (): Promise<void> => {
   try {
     writeStore({ version: 0, assets: [] });
@@ -198,10 +171,6 @@ export const purgeLibrary = async (): Promise<void> => {
   }
 };
 
-/**
- * Find top 3 similar assets in library.
- * Always returns up to 3 results regardless of score.
- */
 export const findSimilarAssetsInLibrary = async (
   currentSong: Section[],
   _threshold = 0,
@@ -221,7 +190,6 @@ export const findSimilarAssetsInLibrary = async (
         title: asset.title,
         timestamp: asset.timestamp,
         assetType: asset.type,
-        // Conditional spread: omit optional props when undefined (exactOptionalPropertyTypes).
         ...(asset.artist !== undefined && { artist: asset.artist }),
         ...(asset.metadata !== undefined && { metadata: asset.metadata }),
       };
@@ -233,19 +201,22 @@ export const findSimilarAssetsInLibrary = async (
 // ---------------------------------------------------------------------------
 // Text-file metadata extraction
 //
-// Recognises frontmatter-style comment lines at the top of a plain-text
-// import (txt / md / docx / odt raw text).  Lines must appear *before* the
-// first non-comment, non-blank line and follow the pattern:
+// Three recognised formats (applied in order, all may coexist):
 //
-//   # key: value
+//  1. Frontmatter comment  →  # key: value
+//     Must appear before any non-comment, non-blank line.
 //
-// Supported keys (case-insensitive):
-//   title, topic, mood, genre, tempo, instrumentation, rhythm,
-//   narrative, musicalPrompt (aliases: musical_prompt, musical-prompt),
-//   artist, language (alias: lang — already handled by extractImportPayloadFromText)
+//  2. H1 heading           →  # Title text  (no colon)
+//     First occurrence used as title when no explicit "# title:" is present.
+//     The H1 line is consumed and excluded from the lyrics body.
 //
-// Returns an object with the extracted fields and the remaining body text
-// (everything after the header block).
+//  3. Bold label           →  **Key:** value  or  **Key :** value
+//     Recognised anywhere in the leading header block (before the first
+//     lyric section).  Case-insensitive key matching.
+//     The matched lines are consumed and excluded from the lyrics body.
+//
+// All three formats are stripped from the body passed to parseTextToSections
+// so they do not appear as lyric lines.
 // ---------------------------------------------------------------------------
 
 type ExtractedTextMetadata = {
@@ -255,49 +226,105 @@ type ExtractedTextMetadata = {
   body: string;
 };
 
+/** Apply a normalised key string to the metadata bag. */
+const applyMetaKey = (
+  key: string,
+  value: string,
+  meta: LibraryAsset['metadata'],
+  titleRef: { v?: string },
+  artistRef: { v?: string },
+): void => {
+  const k = key.toLowerCase().replace(/[-\s]/g, '_');
+  switch (k) {
+    case 'title':            titleRef.v = value; break;
+    case 'artist':           artistRef.v = value; break;
+    case 'topic':            meta!.topic = value; break;
+    case 'mood':             meta!.mood = value; break;
+    case 'genre':            meta!.genre = value; break;
+    case 'language':
+    case 'lang':             meta!.language = value; break;
+    case 'tempo':            { const n = parseInt(value, 10); if (!isNaN(n)) meta!.tempo = n; break; }
+    case 'instrumentation':  meta!.instrumentation = value; break;
+    case 'rhythm':           meta!.rhythm = value; break;
+    case 'narrative':        meta!.narrative = value; break;
+    case 'musical_prompt':   meta!.musicalPrompt = value; break;
+    default: break;
+  }
+};
+
 export const extractMetadataFromText = (rawText: string): ExtractedTextMetadata => {
   const lines = rawText.split(/\r?\n/);
   const meta: LibraryAsset['metadata'] = {};
-  let titleOut: string | undefined;
-  let artistOut: string | undefined;
+  const titleRef: { v?: string } = {};
+  const artistRef: { v?: string } = {};
+
+  // Indices of lines consumed as metadata (to be excluded from body).
+  const consumed = new Set<number>();
+
+  // --- Pass 1: scan the leading block for all three formats ---
+  // We scan until we hit the first line that is neither blank, nor a
+  // recognised metadata pattern, nor an H1 heading.
   let headerEnd = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? '';
-    // Stop at first non-comment, non-blank line
-    if (line.trim() === '') {
-      // blank line inside header block: keep scanning
+    const trimmed = line.trim();
+
+    if (trimmed === '') {
       headerEnd = i + 1;
       continue;
     }
-    const match = line.match(/^#\s*([\w-]+)\s*:\s*(.+?)\s*$/i);
-    if (!match) {
-      // Not a header comment — body starts here
-      headerEnd = i;
-      break;
+
+    // Format 1: # key: value  (frontmatter comment)
+    const frontmatterMatch = trimmed.match(/^#\s*([\w-]+)\s*:\s*(.+?)\s*$/i);
+    if (frontmatterMatch) {
+      applyMetaKey(frontmatterMatch[1] ?? '', frontmatterMatch[2] ?? '', meta, titleRef, artistRef);
+      consumed.add(i);
+      headerEnd = i + 1;
+      continue;
     }
-    headerEnd = i + 1;
-    const key = (match[1] ?? '').toLowerCase().replace(/-/g, '_');
-    const value = match[2] ?? '';
-    switch (key) {
-      case 'title':       titleOut = value; break;
-      case 'artist':      artistOut = value; break;
-      case 'topic':       meta.topic = value; break;
-      case 'mood':        meta.mood = value; break;
-      case 'genre':       meta.genre = value; break;
-      case 'language':
-      case 'lang':        meta.language = value; break;
-      case 'tempo':       { const n = parseInt(value, 10); if (!isNaN(n)) meta.tempo = n; break; }
-      case 'instrumentation': meta.instrumentation = value; break;
-      case 'rhythm':      meta.rhythm = value; break;
-      case 'narrative':   meta.narrative = value; break;
-      case 'musical_prompt': meta.musicalPrompt = value; break;
-      default: break;
+
+    // Format 2: # Title text  (H1 heading, no colon)
+    const h1Match = trimmed.match(/^#\s+(.+)$/);
+    if (h1Match) {
+      if (!titleRef.v) titleRef.v = h1Match[1]?.trim();
+      consumed.add(i);
+      headerEnd = i + 1;
+      continue;
     }
+
+    // Format 3: **Key:** value  or  **Key :** value
+    const boldMatch = trimmed.match(/^\*\*([^*:]+?)\s*:\*\*\s*(.+?)\s*$/i);
+    if (boldMatch) {
+      applyMetaKey(boldMatch[1] ?? '', boldMatch[2] ?? '', meta, titleRef, artistRef);
+      consumed.add(i);
+      headerEnd = i + 1;
+      continue;
+    }
+
+    // Non-metadata line — end of header block
+    headerEnd = i;
+    break;
   }
 
-  const body = lines.slice(headerEnd).join('\n');
-  return { title: titleOut, artist: artistOut, metadata: meta, body };
+  // Body = lines from headerEnd onward, minus any consumed metadata lines
+  // that may have been interleaved with blank lines inside the header block.
+  const bodyLines = lines
+    .slice(0, headerEnd).filter((_, i) => !consumed.has(i))
+    .concat(lines.slice(headerEnd));
+
+  // Trim leading blank lines from body
+  let start = 0;
+  while (start < bodyLines.length && (bodyLines[start] ?? '').trim() === '') start++;
+
+  const body = bodyLines.slice(start).join('\n');
+
+  return {
+    ...(titleRef.v !== undefined && { title: titleRef.v }),
+    ...(artistRef.v !== undefined && { artist: artistRef.v }),
+    metadata: meta,
+    body,
+  };
 };
 
 /**
@@ -403,7 +430,7 @@ export const extractImportPayloadFromOdt = async (file: Blob): Promise<ImportedS
 
 /**
  * Build a LibraryAsset from raw text + file-derived fallback title.
- * Extracts frontmatter metadata headers then parses the remaining body.
+ * Extracts frontmatter/H1/bold-label metadata then parses the remaining body.
  */
 const buildAssetFromText = (rawText: string, filenameFallback: string): LibraryAsset => {
   const { title, artist, metadata, body } = extractMetadataFromText(rawText);
@@ -427,14 +454,9 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
       const text = await file.text();
       const parsed = JSON.parse(text) as unknown;
       if (Array.isArray(parsed)) {
-        // P4: validate each item through LibraryAssetSchema instead of casting.
-        // Invalid entries are skipped with a warning — no crash, no garbage data.
         for (let idx = 0; idx < parsed.length; idx++) {
           const result = LibraryAssetSchema.safeParse(parsed[idx]);
           if (result.success) {
-            // Zod passthrough on SectionSchema produces objectOutputType which
-            // diverges from LibraryAsset.sections (Section[]). Cast via unknown
-            // at the import boundary — normalizeLoadedSection re-validates downstream.
             assets.push(result.data as unknown as LibraryAsset);
           } else {
             console.warn(
@@ -482,12 +504,17 @@ export const parseTextToSections = (text: string): Section[] => {
       const headerMatch = firstLine.match(/^(?:\*\*)?\[(.+?)\](?:\*\*)?$/);
       sectionName = headerMatch?.[1] ?? sectionName;
       contentLines = lines.slice(1);
+    } else if (firstLine.match(/^#{1,3}\s+.+/)) {
+      // ### Section Name  (markdown heading used as section label)
+      const headingMatch = firstLine.match(/^#{1,3}\s+(.+)$/);
+      sectionName = headingMatch?.[1]?.trim() ?? sectionName;
+      contentLines = lines.slice(1);
     }
     const sectionLines = contentLines
       .filter(line => line.trim().length > 0)
       .map((lineText, idx) => ({
         id: `line_${uid++}_${idx}`,
-        text: lineText,
+        text: lineText.replace(/\\(.)/g, '$1').trim(),
         rhymingSyllables: '',
         rhyme: '',
         syllables: 0,
