@@ -22,7 +22,7 @@ const escapeXml = (value: string) => value
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&apos;');
 
-const escapeMarkdown = (value: string) => value.replace(/([\\`*_{}[\]()#+\-.!|>])/g, '\\$1');
+const escapeMarkdown = (value: string) => value.replace(/([\\\`*_{}[\]()#+\-.!|>])/g, '\\$1');
 
 const getBaseFileName = (title: string) => (title.trim() || 'Untitled Song').replace(/\s+/g, '_');
 
@@ -32,9 +32,13 @@ const isArtifactLine = (text: string): boolean => {
   return trimmed === '' || trimmed === '[]';
 };
 
+// ---------------------------------------------------------------------------
+// TXT — lossless frontmatter: # title, # lang, then [Section] body
+// ---------------------------------------------------------------------------
 const buildTxtContent = (song: Section[], title: string, songLanguage = '') => {
-  let content = songLanguage.trim() ? `# lang: ${songLanguage.trim()}\n\n` : '';
-  content += `${title}\n\n`;
+  let content = `# title: ${title.trim() || 'Untitled Song'}\n`;
+  if (songLanguage.trim()) content += `# lang: ${songLanguage.trim()}\n`;
+  content += '\n';
   song.forEach(section => {
     content += `[${section.name}]\n`;
     section.lines
@@ -45,6 +49,9 @@ const buildTxtContent = (song: Section[], title: string, songLanguage = '') => {
   return content;
 };
 
+// ---------------------------------------------------------------------------
+// Markdown — lossless: # title H1, **Key:** bold-labels, [meta] tag for isMeta lines
+// ---------------------------------------------------------------------------
 const buildMarkupContent = (song: Section[], title: string, topic: string, mood: string) => {
   let content = `# ${escapeMarkdown(title)}\n\n`;
   content += `**Topic:** ${escapeMarkdown(topic)}\n`;
@@ -54,8 +61,9 @@ const buildMarkupContent = (song: Section[], title: string, topic: string, mood:
     section.lines
       .filter(line => !isArtifactLine(line.text))
       .forEach(line => {
+        // [meta] prefix is a round-trip-safe marker: parsed back as isMeta:true on import.
         content += line.isMeta
-          ? `*${escapeMarkdown(line.text)}*  \n`
+          ? `[meta] ${escapeMarkdown(line.text)}  \n`
           : `${escapeMarkdown(line.text)}  \n`;
       });
     content += '\n';
@@ -68,6 +76,9 @@ const buildWordParagraph = (text: string, options?: { bold?: boolean }) => {
   return `<w:p><w:r>${options?.bold ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
 };
 
+// ---------------------------------------------------------------------------
+// DOCX — lossless: dc:title + dc:subject (topic) + dc:description (mood) in core.xml
+// ---------------------------------------------------------------------------
 const buildDocxBlob = (song: Section[], title: string, topic: string, mood: string, songLanguage = '') => {
   const paragraphs = [
     buildWordParagraph(title, { bold: true }),
@@ -82,6 +93,7 @@ const buildDocxBlob = (song: Section[], title: string, topic: string, mood: stri
       '<w:p/>',
     ]),
   ].join('');
+  const trimmedTitle = title.trim() || 'Untitled Song';
   const trimmedSongLanguage = songLanguage.trim();
 
   const files = {
@@ -90,12 +102,12 @@ const buildDocxBlob = (song: Section[], title: string, topic: string, mood: stri
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-  ${trimmedSongLanguage ? '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' : ''}
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
 </Types>`),
     '_rels/.rels': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-  ${trimmedSongLanguage ? '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>' : ''}
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
 </Relationships>`),
     'word/document.xml': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -107,19 +119,22 @@ const buildDocxBlob = (song: Section[], title: string, topic: string, mood: stri
     </w:sectPr>
   </w:body>
 </w:document>`),
-    ...(trimmedSongLanguage ? {
-      'docProps/core.xml': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    'docProps/core.xml': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties
   xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
   xmlns:dc="http://purl.org/dc/elements/1.1/">
-  <dc:language>${escapeXml(trimmedSongLanguage)}</dc:language>
+  <dc:title>${escapeXml(trimmedTitle)}</dc:title>
+  <dc:subject>${escapeXml(topic)}</dc:subject>
+  <dc:description>${escapeXml(mood)}</dc:description>${trimmedSongLanguage ? `\n  <dc:language>${escapeXml(trimmedSongLanguage)}</dc:language>` : ''}
 </cp:coreProperties>`),
-    } : {}),
   };
 
   return new Blob([zipSync(files, { level: 0 }) as Uint8Array<ArrayBuffer>], { type: DOCX_MIME });
 };
 
+// ---------------------------------------------------------------------------
+// ODT — lossless: dc:title + dc:subject (topic) + dc:description (mood) in meta.xml
+// ---------------------------------------------------------------------------
 const buildOdtBlob = (song: Section[], title: string, topic: string, mood: string, songLanguage = '') => {
   const paragraphs = [
     `<text:p text:style-name="Title">${escapeXml(title)}</text:p>`,
@@ -134,6 +149,7 @@ const buildOdtBlob = (song: Section[], title: string, topic: string, mood: strin
       '<text:p text:style-name="Standard"/>',
     ]),
   ].join('');
+  const trimmedTitle = title.trim() || 'Untitled Song';
   const trimmedSongLanguage = songLanguage.trim();
 
   const files = {
@@ -177,7 +193,9 @@ const buildOdtBlob = (song: Section[], title: string, topic: string, mood: strin
   office:version="1.2">
   <office:meta>
     <meta:generator>Vibe Export</meta:generator>
-    ${trimmedSongLanguage ? `<dc:language>${escapeXml(trimmedSongLanguage)}</dc:language>` : ''}
+    <dc:title>${escapeXml(trimmedTitle)}</dc:title>
+    <dc:subject>${escapeXml(topic)}</dc:subject>
+    <dc:description>${escapeXml(mood)}</dc:description>${trimmedSongLanguage ? `\n    <dc:language>${escapeXml(trimmedSongLanguage)}</dc:language>` : ''}
   </office:meta>
 </office:document-meta>`),
     'settings.xml': strToU8(`<?xml version="1.0" encoding="UTF-8"?>
