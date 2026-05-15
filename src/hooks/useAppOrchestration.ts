@@ -60,6 +60,8 @@ export interface AppOrchestrationResult {
 }
 
 export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestrationResult {
+  const { t } = useTranslation();
+
   const {
     song,
     rhymeScheme,
@@ -95,7 +97,7 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
 
   // ── Similarity + suggestions ─────────────────────────────────────────────
   const { index: webSimilarityIndex } = useSimilarityContext();
-  const { resetSuggestionCycle } = useTopicMoodSuggester({ hasApiKey });
+  useTopicMoodSuggester({ hasApiKey });
 
   // ── Scroll to section (atomic — no sync effect) ──────────────────────────
   const { scrollToSection } = useScrollToSection({
@@ -112,7 +114,7 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
 
   // ── App handlers ─────────────────────────────────────────────────────────
   const { handleGlobalRegenerate } = useAppHandlers({
-    t: useTranslation().t,
+    t,
     hasRealLyricContent, isMobileOrTablet,
     setApiErrorModal: appState.setApiErrorModal, setConfirmModal: appState.setConfirmModal,
     setActiveTab, setIsLeftPanelOpen, setIsStructureOpen,
