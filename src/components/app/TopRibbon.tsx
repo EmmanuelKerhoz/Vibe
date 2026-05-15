@@ -78,13 +78,11 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
     setSunoSent(true);
     sunoSentTimeoutRef.current = setTimeout(() => {
       setSunoSent(false);
-      sunoSentTimeoutRef.current = null;
     }, 2000);
     if (wasTruncated) {
       setSunoTruncated(true);
       sunoTruncatedTimeoutRef.current = setTimeout(() => {
         setSunoTruncated(false);
-        sunoTruncatedTimeoutRef.current = null;
       }, 3000);
     } else {
       setSunoTruncated(false);

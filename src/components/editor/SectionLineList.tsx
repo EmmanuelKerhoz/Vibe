@@ -191,7 +191,7 @@ export const SectionLineList = React.memo(function SectionLineList({
         const sectionLinesCount = section.lines.filter(l => !(l.isMeta ?? isPureMetaLine(l.text))).length;
 
         const resolvedLineLanguage = lineLanguages[line.id] ?? sectionTargetLanguage;
-        const language = {
+        const languageProps = {
           ...(resolvedLineLanguage ? { lineLanguage: resolvedLineLanguage } : {}),
           sectionTargetLanguage,
           ...(adaptLineLanguage ? { adaptLineLanguage } : {}),
@@ -222,7 +222,7 @@ export const SectionLineList = React.memo(function SectionLineList({
                 playAudioFeedback,
                 onQuantizeLine: handleQuantizeLine,
               }}
-              language={language}
+              language={languageProps}
               dragState={{ isDraggedLine, isDragOverLine }}
             />
             {isActive && selectedLine && (
