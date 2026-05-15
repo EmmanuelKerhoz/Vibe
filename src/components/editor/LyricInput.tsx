@@ -15,7 +15,7 @@ import { migrateAdaptationToLangId } from '../../i18n/constants';
 import { supportsSyllableHeuristics } from '../../lib/quantize';
 
 type PlayAudioFeedback = (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
-const DEFAULT_ADAPTATION_LANG_ID = 'adapt:FR' as AdaptationLangId;
+const FRENCH_ADAPTATION_LANG_ID = 'adapt:FR' as AdaptationLangId;
 
 type LyricInputRhymeProps = {
   peerTexts: string[];
@@ -252,7 +252,7 @@ const LyricLineControls = React.memo(function LyricLineControls({
   const handleAdaptLine = () => {
     if (!adaptLineLanguage) return;
     const migrated = sectionTargetLanguage ? migrateAdaptationToLangId(sectionTargetLanguage) : '';
-    const lang = (migrated as AdaptationLangId) || DEFAULT_ADAPTATION_LANG_ID;
+    const lang = (migrated as AdaptationLangId) || FRENCH_ADAPTATION_LANG_ID;
     adaptLineLanguage(sectionId, line.id, lang);
     playAudioFeedback('click');
   };
