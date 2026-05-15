@@ -8,7 +8,7 @@ import { EmojiSign } from '../ui/EmojiSign';
 import { useTranslation } from '../../i18n';
 import { getLanguageDisplay } from '../../i18n';
 import type { AdaptationLangId } from '../../i18n/constants';
-import { getRhymeColor } from '../../utils/songUtils';
+import { getRhymeColor, getRhymeTextColor } from '../../utils/songUtils';
 import { LyricDragHandle } from './LyricDragHandle';
 import { LyricTextArea } from './LyricTextArea';
 import { LyricLineControls } from './LyricLineControls';
@@ -79,7 +79,6 @@ export const LyricInput = React.memo(function LyricInput({
   dragState,
 }: LyricInputProps) {
   const { t } = useTranslation();
-  // Use actions-only hook: stable reference, never re-renders on drag state changes.
   const { setDraggedLineInfo, setDragOverLineInfo } = useDragActions();
   const { handleLineDrop } = useDragHandlersContext();
   const { peerTexts: rhymePeerTexts, schemeLabel } = rhyme;
@@ -100,6 +99,7 @@ export const LyricInput = React.memo(function LyricInput({
   const { isDraggedLine, isDragOverLine } = dragState;
   const lineLanguageDisplay = lineLanguage ? getLanguageDisplay(lineLanguage) : null;
   const rhymeColor = getRhymeColor(schemeLabel);
+  const rhymeHexColor = getRhymeTextColor(schemeLabel);
   const isSelected = selectedLineId === line.id;
   const dragEndRef = useRef<() => void>(() => setDraggedLineInfo(null));
   dragEndRef.current = () => setDraggedLineInfo(null);
@@ -141,7 +141,6 @@ export const LyricInput = React.memo(function LyricInput({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Line number */}
       <span
         className="flex-shrink-0 w-6 text-right text-[9px] tabular-nums font-mono text-zinc-600 dark:text-zinc-400 select-none"
         aria-hidden="true"
@@ -155,7 +154,6 @@ export const LyricInput = React.memo(function LyricInput({
         onDragEnd={dragEndRef.current}
       />
 
-      {/* AI / Human origin indicator */}
       <Tooltip title={line.isManual ? (t.editor?.humanLine ?? 'Human line') : (t.editor?.aiLine ?? 'AI-generated line')}>
         <span className="flex-shrink-0 flex items-center justify-center w-3.5">
           {line.isManual
@@ -180,6 +178,7 @@ export const LyricInput = React.memo(function LyricInput({
         rhymePeerTexts={rhymePeerTexts}
         schemeLabel={schemeLabel}
         rhymeColor={rhymeColor}
+        rhymeHexColor={rhymeHexColor}
         onUpdate={updateLineText}
         onKeyDown={handleLineKeyDown}
         onClick={() => onLineClick(line.id)}
@@ -202,14 +201,12 @@ export const LyricInput = React.memo(function LyricInput({
         {...controlsOptionalProps}
       />
 
-      {/* Syllable count */}
       <span className="flex-shrink-0 text-[9px] tabular-nums text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors w-[2.75rem] text-right">
         {line.syllables > 0 ? line.syllables : ''}
       </span>
 
       <span className="flex-shrink-0 w-2" />
 
-      {/* Rhyme scheme badge */}
       <span
         className={`flex-shrink-0 inline-flex h-4 w-7 items-center justify-center rounded border text-[9px] font-bold uppercase tracking-widest transition-all ${schemeLabel ? rhymeColor : 'opacity-0'}`}
       >

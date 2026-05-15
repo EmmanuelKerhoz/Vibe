@@ -12,6 +12,8 @@ interface LyricTextAreaProps {
   rhymePeerTexts: string[];
   schemeLabel: string | null;
   rhymeColor: string;
+  /** Hex color for inline styling of the rhyming suffix in the overlay. */
+  rhymeHexColor: string | null;
   lineLanguage?: string;
   sectionTargetLanguage?: string;
   onUpdate: (sectionId: string, lineId: string, text: string) => void;
@@ -28,6 +30,7 @@ export const LyricTextArea = React.memo(function LyricTextArea({
   rhymePeerTexts,
   schemeLabel,
   rhymeColor,
+  rhymeHexColor,
   lineLanguage,
   sectionTargetLanguage,
   onUpdate,
@@ -72,8 +75,6 @@ export const LyricTextArea = React.memo(function LyricTextArea({
     blurTimeoutRef.current = setTimeout(onBlur, 80);
   };
 
-  const rhymeTextColor = schemeLabel ? rhymeColor : null;
-
   const renderStyledOverlay = (text: string) => {
     if (!text) return null;
     const parts = text.split(/(\([^)]*\))/g);
@@ -82,14 +83,14 @@ export const LyricTextArea = React.memo(function LyricTextArea({
         return <span key={i} className="text-amber-400">{part}</span>;
       }
       const isLastPart = i === parts.length - 1;
-      if (isLastPart && rhymeTextColor) {
+      if (isLastPart && schemeLabel && rhymeHexColor) {
         const langHint = lineLanguage || sectionTargetLanguage;
         const split = splitRhymingSuffix(part, rhymePeerTexts, langHint);
         if (split) {
           return (
             <span key={i}>
               <span className="text-[var(--text-primary)]">{split.before}</span>
-              <span style={{ color: rhymeTextColor, fontWeight: 600 }}>{split.rhyme}</span>
+              <span style={{ color: rhymeHexColor, fontWeight: 600 }}>{split.rhyme}</span>
             </span>
           );
         }
