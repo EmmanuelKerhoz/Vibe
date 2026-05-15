@@ -287,8 +287,9 @@ export const extractMetadataFromText = (rawText: string): ExtractedTextMetadata 
     // Format 2: # Title text  (H1 heading, no colon)
     const h1Match = trimmed.match(/^#\s+(.+)$/);
     if (h1Match) {
-      const h1Title = h1Match[1]?.trim();
-      if (!titleRef.v && h1Title !== undefined) titleRef.v = h1Title;
+      // exactOptionalPropertyTypes: use captured group directly with explicit string cast
+      const h1Title: string = String(h1Match[1] ?? '').trim();
+      if (!titleRef.v && h1Title !== '') titleRef.v = h1Title;
       consumed.add(i);
       headerEnd = i + 1;
       continue;
