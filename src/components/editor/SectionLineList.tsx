@@ -14,6 +14,10 @@ import type { Section } from '../../types';
 import type { SchemeResult } from '../../lib/rhyme/types';
 import type { AdaptationLangId } from '../../i18n/constants';
 
+/** Plancher absolu de la jauge : garantit ~6.25% de largeur par syllabe même
+ *  dans les sections denses où toutes les lignes sont proches du maximum réel. */
+const GAUGE_ABSOLUTE_MIN = 16;
+
 type MetaGroup = { kind: 'meta'; lines: Section['lines']; physicalCount: number };
 type LyricItem = { kind: 'lyric'; line: Section['lines'][number]; index: number };
 type RenderItem = MetaGroup | LyricItem;
@@ -120,7 +124,9 @@ export const SectionLineList = React.memo(function SectionLineList({
   const renderItems = useMemo(() => buildRenderItems(section.lines), [section.lines]);
   const effectiveRhymeScheme = section.rhymeScheme || rhymeScheme;
 
-  // Max syllable count across lyric lines — drives the background gauge fill
+  // Max syllable count across lyric lines — drives the background gauge fill.
+  // Math.max(..., GAUGE_ABSOLUTE_MIN) garantit que chaque syllabe représente
+  // au moins 1/16 de la largeur totale, même dans les sections très denses.
   const sectionMaxSyllables = useMemo(() => {
     let max = 0;
     for (const item of renderItems) {
@@ -128,7 +134,7 @@ export const SectionLineList = React.memo(function SectionLineList({
         max = item.line.syllables;
       }
     }
-    return max;
+    return Math.max(max, GAUGE_ABSOLUTE_MIN);
   }, [renderItems]);
 
   // Derive per-lyric-index letters from the hoisted schemeResult prop.
