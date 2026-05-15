@@ -80,11 +80,6 @@ export function ImportModal({ isOpen, hasExistingWork, onClose, onOpenLibrary, o
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
             {hasExistingWork ? t.importDialog.replaceDescription : t.importDialog.emptyDescription}
           </p>
-          {hasExistingWork && (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-              <p className="text-sm text-amber-500 leading-relaxed">{t.importDialog.warning}</p>
-            </div>
-          )}
           <p className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{t.importDialog.supportedFiles}</p>
         </div>
 
