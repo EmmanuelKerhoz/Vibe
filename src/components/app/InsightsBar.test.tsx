@@ -2,7 +2,6 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider, SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
-import type { WebSimilarityIndex } from '../../types/webSimilarity';
 import { InsightsBarProvider, type InsightsBarContextValue } from '../../contexts/InsightsBarContext';
 import { InsightsBar } from './InsightsBar';
 
@@ -17,6 +16,10 @@ vi.mock('../ui/Tooltip', () => ({
 const songContextConfig = {
   detectedLanguages: ['English'] as string[],
   songLanguage: 'English',
+};
+
+const composerContextConfig = {
+  isGenerating: false,
 };
 
 vi.mock('../../contexts/SongContext', () => ({
@@ -44,7 +47,7 @@ vi.mock('../../contexts/SongContext', () => ({
 
 vi.mock('../../contexts/ComposerContext', () => ({
   useComposerContext: () => ({
-    isGenerating: false,
+    isGenerating: composerContextConfig.isGenerating,
   }),
 }));
 
@@ -83,12 +86,6 @@ vi.mock('../../contexts/SimilarityContext', () => ({
 }));
 
 function buildInsightsBarContextValue(overrides?: Partial<InsightsBarContextValue>): InsightsBarContextValue {
-  const webSimilarityIndex: WebSimilarityIndex = {
-    candidates: [],
-    status: 'idle',
-    lastUpdated: null,
-    error: null,
-  };
   return {
     targetLanguage: 'adapt:EN',
     setTargetLanguage: vi.fn(),
@@ -102,7 +99,6 @@ function buildInsightsBarContextValue(overrides?: Partial<InsightsBarContextValu
     analyzeCurrentSong: vi.fn(),
     editMode: 'section' as const,
     switchEditMode: vi.fn(),
-    webSimilarityIndex,
     webBadgeLabel: null,
     setIsSimilarityModalOpen: vi.fn(),
     libraryCount: 0,
@@ -118,6 +114,7 @@ describe('InsightsBar', () => {
   beforeEach(() => {
     songContextConfig.detectedLanguages = ['English'];
     songContextConfig.songLanguage = 'English';
+    composerContextConfig.isGenerating = false;
   });
 
   it('renders single-row layout with adaptation, editor toggles, detect, analyze, and similarity buttons', () => {
@@ -235,6 +232,49 @@ describe('InsightsBar', () => {
     rerender(
       <LanguageProvider>
         <InsightsBarProvider value={buildInsightsBarContextValue({ isAnalyzing: true })}>
+          <InsightsBar />
+        </InsightsBarProvider>
+      </LanguageProvider>,
+    );
+
+    expect(englishResolutions).toBe(1);
+    findSpy.mockRestore();
+  });
+
+  it('does not recalculate language metadata when generation state changes alone', () => {
+    songContextConfig.detectedLanguages = ['French'];
+    songContextConfig.songLanguage = 'English';
+    let englishResolutions = 0;
+
+    const findSpy = vi.spyOn(SUPPORTED_ADAPTATION_LANGUAGES, 'find');
+    findSpy.mockImplementation(((predicate, thisArg) => (
+      Array.prototype.find.call(
+        SUPPORTED_ADAPTATION_LANGUAGES,
+        (lang, index, array) => {
+          const result = predicate.call(thisArg, lang, index, array);
+          if (lang.aiName === 'English' && result) {
+            englishResolutions += 1;
+          }
+          return result;
+        },
+      )
+    )) as typeof SUPPORTED_ADAPTATION_LANGUAGES.find);
+
+    const { rerender } = render(
+      <LanguageProvider>
+        <InsightsBarProvider value={buildInsightsBarContextValue()}>
+          <InsightsBar />
+        </InsightsBarProvider>
+      </LanguageProvider>,
+    );
+
+    expect(englishResolutions).toBe(1);
+
+    composerContextConfig.isGenerating = true;
+
+    rerender(
+      <LanguageProvider>
+        <InsightsBarProvider value={buildInsightsBarContextValue()}>
           <InsightsBar />
         </InsightsBarProvider>
       </LanguageProvider>,

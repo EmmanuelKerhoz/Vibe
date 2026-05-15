@@ -1,8 +1,8 @@
 /**
  * InsightsBarProps — intentionally empty.
  *
- * InsightsBar is now a zero-prop component: all state is sourced
- * from InsightsBarContext via useInsightsBarContext().
+ * InsightsBar is now a zero-prop component: shared values are sourced
+ * from focused InsightsBar action/state contexts by the controls that need them.
  *
  * Kept as a module so downstream imports of InsightsBarProps
  * remain valid (empty interface extends nothing — no breaking change

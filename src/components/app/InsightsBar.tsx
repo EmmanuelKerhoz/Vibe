@@ -2,7 +2,10 @@ import React, { useCallback, useMemo } from 'react';
 import { getLanguageDisplay, SUPPORTED_ADAPTATION_LANGUAGES } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
-import { useInsightsBarContext } from '../../contexts/InsightsBarContext';
+import {
+  useInsightsBarActionsContext,
+  useInsightsBarStateContext,
+} from '../../contexts/InsightsBarContext';
 import { AdaptationProgressBanner } from './AdaptationProgressBanner';
 import {
   InsightsBarLayout,
@@ -17,37 +20,24 @@ import { DetectLanguageButton } from './insights/DetectLanguageButton';
 import { useTranslationAdaptationContext } from '../../contexts/TranslationAdaptationContext';
 
 export const InsightsBar = React.memo(function InsightsBar() {
-  const {
-    targetLanguage, setTargetLanguage,
-    isAdaptingLanguage, isDetectingLanguage, isAnalyzing,
-    editMode, switchEditMode,
-    webBadgeLabel, libraryCount,
-    adaptSongLanguage, detectLanguage, analyzeCurrentSong,
-    setIsSimilarityModalOpen, hasApiKey,
-    isMetronomeActive, toggleMetronome,
-    adaptationProgress, adaptationResult,
-    onOpenSearch, onToggleAnalysisPanel, isAnalysisPanelOpen,
-  } = useInsightsBarContext();
-
   const { song, songLanguage, setSongLanguage, detectedLanguages } = useSongContext();
-  const { isGenerating } = useComposerContext();
-  const { showTranslationFeatures } = useTranslationAdaptationContext();
-  const { showBanner, dismissBanner } = useAdaptationBannerVisibility(adaptationProgress);
 
   const hasLyrics = song.some(s => s.lines.some(l => !l.isMeta && l.text.trim().length > 0));
 
   // Resolve aiName strings from detectedLanguages to canonical langIds before
   // calling getLanguageDisplay, avoiding the LEGACY_INDEX ambiguity between
   // ui: and adapt: entries that share the same normalised aiName/label.
-  const detectedDisplays = (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : []))
-    .filter((lang, i, arr) => arr.indexOf(lang) === i)
-    .slice(0, 3)
-    .map(lang => {
-      const match = SUPPORTED_ADAPTATION_LANGUAGES.find(
-        l => l.aiName.toLowerCase() === lang.toLowerCase(),
-      );
-      return getLanguageDisplay(match?.langId ?? lang);
-    });
+  const detectedDisplays = useMemo(() => (
+    (detectedLanguages.length > 0 ? detectedLanguages : (songLanguage ? [songLanguage] : []))
+      .filter((lang, i, arr) => arr.indexOf(lang) === i)
+      .slice(0, 3)
+      .map(lang => {
+        const match = SUPPORTED_ADAPTATION_LANGUAGES.find(
+          l => l.aiName.toLowerCase() === lang.toLowerCase(),
+        );
+        return getLanguageDisplay(match?.langId ?? lang);
+      })
+  ), [detectedLanguages, songLanguage]);
 
   /**
    * Fix #5 — memoized: the find() only re-runs when songLanguage changes.
@@ -78,16 +68,6 @@ export const InsightsBar = React.memo(function InsightsBar() {
   }, [setSongLanguage]);
 
   /**
-   * exactOptionalPropertyTypes guard: MetronomeButton declares isMetronomeActive
-   * and toggleMetronome as `?: T`. Passing `prop={undefined}` is a TS error —
-   * the conditional spread omits the key entirely when the value is undefined.
-   */
-  const metronomeOptional = {
-    ...(isMetronomeActive !== undefined ? { isMetronomeActive } : {}),
-    ...(toggleMetronome !== undefined ? { toggleMetronome } : {}),
-  };
-
-  /**
    * exactOptionalPropertyTypes guard: DetectLanguageButton declares
    * defaultLanguage as `?: string`. Same rationale as above.
    */
@@ -97,23 +77,157 @@ export const InsightsBar = React.memo(function InsightsBar() {
 
   return (
     <InsightsBarLayout
-      viewSelector={<ViewModeSelector editMode={editMode} switchEditMode={switchEditMode} disabled={isGenerating || isAnalyzing} />}
+      viewSelector={<InsightsViewModeSelector />}
       detectControl={
-        <DetectLanguageButton
+        <InsightsDetectLanguageButton
           detectedDisplays={detectedDisplays}
           hasLyrics={hasLyrics}
-          isDetectingLanguage={isDetectingLanguage}
-          onDetect={detectLanguage}
-          hasApiKey={hasApiKey}
           onSetDefaultLanguage={handleSetDefaultLanguage}
           {...defaultLanguageOptional}
         />
       }
-      translationControls={<TranslateGroup targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage} isAdaptingLanguage={isAdaptingLanguage} song={song} adaptSongLanguage={adaptSongLanguage} showTranslationFeatures={showTranslationFeatures} hasApiKey={hasApiKey} />}
-      metronomeControl={<MetronomeButton {...metronomeOptional} />}
-      insightsActions={<InsightsActions webBadgeLabel={webBadgeLabel} libraryCount={libraryCount} isAnalyzing={isAnalyzing} isGenerating={isGenerating} hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} analyzeCurrentSong={analyzeCurrentSong} setIsSimilarityModalOpen={setIsSimilarityModalOpen} hasApiKey={hasApiKey} onOpenSearch={onOpenSearch} onToggleAnalysisPanel={onToggleAnalysisPanel} isAnalysisPanelOpen={isAnalysisPanelOpen} />}
+      translationControls={<InsightsTranslateGroup song={song} />}
+      metronomeControl={<InsightsMetronomeButton />}
+      insightsActions={<InsightsActionsControl hasLyrics={hasLyrics} detectedDisplays={detectedDisplays} />}
       mobileKpis={<MobileKpis />}
-      banner={showBanner && adaptationProgress ? <AdaptationProgressBanner progress={adaptationProgress} result={adaptationResult ?? null} onDismiss={dismissBanner} isOverlay /> : null}
+      banner={<InsightsAdaptationBanner />}
     />
   );
 });
+
+function InsightsViewModeSelector() {
+  const { editMode, switchEditMode } = useInsightsBarActionsContext();
+  const { isAnalyzing } = useInsightsBarStateContext();
+  const { isGenerating } = useComposerContext();
+
+  return (
+    <ViewModeSelector
+      editMode={editMode}
+      switchEditMode={switchEditMode}
+      disabled={isGenerating || isAnalyzing}
+    />
+  );
+}
+
+type LanguageDisplay = ReturnType<typeof getLanguageDisplay>;
+
+interface InsightsDetectLanguageButtonProps {
+  detectedDisplays: LanguageDisplay[];
+  hasLyrics: boolean;
+  onSetDefaultLanguage: (langCode: string) => void;
+  defaultLanguage?: string;
+}
+
+function InsightsDetectLanguageButton({
+  detectedDisplays,
+  hasLyrics,
+  onSetDefaultLanguage,
+  defaultLanguage,
+}: InsightsDetectLanguageButtonProps) {
+  const { detectLanguage } = useInsightsBarActionsContext();
+  const { isDetectingLanguage, hasApiKey } = useInsightsBarStateContext();
+
+  const defaultLanguageOptional = defaultLanguage !== undefined
+    ? { defaultLanguage }
+    : {};
+
+  return (
+    <DetectLanguageButton
+      detectedDisplays={detectedDisplays}
+      hasLyrics={hasLyrics}
+      isDetectingLanguage={isDetectingLanguage}
+      onDetect={detectLanguage}
+      hasApiKey={hasApiKey}
+      onSetDefaultLanguage={onSetDefaultLanguage}
+      {...defaultLanguageOptional}
+    />
+  );
+}
+
+interface InsightsTranslateGroupProps {
+  song: ReturnType<typeof useSongContext>['song'];
+}
+
+function InsightsTranslateGroup({ song }: InsightsTranslateGroupProps) {
+  const { setTargetLanguage, adaptSongLanguage } = useInsightsBarActionsContext();
+  const { targetLanguage, isAdaptingLanguage, hasApiKey } = useInsightsBarStateContext();
+  const { showTranslationFeatures } = useTranslationAdaptationContext();
+
+  return (
+    <TranslateGroup
+      targetLanguage={targetLanguage}
+      setTargetLanguage={setTargetLanguage}
+      isAdaptingLanguage={isAdaptingLanguage}
+      song={song}
+      adaptSongLanguage={adaptSongLanguage}
+      showTranslationFeatures={showTranslationFeatures}
+      hasApiKey={hasApiKey}
+    />
+  );
+}
+
+function InsightsMetronomeButton() {
+  const { toggleMetronome } = useInsightsBarActionsContext();
+  const { isMetronomeActive } = useInsightsBarStateContext();
+  const metronomeOptional = {
+    ...(isMetronomeActive !== undefined ? { isMetronomeActive } : {}),
+    ...(toggleMetronome !== undefined ? { toggleMetronome } : {}),
+  };
+
+  return <MetronomeButton {...metronomeOptional} />;
+}
+
+interface InsightsActionsControlProps {
+  hasLyrics: boolean;
+  detectedDisplays: LanguageDisplay[];
+}
+
+function InsightsActionsControl({ hasLyrics, detectedDisplays }: InsightsActionsControlProps) {
+  const {
+    analyzeCurrentSong,
+    setIsSimilarityModalOpen,
+    onOpenSearch,
+    onToggleAnalysisPanel,
+  } = useInsightsBarActionsContext();
+  const {
+    isAnalyzing,
+    webBadgeLabel,
+    libraryCount,
+    hasApiKey,
+    isAnalysisPanelOpen,
+  } = useInsightsBarStateContext();
+  const { isGenerating } = useComposerContext();
+
+  return (
+    <InsightsActions
+      webBadgeLabel={webBadgeLabel}
+      libraryCount={libraryCount}
+      isAnalyzing={isAnalyzing}
+      isGenerating={isGenerating}
+      hasLyrics={hasLyrics}
+      detectedDisplays={detectedDisplays}
+      analyzeCurrentSong={analyzeCurrentSong}
+      setIsSimilarityModalOpen={setIsSimilarityModalOpen}
+      hasApiKey={hasApiKey}
+      onOpenSearch={onOpenSearch}
+      onToggleAnalysisPanel={onToggleAnalysisPanel}
+      isAnalysisPanelOpen={isAnalysisPanelOpen}
+    />
+  );
+}
+
+function InsightsAdaptationBanner() {
+  const { adaptationProgress, adaptationResult } = useInsightsBarStateContext();
+  const { showBanner, dismissBanner } = useAdaptationBannerVisibility(adaptationProgress);
+
+  return showBanner && adaptationProgress
+    ? (
+        <AdaptationProgressBanner
+          progress={adaptationProgress}
+          result={adaptationResult ?? null}
+          onDismiss={dismissBanner}
+          isOverlay
+        />
+      )
+    : null;
+}
