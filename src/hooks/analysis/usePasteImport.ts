@@ -249,11 +249,11 @@ const isIntroName = (name: string): boolean =>
 
 /**
  * Post-process imported sections:
- * - If no Title exists: first INTRO → "Title", subsequent INTROs → "Verse N"
- * - If a Title already exists (from H1 extraction): INTROs stay "Intro",
- *   only duplicates (2nd+) become "Verse N"
+ * - titleExtracted=false: first INTRO → "Title", subsequent INTROs → "Verse N"
+ * - titleExtracted=true:  all INTROs stay "Intro" (title already set from H1),
+ *   only duplicate INTROs (2nd+) become "Verse N"
  */
-const normalizeImportedSectionNames = (sections: Section[]): Section[] => {
+const normalizeImportedSectionNames = (sections: Section[], titleExtracted: boolean): Section[] => {
   const hasTitle = sections.some(s => /^title$/i.test(s.name.trim()));
   let introSeen = false;
   let extraVerseOffset = sections.filter(s => /^verse\s*\d*$/i.test(s.name.trim())).length;
@@ -263,6 +263,9 @@ const normalizeImportedSectionNames = (sections: Section[]): Section[] => {
 
     if (!introSeen) {
       introSeen = true;
+      // If a H1 title was extracted, keep the first Intro as-is
+      if (titleExtracted) return section;
+      // Otherwise promote first Intro to Title (unless a Title section already exists)
       if (!hasTitle) return { ...section, name: 'Title' };
       return section;
     }
@@ -396,14 +399,15 @@ export const usePasteImport = ({
     if (extractedTitle && setSongTitle) {
       setSongTitle(extractedTitle);
     }
-    const textToProcess = extractedTitle ? lyricsText : pastedText;
+    const titleExtracted = Boolean(extractedTitle);
+    const textToProcess = titleExtracted ? lyricsText : pastedText;
 
     if (!hasApiKey) {
       const sections = parseTextToSections(textToProcess);
       if (sections.length === 0) return;
       const newStructure = sections.map(s => s.name);
       updateSongAndStructureWithHistory(sections, newStructure);
-      if (!extractedTitle) requestAutoTitleGeneration();
+      if (!titleExtracted) requestAutoTitleGeneration();
       clearLineSelection();
       setIsPasteModalOpen(false);
       setPastedText('');
@@ -528,7 +532,7 @@ export const usePasteImport = ({
           return section;
         });
 
-        const newSections = normalizeImportedSectionNames(rawSections);
+        const newSections = normalizeImportedSectionNames(rawSections, titleExtracted);
 
         const validSections = newSections.filter(
           section => !isPureMetaLine(section.name) &&
@@ -552,7 +556,7 @@ export const usePasteImport = ({
           onDetectedLanguage?.(detectedLanguage, sectionIds);
         }
 
-        if (!extractedTitle) requestAutoTitleGeneration();
+        if (!titleExtracted) requestAutoTitleGeneration();
         clearLineSelection();
         setIsPasteModalOpen(false);
         setPastedText('');
