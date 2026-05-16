@@ -108,14 +108,17 @@ export const SectionLineList = React.memo(function SectionLineList({
     deleteLineFromSection(sectionId, lineId);
   }, [selectedLineId, clearSelection, deleteLineFromSection]);
 
-  // Quantize a lyric line against current song BPM + time signature
-  const handleQuantizeLine = useCallback((sectionId: string, lineId: string) => {
+  // Quantize a lyric line against current song BPM + time signature.
+  // targetSyllables: when provided (user-entered COUNT), use it as the syllable
+  // count instead of re-counting from text — so the grid snapping honours the
+  // value the user explicitly typed in the COUNT column.
+  const handleQuantizeLine = useCallback((sectionId: string, lineId: string, targetSyllables?: number) => {
     const line = section.lines.find(l => l.id === lineId);
     if (!line || !line.text.trim()) return;
     const language = lineLanguages[line.id] ?? sectionTargetLanguage;
     if (!supportsSyllableHeuristics(line.text, language)) return;
     const safeTempo = (tempo ?? 0) > 0 ? (tempo ?? 120) : 120;
-    const result = quantizeLine(line.text, safeTempo, timeSignature, language);
+    const result = quantizeLine(line.text, safeTempo, timeSignature, language, targetSyllables);
     if (result.markedText !== line.text) {
       updateLineText(sectionId, lineId, result.markedText);
     }

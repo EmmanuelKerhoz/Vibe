@@ -170,17 +170,23 @@ function insertMarkers(line: string, beatsPerBar: number, bars: number): string 
 /**
  * Quantize a lyric line against the current song BPM and time signature.
  *
- * @param line          Raw lyric line text.
- * @param bpm           Song BPM (fallback: 120).
- * @param timeSignature [beatsPerBar, beatUnit] (fallback: [4, 4]).
- * @returns             A {@link QuantizeResult} with the snapped bar count,
- *                      beat count, soft-break-marked text, and syllable stats.
+ * @param line             Raw lyric line text.
+ * @param bpm              Song BPM (fallback: 120).
+ * @param timeSignature    [beatsPerBar, beatUnit] (fallback: [4, 4]).
+ * @param language         Language hint for script detection.
+ * @param targetSyllables  Optional override: treat this value as the syllable
+ *                         count instead of re-counting from text. Used when
+ *                         the user has manually set a syllable target via the
+ *                         COUNT inline editor before triggering quantize.
+ * @returns                A {@link QuantizeResult} with the snapped bar count,
+ *                         beat count, soft-break-marked text, and syllable stats.
  */
 export function quantizeLine(
   line: string,
   bpm: number = 120,
   timeSignature: [number, number] = [4, 4],
   language: string = '',
+  targetSyllables?: number,
 ): QuantizeResult {
   const safeTs: [number, number] = timeSignature[0] > 0 ? timeSignature : [4, 4];
 
@@ -194,7 +200,11 @@ export function quantizeLine(
     };
   }
 
-  const syllableCount = countLineSyllables(line);
+  // Use caller-supplied target if valid, otherwise count from text.
+  const syllableCount = (targetSyllables !== undefined && targetSyllables > 0)
+    ? targetSyllables
+    : countLineSyllables(line);
+
   const bars = snapToNearestBars(syllableCount, safeTs);
   const beats = bars * safeTs[0];
   const markedText = syllableCount > 0 ? insertMarkers(line, safeTs[0], bars) : line;

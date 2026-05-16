@@ -38,7 +38,7 @@ interface LyricInputControlsProps {
   addLineToSection: (sectionId: string, afterLineId?: string) => void;
   deleteLineFromSection: (sectionId: string, lineId: string) => void;
   playAudioFeedback: (type: 'click' | 'success' | 'error' | 'drag' | 'drop') => void;
-  onQuantizeLine?: (sectionId: string, lineId: string) => void;
+  onQuantizeLine?: (sectionId: string, lineId: string, targetSyllables?: number) => void;
 }
 
 interface LyricInputLanguageProps {
@@ -148,7 +148,9 @@ export const LyricInput = React.memo(function LyricInput({
 
   const acceptQuantize = useCallback(() => {
     setQuantizeState('idle');
-    if (onQuantizeLine) onQuantizeLine(sectionId, line.id);
+    // Pass the user-entered count as targetSyllables so quantizeLine snaps
+    // the grid to that value instead of re-counting from text.
+    if (onQuantizeLine) onQuantizeLine(sectionId, line.id, pendingCountRef.current);
   }, [onQuantizeLine, sectionId, line.id]);
 
   const rejectQuantize = useCallback(() => {
