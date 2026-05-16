@@ -398,9 +398,6 @@ export const usePasteImport = ({
 
     // --- Extract H1/H2 title before any chunking ---
     const { songTitle: extractedTitle, lyricsText } = extractH1TitleFromText(pastedText);
-    if (extractedTitle && setSongTitle) {
-      setSongTitle(extractedTitle);
-    }
     const titleExtracted = Boolean(extractedTitle);
     const textToProcess = titleExtracted ? lyricsText : pastedText;
 
@@ -409,7 +406,14 @@ export const usePasteImport = ({
       if (sections.length === 0) return;
       const newStructure = sections.map(s => s.name);
       updateSongAndStructureWithHistory(sections, newStructure);
-      if (!titleExtracted) requestAutoTitleGeneration();
+      // Apply title AFTER sections are committed so titleOrigin='user' is
+      // flushed before requestAutoTitleGeneration fires (avoids race condition
+      // where useTitleGenerator's titleOriginRef still reads 'ai').
+      if (extractedTitle && setSongTitle) {
+        setSongTitle(extractedTitle);
+      } else if (!titleExtracted) {
+        requestAutoTitleGeneration();
+      }
       clearLineSelection();
       setIsPasteModalOpen(false);
       setPastedText('');
@@ -558,7 +562,14 @@ export const usePasteImport = ({
           onDetectedLanguage?.(detectedLanguage, sectionIds);
         }
 
-        if (!titleExtracted) requestAutoTitleGeneration();
+        // Apply title AFTER sections are committed so titleOrigin='user' is
+        // flushed before requestAutoTitleGeneration fires (avoids race condition
+        // where useTitleGenerator's titleOriginRef still reads 'ai').
+        if (extractedTitle && setSongTitle) {
+          setSongTitle(extractedTitle);
+        } else if (!titleExtracted) {
+          requestAutoTitleGeneration();
+        }
         clearLineSelection();
         setIsPasteModalOpen(false);
         setPastedText('');
