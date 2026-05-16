@@ -24,6 +24,8 @@ type UsePasteImportParams = {
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
+  /** Optional: called when a Markdown H1 title is detected in the pasted text. */
+  setSongTitle?: (value: string) => void;
   currentSongLanguage?: string;
   /** Called when the detected lyric language differs from the current song language.
    *  Receives a canonical AdaptationLangId so the language selector can update
@@ -125,6 +127,43 @@ const getSectionHeaderHint = (line: string): string => {
   return isStandaloneHeader ? normalized : '';
 };
 
+/**
+ * Extract a leading Markdown H1 title and metadata block from pasted text.
+ * Returns the extracted song title (or null) and the cleaned lyrics text
+ * with the H1 line and any **Key:** metadata lines stripped out.
+ */
+const extractH1TitleFromText = (text: string): { songTitle: string | null; lyricsText: string } => {
+  const lines = text.split(/\r?\n/);
+  let songTitle: string | null = null;
+  let firstContentIndex = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    // H1 title line
+    if (songTitle === null && /^#\s+.+/.test(line)) {
+      songTitle = line.replace(/^#\s+/, '').trim();
+      firstContentIndex = i + 1;
+      continue;
+    }
+    // Markdown metadata lines (e.g. **Topic:** ..., **Mood:** ...)
+    if (songTitle !== null && /^\*{1,2}[^*]+\*{1,2}\s*:/.test(line)) {
+      firstContentIndex = i + 1;
+      continue;
+    }
+    // Stop skipping once we hit a non-metadata, non-empty line after the H1
+    if (songTitle !== null && line !== '') {
+      firstContentIndex = i;
+      break;
+    }
+  }
+
+  const lyricsText = songTitle !== null
+    ? lines.slice(firstContentIndex).join('\n').trimStart()
+    : text;
+
+  return { songTitle, lyricsText };
+};
+
 const splitPastedLyricsIntoChunks = (text: string): PasteImportChunk[] => {
   const chunks: PasteImportChunk[] = [];
   const lines = text.split(/\r?\n/);
@@ -203,19 +242,27 @@ const isIntroName = (name: string): boolean =>
 
 /**
  * Post-process imported sections:
- * - First INTRO → "Title" (singleton section header)
- * - Subsequent INTROs → "Verse N" (extra intros are not semantically valid)
+ * - If no Title exists: first INTRO → "Title", subsequent INTROs → "Verse N"
+ * - If a Title already exists (from H1 extraction): INTROs stay "Intro",
+ *   only duplicates (2nd+) become "Verse N"
  */
 const normalizeImportedSectionNames = (sections: Section[]): Section[] => {
+  const hasTitle = sections.some(s => /^title$/i.test(s.name.trim()));
   let introSeen = false;
   let extraVerseOffset = sections.filter(s => /^verse\s*\d*$/i.test(s.name.trim())).length;
 
   return sections.map((section) => {
     if (!isIntroName(section.name)) return section;
+
     if (!introSeen) {
       introSeen = true;
-      return { ...section, name: 'Title' };
+      // No title yet → promote first INTRO to Title
+      if (!hasTitle) return { ...section, name: 'Title' };
+      // Title already set externally → keep first INTRO as Intro
+      return section;
     }
+
+    // Extra INTROs → Verse N
     extraVerseOffset += 1;
     return { ...section, name: `Verse ${extraVerseOffset}` };
   });
@@ -272,6 +319,7 @@ export const usePasteImport = ({
   updateSongAndStructureWithHistory,
   setTopic,
   setMood,
+  setSongTitle,
   currentSongLanguage = '',
   onLanguageMismatch,
   onDetectedLanguage,
@@ -339,19 +387,26 @@ export const usePasteImport = ({
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
 
+    // --- Extract H1 title before any chunking ---
+    const { songTitle: extractedTitle, lyricsText } = extractH1TitleFromText(pastedText);
+    if (extractedTitle && setSongTitle) {
+      setSongTitle(extractedTitle);
+    }
+    const textToProcess = extractedTitle ? lyricsText : pastedText;
+
     if (!hasApiKey) {
-      const sections = parseTextToSections(pastedText);
+      const sections = parseTextToSections(textToProcess);
       if (sections.length === 0) return;
       const newStructure = sections.map(s => s.name);
       updateSongAndStructureWithHistory(sections, newStructure);
-      requestAutoTitleGeneration();
+      if (!extractedTitle) requestAutoTitleGeneration();
       clearLineSelection();
       setIsPasteModalOpen(false);
       setPastedText('');
       return;
     }
 
-    const chunks = splitPastedLyricsIntoChunks(pastedText);
+    const chunks = splitPastedLyricsIntoChunks(textToProcess);
     if (chunks.length === 0) return;
 
     setIsAnalyzing(true);
@@ -411,7 +466,7 @@ export const usePasteImport = ({
 
         const metadataPromise = generateContentWithRetry({
           model: AI_MODEL_NAME,
-          contents: buildMetadataPrompt(pastedText, uiLang),
+          contents: buildMetadataPrompt(textToProcess, uiLang),
           config: {
             responseMimeType: 'application/json',
             responseSchema: METADATA_RESPONSE_SCHEMA,
@@ -466,6 +521,7 @@ export const usePasteImport = ({
           return section;
         });
 
+        // If H1 title was extracted externally, pass that flag so INTRO stays Intro
         const newSections = normalizeImportedSectionNames(rawSections);
 
         const validSections = newSections.filter(
@@ -490,7 +546,7 @@ export const usePasteImport = ({
           onDetectedLanguage?.(detectedLanguage, sectionIds);
         }
 
-        requestAutoTitleGeneration();
+        if (!extractedTitle) requestAutoTitleGeneration();
         clearLineSelection();
         setIsPasteModalOpen(false);
         setPastedText('');
