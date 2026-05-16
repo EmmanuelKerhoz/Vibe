@@ -98,7 +98,7 @@ export const SectionLineList = React.memo(function SectionLineList({
   playAudioFeedback, onLineBlur,
 }: SectionLineListProps) {
   const { rhymeScheme, lineLanguages, tempo, timeSignature } = useSongContext();
-  const { selectedLineId, isGenerating, handleLineClick, updateLineText, handleLineKeyDown, clearSelection } = useComposerContext();
+  const { selectedLineId, isGenerating, handleLineClick, updateLineText, updateLineSyllables, handleLineKeyDown, clearSelection } = useComposerContext();
   const { moveLineUp, moveLineDown, addLineToSection, deleteLineFromSection } = useSongMutation();
   const { draggedLineInfo, dragOverLineInfo } = useDragState();
 
@@ -125,8 +125,6 @@ export const SectionLineList = React.memo(function SectionLineList({
   const effectiveRhymeScheme = section.rhymeScheme || rhymeScheme;
 
   // Max syllable count across lyric lines — drives the background gauge fill.
-  // Math.max(..., GAUGE_ABSOLUTE_MIN) garantit que chaque syllabe représente
-  // au moins 1/16 de la largeur totale, même dans les sections très denses.
   const sectionMaxSyllables = useMemo(() => {
     let max = 0;
     for (const item of renderItems) {
@@ -138,7 +136,6 @@ export const SectionLineList = React.memo(function SectionLineList({
   }, [renderItems]);
 
   // Derive per-lyric-index letters from the hoisted schemeResult prop.
-  // Falls back to static scheme when schemeResult is null (< 2 lines, error).
   const dynamicLetters = useMemo<string[]>(() => {
     if (schemeResult) return schemeResult.letters;
     return renderItems
@@ -224,7 +221,7 @@ export const SectionLineList = React.memo(function SectionLineList({
                 onLineClick: handleLineClick,
                 ...(onLineBlur ? { onLineBlur } : {}),
               }}
-              editing={{ updateLineText, handleLineKeyDown }}
+              editing={{ updateLineText, handleLineKeyDown, updateLineSyllables }}
               controls={{
                 sectionLinesCount,
                 isGenerating,

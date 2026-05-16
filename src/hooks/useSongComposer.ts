@@ -99,6 +99,7 @@ export const useSongComposer = ({
 
   const {
     updateLineText,
+    updateLineSyllables,
     handleLineKeyDown,
     handleLineClick,
     addInstruction,
@@ -150,6 +151,7 @@ export const useSongComposer = ({
     quantizeSyllables,
     generateSuggestions,
     updateLineText,
+    updateLineSyllables,
     handleLineKeyDown,
     applySuggestion,
     generateMusicalPrompt,
@@ -165,7 +167,7 @@ export const useSongComposer = ({
     isGenerating, isRegeneratingSection, isGeneratingMusicalPrompt, isAnalyzingLyrics,
     selectedLineId, setSelectedLineId, suggestions, isSuggesting,
     generateSong, regenerateSection, quantizeSyllables, generateSuggestions,
-    updateLineText, handleLineKeyDown, applySuggestion,
+    updateLineText, updateLineSyllables, handleLineKeyDown, applySuggestion,
     generateMusicalPrompt, analyzeLyricsForMusic,
     handleLineClick, handleInstructionChange, addInstruction, removeInstruction, clearSelection,
     coherenceResult, dismissCoherenceResult,
