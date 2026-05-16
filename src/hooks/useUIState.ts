@@ -31,7 +31,6 @@ export function useUIState(initial?: NavInitial) {
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(() => shouldShowSplash());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiErrorModal, setApiErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
   const [isSimilarityModalOpen, setIsSimilarityModalOpen] = useState(false);
@@ -73,7 +72,6 @@ export function useUIState(initial?: NavInitial) {
     isAboutOpen, setIsAboutOpen,
     isSettingsOpen, setIsSettingsOpen,
     apiErrorModal, setApiErrorModal,
-    isImportModalOpen, setIsImportModalOpen,
     isExportModalOpen, setIsExportModalOpen,
     isSectionDropdownOpen, setIsSectionDropdownOpen,
     isSimilarityModalOpen, setIsSimilarityModalOpen,

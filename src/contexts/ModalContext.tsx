@@ -10,7 +10,7 @@ export interface UIStateBag extends UIStateSlice {}
 
 // ── Modal names union ─────────────────────────────────────────────────────────
 export type ModalName =
-  | 'about' | 'settings' | 'apiError' | 'import' | 'export'
+  | 'about' | 'settings' | 'apiError' | 'export'
   | 'sectionDropdown' | 'similarity' | 'saveToLibrary'
   | 'versions' | 'reset' | 'keyboardShortcuts' | 'confirm' | 'prompt' | 'paste' | 'analysis'
   | 'searchReplace';
@@ -45,7 +45,6 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
     switch (name) {
       case 'about':           uiState.setIsAboutOpen(true); break;
       case 'settings':        uiState.setIsSettingsOpen(true); break;
-      case 'import':          uiState.setIsImportModalOpen(true); break;
       case 'export':          uiState.setIsExportModalOpen(true); break;
       case 'sectionDropdown': uiState.setIsSectionDropdownOpen(true); break;
       case 'similarity':      uiState.setIsSimilarityModalOpen(true); break;
@@ -78,7 +77,6 @@ export function ModalProvider({ children, uiState }: ModalProviderProps) {
     switch (name) {
       case 'about':           uiState.setIsAboutOpen(false); break;
       case 'settings':        uiState.setIsSettingsOpen(false); break;
-      case 'import':          uiState.setIsImportModalOpen(false); break;
       case 'export':          uiState.setIsExportModalOpen(false); break;
       case 'sectionDropdown': uiState.setIsSectionDropdownOpen(false); break;
       case 'similarity':      uiState.setIsSimilarityModalOpen(false); break;

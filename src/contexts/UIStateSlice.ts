@@ -4,7 +4,6 @@ export interface UIStateSlice {
   setIsAboutOpen: (v: boolean) => void;
   setIsSettingsOpen: (v: boolean) => void;
   setApiErrorModal: (v: { open: boolean; message: string }) => void;
-  setIsImportModalOpen: (v: boolean) => void;
   setIsExportModalOpen: (v: boolean) => void;
   setIsSectionDropdownOpen: (v: boolean) => void;
   setIsSimilarityModalOpen: (v: boolean) => void;
@@ -21,7 +20,6 @@ export interface UIStateSlice {
   isAboutOpen: boolean;
   isSettingsOpen: boolean;
   apiErrorModal: { open: boolean; message: string };
-  isImportModalOpen: boolean;
   isExportModalOpen: boolean;
   isSectionDropdownOpen: boolean;
   isSimilarityModalOpen: boolean;

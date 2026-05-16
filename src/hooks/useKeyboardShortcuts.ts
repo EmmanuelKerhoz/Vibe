@@ -91,7 +91,6 @@ export const useKeyboardShortcuts = ({
     isAnalysisModalOpen,
     isPasteModalOpen,
     isExportModalOpen,
-    isImportModalOpen,
     isSettingsOpen,
     isAboutOpen,
     isSearchReplaceOpen,
@@ -106,7 +105,6 @@ export const useKeyboardShortcuts = ({
     setIsAnalysisModalOpen,
     setIsPasteModalOpen,
     setIsExportModalOpen,
-    setIsImportModalOpen,
     setIsSettingsOpen,
     setIsAboutOpen,
     setIsSearchReplaceOpen,
@@ -128,10 +126,8 @@ export const useKeyboardShortcuts = ({
         if (isAnalysisModalOpen) { closeModal('analysis'); return; }
         if (isPasteModalOpen) { closeModal('paste'); return; }
         if (isExportModalOpen) { closeModal('export'); return; }
-        if (isImportModalOpen) { closeModal('import'); return; }
         if (isSettingsOpen) { closeModal('settings'); return; }
         if (isAboutOpen) { closeModal('about'); return; }
-        // fix: keyboard shortcuts modal was not dismissible via Escape
         if (isKeyboardShortcutsModalOpen) { setIsKeyboardShortcutsModalOpen(false); return; }
         if (isMobileOrTablet) { closeMobilePanels(); return; }
         return;
@@ -141,26 +137,28 @@ export const useKeyboardShortcuts = ({
         openModal('searchReplace');
         return;
       }
-      if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
-      const target = e.target as HTMLElement;
-      // Allow app-level undo/redo for lyrics line inputs (dataset.lineId);
-      // other INPUT/TEXTAREA elements keep native browser undo.
-      if ((target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') && !('lineId' in target.dataset)) return;
-      e.preventDefault();
-      if (e.shiftKey) redo(); else undo();
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        redo();
+        return;
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [
     apiErrorModal.open, confirmModal, isAboutOpen, isAnalysisModalOpen, isExportModalOpen,
-    isImportModalOpen, isMobileOrTablet, isPasteModalOpen, isResetModalOpen,
+    isMobileOrTablet, isPasteModalOpen, isResetModalOpen,
     isSaveToLibraryModalOpen, isSettingsOpen, isSimilarityModalOpen, isVersionsModalOpen,
     isSearchReplaceOpen, isKeyboardShortcutsModalOpen,
     promptModal, closeMobilePanels, redo,
-    // dispatch refs from useModalDispatch are stable — no re-registration cost
     closeModal, openModal,
     setPromptModal, setConfirmModal,
-    setIsAboutOpen, setIsAnalysisModalOpen, setIsExportModalOpen, setIsImportModalOpen,
+    setIsAboutOpen, setIsAnalysisModalOpen, setIsExportModalOpen,
     setIsPasteModalOpen, setIsResetModalOpen, setIsSaveToLibraryModalOpen, setIsSettingsOpen,
     setIsSimilarityModalOpen, setIsVersionsModalOpen,
     setApiErrorModal, undo,

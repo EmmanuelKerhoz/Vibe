@@ -3,7 +3,6 @@ import type { AdaptationLangId } from '../i18n/constants';
 
 interface UseModalHandlersParams {
   setIsPasteModalOpen: (v: boolean) => void;
-  setIsImportModalOpen: (v: boolean) => void;
   setIsExportModalOpen: (v: boolean) => void;
   setIsSettingsOpen: (v: boolean) => void;
   setIsAboutOpen: (v: boolean) => void;
@@ -14,7 +13,6 @@ interface UseModalHandlersParams {
 
 export function useModalHandlers({
   setIsPasteModalOpen,
-  setIsImportModalOpen,
   setIsExportModalOpen,
   setIsSettingsOpen,
   setIsAboutOpen,
@@ -25,16 +23,6 @@ export function useModalHandlers({
   const handleOpenPasteModal = useCallback(
     () => setIsPasteModalOpen(true),
     [setIsPasteModalOpen]
-  );
-
-  const handleOpenPasteLyricsFromModals = useCallback(() => {
-    setIsImportModalOpen(false);
-    setIsPasteModalOpen(true);
-  }, [setIsImportModalOpen, setIsPasteModalOpen]);
-
-  const handleOpenImport = useCallback(
-    () => setIsImportModalOpen(true),
-    [setIsImportModalOpen]
   );
 
   const handleOpenExport = useCallback(
@@ -70,8 +58,6 @@ export function useModalHandlers({
 
   return {
     handleOpenPasteModal,
-    handleOpenPasteLyricsFromModals,
-    handleOpenImport,
     handleOpenExport,
     handleOpenSettings,
     handleOpenAbout,

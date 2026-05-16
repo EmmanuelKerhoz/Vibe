@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AboutModal } from './modals/AboutModal';
 import { SettingsModal } from './modals/SettingsModal';
-import { ImportModal } from './modals/ImportModal';
 import { ExportModal } from './modals/ExportModal';
 import { PasteModal } from './modals/PasteModal';
 import { AnalysisModal } from './modals/AnalysisModal';
@@ -41,10 +40,8 @@ interface Props {
   showTranslationFeatures: boolean;
   setShowTranslationFeatures: (v: boolean) => void;
 
-  // Import
-  hasExistingWork: boolean;
+  // Import (file input only — no dialog)
   handleImportChooseFile: () => void;
-  onOpenPasteLyrics: () => void;
   handleImportInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
   // Export
@@ -92,10 +89,10 @@ interface Props {
   libraryCount: number;
   webSimilarityIndex: WebSimilarityIndex;
   triggerWebSimilarity: () => void;
-  handleDeleteLibraryAsset: (id: string) => void;
+  handleDeleteLibraryAsset: (id: string) => Promise<void>;
 
   // Library
-  handleSaveToLibrary: () => Promise<void>;
+  handleSaveToLibrary: (name: string) => Promise<void>;
   handleLoadLibraryAsset: (asset: LibraryAsset) => void;
   handlePurgeLibrary: () => Promise<void>;
   isSavingToLibrary: boolean;
@@ -112,7 +109,7 @@ interface Props {
 export const AppModals = React.memo(function AppModals({
   theme, setTheme, audioFeedback, setAudioFeedback, uiScale, setUiScale, defaultEditMode, setDefaultEditMode,
   showTranslationFeatures, setShowTranslationFeatures,
-  hasExistingWork, handleImportChooseFile, onOpenPasteLyrics, handleImportInputChange,
+  handleImportChooseFile, handleImportInputChange,
   exportSong,
   pastedText, setPastedText, isAnalyzing, isAnalyzingTheme, importProgress, analyzePastedLyrics,
   analysisReport, analysisSteps,
@@ -126,14 +123,10 @@ export const AppModals = React.memo(function AppModals({
   resetSong,
 }: Props) {
   const { t } = useTranslation();
-  // Split hooks: dispatch (stable) + state (reactive).
-  // React.memo on AppModals is now effective for dispatch-only interactions
-  // because closeModal/openModal refs don't change on modal state changes.
   const { closeModal, openModal } = useModalDispatch();
   const { uiState: ui } = useModalState();
   const { importInputRef } = ui;
 
-  // Splash: show About once at app startup, with auto-close after 5 s.
   const [hasShownSplash, setHasShownSplash] = useState(false);
   const [showSplashMode, setShowSplashMode] = useState(false);
 
@@ -151,10 +144,8 @@ export const AppModals = React.memo(function AppModals({
     }
   }, [ui.isAboutOpen, showSplashMode]);
 
-  const openLibraryFromImport = () => { closeModal('import'); openModal('saveToLibrary'); };
   const openLibraryFromExport = () => { closeModal('export'); openModal('saveToLibrary'); };
 
-  // i18n-resolved labels with English fallback for locales not yet translated.
   const confirmTitle = t.confirmModal?.regenerateTitle ?? 'Regenerate Song';
   const confirmLabel = t.confirmModal?.regenerateConfirm ?? 'Regenerate';
   const confirmCancel = t.confirmModal?.cancel ?? 'Cancel';
@@ -178,12 +169,6 @@ export const AppModals = React.memo(function AppModals({
         uiScale={uiScale} setUiScale={setUiScale}
         defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
         showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
-      />
-      <ImportModal
-        isOpen={ui.isImportModalOpen} hasExistingWork={hasExistingWork}
-        onClose={() => closeModal('import')} onChooseFile={handleImportChooseFile}
-        onOpenLibrary={openLibraryFromImport}
-        onPasteLyrics={onOpenPasteLyrics}
       />
       <ExportModal
         isOpen={ui.isExportModalOpen}

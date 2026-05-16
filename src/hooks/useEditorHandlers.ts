@@ -48,7 +48,6 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setApiErrorModal,
     setConfirmModal,
     setIsPasteModalOpen,
-    setIsImportModalOpen,
     setIsExportModalOpen,
     setIsSettingsOpen,
     setIsAboutOpen,
@@ -103,7 +102,6 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     handleSectionTargetLanguageChange,
   } = useModalHandlers({
     setIsPasteModalOpen,
-    setIsImportModalOpen,
     setIsExportModalOpen,
     setIsSettingsOpen,
     setIsAboutOpen,
@@ -140,17 +138,12 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   const { handleImportInputChange, handleImportChooseFile } = useImportHandlers({
     importInputRef,
     loadFileForAnalysis,
-    setIsImportModalOpen,
     setIsPasteModalOpen,
     setPastedText,
     setSongLanguage,
   });
 
   // ── Derived composite callbacks ───────────────────────────────────────
-  /**
-   * Closes the left panel then triggers a full song regeneration.
-   * Layout intent: belongs here, not in ComposerParamsContext.
-   */
   const handleGenerateSongFromLeftPanel = useCallback(() => {
     setIsLeftPanelOpen(false);
     handleGlobalRegenerate();
@@ -179,8 +172,6 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     handleOpenNewGeneration,
     // Modal handlers
     handleOpenPasteModal,
-    // handleOpenImport is replaced by handleImportChooseFile to skip the
-    // intermediate dialog and open the OS file picker directly.
     handleOpenImport: handleImportChooseFile,
     handleOpenExport,
     handleOpenSettings,

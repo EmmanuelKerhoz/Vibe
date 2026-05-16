@@ -36,10 +36,6 @@ vi.mock('./modals/SettingsModal', () => ({
   SettingsModal: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>Settings modal</div> : null),
 }));
 
-vi.mock('./modals/ImportModal', () => ({
-  ImportModal: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>Import modal</div> : null),
-}));
-
 vi.mock('./modals/ExportModal', () => ({
   ExportModal: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div>Export modal</div> : null),
 }));
@@ -98,7 +94,6 @@ function createUiState(overrides: Partial<UIStateBag> = {}): UIStateBag {
     setIsAboutOpen: vi.fn(),
     setIsSettingsOpen: vi.fn(),
     setApiErrorModal: vi.fn(),
-    setIsImportModalOpen: vi.fn(),
     setIsExportModalOpen: vi.fn(),
     setIsSectionDropdownOpen: vi.fn(),
     setIsSimilarityModalOpen: vi.fn(),
@@ -115,7 +110,6 @@ function createUiState(overrides: Partial<UIStateBag> = {}): UIStateBag {
     isAboutOpen: false,
     isSettingsOpen: false,
     apiErrorModal: { open: false, message: '' },
-    isImportModalOpen: false,
     isExportModalOpen: false,
     isSectionDropdownOpen: false,
     isSimilarityModalOpen: false,
@@ -152,9 +146,7 @@ function createProps(): React.ComponentProps<typeof AppModals> {
     setDefaultEditMode: vi.fn(),
     showTranslationFeatures: false,
     setShowTranslationFeatures: vi.fn(),
-    hasExistingWork: false,
     handleImportChooseFile: vi.fn(),
-    onOpenPasteLyrics: vi.fn(),
     handleImportInputChange: vi.fn(),
     exportSong: vi.fn(async () => {}),
     pastedText: '',
@@ -189,6 +181,8 @@ function createProps(): React.ComponentProps<typeof AppModals> {
     libraryAssets: [],
     hasCurrentSong: true,
     resetSong: vi.fn(),
+    saveLibraryError: null,
+    clearSaveLibraryError: vi.fn(),
   };
 }
 

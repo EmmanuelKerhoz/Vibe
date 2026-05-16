@@ -5,8 +5,8 @@
  *
  * editMode / setEditMode / markupText / setMarkupText / markupTextareaRef
  * have been moved to EditorContext and are no longer part of UIStateBag.
- * This reduces the dep array from 36 to 31 entries, eliminating keystroke-
- * triggered invalidation of ModalStateContext.
+ * This reduces the dep array, eliminating keystroke-triggered invalidation
+ * of ModalStateContext.
  *
  * useState setters have referential stability across renders, so they do
  * not contribute to invalidation in practice.
@@ -18,13 +18,13 @@ import type { UIStateSlice } from '../contexts/UIStateSlice';
 export const useUIStateForProvider = (bag: UIStateSlice): UIStateBag => {
   const {
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
-    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
     setIsResetModalOpen, setIsKeyboardShortcutsModalOpen,
     setConfirmModal, setPromptModal, setIsPasteModalOpen,
     setIsAnalysisModalOpen, setIsSearchReplaceOpen, setIsAnalysisPanelOpen,
     isAboutOpen, isSettingsOpen, apiErrorModal,
-    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isExportModalOpen, isSectionDropdownOpen,
     isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
     isResetModalOpen, isKeyboardShortcutsModalOpen,
     confirmModal, promptModal, isPasteModalOpen,
@@ -37,13 +37,13 @@ export const useUIStateForProvider = (bag: UIStateSlice): UIStateBag => {
 
   return useMemo(() => ({
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
-    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
     setIsResetModalOpen, setIsKeyboardShortcutsModalOpen,
     setConfirmModal, setPromptModal, setIsPasteModalOpen,
     setIsAnalysisModalOpen, setIsSearchReplaceOpen, setIsAnalysisPanelOpen,
     isAboutOpen, isSettingsOpen, apiErrorModal,
-    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isExportModalOpen, isSectionDropdownOpen,
     isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
     isResetModalOpen, isKeyboardShortcutsModalOpen,
     confirmModal, promptModal, isPasteModalOpen,
@@ -54,13 +54,13 @@ export const useUIStateForProvider = (bag: UIStateSlice): UIStateBag => {
     importInputRef,
   }), [
     setIsAboutOpen, setIsSettingsOpen, setApiErrorModal,
-    setIsImportModalOpen, setIsExportModalOpen, setIsSectionDropdownOpen,
+    setIsExportModalOpen, setIsSectionDropdownOpen,
     setIsSimilarityModalOpen, setIsSaveToLibraryModalOpen, setIsVersionsModalOpen,
     setIsResetModalOpen, setIsKeyboardShortcutsModalOpen,
     setConfirmModal, setPromptModal, setIsPasteModalOpen,
     setIsAnalysisModalOpen, setIsSearchReplaceOpen, setIsAnalysisPanelOpen,
     isAboutOpen, isSettingsOpen, apiErrorModal,
-    isImportModalOpen, isExportModalOpen, isSectionDropdownOpen,
+    isExportModalOpen, isSectionDropdownOpen,
     isSimilarityModalOpen, isSaveToLibraryModalOpen, isVersionsModalOpen,
     isResetModalOpen, isKeyboardShortcutsModalOpen,
     confirmModal, promptModal, isPasteModalOpen,

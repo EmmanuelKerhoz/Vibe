@@ -9,14 +9,14 @@ type WindowWithOpenFilePicker = Window & {
 type UseImportHandlersParams = {
   importInputRef: RefObject<HTMLInputElement | null>;
   loadFileForAnalysis: (file: File) => Promise<{ songLanguage?: string }>;
-  setIsImportModalOpen: (v: boolean) => void;
   setIsPasteModalOpen: (v: boolean) => void;
   setPastedText: (v: string) => void;
   setSongLanguage: (v: string) => void;
 };
 
 export const useImportHandlers = (params: UseImportHandlersParams) => {
-  const { importInputRef, loadFileForAnalysis, setIsImportModalOpen, setSongLanguage } = params;
+  const { importInputRef, loadFileForAnalysis, setSongLanguage } = params;
+
   const restoreImportedSongLanguage = useCallback((payload: { songLanguage?: string }) => {
     const importedLanguage = payload.songLanguage?.trim() ?? '';
     if (importedLanguage) setSongLanguage(importedLanguage);
@@ -26,10 +26,9 @@ export const useImportHandlers = (params: UseImportHandlersParams) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    setIsImportModalOpen(false);
     const payload = await loadFileForAnalysis(file);
     restoreImportedSongLanguage(payload);
-  }, [loadFileForAnalysis, restoreImportedSongLanguage, setIsImportModalOpen]);
+  }, [loadFileForAnalysis, restoreImportedSongLanguage]);
 
   const handleImportChooseFile = useCallback(async () => {
     const pickerWindow = window as WindowWithOpenFilePicker;
@@ -45,7 +44,6 @@ export const useImportHandlers = (params: UseImportHandlersParams) => {
         });
         if (!handle) return;
         const file = await handle.getFile();
-        setIsImportModalOpen(false);
         const payload = await loadFileForAnalysis(file);
         restoreImportedSongLanguage(payload);
       } catch (error) {
@@ -56,7 +54,7 @@ export const useImportHandlers = (params: UseImportHandlersParams) => {
       return;
     }
     importInputRef.current?.click();
-  }, [importInputRef, loadFileForAnalysis, restoreImportedSongLanguage, setIsImportModalOpen]);
+  }, [importInputRef, loadFileForAnalysis, restoreImportedSongLanguage]);
 
   return { handleImportInputChange, handleImportChooseFile };
 };
