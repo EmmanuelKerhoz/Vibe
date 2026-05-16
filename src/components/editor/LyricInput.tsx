@@ -160,8 +160,8 @@ export const LyricInput = React.memo(function LyricInput({
           style={{
             width: `calc(${gaugePct} * (100% - ${GAUGE_RIGHT_OFFSET}))`,
             background: 'var(--accent-color)',
-            opacity: 0.14,
-            boxShadow: 'inset -1.5px 0 0 0 var(--accent-color)',
+            opacity: 0.20,
+            boxShadow: 'inset -2px 0 0 0 var(--accent-color)',
           }}
         />
       )}
