@@ -92,6 +92,28 @@ export const useLineEditor = ({
     [updateSong],
   );
 
+  /**
+   * Directly overrides line.syllables with a user-supplied value.
+   * Does NOT recompute from text — the user is intentionally setting a
+   * target count (e.g. for quantization reference).
+   */
+  const updateLineSyllables = useCallback(
+    (sectionId: string, lineId: string, count: number) => {
+      updateSong(currentSong =>
+        currentSong.map(section => {
+          if (section.id !== sectionId) return section;
+          return {
+            ...section,
+            lines: section.lines.map(line =>
+              line.id === lineId ? { ...line, syllables: count } : line,
+            ),
+          };
+        }),
+      );
+    },
+    [updateSong],
+  );
+
   const handleLineKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>, sectionId: string, lineId: string) => {
       const target = e.currentTarget;
@@ -320,6 +342,7 @@ export const useLineEditor = ({
 
   return {
     updateLineText,
+    updateLineSyllables,
     handleLineKeyDown,
     handleLineClick,
     addInstruction,
