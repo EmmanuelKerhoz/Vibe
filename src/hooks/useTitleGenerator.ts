@@ -13,12 +13,21 @@ export function useTitleGenerator() {
     songLanguage,
     shouldAutoGenerateTitle,
     setShouldAutoGenerateTitle,
+    title,
+    titleOrigin,
     setTitle,
     setTitleOrigin,
   } = useSongContext();
   const songLength = song.length;
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Stable refs so the async callback always reads current values without
+  // being stale-closed over the render's snapshot.
+  const titleRef = useRef(title);
+  titleRef.current = title;
+  const titleOriginRef = useRef(titleOrigin);
+  titleOriginRef.current = titleOrigin;
 
   useEffect(() => () => { abortControllerRef.current?.abort(); }, []);
 
@@ -79,8 +88,13 @@ ${languageInstruction}Return ONLY the title as plain text, no quotes, no explana
     const run = async () => {
       const newTitle = await generateTitle();
       if (!isCancelled && newTitle) {
-        setTitle(newTitle);
-        setTitleOrigin('ai');
+        // Do not overwrite a title that was set by the user (e.g. from a
+        // Markdown H1 on paste import). Only apply when origin is 'ai' or
+        // the current title is the default empty/placeholder value.
+        if (titleOriginRef.current !== 'user' || !titleRef.current.trim()) {
+          setTitle(newTitle);
+          setTitleOrigin('ai');
+        }
       }
       if (!isCancelled) setShouldAutoGenerateTitle(false);
     };
