@@ -14,7 +14,7 @@
  * AnalysisContext (canPasteLyrics, isAnalyzing).
  */
 import { useCallback } from 'react';
-import { useModalDispatch } from '../contexts/ModalContext';
+import { useModalDispatch, useModalState } from '../contexts/ModalContext';
 import { useAnalysisContext } from '../contexts/AnalysisContext';
 
 export interface TopRibbonActions {
@@ -33,11 +33,12 @@ export interface TopRibbonActions {
 
 export function useTopRibbonActions(): TopRibbonActions {
   const { openModal } = useModalDispatch();
+  const { uiState } = useModalState();
   const { canPasteLyrics, isAnalyzing } = useAnalysisContext();
 
   const openVersionsModal     = useCallback(() => openModal('versions'),          [openModal]);
   const openResetModal        = useCallback(() => openModal('reset'),             [openModal]);
-  const openImport            = useCallback(() => openModal('import'),            [openModal]);
+  const openImport            = useCallback(() => uiState.importInputRef.current?.click(), [uiState.importInputRef]);
   const openExport            = useCallback(() => openModal('export'),            [openModal]);
   const openLibrary           = useCallback(() => openModal('saveToLibrary'),     [openModal]);
   const openSettings          = useCallback(() => openModal('settings'),          [openModal]);

@@ -205,7 +205,8 @@ export const AppModals = React.memo(function AppModals({
       />
       <SaveToLibraryModal
         isOpen={ui.isSaveToLibraryModalOpen} onClose={() => closeModal('saveToLibrary')}
-        onSave={handleSaveToLibrary} onLoadAsset={handleLoadLibraryAsset}
+        onSave={() => handleSaveToLibrary(title)}
+        onLoadAsset={handleLoadLibraryAsset}
         onDeleteAsset={handleDeleteLibraryAsset} onPurgeLibrary={handlePurgeLibrary}
         isSaving={isSavingToLibrary}
         saveError={saveLibraryError} onDismissError={clearSaveLibraryError}
