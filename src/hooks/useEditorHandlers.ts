@@ -30,7 +30,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   const {
     song, structure, rhymeScheme,
     appState,
-    replaceStateWithoutHistory, clearHistory, clearSelection,
+    replaceStateWithoutHistory, navigateWithHistory, clearHistory, clearSelection,
     resetWebSimilarityIndex,
     updateSongAndStructureWithHistory,
     setSongLanguage,
@@ -118,6 +118,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     rhymeScheme,
     appState,
     replaceStateWithoutHistory,
+    navigateWithHistory,
     clearHistory,
     clearSelection,
     resetWebSimilarityIndex,
