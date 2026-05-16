@@ -43,6 +43,7 @@ export function AppModalLayer() {
     song,
     structure,
     title,
+    setTitle,
     rhymeScheme,
     replaceStateWithoutHistory,
     clearHistory,
@@ -98,6 +99,7 @@ export function AppModalLayer() {
     setIsPasteModalOpen,
     setPastedText,
     setSongLanguage,
+    setSongTitle: setTitle,
   });
 
   const {
