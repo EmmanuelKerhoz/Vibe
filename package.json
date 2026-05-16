@@ -1,7 +1,7 @@
 {
   "name": "vibe",
   "private": true,
-  "version": "1.27.8.16",
+  "version": "1.27.8.17",
   "type": "module",
   "scripts": {
     "dev": "vite",

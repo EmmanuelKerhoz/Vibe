@@ -54,6 +54,8 @@ export const useSongAnalysis = ({
     setLineLanguages,
     setTopic,
     setMood,
+    setTitle,
+    setTitleOrigin,
   } = useSongContext();
 
   const { isAnalyzing, setIsAnalyzingForSubhook } = useAnalysisCounter();
@@ -84,12 +86,18 @@ export const useSongAnalysis = ({
     languageAdapter.setSectionTargetLanguages(prev => ({ ...prev, ...mapping }));
   }, [languageAdapter]);
 
+  const handleSetSongTitle = useCallback((value: string) => {
+    setTitle(value);
+    setTitleOrigin('user');
+  }, [setTitle, setTitleOrigin]);
+
   const pasteImport = usePasteImport({
     rhymeScheme,
     uiLanguage,
     updateSongAndStructureWithHistory,
     setTopic,
     setMood,
+    setSongTitle: handleSetSongTitle,
     currentSongLanguage: languageAdapter.songLanguage,
     onLanguageMismatch: languageAdapter.setTargetLanguage,
     onDetectedLanguage: handleDetectedLanguage,
