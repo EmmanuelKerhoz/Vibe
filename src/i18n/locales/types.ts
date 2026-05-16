@@ -199,6 +199,14 @@ export interface Translations {
     rhyme: string;
     syllables: string;
     syllableCount?: string;
+    /** Tooltip on the syllable count button to invite inline editing */
+    editSyllableCount?: string;
+    /** Label in the quantize-offer popover asking the user to confirm quantize */
+    quantizeOffer?: string;
+    /** Confirm button label in the quantize-offer popover */
+    yes?: string;
+    /** Reject button label in the quantize-offer popover */
+    no?: string;
     /** Column header for the rhyme schema badge */
     schemaHeader?: string;
     concept: string;

@@ -79,7 +79,10 @@ export const useSongEditor = ({
       payload = extractImportPayloadFromText(await file.text());
     }
     if (payload.text) openPasteModalWithText(payload.text);
-    return { songLanguage: payload.songLanguage, songTitle: payload.songTitle };
+    return {
+      ...(payload.songLanguage ? { songLanguage: payload.songLanguage } : {}),
+      ...(payload.songTitle !== undefined ? { songTitle: payload.songTitle } : {}),
+    };
   }, [openPasteModalWithText]);
 
   const introOutroSortedRef = useRef<string | null>(null);
