@@ -69,8 +69,8 @@ export const useSongEditor = ({
     URL.revokeObjectURL(url);
   }, [song, title, topic, mood, songLanguage]);
 
-  const loadFileForAnalysis = useCallback(async (file: File) => {
-    let payload = { text: '', songLanguage: '' };
+  const loadFileForAnalysis = useCallback(async (file: File): Promise<{ songLanguage?: string; songTitle?: string }> => {
+    let payload: { text: string; songLanguage: string; songTitle?: string } = { text: '', songLanguage: '' };
     if (file.name.endsWith('.docx')) {
       payload = await extractImportPayloadFromDocx(file);
     } else if (file.name.endsWith('.odt')) {
@@ -79,7 +79,7 @@ export const useSongEditor = ({
       payload = extractImportPayloadFromText(await file.text());
     }
     if (payload.text) openPasteModalWithText(payload.text);
-    return payload;
+    return { songLanguage: payload.songLanguage, songTitle: payload.songTitle };
   }, [openPasteModalWithText]);
 
   const introOutroSortedRef = useRef<string | null>(null);

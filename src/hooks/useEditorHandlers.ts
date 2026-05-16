@@ -34,6 +34,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     resetWebSimilarityIndex,
     updateSongAndStructureWithHistory,
     setSongLanguage,
+    setTitle,
     setPastedText,
     setSectionTargetLanguages,
     hasRealLyricContent,
@@ -141,6 +142,7 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setIsPasteModalOpen,
     setPastedText,
     setSongLanguage,
+    setSongTitle: setTitle,
   });
 
   // ── Derived composite callbacks ───────────────────────────────────────
