@@ -197,6 +197,30 @@ const deriveSchemeFromLineLabels = (
   return KNOWN.includes(candidate) ? candidate : fallback;
 };
 
+/** True if the section name is an INTRO variant (e.g. "Intro", "Intro 1"). */
+const isIntroName = (name: string): boolean =>
+  /^intro(\s+\d+)?$/i.test(name.trim());
+
+/**
+ * Post-process imported sections:
+ * - First INTRO → "Title" (singleton section header)
+ * - Subsequent INTROs → "Verse N" (extra intros are not semantically valid)
+ */
+const normalizeImportedSectionNames = (sections: Section[]): Section[] => {
+  let introSeen = false;
+  let extraVerseOffset = sections.filter(s => /^verse\s*\d*$/i.test(s.name.trim())).length;
+
+  return sections.map((section) => {
+    if (!isIntroName(section.name)) return section;
+    if (!introSeen) {
+      introSeen = true;
+      return { ...section, name: 'Title' };
+    }
+    extraVerseOffset += 1;
+    return { ...section, name: `Verse ${extraVerseOffset}` };
+  });
+};
+
 const buildSectionPrompt = (chunk: PasteImportChunk, uiLang: string): string => `${UNTRUSTED_INPUT_PREAMBLE}
 
 Analyze this single lyrics section.
@@ -415,7 +439,7 @@ export const usePasteImport = ({
 
         const detectedLanguage = metadata.language;
 
-        const newSections: Section[] = validChunks.map((chunk) => {
+        const rawSections: Section[] = validChunks.map((chunk) => {
           const rawScheme = chunk.rhymeScheme ?? rhymeScheme;
           const resolvedScheme = rawScheme === 'FREE'
             ? deriveSchemeFromLineLabels(chunk.lines ?? [], 'FREE')
@@ -441,6 +465,8 @@ export const usePasteImport = ({
 
           return section;
         });
+
+        const newSections = normalizeImportedSectionNames(rawSections);
 
         const validSections = newSections.filter(
           section => !isPureMetaLine(section.name) &&
