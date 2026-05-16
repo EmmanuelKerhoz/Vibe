@@ -256,13 +256,10 @@ const normalizeImportedSectionNames = (sections: Section[]): Section[] => {
 
     if (!introSeen) {
       introSeen = true;
-      // No title yet → promote first INTRO to Title
       if (!hasTitle) return { ...section, name: 'Title' };
-      // Title already set externally → keep first INTRO as Intro
       return section;
     }
 
-    // Extra INTROs → Verse N
     extraVerseOffset += 1;
     return { ...section, name: `Verse ${extraVerseOffset}` };
   });
@@ -409,11 +406,12 @@ export const usePasteImport = ({
     const chunks = splitPastedLyricsIntoChunks(textToProcess);
     if (chunks.length === 0) return;
 
+    const firstChunk: PasteImportChunk = chunks[0];
     setIsAnalyzing(true);
     setImportProgress({
       current: 0,
       total: chunks.length,
-      currentLabel: chunks[0]?.displayLabel ?? '',
+      currentLabel: firstChunk.displayLabel,
     });
 
     // Atomic counter for parallel progress updates
@@ -521,7 +519,6 @@ export const usePasteImport = ({
           return section;
         });
 
-        // If H1 title was extracted externally, pass that flag so INTRO stays Intro
         const newSections = normalizeImportedSectionNames(rawSections);
 
         const validSections = newSections.filter(
