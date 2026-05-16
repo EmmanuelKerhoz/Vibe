@@ -90,6 +90,7 @@ export function useEditorState() {
     updateSongAndStructureWithHistory: songCtx.updateSongAndStructureWithHistory,
     updateState: songCtx.updateState,
     replaceStateWithoutHistory: songCtx.replaceStateWithoutHistory,
+    navigateWithHistory: songCtx.navigateWithHistory,
     clearHistory: songCtx.clearHistory,
     songLanguage: songCtx.songLanguage,
     setSongLanguage: songCtx.setSongLanguage,
