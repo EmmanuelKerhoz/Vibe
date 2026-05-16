@@ -45,6 +45,13 @@ type PasteImportChunk = {
   text: string;
 };
 
+type ChunkResult = {
+  name: string;
+  rhymeScheme: string | undefined;
+  lines: Array<{ text?: string; rhymingSyllables?: string; rhyme?: string; syllables?: number; concept?: string }>;
+  _displayLabel: string;
+};
+
 export type PasteImportProgress = {
   current: number;
   total: number;
@@ -138,7 +145,7 @@ const extractH1TitleFromText = (text: string): { songTitle: string | null; lyric
   let firstContentIndex = 0;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const line = lines[i]!.trim();
     // H1 title line
     if (songTitle === null && /^#\s+.+/.test(line)) {
       songTitle = line.replace(/^#\s+/, '').trim();
@@ -406,12 +413,14 @@ export const usePasteImport = ({
     const chunks = splitPastedLyricsIntoChunks(textToProcess);
     if (chunks.length === 0) return;
 
-    const firstChunk: PasteImportChunk = chunks[0];
+    // chunks.length > 0 is guaranteed by the guard above — non-null assertion is safe
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const firstChunkLabel: string = chunks[0]!.displayLabel;
     setIsAnalyzing(true);
     setImportProgress({
       current: 0,
       total: chunks.length,
-      currentLabel: firstChunk.displayLabel,
+      currentLabel: firstChunkLabel,
     });
 
     // Atomic counter for parallel progress updates
@@ -422,7 +431,7 @@ export const usePasteImport = ({
       await withAbort(abortControllerRef, async (nextSignal) => {
 
         // --- Parallel fetch: all chunks + metadata launched simultaneously ---
-        const chunkPromises = chunks.map(async (chunk) => {
+        const chunkPromises = chunks.map(async (chunk): Promise<ChunkResult | null> => {
           try {
             const response = await generateContentWithRetry({
               model: AI_MODEL_NAME,
@@ -487,7 +496,7 @@ export const usePasteImport = ({
           return;
         }
 
-        const validChunks = chunkResults.filter(Boolean) as NonNullable<typeof chunkResults[0]>[];
+        const validChunks: ChunkResult[] = chunkResults.filter((r): r is ChunkResult => r !== null);
         if (validChunks.length === 0) return;
 
         const detectedLanguage = metadata.language;
