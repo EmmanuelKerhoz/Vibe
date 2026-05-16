@@ -9,7 +9,6 @@ import { languageNameToCode } from '../../constants/langFamilyMap';
 import type { Section } from '../../types';
 import type { AdaptationLangId } from '../../i18n/constants';
 import { abortCurrent, withAbort, isAbortError } from '../../utils/withAbort';
-import { buildDetectLanguagePrompt } from '../../utils/promptUtils';
 import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { SECTION_TYPE_DEFINITIONS } from '../../constants/sections';
 import { parseTextToSections } from '../../utils/libraryUtils';
@@ -24,7 +23,7 @@ type UsePasteImportParams = {
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   setTopic: (value: string) => void;
   setMood: (value: string) => void;
-  /** Optional: called when a Markdown H1 title is detected in the pasted text. */
+  /** Optional: called when a Markdown H1 or H2 title is detected in the pasted text. */
   setSongTitle?: (value: string) => void;
   currentSongLanguage?: string;
   /** Called when the detected lyric language differs from the current song language.
@@ -135,9 +134,12 @@ const getSectionHeaderHint = (line: string): string => {
 };
 
 /**
- * Extract a leading Markdown H1 title and metadata block from pasted text.
+ * Extract a leading Markdown H1 or H2 title and metadata block from pasted text.
  * Returns the extracted song title (or null) and the cleaned lyrics text
- * with the H1 line and any **Key:** metadata lines stripped out.
+ * with the heading line and any **Key:** metadata lines stripped out.
+ *
+ * Accepts both `# Title` (H1) and `## Title` (H2) as song title candidates
+ * so that MD exports using either heading level are handled correctly.
  */
 const extractH1TitleFromText = (text: string): { songTitle: string | null; lyricsText: string } => {
   const lines = text.split(/\r?\n/);
@@ -146,9 +148,9 @@ const extractH1TitleFromText = (text: string): { songTitle: string | null; lyric
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!.trim();
-    // H1 title line
-    if (songTitle === null && /^#\s+.+/.test(line)) {
-      songTitle = line.replace(/^#\s+/, '').trim();
+    // H1 or H2 title line
+    if (songTitle === null && /^#{1,2}\s+.+/.test(line)) {
+      songTitle = line.replace(/^#{1,2}\s+/, '').trim();
       firstContentIndex = i + 1;
       continue;
     }
@@ -157,7 +159,7 @@ const extractH1TitleFromText = (text: string): { songTitle: string | null; lyric
       firstContentIndex = i + 1;
       continue;
     }
-    // Stop skipping once we hit a non-metadata, non-empty line after the H1
+    // Stop skipping once we hit a non-metadata, non-empty line after the heading
     if (songTitle !== null && line !== '') {
       firstContentIndex = i;
       break;
@@ -250,7 +252,7 @@ const isIntroName = (name: string): boolean =>
 /**
  * Post-process imported sections:
  * - titleExtracted=false: first INTRO → "Title", subsequent INTROs → "Verse N"
- * - titleExtracted=true:  all INTROs stay "Intro" (title already set from H1),
+ * - titleExtracted=true:  all INTROs stay "Intro" (title already set from H1/H2),
  *   only duplicate INTROs (2nd+) become "Verse N"
  */
 const normalizeImportedSectionNames = (sections: Section[], titleExtracted: boolean): Section[] => {
@@ -263,7 +265,7 @@ const normalizeImportedSectionNames = (sections: Section[], titleExtracted: bool
 
     if (!introSeen) {
       introSeen = true;
-      // If a H1 title was extracted, keep the first Intro as-is
+      // If a H1/H2 title was extracted, keep the first Intro as-is
       if (titleExtracted) return section;
       // Otherwise promote first Intro to Title (unless a Title section already exists)
       if (!hasTitle) return { ...section, name: 'Title' };
@@ -394,7 +396,7 @@ export const usePasteImport = ({
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
 
-    // --- Extract H1 title before any chunking ---
+    // --- Extract H1/H2 title before any chunking ---
     const { songTitle: extractedTitle, lyricsText } = extractH1TitleFromText(pastedText);
     if (extractedTitle && setSongTitle) {
       setSongTitle(extractedTitle);
