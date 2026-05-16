@@ -95,7 +95,6 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   // ── Modal handlers ─────────────────────────────────────────────
   const {
     handleOpenPasteModal,
-    handleOpenImport,
     handleOpenExport,
     handleOpenSettings,
     handleOpenAbout,
@@ -180,7 +179,9 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     handleOpenNewGeneration,
     // Modal handlers
     handleOpenPasteModal,
-    handleOpenImport,
+    // handleOpenImport is replaced by handleImportChooseFile to skip the
+    // intermediate dialog and open the OS file picker directly.
+    handleOpenImport: handleImportChooseFile,
     handleOpenExport,
     handleOpenSettings,
     handleOpenAbout,
