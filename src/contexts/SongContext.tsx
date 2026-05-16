@@ -49,8 +49,28 @@ export function SongProvider({ children, initialSession }: SongProviderProps) {
   const initialSong = initialSession?.song ?? createEmptySong(DEFAULT_STRUCTURE, DEFAULT_RHYME_SCHEME);
   const initialStructure = initialSession?.structure ?? DEFAULT_STRUCTURE;
 
-  const history = useSongHistoryState(initialSong, initialStructure);
   const meta = useSongMeta(initialSession ?? undefined);
+
+  const metaSetters = useMemo(() => ({
+    setTitle: meta.setTitle,
+    setTitleOrigin: meta.setTitleOrigin,
+    setTopic: meta.setTopic,
+    setMood: meta.setMood,
+    setRhymeScheme: meta.setRhymeScheme,
+    setTargetSyllables: meta.setTargetSyllables,
+    setGenre: meta.setGenre,
+    setTempo: meta.setTempo,
+    setInstrumentation: meta.setInstrumentation,
+    setRhythm: meta.setRhythm,
+    setNarrative: meta.setNarrative,
+    setMusicalPrompt: meta.setMusicalPrompt,
+  }), [
+    meta.setTitle, meta.setTitleOrigin, meta.setTopic, meta.setMood,
+    meta.setRhymeScheme, meta.setTargetSyllables, meta.setGenre, meta.setTempo,
+    meta.setInstrumentation, meta.setRhythm, meta.setNarrative, meta.setMusicalPrompt,
+  ]);
+
+  const history = useSongHistoryState(initialSong, initialStructure, metaSetters);
 
   const historyValue = useMemo<SongHistoryContextValue>(
     () => ({
@@ -74,6 +94,7 @@ export function SongProvider({ children, initialSession }: SongProviderProps) {
       history.updateSongWithHistory,
       history.updateStructureWithHistory,
       history.updateSongAndStructureWithHistory,
+      history.navigateWithHistory,
       history.replaceStateWithoutHistory,
       history.clearHistory,
       history.undo,

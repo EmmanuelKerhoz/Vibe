@@ -6,9 +6,26 @@ import { cleanSectionName } from '../utils/songUtils';
 
 const MAX_HISTORY = 50;
 
+export type SongMeta = {
+  title: string;
+  titleOrigin: 'user' | 'ai';
+  topic: string;
+  mood: string;
+  rhymeScheme: string;
+  targetSyllables: number;
+  genre: string;
+  tempo: number;
+  instrumentation: string;
+  rhythm: string;
+  narrative: string;
+  musicalPrompt: string;
+};
+
 type SongHistorySnapshot = {
   song: Section[];
   structure: string[];
+  /** Present only on snapshots created by navigation actions (New Song, Load Song). */
+  meta?: SongMeta;
 };
 
 export type UpdateSongAndStructureWithHistory = (
@@ -47,6 +64,7 @@ const cleanStructure = (structure: string[]): string[] =>
 const normalizeSnapshot = (snapshot: SongHistorySnapshot): SongHistorySnapshot => ({
   song: cleanSong(snapshot.song),
   structure: cleanStructure(snapshot.structure),
+  ...(snapshot.meta ? { meta: snapshot.meta } : {}),
 });
 
 const cappedPast = (past: SongHistorySnapshot[]): SongHistorySnapshot[] =>
@@ -54,41 +72,40 @@ const cappedPast = (past: SongHistorySnapshot[]): SongHistorySnapshot[] =>
 
 // ─── Delta helpers ────────────────────────────────────────────────────────────
 
-/**
- * Per-section fingerprint: id + name + line count guard + per-line digest.
- * Early-exits on line-count mismatch before building the line string —
- * avoids O(n) concat when sections are replaced wholesale (AI generation).
- */
 const sectionFingerprint = (s: Section): string => {
   const lines = s.lines ?? [];
-  // Prefix with line count so a count change is immediately visible
-  // without iterating individual lines.
   const lineCount = lines.length;
   const lineDigest = lines.map(l => `${l.id}:${l.text}:${l.syllables}`).join('|');
   return `${s.id}:${s.name}:${lineCount}:${lineDigest}`;
 };
 
-/**
- * Full snapshot fingerprint with two early-exit guards:
- * 1. Section-count mismatch → return immediately (O(1)).
- * 2. Structure string mismatch → return immediately (O(k) where k = section names).
- * Only reaches per-line iteration when counts match.
- *
- * NOTE: this function is called twice per applySnapshot/updateState invocation
- * (current + next). The guards ensure the common case of a full-song replacement
- * (AI generation) resolves in O(1) instead of O(n×m).
- */
 const snapshotFingerprint = (snap: SongHistorySnapshot): string => {
-  // Guard 1: encode section count directly into the fingerprint prefix.
-  // A caller comparing two fingerprints will see mismatch at the first char
-  // when counts differ — no need for a separate fast-path outside this fn.
   const sectionCount = snap.song.length;
   const structureKey = snap.structure.join(',');
   const songKey = snap.song.map(sectionFingerprint).join('//');
   return `${sectionCount}|${structureKey}||${songKey}`;
 };
 
-export const useSongHistoryState = (initialSong: Section[] = [], initialStructure: string[] = []) => {
+export type MetaSetters = {
+  setTitle: (v: string) => void;
+  setTitleOrigin: (v: 'user' | 'ai') => void;
+  setTopic: (v: string) => void;
+  setMood: (v: string) => void;
+  setRhymeScheme: (v: string) => void;
+  setTargetSyllables: (v: number) => void;
+  setGenre: (v: string) => void;
+  setTempo: (v: number) => void;
+  setInstrumentation: (v: string) => void;
+  setRhythm: (v: string) => void;
+  setNarrative: (v: string) => void;
+  setMusicalPrompt: (v: string) => void;
+};
+
+export const useSongHistoryState = (
+  initialSong: Section[] = [],
+  initialStructure: string[] = [],
+  metaSetters?: MetaSetters,
+) => {
   const [state, setState] = useState<SongHistoryState>(() => ({
     ...normalizeSnapshot({ song: initialSong, structure: initialStructure }),
     past: [],
@@ -102,8 +119,8 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
         return {
           song: normalizedNext.song,
           structure: normalizedNext.structure,
-          past: current.past,
-          future: current.future,
+          past: [],
+          future: [],
         };
       }
       const currentFp = snapshotFingerprint({ song: current.song, structure: current.structure });
@@ -145,6 +162,34 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     updateState(() => ({ song: newSong, structure: newStructure }));
   }, [updateState]);
 
+  /**
+   * Push a navigation snapshot (song + structure + meta) into history,
+   * then replace current state with the new snapshot.
+   * Used by New Song / Load Song so that Undo restores the previous song
+   * including its metadata, and Redo returns to the new state.
+   */
+  const navigateWithHistory = useCallback((
+    newSong: Section[],
+    newStructure: string[],
+    currentMeta: SongMeta,
+  ) => {
+    const normalizedNew = normalizeSnapshot({ song: newSong, structure: newStructure });
+    setState(current => {
+      const currentFp = snapshotFingerprint({ song: current.song, structure: current.structure });
+      const nextFp = snapshotFingerprint(normalizedNew);
+      if (currentFp === nextFp) return current;
+      return {
+        song: normalizedNew.song,
+        structure: normalizedNew.structure,
+        past: cappedPast([
+          ...current.past,
+          { song: current.song, structure: current.structure, meta: currentMeta },
+        ]),
+        future: [],
+      };
+    });
+  }, []);
+
   const replaceStateWithoutHistory = useCallback((newSong: Section[], newStructure: string[]) => {
     applySnapshot({ song: newSong, structure: newStructure }, { trackHistory: false });
   }, [applySnapshot]);
@@ -153,11 +198,28 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     setState(current => ({ ...current, past: [], future: [] }));
   }, []);
 
+  const applyMeta = useCallback((meta: SongMeta) => {
+    if (!metaSetters) return;
+    metaSetters.setTitle(meta.title);
+    metaSetters.setTitleOrigin(meta.titleOrigin);
+    metaSetters.setTopic(meta.topic);
+    metaSetters.setMood(meta.mood);
+    metaSetters.setRhymeScheme(meta.rhymeScheme);
+    metaSetters.setTargetSyllables(meta.targetSyllables);
+    metaSetters.setGenre(meta.genre);
+    metaSetters.setTempo(meta.tempo);
+    metaSetters.setInstrumentation(meta.instrumentation);
+    metaSetters.setRhythm(meta.rhythm);
+    metaSetters.setNarrative(meta.narrative);
+    metaSetters.setMusicalPrompt(meta.musicalPrompt);
+  }, [metaSetters]);
+
   const undo = useCallback(() => {
     setState(current => {
       if (current.past.length === 0) return current;
       const previous = current.past[current.past.length - 1];
       if (!previous) return current;
+      if (previous.meta) applyMeta(previous.meta);
       return {
         song: previous.song,
         structure: previous.structure,
@@ -165,13 +227,14 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
         future: [{ song: current.song, structure: current.structure }, ...current.future],
       };
     });
-  }, []);
+  }, [applyMeta]);
 
   const redo = useCallback(() => {
     setState(current => {
       if (current.future.length === 0) return current;
       const next = current.future[0];
       if (!next) return current;
+      if (next.meta) applyMeta(next.meta);
       return {
         song: next.song,
         structure: next.structure,
@@ -179,7 +242,7 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
         future: current.future.slice(1),
       };
     });
-  }, []);
+  }, [applyMeta]);
 
   return {
     song: state.song,
@@ -190,6 +253,7 @@ export const useSongHistoryState = (initialSong: Section[] = [], initialStructur
     updateSongWithHistory,
     updateStructureWithHistory,
     updateSongAndStructureWithHistory,
+    navigateWithHistory,
     replaceStateWithoutHistory,
     clearHistory,
     undo,

@@ -4,6 +4,7 @@ import type { SimilarityMatch } from '../utils/similarityUtils';
 import { buildResetPayload, buildPartialResetPayload, clearPersistedSession } from '../utils/sessionReset';
 import { createEmptySong } from '../utils/songDefaults';
 import { useSongContext } from '../contexts/SongContext';
+import type { SongMeta } from './useSongHistoryState';
 
 type StateBag = {
   setHasSavedSession: (v: boolean) => void;
@@ -19,6 +20,7 @@ type UseSessionActionsParams = {
   rhymeScheme: string;
   appState: StateBag;
   replaceStateWithoutHistory: (song: ReturnType<typeof createEmptySong>, structure: string[]) => void;
+  navigateWithHistory: (song: Section[], structure: string[], meta: SongMeta) => void;
   clearHistory: () => void;
   clearSelection: () => void;
   resetWebSimilarityIndex: () => void;
@@ -29,8 +31,9 @@ type UseSessionActionsParams = {
 
 const applyResetPayload = (
   payload: ReturnType<typeof buildResetPayload>,
-  replaceStateWithoutHistory: (song: ReturnType<typeof createEmptySong>, structure: string[]) => void,
-  clearHistory: () => void,
+  navigateWithHistory: (song: Section[], structure: string[], meta: SongMeta) => void,
+  currentMeta: SongMeta,
+  clearPersistedSessionFn: () => void,
   clearSelection: () => void,
   resetWebSimilarityIndex: () => void,
   appState: StateBag,
@@ -49,9 +52,11 @@ const applyResetPayload = (
     setMusicalPrompt: (v: string) => void;
   },
 ) => {
-  replaceStateWithoutHistory(payload.song, payload.structure);
-  clearHistory();
-  clearPersistedSession();
+  // Push current song+meta into history, then set new blank song.
+  // This enables Undo to restore the previous song (with its metadata)
+  // and Redo to return to the new blank song.
+  navigateWithHistory(payload.song, payload.structure, currentMeta);
+  clearPersistedSessionFn();
   clearSelection();
   appState.setHasSavedSession(payload.hasSavedSession);
   songMetaSetters.setTitle(payload.title);
@@ -75,10 +80,11 @@ const applyResetPayload = (
 
 export const useSessionActions = (params: UseSessionActionsParams) => {
   const {
+    song,
+    structure,
     rhymeScheme,
     appState,
-    replaceStateWithoutHistory,
-    clearHistory,
+    navigateWithHistory,
     clearSelection,
     resetWebSimilarityIndex,
     resetSuggestionCycle,
@@ -90,6 +96,8 @@ export const useSessionActions = (params: UseSessionActionsParams) => {
     setTitle, setTitleOrigin, setTopic, setMood, setRhymeScheme,
     setTargetSyllables, setGenre, setTempo, setInstrumentation,
     setRhythm, setNarrative, setMusicalPrompt,
+    title, topic, mood, targetSyllables, genre, tempo,
+    instrumentation, rhythm, narrative, musicalPrompt, titleOrigin,
   } = useSongContext();
 
   const songMetaSetters = useMemo(() => ({
@@ -121,10 +129,25 @@ export const useSessionActions = (params: UseSessionActionsParams) => {
   ]);
 
   const handleCreateEmptySong = useCallback(() => {
+    const currentMeta: SongMeta = {
+      title,
+      titleOrigin,
+      topic,
+      mood,
+      rhymeScheme,
+      targetSyllables,
+      genre,
+      tempo,
+      instrumentation,
+      rhythm,
+      narrative,
+      musicalPrompt,
+    };
     applyResetPayload(
       buildResetPayload('AABB'),
-      replaceStateWithoutHistory,
-      clearHistory,
+      navigateWithHistory,
+      currentMeta,
+      clearPersistedSession,
       clearSelection,
       resetWebSimilarityIndex,
       appState,
@@ -133,12 +156,13 @@ export const useSessionActions = (params: UseSessionActionsParams) => {
     resetSuggestionCycle();
   }, [
     appState,
-    clearHistory,
+    navigateWithHistory,
     clearSelection,
-    replaceStateWithoutHistory,
     resetSuggestionCycle,
     resetWebSimilarityIndex,
     songMetaSetters,
+    title, titleOrigin, topic, mood, rhymeScheme, targetSyllables,
+    genre, tempo, instrumentation, rhythm, narrative, musicalPrompt,
   ]);
 
   const resetSong = useCallback(() => {
