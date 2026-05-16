@@ -13,7 +13,6 @@ import { useAppStateContext } from '../../contexts/AppStateContext';
 import { useVersionContext } from '../../contexts/VersionContext';
 import { useAnalysisContext } from '../../contexts/AnalysisContext';
 import { useSimilarityContext } from '../../contexts/SimilarityContext';
-import { useDerivedAppState } from '../../hooks/useDerivedAppState';
 import { useImportHandlers } from '../../hooks/useImportHandlers';
 import { useLibraryActions } from '../../hooks/useLibraryActions';
 import { useModalHandlers } from '../../hooks/useModalHandlers';
@@ -62,7 +61,7 @@ export function AppModalLayer() {
     libraryCount, setLibraryCount, libraryAssets, setLibraryAssets,
     isSavingToLibrary, setIsSavingToLibrary,
     setIsSaveToLibraryModalOpen,
-    setIsImportModalOpen, setIsExportModalOpen,
+    setIsExportModalOpen,
     setIsSettingsOpen, setIsAboutOpen,
     setIsKeyboardShortcutsModalOpen, setIsSearchReplaceOpen,
     setIsPasteModalOpen,
@@ -87,8 +86,6 @@ export function AppModalLayer() {
 
   const { index: webSimilarityIndex, triggerNow: triggerWebSimilarity, resetIndex: resetWebSimilarityIndex } = useSimilarityContext();
 
-  const { hasExistingWork } = useDerivedAppState({ editMode, markupText, webSimilarityIndex });
-
   const { resetSuggestionCycle } = useTopicMoodSuggester({ hasApiKey });
 
   const { exportSong, loadFileForAnalysis } = useSongEditor({
@@ -98,7 +95,6 @@ export function AppModalLayer() {
   const { handleImportInputChange, handleImportChooseFile } = useImportHandlers({
     importInputRef,
     loadFileForAnalysis,
-    setIsImportModalOpen,
     setIsPasteModalOpen,
     setPastedText,
     setSongLanguage,
@@ -116,9 +112,8 @@ export function AppModalLayer() {
     setIsSaveToLibraryModalOpen,
   });
 
-  const { handleOpenPasteLyricsFromModals, handleSectionTargetLanguageChange } = useModalHandlers({
+  const { handleSectionTargetLanguageChange } = useModalHandlers({
     setIsPasteModalOpen,
-    setIsImportModalOpen,
     setIsExportModalOpen,
     setIsSettingsOpen,
     setIsAboutOpen,
@@ -150,9 +145,7 @@ export function AppModalLayer() {
           uiScale={uiScale} setUiScale={setUiScale}
           defaultEditMode={defaultEditMode} setDefaultEditMode={setDefaultEditMode}
           showTranslationFeatures={showTranslationFeatures} setShowTranslationFeatures={setShowTranslationFeatures}
-          hasExistingWork={hasExistingWork}
           handleImportChooseFile={handleImportChooseFile}
-          onOpenPasteLyrics={handleOpenPasteLyricsFromModals}
           handleImportInputChange={handleImportInputChange}
           exportSong={exportSong}
           pastedText={pastedText} setPastedText={setPastedText}

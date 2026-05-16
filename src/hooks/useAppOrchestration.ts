@@ -124,7 +124,6 @@ export function useAppOrchestration(isMobileOrTablet: boolean): AppOrchestration
   // ── Modal handlers ───────────────────────────────────────────────────────
   const { handleOpenSettings, handleOpenAbout, handleSectionTargetLanguageChange } = useModalHandlers({
     setIsPasteModalOpen: appState.setIsPasteModalOpen,
-    setIsImportModalOpen: appState.setIsImportModalOpen,
     setIsExportModalOpen: appState.setIsExportModalOpen,
     setIsSettingsOpen: appState.setIsSettingsOpen,
     setIsAboutOpen: appState.setIsAboutOpen,
