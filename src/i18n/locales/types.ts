@@ -251,24 +251,28 @@ export interface Translations {
     adaptApply?: string;
     /** Tooltip for the per-line quantize button */
     quantize_line?: string;
-    /** Brief confirmation message shown after a line is quantized */
-    quantize_line_done?: string;
-    /** Tooltip shown when quantize is disabled for unsupported scripts */
     quantize_line_unsupported?: string;
+    quantize_line_done?: string;
+    /** Tooltip on APPLY button when no selector has changed */
+    applyNoChanges?: string;
+    /** Tooltip on APPLY button when language adapt is pending but no lyrics exist */
+    applyNoLyrics?: string;
+    /** Tooltip on APPLY button when changes are pending */
+    applyPending?: string;
   };
 
-  suggestions: {
+  suggestions?: {
     title: string;
     crafting: string;
     clickToApply: string;
     moreOptions: string;
     empty: string;
-    spellCheckTitle: string;
-    spellChecking: string;
-    applyCorrection: string;
-    dismiss: string;
-    synonymsTitle: string;
-    synonymsLoading: string;
+    spellCheckTitle?: string;
+    spellChecking?: string;
+    applyCorrection?: string;
+    dismiss?: string;
+    synonymsTitle?: string;
+    synonymsLoading?: string;
   };
 
   musical: {
@@ -296,16 +300,12 @@ export interface Translations {
     copyPrompt: string;
     copied: string;
     contextInfo: string;
-    /** Metronome feature (B4) */
-    metronome?: string;
-    metronomeStart?: string;
-    metronomeStop?: string;
-    /** Instrument builder (B2) */
+    metronome: string;
+    metronomeStart: string;
+    metronomeStop: string;
     instruments?: string;
     instrumentsPlaceholder?: string;
-    /** Rhythm presets (B3) */
     rhythmPresets?: string;
-    /** Vibe Board feature */
     vibeBoard?: string;
     vibeBoardDescription?: string;
     subStyle?: string;
@@ -324,9 +324,9 @@ export interface Translations {
     revert: string;
     close: string;
     noData: string;
-    showMusicalSuggestions: string;
-    hideMusicalSuggestions: string;
-    musicalSuggestionsMovedHint: string;
+    showMusicalSuggestions?: string;
+    hideMusicalSuggestions?: string;
+    musicalSuggestionsMovedHint?: string;
   };
 
   similarity: {
@@ -340,14 +340,14 @@ export interface Translations {
     matchedSections: string;
     sharedKeywords: string;
     thresholdHint: string;
-    webTitle: string;
-    webSubtitle: string;
-    webIdle: string;
-    webRunning: string;
-    webNoMatches: string;
-    webRefresh: string;
-    nGramScoring: string;
-    libraryTitle: string;
+    webTitle?: string;
+    webSubtitle?: string;
+    webIdle?: string;
+    webRunning?: string;
+    webNoMatches?: string;
+    webRefresh?: string;
+    nGramScoring?: string;
+    libraryTitle?: string;
   };
 
   saveToLibrary: {
@@ -362,17 +362,17 @@ export interface Translations {
     load: string;
     loadDescription: string;
     close: string;
-    storageTitle: string;
-    storageLibraryData: string;
-    storageUsed: string;
-    storageQuota: string;
-    storageSaturation: string;
-    storageScopeLocal: string;
-    libraryItems: string;
-    purge: string;
-    purgeWarning: string;
-    confirmPurge: string;
-    cancel: string;
+    storageTitle?: string;
+    storageLibraryData?: string;
+    storageUsed?: string;
+    storageQuota?: string;
+    storageSaturation?: string;
+    storageScopeLocal?: string;
+    libraryItems?: string;
+    purge?: string;
+    purgeWarning?: string;
+    confirmPurge?: string;
+    cancel?: string;
   };
 
   paste: {
@@ -454,14 +454,12 @@ export interface Translations {
     apiKeyLabel: string;
     license: string;
     licenseLabel: string;
+    close: string;
     github: string;
     docs: string;
-    close: string;
-    /** SR-only countdown text shown while the splash auto-closes. Use `{seconds}` as placeholder. */
     splashAutoClose?: string;
   };
 
-  /** AI assistant panel — optional; non-EN/FR locales fall back via deep-merge */
   aiAssistant?: {
     title: string;
     onboarding: string;
@@ -483,28 +481,26 @@ export interface Translations {
     audio: {
       label: string;
       enable: string;
-      /** @deprecated replaced by the enable/disable toggle buttons */
       volume: string;
-      /** Optional: falls back to the English value via LanguageProvider deep-merge */
-      disable?: string;
+      disable: string;
     };
     language: {
       label: string;
     };
-    scale?: {
+    scale: {
       label: string;
       small: string;
       medium: string;
       large: string;
     };
-    editMode?: {
+    editMode: {
       label: string;
       text: string;
       section: string;
       markdown: string;
-      phonetic?: string;
+      phonetic: string;
     };
-    translation?: {
+    translation: {
       label: string;
       show: string;
       hide: string;
@@ -550,13 +546,12 @@ export interface Translations {
     generateSong: string;
     regenerateSection: string;
     quantizeSection: string;
-    /** Template: use `{lang}` placeholder for the target language name */
     adaptSong: string;
     sectionAdapt: string;
     markupMode: string;
-    editorMode: string;
     phoneticMode: string;
     textMode: string;
+    editorMode: string;
     applyAnalysis: string;
     revertAnalysis: string;
     closeAnalysis: string;
@@ -571,142 +566,128 @@ export interface Translations {
     aiGeneratedTitle: string;
     userEnteredTitle: string;
     openSearch: string;
-    /** Aria-label for the backdrop that closes a dialog when clicked */
-    closeDialog?: string;
-    /** Aria-label / title for the busy-indicator dot in the ribbon */
-    processing?: string;
-    /** Title attribute on the remove-from-library buttons */
-    removeFromLibrary?: string;
-    /** Aria-label for the remove-from-library button; use `{title}` as placeholder for the song title */
-    removeFromLibraryItem?: string;
-    /** Tooltip when the left (lyrics generation) panel is closed */
-    openLeftPanel?: string;
-    /** Tooltip when the left (lyrics generation) panel is open */
-    closeLeftPanel?: string;
-    /** Tooltip for the detect-language button when no language is detected */
-    detectLanguage?: string;
-    /** Tooltip for the detect-language button when languages are already detected.
-     *  Use `{langs}` as a placeholder for the comma-separated language list. */
-    redetectLanguage?: string;
-    /** Tooltip for the preset moods dropdown */
-    moodPresets?: string;
-    /** Tooltip for the default rhyme scheme dropdown */
-    rhymeScheme?: string;
-    /** Tooltip for the target syllables slider */
-    targetSyllables?: string;
-    /** Tooltip for the view mode selector dropdown */
-    viewMode?: string;
-    /** Tooltip for the "New Lyrics Generation" menu item */
-    newLyricsGeneration?: string;
-    /** Tooltip for the "New Song" menu item */
-    newSong?: string;
-    pasteAvailable?: string;
-    pasteUnavailable?: string;
-    browseLibrary?: string;
-    openSettings?: string;
-    sponsor?: string;
-    sendToSuno?: string;
+    closeDialog: string;
+    processing: string;
+    removeFromLibrary: string;
+    removeFromLibraryItem: string;
+    openLeftPanel: string;
+    closeLeftPanel: string;
+    detectLanguage: string;
+    redetectLanguage: string;
+    moodPresets: string;
+    rhymeScheme: string;
+    targetSyllables: string;
+    viewMode: string;
+    newLyricsGeneration: string;
+    newSong: string;
+    pasteAvailable: string;
+    pasteUnavailable: string;
+    browseLibrary: string;
+    openSettings: string;
+    sponsor: string;
     sendToSunoConfirm?: string;
-    /** Tooltip shown after the SUNO prompt was sent and was truncated to MAX_SUNO_PROMPT_LENGTH.
-     *  Use `{max}` as placeholder for the character limit. */
-    sendToSunoTruncated?: string;
-    /** Tooltip shown when the SUNO prompt exceeds MAX_SUNO_PROMPT_LENGTH and will be trimmed on send.
-     *  Use `{max}` as placeholder for the character limit. */
-    sendToSunoWillTruncate?: string;
+    sendToSuno?: string;
     quantizeLineDone?: string;
   };
 
-  /** Section type labels (Intro, Verse, Chorus, etc.) */
-  sections?: {
-    intro?: string;
-    verse?: string;
-    preChorus?: string;
-    chorus?: string;
-    bridge?: string;
-    breakdown?: string;
-    finalChorus?: string;
-    outro?: string;
-    [key: string]: string | undefined;
+  sections: {
+    intro: string;
+    verse: string;
+    preChorus: string;
+    chorus: string;
+    bridge: string;
+    breakdown: string;
+    finalChorus: string;
+    outro: string;
   };
 
-  /** Preset mood labels */
-  moods?: {
-    [key: string]: string;
+  moods: {
+    aggressive: string;
+    calm: string;
+    dark: string;
+    energetic: string;
+    ethereal: string;
+    funky: string;
+    gloomy: string;
+    happy: string;
+    intense: string;
+    joyful: string;
+    lonely: string;
+    majestic: string;
+    melancholic: string;
+    nostalgic: string;
+    optimistic: string;
+    peaceful: string;
+    quirky: string;
+    romantic: string;
+    sad: string;
+    tense: string;
+    uplifting: string;
+    vibrant: string;
+    whimsical: string;
+    yearning: string;
+    zen: string;
   };
 
-  /** Insights / stats bar labels */
   insights?: {
-    title?: string;
-    sections?: string;
-    words?: string;
-    characters?: string;
-    [key: string]: string | undefined;
+    title: string;
+    sections: string;
+    words: string;
+    characters: string;
   };
 
-  /** Rhyme scheme option labels */
   rhymeSchemes?: {
-    AABB?: string;
-    ABAB?: string;
-    AAAA?: string;
-    ABCB?: string;
-    AAABBB?: string;
-    AABBCC?: string;
-    ABABAB?: string;
-    ABCABC?: string;
-    FREE?: string;
-    [key: string]: string | undefined;
+    AABB: string;
+    ABAB: string;
+    AAAA: string;
+    ABCB: string;
+    AAABBB: string;
+    AABBCC: string;
+    ABABAB: string;
+    ABCABC: string;
+    FREE: string;
   };
 
-  /** API error modal */
   apiError?: {
-    title?: string;
-    close?: string;
-    [key: string]: string | undefined;
+    title: string;
+    close: string;
   };
 
-  /** Multi-step adaptation progress banner */
   adaptationProgress?: {
-    adapting?: string;
-    reversing?: string;
-    reviewing?: string;
-    done?: string;
-    fidelityScore?: string;
-    reviewRecommended?: string;
-    pipelineFailed?: string;
-    dismissResult?: string;
-    [key: string]: string | undefined;
+    adapting: string;
+    reversing: string;
+    reviewing: string;
+    done: string;
+    fidelityScore: string;
+    reviewRecommended: string;
+    pipelineFailed: string;
+    dismissResult: string;
   };
 
-  /** Confirm dialog (regenerate, etc.) */
   confirmModal?: {
-    regenerateTitle?: string;
-    regenerateConfirm?: string;
-    cancel?: string;
-    [key: string]: string | undefined;
+    regenerateTitle: string;
+    regenerateConfirm: string;
+    cancel: string;
   };
 
-  /** Prompt/input dialog (save version, etc.) */
   promptModal?: {
-    saveVersionTitle?: string;
-    saveVersionMessage?: string;
-    saveVersionPlaceholder?: string;
-    saveVersionConfirm?: string;
-    cancel?: string;
-    [key: string]: string | undefined;
+    saveVersionTitle: string;
+    saveVersionMessage: string;
+    saveVersionPlaceholder: string;
+    saveVersionConfirm: string;
+    cancel: string;
   };
 
-  /** Rhythmic coherence check dialog */
   rhythmicCoherence?: {
-    title?: string;
-    scoreLabel?: string;
-    optionA?: string;
-    optionADescription?: string;
-    optionB?: string;
-    optionBDescription?: string;
-    apply?: string;
-    skip?: string;
-    suggestedBpm?: string;
-    tooLongLines?: string;
-    [key: string]: string | undefined;
+    title: string;
+    scoreLabel: string;
+    optionA: string;
+    optionADescription: string;
+    optionB: string;
+    optionBDescription: string;
+    apply: string;
+    skip: string;
+    suggestedBpm: string;
+    tooLongLines: string;
   };
 }

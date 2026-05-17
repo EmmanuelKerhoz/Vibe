@@ -186,7 +186,10 @@
     "detect": "Detect",
     "quantize_line": "Quantize line",
     "quantize_line_unsupported": "Quantize supports Latin-script lyrics only",
-    "quantize_line_done": "Line quantized"
+    "quantize_line_done": "Line quantized",
+    "applyNoChanges": "No changes",
+    "applyNoLyrics": "No lyrics",
+    "applyPending": "Apply"
   },
   "suggestions": {
     "title": "AI Suggestions",
