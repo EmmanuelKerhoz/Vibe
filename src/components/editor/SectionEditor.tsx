@@ -142,7 +142,9 @@ export const SectionEditor = React.memo(function SectionEditor({
         : (t.editor?.applyPending ?? 'Apply all pending changes to this section');
 
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
-  const isProcessing = isGenerating || isApplying;
+
+  // Bar visible whenever any async operation is in flight for this section
+  const isProcessing = isGenerating || isApplying || isAdaptingLanguage;
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -208,20 +210,20 @@ export const SectionEditor = React.memo(function SectionEditor({
       <div className="flex-1 pt-2.5 px-3.5 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
 
         <div className="mb-2 flex items-start justify-between gap-3 flex-wrap relative">
-          {/* Indeterminate regeneration progress bar */}
+          {/* Indeterminate regeneration/adaptation progress bar — LTR sweep */}
           {isProcessing && (
             <div
               role="progressbar"
-              aria-label="Regenerating section"
+              aria-label="Processing section"
               aria-busy="true"
               className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden rounded-full"
               style={{ background: 'oklch(from var(--lcars-cyan, #4fc3f7) l c h / 0.18)' }}
             >
               <div
-                className="h-full w-1/3 rounded-full"
+                className="absolute inset-y-0 left-0 w-full h-full"
                 style={{
-                  background: 'var(--lcars-cyan, #4fc3f7)',
-                  animation: 'section-regen-slide 1.4s ease-in-out infinite',
+                  background: 'linear-gradient(to right, var(--lcars-cyan, #4fc3f7) 60%, transparent 100%)',
+                  animation: 'section-regen-slide 1.4s linear infinite',
                 }}
               />
             </div>

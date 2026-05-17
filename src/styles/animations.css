@@ -51,9 +51,9 @@
   to   { --lcars-gradient-angle: 360deg; }
 }
 
-/* Indeterminate progress bar — section regeneration indicator */
+/* Indeterminate progress bar — section regeneration/adaptation indicator
+   Strict LTR: starts fully left of container, sweeps to fully right, repeats. */
 @keyframes section-regen-slide {
-  0%   { transform: translateX(-300%); }
-  50%  { transform: translateX(150%); }
-  100% { transform: translateX(-300%); }
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
 }
