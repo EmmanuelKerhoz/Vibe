@@ -47,13 +47,13 @@ export const SectionEditor = React.memo(function SectionEditor({
   onLineBlur,
 }: SectionEditorProps) {
   const { t } = useTranslation();
-  const { isGenerating } = useComposerContext();
+  const { isGenerating, regenerateSection } = useComposerContext();
   const { handleDrop } = useDragHandlersContext();
   const { draggedItemIndex, dragOverIndex } = useDragState();
   const { setDragOverIndex } = useDragActions();
   const { isProxiedForSection } = useRhymeProxyContext();
   const { lineLanguages, rhymeScheme: globalRhymeScheme } = useSongContext();
-  const { setSectionName, setSectionRhymeScheme } = useSongMutation();
+  const { renameSectionWithRenumber, setSectionRhymeScheme } = useSongMutation();
 
   const sectionName: string = section.name ?? '';
   const committedRhyme: string = section.rhymeScheme || globalRhymeScheme;
@@ -77,6 +77,13 @@ export const SectionEditor = React.memo(function SectionEditor({
     setPendingLang(sectionTargetLanguage);
   }, [sectionTargetLanguage]);
 
+  const hasLyrics = useMemo(
+    () => section.lines.some(
+      l => !(l.isMeta ?? isPureMetaLine(l.text)) && l.text.trim().length > 0,
+    ),
+    [section.lines],
+  );
+
   const isDirty =
     pendingName !== sectionName ||
     pendingRhyme !== committedRhyme ||
@@ -85,12 +92,22 @@ export const SectionEditor = React.memo(function SectionEditor({
   // ── Apply ────────────────────────────────────────────────────────────────────
   const handleApply = useCallback(() => {
     if (!isDirty) return;
+
+    // 1. Type change → relabel + renumber siblings
     if (pendingName !== sectionName) {
-      setSectionName(section.id, pendingName);
+      renameSectionWithRenumber(section.id, pendingName);
     }
+
+    // 2. Rhyme scheme change → commit then trigger AI rewrite (if lyrics exist)
     if (pendingRhyme !== committedRhyme) {
       setSectionRhymeScheme(section.id, pendingRhyme);
+      if (hasLyrics) {
+        // Defer regen by one tick so the rhymeScheme state has settled
+        setTimeout(() => regenerateSection(section.id), 0);
+      }
     }
+
+    // 3. Language change → adapt
     if (pendingLang !== sectionTargetLanguage) {
       onSectionTargetLanguageChange?.(section.id, pendingLang);
       if (adaptSectionLanguage) {
@@ -103,19 +120,13 @@ export const SectionEditor = React.memo(function SectionEditor({
     pendingRhyme, committedRhyme,
     pendingLang, sectionTargetLanguage,
     section.id,
-    setSectionName, setSectionRhymeScheme,
+    hasLyrics,
+    renameSectionWithRenumber, setSectionRhymeScheme, regenerateSection,
     onSectionTargetLanguageChange, adaptSectionLanguage,
   ]);
 
   // ── Drag ─────────────────────────────────────────────────────────────────────
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
-
-  const hasLyrics = useMemo(
-    () => section.lines.some(
-      l => !(l.isMeta ?? isPureMetaLine(l.text)) && l.text.trim().length > 0,
-    ),
-    [section.lines],
-  );
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();

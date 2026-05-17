@@ -8,6 +8,11 @@ import type { Section } from '../types';
 const isSectionPreChorus = (s: Section) => isPreChorusSectionName(s.name);
 const isSectionChorus = (s: Section) => isLinkedChorusSectionName(s.name);
 
+// Strip trailing number: "VERSE 2" → "VERSE", "CHORUS" → "CHORUS"
+function baseTypeName(name: string): string {
+  return name.replace(/\s+\d+$/, '').trim();
+}
+
 interface SongMutationContextValue {
   moveSectionUp: (sectionId: string) => void;
   moveSectionDown: (sectionId: string) => void;
@@ -16,6 +21,7 @@ interface SongMutationContextValue {
   addLineToSection: (sectionId: string, afterLineId?: string) => void;
   deleteLineFromSection: (sectionId: string, lineId: string) => void;
   setSectionName: (sectionId: string, name: string) => void;
+  renameSectionWithRenumber: (sectionId: string, newName: string) => void;
   setSectionRhymeScheme: (sectionId: string, scheme: string) => void;
 }
 
@@ -127,6 +133,39 @@ export function SongMutationProvider({ children }: { children: ReactNode }) {
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
   }, [song, updateSongAndStructureWithHistory]);
 
+  /**
+   * Rename section sectionId to newName, then re-number all sections whose
+   * base type matches newName's base type (in song order, 1-indexed if > 1).
+   * E.g. renaming INTRO → VERSE when two VERSEs already exist:
+   *   existing VERSE 1 stays "VERSE 1", existing VERSE 2 stays "VERSE 2",
+   *   renamed section becomes "VERSE 3" (last in song order).
+   * If only one section of the type exists after renaming, no number is appended.
+   */
+  const renameSectionWithRenumber = useCallback((sectionId: string, newName: string) => {
+    const targetBase = baseTypeName(newName);
+    // First pass: rename the target section
+    const renamed = song.map(s => s.id === sectionId ? { ...s, name: newName } : s);
+    // Second pass: collect all sections whose base matches targetBase
+    const matchingIds = renamed
+      .filter(s => baseTypeName(s.name) === targetBase)
+      .map(s => s.id);
+    if (matchingIds.length <= 1) {
+      // Single occurrence — use bare name (strip any stale number)
+      const newSong = renamed.map(s =>
+        s.id === sectionId ? { ...s, name: targetBase } : s
+      );
+      updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
+      return;
+    }
+    // Multiple occurrences — number them in song-order starting at 1
+    let counter = 1;
+    const newSong = renamed.map(s => {
+      if (baseTypeName(s.name) !== targetBase) return s;
+      return { ...s, name: `${targetBase} ${counter++}` };
+    });
+    updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
+  }, [song, updateSongAndStructureWithHistory]);
+
   const setSectionRhymeScheme = useCallback((sectionId: string, newScheme: string) => {
     updateState(current => ({
       song: current.song.map(s => s.id === sectionId ? { ...s, rhymeScheme: newScheme } : s),
@@ -138,12 +177,14 @@ export function SongMutationProvider({ children }: { children: ReactNode }) {
     moveSectionUp, moveSectionDown,
     moveLineUp, moveLineDown,
     addLineToSection, deleteLineFromSection,
-    setSectionName, setSectionRhymeScheme,
+    setSectionName, renameSectionWithRenumber,
+    setSectionRhymeScheme,
   }), [
     moveSectionUp, moveSectionDown,
     moveLineUp, moveLineDown,
     addLineToSection, deleteLineFromSection,
-    setSectionName, setSectionRhymeScheme,
+    setSectionName, renameSectionWithRenumber,
+    setSectionRhymeScheme,
   ]);
 
   return (
