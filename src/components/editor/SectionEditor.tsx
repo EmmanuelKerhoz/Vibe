@@ -49,7 +49,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   onLineBlur,
 }: SectionEditorProps) {
   const { t } = useTranslation();
-  const { isGenerating, regenerateSection } = useComposerContext();
+  const { isGenerating, isRegeneratingSection, regenerateSection } = useComposerContext();
   const { handleDrop } = useDragHandlersContext();
   const { draggedItemIndex, dragOverIndex } = useDragState();
   const { setDragOverIndex } = useDragActions();
@@ -69,12 +69,16 @@ export const SectionEditor = React.memo(function SectionEditor({
   useEffect(() => { setPendingRhyme(committedRhyme); }, [committedRhyme]);
   useEffect(() => { setPendingLang(sectionTargetLanguage); }, [sectionTargetLanguage]);
 
-  // Release local lock once the parent async state takes over or finishes
+  const isRegenSection = isRegeneratingSection(section.id);
+
+  // Release local lock once ALL async operations for this section are done.
+  // regenerateSection manages regeneratingSections (not isGenerating), so we
+  // must watch isRegenSection in addition to isGenerating / isAdaptingLanguage.
   useEffect(() => {
-    if (!isGenerating && !isAdaptingLanguage) {
+    if (!isGenerating && !isAdaptingLanguage && !isRegenSection) {
       setIsApplying(false);
     }
-  }, [isGenerating, isAdaptingLanguage]);
+  }, [isGenerating, isAdaptingLanguage, isRegenSection]);
 
   const hasLyrics = useMemo(
     () => section.lines.some(
@@ -130,9 +134,8 @@ export const SectionEditor = React.memo(function SectionEditor({
       }
     }
 
-    // If no async operation was launched, no external state will ever flip
-    // isGenerating/isAdaptingLanguage, so the cleanup useEffect will never
-    // re-fire. Reset immediately.
+    // No async op launched — reset immediately since no external state
+    // will ever flip to trigger the cleanup useEffect.
     if (!asyncDispatched) {
       setIsApplying(false);
     }
@@ -157,7 +160,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
 
   // Bar visible whenever any async operation is in flight for this section
-  const isProcessing = isGenerating || isApplying || isAdaptingLanguage;
+  const isProcessing = isGenerating || isApplying || isAdaptingLanguage || isRegenSection;
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
