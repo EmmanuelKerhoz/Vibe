@@ -9,6 +9,7 @@ import { APP_VERSION_LABEL } from '../../version';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 import type { SaveStatus } from '../../hooks/useSessionAutoSave';
+import type { Translations } from '../../i18n/locales/types';
 
 interface Props {
   hasApiKey: boolean;
@@ -80,15 +81,12 @@ export function StatusBar({
       : (t.statusBar.sessionSavedTooltip ?? 'Session auto-saved to this device');
 
   // ── Persistence dot / text — CSS tokens only (no Tailwind color classes) ──
-  // mobile-status-dot--* classes are already defined in components.css and use
-  // design-system tokens; we re-use them here for full consistency.
   const persistenceDotClass =
     persistenceState === 'saving'  ? 'mobile-status-dot mobile-status-dot--saving'
     : persistenceState === 'unsaved' ? 'mobile-status-dot mobile-status-dot--unsaved'
     : persistenceState === 'error'   ? 'mobile-status-dot mobile-status-dot--error'
     : 'mobile-status-dot mobile-status-dot--saved';
 
-  // Text colour via CSS vars — no Tailwind colour utilities
   const persistenceTextStyle: React.CSSProperties =
     persistenceState === 'saving'
       ? { color: 'var(--accent-warning)' }
@@ -102,7 +100,7 @@ export function StatusBar({
     ? (t.statusBar.themeSwitchToLight ?? `${t.statusBar.theme} — ${t.settings.theme.light}`)
     : (t.statusBar.themeSwitchToDark  ?? `${t.statusBar.theme} — ${t.settings.theme.dark}`);
 
-  const insights = t.insights ?? {};
+  const insights: Translations['insights'] = t.insights;
 
   return (
     <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-xs${className ? ` ${className}` : ''}`}>
@@ -114,7 +112,6 @@ export function StatusBar({
               ? 'bg-[var(--accent-warning)] animate-pulse'
               : 'bg-[var(--accent-color)] lcars-pulse'
           }`} />
-          {/* status label — text-primary / text-secondary via token, not Tailwind colour */}
           <span className="telemetry-text uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
             {statusLabel}
           </span>
@@ -144,7 +141,7 @@ export function StatusBar({
         <StorageGauge />
         <div className="lcars-divider hidden lg:block" />
 
-        {/* KPI counters — secondary text via token */}
+        {/* KPI counters */}
         <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
           {sectionCount}{' '}
           <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
@@ -160,7 +157,7 @@ export function StatusBar({
         <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
           {charCount}{' '}
           <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
-            {insights.characters}
+            {insights?.characters}
           </span>
         </span>
       </div>

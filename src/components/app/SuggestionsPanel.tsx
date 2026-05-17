@@ -83,6 +83,9 @@ export function SuggestionsPanel({
 
   if (!selectedLineId) return null;
 
+  // Guard: t.suggestions is optional in the Translations type
+  const ts = t.suggestions!;
+
   const hasSpellCorrection = spellCheck?.correction != null;
   const hasSynonyms = synonyms && Object.keys(synonyms).length > 0;
 
@@ -114,8 +117,7 @@ export function SuggestionsPanel({
             style={{ color: 'var(--text-muted)' }}
           >
             <Lightbulb className="w-4 h-4 text-[var(--accent-warning)]" />
-            {/* text-xs = 12px — respects the 12px absolute floor */}
-            <span className="text-xs uppercase tracking-widest font-semibold">{t.suggestions.title}</span>
+            <span className="text-xs uppercase tracking-widest font-semibold">{ts.title}</span>
           </h3>
           <button
             onClick={() => setSelectedLineId(null)}
@@ -132,12 +134,11 @@ export function SuggestionsPanel({
           {/* ── Spell-check correction ── */}
           {(spellCheck?.isChecking || hasSpellCorrection) && (
             <div className="space-y-2">
-              {/* text-[11px] — minimum legible label size */}
               <p
                 className="text-[11px] uppercase tracking-widest"
                 style={{ color: 'var(--text-muted)' }}
               >
-                {t.suggestions.spellCheckTitle}
+                {ts.spellCheckTitle}
               </p>
               {spellCheck?.isChecking ? (
                 <SpellCheckSkeleton />
@@ -156,7 +157,7 @@ export function SuggestionsPanel({
                       className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-color)]/20 hover:bg-[var(--accent-color)]/30 text-[11px] text-[var(--accent-color)] uppercase tracking-wider transition-colors"
                     >
                       <Check className="w-3 h-3" />
-                      {t.suggestions.applyCorrection}
+                      {ts.applyCorrection}
                     </button>
                     <button
                       type="button"
@@ -164,7 +165,7 @@ export function SuggestionsPanel({
                       className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-[11px] uppercase tracking-wider transition-colors"
                       style={{ color: 'var(--text-muted)' }}
                     >
-                      {t.suggestions.dismiss}
+                      {ts.dismiss}
                     </button>
                   </div>
                 </div>
@@ -179,7 +180,7 @@ export function SuggestionsPanel({
                 className="text-[11px] uppercase tracking-widest"
                 style={{ color: 'var(--text-muted)' }}
               >
-                {t.suggestions.synonymsTitle}
+                {ts.synonymsTitle}
               </p>
               {isSynonymsLoading ? (
                 <SynonymsSkeleton />
@@ -234,7 +235,7 @@ export function SuggestionsPanel({
                 <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-[var(--accent-color)] animate-pulse" />
               </div>
               <p className="text-xs animate-pulse" style={{ color: 'var(--text-muted)' }}>
-                {t.suggestions.crafting}
+                {ts.crafting}
               </p>
             </div>
           ) : suggestions.length > 0 ? (
@@ -269,7 +270,7 @@ export function SuggestionsPanel({
                       )}
                     </div>
                     <div className="mt-3 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[11px] text-[var(--accent-color)] uppercase tracking-wider">{t.suggestions.clickToApply}</span>
+                      <span className="text-[11px] text-[var(--accent-color)] uppercase tracking-wider">{ts.clickToApply}</span>
                       <Check className="w-3 h-3 text-[var(--accent-color)]" />
                     </div>
                   </button>
@@ -284,7 +285,7 @@ export function SuggestionsPanel({
                 style={{ color: 'var(--text-muted)' }}
               >
                 <RefreshCw className="w-3 h-3" />
-                {t.suggestions.moreOptions}
+                {ts.moreOptions}
               </button>
             </div>
           ) : (
@@ -293,7 +294,7 @@ export function SuggestionsPanel({
                 <Hash className="w-6 h-6" style={{ color: 'var(--text-faint)' }} />
               </div>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {t.suggestions.empty}
+                {ts.empty}
               </p>
             </div>
           )}
