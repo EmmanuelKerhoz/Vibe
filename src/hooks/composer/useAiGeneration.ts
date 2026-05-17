@@ -77,16 +77,11 @@ const alignGeneratedSongToStructure = (
   });
 };
 
-type RawLine = Omit<Section['lines'][number], 'id'> & { id?: string };
-
 const flagMetaLines = <T extends { text?: string }>(lines: T[]): (T & { isMeta: boolean })[] =>
   lines.map(line => ({
     ...line,
     isMeta: isPureMetaLine(line.text ?? ''),
   }));
-
-const sanitisePromptField = (value: string, maxLength = 500): string =>
-  sanitizeForPrompt(value, { maxLength });
 
 const buildExclusiveLanguageInstruction = (language: string): string => {
   const safe = sanitizeForPrompt(language, { maxLength: 64 });
@@ -191,16 +186,25 @@ export const useAiGeneration = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [regeneratingSections, setRegeneratingSections] = useState<Set<string>>(new Set());
   const resolvedUiLanguage = resolveUiLanguageName(uiLanguage);
+
+  // Always-fresh refs — readable inside any useCallback without stale closure risk
   const latestSongRef = useRef(song);
   const latestTargetSyllablesRef = useRef(targetSyllables);
+  const latestRhymeSchemeRef = useRef(rhymeScheme);
+  const latestTitleRef = useRef(title);
+  const latestTopicRef = useRef(topic);
+  const latestMoodRef = useRef(mood);
+  const latestSongLanguageRef = useRef(songLanguage);
+  const latestResolvedUiLanguageRef = useRef(resolvedUiLanguage);
 
-  useEffect(() => {
-    latestSongRef.current = song;
-  }, [song]);
-
-  useEffect(() => {
-    latestTargetSyllablesRef.current = targetSyllables;
-  }, [targetSyllables]);
+  useEffect(() => { latestSongRef.current = song; }, [song]);
+  useEffect(() => { latestTargetSyllablesRef.current = targetSyllables; }, [targetSyllables]);
+  useEffect(() => { latestRhymeSchemeRef.current = rhymeScheme; }, [rhymeScheme]);
+  useEffect(() => { latestTitleRef.current = title; }, [title]);
+  useEffect(() => { latestTopicRef.current = topic; }, [topic]);
+  useEffect(() => { latestMoodRef.current = mood; }, [mood]);
+  useEffect(() => { latestSongLanguageRef.current = songLanguage; }, [songLanguage]);
+  useEffect(() => { latestResolvedUiLanguageRef.current = resolvedUiLanguage; }, [resolvedUiLanguage]);
 
   const generateAbortRef = useRef<AbortController | null>(null);
   const regenAbortRefs = useRef<Map<string, AbortController>>(new Map());
@@ -226,19 +230,19 @@ export const useAiGeneration = ({
     setIsGenerating(true);
     try {
       await withAbort(generateAbortRef, async (signal) => {
-        const lang = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
-        const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
+        const lang = sanitizeForPrompt(latestSongLanguageRef.current || 'English', { maxLength: 64 });
+        const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(latestSongLanguageRef.current);
         const safeStructure = structure.map(s => sanitizeForPrompt(s, { maxLength: 64 })).join(', ');
-        const safeRhymeScheme = sanitizeForPrompt(rhymeScheme, { maxLength: 64 });
-        const safeUiLang = sanitizeForPrompt(resolvedUiLanguage, { maxLength: 64 });
+        const safeRhymeScheme = sanitizeForPrompt(latestRhymeSchemeRef.current, { maxLength: 64 });
+        const safeUiLang = sanitizeForPrompt(latestResolvedUiLanguageRef.current, { maxLength: 64 });
         const prompt =
 `${UNTRUSTED_INPUT_PREAMBLE}
 
 Write a song based on the following untrusted user-supplied brief:
-${fence('TOPIC', topic)}
-${fence('MOOD', mood)}
+${fence('TOPIC', latestTopicRef.current)}
+${fence('MOOD', latestMoodRef.current)}
 Default Rhyme Scheme: ${safeRhymeScheme}
-Target Syllables per line: ${targetSyllables}
+Target Syllables per line: ${latestTargetSyllablesRef.current}
 Structure: ${safeStructure}
 
 IMPORTANT: Write ALL lyrics in ${lang}. You MUST follow the provided structure EXACTLY.
@@ -267,16 +271,17 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           })
         );
 
+        const currentRhymeScheme = latestRhymeSchemeRef.current;
         const data = safeJsonParse<SongResponse>(response.text || '[]', [], SongResponseSchema);
         const songWithIds = data.map((section) => ({
           ...section,
           name: cleanSectionName(section.name),
           id: generateId(),
-          rhymeScheme: section.rhymeScheme || rhymeScheme,
+          rhymeScheme: section.rhymeScheme || currentRhymeScheme,
           lines: flagMetaLines(section.lines).map((line) => ({ ...line, id: generateId() })),
         }));
         const orderedSong = syncLinkedChorusSections(
-          alignGeneratedSongToStructure(songWithIds, structure, rhymeScheme),
+          alignGeneratedSongToStructure(songWithIds, structure, currentRhymeScheme),
         );
         updateSongAndStructureWithHistory(orderedSong, structure);
         requestAutoTitleGeneration();
@@ -289,8 +294,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
       if (!generateAbortRef.current?.signal.aborted) setIsGenerating(false);
     }
   }, [
-    structure, topic, mood, rhymeScheme, targetSyllables, songLanguage,
-    resolvedUiLanguage,
+    structure,
     updateSongAndStructureWithHistory, requestAutoTitleGeneration, setSelectedLineId,
   ]);
 
@@ -299,7 +303,11 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
     const sectionToRegenerate = currentSong.find(s => s.id === sectionId);
     if (!sectionToRegenerate) return;
 
-    const effectiveRhymeScheme = overrides?.rhymeScheme ?? sectionToRegenerate.rhymeScheme ?? rhymeScheme;
+    // Override wins > section-level scheme > global scheme (all read from latest refs)
+    const effectiveRhymeScheme =
+      overrides?.rhymeScheme ??
+      sectionToRegenerate.rhymeScheme ??
+      latestRhymeSchemeRef.current;
 
     setRegeneratingSections(prev => new Set(prev).add(sectionId));
 
@@ -321,9 +329,9 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
       else if (lowerName.includes('outro')) lineCountPrompt = 'The section should have exactly 4 lines.';
 
       const songStructure = currentSong.map(s => sanitizeForPrompt(s.name, { maxLength: 64 })).join(' → ');
-      const lang = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
-      const safeUiLang = sanitizeForPrompt(resolvedUiLanguage, { maxLength: 64 });
-      const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
+      const lang = sanitizeForPrompt(latestSongLanguageRef.current || 'English', { maxLength: 64 });
+      const safeUiLang = sanitizeForPrompt(latestResolvedUiLanguageRef.current, { maxLength: 64 });
+      const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(latestSongLanguageRef.current);
       const formatSectionLyrics = (sec: Section) => sec.lines.map(l => l.text).filter(Boolean).join('\n');
 
       const prevContext = prevSection
@@ -341,7 +349,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
         ? `\nCreative directives:\n${creativeDirectives.map((d, i) => `- ${fence(`DIRECTIVE_${i + 1}`, d, { maxLength: 200 })}`).join('\n')}`
         : '';
 
-      const langCode = sectionToRegenerate.language || songLanguage;
+      const langCode = sectionToRegenerate.language || latestSongLanguageRef.current;
       const hasRhymedLines = sectionToRegenerate.lines.some(line =>
         line.rhyme && line.rhyme !== '' && line.rhyme !== 'FREE' && !line.isMeta,
       );
@@ -372,9 +380,9 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
 `${UNTRUSTED_INPUT_PREAMBLE}
 
 Rewrite the following section of a song.
-${fence('TITLE', title, { maxLength: 200 })}
-${fence('TOPIC', topic)}
-${fence('MOOD', mood)}
+${fence('TITLE', latestTitleRef.current, { maxLength: 200 })}
+${fence('TOPIC', latestTopicRef.current)}
+${fence('MOOD', latestMoodRef.current)}
 Target Syllables per line: ${latestTargetSyllablesRef.current}
 Section Name: ${sanitizeForPrompt(sectionPayload.name, { maxLength: 64 })}
 Rhyme Scheme: ${sanitizeForPrompt(effectiveRhymeScheme, { maxLength: 64 })}
@@ -432,17 +440,15 @@ Return the updated section in the exact same JSON structure (as an array with on
       }
       regenAbortRefs.current.delete(sectionId);
     }
-  }, [
-    rhymeScheme, title, topic, mood, songLanguage, resolvedUiLanguage, updateSong,
-  ]);
+  }, [updateSong]);
 
   const quantizeSyllables = useCallback(async (sectionId?: string) => {
     const currentSong = latestSongRef.current;
     const currentTargetSyllables = latestTargetSyllablesRef.current;
     if (currentSong.length === 0) return;
     setIsGenerating(true);
-    const lang = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
-    const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
+    const lang = sanitizeForPrompt(latestSongLanguageRef.current || 'English', { maxLength: 64 });
+    const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(latestSongLanguageRef.current);
 
     try {
       await withAbort(generateAbortRef, async (signal) => {
@@ -514,7 +520,7 @@ Return the updated song in the exact same JSON structure.`;
     } finally {
       if (!generateAbortRef.current?.signal.aborted) setIsGenerating(false);
     }
-  }, [songLanguage, updateSong, updateSongWithHistory]);
+  }, [updateSong, updateSongWithHistory]);
 
   return {
     isGenerating,
