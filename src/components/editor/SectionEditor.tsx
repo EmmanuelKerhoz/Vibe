@@ -92,7 +92,6 @@ export const SectionEditor = React.memo(function SectionEditor({
       setSectionRhymeScheme(section.id, pendingRhyme);
     }
     if (pendingLang !== sectionTargetLanguage) {
-      // Propagate language selection upstream (triggers adaptation if adaptSectionLanguage provided)
       onSectionTargetLanguageChange?.(section.id, pendingLang);
       if (adaptSectionLanguage) {
         adaptSectionLanguage(section.id, pendingLang);
@@ -157,7 +156,9 @@ export const SectionEditor = React.memo(function SectionEditor({
     ],
   );
 
-  const schemeResult = useRhymeSchemeMultiLang(multiLangLines, isProxied);
+  // Pass committedRhyme as forcedScheme so badges always reflect the scheme
+  // explicitly chosen by the user (via APPLY), overriding acoustic detection.
+  const schemeResult = useRhymeSchemeMultiLang(multiLangLines, isProxied, committedRhyme);
 
   const lineListOptional = {
     ...(adaptLineLanguage ? { adaptLineLanguage } : {}),

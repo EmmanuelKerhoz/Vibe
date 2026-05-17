@@ -60,26 +60,17 @@ export function applyLocalSchemeOverride(
  * - Empty / meta-line filtering (lines starting with '[' or blank)
  * - Safe fallback: returns null on < 2 usable lines or on detection error
  * - Optional `isProxied` stamp (forwarded from song-level analysis)
+ * - Optional `forcedScheme` (e.g. "ABAB") — when provided, overrides acoustic
+ *   detection and is applied via `applyLocalSchemeOverride` at high priority.
+ *   This is how section.rhymeScheme selected by the user is reflected in badges.
  *
  * Drop-in complement to `useRhymeScheme` — same return type (`SchemeResult | null`).
- *
- * @example
- * const lines = [
- *   { text: "On the road again",  lang: "en" },
- *   { text: "Sur la route encore", lang: "fr" },
- *   { text: "Back to the beat",    lang: "en" },
- *   { text: "Le coeur qui bat fort",lang: "fr" },
- * ];
- * const scheme = useRhymeSchemeMultiLang(lines);
- * // scheme.label === 'ABAB' (cross-family FALLBACK path)
  */
 export function useRhymeSchemeMultiLang(
   lines: MultiLangLine[],
   isProxied?: boolean,
+  forcedScheme?: string,
 ): SchemeResult | null {
-  // Serialise for stable memo key — avoids deep-equality overhead.
-  // Dependency is the inline expression so filtered re-evaluates whenever
-  // the serialised content changes, regardless of referential identity of `lines`.
   const serialised = lines.map(l => `${l.lang}\x01${l.text}`).join('\x00');
 
   const filtered = useMemo(
@@ -96,6 +87,14 @@ export function useRhymeSchemeMultiLang(
     try {
       const raw = detectRhymeSchemeMultiLang(filtered);
       if (raw === null) return null;
+
+      // If the user has explicitly set a scheme for this section, use it directly.
+      // It takes precedence over both acoustic detection and local detection.
+      if (forcedScheme) {
+        const overridden = applyLocalSchemeOverride(raw, forcedScheme, filtered.length);
+        return isProxied !== undefined ? { ...overridden, isProxied } : overridden;
+      }
+
       const firstLang = filtered[0]?.lang;
       const singleLang = filtered.every(line => line.lang === firstLang);
       const localScheme = singleLang && firstLang !== undefined && firstLang !== '__unknown__'
@@ -109,7 +108,7 @@ export function useRhymeSchemeMultiLang(
       }
       return null;
     }
-  }, [filtered, isProxied]);
+  }, [filtered, isProxied, forcedScheme]);
 
   return result;
 }
