@@ -1,4 +1,4 @@
-import { languageNameToCode } from '../constants/langFamilyMap';
+import { languageNameToCode, getAlgoFamily } from '../constants/langFamilyMap';
 import type { Section } from '../types';
 import { compareTextsWithIPA } from './ipaPipeline';
 import { detectRhymeSchemeFromIPAPairs, detectRhymeSchemeLocally } from './rhymeSchemeUtils';
@@ -117,7 +117,6 @@ export const buildRhymeGroups = (lines: string[], langCode?: string): RhymeGroup
 
     const members: number[] = [i];
     for (let j = i + 1; j < n; j++) {
-      // FIX: skip lines already claimed by an earlier group
       if (groupIndex[j] !== null) continue;
       if (!lines[j]?.trim()) continue;
       if (doLinesRhymeGraphemic(lines[i]!, lines[j]!, langCode)) {
@@ -145,13 +144,6 @@ export const buildRhymeGroups = (lines: string[], langCode?: string): RhymeGroup
 
 // ─── buildRhymeOverlays ───────────────────────────────────────────────────────
 
-/**
- * Compute overlay segments for every lyric line.
- *
- * FIX: position is derived from segmentVerseToRhymingUnit() (Step-0) instead
- * of being inferred from split.before.trim(), which was unreliable for enjambed
- * and internal rhymes.
- */
 export const buildRhymeOverlays = (
   lines: string[],
   groups: RhymeGroup[],
@@ -174,26 +166,16 @@ export const buildRhymeOverlays = (
     const split = splitRhymingSuffix(line, peerLines, langCode);
     if (!split) return null;
 
-    // FIX: use Step-0 to derive position reliably
     const { position } = segmentVerseToRhymingUnit(line, langCode);
-
     return { before: split.before, rhyme: split.rhyme, position };
   });
 };
 
 // ─── buildRhymeScheme ─────────────────────────────────────────────────────────
 
-/**
- * Derive a letter-based rhyme scheme string.
- *
- * FIX: non-rhyming positions use 'X' placeholder (not '') so the scheme string
- * length equals lineCount and per-line indices stay aligned.
- * Returns null when fewer than 2 distinct rhyming letters exist.
- */
 export const buildRhymeScheme = (lineCount: number, groups: RhymeGroup[]): string | null => {
   if (groups.length < 1) return null;
 
-  // 'X' = non-rhyming placeholder (positionally stable)
   const letters = new Array<string>(lineCount).fill('X');
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let nextLetter = 0;
@@ -212,20 +194,12 @@ export const buildRhymeScheme = (lineCount: number, groups: RhymeGroup[]): strin
 
 // ─── analyseSection / analyseSong ────────────────────────────────────────────
 
-/**
- * Full analysis for a single section.
- *
- * FIX: meta lines and empty lines are filtered out before analysis. The overlay
- * array is re-mapped to the full section.lines length, with nulls for meta/empty
- * positions, so callers can index it by the original line index.
- */
 export const analyseSection = (
   section: Section,
   langCode?: string,
 ): SectionRhymeAnalysis => {
   const allLines = section.lines ?? [];
 
-  // Collect lyric-only lines with their original indices
   const lyricEntries: { idx: number; text: string }[] = [];
   allLines.forEach((l, idx) => {
     if (!l.isMeta && l.text?.trim()) lyricEntries.push({ idx, text: l.text });
@@ -236,7 +210,6 @@ export const analyseSection = (
   const lyricOverlays = buildRhymeOverlays(lyricTexts, groups, langCode);
   const scheme = buildRhymeScheme(lyricTexts.length, groups);
 
-  // Re-map overlays to full section length (null for meta / empty positions)
   const overlays: (RhymeOverlaySegment | null)[] = new Array(allLines.length).fill(null);
   lyricEntries.forEach(({ idx }, lyricIdx) => {
     overlays[idx] = lyricOverlays[lyricIdx] ?? null;
@@ -252,10 +225,6 @@ export const analyseSong = (
 
 // ─── analyzeSongRhymes (original async API — preserved for consumers) ─────────
 
-/**
- * Builds lightweight, local rhyme diagnostics for each song section.
- * This is the primary async entry point used by useSongAnalysisEngine.
- */
 export const analyzeSongRhymes = async (
   song: Section[],
   detectCrossSectionBoundary = false,
@@ -268,7 +237,7 @@ export const analyzeSongRhymes = async (
 
     const sectionLangCode = languageNameToCode(section.language ?? '');
 
-    const { getAlgoFamily } = await import('../constants/langFamilyMap');
+    // Use statically-imported getAlgoFamily — no dynamic import needed
     const family = sectionLangCode ? getAlgoFamily(sectionLangCode) : undefined;
     const isProxied = family ? !NATIVE_G2P_FAMILIES.has(family) : false;
 
@@ -336,18 +305,6 @@ export const analyzeSongRhymes = async (
 
       const ipaScheme = detectRhymeSchemeFromIPAPairs(lyricLines.length, pairs);
 
-      // Combined IPA + graphemic scheme: when the IPA pipeline misses a real
-      // rhyme (e.g. the simple client-side romG2P fallback under-scores
-      // lueur/cœur or connaissance/effervescence in the screenshot's verse),
-      // the graphemic engine in scheme mode is a reliable safety net.  We
-      // OR-merge the two pair sets so a pair counts as rhyming when EITHER
-      // signal confirms it.  This preserves all existing IPA matches while
-      // recovering rhymes the romG2P fallback drops.
-      //
-      // Synthesized graphemic pairs are scoped to the local `combinedPairs`
-      // array used by detectRhymeSchemeFromIPAPairs (threshold 60); they are
-      // intentionally NOT pushed into the returned `pairs` so downstream
-      // consumers continue to see only IPA-derived confidence scores.
       const graphemicPairs: LocalRhymePairAnalysis[] = [];
       for (let i = 0; i < lyricLines.length; i++) {
         for (let j = i + 1; j < lyricLines.length; j++) {

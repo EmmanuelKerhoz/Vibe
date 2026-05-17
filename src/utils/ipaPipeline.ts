@@ -15,7 +15,12 @@ import { getAlgoFamily, getFamilyConfig, type AlgoFamily } from '../constants/la
 import { phonemizeText, type PhonemeResponse } from './phonemizeClient';
 import { graphemeToIPA } from './g2pUtils';
 import { syllabifyIPA, extractRhymeNucleus, type IPASyllable } from './ipaSyllabification';
-import { calculateRhymeSimilarity, calculateRhymeSimilarityWithWeight, type RhymeSimilarityResult } from './ipaUtils';
+import {
+  calculateRhymeSimilarity,
+  calculateRhymeSimilarityWithWeight,
+  classifyRhymeQuality,
+  type RhymeSimilarityResult,
+} from './ipaUtils';
 import { finalizeDetectedRhymeScheme, RHYME_SCHEME_LETTERS } from './rhymeSchemeUtils';
 
 const createAbortError = () => {
@@ -49,19 +54,6 @@ export interface IPAPipelineResult {
   lowResource: boolean;
 }
 
-/**
- * Seuils de similarité IPA différenciés par famille phonologique.
- *
- * Familles tonales (KWA, SIN, VIET, TAI) : seuil relevé — les tons sont
- * discriminants, une légère variation de noyau vocalique ne constitue pas
- * une rime.
- *
- * Familles à coda haute pertinence (GER, SLV, KOR, VIET) : seuil légèrement
- * abaissé — la richesse consonantique de coda compense une correspondance
- * vocalique moins stricte.
- *
- * Toutes les familles non listées héritent du seuil par défaut (0.75).
- */
 const FAMILY_RHYME_THRESHOLDS: Partial<Record<AlgoFamily, number>> = {
   'ALGO-KWA':  0.80,
   'ALGO-SIN':  0.82,
@@ -74,20 +66,6 @@ const FAMILY_RHYME_THRESHOLDS: Partial<Record<AlgoFamily, number>> = {
   'ALGO-KOR':  0.72,
 };
 
-/**
- * Per-family tone weight ∈ [0.0, 1.0].
- *
- * Controls how much tonal mismatch penalises the rhyme score when
- * compareTextsWithIPA applies post-score tone correction.
- *
- * 0.0  = tone is ignored (non-tonal families)
- * 0.55 = BNT/KWA/CRV: tone matters but vowel nucleus dominates
- * 0.65 = TAI: 5-tone system, tone is a strong discriminant
- * 0.70 = SIN/VIET: lexical tone = meaning; near-identical nuclei with
- *         different tones are NOT rhymes in formal poetry
- *
- * Consumers may override per-call via compareTextsWithIPA({ toneWeight }).
- */
 export const TONE_WEIGHT_DEFAULTS: Partial<Record<AlgoFamily, number>> = {
   'ALGO-SIN':  0.70,
   'ALGO-VIET': 0.70,
@@ -97,43 +75,20 @@ export const TONE_WEIGHT_DEFAULTS: Partial<Record<AlgoFamily, number>> = {
   'ALGO-BNT':  0.55,
 };
 
-/**
- * Resolve the effective tone weight for a given language code.
- * Non-tonal families always return 0.0 — overrides are clamped to 0.0 for
- * non-tonal families so callers cannot accidentally enable tonal penalties
- * on languages that carry no lexical tone.
- * @param langCode - ISO 639 code
- * @param override - Optional caller-supplied value that takes precedence
- *                   for tonal families
- */
 export const getToneWeightForLangCode = (langCode: string, override?: number): number => {
   const family = getAlgoFamily(langCode);
   if (!family) return 0.0;
   const defaultWeight = TONE_WEIGHT_DEFAULTS[family] ?? 0.0;
-  // Non-tonal families: clamp to 0.0 regardless of any caller override.
   if (defaultWeight === 0.0) return 0.0;
   if (override !== undefined) return Math.max(0, Math.min(1, override));
   return defaultWeight;
 };
 
-/**
- * Retourne le seuil IPA adapté à la famille phonologique du langCode.
- * @param langCode - Code ISO 639
- * @param base - Seuil par défaut si la famille n'est pas listée (default 0.75)
- */
 export const getThresholdForLangCode = (langCode: string, base = 0.75): number => {
   const family = getAlgoFamily(langCode);
   return (family && FAMILY_RHYME_THRESHOLDS[family]) ?? base;
 };
 
-/**
- * Run the complete IPA pipeline for a text segment
- * Step 1-4 implementation
- *
- * @param text - Input text to process
- * @param langCode - ISO 639 language code
- * @returns Complete pipeline result with IPA, syllables, and rhyme nucleus
- */
 export const runIPAPipeline = async (
   text: string,
   langCode: string,
@@ -220,58 +175,16 @@ export const runIPAPipeline = async (
   };
 };
 
-/**
- * Options for compareTextsWithIPA.
- */
 export interface CompareTextsOptions {
-  /**
-   * Override the tone weight for this comparison.
-   * When absent, TONE_WEIGHT_DEFAULTS[family] is used.
-   * 0.0 = ignore tones, 1.0 = tones are fully decisive.
-   */
   toneWeight?: number;
 }
 
-/**
- * Apply post-score tone penalty.
- *
- * calculateRhymeSimilarity operates on raw IPA strings and has no tone
- * awareness. When a tonal language pair is compared, the base score may
- * over-estimate similarity because tone marks were stripped before scoring.
- *
- * Strategy: discount the base score by `toneWeight * (1 - baseScore)`.
- * - Identical segments (score ≈ 1.0) receive no penalty regardless of weight.
- * - Divergent segments already score low; the penalty adds a calibrated
- *   reduction proportional to how tonal the language family is.
- * - toneWeight = 0 → no-op (non-tonal families).
- *
- * @param baseScore      Raw IPA similarity score ∈ [0, 1]
- * @param toneWeight     Effective tone weight ∈ [0, 1]
- * @returns              Adjusted score ∈ [0, 1]
- */
 const applyTonePenalty = (baseScore: number, toneWeight: number): number => {
   if (toneWeight <= 0) return baseScore;
   const penalty = toneWeight * (1 - baseScore);
   return Math.max(0, baseScore - penalty);
 };
 
-/**
- * Compare two texts using the full IPA pipeline (step 5).
- *
- * toneWeight is resolved in priority order:
- *   1. options.toneWeight (caller override)
- *   2. TONE_WEIGHT_DEFAULTS[family] for the shared family
- *   3. 0.0 for non-tonal or unknown families
- *
- * Cross-family pairs (code-switching): each text is phonemized through its
- * own langCode pipeline, then scored with the lower of the two tone weights
- * (conservative: only penalise tone when *both* languages are tonal).
- *
- * @param text1    First line text
- * @param text2    Second line text
- * @param langCode Primary language code (both texts when no cross-family pair)
- * @param options  Optional overrides (toneWeight, langCode2 for code-switching)
- */
 export const compareTextsWithIPA = async (
   text1: string,
   text2: string,
@@ -297,13 +210,10 @@ export const compareTextsWithIPA = async (
   const rn1 = result1.rhymeNucleus || result1.ipa;
   const rn2 = result2.rhymeNucleus || result2.ipa;
 
-  // Resolve effective tone weight
   const tw1 = getToneWeightForLangCode(langCode, options?.toneWeight);
   const tw2 = getToneWeightForLangCode(langCode2, options?.toneWeight);
-  // Cross-family: conservative minimum (only penalise when both are tonal)
   const effectiveToneWeight = tw1 > 0 && tw2 > 0 ? Math.min(tw1, tw2) : 0.0;
 
-  // CRV weight-aware scoring path
   if (result1.family === 'ALGO-CRV' && result2.family === 'ALGO-CRV') {
     const weight1 = result1.syllables.length > 0
       ? result1.syllables[result1.syllables.length - 1]?.weight
@@ -314,15 +224,10 @@ export const compareTextsWithIPA = async (
     return calculateRhymeSimilarityWithWeight(rn1, rn2, weight1, weight2, true);
   }
 
-  // Base similarity — calculateRhymeSimilarity accepts exactly 3 args.
-  // Tone penalty is applied as a post-score adjustment (see applyTonePenalty).
   const base = calculateRhymeSimilarity(rn1, rn2, true);
 
   if (effectiveToneWeight <= 0) return base;
 
-  // Only penalise when tones are known AND differ — avoids penalising identical
-  // tones and prevents double-penalisation when tone marks are already encoded
-  // in the rhyme nucleus (e.g. KWA/CRV families with explicit tone diacritics).
   const tone1 = result1.syllables.length > 0
     ? result1.syllables[result1.syllables.length - 1]?.tone
     : undefined;
@@ -337,7 +242,7 @@ export const compareTextsWithIPA = async (
   const adjustedScore = applyTonePenalty(base.score, effectiveToneWeight);
   if (adjustedScore === base.score) return base;
 
-  const { classifyRhymeQuality } = await import('./ipaUtils');
+  // Use statically-imported classifyRhymeQuality — no dynamic import needed
   return {
     ...base,
     score: adjustedScore,
@@ -345,9 +250,6 @@ export const compareTextsWithIPA = async (
   };
 };
 
-/**
- * Batch process multiple texts through the IPA pipeline
- */
 export const runIPAPipelineBatch = async (
   texts: string[],
   langCode: string,
@@ -356,9 +258,6 @@ export const runIPAPipelineBatch = async (
   return Promise.all(texts.map(text => runIPAPipeline(text, langCode, signal)));
 };
 
-/**
- * Compare multiple texts for rhyme detection — returns pairwise similarity matrix
- */
 export const compareMultipleTexts = async (
   texts: string[],
   langCode: string
@@ -387,11 +286,6 @@ export const compareMultipleTexts = async (
   return matrix;
 };
 
-/**
- * Enhanced rhyme detection for songUtils integration.
- * Quand threshold n'est pas fourni, le seuil est dérivé automatiquement
- * de la famille phonologique du langCode via FAMILY_RHYME_THRESHOLDS.
- */
 export const doLinesRhymeIPA = async (
   line1: string,
   line2: string,
@@ -404,9 +298,6 @@ export const doLinesRhymeIPA = async (
   return similarity.score >= effectiveThreshold;
 };
 
-/**
- * Get rhyme quality classification for a pair of lines
- */
 export const getRhymeQualityForLines = async (
   line1: string,
   line2: string,
@@ -415,11 +306,6 @@ export const getRhymeQualityForLines = async (
   return compareTextsWithIPA(line1, line2, langCode);
 };
 
-/**
- * IPA-based rhyme scheme detector (experimental).
- * Quand threshold n'est pas fourni, le seuil est dérivé automatiquement
- * de la famille phonologique du langCode via FAMILY_RHYME_THRESHOLDS.
- */
 export const detectRhymeSchemeLocallyIPA = async (
   lines: string[],
   langCode: string,
