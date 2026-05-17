@@ -1,10 +1,20 @@
 import { useTranslation } from '../../../i18n';
 import { useAppKpis } from '../../../hooks/useAppKpis';
+import type { Translations } from '../../../i18n/locales/types';
+
+type InsightsStrings = Required<Translations>['insights'];
+
+const FALLBACK_INSIGHTS: InsightsStrings = {
+  title: '',
+  sections: '',
+  words: '',
+  characters: '',
+};
 
 export function MobileKpis() {
   const { t } = useTranslation();
   const { sectionCount, wordCount, charCount } = useAppKpis();
-  const insights = t.insights ?? {};
+  const insights: InsightsStrings = t.insights ?? FALLBACK_INSIGHTS;
 
   return (
     <div className="flex lg:hidden items-center gap-3 shrink-0">

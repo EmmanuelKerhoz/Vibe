@@ -587,6 +587,10 @@ export interface Translations {
     sponsor: string;
     sendToSunoConfirm?: string;
     sendToSuno?: string;
+    /** Tooltip shown after Send to SUNO when the prompt was truncated */
+    sendToSunoTruncated?: string;
+    /** Tooltip shown on Send to SUNO when the prompt exceeds max length and will be trimmed */
+    sendToSunoWillTruncate?: string;
     quantizeLineDone?: string;
   };
 
