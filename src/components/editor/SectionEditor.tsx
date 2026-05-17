@@ -5,6 +5,8 @@ import { SectionHeader } from './SectionHeader';
 import { SectionAdaptControl } from './SectionAdaptControl';
 import { SectionLineList } from './SectionLineList';
 import { SectionFooter } from './SectionFooter';
+import { Check, Loader2 } from '../ui/icons';
+import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
 import { useDragActions, useDragState } from '../../contexts/DragContext';
 import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
@@ -63,19 +65,10 @@ export const SectionEditor = React.memo(function SectionEditor({
   const [pendingRhyme, setPendingRhyme] = useState<string>(committedRhyme);
   const [pendingLang, setPendingLang] = useState<AdaptationLangId>(sectionTargetLanguage);
 
-  // Keep pending in sync when committed values change externally
-  // (e.g. undo, remote sync) — only if no local edit is pending
-  useEffect(() => {
-    setPendingName(sectionName);
-  }, [sectionName]);
-
-  useEffect(() => {
-    setPendingRhyme(committedRhyme);
-  }, [committedRhyme]);
-
-  useEffect(() => {
-    setPendingLang(sectionTargetLanguage);
-  }, [sectionTargetLanguage]);
+  // Sync pending with committed values on external change (undo, remote sync)
+  useEffect(() => { setPendingName(sectionName); }, [sectionName]);
+  useEffect(() => { setPendingRhyme(committedRhyme); }, [committedRhyme]);
+  useEffect(() => { setPendingLang(sectionTargetLanguage); }, [sectionTargetLanguage]);
 
   const hasLyrics = useMemo(
     () => section.lines.some(
@@ -84,30 +77,37 @@ export const SectionEditor = React.memo(function SectionEditor({
     [section.lines],
   );
 
+  // isDirty: true as soon as any selector diverges from its committed value
   const isDirty =
     pendingName !== sectionName ||
     pendingRhyme !== committedRhyme ||
     pendingLang !== sectionTargetLanguage;
 
+  // canApply: type/rhyme always committable; lang requires apiKey + lyrics
+  const langPending = pendingLang !== sectionTargetLanguage;
+  const langApplyable = !langPending || (hasApiKey && hasLyrics);
+  const canApply =
+    isDirty &&
+    !isGenerating &&
+    !isAnalyzing &&
+    !isAdaptingLanguage &&
+    langApplyable;
+
   // ── Apply ────────────────────────────────────────────────────────────────────
   const handleApply = useCallback(() => {
-    if (!isDirty) return;
+    if (!canApply) return;
 
-    // 1. Type change → relabel + renumber siblings
     if (pendingName !== sectionName) {
       renameSectionWithRenumber(section.id, pendingName);
     }
 
-    // 2. Rhyme scheme change → commit then trigger AI rewrite (if lyrics exist)
     if (pendingRhyme !== committedRhyme) {
       setSectionRhymeScheme(section.id, pendingRhyme);
       if (hasLyrics) {
-        // Defer regen by one tick so the rhymeScheme state has settled
         setTimeout(() => regenerateSection(section.id), 0);
       }
     }
 
-    // 3. Language change → adapt
     if (pendingLang !== sectionTargetLanguage) {
       onSectionTargetLanguageChange?.(section.id, pendingLang);
       if (adaptSectionLanguage) {
@@ -115,15 +115,23 @@ export const SectionEditor = React.memo(function SectionEditor({
       }
     }
   }, [
-    isDirty,
+    canApply,
     pendingName, sectionName,
     pendingRhyme, committedRhyme,
     pendingLang, sectionTargetLanguage,
-    section.id,
-    hasLyrics,
+    section.id, hasLyrics,
     renameSectionWithRenumber, setSectionRhymeScheme, regenerateSection,
     onSectionTargetLanguageChange, adaptSectionLanguage,
   ]);
+
+  // ── Apply button tooltip ─────────────────────────────────────────────────────
+  const applyTooltip = !isDirty
+    ? (t.editor?.applyNoChanges ?? 'No pending changes')
+    : !langApplyable && !hasApiKey
+      ? (t.tooltips?.aiUnavailable ?? 'AI unavailable — configure an API key')
+      : !langApplyable && !hasLyrics
+        ? (t.editor?.applyNoLyrics ?? 'No lyrics to adapt — add content first')
+        : (t.editor?.applyPending ?? 'Apply all pending changes to this section');
 
   // ── Drag ─────────────────────────────────────────────────────────────────────
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
@@ -167,8 +175,6 @@ export const SectionEditor = React.memo(function SectionEditor({
     ],
   );
 
-  // Pass committedRhyme as forcedScheme so badges always reflect the scheme
-  // explicitly chosen by the user (via APPLY), overriding acoustic detection.
   const schemeResult = useRhymeSchemeMultiLang(multiLangLines, isProxied, committedRhyme);
 
   const lineListOptional = {
@@ -195,6 +201,7 @@ export const SectionEditor = React.memo(function SectionEditor({
       <div className="flex-1 pt-2.5 px-3.5 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
 
         <div className="mb-2 flex items-start justify-between gap-3 flex-wrap">
+          {/* Left: section type + line count + rhyme scheme */}
           <SectionHeader
             section={section}
             sectionIndex={sectionIndex}
@@ -204,22 +211,49 @@ export const SectionEditor = React.memo(function SectionEditor({
             onPendingNameChange={setPendingName}
             onPendingRhymeChange={setPendingRhyme}
           />
-          {adaptSectionLanguage && (
-            <SectionAdaptControl
-              sectionId={section.id}
-              sectionTargetLanguage={sectionTargetLanguage}
-              hasApiKey={hasApiKey}
-              hasLyrics={hasLyrics}
-              isGenerating={isGenerating}
-              isAnalyzing={isAnalyzing}
-              isAdaptingLanguage={isAdaptingLanguage}
-              pendingLang={pendingLang}
-              onPendingLangChange={setPendingLang}
-              isDirty={isDirty}
-              onApply={handleApply}
-              adaptSectionLanguage={adaptSectionLanguage}
-            />
-          )}
+
+          {/* Right: adaptation selector + APPLY button */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {adaptSectionLanguage && (
+              <SectionAdaptControl
+                sectionId={section.id}
+                sectionTargetLanguage={sectionTargetLanguage}
+                hasApiKey={hasApiKey}
+                hasLyrics={hasLyrics}
+                isGenerating={isGenerating}
+                isAnalyzing={isAnalyzing}
+                isAdaptingLanguage={isAdaptingLanguage}
+                pendingLang={pendingLang}
+                onPendingLangChange={setPendingLang}
+                isDirty={isDirty}
+                onApply={handleApply}
+                adaptSectionLanguage={adaptSectionLanguage}
+              />
+            )}
+
+            {/* APPLY — always present in section mode, disabled until dirty */}
+            <Tooltip title={applyTooltip}>
+              <button
+                type="button"
+                onClick={handleApply}
+                disabled={!canApply}
+                aria-label={applyTooltip}
+                className={[
+                  'flex items-center gap-1 px-2 py-0.5 rounded',
+                  'text-[10px] font-semibold uppercase tracking-[0.15em]',
+                  'border transition-colors duration-150',
+                  canApply
+                    ? 'border-[var(--lcars-cyan)]/60 text-[var(--lcars-cyan)] hover:bg-[var(--lcars-cyan)]/10 cursor-pointer'
+                    : 'border-zinc-600/30 text-zinc-500 dark:text-zinc-600 cursor-not-allowed opacity-40',
+                ].join(' ')}
+              >
+                {isAdaptingLanguage
+                  ? <Loader2 className="h-3 w-3 animate-spin" />
+                  : <Check className="h-3 w-3" />}
+                <span>{t.editor?.adaptApply ?? 'Apply'}</span>
+              </button>
+            </Tooltip>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 pl-1 pr-8 mb-1 select-none" aria-hidden="true">

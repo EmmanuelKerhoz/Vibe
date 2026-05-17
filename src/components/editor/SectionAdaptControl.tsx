@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Loader2, Languages, Check } from '../ui/icons';
+import { Loader2, Languages } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
 import { useTranslation } from '../../i18n';
@@ -23,17 +23,17 @@ interface SectionAdaptControlProps {
 }
 
 export const SectionAdaptControl = React.memo(function SectionAdaptControl({
-  sectionId,
-  sectionTargetLanguage,
-  hasApiKey,
-  hasLyrics,
-  isGenerating,
-  isAnalyzing,
+  sectionId: _sectionId,
+  sectionTargetLanguage: _sectionTargetLanguage,
+  hasApiKey: _hasApiKey,
+  hasLyrics: _hasLyrics,
+  isGenerating: _isGenerating,
+  isAnalyzing: _isAnalyzing,
   isAdaptingLanguage,
   pendingLang,
   onPendingLangChange,
-  isDirty,
-  onApply,
+  isDirty: _isDirty,
+  onApply: _onApply,
   adaptSectionLanguage,
 }: SectionAdaptControlProps) {
   const { t } = useTranslation();
@@ -50,36 +50,12 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
     onValueChange: (lang: string) => onPendingLangChange(lang as AdaptationLangId),
   });
 
-  const canApply =
-    isDirty &&
-    !isGenerating &&
-    !isAnalyzing &&
-    !isAdaptingLanguage &&
-    // lang-specific guard: if lang changed, need api key and lyrics
-    (hasApiKey && hasLyrics || true); // section type / rhyme always committable
-
-  // For the Apply button label/tooltip we compute whether the lang part is actionable
-  const langActionable =
-    !!adaptSectionLanguage &&
-    hasApiKey &&
-    hasLyrics &&
-    pendingLang.length > 0;
-
   const handleSearchEnter = useCallback((): boolean => {
-    if (!showCustomInput) return false;
-    if (canApply) onApply();
-    return true;
-  }, [showCustomInput, canApply, onApply]);
+    // Search enter no longer triggers apply — APPLY button is the sole commit point
+    return false;
+  }, []);
 
   if (!adaptSectionLanguage) return null;
-
-  const applyTooltip = !isDirty
-    ? 'No pending changes'
-    : !hasApiKey
-      ? (t.tooltips?.aiUnavailable ?? 'AI unavailable — configure an API key')
-      : !hasLyrics
-        ? 'No lyrics to adapt — add content first'
-        : 'Apply all pending changes to this section';
 
   const selectTooltip = showCustomInput
     ? `Type a custom language in the dropdown filter, then pick "Other language…"`
@@ -125,28 +101,6 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
             onSearchEnter={handleSearchEnter}
           />
         </div>
-      </Tooltip>
-
-      <Tooltip title={applyTooltip}>
-        <button
-          type="button"
-          onClick={onApply}
-          disabled={!canApply || isAdaptingLanguage}
-          aria-label={applyTooltip}
-          className={[
-            'flex items-center gap-1 px-2 py-0.5 rounded',
-            'text-[10px] font-semibold uppercase tracking-[0.15em]',
-            'border transition-colors duration-150',
-            canApply && !isAdaptingLanguage
-              ? 'border-[var(--lcars-cyan)]/60 text-[var(--lcars-cyan)] hover:bg-[var(--lcars-cyan)]/10'
-              : 'border-zinc-600/30 text-zinc-500 dark:text-zinc-600 cursor-not-allowed opacity-50',
-          ].join(' ')}
-        >
-          {isAdaptingLanguage
-            ? <Loader2 className="h-3 w-3 animate-spin" />
-            : <Check className="h-3 w-3" />}
-          <span>{t.editor?.adaptApply ?? 'Apply'}</span>
-        </button>
       </Tooltip>
     </div>
   );
