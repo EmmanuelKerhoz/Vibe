@@ -77,22 +77,14 @@ const alignGeneratedSongToStructure = (
   });
 };
 
-/** Raw line shape returned by the AI generator (before ID assignment). */
 type RawLine = Omit<Section['lines'][number], 'id'> & { id?: string };
 
-/** Flags isMeta on lines returned by the AI generator */
 const flagMetaLines = <T extends { text?: string }>(lines: T[]): (T & { isMeta: boolean })[] =>
   lines.map(line => ({
     ...line,
     isMeta: isPureMetaLine(line.text ?? ''),
   }));
 
-/**
- * Sanitises a user-supplied string before prompt interpolation.
- * Thin wrapper around {@link sanitizeForPrompt} kept for backward compat
- * inside this module — prefer {@link fence}/{@link fenceLong} for new
- * call sites because they also wrap the value in untrusted-input fences.
- */
 const sanitisePromptField = (value: string, maxLength = 500): string =>
   sanitizeForPrompt(value, { maxLength });
 
@@ -101,10 +93,6 @@ const buildExclusiveLanguageInstruction = (language: string): string => {
   return safe ? `Write exclusively in ${safe}.` : '';
 };
 
-/**
- * Meta-instruction formatting rule injected into every prompt.
- * IMPORTANT: brackets are MANDATORY — bare text is not recognized.
- */
 const META_INSTRUCTION_HINT =
 `PERFORMANCE / PRODUCTION META-INSTRUCTIONS:
 You may insert standalone meta-instruction lines using square brackets, e.g.:
@@ -115,10 +103,6 @@ Rules:
 - Meta lines are NOT subject to rhyme or syllable requirements.
 - These are preserved and displayed as special directives in the song editor.`;
 
-/**
- * Rhyme enforcement rules injected into generation and regeneration prompts.
- * Provides concrete phonetic guidance per scheme and mandates self-validation.
- */
 const RHYME_ENFORCEMENT_RULES =
 `RHYME ENFORCEMENT — CRITICAL:
 The rhyme scheme you declare MUST be phonetically respected. Shared-letter lines MUST end
@@ -207,14 +191,18 @@ export const useAiGeneration = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [regeneratingSections, setRegeneratingSections] = useState<Set<string>>(new Set());
   const resolvedUiLanguage = resolveUiLanguageName(uiLanguage);
+  const latestSongRef = useRef(song);
+  const latestTargetSyllablesRef = useRef(targetSyllables);
 
-  // Dedicated abort controller for generateSong / quantizeSyllables (full-song operations).
-  // Separate from per-section regen controllers to avoid cross-operation abort interference
-  // that previously caused isGenerating to stick true when ops overlapped.
+  useEffect(() => {
+    latestSongRef.current = song;
+  }, [song]);
+
+  useEffect(() => {
+    latestTargetSyllablesRef.current = targetSyllables;
+  }, [targetSyllables]);
+
   const generateAbortRef = useRef<AbortController | null>(null);
-
-  // Per-section abort controllers: keyed by sectionId so concurrent section regens
-  // can be independently cancelled without aborting a global generate in flight.
   const regenAbortRefs = useRef<Map<string, AbortController>>(new Map());
 
   useEffect(() => {
@@ -234,7 +222,6 @@ export const useAiGeneration = ({
 
   const updateSong = useMemo(() => makeSongUpdater(updateState), [updateState]);
 
-  // ── generateSong ─────────────────────────────────────────────────────────
   const generateSong = useCallback(async () => {
     setIsGenerating(true);
     try {
@@ -307,38 +294,37 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
     updateSongAndStructureWithHistory, requestAutoTitleGeneration, setSelectedLineId,
   ]);
 
-  // ── regenerateSection ────────────────────────────────────────────────────
-  const regenerateSection = useCallback(async (sectionId: string) => {
-    const sectionToRegenerate = song.find(s => s.id === sectionId);
+  const regenerateSection = useCallback(async (sectionId: string, overrides?: { rhymeScheme?: string }) => {
+    const currentSong = latestSongRef.current;
+    const sectionToRegenerate = currentSong.find(s => s.id === sectionId);
     if (!sectionToRegenerate) return;
+
+    const effectiveRhymeScheme = overrides?.rhymeScheme ?? sectionToRegenerate.rhymeScheme ?? rhymeScheme;
 
     setRegeneratingSections(prev => new Set(prev).add(sectionId));
 
-    // Create a dedicated abort controller for this section so it can be cancelled
-    // independently without affecting generateSong or other concurrent section regens.
     const ctrl = new AbortController();
     regenAbortRefs.current.get(sectionId)?.abort();
     regenAbortRefs.current.set(sectionId, ctrl);
 
     try {
-      const sectionIndex = song.findIndex(s => s.id === sectionId);
-      const prevSection = sectionIndex > 0 ? song[sectionIndex - 1] : null;
-      const nextSection = sectionIndex < song.length - 1 ? song[sectionIndex + 1] : null;
+      const sectionIndex = currentSong.findIndex(s => s.id === sectionId);
+      const prevSection = sectionIndex > 0 ? currentSong[sectionIndex - 1] : null;
+      const nextSection = sectionIndex < currentSong.length - 1 ? currentSong[sectionIndex + 1] : null;
 
       let lineCountPrompt = '';
       const lowerName = sectionToRegenerate.name.toLowerCase();
-      if (lowerName.includes('intro'))  lineCountPrompt = 'The section should have exactly 4 lines.';
-      else if (lowerName.includes('verse'))  lineCountPrompt = 'The section should have exactly 6 lines.';
+      if (lowerName.includes('intro')) lineCountPrompt = 'The section should have exactly 4 lines.';
+      else if (lowerName.includes('verse')) lineCountPrompt = 'The section should have exactly 6 lines.';
       else if (lowerName.includes('chorus')) lineCountPrompt = 'The section should have exactly 4 lines.';
       else if (lowerName.includes('bridge')) lineCountPrompt = 'The section should have exactly 6 lines.';
-      else if (lowerName.includes('outro'))  lineCountPrompt = 'The section should have exactly 4 lines.';
+      else if (lowerName.includes('outro')) lineCountPrompt = 'The section should have exactly 4 lines.';
 
-      const songStructure = song.map(s => sanitizeForPrompt(s.name, { maxLength: 64 })).join(' → ');
+      const songStructure = currentSong.map(s => sanitizeForPrompt(s.name, { maxLength: 64 })).join(' → ');
       const lang = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
       const safeUiLang = sanitizeForPrompt(resolvedUiLanguage, { maxLength: 64 });
       const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
-      const formatSectionLyrics = (sec: Section) =>
-        sec.lines.map(l => l.text).filter(Boolean).join('\n');
+      const formatSectionLyrics = (sec: Section) => sec.lines.map(l => l.text).filter(Boolean).join('\n');
 
       const prevContext = prevSection
         ? `\n${fenceLong(`PREVIOUS_SECTION_${sanitizeForPrompt(prevSection.name, { maxLength: 32 })}`, formatSectionLyrics(prevSection))}`
@@ -357,7 +343,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
 
       const langCode = sectionToRegenerate.language || songLanguage;
       const hasRhymedLines = sectionToRegenerate.lines.some(line =>
-        line.rhyme && line.rhyme !== '' && line.rhyme !== 'FREE' && !line.isMeta
+        line.rhyme && line.rhyme !== '' && line.rhyme !== 'FREE' && !line.isMeta,
       );
       let ipaConstraints = '';
       if (langCode && hasRhymedLines) {
@@ -365,17 +351,22 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
           const enrichedPrompt = await buildRhymeConstrainedPrompt(
             sectionToRegenerate.lines,
             langCode,
-            sectionToRegenerate.rhymeScheme || rhymeScheme
+            effectiveRhymeScheme,
           );
           if (enrichedPrompt.includes('PHONEMIC RHYME CONSTRAINTS:')) {
             ipaConstraints = '\n\n' + enrichedPrompt.substring(
-              enrichedPrompt.indexOf('PHONEMIC RHYME CONSTRAINTS:')
+              enrichedPrompt.indexOf('PHONEMIC RHYME CONSTRAINTS:'),
             );
           }
         } catch (err) {
           console.debug('Failed to build IPA-enhanced prompt, continuing without:', err);
         }
       }
+
+      const sectionPayload: Section = {
+        ...sectionToRegenerate,
+        rhymeScheme: effectiveRhymeScheme,
+      };
 
       const prompt =
 `${UNTRUSTED_INPUT_PREAMBLE}
@@ -384,9 +375,9 @@ Rewrite the following section of a song.
 ${fence('TITLE', title, { maxLength: 200 })}
 ${fence('TOPIC', topic)}
 ${fence('MOOD', mood)}
-Target Syllables per line: ${targetSyllables}
-Section Name: ${sanitizeForPrompt(sectionToRegenerate.name, { maxLength: 64 })}
-Rhyme Scheme: ${sanitizeForPrompt(sectionToRegenerate.rhymeScheme || rhymeScheme, { maxLength: 64 })}
+Target Syllables per line: ${latestTargetSyllablesRef.current}
+Section Name: ${sanitizeForPrompt(sectionPayload.name, { maxLength: 64 })}
+Rhyme Scheme: ${sanitizeForPrompt(effectiveRhymeScheme, { maxLength: 64 })}
 ${lineCountPrompt}
 Song structure: ${songStructure}
 ${prevContext}${nextContext}${directivesPrompt}
@@ -398,7 +389,7 @@ ${META_INSTRUCTION_HINT}
 IMPORTANT: Write ALL lyrics in ${lang}. Concepts may be written in ${safeUiLang}.
 ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}
 
-${fenceLong('CURRENT_SECTION', JSON.stringify([sectionToRegenerate], null, 2))}
+${fenceLong('CURRENT_SECTION', JSON.stringify([sectionPayload], null, 2))}
 
 Provide a new creative version of this section that fits seamlessly with the surrounding sections.
 Return the updated section in the exact same JSON structure (as an array with one section).`;
@@ -409,7 +400,7 @@ Return the updated section in the exact same JSON structure (as an array with on
           contents: prompt,
           config: { responseMimeType: 'application/json', responseSchema: GENERATION_SCHEMA },
           signal: ctrl.signal,
-        })
+        }),
       );
 
       if (ctrl.signal.aborted) return;
@@ -417,11 +408,15 @@ Return the updated section in the exact same JSON structure (as an array with on
       const data = safeJsonParse<SongResponse>(response.text || '[]', [], SongResponseSchema);
       const firstSection = data[0];
       if (firstSection) {
-        const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
-        updateSong(currentSong =>
-          syncLinkedChorusSections(currentSong.map(section =>
-            section.id !== sectionId ? section : mergeAiSectionIntoCurrent(section, patchedSection)
-          ), sectionId)
+        const patchedSection = {
+          ...firstSection,
+          rhymeScheme: firstSection.rhymeScheme || effectiveRhymeScheme,
+          lines: flagMetaLines(firstSection.lines ?? []),
+        };
+        updateSong(currentSongState =>
+          syncLinkedChorusSections(currentSongState.map(section =>
+            section.id !== sectionId ? section : mergeAiSectionIntoCurrent(section, patchedSection),
+          ), sectionId),
         );
       }
     } catch (error: unknown) {
@@ -438,14 +433,13 @@ Return the updated section in the exact same JSON structure (as an array with on
       regenAbortRefs.current.delete(sectionId);
     }
   }, [
-    song, title, topic, mood, rhymeScheme, targetSyllables, songLanguage,
-    resolvedUiLanguage,
-    updateSong,
+    rhymeScheme, title, topic, mood, songLanguage, resolvedUiLanguage, updateSong,
   ]);
 
-  // ── quantizeSyllables ────────────────────────────────────────────────────
   const quantizeSyllables = useCallback(async (sectionId?: string) => {
-    if (song.length === 0) return;
+    const currentSong = latestSongRef.current;
+    const currentTargetSyllables = latestTargetSyllablesRef.current;
+    if (currentSong.length === 0) return;
     setIsGenerating(true);
     const lang = sanitizeForPrompt(songLanguage || 'English', { maxLength: 64 });
     const exclusiveLanguageInstruction = buildExclusiveLanguageInstruction(songLanguage);
@@ -454,9 +448,9 @@ Return the updated section in the exact same JSON structure (as an array with on
       await withAbort(generateAbortRef, async (signal) => {
         let prompt = '';
         if (sectionId) {
-          const sectionToQuantize = song.find(s => s.id === sectionId);
+          const sectionToQuantize = currentSong.find(s => s.id === sectionId);
           if (!sectionToQuantize) return;
-          const syllables = sectionToQuantize.targetSyllables ?? targetSyllables;
+          const syllables = sectionToQuantize.targetSyllables ?? currentTargetSyllables;
           prompt =
 `${UNTRUSTED_INPUT_PREAMBLE}
 
@@ -475,14 +469,14 @@ Return the updated section in the exact same JSON structure (as an array with on
 `${UNTRUSTED_INPUT_PREAMBLE}
 
 Rewrite the following song so that EVERY line has EXACTLY the number of syllables specified by its
-section's targetSyllables (or ${targetSyllables} if not specified).
+section's targetSyllables (or ${currentTargetSyllables} if not specified).
 Maintain the original meaning, rhyme scheme (respecting section-level schemes if specified), and section structure.
 Write ALL lyrics in ${lang}.
 ${exclusiveLanguageInstruction ? `${exclusiveLanguageInstruction}\n` : ''}Preserve any meta-instruction lines (e.g. [Guitar solo]) verbatim — they are NOT counted toward syllable targets.
 
 ${RHYME_ENFORCEMENT_RULES}
 
-${fenceLong('CURRENT_SONG', JSON.stringify(song, null, 2))}
+${fenceLong('CURRENT_SONG', JSON.stringify(currentSong, null, 2))}
 
 Return the updated song in the exact same JSON structure.`;
         }
@@ -493,7 +487,7 @@ Return the updated song in the exact same JSON structure.`;
             contents: prompt,
             config: { responseMimeType: 'application/json', responseSchema: GENERATION_SCHEMA },
             signal,
-          })
+          }),
         );
 
         const data = safeJsonParse<SongResponse>(response.text || '[]', [], SongResponseSchema);
@@ -502,14 +496,14 @@ Return the updated song in the exact same JSON structure.`;
           const firstSection = data[0];
           if (firstSection) {
             const patchedSection = { ...firstSection, lines: flagMetaLines(firstSection.lines ?? []) };
-            updateSong(currentSong =>
-              syncLinkedChorusSections(currentSong.map(section =>
-                section.id !== sectionId ? section : mergeAiSectionIntoCurrent(section, patchedSection)
-              ), sectionId)
+            updateSong(currentSongState =>
+              syncLinkedChorusSections(currentSongState.map(section =>
+                section.id !== sectionId ? section : mergeAiSectionIntoCurrent(section, patchedSection),
+              ), sectionId),
             );
           }
         } else {
-          const updatedSong = mapSongWithPreservedIds(data, song);
+          const updatedSong = mapSongWithPreservedIds(data, currentSong);
           const reflagged = updatedSong.map(sec => ({ ...sec, lines: flagMetaLines(sec.lines) }));
           updateSongWithHistory(syncLinkedChorusSections(reflagged));
         }
@@ -520,9 +514,7 @@ Return the updated song in the exact same JSON structure.`;
     } finally {
       if (!generateAbortRef.current?.signal.aborted) setIsGenerating(false);
     }
-  }, [
-    song, targetSyllables, songLanguage, updateSong, updateSongWithHistory,
-  ]);
+  }, [songLanguage, updateSong, updateSongWithHistory]);
 
   return {
     isGenerating,
