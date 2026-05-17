@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, ClipboardPaste, Sparkles, Loader2 } from '../../ui/icons';
 import { Button } from '../../ui/Button';
 import { Tooltip } from '../../ui/Tooltip';
@@ -30,9 +30,29 @@ export function PasteModal({
   onAnalyze,
 }: Props) {
   const { t } = useTranslation();
+  const activeLineRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   const progressValue = importProgress?.total
     ? Math.round((importProgress.current / importProgress.total) * 100)
     : 0;
+
+  // Compute which line range is "active" based on progress ratio
+  const lines = pastedText.split('\n');
+  const totalLines = lines.length;
+  const activeLine = isAnalyzing && importProgress?.total
+    ? Math.min(
+        Math.floor((importProgress.current / importProgress.total) * totalLines),
+        totalLines - 1
+      )
+    : -1;
+
+  // Auto-scroll active line into view
+  useEffect(() => {
+    if (activeLineRef.current && scrollContainerRef.current) {
+      activeLineRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, [activeLine]);
 
   if (!isOpen) return null;
 
@@ -69,12 +89,83 @@ export function PasteModal({
 
         <div className="p-8 flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-app)]">
           <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">{t.paste.description}</p>
-          <textarea
-            value={pastedText}
-            onChange={(e) => setPastedText(e.target.value)}
-            placeholder={t.paste.placeholder}
-            className="w-full h-80 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl p-5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-color)]/50 focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all resize-none placeholder:text-[var(--text-secondary)] font-mono leading-relaxed"
-          />
+
+          {/* Textarea when idle, animated scanner when analyzing */}
+          {!isAnalyzing ? (
+            <textarea
+              value={pastedText}
+              onChange={(e) => setPastedText(e.target.value)}
+              placeholder={t.paste.placeholder}
+              className="w-full h-80 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl p-5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-color)]/50 focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all resize-none placeholder:text-[var(--text-secondary)] font-mono leading-relaxed"
+            />
+          ) : (
+            <div
+              ref={scrollContainerRef}
+              className="w-full h-80 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl overflow-y-auto custom-scrollbar font-mono text-sm leading-relaxed"
+              style={{ padding: '20px' }}
+            >
+              {lines.map((line, idx) => {
+                const isPast = idx < activeLine;
+                const isActive = idx === activeLine;
+                const isFuture = idx > activeLine;
+
+                return (
+                  <div
+                    key={idx}
+                    ref={isActive ? activeLineRef : undefined}
+                    style={{
+                      position: 'relative',
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                      transition: 'background 0.3s ease, color 0.3s ease, opacity 0.3s ease',
+                      opacity: isPast ? 0.35 : isFuture ? 0.6 : 1,
+                      color: isActive
+                        ? 'var(--accent-color)'
+                        : isPast
+                        ? 'var(--text-secondary)'
+                        : 'var(--text-primary)',
+                      background: isActive
+                        ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)'
+                        : 'transparent',
+                      boxShadow: isActive
+                        ? 'inset 0 0 0 1px color-mix(in srgb, var(--accent-color) 25%, transparent)'
+                        : 'none',
+                      minHeight: '1.5em',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all',
+                    }}
+                  >
+                    {/* Scan beam on active line */}
+                    {isActive && (
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          borderRadius: '4px',
+                          background:
+                            'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--accent-color) 20%, transparent) 50%, transparent 100%)',
+                          backgroundSize: '200% 100%',
+                          animation: 'paste-scan 1.2s ease-in-out infinite',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    )}
+                    {line || '\u00A0'}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Inline scan keyframe */}
+          <style>{`
+            @keyframes paste-scan {
+              0%   { background-position: 200% 0; }
+              100% { background-position: -200% 0; }
+            }
+          `}</style>
+
           {isAnalyzing && importProgress && importProgress.total > 0 && (
             <div className="mt-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-sidebar)]/80 p-4">
               <div className="mb-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
