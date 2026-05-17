@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Section } from '../../types';
 import { getSectionDotColor } from '../../utils/songUtils';
 import { SectionHeader } from './SectionHeader';
@@ -11,6 +11,7 @@ import { useDragHandlersContext } from '../../contexts/DragHandlersContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useRhymeProxyContext } from '../../contexts/RhymeProxyContext';
 import { useSongContext } from '../../contexts/SongContext';
+import { useSongMutation } from '../../contexts/SongMutationContext';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { useRhymeSchemeMultiLang } from '../../hooks/useRhymeSchemeMultiLang';
 import type { AdaptationLangId } from '../../i18n/constants';
@@ -51,9 +52,63 @@ export const SectionEditor = React.memo(function SectionEditor({
   const { draggedItemIndex, dragOverIndex } = useDragState();
   const { setDragOverIndex } = useDragActions();
   const { isProxiedForSection } = useRhymeProxyContext();
-  const { lineLanguages } = useSongContext();
+  const { lineLanguages, rhymeScheme: globalRhymeScheme } = useSongContext();
+  const { setSectionName, setSectionRhymeScheme } = useSongMutation();
 
   const sectionName: string = section.name ?? '';
+  const committedRhyme: string = section.rhymeScheme || globalRhymeScheme;
+
+  // ── Pending state ───────────────────────────────────────────────────────────
+  const [pendingName, setPendingName] = useState<string>(sectionName);
+  const [pendingRhyme, setPendingRhyme] = useState<string>(committedRhyme);
+  const [pendingLang, setPendingLang] = useState<AdaptationLangId>(sectionTargetLanguage);
+
+  // Keep pending in sync when committed values change externally
+  // (e.g. undo, remote sync) — only if no local edit is pending
+  useEffect(() => {
+    setPendingName(sectionName);
+  }, [sectionName]);
+
+  useEffect(() => {
+    setPendingRhyme(committedRhyme);
+  }, [committedRhyme]);
+
+  useEffect(() => {
+    setPendingLang(sectionTargetLanguage);
+  }, [sectionTargetLanguage]);
+
+  const isDirty =
+    pendingName !== sectionName ||
+    pendingRhyme !== committedRhyme ||
+    pendingLang !== sectionTargetLanguage;
+
+  // ── Apply ────────────────────────────────────────────────────────────────────
+  const handleApply = useCallback(() => {
+    if (!isDirty) return;
+    if (pendingName !== sectionName) {
+      setSectionName(section.id, pendingName);
+    }
+    if (pendingRhyme !== committedRhyme) {
+      setSectionRhymeScheme(section.id, pendingRhyme);
+    }
+    if (pendingLang !== sectionTargetLanguage) {
+      // Propagate language selection upstream (triggers adaptation if adaptSectionLanguage provided)
+      onSectionTargetLanguageChange?.(section.id, pendingLang);
+      if (adaptSectionLanguage) {
+        adaptSectionLanguage(section.id, pendingLang);
+      }
+    }
+  }, [
+    isDirty,
+    pendingName, sectionName,
+    pendingRhyme, committedRhyme,
+    pendingLang, sectionTargetLanguage,
+    section.id,
+    setSectionName, setSectionRhymeScheme,
+    onSectionTargetLanguageChange, adaptSectionLanguage,
+  ]);
+
+  // ── Drag ─────────────────────────────────────────────────────────────────────
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
 
   const hasLyrics = useMemo(
@@ -104,11 +159,6 @@ export const SectionEditor = React.memo(function SectionEditor({
 
   const schemeResult = useRhymeSchemeMultiLang(multiLangLines, isProxied);
 
-  const adaptControlOptional = {
-    ...(onSectionTargetLanguageChange ? { onSectionTargetLanguageChange } : {}),
-    ...(adaptSectionLanguage ? { adaptSectionLanguage } : {}),
-  };
-
   const lineListOptional = {
     ...(adaptLineLanguage ? { adaptLineLanguage } : {}),
     ...(adaptingLineIds ? { adaptingLineIds } : {}),
@@ -137,17 +187,27 @@ export const SectionEditor = React.memo(function SectionEditor({
             section={section}
             sectionIndex={sectionIndex}
             songLength={songLength}
+            pendingName={pendingName}
+            pendingRhyme={pendingRhyme}
+            onPendingNameChange={setPendingName}
+            onPendingRhymeChange={setPendingRhyme}
           />
-          <SectionAdaptControl
-            sectionId={section.id}
-            sectionTargetLanguage={sectionTargetLanguage}
-            hasApiKey={hasApiKey}
-            hasLyrics={hasLyrics}
-            isGenerating={isGenerating}
-            isAnalyzing={isAnalyzing}
-            isAdaptingLanguage={isAdaptingLanguage}
-            {...adaptControlOptional}
-          />
+          {adaptSectionLanguage && (
+            <SectionAdaptControl
+              sectionId={section.id}
+              sectionTargetLanguage={sectionTargetLanguage}
+              hasApiKey={hasApiKey}
+              hasLyrics={hasLyrics}
+              isGenerating={isGenerating}
+              isAnalyzing={isAnalyzing}
+              isAdaptingLanguage={isAdaptingLanguage}
+              pendingLang={pendingLang}
+              onPendingLangChange={setPendingLang}
+              isDirty={isDirty}
+              onApply={handleApply}
+              adaptSectionLanguage={adaptSectionLanguage}
+            />
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 pl-1 pr-8 mb-1 select-none" aria-hidden="true">

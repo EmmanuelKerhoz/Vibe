@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ChevronUp, ChevronDown } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { LcarsSelect } from '../ui/LcarsSelect';
@@ -13,16 +13,23 @@ interface SectionHeaderProps {
   section: Section;
   sectionIndex: number;
   songLength: number;
+  // Pending state lifted from SectionEditor for unified APPLY
+  pendingName: string;
+  pendingRhyme: string;
+  onPendingNameChange: (v: string) => void;
+  onPendingRhymeChange: (v: string) => void;
 }
 
 export const SectionHeader = React.memo(function SectionHeader({
   section, sectionIndex, songLength,
+  pendingName, pendingRhyme,
+  onPendingNameChange, onPendingRhymeChange,
 }: SectionHeaderProps) {
   const { t } = useTranslation();
   const { rhymeScheme } = useSongContext();
-  const { moveSectionUp, moveSectionDown, setSectionName, setSectionRhymeScheme } = useSongMutation();
+  const { moveSectionUp, moveSectionDown } = useSongMutation();
   const sectionName: string = section.name ?? '';
-  const sectionColor = getSectionColorHex(sectionName);
+  const sectionColor = getSectionColorHex(pendingName || sectionName);
 
   const rhymeSchemes = useMemo(() => t.rhymeSchemes ?? {}, [t.rhymeSchemes]);
 
@@ -60,17 +67,17 @@ export const SectionHeader = React.memo(function SectionHeader({
         </Tooltip>
       </div>
 
-      {/* Section name */}
+      {/* Section name — writes to pending only */}
       <LcarsSelect
-        value={sectionName}
-        onChange={(v) => setSectionName(section.id, v)}
+        value={pendingName}
+        onChange={onPendingNameChange}
         options={sectionTypeSelectOptions.map(option => ({
           ...option,
           title: getSectionTooltipText(option.value),
         }))}
         accentColor={sectionColor}
         style={{ color: sectionColor }}
-        buttonTitle={getSectionTooltipText(sectionName)}
+        buttonTitle={getSectionTooltipText(pendingName)}
       />
 
       {/* Lines count */}
@@ -78,11 +85,11 @@ export const SectionHeader = React.memo(function SectionHeader({
         {section.lines.filter(l => !l.isMeta).length} {t.editor.lines ?? 'lines'}
       </p>
 
-      {/* Rhyme scheme */}
+      {/* Rhyme scheme — writes to pending only */}
       <div className="min-w-[15rem] max-w-xs flex-shrink-0">
         <LcarsSelect
-          value={section.rhymeScheme || rhymeScheme}
-          onChange={(v) => setSectionRhymeScheme(section.id, v)}
+          value={pendingRhyme}
+          onChange={onPendingRhymeChange}
           options={RHYME_KEYS.filter((k): k is string => typeof k === 'string').map(key => ({
             value: key,
             label: rhymeSchemes[key as keyof typeof rhymeSchemes] ?? key,

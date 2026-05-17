@@ -14,7 +14,11 @@ interface SectionAdaptControlProps {
   isGenerating: boolean;
   isAnalyzing: boolean;
   isAdaptingLanguage: boolean;
-  onSectionTargetLanguageChange?: (sectionId: string, lang: AdaptationLangId) => void;
+  // Pending language driven externally from SectionEditor
+  pendingLang: AdaptationLangId;
+  onPendingLangChange: (lang: AdaptationLangId) => void;
+  isDirty: boolean;
+  onApply: () => void;
   adaptSectionLanguage?: (sectionId: string, lang: AdaptationLangId) => void;
 }
 
@@ -26,64 +30,56 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
   isGenerating,
   isAnalyzing,
   isAdaptingLanguage,
-  onSectionTargetLanguageChange,
+  pendingLang,
+  onPendingLangChange,
+  isDirty,
+  onApply,
   adaptSectionLanguage,
 }: SectionAdaptControlProps) {
   const { t } = useTranslation();
-
-  const handleValueChange = useCallback(
-    (lang: AdaptationLangId) => onSectionTargetLanguageChange?.(sectionId, lang),
-    [sectionId, onSectionTargetLanguageChange],
-  );
 
   const {
     selectValue,
     customText,
     showCustomInput,
-    effectiveLang,
     languageOptions,
     handleLanguageSelect,
     setCustomText,
-    handleCustomConfirm,
   } = useCustomLanguageSelector({
-    storedValue: sectionTargetLanguage,
-    // Wrap to avoid TS2322 contravariance: hook types onValueChange as
-    // (lang: string) => void; handleValueChange is (lang: AdaptationLangId) => void.
-    onValueChange: (lang: string) => handleValueChange(lang as AdaptationLangId),
+    storedValue: pendingLang,
+    onValueChange: (lang: string) => onPendingLangChange(lang as AdaptationLangId),
   });
 
-  const canAdapt =
-    !!adaptSectionLanguage &&
-    hasApiKey &&
-    hasLyrics &&
+  const canApply =
+    isDirty &&
     !isGenerating &&
     !isAnalyzing &&
     !isAdaptingLanguage &&
-    effectiveLang.length > 0;
+    // lang-specific guard: if lang changed, need api key and lyrics
+    (hasApiKey && hasLyrics || true); // section type / rhyme always committable
 
-  const isDirty = effectiveLang !== sectionTargetLanguage && effectiveLang.length > 0;
-
-  const handleApply = useCallback(() => {
-    if (!canAdapt) return;
-    handleCustomConfirm();
-    adaptSectionLanguage!(sectionId, effectiveLang as AdaptationLangId);
-  }, [canAdapt, handleCustomConfirm, adaptSectionLanguage, sectionId, effectiveLang]);
+  // For the Apply button label/tooltip we compute whether the lang part is actionable
+  const langActionable =
+    !!adaptSectionLanguage &&
+    hasApiKey &&
+    hasLyrics &&
+    pendingLang.length > 0;
 
   const handleSearchEnter = useCallback((): boolean => {
     if (!showCustomInput) return false;
-    if (canAdapt) handleApply();
+    if (canApply) onApply();
     return true;
-  }, [showCustomInput, canAdapt, handleApply]);
+  }, [showCustomInput, canApply, onApply]);
 
   if (!adaptSectionLanguage) return null;
 
-  const applyTooltip = !hasApiKey
-    ? (t.tooltips?.aiUnavailable ?? 'AI unavailable — configure an API key')
-    : !hasLyrics
-      ? 'No lyrics to adapt — add content first'
-      : isDirty
-        ? `Adapt this section to ${effectiveLang}`
-        : `Section already set to ${effectiveLang}`;
+  const applyTooltip = !isDirty
+    ? 'No pending changes'
+    : !hasApiKey
+      ? (t.tooltips?.aiUnavailable ?? 'AI unavailable — configure an API key')
+      : !hasLyrics
+        ? 'No lyrics to adapt — add content first'
+        : 'Apply all pending changes to this section';
 
   const selectTooltip = showCustomInput
     ? `Type a custom language in the dropdown filter, then pick "Other language…"`
@@ -134,14 +130,14 @@ export const SectionAdaptControl = React.memo(function SectionAdaptControl({
       <Tooltip title={applyTooltip}>
         <button
           type="button"
-          onClick={handleApply}
-          disabled={!canAdapt || isAdaptingLanguage}
+          onClick={onApply}
+          disabled={!canApply || isAdaptingLanguage}
           aria-label={applyTooltip}
           className={[
             'flex items-center gap-1 px-2 py-0.5 rounded',
             'text-[10px] font-semibold uppercase tracking-[0.15em]',
             'border transition-colors duration-150',
-            canAdapt && isDirty
+            canApply && !isAdaptingLanguage
               ? 'border-[var(--lcars-cyan)]/60 text-[var(--lcars-cyan)] hover:bg-[var(--lcars-cyan)]/10'
               : 'border-zinc-600/30 text-zinc-500 dark:text-zinc-600 cursor-not-allowed opacity-50',
           ].join(' ')}
