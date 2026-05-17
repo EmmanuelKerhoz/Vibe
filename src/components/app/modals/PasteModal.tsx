@@ -37,6 +37,9 @@ export function PasteModal({
     ? Math.round((importProgress.current / importProgress.total) * 100)
     : 0;
 
+  // Indeterminate shimmer: analyzing started but no step completed yet
+  const isIndeterminate = isAnalyzing && importProgress?.total !== undefined && importProgress.current === 0;
+
   // Compute which line range is "active" based on progress ratio
   const lines = pastedText.split('\n');
   const totalLines = lines.length;
@@ -146,7 +149,7 @@ export function PasteModal({
                           background:
                             'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--accent-color) 20%, transparent) 50%, transparent 100%)',
                           backgroundSize: '200% 100%',
-                          animation: 'paste-scan 1.2s ease-in-out infinite',
+                          animation: 'paste-scan 1.4s ease-in-out infinite',
                           pointerEvents: 'none',
                         }}
                       />
@@ -158,11 +161,19 @@ export function PasteModal({
             </div>
           )}
 
-          {/* Inline scan keyframe */}
+          {/* Keyframes: scan beam + indeterminate shimmer */}
           <style>{`
             @keyframes paste-scan {
               0%   { background-position: 200% 0; }
               100% { background-position: -200% 0; }
+            }
+            @keyframes paste-progress-indeterminate {
+              0%   { transform: translateX(-100%); }
+              100% { transform: translateX(400%); }
+            }
+            @keyframes paste-label-in {
+              from { opacity: 0; transform: translateY(4px); }
+              to   { opacity: 1; transform: translateY(0); }
             }
           `}</style>
 
@@ -170,21 +181,49 @@ export function PasteModal({
             <div className="mt-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-sidebar)]/80 p-4">
               <div className="mb-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
                 <span>{t.paste.analyzing}</span>
-                <span>{importProgress.current}/{importProgress.total}</span>
+                {/* tabular-nums prevents layout shift as digits change */}
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {importProgress.current}/{importProgress.total}
+                </span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-[var(--input-bg)]">
-                <div
-                  role="progressbar"
-                  aria-label={t.paste.analyzing}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={progressValue}
-                  className="h-full rounded-full bg-[var(--accent-color)] transition-[width] duration-300 ease-out"
-                  style={{ width: `${progressValue}%` }}
-                />
+              <div className="h-2 overflow-hidden rounded-full bg-[var(--input-bg)] relative">
+                {isIndeterminate ? (
+                  /* Indeterminate shimmer: first step not yet complete */
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '30%',
+                      borderRadius: '9999px',
+                      background: 'var(--accent-color)',
+                      opacity: 0.7,
+                      animation: 'paste-progress-indeterminate 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite',
+                    }}
+                  />
+                ) : (
+                  <div
+                    role="progressbar"
+                    aria-label={t.paste.analyzing}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={progressValue}
+                    style={{
+                      width: `${progressValue}%`,
+                      willChange: 'width',
+                      transition: 'width 400ms cubic-bezier(0.16, 1, 0.3, 1)',
+                    }}
+                    className="h-full rounded-full bg-[var(--accent-color)]"
+                  />
+                )}
               </div>
               {importProgress.currentLabel && (
-                <p className="mt-2 text-xs font-medium uppercase tracking-wide text-[var(--accent-color)]">
+                /* key triggers re-mount → slide-in animation on each new label */
+                <p
+                  key={importProgress.currentLabel}
+                  className="mt-2 text-xs font-medium uppercase tracking-wide text-[var(--accent-color)]"
+                  style={{ animation: 'paste-label-in 200ms ease-out both' }}
+                >
                   {importProgress.currentLabel}
                 </p>
               )}
