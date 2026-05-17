@@ -104,7 +104,7 @@ const METADATA_RESPONSE_SCHEMA = {
 };
 
 const normalizeSectionHeaderCandidate = (line: string): string => {
-  const trimmed = line.trim().replace(/^#+\s*/, '').replace(/[::：]\s*$/, '');
+  const trimmed = line.trim().replace(/^#+\s*/, '').replace(/[:::]\s*$/, '');
   const bracketValue = unwrapBracketToken(trimmed);
   return cleanSectionName(bracketValue ?? trimmed);
 };
@@ -135,11 +135,6 @@ const getSectionHeaderHint = (line: string): string => {
 
 /**
  * Extract a leading Markdown H1 or H2 title and metadata block from pasted text.
- * Returns the extracted song title (or null) and the cleaned lyrics text
- * with the heading line and any **Key:** metadata lines stripped out.
- *
- * Accepts both `# Title` (H1) and `## Title` (H2) as song title candidates
- * so that MD exports using either heading level are handled correctly.
  */
 const extractH1TitleFromText = (text: string): { songTitle: string | null; lyricsText: string } => {
   const lines = text.split(/\r?\n/);
@@ -148,18 +143,15 @@ const extractH1TitleFromText = (text: string): { songTitle: string | null; lyric
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!.trim();
-    // H1 or H2 title line
     if (songTitle === null && /^#{1,2}\s+.+/.test(line)) {
       songTitle = line.replace(/^#{1,2}\s+/, '').trim();
       firstContentIndex = i + 1;
       continue;
     }
-    // Markdown metadata lines (e.g. **Topic:** ..., **Mood:** ...)
     if (songTitle !== null && /^\*{1,2}[^*]+\*{1,2}\s*:/.test(line)) {
       firstContentIndex = i + 1;
       continue;
     }
-    // Stop skipping once we hit a non-metadata, non-empty line after the heading
     if (songTitle !== null && line !== '') {
       firstContentIndex = i;
       break;
@@ -218,18 +210,13 @@ const splitPastedLyricsIntoChunks = (text: string): PasteImportChunk[] => {
 
   const fallbackText = text.trim();
   return fallbackText
-    ? [{
-      displayLabel: 'Section 1',
-      nameHint: '',
-      text: fallbackText,
-    }]
+    ? [{ displayLabel: 'Section 1', nameHint: '', text: fallbackText }]
     : [];
 };
 
 /**
  * Derive a canonical rhyme scheme from per-line rhyme labels when the AI
  * returns FREE but each line carries an individual label (A/B/C…).
- * Returns the joined label string if it matches a known scheme, else 'FREE'.
  */
 const deriveSchemeFromLineLabels = (
   lines: Array<{ rhyme?: string }>,
@@ -252,8 +239,7 @@ const isIntroName = (name: string): boolean =>
 /**
  * Post-process imported sections:
  * - titleExtracted=false: first INTRO → "Title", subsequent INTROs → "Verse N"
- * - titleExtracted=true:  all INTROs stay "Intro" (title already set from H1/H2),
- *   only duplicate INTROs (2nd+) become "Verse N"
+ * - titleExtracted=true:  all INTROs stay "Intro", only duplicate INTROs become "Verse N"
  */
 const normalizeImportedSectionNames = (sections: Section[], titleExtracted: boolean): Section[] => {
   const hasTitle = sections.some(s => /^title$/i.test(s.name.trim()));
@@ -265,9 +251,7 @@ const normalizeImportedSectionNames = (sections: Section[], titleExtracted: bool
 
     if (!introSeen) {
       introSeen = true;
-      // If a H1/H2 title was extracted, keep the first Intro as-is
       if (titleExtracted) return section;
-      // Otherwise promote first Intro to Title (unless a Title section already exists)
       if (!hasTitle) return { ...section, name: 'Title' };
       return section;
     }
@@ -396,7 +380,6 @@ export const usePasteImport = ({
   const analyzePastedLyrics = async () => {
     if (!pastedText.trim()) return;
 
-    // --- Extract H1/H2 title before any chunking ---
     const { songTitle: extractedTitle, lyricsText } = extractH1TitleFromText(pastedText);
     const titleExtracted = Boolean(extractedTitle);
     const textToProcess = titleExtracted ? lyricsText : pastedText;
@@ -406,9 +389,6 @@ export const usePasteImport = ({
       if (sections.length === 0) return;
       const newStructure = sections.map(s => s.name);
       updateSongAndStructureWithHistory(sections, newStructure);
-      // Apply title AFTER sections are committed so titleOrigin='user' is
-      // flushed before requestAutoTitleGeneration fires (avoids race condition
-      // where useTitleGenerator's titleOriginRef still reads 'ai').
       if (extractedTitle && setSongTitle) {
         setSongTitle(extractedTitle);
       } else if (!titleExtracted) {
@@ -423,7 +403,6 @@ export const usePasteImport = ({
     const chunks = splitPastedLyricsIntoChunks(textToProcess);
     if (chunks.length === 0) return;
 
-    // chunks.length > 0 is guaranteed by the guard above — non-null assertion is safe
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const firstChunkLabel: string = chunks[0]!.displayLabel;
     setIsAnalyzing(true);
@@ -433,15 +412,24 @@ export const usePasteImport = ({
       currentLabel: firstChunkLabel,
     });
 
-    // Atomic counter for parallel progress updates
+    // Atomic counter + in-progress index tracker for parallel progress updates
     const completedRef = { count: 0 };
+    const inProgressRef = new Set<number>();
 
     let wasAborted = false;
     try {
       await withAbort(abortControllerRef, async (nextSignal) => {
 
-        // --- Parallel fetch: all chunks + metadata launched simultaneously ---
-        const chunkPromises = chunks.map(async (chunk): Promise<ChunkResult | null> => {
+        const chunkPromises = chunks.map(async (chunk, idx): Promise<ChunkResult | null> => {
+          // Mark this chunk as in-progress and show the lowest in-flight label
+          inProgressRef.add(idx);
+          const minInFlight = Math.min(...inProgressRef);
+          setImportProgress({
+            current: completedRef.count,
+            total: chunks.length,
+            currentLabel: chunks[minInFlight]?.displayLabel ?? chunk.displayLabel,
+          });
+
           try {
             const response = await generateContentWithRetry({
               model: AI_MODEL_NAME,
@@ -472,11 +460,16 @@ export const usePasteImport = ({
             console.warn(`Paste import: section "${chunk.displayLabel}" failed after retries, skipping.`, sectionError);
             return null;
           } finally {
+            inProgressRef.delete(idx);
             completedRef.count += 1;
+            // After completion, show the next lowest in-flight chunk (if any)
+            const nextMin = inProgressRef.size > 0
+              ? Math.min(...inProgressRef)
+              : idx;
             setImportProgress({
               current: completedRef.count,
               total: chunks.length,
-              currentLabel: chunk.displayLabel,
+              currentLabel: chunks[nextMin]?.displayLabel ?? chunk.displayLabel,
             });
           }
         });
@@ -562,9 +555,6 @@ export const usePasteImport = ({
           onDetectedLanguage?.(detectedLanguage, sectionIds);
         }
 
-        // Apply title AFTER sections are committed so titleOrigin='user' is
-        // flushed before requestAutoTitleGeneration fires (avoids race condition
-        // where useTitleGenerator's titleOriginRef still reads 'ai').
         if (extractedTitle && setSongTitle) {
           setSongTitle(extractedTitle);
         } else if (!titleExtracted) {
