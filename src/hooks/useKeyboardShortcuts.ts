@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useModalDispatch, useModalState } from '../contexts/ModalContext';
+import { useAppNavigationContext } from '../contexts/AppStateContext';
 
 export type KeyboardShortcutCategory = 'edit' | 'navigation' | 'file' | 'ai';
 
@@ -10,7 +11,9 @@ export type KeyboardShortcutId =
   | 'dismissNavigation'
   | 'dismissFileDialogs'
   | 'dismissAiDialogs'
-  | 'openSearch';
+  | 'openSearch'
+  | 'goToMusical'
+  | 'lyriaGenerate';
 
 export type KeyboardShortcutModifier = 'ctrlOrMeta' | 'shift' | 'alt';
 
@@ -61,6 +64,16 @@ export const KEYBOARD_SHORTCUTS_METADATA: readonly KeyboardShortcutMetadata[] = 
     category: 'edit',
     combos: [{ key: 'f', modifiers: ['ctrlOrMeta'] }],
   },
+  {
+    id: 'goToMusical',
+    category: 'navigation',
+    combos: [{ key: 'b', modifiers: ['alt'] }],
+  },
+  {
+    id: 'lyriaGenerate',
+    category: 'ai',
+    combos: [{ key: 'a', modifiers: ['alt'] }],
+  },
 ] as const;
 
 type UseKeyboardShortcutsParams = {
@@ -68,6 +81,7 @@ type UseKeyboardShortcutsParams = {
   closeMobilePanels: () => void;
   undo: () => void;
   redo: () => void;
+  onLyriaGenerate?: () => void;
 };
 
 export const useKeyboardShortcuts = ({
@@ -75,11 +89,11 @@ export const useKeyboardShortcuts = ({
   closeMobilePanels,
   undo,
   redo,
+  onLyriaGenerate,
 }: UseKeyboardShortcutsParams) => {
-  // Split hooks: dispatch refs are stable (never trigger re-renders on modal
-  // state changes); state is read separately only where needed.
   const { closeModal, openModal } = useModalDispatch();
   const { uiState } = useModalState();
+  const { setActiveTab } = useAppNavigationContext();
   const {
     promptModal,
     confirmModal,
@@ -114,6 +128,21 @@ export const useKeyboardShortcuts = ({
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
+
+      // Alt+B — aller à l'onglet Musical
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'b') {
+        e.preventDefault();
+        setActiveTab('musical');
+        return;
+      }
+
+      // Alt+A — déclencher la génération Lyria Preview (si callback fourni)
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'a') {
+        e.preventDefault();
+        onLyriaGenerate?.();
+        return;
+      }
+
       if (e.key === 'Escape') {
         if (isSearchReplaceOpen) { closeModal('searchReplace'); return; }
         if (promptModal?.open) { setPromptModal(null); return; }
@@ -163,5 +192,6 @@ export const useKeyboardShortcuts = ({
     setIsSimilarityModalOpen, setIsVersionsModalOpen,
     setApiErrorModal, undo,
     setIsSearchReplaceOpen, setIsKeyboardShortcutsModalOpen,
+    setActiveTab, onLyriaGenerate,
   ]);
 };

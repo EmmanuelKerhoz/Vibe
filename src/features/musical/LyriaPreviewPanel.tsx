@@ -6,9 +6,12 @@
  *   lyrics       — verbatim lyrics string from the active song/section in the editor
  *   songTitle    — pre-fills the title field
  *   onFullSong   — callback to escalate to full-song generation (LyriaFullSongPanel)
+ *
+ * Keyboard shortcuts (global, active when panel is mounted):
+ *   Alt+A  — trigger generate (if not already generating)
  */
 
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Button,
   Card,
@@ -32,6 +35,7 @@ import {
   CheckmarkCircle20Filled,
   DismissCircle20Regular,
   Info20Regular,
+  Keyboard20Regular,
 } from '@fluentui/react-icons';
 import { generateAndPoll, getLyriaKPISnapshot } from '../../services/lyriaService';
 import type { LyriaClip, LyriaStyleDescriptor, LyriaTaskStatus } from '../../types/lyria';
@@ -72,10 +76,10 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   const isGenerating = taskStatus.phase === 'generating' || taskStatus.phase === 'polling';
   const doneClip = taskStatus.phase === 'done' ? taskStatus.clip : null;
 
-  async function handleGenerate(): Promise<void> {
+  const handleGenerate = useCallback(async (): Promise<void> => {
+    if (isGenerating || !lyrics.trim()) return;
     setTaskStatus({ phase: 'generating' });
 
-    // Build style — use conditional spread to satisfy exactOptionalPropertyTypes
     const style: LyriaStyleDescriptor = {
       genre,
       ...(mood ? { mood } : {}),
@@ -84,7 +88,6 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
       ...(vocalStyle ? { vocalStyle } : {}),
     };
 
-    // Build params — negativePrompt is optional, omit key entirely when empty
     const baseParams = {
       lyrics,
       style,
@@ -111,7 +114,19 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
       setTaskStatus({ phase: 'error', message });
       setKpi(getLyriaKPISnapshot());
     }
-  }
+  }, [isGenerating, lyrics, genre, mood, tempo, instruments, vocalStyle, negativePrompt, songTitle]);
+
+  // Alt+A — génère le preview depuis n'importe où dans la page quand ce panel est monté
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'a' && !e.defaultPrevented) {
+        e.preventDefault();
+        void handleGenerate();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleGenerate]);
 
   function togglePlayback(): void {
     if (!audioRef.current || !doneClip?.audioUrl) return;
@@ -147,13 +162,34 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
           </Text>
         }
         description={
-          <Badge appearance="tint" color="success" size="small">
-            Google DeepMind
-          </Badge>
+          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalXS }}>
+            <Badge appearance="tint" color="success" size="small">
+              Google DeepMind
+            </Badge>
+            <Tooltip
+              content="Alt+A pour générer rapidement"
+              relationship="label"
+            >
+              <Badge
+                appearance="ghost"
+                size="small"
+                style={{
+                  cursor: 'default',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  color: tokens.colorNeutralForeground3,
+                }}
+              >
+                <Keyboard20Regular style={{ fontSize: 11 }} />
+                Alt+A
+              </Badge>
+            </Tooltip>
+          </div>
         }
         action={
           <Tooltip
-            content="Gènere un extrait audio ~30s basé sur vos paroles et votre style musical. Moteur: Lyria 3 Clip via Gemini API. Audio SynthID watermarké."
+            content="Génère un extrait audio ~30s basé sur vos paroles et votre style musical. Moteur: Lyria 3 Clip via Gemini API. Audio SynthID watermarké."
             relationship="label"
           >
             <Info20Regular style={{ color: tokens.colorNeutralForeground3 }} />
