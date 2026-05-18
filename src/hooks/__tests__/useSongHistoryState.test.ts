@@ -229,6 +229,7 @@ describe('useSongHistoryState', () => {
     // always start from a clean undo stack after a silent replacement.
     act(() => result.current.replaceStateWithoutHistory([S1, S2, S3], ['Verse 1', 'Chorus', 'Bridge']));
     expect(result.current.past).toHaveLength(0);
+    expect(result.current.future).toHaveLength(0);
     expect(result.current.song).toHaveLength(3);
   });
 

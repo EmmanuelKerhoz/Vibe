@@ -138,8 +138,9 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
   });
 
   // ── Import handlers ──────────────────────────────────────────────
-  // Set title origin to 'user' so the auto-title generator does not overwrite
-  // a title extracted from an imported file.
+  // Wrap setTitle so that a title extracted from an imported file is immediately
+  // marked as 'user' origin, preventing the background auto-title generator from
+  // overwriting it with an AI-generated title.
   const handleSetImportTitle = useCallback((v: string) => {
     setTitle(v);
     setTitleOrigin('user');
