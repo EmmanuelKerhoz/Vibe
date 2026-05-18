@@ -126,15 +126,13 @@ export const useKeyboardShortcuts = ({
   } = uiState;
 
   useEffect(() => {
-    const setActiveTab = nav?.setActiveTab;
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
 
       // Alt+B — aller à l'onglet Musical
       if (e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'b') {
         e.preventDefault();
-        setActiveTab?.('musical');
+        nav?.setActiveTab?.('musical');
         return;
       }
 
