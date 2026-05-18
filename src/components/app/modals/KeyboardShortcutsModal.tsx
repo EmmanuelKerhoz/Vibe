@@ -38,6 +38,18 @@ const CATEGORY_STYLES = {
   },
 } as const;
 
+const FALLBACK_SHORTCUTS: Record<KeyboardShortcutMetadata['id'], string> = {
+  undo: 'Undo the latest change outside text inputs.',
+  redo: 'Redo the latest reverted change outside text inputs.',
+  dismissReset: 'Dismiss the reset confirmation dialog.',
+  dismissNavigation: 'Close the settings, about, similarity, or mobile side panels.',
+  dismissFileDialogs: 'Close the import, export, versions, or library dialogs.',
+  dismissAiDialogs: 'Close AI prompts, API alerts, analysis, or pasted-lyrics import dialogs.',
+  openSearch: 'Open the search & replace panel.',
+  goToMusical: 'Jump to the Musical tab (Alt+B).',
+  lyriaGenerate: 'Trigger Lyria 30-second preview generation (Alt+A).',
+};
+
 function normalizeKeyLabel(key: string) {
   if (key === 'Escape') return 'Esc';
   return key.toUpperCase();
@@ -100,17 +112,6 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: Props) {
   const legacyCategory = (keyboardShortcuts as { category?: { editing?: string; navigation?: string; dialogs?: string; ai?: string } } | undefined)?.category;
   const categories = keyboardShortcuts?.categories;
   const shortcutLabels = keyboardShortcuts?.shortcuts;
-  const fallbackShortcuts: Record<KeyboardShortcutMetadata['id'], string> = {
-    undo: 'Undo the latest change outside text inputs.',
-    redo: 'Redo the latest reverted change outside text inputs.',
-    dismissReset: 'Dismiss the reset confirmation dialog.',
-    dismissNavigation: 'Close the settings, about, similarity, or mobile side panels.',
-    dismissFileDialogs: 'Close the import, export, versions, or library dialogs.',
-    dismissAiDialogs: 'Close AI prompts, API alerts, analysis, or pasted-lyrics import dialogs.',
-    openSearch: 'Open the search & replace panel.',
-    goToMusical: 'Jump to the Musical tab (Alt+B).',
-    lyriaGenerate: 'Trigger Lyria 30-second preview generation (Alt+A).',
-  };
 
   const categoryLabel = (category: KeyboardShortcutMetadata['category']) => {
     if (category === 'edit') {
@@ -241,7 +242,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: Props) {
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-sm leading-relaxed text-[var(--text-primary)]">
-                                 {shortcutLabels?.[shortcut.id] ?? fallbackShortcuts[shortcut.id]}
+                                 {shortcutLabels?.[shortcut.id] ?? FALLBACK_SHORTCUTS[shortcut.id]}
                               </td>
                             </tr>
                           ))}

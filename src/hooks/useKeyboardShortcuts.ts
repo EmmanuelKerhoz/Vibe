@@ -134,7 +134,7 @@ export const useKeyboardShortcuts = ({
       // Alt+B — aller à l'onglet Musical
       if (e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'b') {
         e.preventDefault();
-        nav?.setActiveTab?.('musical');
+        setActiveTab?.('musical');
         return;
       }
 
@@ -195,6 +195,6 @@ export const useKeyboardShortcuts = ({
      setApiErrorModal, undo,
      setIsSearchReplaceOpen, setIsKeyboardShortcutsModalOpen,
      nav,
-     nav?.setActiveTab, onLyriaGenerate,
+     onLyriaGenerate,
    ]);
 };
