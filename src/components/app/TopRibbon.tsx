@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Sparkles, Undo2, Redo2, PanelRight, Menu, KeyboardRegular, WandSparkles, Music, Check, AlertTriangle } from '../ui/icons';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { Sparkles, Undo2, Redo2, PanelRight, Menu, KeyboardRegular, WandSparkles, Music, Check, AlertTriangle, Copy } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { IconButton } from '../ui/IconButton';
 import { useTranslation } from '../../i18n';
@@ -10,6 +10,7 @@ import { useTopRibbonActions } from '../../hooks/useTopRibbonActions';
 import { RibbonMenuPanel } from './RibbonMenuPanel';
 import { RibbonTabs } from './RibbonTabs';
 import { SUNO_CREATE_URL } from '../../constants/externalUrls';
+import { copyToClipboard } from '../../utils/clipboard';
 
 const MAX_SUNO_PROMPT_LENGTH = 1800;
 
@@ -28,7 +29,7 @@ interface Props {
 export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, onOpenNewEmpty }: Props) {
   const { past, future, undo, redo } = useSongHistoryContext();
   const { isGenerating, clearSelection } = useComposerContext();
-  const { musicalPrompt } = useSongContext();
+  const { musicalPrompt, song } = useSongContext();
   const { activeTab, setActiveTab, isLeftPanelOpen, setIsLeftPanelOpen, isStructureOpen, setIsStructureOpen } = useAppNavigationContext();
   const { openKeyboardShortcuts, isAnalyzing } = useTopRibbonActions();
   const { t } = useTranslation();
@@ -36,7 +37,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
   const isBusy = isGenerating || isAnalyzing;
-  const processingLabel = t.tooltips.processing ?? 'Processing\u2026';
+  const processingLabel = t.tooltips.processing ?? 'Processing…';
   const panelToggleLabel = isLeftPanelOpen
     ? (t.tooltips.closeLeftPanel ?? 'Close lyrics generation panel')
     : (t.tooltips.openLeftPanel ?? 'Open lyrics generation panel');
@@ -47,8 +48,30 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
   const sunoTruncatedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sunoSent, setSunoSent] = useState(false);
   const [sunoTruncated, setSunoTruncated] = useState(false);
+  const [lyricsCopied, setLyricsCopied] = useState(false);
 
   const isPromptTruncated = musicalPrompt.trim().length > MAX_SUNO_PROMPT_LENGTH;
+
+  const lyricsText = useMemo(() => {
+    if (!song || song.length === 0) return '';
+    return song
+      .map(section => {
+        const header = section.name?.trim() ? `[${section.name.trim()}]` : '';
+        const body = section.lines.map(l => l.text ?? '').join('\n');
+        return header ? `${header}\n${body}` : body;
+      })
+      .join('\n\n')
+      .trim();
+  }, [song]);
+
+  const handleCopyLyrics = useCallback(() => {
+    if (!lyricsText) return;
+    void copyToClipboard(lyricsText).then((ok) => {
+      if (!ok) return;
+      setLyricsCopied(true);
+      setTimeout(() => setLyricsCopied(false), 2000);
+    });
+  }, [lyricsText]);
 
   const toggleLeftPanel = () => {
     if (!isLeftPanelOpen) { setActiveTab('lyrics'); setIsStructureOpen(false); }
@@ -90,12 +113,16 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
   };
 
   const sunoTooltip = sunoSent
-    ? (t.tooltips.sendToSunoConfirm ?? 'Opening SUNO\u2026')
+    ? (t.tooltips.sendToSunoConfirm ?? 'Opening SUNO…')
     : sunoTruncated
       ? (t.tooltips.sendToSunoTruncated ?? `Prompt truncated to ${MAX_SUNO_PROMPT_LENGTH} chars`).replace('{max}', String(MAX_SUNO_PROMPT_LENGTH))
       : isPromptTruncated
         ? (t.tooltips.sendToSunoWillTruncate ?? `Prompt exceeds ${MAX_SUNO_PROMPT_LENGTH} chars — will be trimmed`).replace('{max}', String(MAX_SUNO_PROMPT_LENGTH))
-        : (t.tooltips.sendToSuno ?? 'Open SUNO with your musical prompt');
+        : (t.tooltips.sendToSuno ?? 'Call SUNO with your musical prompt');
+
+  const lyricsTooltip = lyricsCopied
+    ? (t.tooltips.copyLyricsConfirm ?? 'Lyrics copied to clipboard')
+    : (t.tooltips.copyLyrics ?? 'Copy lyrics for SUNO');
 
   return (
     <div
@@ -140,41 +167,57 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
             </button>
           </Tooltip>
         )}
-        {/* Send to SUNO button */}
-        <Tooltip title={sunoTooltip}>
-          <button
-            onClick={handleSendToSuno}
-            disabled={sunoSent}
-            aria-label={t.ribbon.send_to_suno ?? 'Send to SUNO'}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all disabled:cursor-not-allowed disabled:opacity-70"
-            style={{
-              background: sunoSent
-                ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 12%, transparent)'
-                : sunoTruncated || isPromptTruncated
-                  ? 'color-mix(in srgb, var(--lcars-amber, #f59e0b) 12%, transparent)'
-                  : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 12%, transparent)',
-              color: sunoSent
-                ? 'var(--lcars-cyan, #4f98a3)'
-                : sunoTruncated || isPromptTruncated
-                  ? 'var(--lcars-amber, #f59e0b)'
-                  : 'var(--lcars-violet, #a86fdf)',
-              border: `1px solid ${
-                sunoSent
-                  ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 25%, transparent)'
+        {/* Call SUNO button + Copy Lyrics (lyrics tab only) */}
+        <div className="flex items-center gap-1">
+          <Tooltip title={sunoTooltip}>
+            <button
+              onClick={handleSendToSuno}
+              disabled={sunoSent}
+              aria-label={t.ribbon.send_to_suno ?? 'Call SUNO'}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all disabled:cursor-not-allowed disabled:opacity-70"
+              style={{
+                background: sunoSent
+                  ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 12%, transparent)'
                   : sunoTruncated || isPromptTruncated
-                    ? 'color-mix(in srgb, var(--lcars-amber, #f59e0b) 25%, transparent)'
-                    : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 25%, transparent)'
-              }`,
-            }}
-          >
-            {sunoSent
-              ? <Check className="w-3.5 h-3.5" />
-              : sunoTruncated || isPromptTruncated
-                ? <AlertTriangle className="w-3.5 h-3.5" />
-                : <Music className="w-3.5 h-3.5" />}
-            <span className="hidden lg:inline">{t.ribbon.send_to_suno ?? 'Send to SUNO'}</span>
-          </button>
-        </Tooltip>
+                    ? 'color-mix(in srgb, var(--lcars-amber, #f59e0b) 12%, transparent)'
+                    : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 12%, transparent)',
+                color: sunoSent
+                  ? 'var(--lcars-cyan, #4f98a3)'
+                  : sunoTruncated || isPromptTruncated
+                    ? 'var(--lcars-amber, #f59e0b)'
+                    : 'var(--lcars-violet, #a86fdf)',
+                border: `1px solid ${
+                  sunoSent
+                    ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 25%, transparent)'
+                    : sunoTruncated || isPromptTruncated
+                      ? 'color-mix(in srgb, var(--lcars-amber, #f59e0b) 25%, transparent)'
+                      : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 25%, transparent)'
+                }`,
+              }}
+            >
+              {sunoSent
+                ? <Check className="w-3.5 h-3.5" />
+                : sunoTruncated || isPromptTruncated
+                  ? <AlertTriangle className="w-3.5 h-3.5" />
+                  : <Music className="w-3.5 h-3.5" />}
+              <span className="hidden lg:inline">{t.ribbon.send_to_suno ?? 'Call SUNO'}</span>
+            </button>
+          </Tooltip>
+
+          {activeTab === 'lyrics' && (
+            <Tooltip title={lyricsTooltip}>
+              <button
+                onClick={handleCopyLyrics}
+                disabled={!lyricsText}
+                aria-label={t.tooltips.copyLyrics ?? 'Copy lyrics'}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium uppercase tracking-wide border border-[var(--border-color)] text-[var(--text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {lyricsCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span className="hidden lg:inline">{lyricsCopied ? (t.musical?.copied ?? 'Copied!') : (t.editor?.emptyState?.pasteLyrics ?? 'Copy Lyrics')}</span>
+              </button>
+            </Tooltip>
+          )}
+        </div>
         <div className="w-px h-4 bg-[var(--border-color)] mx-1 hidden lg:block" />
         <Tooltip title={t.tooltips.undo}>
           <IconButton onClick={undo} disabled={!canUndo} size="small" style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 36, minHeight: 36 }} className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'} aria-disabled={!canUndo} aria-label={t.tooltips.undo}>
