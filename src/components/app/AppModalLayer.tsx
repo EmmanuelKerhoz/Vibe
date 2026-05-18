@@ -4,7 +4,7 @@
  * Lazy-loads AppModals (already code-split). Owns the ErrorBoundary + Suspense
  * wrapper that was previously inlined in AppInnerContent.
  */
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useCallback } from 'react';
 import { Spinner } from '@fluentui/react-components';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useSongContext } from '../../contexts/SongContext';
@@ -69,6 +69,7 @@ export function AppModalLayer() {
     setIsPasteModalOpen,
     importInputRef,
     setIsResetModalOpen,
+    setIsLeftPanelOpen,
     editMode, markupText,
     hasApiKey,
   } = appState;
@@ -101,7 +102,15 @@ export function AppModalLayer() {
     setPastedText,
     setSongLanguage,
     setSongTitle: setTitle,
+    // Fold the left panel as soon as a file is loaded.
+    onComplete: () => setIsLeftPanelOpen(false),
   });
+
+  // Fold the left panel when the user confirms paste-analyze.
+  const handleAnalyzePastedLyrics = useCallback(() => {
+    setIsLeftPanelOpen(false);
+    analyzePastedLyrics();
+  }, [setIsLeftPanelOpen, analyzePastedLyrics]);
 
   const {
     handleSaveToLibrary, handleLoadLibraryAsset,
@@ -156,7 +165,7 @@ export function AppModalLayer() {
           isAnalyzing={isAnalyzing}
           isAnalyzingTheme={isAnalyzingTheme}
           importProgress={importProgress}
-          analyzePastedLyrics={analyzePastedLyrics}
+          analyzePastedLyrics={handleAnalyzePastedLyrics}
           analysisReport={analysisReport} analysisSteps={analysisSteps}
           appliedAnalysisItems={appliedAnalysisItems}
           selectedAnalysisItems={selectedAnalysisItems}
