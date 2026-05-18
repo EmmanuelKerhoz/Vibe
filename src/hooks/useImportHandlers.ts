@@ -13,10 +13,12 @@ type UseImportHandlersParams = {
   setPastedText: (v: string) => void;
   setSongLanguage: (v: string) => void;
   setSongTitle?: (v: string) => void;
+  /** Called after a file has been successfully loaded — use to fold the left panel. */
+  onComplete?: () => void;
 };
 
 export const useImportHandlers = (params: UseImportHandlersParams) => {
-  const { importInputRef, loadFileForAnalysis, setSongLanguage, setSongTitle } = params;
+  const { importInputRef, loadFileForAnalysis, setSongLanguage, setSongTitle, onComplete } = params;
 
   const restoreImportedSongMeta = useCallback((payload: { songLanguage?: string; songTitle?: string }) => {
     const importedLanguage = payload.songLanguage?.trim() ?? '';
@@ -31,7 +33,8 @@ export const useImportHandlers = (params: UseImportHandlersParams) => {
     if (!file) return;
     const payload = await loadFileForAnalysis(file);
     restoreImportedSongMeta(payload);
-  }, [loadFileForAnalysis, restoreImportedSongMeta]);
+    onComplete?.();
+  }, [loadFileForAnalysis, restoreImportedSongMeta, onComplete]);
 
   const handleImportChooseFile = useCallback(async () => {
     const pickerWindow = window as WindowWithOpenFilePicker;
@@ -49,6 +52,7 @@ export const useImportHandlers = (params: UseImportHandlersParams) => {
         const file = await handle.getFile();
         const payload = await loadFileForAnalysis(file);
         restoreImportedSongMeta(payload);
+        onComplete?.();
       } catch (error) {
         if (!(error instanceof DOMException && error.name === 'AbortError')) {
           console.error('Failed to open import file picker', error);
@@ -57,7 +61,7 @@ export const useImportHandlers = (params: UseImportHandlersParams) => {
       return;
     }
     importInputRef.current?.click();
-  }, [importInputRef, loadFileForAnalysis, restoreImportedSongMeta]);
+  }, [importInputRef, loadFileForAnalysis, restoreImportedSongMeta, onComplete]);
 
   return { handleImportInputChange, handleImportChooseFile };
 };

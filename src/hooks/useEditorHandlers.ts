@@ -153,6 +153,8 @@ export function useEditorHandlers({ state, isMobileOrTablet }: UseEditorHandlers
     setPastedText,
     setSongLanguage,
     setSongTitle: handleSetImportTitle,
+    // Fold the left panel as soon as a file is loaded.
+    onComplete: () => setIsLeftPanelOpen(false),
   });
 
   // ── Derived composite callbacks ───────────────────────────────────────
