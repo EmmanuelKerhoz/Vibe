@@ -226,7 +226,7 @@
     "promptPlaceholder": "Your structured musical prompt (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) will appear here...",
     "promptStructureLabel": "Structured prompt",
     "promptStructureHint": "Keep the musical prompt labeled (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) so AI music tools don't miss critical context.",
-    "optimizedFor": "Optimized for Suno, Udio, and Stable Audio",
+    "optimizedFor": "Optimized for Lyria, Udio, and Stable Audio",
     "copyPrompt": "Copy Prompt",
     "copied": "Copied!",
     "contextInfo": "Context: lyrics, topic & mood are taken into account",

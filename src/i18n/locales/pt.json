@@ -172,7 +172,7 @@
     "promptPlaceholder": "Seu prompt musical estruturado (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) aparecerá aqui...",
     "promptStructureLabel": "Prompt estruturado",
     "promptStructureHint": "Mantenha o prompt musical etiquetado (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) para que as IAs de música não percam contexto.",
-    "optimizedFor": "Otimizado para Suno, Udio e Stable Audio",
+    "optimizedFor": "Otimizado para Lyria, Udio e Stable Audio",
     "copyPrompt": "Copiar Prompt",
     "copied": "Copiado!",
     "contextInfo": "Contexto: letras, tema e humor são levados em conta",

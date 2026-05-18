@@ -185,7 +185,7 @@
     "promptPlaceholder": "구조화된 음악 프롬프트(STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY)가 여기에 표시됩니다...",
     "promptStructureLabel": "Structured prompt",
     "promptStructureHint": "Keep the musical prompt labeled (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) so AI music tools don't miss critical context.",
-    "optimizedFor": "Suno, Udio, Stable Audio에 최적화됨",
+    "optimizedFor": "Lyria, Udio, Stable Audio에 최적화됨",
     "copyPrompt": "프롬프트 복사",
     "copied": "복사됨!",
     "contextInfo": "맥락: 가사, 주제, 분위기가 반영됩니다",

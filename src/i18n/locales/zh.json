@@ -186,7 +186,7 @@
     "promptPlaceholder": "结构化的音乐提示词（STYLE、MOOD、VOCALS、INSTRUMENTATION、RHYTHM、STRUCTURE、MIX/SPACE、REFERENCES、DELIVERY）将显示在这里...",
     "promptStructureLabel": "结构化提示",
     "promptStructureHint": "保持提示词带有标签（STYLE、MOOD、VOCALS、INSTRUMENTATION、RHYTHM、STRUCTURE、MIX/SPACE、REFERENCES、DELIVERY），以便音乐类 AI 不会遗漏上下文。",
-    "optimizedFor": "专为 Suno、Udio 和 Stable Audio 优化",
+    "optimizedFor": "专为 Lyria、Udio 和 Stable Audio 优化",
     "copyPrompt": "复制提示词",
     "copied": "已复制！",
     "contextInfo": "上下文：歌词、主题和情感均已纳入考量",

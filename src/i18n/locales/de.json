@@ -172,7 +172,7 @@
     "promptPlaceholder": "Dein strukturierter musikalischer Prompt (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) erscheint hier...",
     "promptStructureLabel": "Strukturierter Prompt",
     "promptStructureHint": "Halte den musikalischen Prompt beschriftet (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY), damit Musik-KIs keinen Kontext verlieren.",
-    "optimizedFor": "Optimiert für Suno, Udio und Stable Audio",
+    "optimizedFor": "Optimiert für Lyria, Udio und Stable Audio",
     "copyPrompt": "Prompt kopieren",
     "copied": "Kopiert!",
     "contextInfo": "Kontext: Texte, Thema und Stimmung werden berücksichtigt",

@@ -172,7 +172,7 @@
     "promptPlaceholder": "سيظهر موجّهك الموسيقي المُنظم (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) هنا...",
     "promptStructureLabel": "موجه منظم",
     "promptStructureHint": "حافظ على الموجّه الموسيقي مُعلّمًا (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) حتى لا تفوت أدوات الموسيقى بالذكاء الاصطناعي السياق.",
-    "optimizedFor": "محسّن لـ Suno و Udio و Stable Audio",
+    "optimizedFor": "محسّن لـ Lyria و Udio و Stable Audio",
     "copyPrompt": "نسخ الموجّه",
     "copied": "تم النسخ!",
     "contextInfo": "السياق: الكلمات والموضوع والمزاج مأخوذة بعين الاعتبار",
