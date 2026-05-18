@@ -72,18 +72,23 @@ export function AppPanelOrchestrator() {
   }, [isSuggestionsOpen, isStructureOpen, setIsStructureOpen]);
 
   // ── Effect 4: Auto-open left panel after initial hydration only ───────
+  // Seeds prevHasRealLyricContentRef so Effect 5 never observes a stale
+  // false→true transition (race condition fix for file import path).
   const hasSyncedInitialLeftPanelRef = useRef(false);
+  const prevHasRealLyricContentRef = useRef(false);
   useEffect(() => {
     if (!isSessionHydrated) return;
     if (hasSyncedInitialLeftPanelRef.current) return;
     hasSyncedInitialLeftPanelRef.current = true;
+    // Seed the prev-ref with the actual current value so Effect 5
+    // does not treat an already-present lyric content as a new transition.
+    prevHasRealLyricContentRef.current = hasRealLyricContent;
     setIsLeftPanelOpen(!hasRealLyricContent);
   }, [hasRealLyricContent, isSessionHydrated, setIsLeftPanelOpen]);
 
   // ── Effect 5: Collapse left panel as soon as lyrics content appears ───
   // Covers all three entry points: file import, paste modal, direct typing.
   // Runs only after initial sync (ref guard) so it doesn't fight Effect 4.
-  const prevHasRealLyricContentRef = useRef(false);
   useEffect(() => {
     if (!hasSyncedInitialLeftPanelRef.current) return;
     if (hasRealLyricContent && !prevHasRealLyricContentRef.current) {
