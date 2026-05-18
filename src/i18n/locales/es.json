@@ -23,14 +23,15 @@
     "lyrics": "LETRAS",
     "musical": "MUSICAL",
     "similarity": "Similitud",
-    "import": "Importar",
-    "export": "Exportar",
+    "load_import": "Cargar / Importar",
+    "save_export": "Guardar / Exportar",
     "versions": "Versiones de letra",
     "undo": "Deshacer",
     "redo": "Rehacer",
     "reset": "Restablecer",
     "aiUnavailable": "IA NO DISPONIBLE",
-    "send_to_suno": "Enviar a SUNO"
+    "send_to_lyria": "Enviar a LYRIA",
+    "copy_lyrics": "Copiar letras"
   },
   "mobileNav": {
     "navigation": "Navegación móvil",
@@ -171,7 +172,7 @@
     "promptPlaceholder": "Tu prompt musical estructurado (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) aparecerá aquí...",
     "promptStructureLabel": "Prompt estructurado",
     "promptStructureHint": "Mantén el prompt musical etiquetado (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) para que las IA musicales no pierdan contexto.",
-    "optimizedFor": "Optimizado para Suno, Udio y Stable Audio",
+    "optimizedFor": "Optimizado para Lyria, Udio y Stable Audio",
     "copyPrompt": "Copiar Prompt",
     "copied": "¡Copiado!",
     "contextInfo": "Contexto: letras, tema y estado de ánimo se tienen en cuenta",
@@ -412,8 +413,8 @@
     "aiGeneratedTitle": "Título generado por IA",
     "userEnteredTitle": "Título introducido por el usuario",
     "openSearch": "Buscar y reemplazar en las letras (Ctrl+F)",
-    "sendToSunoConfirm": "Abriendo SUNO…",
-    "sendToSuno": "Abrir SUNO con tu prompt musical",
+    "sendToLyriaConfirm": "Abriendo Musical…",
+    "sendToLyria": "Abrir la pestaña Musical para generar la vista previa con Lyria",
     "quantizeLineDone": "Línea cuantizada"
   },
   "sections": {

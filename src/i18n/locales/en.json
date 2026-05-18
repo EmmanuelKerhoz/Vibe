@@ -47,8 +47,8 @@
     "lyrics": "LYRICS",
     "musical": "MUSICAL",
     "similarity": "Similarity",
-    "import": "Load/Import",
-    "export": "Save/Export",
+    "load_import": "Load / Import",
+    "save_export": "Save / Export",
     "versions": "Lyrics Versions",
     "undo": "Undo",
     "redo": "Redo",
@@ -56,7 +56,8 @@
     "aiUnavailable": "AI UNAVAILABLE",
     "menu": "Menu",
     "menuAria": "Open main menu",
-    "send_to_suno": "CALL SUNO"
+    "send_to_lyria": "Send to LYRIA",
+    "copy_lyrics": "Copy Lyrics"
   },
   "mobileNav": {
     "navigation": "Mobile navigation",
@@ -225,7 +226,7 @@
     "promptPlaceholder": "Your structured musical prompt (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) will appear here...",
     "promptStructureLabel": "Structured prompt",
     "promptStructureHint": "Keep the musical prompt labeled (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) so AI music tools don't miss critical context.",
-    "optimizedFor": "Optimized for Suno, Udio, and Stable Audio",
+    "optimizedFor": "Optimized for Lyria, Udio, and Stable Audio",
     "copyPrompt": "Copy Prompt",
     "copied": "Copied!",
     "contextInfo": "Context: lyrics, topic & mood are taken into account",
@@ -502,8 +503,8 @@
     "browseLibrary": "Save or browse your song library",
     "openSettings": "Open application settings",
     "sponsor": "Support the developer",
-    "sendToSunoConfirm": "Opening SUNO…",
-    "sendToSuno": "Open SUNO with your musical prompt",
+    "sendToLyriaConfirm": "Opening Musical…",
+    "sendToLyria": "Open the Musical tab to generate a preview with Lyria",
     "quantizeLineDone": "Line quantized"
   },
   "sections": {

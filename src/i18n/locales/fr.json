@@ -47,8 +47,8 @@
     "lyrics": "PAROLES",
     "musical": "MUSICAL",
     "similarity": "Similarité",
-    "import": "Charger/Importer",
-    "export": "Enregistrer/Exporter",
+    "load_import": "Charger / Importer",
+    "save_export": "Enregistrer / Exporter",
     "versions": "Versions des paroles",
     "undo": "Annuler",
     "redo": "Rétablir",
@@ -56,7 +56,8 @@
     "aiUnavailable": "IA INDISPONIBLE",
     "menu": "Menu",
     "menuAria": "Ouvrir le menu principal",
-    "send_to_suno": "Envoyer à SUNO"
+    "send_to_lyria": "Envoyer à LYRIA",
+    "copy_lyrics": "Copier les paroles"
   },
   "mobileNav": {
     "navigation": "Navigation mobile",
@@ -222,7 +223,7 @@
     "promptPlaceholder": "Votre prompt musical structuré (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) apparaîtra ici...",
     "promptStructureLabel": "Prompt structuré",
     "promptStructureHint": "Gardez le prompt musical étiqueté (STYLE, MOOD, VOCALS, INSTRUMENTATION, RHYTHM, STRUCTURE, MIX/SPACE, REFERENCES, DELIVERY) pour que les outils IA ne manquent pas de contexte critique.",
-    "optimizedFor": "Optimisé pour Suno, Udio et Stable Audio",
+    "optimizedFor": "Optimisé pour Lyria, Udio et Stable Audio",
     "copyPrompt": "Copier le prompt",
     "copied": "Copié !",
     "contextInfo": "Contexte : les paroles, le sujet et l'ambiance sont pris en compte",
@@ -498,8 +499,8 @@
     "browseLibrary": "Enregistrer ou parcourir votre bibliothèque de chansons",
     "openSettings": "Ouvrir les paramètres de l'application",
     "sponsor": "Soutenir le développeur",
-    "sendToSunoConfirm": "Ouverture de SUNO…",
-    "sendToSuno": "Ouvrir SUNO avec votre prompt musical",
+    "sendToLyriaConfirm": "Ouverture de Musical…",
+    "sendToLyria": "Ouvrir l’onglet Musical pour générer un aperçu avec Lyria",
     "quantizeLineDone": "Ligne quantifiée"
   },
   "sections": {

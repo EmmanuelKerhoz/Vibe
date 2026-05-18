@@ -34,50 +34,56 @@ function FormatBadge({ label, color }: { label: string; color: string }) {
 
 export function ExportModal({ isOpen, onClose, onOpenLibrary, onExport }: Props) {
   const { t } = useTranslation();
+  const exportDialog = t.exportDialog ?? ({} as NonNullable<typeof t.exportDialog>);
+  const saveToLibrary = t.saveToLibrary ?? ({} as NonNullable<typeof t.saveToLibrary>);
+  const actions = (t as { actions?: { cancel?: string } }).actions;
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('txt');
 
   useEffect(() => {
     if (isOpen) setSelectedFormat('txt');
   }, [isOpen]);
 
-  const formats = useMemo(() => ([
-    {
-      value: 'txt' as const,
-      label: t.exportDialog.formats.txt,
-      extension: '.txt',
-      icon: <FileText className="w-5 h-5" />,
-      accent: '#38bdf8',
-      surface: 'rgba(56, 189, 248, 0.14)',
-      border: 'rgba(56, 189, 248, 0.28)',
-    },
-    {
-      value: 'markup' as const,
-      label: t.exportDialog.formats.markup,
-      extension: '.md',
-      icon: <FileCode2 className="w-5 h-5" />,
-      accent: '#a855f7',
-      surface: 'rgba(168, 85, 247, 0.14)',
-      border: 'rgba(168, 85, 247, 0.28)',
-    },
-    {
-      value: 'odt' as const,
-      label: t.exportDialog.formats.odt,
-      extension: '.odt',
-      icon: <FormatBadge label="ODT" color="#22c55e" />,
-      accent: '#22c55e',
-      surface: 'rgba(34, 197, 94, 0.14)',
-      border: 'rgba(34, 197, 94, 0.28)',
-    },
-    {
-      value: 'docx' as const,
-      label: t.exportDialog.formats.docx,
-      extension: '.docx',
-      icon: <FormatBadge label="DOC" color="#2563eb" />,
-      accent: '#2563eb',
-      surface: 'rgba(37, 99, 235, 0.14)',
-      border: 'rgba(37, 99, 235, 0.28)',
-    },
-  ]), [t]);
+  const formats = useMemo(() => {
+    const exportFormats = t.exportDialog?.formats ?? ({} as NonNullable<NonNullable<typeof t.exportDialog>['formats']>);
+    return [
+      {
+        value: 'txt' as const,
+        label: exportFormats.txt ?? 'TXT',
+        extension: '.txt',
+        icon: <FileText className="w-5 h-5" />,
+        accent: '#38bdf8',
+        surface: 'rgba(56, 189, 248, 0.14)',
+        border: 'rgba(56, 189, 248, 0.28)',
+      },
+      {
+        value: 'markup' as const,
+        label: exportFormats.markup ?? 'MARKUP',
+        extension: '.md',
+        icon: <FileCode2 className="w-5 h-5" />,
+        accent: '#a855f7',
+        surface: 'rgba(168, 85, 247, 0.14)',
+        border: 'rgba(168, 85, 247, 0.28)',
+      },
+      {
+        value: 'odt' as const,
+        label: exportFormats.odt ?? 'ODT',
+        extension: '.odt',
+        icon: <FormatBadge label="ODT" color="#22c55e" />,
+        accent: '#22c55e',
+        surface: 'rgba(34, 197, 94, 0.14)',
+        border: 'rgba(34, 197, 94, 0.28)',
+      },
+      {
+        value: 'docx' as const,
+        label: exportFormats.docx ?? 'DOCX',
+        extension: '.docx',
+        icon: <FormatBadge label="DOC" color="#2563eb" />,
+        accent: '#2563eb',
+        surface: 'rgba(37, 99, 235, 0.14)',
+        border: 'rgba(37, 99, 235, 0.28)',
+      },
+    ];
+  }, [t]);
 
   if (!isOpen) return null;
 
@@ -100,7 +106,7 @@ export function ExportModal({ isOpen, onClose, onOpenLibrary, onExport }: Props)
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={t.exportDialog.title}
+        aria-label={exportDialog.title ?? 'Export song'}
         className="relative w-full h-full flex flex-col dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px] shadow-2xl overflow-hidden"
       >
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)]">
@@ -110,16 +116,16 @@ export function ExportModal({ isOpen, onClose, onOpenLibrary, onExport }: Props)
             </div>
             <div>
               <h3 className="text-sm font-bold tracking-widest text-[var(--text-primary)] uppercase">
-                {t.exportDialog.title}
+                 {exportDialog.title ?? 'Export song'}
               </h3>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                {t.exportDialog.description}
+                 {exportDialog.description ?? 'Choose a format to export your lyrics.'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label={t.exportDialog.cancel}
+            aria-label={exportDialog.cancel ?? actions?.cancel ?? 'Cancel'}
             className="ux-interactive p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg"
           >
             <X className="w-4 h-4" />
@@ -128,7 +134,7 @@ export function ExportModal({ isOpen, onClose, onOpenLibrary, onExport }: Props)
 
         <div className="p-6 bg-[var(--bg-app)]">
           <p className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-3">
-            {t.exportDialog.formatLabel}
+            {exportDialog.formatLabel ?? 'Format'}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {formats.map(format => {
@@ -192,11 +198,11 @@ export function ExportModal({ isOpen, onClose, onOpenLibrary, onExport }: Props)
             startIcon={<Library className="w-4 h-4" />}
             className="ux-interactive"
           >
-            {t.saveToLibrary.title}
+            {saveToLibrary.title ?? 'Library'}
           </Button>
           <div className="flex items-center gap-3">
             <Button onClick={onClose} variant="outlined" color="inherit" className="ux-interactive">
-              {t.exportDialog.cancel}
+              {exportDialog.cancel ?? actions?.cancel ?? 'Cancel'}
             </Button>
             <Button
               onClick={() => { onExport(selectedFormat); onClose(); }}
@@ -204,7 +210,7 @@ export function ExportModal({ isOpen, onClose, onOpenLibrary, onExport }: Props)
               color="primary"
               className="ux-interactive"
             >
-              {t.exportDialog.save}
+               {exportDialog.save ?? 'Save file'}
             </Button>
           </div>
         </div>
