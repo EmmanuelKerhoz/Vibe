@@ -123,7 +123,7 @@
     "createdAt": "Créé le",
     "updatedAt": "Dernière modification",
     "copyLyrics": "Copier les paroles",
-    "lyricsCopied": "Paroles copiées !",
+    "lyricsCopied": "Paroles copiées !",
     "pasteDetected": "Paroles détectées dans le presse-papiers",
     "importPasted": "Importer les paroles collées",
     "dismiss": "Ignorer"
@@ -174,7 +174,8 @@
     "synonymSuggestions": "Synonymes",
     "completeLine": "Compléter cette ligne",
     "rewriteLine": "Réécrire cette ligne",
-    "translateLine": "Traduire"
+    "translateLine": "Traduire",
+    "aiUnavailableHelp": "L'IA est indisponible. Vérifiez votre clé API dans les Paramètres."
   },
   "library": {
     "title": "Bibliothèque de chansons",
@@ -190,7 +191,7 @@
     "sortByDate": "Date de modification",
     "sortByCreated": "Date de création",
     "songCount": "{count} chansons",
-    "deleteConfirm": "Supprimer cette chanson ?",
+    "deleteConfirm": "Supprimer cette chanson ?",
     "deleteConfirmBody": "Cette action est irréversible.",
     "duplicateSong": "Dupliquer",
     "renameSong": "Renommer",
@@ -242,7 +243,7 @@
     "referencePlaceholder": "ex. Radiohead, Joni Mitchell…",
     "generatePrompt": "Générer le prompt musical",
     "copyPrompt": "Copier le prompt",
-    "promptCopied": "Prompt copié !",
+    "promptCopied": "Prompt copié !",
     "lyriaPreview": "Aperçu Lyria",
     "lyriaPreviewSubtitle": "Générez un aperçu audio de 30 secondes avec Google Lyria",
     "lyriaGenerate": "Générer l'aperçu 30\"",
@@ -304,10 +305,10 @@
     "analyzeFailed": "Échec de l'analyse."
   },
   "dialogs": {
-    "resetTitle": "Réinitialiser la chanson ?",
+    "resetTitle": "Réinitialiser la chanson ?",
     "resetBody": "Toutes les modifications non enregistrées seront perdues.",
     "resetConfirm": "Réinitialiser",
-    "deleteTitle": "Supprimer la chanson ?",
+    "deleteTitle": "Supprimer la chanson ?",
     "deleteBody": "Cette action est irréversible.",
     "deleteConfirm": "Supprimer",
     "importTitle": "Importer des paroles",
