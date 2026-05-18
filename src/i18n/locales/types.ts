@@ -428,6 +428,8 @@ export interface Translations {
       dismissFileDialogs: string;
       dismissAiDialogs: string;
       openSearch: string;
+      goToMusical: string;
+      lyriaGenerate: string;
     };
   };
 
