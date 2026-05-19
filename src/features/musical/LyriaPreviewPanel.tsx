@@ -53,10 +53,9 @@ import {
 } from '@fluentui/react-icons';
 import { generateAndPoll, getLyriaKPISnapshot } from '../../services/lyriaService';
 import type { LyriaClip, LyriaStyleDescriptor, LyriaTaskStatus } from '../../types/lyria';
-import { buildPrompt, sanitizePromptText } from '../../../api/lyria/generate';
 import { useLanguage } from '../../i18n';
 
-// Re-implement styleDescriptorToString client-side (mirrors api/lyria/generate.ts)
+// Client-side serializer — mirrors api/lyria/generate.ts styleDescriptorToString
 function styleDescriptorToString(s: LyriaStyleDescriptor): string {
   const parts: string[] = [];
   if (s.genre) parts.push(s.genre);
