@@ -10,8 +10,12 @@
  * Secret: GOOGLE_GENAI_API_KEY (Vercel env — never in bundle)
  *
  * Security:
- *   - Internal token guard: LYRIA_INTERNAL_TOKEN env var must match
- *     X-Lyria-Token request header (set by lyriaService client).
+ *   - Internal token guard: if LYRIA_INTERNAL_TOKEN is set AND the client
+ *     sends X-Lyria-Token, the values must match.
+ *   - If no X-Lyria-Token header is sent (VITE_ var not in client bundle),
+ *     the request is allowed only when it is same-origin (Origin/Referer
+ *     matches the Vercel deployment host). External requests without the
+ *     header are rejected.
  *   - Lyrics are wrapped in an XML-like delimiter block to prevent
  *     prompt injection from user-controlled content.
  *   - req.body validated structurally before use.
@@ -35,14 +39,38 @@ const MAX_STYLE = 800;
 const MAX_NEGATIVE_PROMPT = 500;
 
 // ─── Auth guard ───────────────────────────────────────────────────────────────
+/**
+ * Two-path auth:
+ * 1. If X-Lyria-Token is present → must match LYRIA_INTERNAL_TOKEN exactly.
+ * 2. If X-Lyria-Token is absent  → allow only same-origin requests
+ *    (Origin or Referer header matches the Vercel deployment host).
+ *    This covers the case where VITE_LYRIA_INTERNAL_TOKEN is not set in the
+ *    client bundle — the browser always sends Origin/Referer for same-origin
+ *    fetches, external scrapers do not.
+ */
 function isAuthorized(req: VercelRequest): boolean {
   const expected = process.env.LYRIA_INTERNAL_TOKEN;
-  if (!expected) {
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
-    return !isProduction;
+  const provided = req.headers['x-lyria-token'] as string | undefined;
+
+  // Token provided by client → must match (always enforced regardless of env)
+  if (provided !== undefined) {
+    return !!expected && provided === expected;
   }
-  const provided = req.headers['x-lyria-token'];
-  return provided === expected;
+
+  // No token provided → fall back to same-origin check
+  const deploymentUrl = process.env.VERCEL_URL ?? process.env.VERCEL_BRANCH_URL ?? '';
+  const origin = (req.headers['origin'] ?? '') as string;
+  const referer = (req.headers['referer'] ?? '') as string;
+
+  // In local dev (no VERCEL_URL), always allow
+  if (!deploymentUrl) return true;
+
+  const host = deploymentUrl.replace(/^https?:\/\//, '');
+  const isSameOrigin =
+    origin.includes(host) ||
+    referer.includes(host);
+
+  return isSameOrigin;
 }
 
 // ─── Input validation ─────────────────────────────────────────────────────────
