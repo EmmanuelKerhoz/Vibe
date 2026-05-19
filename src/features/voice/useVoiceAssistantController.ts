@@ -1,6 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { EditMode } from '../../types';
-import { BrowserVoiceAudioService, type VoiceAudioService } from './voiceAssistantAudioService';
+import {
+  BrowserVoiceAudioService,
+  type VoiceAudioService,
+  VOICE_SPEECH_SLOW_START_MS,
+} from './voiceAssistantAudioService';
 import { requestVoiceAssistantReply, type VoiceAssistantContext } from './voiceAssistantOrchestrator';
 import { useVoiceAssistantState } from './useVoiceAssistantState';
 
@@ -17,7 +21,7 @@ interface UseVoiceAssistantControllerParams extends ControllerDependencies {
   mode: EditMode;
 }
 
-const NO_INPUT_CAPTURED_TEXT = 'I did not catch your request. Please try again in one sentence.';
+const NO_INPUT_CAPTURED_TEXT = 'I did not catch your request. Please try speaking again.';
 
 export function useVoiceAssistantController({
   enabled,
@@ -60,7 +64,7 @@ export function useVoiceAssistantController({
 
       setUiState('speaking');
       const spoken = await audio.speak(reply, {
-        slowStartMs: 1800,
+        slowStartMs: VOICE_SPEECH_SLOW_START_MS,
         onSlowStart: () => setTextFallback(reply),
       });
 

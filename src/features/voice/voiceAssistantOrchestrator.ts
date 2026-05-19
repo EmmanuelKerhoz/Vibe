@@ -37,10 +37,15 @@ function stripVoiceUnsafeFormatting(text: string): string {
 export function limitToTwoSentences(text: string): string {
   const normalized = stripVoiceUnsafeFormatting(text);
   if (!normalized) return '';
-  const sentences = normalized
-    .split(/(?<=[.!?])\s+/)
-    .map(part => part.trim())
-    .filter(Boolean);
+  const segmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl
+    ? new Intl.Segmenter(undefined, { granularity: 'sentence' })
+    : null;
+  const sentences = segmenter
+    ? Array.from(segmenter.segment(normalized), part => part.segment.trim()).filter(Boolean)
+    : normalized
+      .split(/(?<=[.!?])\s+/)
+      .map(part => part.trim())
+      .filter(Boolean);
   if (sentences.length <= 2) return normalized;
   return sentences.slice(0, 2).join(' ');
 }

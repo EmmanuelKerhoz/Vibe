@@ -32,6 +32,8 @@ type WindowWithSpeechRecognition = Window & typeof globalThis & {
   webkitSpeechRecognition?: SpeechRecognitionConstructorLike;
 };
 
+export const VOICE_SPEECH_SLOW_START_MS = 1800;
+
 export interface VoiceAudioService {
   isRecognitionSupported: () => boolean;
   isSpeechSupported: () => boolean;
@@ -92,7 +94,8 @@ export class BrowserVoiceAudioService implements VoiceAudioService {
     return new Promise((resolve) => {
       const utterance = new SpeechSynthesisUtterance(text);
       const synth = window.speechSynthesis;
-      const slowStartMs = options?.slowStartMs ?? 1800;
+      // 1.8s is a practical threshold for cold-start TTS voices on mobile browsers.
+      const slowStartMs = options?.slowStartMs ?? VOICE_SPEECH_SLOW_START_MS;
       let resolved = false;
       let started = false;
 
@@ -121,6 +124,7 @@ export class BrowserVoiceAudioService implements VoiceAudioService {
         settle(false);
       };
 
+      // Clear queued/pending utterances to avoid overlapping old speech.
       synth.cancel();
       synth.speak(utterance);
     });
