@@ -3,8 +3,9 @@
  * Vercel Serverless Function — POST /api/lyria/generate
  *
  * Accepts a LyriaGenerateParams body, builds a Lyria prompt,
- * calls Google GenAI Lyria 3 (clip) or Lyria 3 Pro (full),
- * and returns a LyriaClip to the client.
+ * calls Google GenAI via generateContent:
+ *   clip mode → lyria-3-clip-preview  (~30s, synchronous inlineData response)
+ *   full mode → lyria-3-pro-preview   (~3min, async job)
  *
  * Secret: GOOGLE_GENAI_API_KEY (Vercel env — never in bundle)
  *
@@ -21,6 +22,12 @@ import { GoogleGenAI } from '@google/genai';
 import type { LyriaGenerateParams, LyriaClip, LyriaStyleDescriptor } from '../../src/types/lyria';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY ?? '' });
+
+/** Official Gemini API model IDs for Lyria 3 (as of May 2026) */
+const LYRIA_MODEL = {
+  clip: 'lyria-3-clip-preview',
+  full: 'lyria-3-pro-preview',
+} as const;
 
 // ─── Auth guard ───────────────────────────────────────────────────────────────
 function isAuthorized(req: VercelRequest): boolean {
@@ -93,7 +100,7 @@ export default async function handler(
   }
 
   const params = req.body;
-  const modelId = params.mode === 'full' ? 'lyria-3-pro' : 'lyria-3';
+  const modelId = LYRIA_MODEL[params.mode];
   const prompt = buildPrompt(params);
   const clipId = `lyria_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -106,7 +113,7 @@ export default async function handler(
 
     const part = response.candidates?.[0]?.content?.parts?.[0];
 
-    // Synchronous audio response (clip mode)
+    // Synchronous audio response (clip mode — inlineData)
     if (part && 'inlineData' in part && part.inlineData?.data) {
       const audioDataUri = `data:${part.inlineData.mimeType ?? 'audio/wav'};base64,${part.inlineData.data}`;
       const clip: LyriaClip = {
@@ -115,7 +122,7 @@ export default async function handler(
         status: 'complete',
         audioUrl: audioDataUri,
         synthIdWatermarked: true,
-        durationSeconds: params.mode === 'clip' ? 30 : null,
+        durationSeconds: null,
         model: modelId,
         prompt,
         createdAt: new Date().toISOString(),
@@ -125,11 +132,15 @@ export default async function handler(
       return;
     }
 
-    // Async job (Pro / full mode)
-    function hasFileData(p: unknown): p is { fileData: string } {
-      return typeof p === 'object' && p !== null && typeof (p as Record<string, unknown>)['fileData'] === 'string';
+    // Async job response (Pro / full mode — fileData URI)
+    function hasFileData(p: unknown): p is { fileData: { fileUri: string } } {
+      return (
+        typeof p === 'object' && p !== null &&
+        typeof (p as Record<string, unknown>)['fileData'] === 'object' &&
+        typeof ((p as Record<string, unknown>)['fileData'] as Record<string, unknown>)?.['fileUri'] === 'string'
+      );
     }
-    const jobUri = hasFileData(part) ? part.fileData : undefined;
+    const jobUri = hasFileData(part) ? part.fileData.fileUri : undefined;
 
     const clip: LyriaClip = {
       id: clipId,

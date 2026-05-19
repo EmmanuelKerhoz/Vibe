@@ -4,7 +4,7 @@
  * Engine: Google DeepMind Lyria 3 (Clip = ~30s, Pro = ~3min)
  */
 
-export type LyriaModel = 'lyria-3' | 'lyria-3-pro';
+export type LyriaModel = 'lyria-3-clip-preview' | 'lyria-3-pro-preview';
 
 export type LyriaClipStatus =
   | 'submitted'
@@ -34,7 +34,7 @@ export interface LyriaGenerateParams {
   /** Human-readable style summary OR a LyriaStyleDescriptor (serialized server-side) */
   style: string | LyriaStyleDescriptor;
   title?: string;
-  /** 'clip' → ~30s preview via lyria-3 | 'full' → ~3min via lyria-3-pro */
+  /** 'clip' → ~30s preview via lyria-3-clip-preview | 'full' → ~3min via lyria-3-pro-preview */
   mode: 'clip' | 'full';
   /** Optional negative prompt (instruments/styles to avoid) */
   negativePrompt?: string;
