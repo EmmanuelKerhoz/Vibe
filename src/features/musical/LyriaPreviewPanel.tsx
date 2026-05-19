@@ -142,7 +142,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
     });
   }, []);
 
-  const { styleValue, styleString } = useMemo(() => {
+  const styleString = useMemo(() => {
     const rhythmNarrativeParts: string[] = [];
     if (isPromptFieldIncluded('rhythm') && initialRhythm) rhythmNarrativeParts.push(initialRhythm);
     if (isPromptFieldIncluded('narrative') && initialNarrative) rhythmNarrativeParts.push(initialNarrative);
@@ -157,10 +157,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
       ...(eraField ? { era: eraField } : {}),
     };
 
-    return {
-      styleValue: styleDescriptorToString(descriptor),
-      styleString: styleDescriptorToString(descriptor),
-    };
+    return styleDescriptorToString(descriptor);
   }, [
     isPromptFieldIncluded,
     initialGenre,
@@ -192,7 +189,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
 
     const baseParams = {
       lyrics,
-      style: styleValue,
+      style: styleString,
       title: songTitle,
       mode: 'clip' as const,
     };
@@ -217,8 +214,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
       }
     }
   }, [
-    isGenerating, lyrics, initialGenre, initialMood, initialTempo,
-    styleValue, styleString, negativePrompt, songTitle, onPromptReady,
+    isGenerating, lyrics, styleString, negativePrompt, songTitle, onPromptReady,
   ]);
 
   useEffect(() => {
@@ -243,6 +239,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
       <Badge appearance="tint" color={color} size="small">
         <span tabIndex={0} aria-label={ariaLabel}>{content}</span>
         <button
+          className="lcars-glow-focus"
           type="button"
           aria-label={`Remove ${field} from Lyria prompt`}
           onClick={(event) => {
