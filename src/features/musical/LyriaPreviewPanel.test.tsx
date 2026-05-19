@@ -32,6 +32,18 @@ vi.mock('../../services/lyriaService', () => ({
 describe('LyriaPreviewPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(generateAndPoll).mockResolvedValue({
+      id: 'clip-1',
+      title: 'Preview Clip',
+      status: 'complete',
+      audioUrl: 'data:audio/wav;base64,abc',
+      synthIdWatermarked: true,
+      durationSeconds: null,
+      model: 'lyria-3-clip-preview',
+      prompt: 'prompt',
+      createdAt: '2026-05-19T00:00:00.000Z',
+      errorMessage: null,
+    });
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
     vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
   });
@@ -103,14 +115,14 @@ describe('LyriaPreviewPanel', () => {
       expect(onPromptReady).toHaveBeenLastCalledWith(expect.not.stringContaining('talking drum'));
     });
 
-    await user.click(screen.getByRole('button', { name: /Generate preview/i }));
+    await user.click(screen.getByRole('button', { name: 'Alt+A to generate quickly' }));
 
     await waitFor(() => {
       expect(generateAndPoll).toHaveBeenCalled();
     });
     expect(generateAndPoll).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        style: expect.not.objectContaining({ instruments: expect.any(String) }),
+        style: expect.not.stringContaining('talking drum'),
       }),
       expect.any(Object),
     );
@@ -125,9 +137,12 @@ describe('LyriaPreviewPanel', () => {
       </LanguageProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: /Generate preview/i }));
+    await user.click(screen.getByRole('button', { name: 'Alt+A to generate quickly' }));
 
+    await waitFor(() => {
+      expect(generateAndPoll).toHaveBeenCalled();
+    });
     await screen.findByLabelText('Preview audio — Preview Clip');
-    expect(screen.queryByRole('button', { name: 'Play' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
   });
 });

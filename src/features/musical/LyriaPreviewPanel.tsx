@@ -57,7 +57,7 @@ import type { LyriaClip, LyriaStyleDescriptor, LyriaTaskStatus } from '../../typ
 import { useLanguage } from '../../i18n';
 
 // Client-side serializer — mirrors api/lyria/generate.ts styleDescriptorToString
-function styleDescriptorToString(s: LyriaStyleDescriptor): string {
+function styleDescriptorToString(s: Partial<LyriaStyleDescriptor>): string {
   const parts: string[] = [];
   if (s.genre) parts.push(s.genre);
   if (s.mood) parts.push(s.mood);
@@ -148,7 +148,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
     if (isPromptFieldIncluded('narrative') && initialNarrative) rhythmNarrativeParts.push(initialNarrative);
     const eraField = rhythmNarrativeParts.join(' | ');
 
-    const descriptor: LyriaStyleDescriptor = {
+    const descriptor: Partial<LyriaStyleDescriptor> = {
       ...(isPromptFieldIncluded('genre') && initialGenre ? { genre: initialGenre } : {}),
       ...(isPromptFieldIncluded('mood') && initialMood ? { mood: initialMood } : {}),
       ...(isPromptFieldIncluded('tempo') && initialTempo > 0 ? { tempo: initialTempo } : {}),
@@ -158,7 +158,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
     };
 
     return {
-      styleValue: descriptor,
+      styleValue: styleDescriptorToString(descriptor),
       styleString: styleDescriptorToString(descriptor),
     };
   }, [
