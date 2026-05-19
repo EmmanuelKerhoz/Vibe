@@ -89,25 +89,10 @@ const snapshotFingerprint = (snap: SongHistorySnapshot): string => {
   return `${sectionCount}|${structureKey}||${songKey}`;
 };
 
-export type MetaSetters = {
-  setTitle: (v: string) => void;
-  setTitleOrigin: (v: 'user' | 'ai') => void;
-  setTopic: (v: string) => void;
-  setMood: (v: string) => void;
-  setRhymeScheme: (v: string) => void;
-  setTargetSyllables: (v: number) => void;
-  setGenre: (v: string) => void;
-  setTempo: (v: number) => void;
-  setInstrumentation: (v: string) => void;
-  setRhythm: (v: string) => void;
-  setNarrative: (v: string) => void;
-  setMusicalPrompt: (v: string) => void;
-};
-
 export const useSongHistoryState = (
   initialSong: Section[] = [],
   initialStructure: string[] = [],
-  metaSetters?: MetaSetters,
+  onMetaRestore?: (meta: SongMeta) => void,
 ) => {
   const [state, setState] = useState<SongHistoryState>(() => ({
     ...normalizeSnapshot({ song: initialSong, structure: initialStructure }),
@@ -202,20 +187,8 @@ export const useSongHistoryState = (
   }, []);
 
   const applyMeta = useCallback((meta: SongMeta) => {
-    if (!metaSetters) return;
-    metaSetters.setTitle(meta.title);
-    metaSetters.setTitleOrigin(meta.titleOrigin);
-    metaSetters.setTopic(meta.topic);
-    metaSetters.setMood(meta.mood);
-    metaSetters.setRhymeScheme(meta.rhymeScheme);
-    metaSetters.setTargetSyllables(meta.targetSyllables);
-    metaSetters.setGenre(meta.genre);
-    metaSetters.setTempo(meta.tempo);
-    metaSetters.setInstrumentation(meta.instrumentation);
-    metaSetters.setRhythm(meta.rhythm);
-    metaSetters.setNarrative(meta.narrative);
-    metaSetters.setMusicalPrompt(meta.musicalPrompt);
-  }, [metaSetters]);
+    onMetaRestore?.(meta);
+  }, [onMetaRestore]);
 
   const undo = useCallback(() => {
     setState(current => {

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useMemo, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import { DEFAULT_RHYME_SCHEME, DEFAULT_STRUCTURE } from '../constants/editor';
 import { useSongHistoryState } from '../hooks/useSongHistoryState';
+import type { SongMeta } from '../hooks/useSongHistoryState';
 import { useSongMeta } from '../hooks/useSongMeta';
 import { createEmptySong } from '../utils/songDefaults';
 import type { Section } from '../types';
@@ -51,26 +52,26 @@ export function SongProvider({ children, initialSession }: SongProviderProps) {
 
   const meta = useSongMeta(initialSession ?? undefined);
 
-  const metaSetters = useMemo(() => ({
-    setTitle: meta.setTitle,
-    setTitleOrigin: meta.setTitleOrigin,
-    setTopic: meta.setTopic,
-    setMood: meta.setMood,
-    setRhymeScheme: meta.setRhymeScheme,
-    setTargetSyllables: meta.setTargetSyllables,
-    setGenre: meta.setGenre,
-    setTempo: meta.setTempo,
-    setInstrumentation: meta.setInstrumentation,
-    setRhythm: meta.setRhythm,
-    setNarrative: meta.setNarrative,
-    setMusicalPrompt: meta.setMusicalPrompt,
-  }), [
+  const onMetaRestore = useCallback((restoredMeta: SongMeta) => {
+    meta.setTitle(restoredMeta.title);
+    meta.setTitleOrigin(restoredMeta.titleOrigin);
+    meta.setTopic(restoredMeta.topic);
+    meta.setMood(restoredMeta.mood);
+    meta.setRhymeScheme(restoredMeta.rhymeScheme);
+    meta.setTargetSyllables(restoredMeta.targetSyllables);
+    meta.setGenre(restoredMeta.genre);
+    meta.setTempo(restoredMeta.tempo);
+    meta.setInstrumentation(restoredMeta.instrumentation);
+    meta.setRhythm(restoredMeta.rhythm);
+    meta.setNarrative(restoredMeta.narrative);
+    meta.setMusicalPrompt(restoredMeta.musicalPrompt);
+  }, [
     meta.setTitle, meta.setTitleOrigin, meta.setTopic, meta.setMood,
     meta.setRhymeScheme, meta.setTargetSyllables, meta.setGenre, meta.setTempo,
     meta.setInstrumentation, meta.setRhythm, meta.setNarrative, meta.setMusicalPrompt,
   ]);
 
-  const history = useSongHistoryState(initialSong, initialStructure, metaSetters);
+  const history = useSongHistoryState(initialSong, initialStructure, onMetaRestore);
 
   const historyValue = useMemo<SongHistoryContextValue>(
     () => ({
