@@ -9,6 +9,20 @@ import bannerImage from '../../../../docs/Lyricist_Splash_Medium.png';
 
 const SPLASH_DELAY_MS = 3000;
 
+/** Lyria model catalogue shown in the About dialog. */
+const LYRIA_MODELS = [
+  {
+    id: 'lyria-3-clip-preview',
+    label: 'Clip Preview',
+    description: 'Short musical sketches (≤30 s). Low latency, ideal for iterating on hooks and chord progressions.',
+  },
+  {
+    id: 'lyria-3-pro-preview',
+    label: 'Full Song',
+    description: 'Full-length generation (up to 4 min). Higher fidelity, richer arrangement — best for final production.',
+  },
+] as const;
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -24,12 +38,9 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
   const sweepItemsRef = useRef<HTMLDivElement>(null);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
-  // Stable ref so the auto-close effect never needs onClose in its dep array,
-  // preventing the 3 s timer from restarting when the parent re-renders.
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
-  // Sweep animation
   useEffect(() => {
     if (!isOpen) return;
     const container = sweepItemsRef.current;
@@ -43,8 +54,6 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
     }
   }, [isOpen]);
 
-  // Auto-close when used as splash screen.
-  // Progress bar is CSS-animated — zero React re-renders during the countdown.
   useEffect(() => {
     if (!isOpen || !isSplashScreen) return;
     const id = setTimeout(() => onCloseRef.current(), SPLASH_DELAY_MS);
@@ -55,18 +64,15 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-[1px] animate-in fade-in duration-300"
         onClick={onClose}
       />
 
-      {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden items-center justify-center hidden dark:flex">
         <div className="w-[600px] h-[400px] bg-[var(--accent-color)]/10 blur-[120px] rounded-full" />
       </div>
 
-      {/* Gradient border wrapper */}
       <div
         className="lcars-gradient-outline relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[24px_8px_24px_8px] animate-in zoom-in-95 duration-300"
         style={{
@@ -75,14 +81,12 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
           isolation: 'isolate',
         }}
       >
-      {/* Modal panel */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t.app.name}
         className="relative w-full h-full flex flex-col shadow-2xl overflow-hidden about-dialog-shimmer dialog-surface rounded-none sm:rounded-[22px_6px_22px_6px]"
       >
-        {/* Splash progress bar — CSS animation, no React re-renders */}
         {isSplashScreen && (
           <>
             <div
@@ -95,7 +99,6 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
               }}
               aria-hidden="true"
             />
-            {/* SR-only: announce auto-close to screen readers */}
             <div
               role="status"
               aria-live="polite"
@@ -107,7 +110,6 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
           </>
         )}
 
-        {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0" style={{ background: 'var(--bg-sidebar)' }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 flex items-center justify-center">
@@ -131,23 +133,20 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
           </button>
         </div>
 
-        {/* Scrollable body */}
         <div ref={bodyRef} className="flex-1 overflow-y-auto custom-scrollbar">
 
-          {/* Banner */}
           <img
             src={bannerImage}
             alt="Lyricist splash screen"
             className="w-full block"
           />
 
-          {/* Body content */}
           <div ref={sweepItemsRef} className="px-8 pt-4 pb-8 space-y-6">
             <p className="about-sweep-item text-sm text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto text-center">
               {about.description ?? 'AI-powered songwriting assistant.'}
             </p>
 
-            {/* Tech Info */}
+            {/* Tech Info — Gemini */}
             <div className="grid grid-cols-1 gap-3 pt-4 border-t border-[var(--border-color)] sm:grid-cols-2">
               <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
                 <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{about.engineLabel ?? 'Engine'}</span>
@@ -167,9 +166,31 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
               </div>
             </div>
 
+            {/* Lyria Music Generation */}
+            <div className="about-sweep-item pt-4 border-t border-[var(--border-color)] space-y-3">
+              <div className="flex items-center gap-2">
+                <Music className="w-3.5 h-3.5 text-[var(--accent-color)]" aria-hidden="true" />
+                <span className="text-[10px] uppercase tracking-widest font-semibold text-[var(--accent-color)]">Lyria Music Generation</span>
+                <span className="ml-auto text-[10px] text-[var(--text-secondary)] font-mono">VITE_LYRIA_INTERNAL_TOKEN</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {LYRIA_MODELS.map((m) => (
+                  <div
+                    key={m.id}
+                    className="flex flex-col gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-[var(--text-primary)]">{m.label}</span>
+                      <span className="text-[10px] font-mono text-[var(--accent-color)] bg-[var(--accent-color)]/10 px-1.5 py-0.5 rounded">{m.id}</span>
+                    </div>
+                    <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{m.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Links */}
             <div className="pt-2 space-y-3">
-              {/* GitHub repo + Documentation */}
               <div className="flex gap-2">
                 <a
                   href="https://github.com/EmmanuelKerhoz/Vibe"
@@ -199,7 +220,6 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
                 <AiAssistantPanel onClose={() => setIsAssistantOpen(false)} />
               )}
 
-              {/* Donation */}
               <a href="https://github.com/sponsors/EmmanuelKerhoz" target="_blank" rel="noopener noreferrer" aria-label="Visit GitHub Sponsors page"
                 className="about-sweep-item ux-interactive mx-auto flex w-full max-w-sm items-center justify-center gap-2 px-4 py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 hover:border-pink-500/40 text-pink-400 hover:text-pink-300 rounded-lg text-xs font-medium">
                 <Github className="w-4 h-4" /><span>Donation (Github Sponsor)</span><ExternalLink className="w-3 h-3 opacity-50" />
@@ -234,7 +254,6 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-[var(--border-color)] flex justify-end flex-shrink-0" style={{ background: 'var(--bg-sidebar)' }}>
           <Button onClick={onClose} variant="contained" color="primary" className="ux-interactive">
             {about.close ?? actions?.close ?? 'Close'}
