@@ -75,14 +75,18 @@ export function MusicalTab({
           generateMusicalPrompt={generateMusicalPrompt}
         />
 
-        {/* ── Lyria 3 Preview 30'' ──────────────────────────────────── */}
+        {/* ── Lyria 3 Preview 30'' — consomme les valeurs SongContext ─── */}
         <LyriaPreviewPanel
           lyrics={lyricsText}
           songTitle={title ?? ''}
+          initialGenre={genre}
+          initialMood={mood ?? ''}
+          initialTempo={tempo}
+          initialInstrumentation={instrumentation}
           onFullSong={(clip) => setApprovedClip(clip)}
         />
 
-        {/* ── Lyria 3 Pro — titre complet (conditionnel) ──────────── */}
+        {/* ── Lyria 3 Pro — titre complet (conditionnel) ──────────────── */}
         {approvedClip && (
           <LyriaFullSongPanel
             approvedPrompt={approvedClip.prompt}

@@ -3,12 +3,21 @@
  * Fluent 2 panel: generate a 30-second Lyria 3 Clip preview from current lyrics + style.
  *
  * Props:
- *   lyrics       — verbatim lyrics string from the active song/section in the editor
- *   songTitle    — pre-fills the title field
- *   onFullSong   — callback to escalate to full-song generation (LyriaFullSongPanel)
+ *   lyrics              — verbatim lyrics string from the active song/section in the editor
+ *   songTitle           — pre-fills the title field
+ *   initialGenre        — genre from SongContext / MusicalParamsPanel
+ *   initialMood         — mood from SongContext
+ *   initialTempo        — tempo (number, BPM) from SongContext
+ *   initialInstrumentation — instruments string from SongContext
+ *   onFullSong          — callback to escalate to full-song generation (LyriaFullSongPanel)
  *
  * Keyboard shortcuts (global, active when panel is mounted):
  *   Alt+A  — trigger generate (if not already generating)
+ *
+ * Design contract:
+ *   genre / mood / tempo / instrumentation come from SongContext via MusicalTab.
+ *   They are displayed read-only in the panel — edit them in MusicalParamsPanel.
+ *   vocalStyle and negativePrompt are Lyria-specific and remain local.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -17,13 +26,13 @@ import {
   Card,
   CardHeader,
   Field,
-  Input,
   Label,
   Spinner,
   Text,
   Textarea,
   Badge,
   Divider,
+  Input,
   Tooltip,
   tokens,
 } from '@fluentui/react-components';
@@ -36,6 +45,7 @@ import {
   DismissCircle20Regular,
   Info20Regular,
   Keyboard20Regular,
+  LockClosed20Regular,
 } from '@fluentui/react-icons';
 import { generateAndPoll, getLyriaKPISnapshot } from '../../services/lyriaService';
 import type { LyriaClip, LyriaStyleDescriptor, LyriaTaskStatus } from '../../types/lyria';
@@ -43,21 +53,21 @@ import type { LyriaClip, LyriaStyleDescriptor, LyriaTaskStatus } from '../../typ
 interface LyriaPreviewPanelProps {
   lyrics: string;
   songTitle?: string;
+  /** Provided by MusicalTab from SongContext — read-only inside this panel */
+  initialGenre?: string;
+  initialMood?: string;
+  initialTempo?: number;
+  initialInstrumentation?: string;
   onFullSong?: (clip: LyriaClip) => void;
 }
-
-const GENRES = [
-  'afrobeats', 'highlife', 'afro-pop', 'gospel', 'R&B', 'hip-hop',
-  'pop', 'electronic', 'jazz', 'soul', 'reggae', 'dancehall',
-];
-
-const MOODS = [
-  'upbeat', 'melancholic', 'cinematic', 'energetic', 'smooth', 'aggressive', 'romantic', 'ethereal',
-];
 
 export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   lyrics,
   songTitle = '',
+  initialGenre = 'afrobeats',
+  initialMood = '',
+  initialTempo = 96,
+  initialInstrumentation = '',
   onFullSong,
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -66,11 +76,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   const [taskStatus, setTaskStatus] = useState<LyriaTaskStatus>({ phase: 'idle' });
   const [kpi, setKpi] = useState(getLyriaKPISnapshot());
 
-  // Style descriptor state
-  const [genre, setGenre] = useState('afrobeats');
-  const [mood, setMood] = useState('upbeat');
-  const [tempo, setTempo] = useState('96');
-  const [instruments, setInstruments] = useState('acoustic guitar, bass, talking drum, piano');
+  // Lyria-specific local state (not in SongContext)
   const [vocalStyle, setVocalStyle] = useState('female lead, West African, smooth');
   const [negativePrompt, setNegativePrompt] = useState('');
 
@@ -95,19 +101,17 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   const handleGenerate = useCallback(async (): Promise<void> => {
     if (isGenerating || !lyrics.trim()) return;
 
-    // Cancel any previous in-flight request
     abortRef.current?.abort();
     abortRef.current = new AbortController();
     const { signal } = abortRef.current;
 
     setTaskStatus({ phase: 'generating' });
 
-    const tempoNum = Number(tempo);
     const style: LyriaStyleDescriptor = {
-      genre,
-      ...(mood ? { mood } : {}),
-      ...(tempoNum > 0 ? { tempo: tempoNum } : {}),
-      ...(instruments ? { instruments } : {}),
+      genre: initialGenre,
+      ...(initialMood ? { mood: initialMood } : {}),
+      ...(initialTempo > 0 ? { tempo: initialTempo } : {}),
+      ...(initialInstrumentation ? { instruments: initialInstrumentation } : {}),
       ...(vocalStyle ? { vocalStyle } : {}),
     };
 
@@ -117,19 +121,13 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
       title: songTitle,
       mode: 'clip' as const,
     };
-    const params = negativePrompt
-      ? { ...baseParams, negativePrompt }
-      : baseParams;
+    const params = negativePrompt ? { ...baseParams, negativePrompt } : baseParams;
 
     try {
       setTaskStatus({ phase: 'polling', elapsed: 0 });
       const clip = await generateAndPoll(
         params,
-        {
-          intervalMs: 2_000,
-          timeoutMs: 90_000,
-          signal,
-        },
+        { intervalMs: 2_000, timeoutMs: 90_000, signal },
       );
       if (!signal.aborted) {
         setTaskStatus({ phase: 'done', clip });
@@ -141,7 +139,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
       setTaskStatus({ phase: 'error', message });
       setKpi(getLyriaKPISnapshot());
     }
-  }, [isGenerating, lyrics, genre, mood, tempo, instruments, vocalStyle, negativePrompt, songTitle]);
+  }, [isGenerating, lyrics, initialGenre, initialMood, initialTempo, initialInstrumentation, vocalStyle, negativePrompt, songTitle]);
 
   // Alt+A — génère le preview depuis n'importe où dans la page quand ce panel est monté
   useEffect(() => {
@@ -191,10 +189,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
             <Badge appearance="tint" color="success" size="small">
               Google DeepMind
             </Badge>
-            <Tooltip
-              content="Alt+A pour générer rapidement"
-              relationship="label"
-            >
+            <Tooltip content="Alt+A pour générer rapidement" relationship="label">
               <Badge
                 appearance="ghost"
                 size="small"
@@ -224,75 +219,61 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
 
       <Divider />
 
-      {/* Genre row */}
-      <div style={{ display: 'flex', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' }}>
-        {GENRES.map((g) => (
-          <button
-            key={g}
-            type="button"
-            aria-pressed={genre === g}
-            onClick={() => setGenre(g)}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-          >
-            <Badge
-              appearance={genre === g ? 'filled' : 'outline'}
-              color={genre === g ? 'brand' : 'subtle'}
-              style={{ pointerEvents: 'none' }}
-            >
-              {g}
-            </Badge>
-          </button>
-        ))}
-      </div>
-
-      {/* Mood row */}
-      <div style={{ display: 'flex', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' }}>
-        {MOODS.map((m) => (
-          <button
-            key={m}
-            type="button"
-            aria-pressed={mood === m}
-            onClick={() => setMood(m)}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-          >
-            <Badge
-              appearance={mood === m ? 'filled' : 'outline'}
-              color="subtle"
-              style={{ pointerEvents: 'none' }}
-            >
-              {m}
-            </Badge>
-          </button>
-        ))}
-      </div>
-
-      {/* Tempo + Instruments */}
+      {/* ── Paramètres musicaux (read-only — éditer dans MusicalParamsPanel) ─── */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 2fr',
-          gap: tokens.spacingHorizontalM,
-          alignItems: 'end',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: tokens.spacingVerticalXS,
+          padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+          background: tokens.colorNeutralBackground3,
+          borderRadius: tokens.borderRadiusMedium,
+          border: `1px solid ${tokens.colorNeutralStroke2}`,
         }}
       >
-        <Field label="Tempo (BPM)">
-          <Input
-            type="number"
-            value={tempo}
-            onChange={(_, d) => setTempo(d.value)}
-            min={60}
-            max={200}
-          />
-        </Field>
-        <Field label="Instruments">
-          <Input
-            value={instruments}
-            onChange={(_, d) => setInstruments(d.value)}
-          />
-        </Field>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: tokens.spacingHorizontalXS,
+            marginBottom: tokens.spacingVerticalXXS,
+          }}
+        >
+          <LockClosed20Regular style={{ fontSize: 13, color: tokens.colorNeutralForeground3 }} />
+          <Text size={100} style={{ color: tokens.colorNeutralForeground3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Paramètres musicaux (depuis MusicalParamsPanel)
+          </Text>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalXS }}>
+          {initialGenre && (
+            <Badge appearance="tint" color="brand" size="small">
+              🎵 {initialGenre}
+            </Badge>
+          )}
+          {initialMood && (
+            <Badge appearance="tint" color="informative" size="small">
+              🌈 {initialMood}
+            </Badge>
+          )}
+          {initialTempo > 0 && (
+            <Badge appearance="tint" color="subtle" size="small">
+              ♩ {initialTempo} BPM
+            </Badge>
+          )}
+          {initialInstrumentation && (
+            <Badge appearance="tint" color="subtle" size="small">
+              🎸 {initialInstrumentation}
+            </Badge>
+          )}
+          {!initialGenre && !initialMood && !initialTempo && !initialInstrumentation && (
+            <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
+              Aucun paramètre défini — configurez-les dans les paramètres musicaux ci-dessus.
+            </Text>
+          )}
+        </div>
       </div>
 
-      {/* Vocal style */}
+      {/* Vocal style (Lyria-specific, not in SongContext) */}
       <Field label="Style vocal">
         <Input
           value={vocalStyle}
@@ -383,7 +364,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
             </div>
           </div>
 
-          {/* Audio player — onPlay/onPause keep isPlaying in sync with native controls */}
+          {/* Audio player */}
           {doneClip.audioUrl && (
             <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM }}>
               <Button
