@@ -118,7 +118,7 @@ describe('SaveToLibraryModal', () => {
     expect(screen.getByText('Library data')).toBeTruthy();
     expect(screen.getByText('Browser usage')).toBeTruthy();
     expect(screen.getByText('Browser limit')).toBeTruthy();
-    expect(screen.getByText('Library data covers only lyricist_library. Browser usage and limit are global estimates for this browser when available.')).toBeTruthy();
+    expect(screen.getByText('Library data covers lyricist_library only. Usage and limit are global browser estimates where available.')).toBeTruthy();
   });
 
   it('renders the storage block even when localStorage access fails', async () => {
@@ -145,6 +145,6 @@ describe('SaveToLibraryModal', () => {
     });
     expect(screen.getByText('Library data')).toBeTruthy();
     expect(screen.queryByText('Browser usage')).toBeNull();
-    expect(screen.getByText('Library data covers only lyricist_library. Browser usage and limit are global estimates for this browser when available.')).toBeTruthy();
+    expect(screen.getByText('Library data covers lyricist_library only. Usage and limit are global browser estimates where available.')).toBeTruthy();
   });
 });

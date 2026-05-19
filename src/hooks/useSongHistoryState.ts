@@ -21,6 +21,23 @@ export type SongMeta = {
   musicalPrompt: string;
 };
 
+type SongMetaSetters = {
+  setTitle: (value: string) => void;
+  setTitleOrigin: (value: SongMeta['titleOrigin']) => void;
+  setTopic: (value: string) => void;
+  setMood: (value: string) => void;
+  setRhymeScheme: (value: string) => void;
+  setTargetSyllables: (value: number) => void;
+  setGenre: (value: string) => void;
+  setTempo: (value: number) => void;
+  setInstrumentation: (value: string) => void;
+  setRhythm: (value: string) => void;
+  setNarrative: (value: string) => void;
+  setMusicalPrompt: (value: string) => void;
+};
+
+type SongMetaRestorer = ((meta: SongMeta) => void) | SongMetaSetters;
+
 type SongHistorySnapshot = {
   song: Section[];
   structure: string[];
@@ -92,7 +109,7 @@ const snapshotFingerprint = (snap: SongHistorySnapshot): string => {
 export const useSongHistoryState = (
   initialSong: Section[] = [],
   initialStructure: string[] = [],
-  onMetaRestore?: (meta: SongMeta) => void,
+  onMetaRestore?: SongMetaRestorer,
 ) => {
   const [state, setState] = useState<SongHistoryState>(() => ({
     ...normalizeSnapshot({ song: initialSong, structure: initialStructure }),
@@ -187,7 +204,23 @@ export const useSongHistoryState = (
   }, []);
 
   const applyMeta = useCallback((meta: SongMeta) => {
-    onMetaRestore?.(meta);
+    if (!onMetaRestore) return;
+    if (typeof onMetaRestore === 'function') {
+      onMetaRestore(meta);
+      return;
+    }
+    onMetaRestore.setTitle(meta.title);
+    onMetaRestore.setTitleOrigin(meta.titleOrigin);
+    onMetaRestore.setTopic(meta.topic);
+    onMetaRestore.setMood(meta.mood);
+    onMetaRestore.setRhymeScheme(meta.rhymeScheme);
+    onMetaRestore.setTargetSyllables(meta.targetSyllables);
+    onMetaRestore.setGenre(meta.genre);
+    onMetaRestore.setTempo(meta.tempo);
+    onMetaRestore.setInstrumentation(meta.instrumentation);
+    onMetaRestore.setRhythm(meta.rhythm);
+    onMetaRestore.setNarrative(meta.narrative);
+    onMetaRestore.setMusicalPrompt(meta.musicalPrompt);
   }, [onMetaRestore]);
 
   const undo = useCallback(() => {
