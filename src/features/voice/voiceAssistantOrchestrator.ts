@@ -8,6 +8,9 @@ export interface VoiceAssistantContext {
 }
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
+const sentenceSegmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl
+  ? new Intl.Segmenter(undefined, { granularity: 'sentence' })
+  : null;
 
 export function buildVoiceAssistantSystemPrompt(context: VoiceAssistantContext): string {
   const stateInstruction = context.isFirstCall
@@ -37,11 +40,8 @@ function stripVoiceUnsafeFormatting(text: string): string {
 export function limitToTwoSentences(text: string): string {
   const normalized = stripVoiceUnsafeFormatting(text);
   if (!normalized) return '';
-  const segmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl
-    ? new Intl.Segmenter(undefined, { granularity: 'sentence' })
-    : null;
-  const sentences = segmenter
-    ? Array.from(segmenter.segment(normalized), part => part.segment.trim()).filter(Boolean)
+  const sentences = sentenceSegmenter
+    ? Array.from(sentenceSegmenter.segment(normalized), part => part.segment.trim()).filter(Boolean)
     : normalized
       .split(/(?<=[.!?])\s+/)
       .map(part => part.trim())

@@ -42,7 +42,7 @@ export function useVoiceAssistantController({
   const isBusy = uiState !== 'idle';
 
   const invoke = useCallback(async () => {
-    if (!enabled || isBusy) return;
+    if (!enabled || uiState !== 'idle') return;
 
     setErrorText(null);
     setTextFallback(null);
@@ -75,7 +75,7 @@ export function useVoiceAssistantController({
       setErrorText(message);
       setUiState('idle');
     }
-  }, [audio, context, enabled, isBusy, isFirstCall, markFirstCallHandled, requestReply]);
+  }, [audio, context, enabled, isFirstCall, markFirstCallHandled, requestReply, uiState]);
 
   return {
     invoke,

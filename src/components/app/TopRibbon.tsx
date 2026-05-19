@@ -246,8 +246,8 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
       </div>
       {(voicePromptText || voiceTextFallback || voiceErrorText) && (
         <div
-          role="status"
-          aria-live="polite"
+          role={voiceErrorText ? 'alert' : 'status'}
+          aria-live={voiceErrorText ? 'assertive' : 'polite'}
           className="absolute right-4 lg:right-8 top-[calc(100%+8px)] max-w-xs rounded-md border border-[var(--border-color)] bg-[var(--bg-sidebar)] px-2.5 py-1.5 text-[10px] text-[var(--text-secondary)] shadow"
         >
           {voiceErrorText ?? voiceTextFallback ?? voicePromptText}
