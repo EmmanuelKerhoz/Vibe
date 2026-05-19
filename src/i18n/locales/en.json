@@ -100,8 +100,8 @@
   },
   "structure": {
     "title": "Structure editor",
-    "addSection": "Add a section...",
-    "normalize": "Normalize structure",
+    "addSection": "Add section...",
+    "normalize": "Normalize Structure",
     "collapse": "Collapse sidebar"
   },
   "editor": {
@@ -109,8 +109,8 @@
       "title": "Ready to write your next masterpiece?",
       "description": "Set up your song parameters in the sidebar or import existing lyrics to get started.",
       "loadSession": "Load last session",
-      "pasteLyrics": "Paste lyrics",
-      "generateSong": "Generate lyrics"
+      "pasteLyrics": "Paste Lyrics",
+      "generateSong": "Generate Lyrics"
     },
     "markupMode": {
       "title": "Markdown mode",
@@ -143,7 +143,7 @@
     "adaptation": "ADAPTATION",
     "adaptGlobal": "Adaptation (GLOBAL)",
     "regenerateGlobal": "Regenerate (GLOBAL)",
-    "regenerateLyrics": "Regenerate lyrics",
+    "regenerateLyrics": "Regenerate Lyrics",
     "adaptSection": "Adaptation",
     "editorMode": "Sections",
     "markupModeLabel": "Markdown",
@@ -163,7 +163,7 @@
     "adapt": "ADAPT",
     "moodPlaceholder": "Mood...",
     "regenerateWarning": "This will completely regenerate the current lyrics. Do you want to continue?",
-    "addLine": "Add a line",
+    "addLine": "Add Line",
     "addMusicalEffect": "Add a musical effect / modulation",
     "moveSectionUp": "Move section up",
     "moveSectionDown": "Move section down",
@@ -182,7 +182,7 @@
     "detectingLanguageLabel": "Detecting language…",
     "analyzingLabel": "Analyzing…",
     "checkingSimilarityLabel": "Checking similarity…",
-    "lyricsEditors": "Lyrics",
+    "lyricsEditors": "View",
     "lyricsInsights": "Lyrics insights",
     "detect": "Detect",
     "quantize_line": "Quantize line",
@@ -318,7 +318,7 @@
     "cancel": "Cancel"
   },
   "paste": {
-    "title": "Paste lyrics",
+    "title": "Paste Lyrics",
     "description": "Paste your existing lyrics below. Our AI will analyze them to extract structure, rhyme scheme, syllable count and key concepts to integrate into the editor.",
     "placeholder": "Paste your lyrics here...",
     "cancel": "Cancel",
@@ -348,7 +348,7 @@
     }
   },
   "keyboardShortcuts": {
-    "title": "Keyboard shortcuts",
+    "title": "Keyboard Shortcuts",
     "description": "Reference of active shortcuts available in Lyricist Pro.",
     "keysColumn": "Keys",
     "actionColumn": "Action",
@@ -360,7 +360,7 @@
       "ai": "AI"
     },
     "shortcuts": {
-      "undo": "Undo the last change outside text fields.",
+      "undo": "Undo the latest change outside text inputs.",
       "redo": "Redo the last undone change outside text fields.",
       "dismissReset": "Dismiss the reset confirmation dialog.",
       "dismissNavigation": "Close the settings, about, similarity or mobile side panels.",
@@ -495,7 +495,7 @@
     "analysisImport": "Analyze and import pasted lyrics",
     "checkSimilarity": "Compare this song with saved versions and show closest matches",
     "copyPrompt": "Copy to clipboard",
-    "generateTitle": "Generate a title from lyrics",
+    "generateTitle": "Generate title from lyrics",
     "aiGeneratedTitle": "AI-generated title",
     "userEnteredTitle": "User-entered title",
     "openSearch": "Search and replace in lyrics (Ctrl+F)",
@@ -506,7 +506,7 @@
     "openLeftPanel": "Open left panel",
     "closeLeftPanel": "Close left panel",
     "detectLanguage": "Detect lyrics language",
-    "redetectLanguage": "Re-detect lyrics language",
+    "redetectLanguage": "Detected: {langs} — click to re-detect",
     "moodPresets": "Choose a preset mood for your song",
     "rhymeScheme": "Select the default rhyme scheme for all sections",
     "targetSyllables": "Set the target syllable count per line",
@@ -574,7 +574,7 @@
     "AABBCC": "AABBCC (6-line couplets)",
     "ABABAB": "ABABAB (6-line alternating)",
     "ABCABC": "ABCABC (6-line repetitive)",
-    "FREE": "Free verse"
+    "FREE": "Free Verse"
   },
   "apiError": {
     "title": "API Error",

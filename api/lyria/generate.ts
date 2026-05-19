@@ -54,7 +54,7 @@ function isValidParams(body: unknown): body is LyriaGenerateParams {
 }
 
 // ─── Prompt builder ───────────────────────────────────────────────────────────
-function buildPrompt(params: LyriaGenerateParams): string {
+export function buildPrompt(params: LyriaGenerateParams): string {
   const style: string =
     typeof params.style === 'string'
       ? params.style
