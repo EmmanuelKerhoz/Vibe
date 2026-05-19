@@ -85,7 +85,7 @@ export function MusicalTab({
         {/* ── Lyria 3 Pro — titre complet (conditionnel) ──────────── */}
         {approvedClip && (
           <LyriaFullSongPanel
-            clip={approvedClip}
+            approvedPrompt={approvedClip.approvedPrompt ?? ''}
             lyrics={lyricsText}
             songTitle={title ?? ''}
           />

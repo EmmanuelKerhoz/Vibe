@@ -40,10 +40,7 @@ function pending(delta: number): void {
 // ─── Internal token header ────────────────────────────────────────────────────
 // Matches LYRIA_INTERNAL_TOKEN on the server side.
 // In production this value is injected at build time via Vite env.
-const INTERNAL_TOKEN =
-  typeof import.meta !== 'undefined'
-    ? (import.meta as Record<string, unknown>)?.['env']?.['VITE_LYRIA_INTERNAL_TOKEN'] as string | undefined
-    : undefined;
+const INTERNAL_TOKEN: string | undefined = import.meta.env.VITE_LYRIA_INTERNAL_TOKEN;
 
 function authHeaders(): Record<string, string> {
   return INTERNAL_TOKEN ? { 'X-Lyria-Token': INTERNAL_TOKEN } : {};
@@ -89,7 +86,7 @@ export async function generateClip(params: LyriaGenerateParams, signal?: AbortSi
     return await proxyFetch<LyriaClip>('/api/lyria/generate', {
       method: 'POST',
       body: JSON.stringify(params),
-      signal,
+      signal: signal ?? null,
     });
   } finally {
     pending(-1);
@@ -97,7 +94,7 @@ export async function generateClip(params: LyriaGenerateParams, signal?: AbortSi
 }
 
 export async function getClipStatus(id: string, signal?: AbortSignal): Promise<LyriaClip> {
-  return proxyFetch<LyriaClip>(`/api/lyria/get?id=${encodeURIComponent(id)}`, { signal });
+  return proxyFetch<LyriaClip>(`/api/lyria/get?id=${encodeURIComponent(id)}`, { signal: signal ?? null });
 }
 
 /**
