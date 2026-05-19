@@ -50,6 +50,7 @@ export const LyriaFullSongPanel: React.FC<LyriaFullSongPanelProps> = ({
   onDone,
 }) => {
   const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
   const [taskStatus, setTaskStatus] = useState<LyriaTaskStatus>({ phase: 'idle' });
   const [kpi, setKpi] = useState(getLyriaKPISnapshot());
 
@@ -59,6 +60,7 @@ export const LyriaFullSongPanel: React.FC<LyriaFullSongPanelProps> = ({
   // Abort polling on unmount
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       abortRef.current?.abort();
     };
   }, []);
@@ -90,10 +92,12 @@ export const LyriaFullSongPanel: React.FC<LyriaFullSongPanelProps> = ({
         onDone?.(full);
       }
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
+      if (signal.aborted || (err instanceof DOMException && err.name === 'AbortError')) return;
       const message = err instanceof Error ? err.message : String(err);
-      setTaskStatus({ phase: 'error', message });
-      setKpi(getLyriaKPISnapshot());
+      if (mountedRef.current) {
+        setTaskStatus({ phase: 'error', message });
+        setKpi(getLyriaKPISnapshot());
+      }
     }
   }
 

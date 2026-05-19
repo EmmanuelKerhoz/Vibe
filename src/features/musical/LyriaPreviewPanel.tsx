@@ -76,6 +76,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [taskStatus, setTaskStatus] = useState<LyriaTaskStatus>({ phase: 'idle' });
   const [kpi, setKpi] = useState(getLyriaKPISnapshot());
@@ -90,6 +91,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   // Abort polling on unmount
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       abortRef.current?.abort();
     };
   }, []);
@@ -138,10 +140,12 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
         setKpi(getLyriaKPISnapshot());
       }
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
+      if (signal.aborted || (err instanceof DOMException && err.name === 'AbortError')) return;
       const message = err instanceof Error ? err.message : String(err);
-      setTaskStatus({ phase: 'error', message });
-      setKpi(getLyriaKPISnapshot());
+      if (mountedRef.current) {
+        setTaskStatus({ phase: 'error', message });
+        setKpi(getLyriaKPISnapshot());
+      }
     }
   }, [isGenerating, lyrics, initialGenre, initialMood, initialTempo, initialInstrumentation, vocalStyle, negativePrompt, songTitle]);
 
@@ -162,7 +166,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      void audioRef.current.play();
+      void audioRef.current.play().catch(() => setIsPlaying(false));
     }
   }
 
@@ -251,22 +255,22 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalXS }}>
           {initialGenre && (
             <Badge appearance="tint" color="brand" size="small">
-              🎵 {initialGenre}
+              <span tabIndex={0} aria-label={`Genre: ${initialGenre}`}>🎵 {initialGenre}</span>
             </Badge>
           )}
           {initialMood && (
             <Badge appearance="tint" color="informative" size="small">
-              🌈 {initialMood}
+              <span tabIndex={0} aria-label={`Mood: ${initialMood}`}>🌈 {initialMood}</span>
             </Badge>
           )}
           {initialTempo > 0 && (
             <Badge appearance="tint" color="subtle" size="small">
-              ♩ {initialTempo} BPM
+              <span tabIndex={0} aria-label={`Tempo: ${initialTempo} BPM`}>♩ {initialTempo} BPM</span>
             </Badge>
           )}
           {initialInstrumentation && (
             <Badge appearance="tint" color="subtle" size="small">
-              🎸 {initialInstrumentation}
+              <span tabIndex={0} aria-label={`Instrumentation: ${initialInstrumentation}`}>🎸 {initialInstrumentation}</span>
             </Badge>
           )}
           {!initialGenre && !initialMood && !initialTempo && !initialInstrumentation && (

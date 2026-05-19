@@ -51,24 +51,38 @@ export function SongProvider({ children, initialSession }: SongProviderProps) {
   const initialStructure = initialSession?.structure ?? DEFAULT_STRUCTURE;
 
   const meta = useSongMeta(initialSession ?? undefined);
+  const {
+    setTitle,
+    setTitleOrigin,
+    setTopic,
+    setMood,
+    setRhymeScheme,
+    setTargetSyllables,
+    setGenre,
+    setTempo,
+    setInstrumentation,
+    setRhythm,
+    setNarrative,
+    setMusicalPrompt,
+  } = meta;
 
   const onMetaRestore = useCallback((restoredMeta: SongMeta) => {
-    meta.setTitle(restoredMeta.title);
-    meta.setTitleOrigin(restoredMeta.titleOrigin);
-    meta.setTopic(restoredMeta.topic);
-    meta.setMood(restoredMeta.mood);
-    meta.setRhymeScheme(restoredMeta.rhymeScheme);
-    meta.setTargetSyllables(restoredMeta.targetSyllables);
-    meta.setGenre(restoredMeta.genre);
-    meta.setTempo(restoredMeta.tempo);
-    meta.setInstrumentation(restoredMeta.instrumentation);
-    meta.setRhythm(restoredMeta.rhythm);
-    meta.setNarrative(restoredMeta.narrative);
-    meta.setMusicalPrompt(restoredMeta.musicalPrompt);
+    setTitle(restoredMeta.title);
+    setTitleOrigin(restoredMeta.titleOrigin);
+    setTopic(restoredMeta.topic);
+    setMood(restoredMeta.mood);
+    setRhymeScheme(restoredMeta.rhymeScheme);
+    setTargetSyllables(restoredMeta.targetSyllables);
+    setGenre(restoredMeta.genre);
+    setTempo(restoredMeta.tempo);
+    setInstrumentation(restoredMeta.instrumentation);
+    setRhythm(restoredMeta.rhythm);
+    setNarrative(restoredMeta.narrative);
+    setMusicalPrompt(restoredMeta.musicalPrompt);
   }, [
-    meta.setTitle, meta.setTitleOrigin, meta.setTopic, meta.setMood,
-    meta.setRhymeScheme, meta.setTargetSyllables, meta.setGenre, meta.setTempo,
-    meta.setInstrumentation, meta.setRhythm, meta.setNarrative, meta.setMusicalPrompt,
+    setTitle, setTitleOrigin, setTopic, setMood,
+    setRhymeScheme, setTargetSyllables, setGenre, setTempo,
+    setInstrumentation, setRhythm, setNarrative, setMusicalPrompt,
   ]);
 
   const history = useSongHistoryState(initialSong, initialStructure, onMetaRestore);
