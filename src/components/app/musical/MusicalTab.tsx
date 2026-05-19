@@ -42,14 +42,6 @@ export function MusicalTab({
     setCompletedSteps(prev => new Set(prev).add(step));
   }, []);
 
-  // When Lyria fires, push the built style prompt into MusicalPromptBuilder's container.
-  // Only overwrites if the user hasn't manually edited their own prompt (or if it's empty).
-  const handleLyriaPromptReady = useCallback((stylePrompt: string) => {
-    if (stylePrompt.trim()) {
-      setMusicalPrompt(stylePrompt);
-    }
-  }, [setMusicalPrompt]);
-
   const hasLyrics  = song.some(s => s.lines.some(l => l.text.trim() !== ''));
   const hasContext = !!(title || topic || mood || hasLyrics);
   const canGeneratePrompt = hasApiKey && !!(hasContext || genre || instrumentation);
@@ -83,7 +75,12 @@ export function MusicalTab({
           generateMusicalPrompt={generateMusicalPrompt}
         />
 
-        {/* ── Lyria 3 Preview 30'' — consomme toutes les valeurs SongContext ─── */}
+        {/*
+          LyriaPreviewPanel consomme les paramètres individuels du SongContext.
+          initialMusicalPrompt n'est PAS passé ici : ce prop court-circuite
+          genre/tempo/instrumentation et fige le style de la 1ère génération.
+          Le MusicalPromptBuilder gère son propre prompt manuel indépendamment.
+        */}
         <LyriaPreviewPanel
           lyrics={lyricsText}
           songTitle={title ?? ''}
@@ -93,12 +90,10 @@ export function MusicalTab({
           initialInstrumentation={instrumentation}
           initialRhythm={rhythm}
           initialNarrative={narrative}
-          initialMusicalPrompt={musicalPrompt}
           onFullSong={(clip) => setApprovedClip(clip)}
-          onPromptReady={handleLyriaPromptReady}
         />
 
-        {/* ── Lyria 3 Pro — titre complet (conditionnel) ──────────────── */}
+        {/* Lyria 3 Pro — full song (conditionnel) */}
         {approvedClip && (
           <LyriaFullSongPanel
             approvedPrompt={approvedClip.prompt}
