@@ -8,12 +8,17 @@ import { tPlural } from '../../i18n/plurals';
 import { APP_VERSION_LABEL } from '../../version';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
+import { useAppNavigationContext } from '../../contexts/AppStateContext';
+import { VoiceAssistantButton } from '../../features/voice/VoiceAssistantButton';
+import { useVoiceAssistantController } from '../../features/voice/useVoiceAssistantController';
 import type { SaveStatus } from '../../hooks/useSessionAutoSave';
 import type { Translations } from '../../i18n/locales/types';
+import type { EditMode } from '../../types';
 
 interface Props {
   hasApiKey: boolean;
   isAnalyzing: boolean;
+  currentEditMode: EditMode;
   theme: 'light' | 'dark';
   setTheme: (v: 'light' | 'dark') => void;
   audioFeedback: boolean;
@@ -42,6 +47,7 @@ function safeLocale(language: string): string {
 export function StatusBar({
   hasApiKey,
   isAnalyzing,
+  currentEditMode,
   theme, setTheme, audioFeedback, setAudioFeedback,
   onOpenAbout, onOpenSettings, hasSavedSession,
   saveStatus = 'idle', lastSavedAt = null,
@@ -50,6 +56,29 @@ export function StatusBar({
   const { isGenerating, isSuggesting } = useComposerContext();
   const { sectionCount, wordCount, charCount } = useAppKpis();
   const { t, language } = useTranslation();
+  const { activeTab } = useAppNavigationContext();
+
+  // ── Voice assistant (moved from TopRibbon) ───────────────────────────────
+  const {
+    invoke: invokeVoiceAssistant,
+    uiState: voiceUiState,
+    promptText: voicePromptText,
+    textFallback: voiceTextFallback,
+    errorText: voiceErrorText,
+  } = useVoiceAssistantController({
+    enabled: hasApiKey,
+    page: activeTab,
+    mode: currentEditMode,
+  });
+
+  const voiceLabel =
+    voiceUiState === 'listening'
+      ? (t.tooltips?.voiceListening ?? 'Listening…')
+      : voiceUiState === 'processing'
+        ? (t.tooltips?.voiceProcessing ?? 'Processing your request…')
+        : voiceUiState === 'speaking'
+          ? (t.tooltips?.voiceSpeaking ?? 'Speaking…')
+          : (t.tooltips?.voiceAssistant ?? 'Voice assistant');
 
   const isBusy = isGenerating || isAnalyzing || isSuggesting;
   const statusLabel = isGenerating ? t.statusBar.generating
@@ -101,6 +130,8 @@ export function StatusBar({
     : (t.statusBar.themeSwitchToDark  ?? `${t.statusBar.theme} — ${t.settings.theme.dark}`);
 
   const insights: Translations['insights'] = t.insights;
+
+  const voiceActive = voiceUiState !== 'idle';
 
   return (
     <div className={`relative lcars-status-bar h-10 border-t border-fluent-border flex items-center justify-between px-3 lg:px-6 z-40 text-xs${className ? ` ${className}` : ''}`}>
@@ -160,6 +191,55 @@ export function StatusBar({
             {insights?.characters}
           </span>
         </span>
+      </div>
+
+      {/* Centre: Voice activation — big pill button using available horizontal space */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
+        <Tooltip title={voiceLabel}>
+          <button
+            onClick={invokeVoiceAssistant}
+            disabled={!hasApiKey}
+            aria-label={voiceLabel}
+            aria-pressed={voiceActive}
+            className="flex items-center gap-2 px-4 h-7 rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              fontSize: '0.625rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: voiceActive ? 'var(--lcars-cyan, #4f98a3)' : 'var(--text-secondary)',
+              background: voiceActive
+                ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 14%, transparent)'
+                : 'color-mix(in srgb, var(--text-secondary) 6%, transparent)',
+              border: `1px solid ${voiceActive
+                ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 30%, transparent)'
+                : 'color-mix(in srgb, var(--text-secondary) 15%, transparent)'}`,
+              boxShadow: voiceActive
+                ? '0 0 8px color-mix(in srgb, var(--lcars-cyan, #4f98a3) 20%, transparent)'
+                : 'none',
+            }}
+          >
+            {/* Inline VoiceAssistantButton icon logic without wrapper div */}
+            <VoiceAssistantButton
+              state={voiceUiState}
+              disabled={!hasApiKey}
+              onInvoke={invokeVoiceAssistant}
+            />
+            <span className="hidden lg:inline">
+              {voiceLabel}
+            </span>
+          </button>
+        </Tooltip>
+        {/* Inline voice feedback strip */}
+        {(voicePromptText || voiceTextFallback || voiceErrorText) && (
+          <div
+            role={voiceErrorText ? 'alert' : 'status'}
+            aria-live={voiceErrorText ? 'assertive' : 'polite'}
+            className="absolute bottom-[calc(100%+4px)] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[var(--border-color)] bg-[var(--bg-sidebar)] px-2.5 py-1 text-[10px] text-[var(--text-secondary)] shadow z-50"
+          >
+            {voiceErrorText ?? voiceTextFallback ?? voicePromptText}
+          </div>
+        )}
       </div>
 
       {/* Right: settings + theme + version */}
