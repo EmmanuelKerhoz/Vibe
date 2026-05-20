@@ -13,9 +13,7 @@ interface Props {
   hasApiKey: boolean;
 }
 
-export function MusicalTab({
-  hasApiKey,
-}: Props) {
+export function MusicalTab({ hasApiKey }: Props) {
   const {
     song, title, topic, mood,
     genre, setGenre, tempo, setTempo,
@@ -24,12 +22,14 @@ export function MusicalTab({
     narrative, setNarrative,
     musicalPrompt, setMusicalPrompt,
   } = useSongContext();
+
   const {
     isGeneratingMusicalPrompt,
     isAnalyzingLyrics,
     generateMusicalPrompt,
     analyzeLyricsForMusic,
   } = useComposerContext();
+
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [approvedClip, setApprovedClip] = useState<LyriaClip | null>(null);
 
@@ -75,6 +75,14 @@ export function MusicalTab({
           generateMusicalPrompt={generateMusicalPrompt}
         />
 
+        {/*
+          LyriaPreviewPanel:
+          - onPromptReady is NOT wired to setMusicalPrompt.
+            Lyria builds its own styleString locally and never overwrites
+            the AI musical prompt in SongContext.
+          - initialMusicalPrompt is a read-only signal so Lyria can show
+            a "Full prompt active" badge when the AI prompt is present.
+        */}
         <LyriaPreviewPanel
           lyrics={lyricsText}
           songTitle={title ?? ''}
@@ -84,11 +92,10 @@ export function MusicalTab({
           initialInstrumentation={instrumentation}
           initialRhythm={rhythm}
           initialNarrative={narrative}
-          onPromptReady={setMusicalPrompt}
+          initialMusicalPrompt={musicalPrompt}
           onFullSong={(clip) => setApprovedClip(clip)}
         />
 
-        {/* Lyria 3 Pro — full song (conditionnel) */}
         {approvedClip && (
           <LyriaFullSongPanel
             approvedPrompt={approvedClip.prompt}
