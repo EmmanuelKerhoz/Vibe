@@ -472,7 +472,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
               onClick={() => onFullSong(doneClip)}
               style={{ alignSelf: 'flex-start' }}
             >
-              {L?.escalateToFullSong ?? 'Escalate to full song (Lyria 3 Pro)'}
+              {L?.escalate ?? 'Escalate to full song (Lyria 3 Pro)'}
             </Button>
           )}
           <details>
