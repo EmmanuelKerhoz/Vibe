@@ -1,13 +1,13 @@
 /**
  * LyriaPreviewPanel — Lyria 3 Clip preview (30s)
  *
- * Key contracts:
- *  - styleString is built locally from props; it NEVER writes to SongContext.musicalPrompt.
- *  - musicalPrompt (AI, from MusicalPromptBuilder) and Lyria styleString are independent outputs.
- *  - onPromptReady is called ONLY when the user clicks "Generate" (not on every param change).
- *  - styleDescriptorToString deduplicates tokens via Set to prevent e.g. "Afrobeat, …, Afrobeat".
- *  - Removable param tags use Badge + native <button> for reliable dismiss interaction in JSDOM.
- *  - KPI stats are collapsed inside <details> to reduce visual noise.
+ * Sync contract (v1.31.0.5):
+ *  - Props are LIVE (not initial*): genre, mood, tempo, instrumentation, rhythm, narrative.
+ *    Any change in MusicalParamsPanel is immediately reflected here.
+ *  - Removing a badge calls onParamRemoved(field) → parent clears SongContext → params panel deselects.
+ *  - musicalPrompt (AI) is read-only; displayed as "Full prompt active" badge.
+ *  - onPromptReady fires ONLY at Generate time (explicit user action).
+ *  - styleDescriptorToString deduplicates tokens via Set.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -53,57 +53,89 @@ function styleDescriptorToString(s: Partial<LyriaStyleDescriptor>): string {
       parts.push(raw.trim());
     }
   };
-  if (s.genre)      push(s.genre);
-  if (s.mood)       push(s.mood);
-  if (s.tempo)      push(`${s.tempo} bpm`);
+  if (s.genre)       push(s.genre);
+  if (s.mood)        push(s.mood);
+  if (s.tempo)       push(`${s.tempo} bpm`);
   if (s.instruments) push(`instruments: ${s.instruments}`);
-  if (s.vocalStyle) push(`vocals: ${s.vocalStyle}`);
-  if (s.era)        push(s.era);
+  if (s.vocalStyle)  push(`vocals: ${s.vocalStyle}`);
+  if (s.era)         push(s.era);
   return parts.join(', ');
 }
 
 type LyriaPromptField = 'genre' | 'mood' | 'tempo' | 'instrumentation' | 'rhythm' | 'narrative';
 
-interface LyriaPreviewPanelProps {
+export interface LyriaPreviewPanelProps {
   lyrics: string;
   songTitle?: string;
+  /** Live values from SongContext — update immediately when params change */
+  genre?: string;
+  mood?: string;
+  tempo?: number;
+  instrumentation?: string;
+  rhythm?: string;
+  narrative?: string;
+  /** AI musical prompt from MusicalPromptBuilder — read-only badge. */
+  musicalPrompt?: string;
+  /**
+   * Called when the user removes a param badge.
+   * Parent must clear the corresponding SongContext value so all panels stay in sync.
+   */
+  onParamRemoved?: (field: LyriaPromptField) => void;
+  onFullSong?: (clip: LyriaClip) => void;
+  /** Called with the Lyria style string ONLY when user explicitly triggers generation. */
+  onPromptReady?: (stylePrompt: string) => void;
+  // Legacy initial* props — kept for test backward-compat, aliased internally
   initialGenre?: string;
   initialMood?: string;
   initialTempo?: number;
   initialInstrumentation?: string;
   initialRhythm?: string;
   initialNarrative?: string;
-  /** AI musical prompt from MusicalPromptBuilder — read-only, shown as badge only. */
   initialMusicalPrompt?: string;
-  onFullSong?: (clip: LyriaClip) => void;
-  /** Called with the Lyria style string ONLY when user explicitly triggers generation. */
-  onPromptReady?: (stylePrompt: string) => void;
 }
 
 export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   lyrics,
   songTitle = '',
-  initialGenre = 'afrobeats',
-  initialMood = '',
-  initialTempo = 96,
-  initialInstrumentation = '',
-  initialRhythm = '',
-  initialNarrative = '',
-  initialMusicalPrompt = '',
+  genre: genreProp,
+  mood: moodProp,
+  tempo: tempoProp,
+  instrumentation: instrumentationProp,
+  rhythm: rhythmProp,
+  narrative: narrativeProp,
+  musicalPrompt: musicalPromptProp,
+  onParamRemoved,
   onFullSong,
   onPromptReady,
+  // Legacy fallbacks
+  initialGenre,
+  initialMood,
+  initialTempo,
+  initialInstrumentation,
+  initialRhythm,
+  initialNarrative,
+  initialMusicalPrompt,
 }) => {
   const { t } = useLanguage();
   const L = t.lyria;
 
+  // Resolve live props (new API) with fallback to initial* (legacy/tests)
+  const activeGenre           = genreProp          ?? initialGenre          ?? 'afrobeats';
+  const activeMood            = moodProp           ?? initialMood           ?? '';
+  const activeTempo           = tempoProp          ?? initialTempo          ?? 96;
+  const activeInstrumentation = instrumentationProp ?? initialInstrumentation ?? '';
+  const activeRhythm          = rhythmProp         ?? initialRhythm         ?? '';
+  const activeNarrative       = narrativeProp      ?? initialNarrative      ?? '';
+  const activeMusicalPrompt   = musicalPromptProp  ?? initialMusicalPrompt  ?? '';
+
   const abortRef   = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
 
-  const [taskStatus, setTaskStatus]     = useState<LyriaTaskStatus>({ phase: 'idle' });
-  const [kpi, setKpi]                   = useState(getLyriaKPISnapshot());
-  const [excludedFields, setExcluded]   = useState<Set<LyriaPromptField>>(() => new Set());
-  const [vocalStyle]                    = useState('female lead, West African, smooth');
-  const [negativePrompt, setNegative]   = useState('');
+  const [taskStatus, setTaskStatus]   = useState<LyriaTaskStatus>({ phase: 'idle' });
+  const [kpi, setKpi]                 = useState(getLyriaKPISnapshot());
+  const [excludedFields, setExcluded] = useState<Set<LyriaPromptField>>(() => new Set());
+  const [vocalStyle]                  = useState('female lead, West African, smooth');
+  const [negativePrompt, setNegative] = useState('');
 
   const isGenerating = taskStatus.phase === 'generating' || taskStatus.phase === 'polling';
   const doneClip     = taskStatus.phase === 'done' ? taskStatus.clip : null;
@@ -119,6 +151,15 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
     abortRef.current?.abort();
   }, []);
 
+  // When a live prop changes (parent re-selects genre/instruments etc),
+  // re-include that field automatically so the user sees the updated value.
+  useEffect(() => { setExcluded(prev => { const n = new Set(prev); n.delete('genre'); return n; }); }, [activeGenre]);
+  useEffect(() => { setExcluded(prev => { const n = new Set(prev); n.delete('mood'); return n; }); }, [activeMood]);
+  useEffect(() => { setExcluded(prev => { const n = new Set(prev); n.delete('tempo'); return n; }); }, [activeTempo]);
+  useEffect(() => { setExcluded(prev => { const n = new Set(prev); n.delete('instrumentation'); return n; }); }, [activeInstrumentation]);
+  useEffect(() => { setExcluded(prev => { const n = new Set(prev); n.delete('rhythm'); return n; }); }, [activeRhythm]);
+  useEffect(() => { setExcluded(prev => { const n = new Set(prev); n.delete('narrative'); return n; }); }, [activeNarrative]);
+
   const included = useCallback(
     (f: LyriaPromptField) => !excludedFields.has(f),
     [excludedFields],
@@ -126,25 +167,24 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
 
   const removeField = useCallback((f: LyriaPromptField) => {
     setExcluded(prev => { const n = new Set(prev); n.add(f); return n; });
-  }, []);
+    // Propagate removal to SongContext so params panel stays in sync
+    onParamRemoved?.(f);
+  }, [onParamRemoved]);
 
   const styleString = useMemo(() => {
     const eraParts: string[] = [];
-    if (included('rhythm')    && initialRhythm)    eraParts.push(initialRhythm);
-    if (included('narrative') && initialNarrative) eraParts.push(initialNarrative);
+    if (included('rhythm')    && activeRhythm)    eraParts.push(activeRhythm);
+    if (included('narrative') && activeNarrative) eraParts.push(activeNarrative);
 
     return styleDescriptorToString({
-      ...(included('genre')           && initialGenre          ? { genre: initialGenre }                   : {}),
-      ...(included('mood')            && initialMood           ? { mood: initialMood }                     : {}),
-      ...(included('tempo')           && initialTempo > 0      ? { tempo: initialTempo }                   : {}),
-      ...(included('instrumentation') && initialInstrumentation ? { instruments: initialInstrumentation } : {}),
-      ...(vocalStyle                                           ? { vocalStyle }                            : {}),
-      ...(eraParts.length > 0                                  ? { era: eraParts.join(' | ') }             : {}),
+      ...(included('genre')           && activeGenre           ? { genre: activeGenre }                 : {}),
+      ...(included('mood')            && activeMood            ? { mood: activeMood }                   : {}),
+      ...(included('tempo')           && activeTempo > 0       ? { tempo: activeTempo }                 : {}),
+      ...(included('instrumentation') && activeInstrumentation ? { instruments: activeInstrumentation } : {}),
+      ...(vocalStyle                                           ? { vocalStyle }                         : {}),
+      ...(eraParts.length > 0                                  ? { era: eraParts.join(' | ') }          : {}),
     });
-  }, [included, initialGenre, initialMood, initialTempo, initialInstrumentation, initialRhythm, initialNarrative, vocalStyle]);
-
-  // NOTE: No mount/update useEffect calling onPromptReady.
-  // onPromptReady fires ONLY in handleGenerate (explicit user action).
+  }, [included, activeGenre, activeMood, activeTempo, activeInstrumentation, activeRhythm, activeNarrative, vocalStyle]);
 
   const handleGenerate = useCallback(async () => {
     if (isGenerating || !lyrics.trim()) return;
@@ -152,7 +192,6 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
     abortRef.current = new AbortController();
     const { signal } = abortRef.current;
     setTaskStatus({ phase: 'generating' });
-    // Surface Lyria style string to parent only at generation time
     onPromptReady?.(styleString);
     const params = {
       lyrics,
@@ -188,10 +227,6 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [handleGenerate]);
 
-  /**
-   * Renders a dismissible param badge using Badge + native <button>.
-   * Native <button> is required for reliable getByRole('button', { name }) in tests.
-   */
   const renderParamBadge = (field: LyriaPromptField, label: string) => {
     if (!included(field)) return null;
     return (
@@ -228,13 +263,13 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   };
 
   const hasVisibleParams = Boolean(
-    (initialGenre          && included('genre'))          ||
-    (initialMood           && included('mood'))           ||
-    (initialTempo > 0      && included('tempo'))          ||
-    (initialInstrumentation && included('instrumentation')) ||
-    (initialRhythm         && included('rhythm'))         ||
-    (initialNarrative      && included('narrative'))      ||
-    initialMusicalPrompt,
+    (activeGenre           && included('genre'))           ||
+    (activeMood            && included('mood'))            ||
+    (activeTempo > 0       && included('tempo'))           ||
+    (activeInstrumentation && included('instrumentation')) ||
+    (activeRhythm          && included('rhythm'))          ||
+    (activeNarrative       && included('narrative'))       ||
+    activeMusicalPrompt,
   );
 
   return (
@@ -264,7 +299,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
 
       <Divider />
 
-      {/* ── Params (read-only — edit in MusicalParamsPanel) ── */}
+      {/* ── Params (live — mirrors SongContext) ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS, padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`, background: tokens.colorNeutralBackground3, borderRadius: tokens.borderRadiusMedium, border: `1px solid ${tokens.colorNeutralStroke2}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalXS, marginBottom: tokens.spacingVerticalXXS }}>
           <LockClosed20Regular style={{ fontSize: 13, color: tokens.colorNeutralForeground3 }} />
@@ -274,17 +309,17 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalXS, alignItems: 'center' }}>
-          {initialGenre           && renderParamBadge('genre',           `🎵 ${initialGenre}`)}
-          {initialMood            && renderParamBadge('mood',            `🌈 ${initialMood}`)}
-          {initialTempo > 0       && renderParamBadge('tempo',           `♩ ${initialTempo} BPM`)}
-          {initialInstrumentation && renderParamBadge('instrumentation', `🎸 ${initialInstrumentation}`)}
-          {initialRhythm          && renderParamBadge('rhythm',          `🥁 ${initialRhythm.slice(0, 60)}${initialRhythm.length > 60 ? '…' : ''}`)}
-          {initialNarrative       && renderParamBadge('narrative',       `📖 ${initialNarrative.slice(0, 60)}${initialNarrative.length > 60 ? '…' : ''}`)}
+          {activeGenre           && renderParamBadge('genre',           `\uD83C\uDFB5 ${activeGenre}`)}
+          {activeMood            && renderParamBadge('mood',            `\uD83C\uDF08 ${activeMood}`)}
+          {activeTempo > 0       && renderParamBadge('tempo',           `\u2669 ${activeTempo} BPM`)}
+          {activeInstrumentation && renderParamBadge('instrumentation', `\uD83C\uDFB8 ${activeInstrumentation}`)}
+          {activeRhythm          && renderParamBadge('rhythm',          `\uD83E\uDD41 ${activeRhythm.slice(0, 60)}${activeRhythm.length > 60 ? '\u2026' : ''}`)}
+          {activeNarrative       && renderParamBadge('narrative',       `\uD83D\uDCD6 ${activeNarrative.slice(0, 60)}${activeNarrative.length > 60 ? '\u2026' : ''}`)}
         </div>
 
-        {initialMusicalPrompt && (
+        {activeMusicalPrompt && (
           <Badge appearance="tint" color="success" size="small" style={{ alignSelf: 'flex-start', marginTop: tokens.spacingVerticalXXS }}>
-            ✨ Full prompt active
+            \u2728 Full prompt active
           </Badge>
         )}
         {!hasVisibleParams && (
@@ -315,7 +350,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
           onClick={() => void handleGenerate()}
           style={{ alignSelf: 'flex-start' }}
         >
-          {isGenerating ? (L?.generating ?? 'Generating…') : (L?.generatePreview ?? "Generate preview 30''")}
+          {isGenerating ? (L?.generating ?? 'Generating\u2026') : (L?.generatePreview ?? "Generate preview 30''")}
         </Button>
       </Tooltip>
 
@@ -356,45 +391,49 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
         <Card style={{ background: tokens.colorNeutralBackground3, padding: tokens.spacingVerticalM, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS }}>
-              <CheckmarkCircle20Filled style={{ color: tokens.colorStatusSuccessForeground1 }} />
-              <Text weight="semibold" size={300}>{doneClip.title}</Text>
+              <CheckmarkCircle20Filled style={{ color: tokens.colorStatusSuccessForeground1, fontSize: 20 }} />
+              <Text weight="semibold">{doneClip.title}</Text>
             </div>
-            <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
-              <Badge appearance="tint" color="informative" size="small">🛡️ SynthID</Badge>
-              {kpi.lastGenerationMs && <Badge appearance="ghost" size="small">{kpi.lastGenerationMs}ms</Badge>}
-            </div>
+            {doneClip.synthIdWatermarked && (
+              <Badge appearance="ghost" size="small" style={{ color: tokens.colorNeutralForeground3 }}>
+                SynthID \u2713
+              </Badge>
+            )}
           </div>
-          {doneClip.audioUrl && (
-            <audio src={doneClip.audioUrl} aria-label={`Preview — ${doneClip.title}`} style={{ width: '100%' }} controls />
-          )}
+          <audio
+            controls
+            src={doneClip.audioUrl ?? undefined}
+            style={{ width: '100%' }}
+            aria-label={`Preview — ${doneClip.title}`}
+          />
           {onFullSong && (
-            <Button appearance="outline" size="small" style={{ alignSelf: 'flex-start' }} onClick={() => onFullSong(doneClip)}>
-              {L?.escalate ?? 'Escalate to full song (Lyria 3 Pro)'}
+            <Button
+              appearance="subtle"
+              size="small"
+              onClick={() => onFullSong(doneClip)}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              {L?.escalateToFullSong ?? 'Escalate to full song (Lyria 3 Pro)'}
             </Button>
           )}
+          <details>
+            <summary style={{ cursor: 'pointer', color: tokens.colorNeutralForeground3, fontSize: 12 }}>Stats</summary>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalS, marginTop: tokens.spacingVerticalXXS }}>
+              {[
+                { label: 'Requests', value: kpi.totalRequests },
+                { label: 'Success', value: kpi.successCount },
+                { label: 'Errors', value: kpi.errorCount },
+                { label: 'Last gen', value: kpi.lastGenerationMs != null ? `${kpi.lastGenerationMs}ms` : '\u2014' },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48 }}>
+                  <Text size={400} weight="semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>{value}</Text>
+                  <Text size={100} style={{ color: tokens.colorNeutralForeground3 }}>{label}</Text>
+                </div>
+              ))}
+            </div>
+          </details>
         </Card>
       )}
-
-      {/* ── KPI (collapsed) ── */}
-      <details>
-        <summary style={{ cursor: 'pointer', fontSize: 11, color: tokens.colorNeutralForeground3, userSelect: 'none' }}>Stats</summary>
-        <div style={{ display: 'flex', gap: tokens.spacingHorizontalM, marginTop: tokens.spacingVerticalXS }}>
-          <Label size="small" style={{ color: tokens.colorNeutralForeground3 }}>
-            {(L?.successCount ?? 'Success: {n}').replace('{n}', String(kpi.successCount))}
-          </Label>
-          <Label size="small" style={{ color: tokens.colorNeutralForeground3 }}>
-            {(L?.errorCount ?? 'Errors: {n}').replace('{n}', String(kpi.errorCount))}
-          </Label>
-          {kpi.lastError && (
-            <Label size="small" style={{ color: tokens.colorStatusDangerForeground1 }}>
-              {(L?.lastError ?? 'Last error: {msg}').replace('{msg}', kpi.lastError)}
-            </Label>
-          )}
-        </div>
-      </details>
-
     </Card>
   );
 };
-
-export default LyriaPreviewPanel;

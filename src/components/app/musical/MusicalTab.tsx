@@ -42,6 +42,21 @@ export function MusicalTab({ hasApiKey }: Props) {
     setCompletedSteps(prev => new Set(prev).add(step));
   }, []);
 
+  /**
+   * When the user removes a badge in LyriaPreviewPanel, clear the corresponding
+   * SongContext value so MusicalParamsPanel deselects it and both prompts update.
+   */
+  const handleParamRemoved = useCallback((field: 'genre' | 'mood' | 'tempo' | 'instrumentation' | 'rhythm' | 'narrative') => {
+    switch (field) {
+      case 'genre':           setGenre('');           break;
+      case 'tempo':           setTempo(0);            break;
+      case 'instrumentation': setInstrumentation(''); break;
+      case 'rhythm':          setRhythm('');          break;
+      case 'narrative':       setNarrative('');       break;
+      // 'mood' is derived from lyrics analysis — not cleared from here
+    }
+  }, [setGenre, setTempo, setInstrumentation, setRhythm, setNarrative]);
+
   const hasLyrics  = song.some(s => s.lines.some(l => l.text.trim() !== ''));
   const hasContext = !!(title || topic || mood || hasLyrics);
   const canGeneratePrompt = hasApiKey && !!(hasContext || genre || instrumentation);
@@ -76,23 +91,21 @@ export function MusicalTab({ hasApiKey }: Props) {
         />
 
         {/*
-          LyriaPreviewPanel:
-          - onPromptReady is NOT wired to setMusicalPrompt.
-            Lyria builds its own styleString locally and never overwrites
-            the AI musical prompt in SongContext.
-          - initialMusicalPrompt is a read-only signal so Lyria can show
-            a "Full prompt active" badge when the AI prompt is present.
+          LyriaPreviewPanel receives LIVE props from SongContext (not snapshots).
+          onParamRemoved clears the corresponding SongContext value so
+          MusicalParamsPanel deselects it and both prompts stay in sync.
         */}
         <LyriaPreviewPanel
           lyrics={lyricsText}
           songTitle={title ?? ''}
-          initialGenre={genre}
-          initialMood={mood ?? ''}
-          initialTempo={tempo}
-          initialInstrumentation={instrumentation}
-          initialRhythm={rhythm}
-          initialNarrative={narrative}
-          initialMusicalPrompt={musicalPrompt}
+          genre={genre}
+          mood={mood ?? ''}
+          tempo={tempo}
+          instrumentation={instrumentation}
+          rhythm={rhythm}
+          narrative={narrative}
+          musicalPrompt={musicalPrompt}
+          onParamRemoved={handleParamRemoved}
           onFullSong={(clip) => setApprovedClip(clip)}
         />
 
