@@ -1,7 +1,7 @@
 /**
  * LyriaPreviewPanel — Lyria 3 Clip preview (30s)
  *
- * Sync contract (v1.31.0.6):
+ * Sync contract (v1.31.0.7):
  *  - Props are LIVE (not initial*): genre, mood, tempo, instrumentation, rhythm, narrative.
  *    Any change in MusicalParamsPanel is immediately reflected here.
  *  - Removing a badge calls onParamRemoved(field) → parent clears SongContext → params panel deselects.
@@ -472,7 +472,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
               onClick={() => onFullSong(doneClip)}
               style={{ alignSelf: 'flex-start' }}
             >
-              {L?.escalateToFullSong ?? 'Escalate to full song (Lyria 3 Pro)'}
+              {L?.escalate ?? 'Escalate to full song (Lyria 3 Pro)'}
             </Button>
           )}
           <details>
