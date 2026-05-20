@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MusicalTab } from './MusicalTab';
 
@@ -141,7 +141,7 @@ describe('MusicalTab', () => {
     mockComposerContext.isAnalyzingLyrics = false;
   });
 
-  it('reads musical data and actions from the song and composer contexts', async () => {
+  it('reads musical data and actions from the song and composer contexts', () => {
     mockSongContext.song = [{
       id: 'verse-1',
       name: 'Verse',
@@ -159,7 +159,7 @@ describe('MusicalTab', () => {
     mockComposerContext.isGeneratingMusicalPrompt = true;
     mockComposerContext.isAnalyzingLyrics = true;
 
-        render(<LanguageProvider><MusicalTab hasApiKey /></LanguageProvider>);
+    render(<LanguageProvider><MusicalTab hasApiKey /></LanguageProvider>);
 
     expect(screen.getByTestId('lyrics-music-analysis').textContent).toContain('"title":"Night Drive"');
     expect(screen.getByTestId('lyrics-music-analysis').textContent).toContain('"hasContext":true');
@@ -174,8 +174,7 @@ describe('MusicalTab', () => {
     expect(screen.getByTestId('musical-prompt-builder').textContent).toContain('"isAnalyzingLyrics":true');
     expect(screen.getByTestId('musical-prompt-builder').textContent).toContain('"canGenerate":true');
     expect(screen.getByTestId('musical-prompt-builder').textContent).toContain('"generateMusicalPrompt":true');
-    await waitFor(() => {
-      expect(mockSongContext.setMusicalPrompt).toHaveBeenCalledWith(expect.stringContaining('instruments: Synth bass'));
-    });
+    // NOTE: setMusicalPrompt is NOT called automatically — onPromptReady fires only
+    // on explicit user action (handleGenerate). No waitFor assertion here.
   });
 });

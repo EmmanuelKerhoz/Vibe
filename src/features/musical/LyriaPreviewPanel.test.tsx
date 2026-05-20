@@ -65,33 +65,18 @@ describe('LyriaPreviewPanel', () => {
       </LanguageProvider>,
     );
 
-    expect(screen.getByLabelText('Genre: afrobeats')).toBeTruthy();
-    expect(screen.getByLabelText('Mood: joyful')).toBeTruthy();
-    expect(screen.getByLabelText('Tempo: 100 BPM')).toBeTruthy();
-    expect(screen.getByLabelText('Instrumentation: talking drum')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Remove instrumentation from Lyria prompt' })).toBeTruthy();
+    // Tags render visible text with emoji prefix — no aria-label on Tag root.
+    expect(screen.getByText('🎵 afrobeats')).toBeTruthy();
+    expect(screen.getByText('🌈 joyful')).toBeTruthy();
+    expect(screen.getByText('♩ 100 BPM')).toBeTruthy();
+    expect(screen.getByText('🎸 talking drum')).toBeTruthy();
+    // Dismiss button aria-label matches dismissIcon: { 'aria-label': 'Remove instrumentation' }
+    expect(screen.getByRole('button', { name: 'Remove instrumentation' })).toBeTruthy();
   });
 
-  it('syncs the Lyria style prompt with instrumentation to the prompt container', async () => {
-    const onPromptReady = vi.fn();
-
-    render(
-      <LanguageProvider>
-        <LyriaPreviewPanel
-          lyrics="Sing it"
-          initialGenre="afrobeats"
-          initialMood="joyful"
-          initialTempo={100}
-          initialInstrumentation="talking drum, bass"
-          onPromptReady={onPromptReady}
-        />
-      </LanguageProvider>,
-    );
-
-    await waitFor(() => {
-      expect(onPromptReady).toHaveBeenCalledWith(expect.stringContaining('instruments: talking drum, bass'));
-    });
-  });
+  // NOTE: 'syncs the Lyria style prompt with instrumentation to the prompt container'
+  // test REMOVED — onPromptReady no longer fires on mount or param change.
+  // It fires only in handleGenerate (explicit user action). See 'removes prompt badges' below.
 
   it('removes prompt badges from the next Lyria prompt', async () => {
     const user = userEvent.setup();
@@ -110,11 +95,10 @@ describe('LyriaPreviewPanel', () => {
       </LanguageProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Remove instrumentation from Lyria prompt' }));
+    await user.click(screen.getByRole('button', { name: 'Remove instrumentation' }));
 
-    await waitFor(() => {
-      expect(onPromptReady).toHaveBeenLastCalledWith(expect.not.stringContaining('talking drum'));
-    });
+    // onPromptReady not called yet — fires only on Generate
+    expect(onPromptReady).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Alt+A to generate quickly' }));
 
@@ -127,6 +111,10 @@ describe('LyriaPreviewPanel', () => {
       }),
       expect.any(Object),
     );
+    // onPromptReady called with style string that excludes instrumentation
+    await waitFor(() => {
+      expect(onPromptReady).toHaveBeenCalledWith(expect.not.stringContaining('talking drum'));
+    });
   });
 
   it('relies on native audio controls without adding a second play button', async () => {
@@ -143,7 +131,8 @@ describe('LyriaPreviewPanel', () => {
     await waitFor(() => {
       expect(generateAndPoll).toHaveBeenCalled();
     });
-    await screen.findByLabelText('Preview audio — Preview Clip');
+    // aria-label matches `Preview — ${doneClip.title}` in LyriaPreviewPanel
+    await screen.findByLabelText('Preview — Preview Clip');
     expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
   });
 });
