@@ -65,12 +65,12 @@ describe('LyriaPreviewPanel', () => {
       </LanguageProvider>,
     );
 
-    // Tags render visible text with emoji prefix — no aria-label on Tag root.
-    expect(screen.getByText('🎵 afrobeats')).toBeTruthy();
-    expect(screen.getByText('🌈 joyful')).toBeTruthy();
-    expect(screen.getByText('♩ 100 BPM')).toBeTruthy();
-    expect(screen.getByText('🎸 talking drum')).toBeTruthy();
-    // Dismiss button aria-label matches dismissIcon: { 'aria-label': 'Remove instrumentation' }
+    // Param badges render as `Label: value` with aria-label for accessibility.
+    expect(screen.getByLabelText('Style: afrobeats')).toBeTruthy();
+    expect(screen.getByLabelText('Mood: joyful')).toBeTruthy();
+    expect(screen.getByLabelText('BPM: 100')).toBeTruthy();
+    expect(screen.getByLabelText('Instrumentation: talking drum')).toBeTruthy();
+    // Dismiss button aria-label is `Remove ${field}` (see renderParamBadge in LyriaPreviewPanel).
     expect(screen.getByRole('button', { name: 'Remove instrumentation' })).toBeTruthy();
   });
 
