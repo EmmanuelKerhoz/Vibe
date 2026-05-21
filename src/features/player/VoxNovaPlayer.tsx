@@ -97,20 +97,20 @@ export function VoxNovaPlayer() {
           <div style={{ flex: 1, overflow: 'auto', marginTop: tokens.spacingVerticalS }}>
             {activeTab === 'cloud' && (
               <TrackList
-                tracks={library.tracks.filter(t => t.source === 'cloud')}
+                tracks={library.tracks}
+                filter="cloud"
                 selectedId={selectedId ?? undefined}
                 onSelect={handleSelect}
                 onRemove={library.removeTrack}
-                onUpdateUrl={library.updateUrl}
               />
             )}
             {activeTab === 'local' && (
               <TrackList
-                tracks={library.tracks.filter(t => t.source === 'local')}
+                tracks={library.tracks}
+                filter="local"
                 selectedId={selectedId ?? undefined}
                 onSelect={handleSelect}
                 onRemove={library.removeTrack}
-                onUpdateUrl={library.updateUrl}
               />
             )}
             {activeTab === 'upload' && (

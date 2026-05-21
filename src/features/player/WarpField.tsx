@@ -41,7 +41,7 @@ export function WarpField({ isPlaying }: WarpFieldProps) {
     const colors = new Float32Array(starCount * 3);
     const velocities = new Float32Array(starCount);
     const starGeometry = new THREE.BufferGeometry();
-    const starColors = [
+    const starColors: THREE.Color[] = [
       new THREE.Color(0xffffff), new THREE.Color(0xaaccff),
       new THREE.Color(0xffead1), new THREE.Color(0xffd1d1),
     ];
@@ -49,7 +49,7 @@ export function WarpField({ isPlaying }: WarpFieldProps) {
       positions[i * 3] = (Math.random() - 0.5) * 3000;
       positions[i * 3 + 1] = (Math.random() - 0.5) * 3000;
       positions[i * 3 + 2] = Math.random() * 3000;
-      const c = starColors[i % starColors.length] ?? starColors[0]!;
+      const c: THREE.Color = starColors[i % starColors.length] ?? starColors[0] ?? new THREE.Color(0xffffff);
       colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
       velocities[i] = Math.random() * 1.5 + 0.5;
     }
@@ -144,11 +144,12 @@ export function WarpField({ isPlaying }: WarpFieldProps) {
         const pos = posAttr.array as Float32Array;
         for (let i = 0; i < starCount; i++) {
           const vel = velocities[i] ?? 1;
-          pos[i*3+2] += vel * refs.currentSpeed;
-          if ((pos[i*3+2] ?? 0) > 1500) {
-            pos[i*3+2] = -1500;
-            pos[i*3] = (Math.random()-0.5)*3000;
-            pos[i*3+1] = (Math.random()-0.5)*3000;
+          const z0 = pos[i * 3 + 2] ?? 0;
+          pos[i * 3 + 2] = z0 + vel * refs.currentSpeed;
+          if ((pos[i * 3 + 2] ?? 0) > 1500) {
+            pos[i * 3 + 2] = -1500;
+            pos[i * 3] = (Math.random() - 0.5) * 3000;
+            pos[i * 3 + 1] = (Math.random() - 0.5) * 3000;
           }
         }
         posAttr.needsUpdate = true;
