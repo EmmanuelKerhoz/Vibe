@@ -58,6 +58,29 @@ function filterFiles(
   });
 }
 
+/**
+ * Returns the immediate parent folder name of a file given its
+ * webkitRelativePath (e.g. "RootDir/Artist/Song.mp3" → "Artist").
+ * Falls back to the bare filename (without extension) when the path
+ * has no intermediate segments.
+ */
+function immediateParentName(f: File): string {
+  const relPath = (f as File & { webkitRelativePath?: string }).webkitRelativePath ?? '';
+  const segments = relPath.split('/');
+  // segments: [rootDir, ...parents, filename]
+  // immediate parent = second-to-last segment (index length-2)
+  if (segments.length >= 3) {
+    // file is at least one level deep inside the selected root
+    return segments[segments.length - 2];
+  }
+  if (segments.length === 2 && segments[1]) {
+    // file is directly inside the selected root — use root folder name
+    return segments[0];
+  }
+  // no path info — fall back to filename without extension
+  return f.name.replace(/\.[^/.]+$/, '');
+}
+
 export function VoxNovaPlayer() {
   const engine = useAudioEngine();
   const analyser = useFrequencyAnalyser();
@@ -128,20 +151,13 @@ export function VoxNovaPlayer() {
       scanProtocol,
       scanPattern,
     );
-    const added: Omit<TrackEntry, 'id'>[] = files.map(f => {
-      const relPath = (f as File & { webkitRelativePath?: string }).webkitRelativePath ?? '';
-      const firstSegment = relPath.split('/')[0];
-      const folderName = relPath.includes('/') && firstSegment
-        ? firstSegment
-        : f.name.replace(/\.[^/.]+$/, '');
-      return {
-        title: folderName,
-        source: 'local',
-        url: URL.createObjectURL(f),
-        memo: `[LCARS_SCAN] Identified: ${f.name} | Protocol: ${scanProtocol.toUpperCase()} | Integrity: Nominal`,
-        linked: true,
-      };
-    });
+    const added: Omit<TrackEntry, 'id'>[] = files.map(f => ({
+      title: immediateParentName(f),
+      source: 'local',
+      url: URL.createObjectURL(f),
+      memo: `[LCARS_SCAN] Identified: ${f.name} | Protocol: ${scanProtocol.toUpperCase()} | Integrity: Nominal`,
+      linked: true,
+    }));
     if (added.length) {
       library.addTracks(added);
       setView('local');
