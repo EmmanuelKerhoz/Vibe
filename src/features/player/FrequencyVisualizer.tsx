@@ -42,7 +42,7 @@ export function FrequencyVisualizer({ isPlaying, analyser, audioRef }: Frequency
 
       const { analyserRef, dataArrayRef } = analyser;
       if (analyserRef.current && dataArrayRef.current && isPlaying) {
-        analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current as Uint8Array<ArrayBuffer>);
       }
 
       const barCount = 80;
@@ -52,7 +52,8 @@ export function FrequencyVisualizer({ isPlaying, analyser, audioRef }: Frequency
 
       for (let i = 0; i < barCount; i++) {
         const sampleIdx = Math.floor((i / barCount) * ((dataArrayRef.current?.length ?? 100) * 0.7));
-        const val = dataArrayRef.current ? dataArrayRef.current[sampleIdx] : (isPlaying ? Math.random() * 15 : 2);
+        const raw = dataArrayRef.current ? dataArrayRef.current[sampleIdx] : undefined;
+        const val = raw !== undefined ? raw : (isPlaying ? Math.random() * 15 : 2);
         const norm = val / 255;
         const barH = Math.max(2, norm * maxBarHeight);
         const x = i * barWidth;

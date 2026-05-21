@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { v4 as uuidv4 } from 'crypto'; // browser crypto.randomUUID fallback below
 import type { TrackEntry, TrackSource } from './types';
 
 // Use browser crypto — no external dep needed

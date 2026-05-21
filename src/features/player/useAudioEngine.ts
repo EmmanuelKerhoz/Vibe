@@ -48,7 +48,12 @@ export function useAudioEngine(): AudioEngineState {
   }, []);
 
   const togglePlay = useCallback(() => {
-    isPlaying ? audioRef.current.pause() || setIsPlaying(false) : audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    }
   }, [isPlaying]);
 
   const seek = useCallback((t: number) => {

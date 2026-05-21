@@ -1,80 +1,79 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import {
-  Tab,
-  TabList,
-  tokens,
+  TabList, Tab, tokens,
 } from '@fluentui/react-components';
-import { Cloud24Regular, Laptop24Regular, ArrowUpload24Regular, FolderOpen24Regular } from '@fluentui/react-icons';
+import {
+  Cloud24Regular,
+  FolderOpen24Regular,
+  ArrowUpload24Regular,
+} from '@fluentui/react-icons';
 import { WarpField } from './WarpField';
 import { FrequencyVisualizer } from './FrequencyVisualizer';
 import { PlayerControls } from './PlayerControls';
 import { TrackList } from './TrackList';
 import { ScanPanel } from './ScanPanel';
 import { UploadPanel } from './UploadPanel';
-import { useLibrary } from './useLibrary';
 import { useAudioEngine } from './useAudioEngine';
 import { useFrequencyAnalyser } from './useFrequencyAnalyser';
-import type { ScanConfig, TrackEntry } from './types';
+import { useLibrary } from './useLibrary';
+import type { TrackEntry } from './types';
 
-type LibraryTab = 'cloud' | 'local' | 'scan' | 'upload';
+type LibraryTab = 'cloud' | 'local' | 'upload';
 
 export function VoxNovaPlayer() {
-  const library = useLibrary();
   const engine = useAudioEngine();
   const analyser = useFrequencyAnalyser();
-
-  const [selectedTrack, setSelectedTrack] = useState<TrackEntry | undefined>(library.tracks[0]);
+  const library = useLibrary();
   const [activeTab, setActiveTab] = useState<LibraryTab>('cloud');
-  const [scanConfig, setScanConfig] = useState<ScanConfig>({ accept: 'wav' });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const handleSelect = useCallback((track: TrackEntry) => {
-    setSelectedTrack(track);
+  const selectedTrack = library.tracks.find(t => t.id === selectedId);
+
+  const handleSelect = (track: TrackEntry) => {
+    setSelectedId(track.id);
     engine.loadTrack(track);
     engine.beep(880, 'sine', 0.05);
-  }, [engine]);
+  };
 
-  const handlePrev = useCallback(() => {
-    const idx = library.tracks.findIndex(t => t.id === selectedTrack?.id);
-    const prev = library.tracks[(idx - 1 + library.tracks.length) % library.tracks.length];
+  const handlePrev = () => {
+    const idx = library.tracks.findIndex(t => t.id === selectedId);
+    const prev = library.tracks[idx - 1];
     if (prev) handleSelect(prev);
-  }, [library.tracks, selectedTrack, handleSelect]);
+  };
 
-  const handleNext = useCallback(() => {
-    const idx = library.tracks.findIndex(t => t.id === selectedTrack?.id);
-    const next = library.tracks[(idx + 1) % library.tracks.length];
+  const handleNext = () => {
+    const idx = library.tracks.findIndex(t => t.id === selectedId);
+    const next = library.tracks[idx + 1];
     if (next) handleSelect(next);
-  }, [library.tracks, selectedTrack, handleSelect]);
-
-  const handleTracksAdded = useCallback((entries: Omit<TrackEntry, 'id'>[]) => {
-    library.addTracks(entries);
-    engine.beep(660, 'sine', 0.08);
-  }, [library, engine]);
+  };
 
   return (
     <div
-      role="region"
-      aria-label="VoxNova Player"
       style={{
         position: 'relative',
+        width: '100%',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        width: '100%',
-        minHeight: 480,
-        background: tokens.colorNeutralBackground1,
-        borderRadius: tokens.borderRadiusXLarge,
         overflow: 'hidden',
-        border: `1px solid ${tokens.colorNeutralStroke1}`,
-        boxShadow: tokens.shadow16,
+        background: '#000008',
+        fontFamily: 'monospace',
       }}
     >
-      {/* Three.js background */}
+      {/* Three.js warp background */}
       <WarpField isPlaying={engine.isPlaying} />
 
-      {/* Content over background */}
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1, gap: 0 }}>
+      {/* Content layer */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', padding: tokens.spacingVerticalM }}>
 
-        {/* Frequency visualizer */}
-        <div style={{ padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalM} 0` }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, marginBottom: tokens.spacingVerticalS, borderBottom: '1px solid rgba(153,204,255,0.15)', paddingBottom: tokens.spacingVerticalS }}>
+          <span style={{ color: '#99ccff', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.7 }}>COMMS_ENCRYPTION: ENABLED</span>
+          <span style={{ marginLeft: 'auto', color: '#99ccff', fontSize: 10, opacity: 0.4 }}>VOX NOVA v2.0</span>
+        </div>
+
+        {/* Visualizer */}
+        <div style={{ position: 'relative' }}>
           <FrequencyVisualizer
             isPlaying={engine.isPlaying}
             analyser={analyser}
@@ -87,7 +86,7 @@ export function VoxNovaPlayer() {
           engine={engine}
           onPrev={handlePrev}
           onNext={handleNext}
-          trackTitle={selectedTrack?.title}
+          trackTitle={selectedTrack?.title ?? ''}
         />
 
         {/* Library tabs */}
@@ -98,30 +97,31 @@ export function VoxNovaPlayer() {
             size="small"
           >
             <Tab value="cloud" icon={<Cloud24Regular />}>Neural Cloud</Tab>
-            <Tab value="local" icon={<Laptop24Regular />}>Local</Tab>
-            <Tab value="scan" icon={<FolderOpen24Regular />}>Scan Sector</Tab>
+            <Tab value="local" icon={<FolderOpen24Regular />}>Local Sector</Tab>
             <Tab value="upload" icon={<ArrowUpload24Regular />}>Uplink</Tab>
           </TabList>
 
-          <div style={{ flex: 1, marginTop: tokens.spacingVerticalS, overflow: 'auto' }}>
-            {(activeTab === 'cloud' || activeTab === 'local') && (
+          <div style={{ flex: 1, overflow: 'auto', marginTop: tokens.spacingVerticalS }}>
+            {activeTab === 'cloud' && (
               <TrackList
-                tracks={library.tracks}
-                selectedId={selectedTrack?.id}
+                tracks={library.tracks.filter(t => t.source === 'cloud')}
+                selectedId={selectedId}
                 onSelect={handleSelect}
                 onRemove={library.removeTrack}
-                filter={activeTab}
+                onUpdateUrl={library.updateUrl}
               />
             )}
-            {activeTab === 'scan' && (
-              <ScanPanel
-                config={scanConfig}
-                onConfigChange={setScanConfig}
-                onTracksFound={handleTracksAdded}
+            {activeTab === 'local' && (
+              <TrackList
+                tracks={library.tracks.filter(t => t.source === 'local')}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onRemove={library.removeTrack}
+                onUpdateUrl={library.updateUrl}
               />
             )}
             {activeTab === 'upload' && (
-              <UploadPanel onTracksAdded={handleTracksAdded} />
+              <UploadPanel onAdd={library.addTracks} />
             )}
           </div>
         </div>

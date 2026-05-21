@@ -6,64 +6,52 @@ interface WarpFieldProps {
 }
 
 export function WarpField({ isPlaying }: WarpFieldProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  // Keep scene refs stable across isPlaying changes
-  const sceneRef = useRef<{
-    starGeometry: THREE.BufferGeometry;
-    velocities: Float32Array;
-    starCount: number;
-    nebula1: THREE.Points;
-    nebula2: THREE.Points;
-    galaxyGroup: THREE.Group;
-    grid: THREE.LineSegments;
-    gridMaterial: THREE.LineBasicMaterial;
-    disk: THREE.Points;
-    coronaMat: THREE.PointsMaterial;
-    renderer: THREE.WebGLRenderer;
-    camera: THREE.PerspectiveCamera;
-    scene: THREE.Scene;
-    rafId: number;
-    currentSpeed: number;
-  } | null>(null);
+  const mountRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<boolean>(false);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
+    const container = mountRef.current;
+    if (!container) return;
+    sceneRef.current = true;
+
+    const refs = { rafId: 0, currentSpeed: 0.3 };
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 2000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    scene.background = new THREE.Color(0x000005);
+    scene.fog = new THREE.FogExp2(0x000005, 0.0004);
+
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 10000);
+    camera.position.set(0, 0, 500);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
     // Star texture
     const starCanvas = document.createElement('canvas');
-    starCanvas.width = 128; starCanvas.height = 128;
-    const sCtx = starCanvas.getContext('2d')!;
-    const sGrad = sCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    sGrad.addColorStop(0, 'rgba(255,255,255,1)');
-    sGrad.addColorStop(0.2, 'rgba(255,255,255,0.8)');
-    sGrad.addColorStop(1, 'rgba(255,255,255,0)');
-    sCtx.fillStyle = sGrad;
-    sCtx.fillRect(0, 0, 128, 128);
+    starCanvas.width = 64; starCanvas.height = 64;
+    const sc = starCanvas.getContext('2d')!;
+    const sg = sc.createRadialGradient(32,32,0,32,32,32);
+    sg.addColorStop(0,'rgba(255,255,255,1)'); sg.addColorStop(0.3,'rgba(255,255,255,0.8)'); sg.addColorStop(1,'rgba(255,255,255,0)');
+    sc.fillStyle = sg; sc.fillRect(0,0,64,64);
     const starTex = new THREE.CanvasTexture(starCanvas);
 
     // Stars
-    const starCount = 1200;
-    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 3000;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
     const velocities = new Float32Array(starCount);
+    const starGeometry = new THREE.BufferGeometry();
     const starColors = [
-      new THREE.Color(0xb3e0ff), new THREE.Color(0xffffff),
+      new THREE.Color(0xffffff), new THREE.Color(0xaaccff),
       new THREE.Color(0xffead1), new THREE.Color(0xffd1d1),
     ];
     for (let i = 0; i < starCount; i++) {
       positions[i * 3] = (Math.random() - 0.5) * 3000;
       positions[i * 3 + 1] = (Math.random() - 0.5) * 3000;
       positions[i * 3 + 2] = Math.random() * 3000;
-      const c = starColors[Math.floor(Math.random() * starColors.length)];
+      const c = starColors[Math.floor(Math.random() * starColors.length)]!;
       colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
       velocities[i] = Math.random() * 1.5 + 0.5;
     }
@@ -140,15 +128,10 @@ export function WarpField({ isPlaying }: WarpFieldProps) {
     const disk = new THREE.Points(diskGeom, new THREE.PointsMaterial({ size: 4, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, map: starTex }));
     const cGeom = new THREE.BufferGeometry();
     cGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0,0,0]), 3));
-    const coronaMat = new THREE.PointsMaterial({ size: 450, color: 0x00f3ff, map: starTex, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false });
+    const coronaMat = new THREE.PointsMaterial({ size: 450, color: 0x4488ff, map: starTex, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending });
     bhGroup.add(disk, new THREE.Points(cGeom, coronaMat));
-    bhGroup.position.set(0, 50, -1200);
+    bhGroup.position.set(-300, 100, -800);
     scene.add(bhGroup);
-
-    camera.position.z = 1000;
-
-    const refs = { starGeometry, velocities, starCount, nebula1, nebula2, galaxyGroup, grid, gridMaterial, disk: disk as THREE.Points, coronaMat, renderer, camera, scene, rafId: 0, currentSpeed: 0 };
-    sceneRef.current = refs;
 
     const handleResize = () => {
       camera.aspect = container.clientWidth / container.clientHeight;
@@ -159,48 +142,40 @@ export function WarpField({ isPlaying }: WarpFieldProps) {
 
     const animate = () => {
       refs.rafId = requestAnimationFrame(animate);
-      const playing = sceneRef.current ? isPlaying : false; // captured in closure, updated via ref
+      const playing = sceneRef.current ? isPlaying : false;
       const targetSpeed = playing ? 8 : 0.3;
       refs.currentSpeed = THREE.MathUtils.lerp(refs.currentSpeed, targetSpeed, 0.03);
-      const pos = starGeometry.attributes.position.array as Float32Array;
-      for (let i = 0; i < starCount; i++) {
-        pos[i*3+2] += velocities[i] * refs.currentSpeed;
-        if (pos[i*3+2] > 1500) { pos[i*3+2] = -1500; pos[i*3] = (Math.random()-0.5)*3000; pos[i*3+1] = (Math.random()-0.5)*3000; }
+      const posAttr = starGeometry.attributes['position'];
+      if (posAttr) {
+        const pos = posAttr.array as Float32Array;
+        for (let i = 0; i < starCount; i++) {
+          pos[i*3+2] += velocities[i] * refs.currentSpeed;
+          if (pos[i*3+2] > 1500) { pos[i*3+2] = -1500; pos[i*3] = (Math.random()-0.5)*3000; pos[i*3+1] = (Math.random()-0.5)*3000; }
+        }
+        posAttr.needsUpdate = true;
       }
-      starGeometry.attributes.position.needsUpdate = true;
       nebula1.rotation.y += 0.001; nebula2.rotation.z += 0.001;
       nebula1.position.z += refs.currentSpeed * 0.5; nebula2.position.z += refs.currentSpeed * 0.5;
       if (nebula1.position.z > 2000) nebula1.position.z = -2000;
       if (nebula2.position.z > 2000) nebula2.position.z = -2000;
       galaxyGroup.rotation.y += 0.01; galaxyGroup.position.z += refs.currentSpeed;
-      if (galaxyGroup.position.z > 2000) { galaxyGroup.position.z = -3000; galaxyGroup.position.x = (Math.random()-0.5)*1000; galaxyGroup.position.y = (Math.random()-0.5)*1000; }
-      grid.position.z += refs.currentSpeed * 0.5;
-      if (grid.position.z > gridSize / gridCount) grid.position.z = 0;
-      const pulse = playing ? Math.sin(Date.now() * 0.005) * 0.3 + 0.5 : 0.2;
-      gridMaterial.opacity = pulse;
-      gridMaterial.color.setHSL(0.5, 1, pulse);
-      (disk.rotation as THREE.Euler).y += 0.02; bhGroup.rotation.z += 0.005;
-      coronaMat.size = 450 + (playing ? Math.sin(Date.now() * 0.008) * 10 + 10 : 0);
+      if (galaxyGroup.position.z > 2000) galaxyGroup.position.z = -2000;
+      bhGroup.rotation.y += 0.005;
+      disk.rotation.y += 0.01 * (1 + refs.currentSpeed * 0.1);
+      grid.position.z += refs.currentSpeed * 0.3;
+      if (grid.position.z > 150) grid.position.z -= 150;
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      sceneRef.current = false;
       cancelAnimationFrame(refs.rafId);
+      window.removeEventListener('resize', handleResize);
       renderer.dispose();
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // mount once
-
-  // Sync isPlaying without re-mounting
-  useEffect(() => {
-    if (!sceneRef.current) return;
-    // Speed targets are computed per-frame from the closure — we patch via a mutable ref trick:
-    // The animate loop reads `isPlaying` from this effect's captured value indirectly.
-    // Simple approach: store latest value in a ref read inside the loop.
   }, [isPlaying]);
 
-  return <div ref={containerRef} className="absolute inset-0 z-0 pointer-events-none opacity-60" style={{ width: '100%', height: '100%' }} />;
+  return <div ref={mountRef} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />;
 }
