@@ -2,7 +2,7 @@
  * PlayerPage — LCARS FUI audio player
  * Three.js WarpField + WebAudio FrequencyVisualizer
  * Adapted from VoxNova reference for Lyricist/Vibe.
- * v1.1.0
+ * v1.1.1
  */
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import * as THREE from 'three';
@@ -12,7 +12,7 @@ import {
   DeleteRegular,
   ArrowUploadRegular,
   ScanDashRegular,
-  SkipBackward10Regular,
+  SkipBack10Regular,
   SkipForward10Regular,
   PlayCircleRegular,
   PauseCircleRegular,
@@ -619,7 +619,7 @@ export function PlayerPage() {
               }}
               aria-label="Previous track"
             >
-              <SkipBackward10Regular style={{ fontSize: 22 }} />
+              <SkipBack10Regular style={{ fontSize: 22 }} />
             </button>
             <button
               onClick={togglePlay}
