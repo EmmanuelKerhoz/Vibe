@@ -19,119 +19,315 @@ export function WarpField({ isPlaying }: WarpFieldProps) {
     if (!container) return;
     sceneRef.current = true;
 
-    const refs = { rafId: 0, currentSpeed: 0.3 };
+    const refs = { rafId: 0, currentSpeed: 0.3, time: 0 };
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000005);
-    scene.fog = new THREE.FogExp2(0x000005, 0.0004);
+    // Deep space — near-black with very slight blue tint
+    scene.background = new THREE.Color(0x01020a);
+    scene.fog = new THREE.FogExp2(0x01020a, 0.00025);
 
-    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 10000);
-    camera.position.set(0, 0, 500);
+    const camera = new THREE.PerspectiveCamera(72, container.clientWidth / container.clientHeight, 0.1, 15000);
+    camera.position.set(0, 40, 600);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
     container.appendChild(renderer.domElement);
 
-    const starCanvas = document.createElement('canvas');
-    starCanvas.width = 64; starCanvas.height = 64;
-    const sc = starCanvas.getContext('2d')!;
-    const sg = sc.createRadialGradient(32,32,0,32,32,32);
-    sg.addColorStop(0,'rgba(255,255,255,1)'); sg.addColorStop(0.3,'rgba(255,255,255,0.8)'); sg.addColorStop(1,'rgba(255,255,255,0)');
-    sc.fillStyle = sg; sc.fillRect(0,0,64,64);
-    const starTex = new THREE.CanvasTexture(starCanvas);
-
-    const starCount = 3000;
-    const positions = new Float32Array(starCount * 3);
-    const colors = new Float32Array(starCount * 3);
-    const velocities = new Float32Array(starCount);
-    const starGeometry = new THREE.BufferGeometry();
-    const starColors: THREE.Color[] = [
-      new THREE.Color(0xffffff), new THREE.Color(0xaaccff),
-      new THREE.Color(0xffead1), new THREE.Color(0xffd1d1),
-    ];
-    for (let i = 0; i < starCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 3000;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 3000;
-      positions[i * 3 + 2] = Math.random() * 3000;
-      const c: THREE.Color = starColors[i % starColors.length] ?? starColors[0] ?? new THREE.Color(0xffffff);
-      colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
-      velocities[i] = Math.random() * 1.5 + 0.5;
-    }
-    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const starMat = new THREE.PointsMaterial({ size: 4, map: starTex, vertexColors: true, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
-    scene.add(new THREE.Points(starGeometry, starMat));
-
-    const makeNebula = (count: number, spread: number, color: number) => {
-      const g = new THREE.BufferGeometry();
-      const p = new Float32Array(count * 3);
-      for (let i = 0; i < count; i++) {
-        p[i * 3] = (Math.random() - 0.5) * spread;
-        p[i * 3 + 1] = (Math.random() - 0.5) * spread;
-        p[i * 3 + 2] = (Math.random() - 0.5) * spread;
-      }
-      g.setAttribute('position', new THREE.BufferAttribute(p, 3));
-      const nc = document.createElement('canvas'); nc.width = 128; nc.height = 128;
-      const nc2 = nc.getContext('2d')!;
-      const ng = nc2.createRadialGradient(64,64,0,64,64,64);
-      ng.addColorStop(0,'rgba(255,255,255,0.4)'); ng.addColorStop(0.5,'rgba(255,255,255,0.1)'); ng.addColorStop(1,'rgba(255,255,255,0)');
-      nc2.fillStyle = ng; nc2.fillRect(0,0,128,128);
-      return new THREE.Points(g, new THREE.PointsMaterial({ size: 600, color, map: new THREE.CanvasTexture(nc), transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false }));
+    // ─── Shared star sprite ───────────────────────────────────────
+    const makeStarSprite = (size = 64) => {
+      const c = document.createElement('canvas');
+      c.width = size; c.height = size;
+      const ctx = c.getContext('2d')!;
+      const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+      g.addColorStop(0, 'rgba(255,255,255,1)');
+      g.addColorStop(0.15, 'rgba(255,255,255,0.9)');
+      g.addColorStop(0.5, 'rgba(255,255,255,0.2)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, size, size);
+      return new THREE.CanvasTexture(c);
     };
-    const nebula1 = makeNebula(4, 2500, 0x0044ff);
-    const nebula2 = makeNebula(2, 2500, 0xee00aa);
-    scene.add(nebula1, nebula2);
+    const starTex = makeStarSprite(64);
 
-    const galaxyGroup = new THREE.Group();
-    const gGeom = new THREE.BufferGeometry();
-    const gPos = new Float32Array(400 * 3);
-    for (let i = 0; i < 400; i++) {
-      const a = i * 0.15; const r = i * 0.8 + Math.random() * 15;
-      gPos[i*3] = Math.cos(a)*r; gPos[i*3+1] = (Math.random()-0.5)*5; gPos[i*3+2] = Math.sin(a)*r;
+    // ─── Starfield — 5000 stars with realistic color distribution ──
+    const STAR_COUNT = 5000;
+    const starPositions = new Float32Array(STAR_COUNT * 3);
+    const starColors = new Float32Array(STAR_COUNT * 3);
+    const starVelocities = new Float32Array(STAR_COUNT);
+    const starSizes = new Float32Array(STAR_COUNT);
+
+    // Realistic stellar color palette (O/B blue, A white, F yellow-white, G/K orange, M red)
+    const stellarPalette = [
+      new THREE.Color(0xb8d4ff), // O/B — hot blue
+      new THREE.Color(0xcce0ff), // B — blue-white
+      new THREE.Color(0xffffff), // A — pure white
+      new THREE.Color(0xfff7e8), // F — yellow-white
+      new THREE.Color(0xffecc8), // G — sun-like
+      new THREE.Color(0xffcf90), // K — orange
+      new THREE.Color(0xff9060), // M — red dwarf
+    ];
+    // Weight distribution: mostly white/yellow, fewer blue/red
+    const palette = [0,0,1,1,1,2,2,2,2,2,3,3,3,4,4,4,5,5,6,6].map(i => stellarPalette[i]!);
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+      starPositions[i * 3]     = (Math.random() - 0.5) * 5000;
+      starPositions[i * 3 + 1] = (Math.random() - 0.5) * 3000;
+      starPositions[i * 3 + 2] = Math.random() * 4000 - 500;
+      const c = palette[Math.floor(Math.random() * palette.length)]!;
+      starColors[i * 3]     = c.r;
+      starColors[i * 3 + 1] = c.g;
+      starColors[i * 3 + 2] = c.b;
+      starVelocities[i] = Math.random() * 1.2 + 0.3;
+      starSizes[i] = Math.random() * 3 + 1;
     }
-    gGeom.setAttribute('position', new THREE.BufferAttribute(gPos, 3));
-    galaxyGroup.add(new THREE.Points(gGeom, new THREE.PointsMaterial({ size: 3, color: 0xffffee, transparent: true, opacity: 0.5, map: starTex, blending: THREE.AdditiveBlending })));
-    galaxyGroup.position.set(500, 300, -1500);
-    scene.add(galaxyGroup);
 
-    const gridCount = 20; const gridSize = 3000;
-    const gridGeom = new THREE.BufferGeometry();
-    const gridLines: number[] = [];
-    for (let i = 0; i <= gridCount; i++) {
-      const z = (i / gridCount) * gridSize - gridSize / 2;
-      gridLines.push(-gridSize/2, 0, z, gridSize/2, 0, z);
-      const x = (i / gridCount) * gridSize - gridSize / 2;
-      gridLines.push(x, 0, -gridSize/2, x, 0, gridSize/2);
+    const starGeom = new THREE.BufferGeometry();
+    starGeom.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeom.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    starGeom.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+
+    const starMat = new THREE.PointsMaterial({
+      size: 3,
+      map: starTex,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+    });
+    const stars = new THREE.Points(starGeom, starMat);
+    scene.add(stars);
+
+    // ─── Distant galaxy cluster (background depth) ────────────────
+    const makeNebulaSprite = (color: number, alpha: number) => {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      const ctx = c.getContext('2d')!;
+      const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+      const col = new THREE.Color(color);
+      g.addColorStop(0, `rgba(${Math.round(col.r*255)},${Math.round(col.g*255)},${Math.round(col.b*255)},${alpha})`);
+      g.addColorStop(0.4, `rgba(${Math.round(col.r*255)},${Math.round(col.g*255)},${Math.round(col.b*255)},${alpha * 0.4})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 256, 256);
+      return new THREE.CanvasTexture(c);
+    };
+
+    // Deep blue nebula
+    const nebula1Geom = new THREE.BufferGeometry();
+    const n1p = new Float32Array(6 * 3);
+    for (let i = 0; i < 6; i++) {
+      n1p[i*3]   = (Math.random() - 0.5) * 2200;
+      n1p[i*3+1] = (Math.random() - 0.5) * 1200;
+      n1p[i*3+2] = -3000 + Math.random() * 1000;
     }
-    gridGeom.setAttribute('position', new THREE.Float32BufferAttribute(gridLines, 3));
-    const gridMaterial = new THREE.LineBasicMaterial({ color: 0x00f3ff, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
-    const grid = new THREE.LineSegments(gridGeom, gridMaterial);
-    grid.position.y = -400;
-    scene.add(grid);
+    nebula1Geom.setAttribute('position', new THREE.BufferAttribute(n1p, 3));
+    const nebula1 = new THREE.Points(nebula1Geom, new THREE.PointsMaterial({
+      size: 1200, color: 0x0022cc, map: makeNebulaSprite(0x0033ff, 0.35),
+      transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    scene.add(nebula1);
 
+    // Magenta/pink nebula
+    const nebula2Geom = new THREE.BufferGeometry();
+    const n2p = new Float32Array(4 * 3);
+    for (let i = 0; i < 4; i++) {
+      n2p[i*3]   = (Math.random() - 0.5) * 2000;
+      n2p[i*3+1] = (Math.random() - 0.5) * 1000;
+      n2p[i*3+2] = -2500 + Math.random() * 800;
+    }
+    nebula2Geom.setAttribute('position', new THREE.BufferAttribute(n2p, 3));
+    const nebula2 = new THREE.Points(nebula2Geom, new THREE.PointsMaterial({
+      size: 1000, color: 0xaa0088, map: makeNebulaSprite(0xcc00aa, 0.3),
+      transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    scene.add(nebula2);
+
+    // Teal/green emission nebula
+    const nebula3Geom = new THREE.BufferGeometry();
+    const n3p = new Float32Array(5 * 3);
+    for (let i = 0; i < 5; i++) {
+      n3p[i*3]   = (Math.random() - 0.5) * 1800;
+      n3p[i*3+1] = (Math.random() - 0.5) * 900;
+      n3p[i*3+2] = -2000 + Math.random() * 600;
+    }
+    nebula3Geom.setAttribute('position', new THREE.BufferAttribute(n3p, 3));
+    const nebula3 = new THREE.Points(nebula3Geom, new THREE.PointsMaterial({
+      size: 800, color: 0x006644, map: makeNebulaSprite(0x00aa66, 0.25),
+      transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    scene.add(nebula3);
+
+    // ─── Milky Way band (distant star field plane) ────────────────
+    const mwGeom = new THREE.BufferGeometry();
+    const mwCount = 2000;
+    const mwPos = new Float32Array(mwCount * 3);
+    const mwCol = new Float32Array(mwCount * 3);
+    for (let i = 0; i < mwCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const r = 200 + Math.random() * 1800;
+      mwPos[i*3]   = Math.cos(theta) * r;
+      mwPos[i*3+1] = (Math.random() - 0.5) * 120; // thin band
+      mwPos[i*3+2] = Math.sin(theta) * r - 2000;
+      const warm = Math.random();
+      mwCol[i*3]   = 0.7 + warm * 0.3;
+      mwCol[i*3+1] = 0.7 + warm * 0.15;
+      mwCol[i*3+2] = 0.8 + (1 - warm) * 0.2;
+    }
+    mwGeom.setAttribute('position', new THREE.BufferAttribute(mwPos, 3));
+    mwGeom.setAttribute('color', new THREE.BufferAttribute(mwCol, 3));
+    const milkyWay = new THREE.Points(mwGeom, new THREE.PointsMaterial({
+      size: 2, vertexColors: true, map: starTex,
+      transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    scene.add(milkyWay);
+
+    // ─── Realistic Black Hole ─────────────────────────────────────
+    // Positioned in LOWER CENTER — below the equalizer zone
     const bhGroup = new THREE.Group();
-    bhGroup.add(new THREE.Mesh(new THREE.SphereGeometry(40,32,32), new THREE.MeshBasicMaterial({ color: 0x000000 })));
-    const diskCount = 800;
+    bhGroup.position.set(0, -220, -900);
+
+    // 1. Event horizon — solid black sphere
+    const ehGeom = new THREE.SphereGeometry(55, 64, 64);
+    const ehMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const eventHorizon = new THREE.Mesh(ehGeom, ehMat);
+    bhGroup.add(eventHorizon);
+
+    // 2. Photon sphere — subtle glow ring right around horizon
+    const photonCanvas = document.createElement('canvas');
+    photonCanvas.width = 512; photonCanvas.height = 512;
+    const pc = photonCanvas.getContext('2d')!;
+    const pr = 256;
+    const pg = pc.createRadialGradient(pr, pr, pr * 0.18, pr, pr, pr * 0.38);
+    pg.addColorStop(0, 'rgba(255,220,140,0)');
+    pg.addColorStop(0.3, 'rgba(255,200,80,0.9)');
+    pg.addColorStop(0.5, 'rgba(255,160,40,0.5)');
+    pg.addColorStop(0.7, 'rgba(200,100,20,0.2)');
+    pg.addColorStop(1, 'rgba(0,0,0,0)');
+    pc.fillStyle = pg; pc.fillRect(0, 0, 512, 512);
+    const photonRingTex = new THREE.CanvasTexture(photonCanvas);
+    const photonPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(240, 240),
+      new THREE.MeshBasicMaterial({ map: photonRingTex, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+    );
+    photonPlane.rotation.x = Math.PI / 2;
+    bhGroup.add(photonPlane);
+
+    // 3. Accretion disk — particle ring with hot inner / cool outer gradient
+    const diskCount = 3000;
     const diskGeom = new THREE.BufferGeometry();
     const diskPos = new Float32Array(diskCount * 3);
-    const diskColors = new Float32Array(diskCount * 3);
+    const diskCol = new Float32Array(diskCount * 3);
+    const diskVel = new Float32Array(diskCount);
     for (let i = 0; i < diskCount; i++) {
-      const a = Math.random() * Math.PI * 2; const r = 60 + Math.random() * 100;
-      diskPos[i*3] = Math.cos(a)*r; diskPos[i*3+1] = (Math.random()-0.5)*10; diskPos[i*3+2] = Math.sin(a)*r;
-      const c = new THREE.Color().setHSL(0.5 + Math.random()*0.2, 1, 0.5);
-      diskColors[i*3] = c.r; diskColors[i*3+1] = c.g; diskColors[i*3+2] = c.b;
+      // Two-layer structure: inner hot zone + outer cooler disk
+      const layer = Math.random() < 0.4 ? 'inner' : 'outer';
+      const minR = layer === 'inner' ? 62 : 85;
+      const maxR = layer === 'inner' ? 100 : 220;
+      const r = minR + Math.pow(Math.random(), 0.5) * (maxR - minR);
+      const theta = Math.random() * Math.PI * 2;
+      const tilt = (Math.random() - 0.5) * (layer === 'inner' ? 6 : 16);
+      diskPos[i*3]   = Math.cos(theta) * r;
+      diskPos[i*3+1] = tilt;
+      diskPos[i*3+2] = Math.sin(theta) * r;
+
+      // Color: inner = blue-white (10k K), mid = yellow-orange (5k K), outer = deep red/purple
+      const t = (r - 60) / 165; // 0 = inner, 1 = outer
+      if (t < 0.15) {
+        // innermost — blue-white blazar jet color
+        diskCol[i*3] = 0.7 + Math.random()*0.3;
+        diskCol[i*3+1] = 0.8 + Math.random()*0.2;
+        diskCol[i*3+2] = 1.0;
+      } else if (t < 0.35) {
+        // hot inner disk — white-yellow
+        diskCol[i*3] = 1.0; diskCol[i*3+1] = 0.9; diskCol[i*3+2] = 0.6;
+      } else if (t < 0.6) {
+        // mid disk — orange
+        diskCol[i*3] = 1.0; diskCol[i*3+1] = 0.55 - t*0.3; diskCol[i*3+2] = 0.1;
+      } else {
+        // outer disk — deep orange-red fading to near-purple
+        diskCol[i*3] = 0.6 + Math.random()*0.2;
+        diskCol[i*3+1] = 0.1 + Math.random()*0.1;
+        diskCol[i*3+2] = 0.2 + Math.random()*0.3;
+      }
+      diskVel[i] = (0.008 + Math.random() * 0.012) * (60 / Math.max(r, 60));
     }
     diskGeom.setAttribute('position', new THREE.BufferAttribute(diskPos, 3));
-    diskGeom.setAttribute('color', new THREE.BufferAttribute(diskColors, 3));
-    const disk = new THREE.Points(diskGeom, new THREE.PointsMaterial({ size: 4, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, map: starTex }));
-    const cGeom = new THREE.BufferGeometry();
-    cGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0,0,0]), 3));
-    const coronaMat = new THREE.PointsMaterial({ size: 450, color: 0x4488ff, map: starTex, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending });
-    bhGroup.add(disk, new THREE.Points(cGeom, coronaMat));
-    bhGroup.position.set(-300, 100, -800);
+    diskGeom.setAttribute('color', new THREE.BufferAttribute(diskCol, 3));
+    const diskMat = new THREE.PointsMaterial({
+      size: 3, vertexColors: true, map: starTex,
+      transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const accretionDisk = new THREE.Points(diskGeom, diskMat);
+    bhGroup.add(accretionDisk);
+
+    // 4. Gravitational lensing glow — large soft halo
+    const lensCanvas = document.createElement('canvas');
+    lensCanvas.width = 256; lensCanvas.height = 256;
+    const lc = lensCanvas.getContext('2d')!;
+    const lg = lc.createRadialGradient(128, 128, 20, 128, 128, 128);
+    lg.addColorStop(0, 'rgba(0,0,0,0)');
+    lg.addColorStop(0.3, 'rgba(30,50,120,0.0)');
+    lg.addColorStop(0.55, 'rgba(60,100,200,0.25)');
+    lg.addColorStop(0.75, 'rgba(100,60,180,0.15)');
+    lg.addColorStop(1, 'rgba(0,0,0,0)');
+    lc.fillStyle = lg; lc.fillRect(0, 0, 256, 256);
+    const lensPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(700, 700),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(lensCanvas), transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+    );
+    lensPlane.rotation.x = Math.PI / 2;
+    bhGroup.add(lensPlane);
+
+    // 5. Relativistic jets (polar)
+    const makeJet = (dir: 1 | -1) => {
+      const jGeom = new THREE.BufferGeometry();
+      const jCount = 300;
+      const jPos = new Float32Array(jCount * 3);
+      const jCol = new Float32Array(jCount * 3);
+      for (let i = 0; i < jCount; i++) {
+        const t = Math.random();
+        const spread = t * 18;
+        jPos[i*3]   = (Math.random() - 0.5) * spread;
+        jPos[i*3+1] = dir * (60 + t * 400);
+        jPos[i*3+2] = (Math.random() - 0.5) * spread;
+        const intensity = 1 - t * 0.7;
+        jCol[i*3]   = 0.3 * intensity;
+        jCol[i*3+1] = 0.6 * intensity;
+        jCol[i*3+2] = 1.0 * intensity;
+      }
+      jGeom.setAttribute('position', new THREE.BufferAttribute(jPos, 3));
+      jGeom.setAttribute('color', new THREE.BufferAttribute(jCol, 3));
+      return new THREE.Points(jGeom, new THREE.PointsMaterial({
+        size: 4, vertexColors: true, map: starTex,
+        transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+    };
+    bhGroup.add(makeJet(1), makeJet(-1));
+
+    // 6. Shadow vignette — opaque dark disk occluding background behind horizon
+    const shadowMesh = new THREE.Mesh(
+      new THREE.CircleGeometry(54, 64),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: false }),
+    );
+    shadowMesh.position.y = 0.5;
+    bhGroup.add(shadowMesh);
+
     scene.add(bhGroup);
 
+    // ─── Neon grid (warp tunnel floor — very subtle) ───────────────
+    const gridSize = 3000;
+    const gridDivisions = 40;
+    const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x001133, 0x000d22);
+    gridHelper.position.set(0, -350, 0);
+    scene.add(gridHelper);
+
+    // ─── Resize ───────────────────────────────────────────────────
     const handleResize = () => {
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
@@ -139,36 +335,68 @@ export function WarpField({ isPlaying }: WarpFieldProps) {
     };
     window.addEventListener('resize', handleResize);
 
+    // ─── Animation loop ───────────────────────────────────────────
     const animate = () => {
       refs.rafId = requestAnimationFrame(animate);
+      refs.time += 0.016;
+
       const playing = sceneRef.current ? isPlayingRef.current : false;
-      const targetSpeed = playing ? 8 : 0.3;
-      refs.currentSpeed = THREE.MathUtils.lerp(refs.currentSpeed, targetSpeed, 0.03);
-      const posAttr = starGeometry.attributes['position'];
+      const targetSpeed = playing ? 7 : 0.25;
+      refs.currentSpeed = THREE.MathUtils.lerp(refs.currentSpeed, targetSpeed, 0.025);
+
+      // Star warp
+      const posAttr = starGeom.attributes['position'];
       if (posAttr) {
         const pos = posAttr.array as Float32Array;
-        for (let i = 0; i < starCount; i++) {
-          const vel = velocities[i] ?? 1;
-          const z0 = pos[i * 3 + 2] ?? 0;
-          pos[i * 3 + 2] = z0 + vel * refs.currentSpeed;
-          if ((pos[i * 3 + 2] ?? 0) > 1500) {
-            pos[i * 3 + 2] = -1500;
-            pos[i * 3] = (Math.random() - 0.5) * 3000;
+        for (let i = 0; i < STAR_COUNT; i++) {
+          const vel = starVelocities[i] ?? 1;
+          const z = (pos[i * 3 + 2] ?? 0) + vel * refs.currentSpeed;
+          pos[i * 3 + 2] = z;
+          if (z > 1500) {
+            pos[i * 3 + 2] = -2500;
+            pos[i * 3]     = (Math.random() - 0.5) * 5000;
             pos[i * 3 + 1] = (Math.random() - 0.5) * 3000;
           }
         }
         posAttr.needsUpdate = true;
       }
-      nebula1.rotation.y += 0.001; nebula2.rotation.z += 0.001;
-      nebula1.position.z += refs.currentSpeed * 0.5; nebula2.position.z += refs.currentSpeed * 0.5;
-      if (nebula1.position.z > 2000) nebula1.position.z = -2000;
-      if (nebula2.position.z > 2000) nebula2.position.z = -2000;
-      galaxyGroup.rotation.y += 0.01; galaxyGroup.position.z += refs.currentSpeed;
-      if (galaxyGroup.position.z > 2000) galaxyGroup.position.z = -2000;
-      bhGroup.rotation.y += 0.005;
-      disk.rotation.y += 0.01 * (1 + refs.currentSpeed * 0.1);
-      grid.position.z += refs.currentSpeed * 0.3;
-      if (grid.position.z > 150) grid.position.z -= 150;
+
+      // Nebula drift
+      nebula1.rotation.y += 0.0003; nebula2.rotation.z += 0.0002; nebula3.rotation.x += 0.0001;
+
+      // Milky Way slow rotation
+      milkyWay.rotation.y += 0.00015;
+
+      // Accretion disk differential rotation (inner faster than outer)
+      const dPosAttr = diskGeom.attributes['position'];
+      if (dPosAttr) {
+        const dp = dPosAttr.array as Float32Array;
+        for (let i = 0; i < diskCount; i++) {
+          const x = dp[i*3] ?? 0;
+          const z = dp[i*3+2] ?? 0;
+          const r = Math.sqrt(x*x + z*z);
+          const angVel = diskVel[i] ?? 0.01;
+          const angle = angVel * (1 + refs.currentSpeed * 0.04);
+          dp[i*3]   = x * Math.cos(angle) - z * Math.sin(angle);
+          dp[i*3+2] = x * Math.sin(angle) + z * Math.cos(angle);
+          // Subtle vertical shimmer (thermal turbulence)
+          dp[i*3+1] = (dp[i*3+1] ?? 0) + Math.sin(refs.time * 3 + r * 0.1) * 0.015;
+        }
+        dPosAttr.needsUpdate = true;
+      }
+
+      // Photon ring pulse
+      const pulse = 0.92 + Math.sin(refs.time * 4) * 0.08;
+      photonPlane.material.opacity = pulse;
+
+      // BH tilt — slight precession
+      bhGroup.rotation.x = Math.sin(refs.time * 0.1) * 0.04;
+      bhGroup.rotation.z = Math.cos(refs.time * 0.07) * 0.03;
+
+      // Grid scroll
+      gridHelper.position.z += refs.currentSpeed * 0.2;
+      if (gridHelper.position.z > 75) gridHelper.position.z -= 75;
+
       renderer.render(scene, camera);
     };
     animate();
