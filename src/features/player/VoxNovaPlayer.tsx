@@ -6,18 +6,20 @@ import {
   Cloud24Regular,
   FolderOpen24Regular,
   ArrowUpload24Regular,
+  ScanDash24Regular,
 } from '@fluentui/react-icons';
 import { WarpField } from './WarpField';
 import { FrequencyVisualizer } from './FrequencyVisualizer';
 import { PlayerControls } from './PlayerControls';
 import { TrackList } from './TrackList';
 import { UploadPanel } from './UploadPanel';
+import { ScanPanel } from './ScanPanel';
 import { useAudioEngine } from './useAudioEngine';
 import { useFrequencyAnalyser } from './useFrequencyAnalyser';
 import { useLibrary } from './useLibrary';
-import type { TrackEntry } from './types';
+import type { TrackEntry, ScanConfig } from './types';
 
-type LibraryTab = 'cloud' | 'local' | 'upload';
+type LibraryTab = 'cloud' | 'local' | 'upload' | 'scan';
 
 export function VoxNovaPlayer() {
   const engine = useAudioEngine();
@@ -25,6 +27,7 @@ export function VoxNovaPlayer() {
   const library = useLibrary();
   const [activeTab, setActiveTab] = useState<LibraryTab>('cloud');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [scanConfig, setScanConfig] = useState<ScanConfig>({ accept: 'all' });
 
   const selectedTrack = library.tracks.find(t => t.id === selectedId);
 
@@ -92,6 +95,7 @@ export function VoxNovaPlayer() {
             <Tab value="cloud" icon={<Cloud24Regular />}>Neural Cloud</Tab>
             <Tab value="local" icon={<FolderOpen24Regular />}>Local Sector</Tab>
             <Tab value="upload" icon={<ArrowUpload24Regular />}>Uplink</Tab>
+            <Tab value="scan" icon={<ScanDash24Regular />}>Scan Sector</Tab>
           </TabList>
 
           <div style={{ flex: 1, overflow: 'auto', marginTop: tokens.spacingVerticalS }}>
@@ -115,6 +119,13 @@ export function VoxNovaPlayer() {
             )}
             {activeTab === 'upload' && (
               <UploadPanel onTracksAdded={library.addTracks} />
+            )}
+            {activeTab === 'scan' && (
+              <ScanPanel
+                config={scanConfig}
+                onConfigChange={setScanConfig}
+                onTracksFound={library.addTracks}
+              />
             )}
           </div>
         </div>

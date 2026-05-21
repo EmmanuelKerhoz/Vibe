@@ -8,6 +8,11 @@ interface WarpFieldProps {
 export function WarpField({ isPlaying }: WarpFieldProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<boolean>(false);
+  const isPlayingRef = useRef<boolean>(isPlaying);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   useEffect(() => {
     const container = mountRef.current;
@@ -136,7 +141,7 @@ export function WarpField({ isPlaying }: WarpFieldProps) {
 
     const animate = () => {
       refs.rafId = requestAnimationFrame(animate);
-      const playing = sceneRef.current ? isPlaying : false;
+      const playing = sceneRef.current ? isPlayingRef.current : false;
       const targetSpeed = playing ? 8 : 0.3;
       refs.currentSpeed = THREE.MathUtils.lerp(refs.currentSpeed, targetSpeed, 0.03);
       const posAttr = starGeometry.attributes['position'];
@@ -175,7 +180,7 @@ export function WarpField({ isPlaying }: WarpFieldProps) {
       renderer.dispose();
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
     };
-  }, [isPlaying]);
+  }, []);
 
   return <div ref={mountRef} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />;
 }

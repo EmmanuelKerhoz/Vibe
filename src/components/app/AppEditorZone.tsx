@@ -15,7 +15,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { InsightsBar } from './InsightsBar';
 import { MusicalInsightsBar } from './MusicalInsightsBar';
 import { LyricsView } from './LyricsView';
-import { PlayerPage } from './PlayerPage';
+import { VoxNovaPlayer } from '../../features/player';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { useInsightsBarStateContext } from '../../contexts/InsightsBarContext';
 import { useTranslation } from '../../i18n';
@@ -79,7 +79,7 @@ export function AppEditorZone({
         }}
       >
         <ErrorBoundary label="Player">
-          <PlayerPage />
+          <VoxNovaPlayer />
         </ErrorBoundary>
       </div>
     );
