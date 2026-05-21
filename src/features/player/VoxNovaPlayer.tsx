@@ -50,10 +50,8 @@ function filterFiles(
   pattern: string,
 ): File[] {
   return files.filter(f => {
-    // Protocol filter
     if (protocol === 'wav' && !f.name.toLowerCase().endsWith('.wav')) return false;
     if (protocol === 'mp3' && !f.name.toLowerCase().endsWith('.mp3')) return false;
-    // Pattern match (case-insensitive substring)
     const p = pattern.trim().toLowerCase();
     if (p && !f.name.toLowerCase().includes(p)) return false;
     return true;
@@ -68,7 +66,6 @@ export function VoxNovaPlayer() {
   const [view, setView] = useState<LibraryView>('cloud');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // ── Scan filter state ─────────────────────────────────────────────────────
   const [scanProtocol, setScanProtocol] = useState<ScanConfig['accept']>('all');
   const [scanPattern, setScanPattern] = useState('');
 
@@ -81,7 +78,6 @@ export function VoxNovaPlayer() {
   const selectedTrack = library.tracks.find(t => t.id === selectedId);
   const visibleTracks = library.tracks.filter(t => t.source === view);
 
-  // ── Track handlers ─────────────────────────────────────────────────────────
   const handleSelect = (track: TrackEntry) => {
     setSelectedId(track.id);
     engine.loadTrack(track);
@@ -106,7 +102,6 @@ export function VoxNovaPlayer() {
     if (next) handleSelect(next);
   };
 
-  // ── File uplink ────────────────────────────────────────────────────────────
   const handleUplinkFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = filterFiles(
       Array.from(e.target.files ?? []).filter(f => f.type.startsWith('audio/')),
@@ -127,7 +122,6 @@ export function VoxNovaPlayer() {
     if (uploadInputRef.current) uploadInputRef.current.value = '';
   };
 
-  // ── Folder scan ────────────────────────────────────────────────────────────
   const handleScanFolder = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = filterFiles(
       Array.from(e.target.files ?? []).filter(f => f.type.startsWith('audio/')),
@@ -155,7 +149,6 @@ export function VoxNovaPlayer() {
     if (folderInputRef.current) folderInputRef.current.value = '';
   };
 
-  // ── PURGE ──────────────────────────────────────────────────────────────────
   const handlePurge = () => {
     if (typeof window !== 'undefined' && !window.confirm('Purge all tracks from local cache?')) return;
     library.purgeAll();
@@ -163,7 +156,6 @@ export function VoxNovaPlayer() {
     engine.pause();
   };
 
-  // ── Derived UI values ──────────────────────────────────────────────────────
   const structuralIntegrity = Math.min(1, library.tracks.length / LIBRARY_CAPACITY);
   const neuralBuffer = engine.duration > 0 ? Math.min(1, engine.currentTime / engine.duration) : 0;
 
@@ -292,7 +284,17 @@ export function VoxNovaPlayer() {
           ))}
         </div>
 
-        {/* ── SCAN SECTOR panel with AUDIO PROTOCOL + PATTERN MATCH ── */}
+        {/* ── UPLINK — standalone, above SCAN SECTOR ── */}
+        <SidebarButton
+          label="UPLINK"
+          color={LCARS.peach}
+          textColor="#0a0a10"
+          onClick={() => uploadInputRef.current?.click()}
+          icon={<UploadIcon />}
+          outlined
+        />
+
+        {/* ── SCAN SECTOR panel: AUDIO PROTOCOL + PATTERN MATCH ── */}
         <div
           style={{
             border: `1px solid ${LCARS.orange}55`,
@@ -340,16 +342,6 @@ export function VoxNovaPlayer() {
                   {p.label}
                 </button>
               ))}
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <SidebarButton
-                label="UPLINK"
-                color={LCARS.peach}
-                textColor="#0a0a10"
-                onClick={() => uploadInputRef.current?.click()}
-                icon={<UploadIcon />}
-                outlined
-              />
             </div>
           </div>
 
@@ -416,7 +408,7 @@ export function VoxNovaPlayer() {
           </div>
         </div>
 
-        {/* Hidden inputs — accept driven by scanProtocol */}
+        {/* Hidden inputs */}
         <input
           ref={uploadInputRef}
           type="file"
