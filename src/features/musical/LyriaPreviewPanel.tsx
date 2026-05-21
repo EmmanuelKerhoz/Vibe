@@ -9,6 +9,9 @@
  *  - onPromptReady fires ONLY at Generate time (explicit user action).
  *  - Lyria prompt structure mirrors MUSICAL PROMPT: "Style: …, Mood: …, BPM: …, Instrumentation: …, Vocals: …"
  *  - Global tags (MELODIC, Wide stereo field, Global Crossover, Commercial release) always appended, dismissible.
+ *
+ * Fix v1.31.0.9: truncate instrumentation to 60 chars (same as rhythm/narrative).
+ *                Add minWidth:0 on badge flex containers to prevent overflow.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -45,6 +48,11 @@ import { useLanguage } from '../../i18n';
 /** Global production tags appended to every Lyria prompt — removable by user. */
 const GLOBAL_TAGS = ['MELODIC', 'Wide stereo field', 'Global Crossover', 'Commercial release'] as const;
 type GlobalTag = typeof GLOBAL_TAGS[number];
+
+/** Truncate a string to maxLen chars, appending ellipsis if needed. */
+function truncate(value: string, maxLen = 60): string {
+  return value.length > maxLen ? value.slice(0, maxLen) + '\u2026' : value;
+}
 
 /**
  * Serializes a LyriaStyleDescriptor to a structured, labeled style string
@@ -154,7 +162,6 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   const [kpi, setKpi]                       = useState(getLyriaKPISnapshot());
   const [excludedFields, setExcluded]       = useState<Set<LyriaPromptField>>(() => new Set());
   const [excludedGlobal, setExcludedGlobal] = useState<Set<GlobalTag>>(() => new Set());
-  // Constant vocal style — no state needed, value never changes at runtime
   const vocalStyle = 'female lead, West African, smooth';
   const [negativePrompt, setNegative]       = useState('');
 
@@ -168,8 +175,6 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   );
 
   useEffect(() => () => {
-    // Abort any in-flight request before marking component as unmounted,
-    // so the AbortError guard fires before the mountedRef guard.
     abortRef.current?.abort();
     mountedRef.current = false;
   }, []);
@@ -259,27 +264,23 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [handleGenerate]);
 
-  // Truncation helper — keeps Badge text readable, prevents layout overflow
-  const truncate = (value: string, maxLen = 60) =>
-    value.length > maxLen ? value.slice(0, maxLen) + '\u2026' : value;
-
   const renderParamBadge = (field: LyriaPromptField, label: string, value: string) => {
     if (!included(field)) return null;
     return (
       <span
         key={field}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 2, minWidth: 0, overflow: 'hidden' }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 2, minWidth: 0, maxWidth: '100%' }}
       >
         <Badge
           appearance="tint"
           size="small"
           role="status"
           aria-label={`${label}: ${value}`}
-          style={{ maxWidth: '100%', overflow: 'hidden' }}
+          style={{ minWidth: 0, overflow: 'hidden' }}
         >
           <Text size={100} style={{ color: tokens.colorNeutralForeground3, marginRight: 2, flexShrink: 0 }}>{label}:</Text>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
-            {truncate(value)}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+            {value}
           </span>
         </Badge>
         <button
@@ -307,7 +308,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
   const renderGlobalTag = (tag: GlobalTag) => (
     <span
       key={tag}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 2, minWidth: 0 }}
     >
       <Badge
         appearance="outline"
@@ -329,6 +330,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
           padding: '0 2px',
           display: 'inline-flex',
           alignItems: 'center',
+          flexShrink: 0,
           color: tokens.colorNeutralForeground3,
           borderRadius: tokens.borderRadiusSmall,
         }}
@@ -376,17 +378,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
       <Divider />
 
       {/* ── Params (live — mirrors SongContext) ── */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: tokens.spacingVerticalXS,
-        padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-        background: tokens.colorNeutralBackground3,
-        borderRadius: tokens.borderRadiusMedium,
-        border: `1px solid ${tokens.colorNeutralStroke2}`,
-        minWidth: 0,
-        overflow: 'hidden',
-      }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS, padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`, background: tokens.colorNeutralBackground3, borderRadius: tokens.borderRadiusMedium, border: `1px solid ${tokens.colorNeutralStroke2}`, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalXS, marginBottom: tokens.spacingVerticalXXS }}>
           <LockClosed20Regular style={{ fontSize: 13, color: tokens.colorNeutralForeground3, flexShrink: 0 }} />
           <Text size={100} style={{ color: tokens.colorNeutralForeground3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -394,34 +386,19 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
           </Text>
         </div>
 
-        {/* Structured param badges — Label: value */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: tokens.spacingHorizontalXS,
-          alignItems: 'center',
-          minWidth: 0,
-          overflow: 'hidden',
-        }}>
+        {/* Structured param badges — Label: value (truncated to 60 chars) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalXS, alignItems: 'center', minWidth: 0 }}>
           {activeGenre           && renderParamBadge('genre',           'Style',           activeGenre)}
           {activeMood            && renderParamBadge('mood',            'Mood',            activeMood)}
           {activeTempo > 0       && renderParamBadge('tempo',           'BPM',             String(activeTempo))}
-          {activeInstrumentation && renderParamBadge('instrumentation', 'Instrumentation', activeInstrumentation)}
-          {activeRhythm          && renderParamBadge('rhythm',          'Rhythm',          activeRhythm)}
-          {activeNarrative       && renderParamBadge('narrative',       'Narrative',       activeNarrative)}
+          {activeInstrumentation && renderParamBadge('instrumentation', 'Instrumentation', truncate(activeInstrumentation))}
+          {activeRhythm          && renderParamBadge('rhythm',          'Rhythm',          truncate(activeRhythm))}
+          {activeNarrative       && renderParamBadge('narrative',       'Narrative',       truncate(activeNarrative))}
         </div>
 
         {/* Global production tags — always appended, individually dismissible */}
         {activeGlobalTags.length > 0 && (
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: tokens.spacingHorizontalXS,
-            alignItems: 'center',
-            marginTop: tokens.spacingVerticalXXS,
-            paddingTop: tokens.spacingVerticalXXS,
-            borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
-          }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalXS, alignItems: 'center', minWidth: 0, marginTop: tokens.spacingVerticalXXS, paddingTop: tokens.spacingVerticalXXS, borderTop: `1px solid ${tokens.colorNeutralStroke2}` }}>
             {activeGlobalTags.map(renderGlobalTag)}
           </div>
         )}

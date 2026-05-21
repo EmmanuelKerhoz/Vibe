@@ -96,26 +96,19 @@ export const useMusicalPrompt = ({
   }, []);
 
   const generateMusicalPrompt = async () => {
-    // Allow generation if there is any usable context: title, topic, lyrics,
-    // or at least one musical param (genre / instrumentation / rhythm / narrative).
-    // The previous guard (`!title && !topic`) was too strict and silently blocked
-    // generation when the user had only filled the musical params panel.
+    // Require at least one meaningful signal: title, topic, lyrics, mood, genre, or instrumentation.
+    // Previously the guard was `if (!title && !topic) return` which silently blocked generation
+    // when the user had only selected genre/instrumentation without filling the text fields.
     const hasLyrics = song.some(s => s.lines.some(l => l.text.trim() !== ''));
-    const hasMusicalParams = !!(genre || instrumentation || rhythm || narrative);
-    const hasContext = !!(title || topic || mood || hasLyrics || hasMusicalParams);
+    const hasContext = !!(title || topic || hasLyrics || mood || genre || instrumentation);
     if (!hasContext) return;
 
     setIsGeneratingMusicalPrompt(true);
     // Capture our own signal so we can later check whether *this* invocation
-    // is still the latest one in the ref. This replaces the previous mutable
-    // `wasAborted` boolean (an ad-hoc, untyped status flag whose semantics
-    // were ambiguous between "superseded by newer run" and "aborted on
-    // unmount") with a single, well-typed equality check on the controller.
+    // is still the latest one in the ref.
     let mySignal: AbortSignal | null = null;
 
-    // Sanitise every user-controlled field before interpolation. Wrap each
-    // one in an explicit `<<<FIELD>>>` fence so the model can be instructed
-    // to treat the contents strictly as data — never as instructions.
+    // Sanitise every user-controlled field before interpolation.
     const safeTitle           = sanitizeForPrompt(title);
     const safeTopic           = sanitizeForPrompt(topic);
     const safeMood            = sanitizeForPrompt(mood);
@@ -190,12 +183,8 @@ Keep the response in English (required by music AI tools) and avoid markdown or 
       if (isAbortError(error)) return;
       handleApiError(error, 'Error generating musical prompt.');
     } finally {
-      // Always release the spinner — *unless* a newer invocation has already
-      // taken ownership of `promptAbortRef`. This fixes the race where an
-      // aborted run would leave `isGeneratingMusicalPrompt` stuck at `true`.
       if (!mySignal || promptAbortRef.current?.signal === mySignal) {
         setIsGeneratingMusicalPrompt(false);
-        // Also clear the ref so we don't hold on to a finished controller.
         if (mySignal && promptAbortRef.current?.signal === mySignal) {
           promptAbortRef.current = null;
         }
