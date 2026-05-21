@@ -6,13 +6,12 @@ import { useAudioEngine } from './useAudioEngine';
 import { useFrequencyAnalyser } from './useFrequencyAnalyser';
 import { useLibrary } from './useLibrary';
 import { LCARS } from './lcarsTheme';
-import type { TrackEntry } from './types';
+import type { TrackEntry, ScanConfig } from './types';
 
 type LibraryView = 'cloud' | 'local';
 
-const LIBRARY_CAPACITY = 50; // arbitrary "structural integrity" denominator
+const LIBRARY_CAPACITY = 50;
 
-/** Random 8-char hex registry id, stable per session. */
 function genRegistry(): string {
   const buf = new Uint8Array(4);
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
@@ -23,19 +22,42 @@ function genRegistry(): string {
   return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
-/** Sector time in the form NNNN.D (deciseconds since mount). */
 function useSectorTime(): string {
   const [t, setT] = useState(0);
   useEffect(() => {
     const start = performance.now();
     const id = window.setInterval(() => {
-      setT((performance.now() - start) / 100); // deciseconds
+      setT((performance.now() - start) / 100);
     }, 100);
     return () => window.clearInterval(id);
   }, []);
   const whole = Math.floor(t / 10).toString().padStart(4, '0');
   const dec = Math.floor(t % 10);
   return `${whole}.${dec}`;
+}
+
+/** Map ScanConfig.accept → native <input accept> string */
+function buildAccept(protocol: ScanConfig['accept']): string {
+  if (protocol === 'wav') return '.wav,audio/wav,audio/x-wav';
+  if (protocol === 'mp3') return '.mp3,audio/mpeg';
+  return '.wav,.mp3,.ogg,.flac,.aac,audio/*';
+}
+
+/** Filter a File list by protocol + pattern */
+function filterFiles(
+  files: File[],
+  protocol: ScanConfig['accept'],
+  pattern: string,
+): File[] {
+  return files.filter(f => {
+    // Protocol filter
+    if (protocol === 'wav' && !f.name.toLowerCase().endsWith('.wav')) return false;
+    if (protocol === 'mp3' && !f.name.toLowerCase().endsWith('.mp3')) return false;
+    // Pattern match (case-insensitive substring)
+    const p = pattern.trim().toLowerCase();
+    if (p && !f.name.toLowerCase().includes(p)) return false;
+    return true;
+  });
 }
 
 export function VoxNovaPlayer() {
@@ -45,6 +67,10 @@ export function VoxNovaPlayer() {
 
   const [view, setView] = useState<LibraryView>('cloud');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // ── Scan filter state ─────────────────────────────────────────────────────
+  const [scanProtocol, setScanProtocol] = useState<ScanConfig['accept']>('all');
+  const [scanPattern, setScanPattern] = useState('');
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +91,6 @@ export function VoxNovaPlayer() {
   const handlePrev = () => {
     if (!visibleTracks.length) return;
     const idx = visibleTracks.findIndex(t => t.id === selectedId);
-    // No selection → start at the first track; otherwise wrap to the end.
     const prev = idx < 0
       ? visibleTracks[0]
       : visibleTracks[idx === 0 ? visibleTracks.length - 1 : idx - 1];
@@ -75,16 +100,19 @@ export function VoxNovaPlayer() {
   const handleNext = () => {
     if (!visibleTracks.length) return;
     const idx = visibleTracks.findIndex(t => t.id === selectedId);
-    // No selection → start at the first track; otherwise wrap to the start.
     const next = idx < 0
       ? visibleTracks[0]
       : visibleTracks[idx >= visibleTracks.length - 1 ? 0 : idx + 1];
     if (next) handleSelect(next);
   };
 
-  // ── File uplink (UPLINK button) ────────────────────────────────────────────
+  // ── File uplink ────────────────────────────────────────────────────────────
   const handleUplinkFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []).filter(f => f.type.startsWith('audio/'));
+    const files = filterFiles(
+      Array.from(e.target.files ?? []).filter(f => f.type.startsWith('audio/')),
+      scanProtocol,
+      scanPattern,
+    );
     const added: Omit<TrackEntry, 'id'>[] = files.map(f => ({
       title: f.name.replace(/\.[^/.]+$/, ''),
       source: 'local',
@@ -99,14 +127,18 @@ export function VoxNovaPlayer() {
     if (uploadInputRef.current) uploadInputRef.current.value = '';
   };
 
-  // ── Folder scan (SCAN SECTOR button) ───────────────────────────────────────
+  // ── Folder scan ────────────────────────────────────────────────────────────
   const handleScanFolder = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []).filter(f => f.type.startsWith('audio/'));
+    const files = filterFiles(
+      Array.from(e.target.files ?? []).filter(f => f.type.startsWith('audio/')),
+      scanProtocol,
+      scanPattern,
+    );
     const added: Omit<TrackEntry, 'id'>[] = files.map(f => ({
       title: f.name.replace(/\.[^/.]+$/, ''),
       source: 'local',
       url: URL.createObjectURL(f),
-      memo: `[LCARS_SCAN] Identified: ${f.name} | Integrity: Nominal`,
+      memo: `[LCARS_SCAN] Identified: ${f.name} | Protocol: ${scanProtocol.toUpperCase()} | Integrity: Nominal`,
       linked: true,
     }));
     if (added.length) {
@@ -134,6 +166,12 @@ export function VoxNovaPlayer() {
       : '[LCARS_SCAN] Standby — awaiting signal selection.');
 
   const title = selectedTrack?.title ?? 'Subspace Channel Idle';
+
+  const PROTOCOLS: Array<{ label: string; value: ScanConfig['accept'] }> = [
+    { label: 'WAV', value: 'wav' },
+    { label: 'MP3', value: 'mp3' },
+    { label: 'ALL', value: 'all' },
+  ];
 
   return (
     <div
@@ -163,7 +201,7 @@ export function VoxNovaPlayer() {
           gap: 6,
         }}
       >
-        {/* VOX / NV-42 CORE block (top with rounded bottom-left elbow) */}
+        {/* VOX / NV-42 CORE block */}
         <div
           style={{
             background: LCARS.peach,
@@ -203,7 +241,7 @@ export function VoxNovaPlayer() {
           onClick={handlePurge}
         />
 
-        {/* Track list (compact, LCARS styling) */}
+        {/* Track list */}
         <div
           style={{
             flex: 1,
@@ -247,50 +285,136 @@ export function VoxNovaPlayer() {
           ))}
         </div>
 
-        {/* Bottom action stack: UPLINK + SCAN SECTOR */}
-        <SidebarButton
-          label="UPLINK"
-          color={LCARS.peach}
-          textColor="#0a0a10"
-          onClick={() => uploadInputRef.current?.click()}
-          icon={<UploadIcon />}
-          outlined
-        />
+        {/* ── SCAN SECTOR panel with AUDIO PROTOCOL + PATTERN MATCH ── */}
         <div
           style={{
-            background: LCARS.orange,
-            color: '#000',
-            padding: '14px 14px 24px 14px',
-            borderTopLeftRadius: 4,
-            borderTopRightRadius: 4,
-            borderBottomLeftRadius: 64,
-            borderBottomRightRadius: 4,
-            cursor: 'pointer',
+            border: `1px solid ${LCARS.orange}55`,
+            borderRadius: 4,
+            padding: '10px 10px 8px 10px',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            flexDirection: 'column',
             gap: 8,
           }}
-          role="button"
-          tabIndex={0}
-          onClick={() => folderInputRef.current?.click()}
-          onKeyDown={e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              folderInputRef.current?.click();
-            }
-          }}
         >
-          <DatabaseIcon />
-          <span style={{ fontSize: 11, letterSpacing: 2, fontWeight: 600 }}>SCAN SECTOR</span>
+          {/* AUDIO PROTOCOL selector */}
+          <div>
+            <div
+              style={{
+                color: LCARS.orange,
+                fontSize: 9,
+                letterSpacing: 3,
+                marginBottom: 6,
+              }}
+            >
+              AUDIO PROTOCOL
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {PROTOCOLS.map(p => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setScanProtocol(p.value)}
+                  style={{
+                    flex: 1,
+                    padding: '5px 4px',
+                    background: scanProtocol === p.value ? LCARS.orange : 'transparent',
+                    color: scanProtocol === p.value ? '#000' : LCARS.orange,
+                    border: `1px solid ${LCARS.orange}`,
+                    borderRadius: 3,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: 1,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    transition: 'background 120ms, color 120ms',
+                  }}
+                  aria-pressed={scanProtocol === p.value}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* PATTERN MATCH input */}
+          <div>
+            <div
+              style={{
+                color: LCARS.orange,
+                fontSize: 9,
+                letterSpacing: 3,
+                marginBottom: 6,
+              }}
+            >
+              PATTERN MATCH
+            </div>
+            <input
+              type="text"
+              value={scanPattern}
+              onChange={e => setScanPattern(e.target.value)}
+              placeholder=""
+              aria-label="Pattern match filter"
+              style={{
+                width: '100%',
+                background: 'rgba(0,0,0,0.6)',
+                border: `1px solid ${LCARS.orange}55`,
+                borderRadius: 3,
+                color: LCARS.text,
+                fontFamily: 'monospace',
+                fontSize: 12,
+                padding: '5px 8px',
+                letterSpacing: 1,
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {/* UPLINK + SCAN SECTOR action buttons */}
+          <SidebarButton
+            label="UPLINK"
+            color={LCARS.peach}
+            textColor="#0a0a10"
+            onClick={() => uploadInputRef.current?.click()}
+            icon={<UploadIcon />}
+            outlined
+          />
+          <div
+            style={{
+              background: LCARS.orange,
+              color: '#000',
+              padding: '14px 14px 24px 14px',
+              borderTopLeftRadius: 4,
+              borderTopRightRadius: 4,
+              borderBottomLeftRadius: 64,
+              borderBottomRightRadius: 4,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+            }}
+            role="button"
+            tabIndex={0}
+            onClick={() => folderInputRef.current?.click()}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                folderInputRef.current?.click();
+              }
+            }}
+          >
+            <DatabaseIcon />
+            <span style={{ fontSize: 11, letterSpacing: 2, fontWeight: 600 }}>SCAN SECTOR</span>
+          </div>
         </div>
 
-        {/* Hidden inputs */}
+        {/* Hidden inputs — accept driven by scanProtocol */}
         <input
           ref={uploadInputRef}
           type="file"
           multiple
-          accept=".wav,.mp3,.ogg,.flac,.aac,audio/*"
+          accept={buildAccept(scanProtocol)}
           style={{ display: 'none' }}
           onChange={handleUplinkFiles}
           aria-hidden="true"
@@ -299,7 +423,7 @@ export function VoxNovaPlayer() {
           ref={folderInputRef}
           type="file"
           multiple
-          accept=".wav,.mp3,.ogg,.flac,.aac,audio/*"
+          accept={buildAccept(scanProtocol)}
           // @ts-expect-error — webkitdirectory is non-standard but widely supported
           webkitdirectory=""
           style={{ display: 'none' }}
@@ -321,7 +445,7 @@ export function VoxNovaPlayer() {
           gap: 12,
         }}
       >
-        {/* Header bar: purple elbow + tan registry strip + status */}
+        {/* Header bar */}
         <div style={{ display: 'flex', alignItems: 'stretch', gap: 4 }}>
           <div
             style={{
@@ -413,7 +537,6 @@ export function VoxNovaPlayer() {
             padding: '12px 24px 16px 24px',
           }}
         >
-          {/* Center title block */}
           <div
             style={{
               display: 'flex',
@@ -450,7 +573,6 @@ export function VoxNovaPlayer() {
             <div style={{ width: 120, height: 3, background: LCARS.peach, borderRadius: 2 }} aria-hidden="true" />
           </div>
 
-          {/* Local memo log */}
           <div
             style={{
               alignSelf: 'center',
@@ -462,14 +584,7 @@ export function VoxNovaPlayer() {
               background: 'rgba(0,0,0,0.4)',
             }}
           >
-            <div
-              style={{
-                color: LCARS.peach,
-                fontSize: 10,
-                letterSpacing: 3,
-                marginBottom: 6,
-              }}
-            >
+            <div style={{ color: LCARS.peach, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>
               LOCAL MEMO LOG
             </div>
             <div
@@ -485,7 +600,6 @@ export function VoxNovaPlayer() {
             </div>
           </div>
 
-          {/* Transport controls + seek */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 18 }}>
             <PlayerControls
               engine={engine}
@@ -501,7 +615,6 @@ export function VoxNovaPlayer() {
             />
           </div>
 
-          {/* Visualizer */}
           <div style={{ marginTop: 12 }}>
             <FrequencyVisualizer
               isPlaying={engine.isPlaying}
@@ -562,7 +675,7 @@ function SidebarButton({ label, color, textColor, onClick, icon, active, outline
 
 interface StatusBarProps {
   label: string;
-  value: number; // 0..1
+  value: number;
   color: string;
 }
 
@@ -665,8 +778,6 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
     </div>
   );
 }
-
-// ───────────────────────── Inline SVG icons ─────────────────────────
 
 function GlobeIcon() {
   return (
