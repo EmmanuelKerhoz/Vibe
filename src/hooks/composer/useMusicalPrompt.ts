@@ -96,13 +96,13 @@ export const useMusicalPrompt = ({
   }, []);
 
   const generateMusicalPrompt = async () => {
-    // Allow generation when any musical context is available:
-    // title, topic, lyrics, genre, instrumentation, or mood.
-    // The previous guard `if (!title && !topic) return` was too strict —
-    // it silently blocked generation for users who set genre/instrumentation
-    // without filling title or topic first.
+    // Allow generation if there is any usable context: title, topic, lyrics,
+    // or at least one musical param (genre / instrumentation / rhythm / narrative).
+    // The previous guard (`!title && !topic`) was too strict and silently blocked
+    // generation when the user had only filled the musical params panel.
     const hasLyrics = song.some(s => s.lines.some(l => l.text.trim() !== ''));
-    const hasContext = !!(title || topic || mood || genre || instrumentation || hasLyrics);
+    const hasMusicalParams = !!(genre || instrumentation || rhythm || narrative);
+    const hasContext = !!(title || topic || mood || hasLyrics || hasMusicalParams);
     if (!hasContext) return;
 
     setIsGeneratingMusicalPrompt(true);
