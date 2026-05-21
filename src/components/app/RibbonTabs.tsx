@@ -1,5 +1,5 @@
 /**
- * RibbonTabs — lyrics / musical tab strip for TopRibbon.
+ * RibbonTabs — lyrics / musical / player tab strip for TopRibbon.
  * Reads activeTab + setActiveTab from useAppNavigationContext directly.
  */
 import React from 'react';
@@ -41,6 +41,21 @@ export function RibbonTabs() {
           {t.ribbon.musical}
           {activeTab === 'musical' && (
             <motion.div layoutId="activeMusicalTab" className="absolute bottom-[6px] left-0 right-0 h-0.5 bg-[var(--lcars-amber)]" />
+          )}
+        </button>
+      </Tooltip>
+      <Tooltip title={t.tooltips.playerTab ?? 'Player'}>
+        <button
+          onClick={() => setActiveTab('player')}
+          className={`text-[10px] uppercase tracking-widest transition-all duration-200 relative py-5 font-semibold ${
+            activeTab === 'player'
+              ? 'text-[var(--lcars-blue,#7eb3d8)]'
+              : 'text-zinc-600 dark:text-zinc-500 hover:text-[var(--lcars-blue,#7eb3d8)]'
+          }`}
+        >
+          {t.ribbon.player ?? 'PLAYER'}
+          {activeTab === 'player' && (
+            <motion.div layoutId="activePlayerTab" className="absolute bottom-[6px] left-0 right-0 h-0.5 bg-[var(--lcars-blue,#7eb3d8)]" />
           )}
         </button>
       </Tooltip>

@@ -90,6 +90,8 @@ export interface Translations {
     send_to_lyria?: string;
     /** Label for the "Copy Lyrics" button in the ribbon */
     copy_lyrics?: string;
+    /** Label for the Player tab */
+    player?: string;
   };
 
   mobileNav: {
@@ -594,6 +596,8 @@ export interface Translations {
     showSidebar: string;
     lyricsTab: string;
     musicalTab: string;
+    /** Tooltip shown on the Player tab */
+    playerTab?: string;
     import: string;
     export: string;
     versions: string;
