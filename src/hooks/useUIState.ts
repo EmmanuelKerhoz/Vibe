@@ -20,8 +20,10 @@ const shouldShowSplash = (): boolean => {
   }
 };
 
+export type AppTab = 'lyrics' | 'musical' | 'player';
+
 export interface NavInitial {
-  activeTab?: 'lyrics' | 'musical';
+  activeTab?: AppTab;
   isStructureOpen?: boolean;
   isLeftPanelOpen?: boolean;
 }
@@ -46,7 +48,7 @@ export function useUIState(initial?: NavInitial) {
   const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
 
   // ── Navigation ───────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<'lyrics' | 'musical'>(initial?.activeTab ?? 'lyrics');
+  const [activeTab, setActiveTab] = useState<AppTab>(initial?.activeTab ?? 'lyrics');
   const [isStructureOpen, setIsStructureOpen] = useState(initial?.isStructureOpen ?? false);
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(initial?.isLeftPanelOpen ?? true);
 
