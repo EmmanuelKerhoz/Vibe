@@ -123,7 +123,13 @@ export const LyriaFullSongPanel: React.FC<LyriaFullSongPanelProps> = ({
           </Text>
         }
         description={
-          <Badge appearance="tint" color="warning" size="small">
+          <Badge
+            appearance="tint"
+            color="warning"
+            size="small"
+            role="img"
+            aria-label="Durée estimée : 3 minutes, traitement asynchrone"
+          >
             ~3 minutes · async
           </Badge>
         }
@@ -204,7 +210,13 @@ export const LyriaFullSongPanel: React.FC<LyriaFullSongPanelProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS }}>
             <CheckmarkCircle20Filled style={{ color: tokens.colorStatusSuccessForeground1 }} />
             <Text weight="semibold" size={300}>{doneClip.title}</Text>
-            <Badge appearance="tint" color="informative" size="small">
+            <Badge
+              appearance="tint"
+              color="informative"
+              size="small"
+              role="img"
+              aria-label="Filigrane SynthID appliqué"
+            >
               🛡️ SynthID
             </Badge>
           </div>

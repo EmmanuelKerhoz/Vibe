@@ -1,7 +1,7 @@
 /**
  * LyriaPreviewPanel — Lyria 3 Clip preview (30s)
  *
- * Sync contract (v1.31.0.7):
+ * Sync contract (v1.31.0.8):
  *  - Props are LIVE (not initial*): genre, mood, tempo, instrumentation, rhythm, narrative.
  *    Any change in MusicalParamsPanel is immediately reflected here.
  *  - Removing a badge calls onParamRemoved(field) → parent clears SongContext → params panel deselects.
@@ -301,7 +301,13 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
       key={tag}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}
     >
-      <Badge appearance="outline" size="small" color="informative">
+      <Badge
+        appearance="outline"
+        size="small"
+        color="informative"
+        role="img"
+        aria-label={`Global tag: ${tag}`}
+      >
         {tag}
       </Badge>
       <button
@@ -343,8 +349,8 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
         header={<Text weight="semibold" size={400}>Lyria 3 — Preview 30''</Text>}
         description={
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalXS }}>
-            <Badge appearance="tint" color="success" size="small">Google DeepMind</Badge>
-            <Badge appearance="tint" color="warning" size="small">AI/A7</Badge>
+            <Badge appearance="tint" color="success" size="small" role="img" aria-label="Moteur: Google DeepMind">Google DeepMind</Badge>
+            <Badge appearance="tint" color="warning" size="small" role="img" aria-label="Niveau IA: A7">AI/A7</Badge>
             <Tooltip content={L?.shortcutTooltip ?? 'Alt+A to generate quickly'} relationship="label">
               <Badge appearance="ghost" size="small" style={{ cursor: 'default', display: 'flex', alignItems: 'center', gap: 3, color: tokens.colorNeutralForeground3 }}>
                 <Keyboard20Regular style={{ fontSize: 11 }} /> Alt+A
@@ -388,7 +394,14 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
         )}
 
         {activeMusicalPrompt && (
-          <Badge appearance="tint" color="success" size="small" style={{ alignSelf: 'flex-start', marginTop: tokens.spacingVerticalXXS }}>
+          <Badge
+            appearance="tint"
+            color="success"
+            size="small"
+            role="img"
+            aria-label="Full AI musical prompt active"
+            style={{ alignSelf: 'flex-start', marginTop: tokens.spacingVerticalXXS }}
+          >
             ✨ Full prompt active
           </Badge>
         )}
@@ -465,7 +478,13 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
               <Text weight="semibold">{doneClip.title}</Text>
             </div>
             {doneClip.synthIdWatermarked && (
-              <Badge appearance="ghost" size="small" style={{ color: tokens.colorNeutralForeground3 }}>
+              <Badge
+                appearance="ghost"
+                size="small"
+                role="img"
+                aria-label="Filigrane SynthID appliqué"
+                style={{ color: tokens.colorNeutralForeground3 }}
+              >
                 SynthID ✓
               </Badge>
             )}
