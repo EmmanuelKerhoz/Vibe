@@ -13,7 +13,7 @@ interface Props {
 export function FrequencyVisualizer({ isPlaying, audioRef }: Props) {
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef     = useRef<Uint8Array | null>(null);
+  const dataRef     = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const ctxRef      = useRef<AudioContext | null>(null);
   const sourceRef   = useRef<MediaElementAudioSourceNode | null>(null);
 
@@ -34,7 +34,7 @@ export function FrequencyVisualizer({ isPlaying, audioRef }: Props) {
           an.fftSize = 512;
           an.smoothingTimeConstant = 0.8;
           analyserRef.current = an;
-          dataRef.current     = new Uint8Array(an.frequencyBinCount);
+          dataRef.current     = new Uint8Array(an.frequencyBinCount) as Uint8Array<ArrayBuffer>;
         }
         if (!sourceRef.current) {
           sourceRef.current = ac.createMediaElementSource(el);
@@ -78,7 +78,7 @@ export function FrequencyVisualizer({ isPlaying, audioRef }: Props) {
       const data     = dataRef.current;
 
       if (analyser && data && isPlaying) {
-        (analyser as AnalyserNode).getByteFrequencyData(data as Uint8Array);
+        (analyser as AnalyserNode).getByteFrequencyData(data as Uint8Array<ArrayBuffer>);
       }
 
       const barCount  = 80;
@@ -89,7 +89,7 @@ export function FrequencyVisualizer({ isPlaying, audioRef }: Props) {
       for (let i = 0; i < barCount; i++) {
         const sampleIdx  = Math.floor((i / barCount) * (data?.length ?? 0) * 0.7);
         const raw        = data ? data[sampleIdx] : 0;
-        const val        = isPlaying ? raw + Math.random() * 15 : 2;
+        const val        = isPlaying ? (raw ?? 0) + Math.random() * 15 : 2;
         const norm       = val / 255;
         const barH       = Math.max(2, norm * maxHeight);
         const x          = i * barWidth;

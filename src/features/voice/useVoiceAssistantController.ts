@@ -17,7 +17,7 @@ interface ControllerDependencies {
 
 interface UseVoiceAssistantControllerParams extends ControllerDependencies {
   enabled: boolean;
-  page: 'lyrics' | 'musical';
+  page: 'lyrics' | 'musical' | 'player';
   mode: EditMode;
 }
 

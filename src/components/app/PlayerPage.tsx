@@ -38,6 +38,8 @@ type AudioProtocol = 'wav' | 'mp3' | 'all';
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
+const FALLBACK_TRACK: TrackEntry = { id: '', title: '', source: 'cloud', url: '' };
+
 const CLOUD_LIBRARY: TrackEntry[] = [
   {
     id: 'c1',
@@ -144,7 +146,7 @@ const WarpField: FC<{ warpSpeed: number }> = ({ warpSpeed }) => {
     const animate = () => {
       animId = requestAnimationFrame(animate);
       time += 0.01;
-      nebulaMat.uniforms.time.value = time;
+      if (nebulaMat.uniforms['time']) nebulaMat.uniforms['time'].value = time;
       stars.rotation.y += 0.0003;
       stars.rotation.x += 0.0001;
       grid.position.z = ((time * warpSpeed * 2) % 10);
@@ -226,11 +228,11 @@ const FrequencyVisualizer: FC<{ analyser: AnalyserNode | null; isPlaying: boolea
         return;
       }
 
-      const data = new Uint8Array(analyser.frequencyBinCount);
+      const data = new Uint8Array(analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>;
       analyser.getByteFrequencyData(data);
       for (let i = 0; i < BAR_COUNT; i++) {
         const idx = Math.floor((i / BAR_COUNT) * data.length);
-        const val = data[idx] / 255;
+        const val = (data[idx] ?? 0) / 255;
         const barH = val * H;
         const hue = (i / BAR_COUNT) * 360;
         const grad = ctx.createLinearGradient(0, H - barH, 0, H);
@@ -281,7 +283,9 @@ export const PlayerPage: FC = () => {
   // ── Library state ───────────────────────────────────────────────────────
   const [libraryView, setLibraryView] = useState<LibraryView>('cloud');
   const [localFiles, setLocalFiles] = useState<TrackEntry[]>(LOCAL_LIBRARY);
-  const [selectedTrack, setSelectedTrack] = useState<TrackEntry>(CLOUD_LIBRARY[0]);
+  const [selectedTrack, setSelectedTrack] = useState<TrackEntry>(
+    CLOUD_LIBRARY[0] ?? FALLBACK_TRACK,
+  );
   const [patternMatch, setPatternMatch] = useState('');
   const [protocol, setProtocol] = useState<AudioProtocol>('all');
   const [scanExpanded, setScanExpanded] = useState(false);
@@ -360,14 +364,14 @@ export const PlayerPage: FC = () => {
 
   const handlePrev = useCallback(() => {
     const idx = library.findIndex(t => t.id === selectedTrack.id);
-    const prev = library[(idx - 1 + library.length) % library.length];
-    loadTrack(prev);
+    const prev = library.at((idx - 1 + library.length) % library.length);
+    if (prev) loadTrack(prev);
   }, [library, selectedTrack, loadTrack]);
 
   const handleNext = useCallback(() => {
     const idx = library.findIndex(t => t.id === selectedTrack.id);
-    const next = library[(idx + 1) % library.length];
-    loadTrack(next);
+    const next = library.at((idx + 1) % library.length);
+    if (next) loadTrack(next);
   }, [library, selectedTrack, loadTrack]);
 
   // ── Local file upload ──────────────────────────────────────────────────
@@ -385,7 +389,10 @@ export const PlayerPage: FC = () => {
       url: URL.createObjectURL(f),
     }));
     setLocalFiles(prev => [...prev, ...newTracks]);
-    if (newTracks.length > 0) { loadTrack(newTracks[0]); setLibraryView('local'); }
+    if (newTracks.length > 0 && newTracks[0]) {
+      loadTrack(newTracks[0]);
+      setLibraryView('local');
+    }
     if (e.target) e.target.value = '';
   }, [loadTrack]);
 
