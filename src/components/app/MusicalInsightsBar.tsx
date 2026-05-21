@@ -13,6 +13,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
 import { useComposerContext } from '../../contexts/ComposerContext';
+import { useAppStateContext } from '../../contexts/AppStateContext';
 import { useSuno } from '../../hooks/useSuno';
 import { copyToClipboard } from '../../utils/clipboard';
 import { computeCompleteness } from '../../utils/musicalPromptCompleteness';
@@ -129,12 +130,18 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
     setInstrumentation,
     setRhythm,
     setNarrative,
+    song,
+    title,
+    topic,
     genre,
     mood,
     instrumentation,
     rhythm,
-    title,
   } = useSongContext();
+
+  // ── App state (API key) ─────────────────────────────────────────────────────
+  const { appState } = useAppStateContext();
+  const hasApiKey = appState.hasApiKey;
 
   // ── Composer ────────────────────────────────────────────────────────────────
   const {
@@ -154,6 +161,27 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
   const hasPrompt = Boolean(musicalPrompt && musicalPrompt.trim().length > 0);
   const { filled, total, pct } = computeCompleteness(musicalPrompt);
   const busy = isGenerating || isGeneratingMusicalPrompt || isSunoGenerating;
+
+  // ── Auto-Suggest gating ─────────────────────────────────────────────────────
+  // Mirror the guard used inside `useMusicalPrompt.generateMusicalPrompt`
+  // (`title || topic || hasLyrics || mood || genre || instrumentation`) so the
+  // button reflects exactly when the action will actually produce a prompt.
+  // Without this, the button could be clicked but silently return early —
+  // leaving the "NO PROMPT" indicator unchanged and confusing the user.
+  const hasLyrics = song.some(s => s.lines.some(l => l.text.trim() !== ''));
+  const hasContext = Boolean(title || topic || hasLyrics || mood || genre || instrumentation);
+  const canAutoSuggest = hasApiKey && hasContext;
+  const autoSuggestDisabled = busy || !canAutoSuggest;
+  const autoSuggestTooltip = !hasApiKey
+    ? (t.tooltips?.aiUnavailable ?? 'AI unavailable — set your API key first')
+    : !hasContext
+      ? 'Add a title, topic, lyrics, mood, genre or instrumentation first'
+      : 'Generate musical prompt from current settings';
+
+  const handleAutoSuggest = useCallback(() => {
+    if (autoSuggestDisabled) return;
+    void generateMusicalPrompt();
+  }, [autoSuggestDisabled, generateMusicalPrompt]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleReset = useCallback(() => {
@@ -246,27 +274,34 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
       {/* ── Prompt actions ────────────────────────────────────────────── */}
       <div className="flex items-center gap-1">
         {/* Auto-Suggest */}
-        <Tooltip title="Generate musical prompt from current settings">
+        <Tooltip title={autoSuggestTooltip}>
           <button
-            onClick={generateMusicalPrompt}
-            disabled={busy}
+            onClick={handleAutoSuggest}
+            disabled={autoSuggestDisabled}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all"
             style={{
-              background: busy
+              background: autoSuggestDisabled
                 ? 'transparent'
                 : 'color-mix(in srgb, var(--accent-color) 10%, transparent)',
-              color: busy ? 'var(--text-secondary)' : 'var(--accent-color)',
+              color: autoSuggestDisabled ? 'var(--text-secondary)' : 'var(--accent-color)',
               border: `1px solid ${
-                busy
+                autoSuggestDisabled
                   ? 'var(--border-color)'
                   : 'color-mix(in srgb, var(--accent-color) 30%, transparent)'
               }`,
-              cursor: busy ? 'not-allowed' : 'pointer',
-              opacity: busy ? 0.5 : 1,
+              cursor: autoSuggestDisabled ? 'not-allowed' : 'pointer',
+              opacity: autoSuggestDisabled ? 0.5 : 1,
             }}
             aria-label={t.tooltips?.generateMusical ?? 'Generate musical prompt'}
           >
-            <SparkleRegular style={{ width: 13, height: 13 }} />
+            {isGeneratingMusicalPrompt ? (
+              <span
+                className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin"
+                aria-hidden
+              />
+            ) : (
+              <SparkleRegular style={{ width: 13, height: 13 }} />
+            )}
             <span className="hidden sm:inline">Auto-Suggest</span>
           </button>
         </Tooltip>

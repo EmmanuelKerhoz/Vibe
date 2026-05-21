@@ -5,7 +5,12 @@
  *  - Props are LIVE (not initial*): genre, mood, tempo, instrumentation, rhythm, narrative.
  *    Any change in MusicalParamsPanel is immediately reflected here.
  *  - Removing a badge calls onParamRemoved(field) → parent clears SongContext → params panel deselects.
- *  - musicalPrompt (AI) is read-only; displayed as "Full prompt active" badge.
+ *  - musicalPrompt (AI) is read-only; displayed as "Full prompt active" badge
+ *    AND used verbatim as the Lyria `style` when present, so the prompt sent
+ *    to Lyria is always in sync with the Musical Prompt shown in the builder
+ *    (and reflected by the PROMPT READY / NO PROMPT indicator).
+ *  - When no musicalPrompt is set, the Lyria style falls back to the
+ *    structured badge-derived `styleString`.
  *  - onPromptReady fires ONLY at Generate time (explicit user action).
  *  - Lyria prompt structure mirrors MUSICAL PROMPT: "Style: …, Mood: …, BPM: …, Instrumentation: …, Vocals: …"
  *  - Global tags (MELODIC, Wide stereo field, Global Crossover, Commercial release) always appended, dismissible.
@@ -223,16 +228,32 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
     );
   }, [included, activeGenre, activeMood, activeTempo, activeInstrumentation, activeRhythm, activeNarrative, vocalStyle, activeGlobalTags]);
 
+  /**
+   * Effective style sent to Lyria.
+   *
+   * Sync contract: when an AI-generated `musicalPrompt` is present we use it
+   * verbatim so the prompt sent to Lyria is the SAME as the one displayed in
+   * the Musical Prompt builder (and surfaced by the NO PROMPT / PROMPT READY
+   * badge). When no AI prompt exists, we fall back to the structured
+   * `styleString` assembled from the individual badges. This keeps the two
+   * prompts in sync as soon as the user clicks Auto-Suggest, while still
+   * allowing manual badge-only generation when no full prompt is set.
+   */
+  const effectiveStyle = useMemo(() => {
+    const trimmedPrompt = activeMusicalPrompt.trim();
+    return trimmedPrompt ? trimmedPrompt : styleString;
+  }, [activeMusicalPrompt, styleString]);
+
   const handleGenerate = useCallback(async () => {
     if (isGenerating || !lyrics.trim()) return;
     abortRef.current?.abort();
     abortRef.current = new AbortController();
     const { signal } = abortRef.current;
     setTaskStatus({ phase: 'generating' });
-    onPromptReady?.(styleString);
+    onPromptReady?.(effectiveStyle);
     const params = {
       lyrics,
-      style: styleString,
+      style: effectiveStyle,
       title: songTitle,
       mode: 'clip' as const,
       ...(negativePrompt ? { negativePrompt } : {}),
@@ -251,7 +272,7 @@ export const LyriaPreviewPanel: React.FC<LyriaPreviewPanelProps> = ({
         setKpi(getLyriaKPISnapshot());
       }
     }
-  }, [isGenerating, lyrics, styleString, negativePrompt, songTitle, onPromptReady]);
+  }, [isGenerating, lyrics, effectiveStyle, negativePrompt, songTitle, onPromptReady]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
