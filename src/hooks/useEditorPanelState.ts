@@ -13,14 +13,15 @@
 import { useCallback, useMemo } from 'react';
 import { useAppNavigationContext } from '../contexts/AppStateContext';
 import { useComposerContext } from '../contexts/ComposerContext';
+import type { AppTab } from './useUIState';
 
 export interface EditorPanelState {
   isStructureOpen: boolean;
   setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   isLeftPanelOpen: boolean;
   setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
-  activeTab: 'lyrics' | 'musical';
-  setActiveTab: (tab: 'lyrics' | 'musical') => void;
+  activeTab: AppTab;
+  setActiveTab: (tab: AppTab) => void;
   isSuggestionsOpen: boolean;
   setIsStructureOpenAndClearLine: (value: boolean | ((prev: boolean) => boolean)) => void;
   showBackdrop: (isMobileOrTablet: boolean) => boolean;

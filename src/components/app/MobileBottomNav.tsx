@@ -1,17 +1,18 @@
 import React from 'react';
-import { Settings, BookOpen, Music, Menu, Sparkles, RefreshCw } from '../ui/icons';
+import { Settings, BookOpen, Music, Menu, Sparkles, RefreshCw, Headphones } from '../ui/icons';
 import { useTranslation } from '../../i18n';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useSongContext } from '../../contexts/SongContext';
+import type { AppTab } from '../../hooks/useUIState';
 
 interface Props {
   isLeftPanelOpen: boolean;
   isStructureOpen: boolean;
-  activeTab: 'lyrics' | 'musical';
+  activeTab: AppTab;
   hasApiKey: boolean;
   setIsLeftPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsStructureOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
-  setActiveTab: (tab: 'lyrics' | 'musical') => void;
+  setActiveTab: (tab: AppTab) => void;
   /** Callback used when the user explicitly asks to (re)generate the song. */
   onGenerateSong?: () => void;
   /** Opens the Settings dialog (not the generation panel) */
@@ -47,7 +48,6 @@ export function MobileBottomNav({
           setActiveTab('lyrics');
           setIsLeftPanelOpen(true);
         },
-        // Composer panel itself does not require an API key to open.
         disabled: false,
       }
     : {
@@ -121,21 +121,19 @@ export function MobileBottomNav({
         <span>{t.mobileNav.music}</span>
       </button>
 
+      {/* Player tab */}
       <button
-        className={`mobile-bottom-nav-btn ${isStructureOpen ? 'active' : ''}`}
+        className={`mobile-bottom-nav-btn ${activeTab === 'player' && !isLeftPanelOpen && !isStructureOpen ? 'active' : ''}`}
         onClick={() => {
-          if (isStructureOpen) {
-            setIsStructureOpen(false);
-          } else {
-            setIsStructureOpen(true);
-            setIsLeftPanelOpen(false);
-          }
+          setActiveTab('player');
+          setIsLeftPanelOpen(false);
+          setIsStructureOpen(false);
         }}
-        aria-label={t.mobileNav.structure}
-        aria-pressed={isStructureOpen}
+        aria-label="Player"
+        aria-pressed={activeTab === 'player'}
       >
-        <Menu size={20} />
-        <span>{t.mobileNav.structure}</span>
+        <Headphones size={20} />
+        <span>Player</span>
       </button>
     </nav>
   );

@@ -1,12 +1,13 @@
 /**
  * AppEditorZone
  * Renders the central content area: InsightsBar (conditional) + the scrollable
- * lyrics/musical zone.
+ * lyrics/musical/player zone.
  *
  * Props surface: 6 (isAnalyzing / isAdaptingLanguage / targetLanguage now
  * sourced from InsightsBarContext — no longer passed as props).
  *
  * Ribbon swap: InsightsBar (lyrics tab) ↔ MusicalInsightsBar (musical tab).
+ * Player tab: full-height LCARS FUI player, no insights ribbon.
  */
 import React, { Suspense, lazy } from 'react';
 import { Spinner } from '@fluentui/react-components';
@@ -14,9 +15,11 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { InsightsBar } from './InsightsBar';
 import { MusicalInsightsBar } from './MusicalInsightsBar';
 import { LyricsView } from './LyricsView';
+import { PlayerPage } from './PlayerPage';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { useInsightsBarStateContext } from '../../contexts/InsightsBarContext';
 import { useTranslation } from '../../i18n';
+import type { AppTab } from '../../hooks/useUIState';
 
 const MusicalTab = lazy(() =>
   import('./musical/MusicalTab').then(m => ({ default: m.MusicalTab }))
@@ -38,7 +41,7 @@ function LazyFallback() {
 type PlayAudioFeedback = ReturnType<typeof useAudioFeedback>['playAudioFeedback'];
 
 interface AppEditorZoneProps {
-  activeTab: 'lyrics' | 'musical';
+  activeTab: AppTab;
   isMobileOrTablet: boolean;
   hasApiKey: boolean;
   songHasContent: boolean;
@@ -62,9 +65,29 @@ export function AppEditorZone({
 }: AppEditorZoneProps) {
   const { isAnalyzing, isAdaptingLanguage, targetLanguage } = useInsightsBarStateContext();
 
+  // ── Player tab: full-height standalone layout, no ribbon ─────────────────────
+  if (activeTab === 'player') {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+          height: '100%',
+        }}
+      >
+        <ErrorBoundary label="Player">
+          <PlayerPage />
+        </ErrorBoundary>
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* ── Ribbon contextuel : swap selon activeTab ───────────────────── */}
+      {/* ── Ribbon contextuel : swap selon activeTab ────────────────────────── */}
       {activeTab === 'musical' ? (
         <ErrorBoundary label="Musical insights">
           <MusicalInsightsBar />
