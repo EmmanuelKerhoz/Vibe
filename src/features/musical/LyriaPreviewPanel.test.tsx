@@ -253,4 +253,80 @@ describe('LyriaPreviewPanel', () => {
       expect(screen.getByLabelText('Style: highlife')).toBeTruthy();
     });
   });
+
+  // Sync contract (v1.31.0.10):
+  // When an AI-generated `musicalPrompt` is provided, the Lyria call must use
+  // it verbatim as `style` instead of the structured badge-derived string. This
+  // keeps the Musical Prompt builder (and the NO PROMPT / PROMPT READY badge in
+  // MusicalInsightsBar) in sync with what is actually sent to Lyria.
+  it('uses musicalPrompt verbatim as the Lyria style when it is set', async () => {
+    const user = userEvent.setup();
+    const onPromptReady = vi.fn();
+    const fullPrompt =
+      'STYLE: cinematic afrobeats\nMOOD: hopeful\nINSTRUMENTATION: talking drum, warm pads\nREFERENCES: Burna Boy, Wizkid';
+
+    render(
+      <LanguageProvider>
+        <LyriaPreviewPanel
+          lyrics="Sing it"
+          genre="afrobeats"
+          mood="joyful"
+          tempo={100}
+          instrumentation="talking drum"
+          musicalPrompt={fullPrompt}
+          onPromptReady={onPromptReady}
+        />
+      </LanguageProvider>,
+    );
+
+    // Badge still rendered as the "Full prompt active" indicator.
+    expect(screen.getByLabelText('Full AI musical prompt active')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Alt+A to generate quickly' }));
+
+    await waitFor(() => {
+      expect(generateAndPoll).toHaveBeenCalled();
+    });
+    expect(generateAndPoll).toHaveBeenLastCalledWith(
+      expect.objectContaining({ style: fullPrompt }),
+      expect.any(Object),
+    );
+    await waitFor(() => {
+      expect(onPromptReady).toHaveBeenCalledWith(fullPrompt);
+    });
+  });
+
+  // When no musicalPrompt is set, the fallback structured `styleString` must
+  // still be used so badge-only generation keeps working.
+  it('falls back to the structured style string when musicalPrompt is empty', async () => {
+    const user = userEvent.setup();
+    const onPromptReady = vi.fn();
+
+    render(
+      <LanguageProvider>
+        <LyriaPreviewPanel
+          lyrics="Sing it"
+          genre="afrobeats"
+          mood="joyful"
+          tempo={100}
+          instrumentation="talking drum"
+          musicalPrompt=""
+          onPromptReady={onPromptReady}
+        />
+      </LanguageProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Alt+A to generate quickly' }));
+
+    await waitFor(() => {
+      expect(generateAndPoll).toHaveBeenCalled();
+    });
+    // Structured string contains the labeled fields from the badges.
+    expect(generateAndPoll).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        style: expect.stringContaining('Style: afrobeats'),
+      }),
+      expect.any(Object),
+    );
+  });
 });
