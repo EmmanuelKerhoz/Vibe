@@ -12,6 +12,15 @@ type LibraryView = 'cloud' | 'local';
 
 const LIBRARY_CAPACITY = 50;
 
+// LCARS accent colors for transparent panel backgrounds
+const LCARS_BOX_COLORS = [
+  'rgba(255,153,0,0.08)',    // peach/orange
+  'rgba(153,102,204,0.08)', // purple
+  'rgba(204,153,102,0.08)', // tan
+  'rgba(255,102,102,0.08)', // red
+  'rgba(102,204,255,0.08)', // light blue
+];
+
 function genRegistry(): string {
   const buf = new Uint8Array(4);
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
@@ -36,14 +45,12 @@ function useSectorTime(): string {
   return `${whole}.${dec}`;
 }
 
-/** Map ScanConfig.accept → native <input accept> string */
 function buildAccept(protocol: ScanConfig['accept']): string {
   if (protocol === 'wav') return '.wav,audio/wav,audio/x-wav';
   if (protocol === 'mp3') return '.mp3,audio/mpeg';
   return '.wav,.mp3,.ogg,.flac,.aac,audio/*';
 }
 
-/** Filter a File list by protocol + pattern */
 function filterFiles(
   files: File[],
   protocol: ScanConfig['accept'],
@@ -58,26 +65,15 @@ function filterFiles(
   });
 }
 
-/**
- * Returns the immediate parent folder name of a file given its
- * webkitRelativePath (e.g. "RootDir/Artist/Song.mp3" → "Artist").
- * Falls back to the bare filename (without extension) when the path
- * has no intermediate segments.
- */
 function immediateParentName(f: File): string {
   const relPath = (f as File & { webkitRelativePath?: string }).webkitRelativePath ?? '';
   const segments = relPath.split('/');
-  // segments: [rootDir, ...parents, filename]
-  // immediate parent = second-to-last segment (index length-2)
   if (segments.length >= 3) {
-    // file is at least one level deep inside the selected root
     return segments[segments.length - 2] ?? f.name.replace(/\.[^/.]+$/, '');
   }
   if (segments.length === 2 && segments[1]) {
-    // file is directly inside the selected root — use root folder name
     return segments[0] ?? f.name.replace(/\.[^/.]+$/, '');
   }
-  // no path info — fall back to filename without extension
   return f.name.replace(/\.[^/.]+$/, '');
 }
 
@@ -88,7 +84,6 @@ export function VoxNovaPlayer() {
 
   const [view, setView] = useState<LibraryView>('cloud');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-
   const [scanProtocol, setScanProtocol] = useState<ScanConfig['accept']>('all');
   const [scanPattern, setScanPattern] = useState('');
 
@@ -101,28 +96,42 @@ export function VoxNovaPlayer() {
   const selectedTrack = library.tracks.find(t => t.id === selectedId);
   const visibleTracks = library.tracks.filter(t => t.source === view);
 
+  // Select + autoplay immediately
   const handleSelect = (track: TrackEntry) => {
     setSelectedId(track.id);
     engine.loadTrack(track);
+    engine.play();
     engine.beep(880, 'sine', 0.05);
   };
 
+  // PREV: go to previous track and autoplay
   const handlePrev = () => {
     if (!visibleTracks.length) return;
     const idx = visibleTracks.findIndex(t => t.id === selectedId);
     const prev = idx < 0
       ? visibleTracks[0]
       : visibleTracks[idx === 0 ? visibleTracks.length - 1 : idx - 1];
-    if (prev) handleSelect(prev);
+    if (prev) {
+      setSelectedId(prev.id);
+      engine.loadTrack(prev);
+      engine.play();
+      engine.beep(660, 'sine', 0.04);
+    }
   };
 
+  // NEXT: go to next track and autoplay
   const handleNext = () => {
     if (!visibleTracks.length) return;
     const idx = visibleTracks.findIndex(t => t.id === selectedId);
     const next = idx < 0
       ? visibleTracks[0]
       : visibleTracks[idx >= visibleTracks.length - 1 ? 0 : idx + 1];
-    if (next) handleSelect(next);
+    if (next) {
+      setSelectedId(next.id);
+      engine.loadTrack(next);
+      engine.play();
+      engine.beep(1100, 'sine', 0.04);
+    }
   };
 
   const handleUplinkFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,7 +225,7 @@ export function VoxNovaPlayer() {
           gap: 6,
         }}
       >
-        {/* VOX / NV-42 CORE block */}
+        {/* VOX / NV-42 CORE block — text pushed right toward the main panel border */}
         <div
           style={{
             background: LCARS.peach,
@@ -227,6 +236,11 @@ export function VoxNovaPlayer() {
             borderBottomLeftRadius: 12,
             borderBottomRightRadius: 4,
             minHeight: 110,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+            textAlign: 'right',
           }}
         >
           <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>VOX</div>
@@ -300,7 +314,6 @@ export function VoxNovaPlayer() {
           ))}
         </div>
 
-        {/* ── UPLINK — standalone, above SCAN SECTOR ── */}
         <SidebarButton
           label="UPLINK"
           color={LCARS.peach}
@@ -310,7 +323,7 @@ export function VoxNovaPlayer() {
           outlined
         />
 
-        {/* ── SCAN SECTOR panel: AUDIO PROTOCOL + PATTERN MATCH ── */}
+        {/* SCAN SECTOR panel */}
         <div
           style={{
             border: `1px solid ${LCARS.orange}55`,
@@ -319,18 +332,11 @@ export function VoxNovaPlayer() {
             display: 'flex',
             flexDirection: 'column',
             gap: 8,
+            background: LCARS_BOX_COLORS[0],
           }}
         >
-          {/* AUDIO PROTOCOL selector */}
           <div>
-            <div
-              style={{
-                color: LCARS.orange,
-                fontSize: 9,
-                letterSpacing: 3,
-                marginBottom: 6,
-              }}
-            >
+            <div style={{ color: LCARS.orange, fontSize: 9, letterSpacing: 3, marginBottom: 6 }}>
               AUDIO PROTOCOL
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -360,17 +366,8 @@ export function VoxNovaPlayer() {
               ))}
             </div>
           </div>
-
-          {/* PATTERN MATCH input */}
           <div>
-            <div
-              style={{
-                color: LCARS.orange,
-                fontSize: 9,
-                letterSpacing: 3,
-                marginBottom: 6,
-              }}
-            >
+            <div style={{ color: LCARS.orange, fontSize: 9, letterSpacing: 3, marginBottom: 6 }}>
               PATTERN MATCH
             </div>
             <input
@@ -381,7 +378,7 @@ export function VoxNovaPlayer() {
               aria-label="Pattern match filter"
               style={{
                 width: '100%',
-                background: 'rgba(0,0,0,0.6)',
+                background: 'rgba(0,0,0,0.5)',
                 border: `1px solid ${LCARS.orange}55`,
                 borderRadius: 3,
                 color: LCARS.text,
@@ -424,7 +421,6 @@ export function VoxNovaPlayer() {
           </div>
         </div>
 
-        {/* Hidden inputs */}
         <input
           ref={uploadInputRef}
           type="file"
@@ -540,7 +536,7 @@ export function VoxNovaPlayer() {
           </div>
         </div>
 
-        {/* Stage */}
+        {/* Stage — order: title → memo → controls → seekbar → volume → EQ → black hole */}
         <div
           style={{
             flex: 1,
@@ -548,27 +544,14 @@ export function VoxNovaPlayer() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'stretch',
-            gap: 24,
+            gap: 20,
             padding: '12px 24px 16px 24px',
             overflow: 'auto',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <div
-              style={{
-                color: LCARS.subText,
-                fontSize: 12,
-                letterSpacing: 4,
-                textTransform: 'uppercase',
-              }}
-            >
+          {/* Track title */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <div style={{ color: LCARS.subText, fontSize: 12, letterSpacing: 4, textTransform: 'uppercase' }}>
               COMMS_ENCRYPTION: LEVEL 5
             </div>
             <h1
@@ -588,17 +571,18 @@ export function VoxNovaPlayer() {
             <div style={{ width: 120, height: 3, background: LCARS.peach, borderRadius: 2 }} aria-hidden="true" />
           </div>
 
+          {/* Memo log box — LCARS purple tint */}
           <div
             style={{
               alignSelf: 'center',
               width: 'min(560px, 90%)',
-              border: `1px solid ${LCARS.peach}55`,
+              border: `1px solid ${LCARS.purple}55`,
               borderRadius: 4,
               padding: '10px 14px',
-              background: 'rgba(0,0,0,0.4)',
+              background: LCARS_BOX_COLORS[1],
             }}
           >
-            <div style={{ color: LCARS.peach, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>
+            <div style={{ color: LCARS.purple, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>
               LOCAL MEMO LOG
             </div>
             <div
@@ -614,7 +598,21 @@ export function VoxNovaPlayer() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          {/* Transport controls + seekbar — LCARS tan tint */}
+          <div
+            style={{
+              alignSelf: 'center',
+              width: 'min(560px, 92%)',
+              border: `1px solid ${LCARS.peach}33`,
+              borderRadius: 4,
+              padding: '12px 16px',
+              background: LCARS_BOX_COLORS[2],
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
             <PlayerControls engine={engine} onPrev={handlePrev} onNext={handleNext} disabled={!selectedTrack} />
             <SeekBar
               currentTime={engine.currentTime}
@@ -624,18 +622,92 @@ export function VoxNovaPlayer() {
             />
           </div>
 
-          <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
+          {/* Volume — LCARS light blue tint */}
+          <div
+            style={{
+              alignSelf: 'center',
+              width: 'min(560px, 92%)',
+              border: `1px solid ${LCARS.amber}33`,
+              borderRadius: 4,
+              padding: '10px 16px',
+              background: LCARS_BOX_COLORS[4],
+            }}
+          >
+            <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
+          </div>
 
-          <div>
+          {/* Equalizer / Frequency Visualizer — LCARS red tint */}
+          <div
+            style={{
+              border: `1px solid ${LCARS.red ?? '#cc3333'}33`,
+              borderRadius: 4,
+              padding: '8px',
+              background: LCARS_BOX_COLORS[3],
+            }}
+          >
+            <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 3, marginBottom: 6, paddingLeft: 4 }}>
+              SUBSPACE FREQUENCY SCAN
+            </div>
             <FrequencyVisualizer
               isPlaying={engine.isPlaying}
               analyser={analyser}
               audioRef={engine.audioRef}
             />
           </div>
+
+          {/* Black Hole visual indicator — below the EQ */}
+          <div
+            style={{
+              alignSelf: 'center',
+              width: 'min(480px, 90%)',
+              border: `1px solid rgba(100,100,200,0.25)`,
+              borderRadius: 4,
+              padding: '10px 14px',
+              background: 'rgba(0,0,20,0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <div>
+              <div style={{ color: 'rgba(100,150,255,0.7)', fontSize: 9, letterSpacing: 3, marginBottom: 4 }}>
+                SINGULARITY STATUS
+              </div>
+              <div style={{ color: LCARS.subText, fontSize: 11, letterSpacing: 1 }}>
+                {engine.isPlaying ? 'ACCRETION ACTIVE' : 'EVENT HORIZON STABLE'}
+              </div>
+            </div>
+            <BlackHoleBadge active={engine.isPlaying} />
+          </div>
         </div>
       </main>
     </div>
+  );
+}
+
+// ───────────────────────── BlackHoleBadge ─────────────────────────
+
+function BlackHoleBadge({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="56"
+      height="56"
+      viewBox="-28 -28 56 56"
+      aria-label="Black hole"
+      style={{ flexShrink: 0, filter: active ? 'drop-shadow(0 0 8px #4466ff)' : 'none', transition: 'filter 600ms ease' }}
+    >
+      {/* Lensing glow */}
+      <circle cx="0" cy="0" r="26" fill="none" stroke="rgba(80,100,200,0.2)" strokeWidth="10" />
+      {/* Photon ring */}
+      <circle cx="0" cy="0" r="15" fill="none" stroke={active ? 'rgba(255,190,60,0.8)' : 'rgba(180,120,40,0.4)'} strokeWidth="2.5" />
+      {/* Event horizon */}
+      <circle cx="0" cy="0" r="11" fill="#000" />
+      {/* Disk shimmer top */}
+      {active && (
+        <ellipse cx="0" cy="0" rx="20" ry="5" fill="none" stroke="rgba(255,160,40,0.35)" strokeWidth="3" />
+      )}
+    </svg>
   );
 }
 
@@ -744,19 +816,11 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        width: 'min(420px, 80%)',
+        width: '100%',
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <span
-        style={{
-          color: LCARS.subText,
-          fontFamily: 'monospace',
-          fontSize: 11,
-          minWidth: 36,
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
+      <span style={{ color: LCARS.subText, fontFamily: 'monospace', fontSize: 11, minWidth: 36, fontVariantNumeric: 'tabular-nums' }}>
         {formatTime(currentTime)}
       </span>
       <input
@@ -768,22 +832,9 @@ function SeekBar({ currentTime, duration, onSeek, disabled }: SeekBarProps) {
         onChange={e => onSeek(Number(e.target.value))}
         disabled={disabled}
         aria-label="Seek"
-        style={{
-          flex: 1,
-          accentColor: LCARS.peach,
-          cursor: disabled ? 'not-allowed' : 'pointer',
-        }}
+        style={{ flex: 1, accentColor: LCARS.peach, cursor: disabled ? 'not-allowed' : 'pointer' }}
       />
-      <span
-        style={{
-          color: LCARS.subText,
-          fontFamily: 'monospace',
-          fontSize: 11,
-          minWidth: 36,
-          textAlign: 'right',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
+      <span style={{ color: LCARS.subText, fontFamily: 'monospace', fontSize: 11, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
         {formatTime(duration)}
       </span>
     </div>
@@ -803,28 +854,12 @@ function VolumeControl({ volume, onChange }: VolumeControlProps) {
     if (volume > 0) lastVolumeRef.current = volume;
   }, [volume]);
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        width: 'min(420px, 80%)',
-        alignSelf: 'center',
-      }}
-    >
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
       <button
         type="button"
         onClick={() => onChange(muted ? (lastVolumeRef.current || 1) : 0)}
         aria-label={muted ? 'Unmute' : 'Mute'}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: LCARS.peach,
-          cursor: 'pointer',
-          padding: 0,
-          display: 'flex',
-          alignItems: 'center',
-        }}
+        style={{ background: 'transparent', border: 'none', color: LCARS.peach, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
       >
         <VolumeIcon muted={muted} />
       </button>
@@ -836,22 +871,9 @@ function VolumeControl({ volume, onChange }: VolumeControlProps) {
         value={volume}
         onChange={e => onChange(Number(e.target.value))}
         aria-label="Volume"
-        style={{
-          flex: 1,
-          accentColor: LCARS.peach,
-          cursor: 'pointer',
-        }}
+        style={{ flex: 1, accentColor: LCARS.peach, cursor: 'pointer' }}
       />
-      <span
-        style={{
-          color: LCARS.subText,
-          fontFamily: 'monospace',
-          fontSize: 11,
-          minWidth: 36,
-          textAlign: 'right',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
+      <span style={{ color: LCARS.subText, fontFamily: 'monospace', fontSize: 11, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
         {pct}%
       </span>
     </div>
