@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useContext, useMemo, useState } from 'react';
 import type { EditMode } from '../../types';
 import {
   BrowserVoiceAudioService,
@@ -7,6 +7,8 @@ import {
 } from './voiceAssistantAudioService';
 import { requestVoiceAssistantReply, type VoiceAssistantContext } from './voiceAssistantOrchestrator';
 import { useVoiceAssistantState } from './useVoiceAssistantState';
+import { LanguageContext } from '../../i18n/LanguageProvider';
+import { langIdToLocaleCode } from '../../i18n/constants';
 
 export type VoiceAssistantUiState = 'idle' | 'listening' | 'processing' | 'speaking';
 
@@ -34,6 +36,13 @@ export function useVoiceAssistantController({
   const defaultAudioService = useMemo(() => new BrowserVoiceAudioService(), []);
   const audio = audioService ?? defaultAudioService;
 
+  // Derive BCP-47 locale code from the active UI language (e.g. 'ui:fr' → 'fr').
+  // Falls back to 'en' when LanguageContext is not available (tests, SSR).
+  const langCtx = useContext(LanguageContext);
+  const uiLocaleCode = langCtx ? langIdToLocaleCode(langCtx.language) : 'en';
+  // Full BCP-47 tag for Web Speech API (e.g. 'fr' → 'fr-FR').
+  const bcpTag = uiLocaleCode.includes('-') ? uiLocaleCode : `${uiLocaleCode}-${uiLocaleCode.toUpperCase()}`;
+
   const [uiState, setUiState] = useState<VoiceAssistantUiState>('idle');
   const [errorText, setErrorText] = useState<string | null>(null);
   const [textFallback, setTextFallback] = useState<string | null>(null);
@@ -55,15 +64,19 @@ export function useVoiceAssistantController({
 
     try {
       setUiState('listening');
-      const query = await audio.listenOnce();
+      // Pass UI locale to STT so recognition targets the correct language.
+      const query = await audio.listenOnce(bcpTag);
       if (!query.trim()) throw new Error(NO_INPUT_CAPTURED_TEXT);
 
       setUiState('processing');
-      const reply = await requestReply(query, { ...context, isFirstCall });
+      const voiceContext: VoiceAssistantContext = { ...context, isFirstCall, uiLocaleCode };
+      const reply = await requestReply(query, voiceContext);
       if (isFirstCall) markFirstCallHandled();
 
       setUiState('speaking');
+      // Pass UI locale to TTS so the browser selects a matching voice.
       const spoken = await audio.speak(reply, {
+        lang: bcpTag,
         slowStartMs: VOICE_SPEECH_SLOW_START_MS,
         onSlowStart: () => setTextFallback(reply),
       });
@@ -75,7 +88,7 @@ export function useVoiceAssistantController({
       setErrorText(message);
       setUiState('idle');
     }
-  }, [audio, context, enabled, isFirstCall, markFirstCallHandled, requestReply, uiState]);
+  }, [audio, bcpTag, context, enabled, isFirstCall, markFirstCallHandled, requestReply, uiLocaleCode, uiState]);
 
   return {
     invoke,

@@ -1,10 +1,13 @@
 import { generateContentWithRetry } from '../../utils/aiUtils';
+import { getUiLanguageNameForAi } from '../../i18n/constants';
 import type { EditMode } from '../../types';
 
 export interface VoiceAssistantContext {
   page: 'lyrics' | 'musical' | 'player';
   mode: EditMode;
   isFirstCall: boolean;
+  /** BCP-47 UI locale code, e.g. 'fr', 'en', 'es'. Drives Gemini reply language. */
+  uiLocaleCode?: string;
 }
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
@@ -17,6 +20,12 @@ export function buildVoiceAssistantSystemPrompt(context: VoiceAssistantContext):
     ? 'Because this is the user\'s first time using the voice assistant, begin with a very brief, friendly 1-sentence introduction of your capabilities before answering their query.'
     : 'Bypass all greetings, pleasantries, and introductory fluff. Deliver the direct answer immediately.';
 
+  const localeCode = context.uiLocaleCode ?? 'en';
+  const languageName = getUiLanguageNameForAi(localeCode); // e.g. 'Français'
+  const languageInstruction = localeCode === 'en'
+    ? 'Always reply in English.'
+    : `Always reply in ${languageName}. Your entire response must be in ${languageName}, regardless of the language the user speaks in.`;
+
   return [
     'You are a contextual songwriting voice assistant embedded in a lyric editor.',
     `The user is currently in ${context.page} using ${context.mode}.`,
@@ -25,6 +34,7 @@ export function buildVoiceAssistantSystemPrompt(context: VoiceAssistantContext):
     'Your response will be spoken aloud. Use natural, conversational language. Do not use markdown, bullet points, or complex formatting.',
     'Provide concise, highly actionable guidance based ONLY on the user\'s current context.',
     'Keep the default response to a maximum of 2 sentences and prioritize direct action verbs.',
+    languageInstruction,
     stateInstruction,
   ].join('\n');
 }
@@ -50,7 +60,10 @@ export function limitToTwoSentences(text: string): string {
   return sentences.slice(0, 2).join(' ');
 }
 
-export async function requestVoiceAssistantReply(query: string, context: VoiceAssistantContext): Promise<string> {
+export async function requestVoiceAssistantReply(
+  query: string,
+  context: VoiceAssistantContext,
+): Promise<string> {
   const prompt = buildVoiceAssistantSystemPrompt(context);
   const response = await generateContentWithRetry({
     model: DEFAULT_MODEL,
