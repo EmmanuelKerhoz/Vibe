@@ -7,6 +7,8 @@ export interface TrackEntry {
   url: string;
   memo?: string;
   linked?: boolean;
+  /** True when the file is a video container (mp4/webm/mov/mkv) */
+  isVideo?: boolean;
 }
 
 export interface ScanConfig {
