@@ -183,7 +183,7 @@ export function VoxNovaPlayer() {
   const memo = selectedTrack?.memo
     || (selectedTrack
       ? `[LCARS_SCAN] Identified: ${selectedTrack.title} | Integrity: Nominal`
-      : '[LCARS_SCAN] Standby \u2014 awaiting signal selection.');
+      : '[LCARS_SCAN] Standby — awaiting signal selection.');
 
   const title = selectedTrack?.title ?? 'Subspace Channel Idle';
 
@@ -193,11 +193,8 @@ export function VoxNovaPlayer() {
     { label: 'ALL', value: 'all' },
   ];
 
-  // Standard width for most content blocks
   const CONTENT_WIDTH = 'min(680px, 95%)';
-  // Wider width for bottom diagnostic blocks
   const WIDE_WIDTH = 'min(900px, 98%)';
-
   const sidebarVisible = !engine.isPlaying;
 
   return (
@@ -327,7 +324,7 @@ export function VoxNovaPlayer() {
           <span>UPLINK</span>
         </button>
 
-        {/* SCAN SECTOR \u2014 filter block */}
+        {/* SCAN SECTOR — filter block */}
         <div
           style={{
             border: `1px solid ${LCARS.orange}55`,
@@ -393,12 +390,12 @@ export function VoxNovaPlayer() {
           </div>
         </div>
 
-        {/* SCAN SECTOR button */}
+        {/* SCAN SECTOR button — text centered, biased toward right border */}
         <div
           style={{
             background: LCARS.orange,
             color: '#000',
-            padding: '14px 18px 24px 14px',
+            padding: '14px 10px 24px 14px',
             borderTopLeftRadius: 4,
             borderTopRightRadius: 4,
             borderBottomLeftRadius: 64,
@@ -406,7 +403,7 @@ export function VoxNovaPlayer() {
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-end',
+            justifyContent: 'center',
             gap: 8,
           }}
           role="button"
@@ -429,7 +426,7 @@ export function VoxNovaPlayer() {
           type="file"
           multiple
           accept={buildAccept(scanProtocol)}
-          // @ts-expect-error \u2014 webkitdirectory is non-standard but widely supported
+          // @ts-expect-error — webkitdirectory is non-standard but widely supported
           webkitdirectory=""
           style={{ display: 'none' }}
           onChange={handleScanFolder}
@@ -607,10 +604,10 @@ export function VoxNovaPlayer() {
             <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
           </div>
 
-          {/* Flex spacer \u2014 pushes SINGULARITY STATUS + SUBSPACE FREQUENCY SCAN to the bottom */}
+          {/* Flex spacer — pushes SINGULARITY STATUS + SUBSPACE FREQUENCY SCAN to the bottom */}
           <div style={{ flex: 1, minHeight: 0 }} aria-hidden="true" />
 
-          {/* SINGULARITY STATUS \u2014 wider */}
+          {/* SINGULARITY STATUS — wider */}
           <div
             style={{
               alignSelf: 'center',
@@ -634,7 +631,7 @@ export function VoxNovaPlayer() {
             <BlackHoleBadge active={engine.isPlaying} />
           </div>
 
-          {/* SUBSPACE FREQUENCY SCAN \u2014 wider */}
+          {/* SUBSPACE FREQUENCY SCAN — wider */}
           <div
             style={{
               alignSelf: 'center',
@@ -657,7 +654,6 @@ export function VoxNovaPlayer() {
   );
 }
 
-// CSS keyframes for pulse rings \u2014 injected once via a style tag
 const PULSE_STYLE = `
   @keyframes bhPulse1 {
     0%   { r: 18; opacity: 0.6; }
@@ -712,11 +708,8 @@ function BlackHoleBadge({ active }: { active: boolean }) {
         transition: 'filter 600ms ease',
       }}
     >
-      {/* Pulse rings \u2014 animated via CSS classes */}
       <circle className="bh-ring1" cx="0" cy="0" r="18" fill="none" stroke={ringColor} strokeWidth="1.5" />
       <circle className="bh-ring2" cx="0" cy="0" r="18" fill="none" stroke={ringColor} strokeWidth="1" />
-
-      {/* Static structure */}
       <circle cx="0" cy="0" r="26" fill="none" stroke="rgba(80,100,200,0.2)" strokeWidth="10" />
       <circle cx="0" cy="0" r="15" fill="none" stroke={active ? 'rgba(255,190,60,0.85)' : 'rgba(180,120,40,0.4)'} strokeWidth="2.5" />
       <circle cx="0" cy="0" r="11" fill="#000" />
