@@ -70,6 +70,7 @@ const lensingFragmentShader = `
   const float PHOTON_RING_WIDTH = 0.055;      // thickness of the bright lensing ring
   const float PHOTON_RING_DISTANCE = 1.01;    // ring placement just outside the event horizon
   const float PHOTON_RING_INTENSITY = 0.55;   // ring brightness contribution
+  const float EVENT_HORIZON_CUTOFF = 0.88;    // black core size inside the lensing ring
   const float HALO_OUTER_RANGE = 3.7;         // furthest radius reached by the purple glow
   const float HALO_INNER_RANGE = 1.15;        // radius where the glow is strongest
   const float HALO_INTENSITY = 0.09;          // subtle background halo brightness
@@ -82,7 +83,7 @@ const lensingFragmentShader = `
     float dist = length(toCenter);
     float r = uBhRadius;
 
-    if (dist < r * 0.88) {
+    if (dist < r * EVENT_HORIZON_CUTOFF) {
       gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
       return;
     }
@@ -226,7 +227,9 @@ export const WarpField = memo(function WarpField({ isPlaying }: WarpFieldProps) 
 
     const state = { rafId: 0, time: 0, rotSpeed: 0.4 };
     const getAspect = () => (
-      container.clientHeight > 0 ? container.clientWidth / container.clientHeight : 1
+      container.clientWidth > 0 && container.clientHeight > 0
+        ? container.clientWidth / container.clientHeight
+        : 1
     );
 
     // ── Renderer ──────────────────────────────────────────────────────────────
