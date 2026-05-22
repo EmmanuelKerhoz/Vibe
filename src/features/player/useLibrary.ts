@@ -8,8 +8,8 @@ const newId = () =>
     : Math.random().toString(36).slice(2);
 
 const SEED_TRACKS: TrackEntry[] = [
-  { id: newId(), title: 'Nebula Flight', source: 'cloud', memo: '', linked: false },
-  { id: newId(), title: 'Stellar Voyage', source: 'cloud', memo: '', linked: false },
+  { id: newId(), title: 'Nebula Flight', source: 'cloud' as TrackSource, url: '', memo: '', linked: false },
+  { id: newId(), title: 'Stellar Voyage', source: 'cloud' as TrackSource, url: '', memo: '', linked: false },
 ];
 
 export interface LibraryState {

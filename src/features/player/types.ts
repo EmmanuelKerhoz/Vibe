@@ -1,7 +1,9 @@
+export type TrackSource = 'cloud' | 'local' | 'lyria';
+
 export interface TrackEntry {
   id: string;
   title: string;
-  source: 'cloud' | 'local' | 'lyria';
+  source: TrackSource;
   url: string;
   memo?: string;
   linked?: boolean;
