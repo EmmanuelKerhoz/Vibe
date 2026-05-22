@@ -85,11 +85,11 @@ const lensingFragmentShader = `
     ghostArc *= smoothstep(0.0, r * 0.95, abs(toCenter.x));
 
     float photonRing = smoothstep(r * 0.055, 0.0, abs(dist - r * 1.01)) * 0.55;
-    float doppler = smoothstep(-r * 2.2, r * 2.2, -toCenter.x);
-    float thermal = 0.85 + sin(atan(toCenter.y, toCenter.x) * 6.0 - uTime * 2.2) * 0.15;
-    vec3 warmDisk = mix(vec3(0.95, 0.22, 0.04), vec3(1.0, 0.82, 0.34), doppler);
-    vec3 hotRing = mix(vec3(1.0, 0.54, 0.08), vec3(1.0, 0.96, 0.74), doppler);
-    stars += warmDisk * (accretionDisk + ghostArc) * thermal * 1.65;
+    float horizontalGlow = smoothstep(-r * 2.2, r * 2.2, -toCenter.x);
+    float angularFlicker = 0.85 + sin(atan(toCenter.y, toCenter.x) * 6.0 - uTime * 2.2) * 0.15;
+    vec3 warmDisk = mix(vec3(0.95, 0.22, 0.04), vec3(1.0, 0.82, 0.34), horizontalGlow);
+    vec3 hotRing = mix(vec3(1.0, 0.54, 0.08), vec3(1.0, 0.96, 0.74), horizontalGlow);
+    stars += warmDisk * (accretionDisk + ghostArc) * angularFlicker * 1.65;
     stars += hotRing * photonRing * 0.85;
 
     float halo = smoothstep(r * 3.7, r * 1.15, dist) * 0.09;
