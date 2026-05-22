@@ -4,11 +4,13 @@
  * Displayed after user approves the 30s preview from LyriaPreviewPanel.
  *
  * Props:
- *   approvedPrompt — the prompt string from the approved preview clip
- *   lyrics         — verbatim lyrics
- *   clipTitle      — title of the approved preview clip (display only)
- *   songTitle      — song title passed to generation
- *   onDone         — callback with the completed full-song LyriaClip
+ *   approvedPrompt   — the prompt string from the approved preview clip
+ *   lyrics           — verbatim lyrics
+ *   clipTitle        — title of the approved preview clip (display only)
+ *   songTitle        — song title passed to generation
+ *   onDone           — callback with the completed full-song LyriaClip
+ *   onAddToLibrary   — optional: called with a TrackEntry when generation
+ *                      succeeds so the Player can pick it up immediately
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -33,6 +35,7 @@ import {
 } from '@fluentui/react-icons';
 import { generateAndPoll, getLyriaKPISnapshot } from '../../services/lyriaService';
 import type { LyriaClip, LyriaTaskStatus } from '../../types/lyria';
+import type { TrackEntry } from '../player/types';
 
 interface LyriaFullSongPanelProps {
   approvedPrompt: string;
@@ -40,6 +43,8 @@ interface LyriaFullSongPanelProps {
   lyrics: string;
   songTitle?: string;
   onDone?: (clip: LyriaClip) => void;
+  /** Called with a ready-to-play TrackEntry after successful generation */
+  onAddToLibrary?: (entry: Omit<TrackEntry, 'id'>) => void;
 }
 
 export const LyriaFullSongPanel: React.FC<LyriaFullSongPanelProps> = ({
@@ -48,6 +53,7 @@ export const LyriaFullSongPanel: React.FC<LyriaFullSongPanelProps> = ({
   lyrics,
   songTitle = '',
   onDone,
+  onAddToLibrary,
 }) => {
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
@@ -90,6 +96,17 @@ export const LyriaFullSongPanel: React.FC<LyriaFullSongPanelProps> = ({
         setTaskStatus({ phase: 'done', clip: full });
         setKpi(getLyriaKPISnapshot());
         onDone?.(full);
+
+        // Bridge to Player library
+        if (full.audioUrl && onAddToLibrary) {
+          onAddToLibrary({
+            title: full.title || songTitle || clipTitle || 'Lyria Generation',
+            source: 'lyria',
+            url: full.audioUrl,
+            linked: true,
+            memo: `[LYRIA] ${full.model} | SynthID: ${full.synthIdWatermarked ? 'YES' : 'NO'} | ${full.durationSeconds != null ? `${Math.round(full.durationSeconds)}s` : '?'} | Prompt: ${approvedPrompt.slice(0, 80)}`,
+          });
+        }
       }
     } catch (err) {
       if (signal.aborted || (err instanceof DOMException && err.name === 'AbortError')) return;
@@ -219,6 +236,11 @@ export const LyriaFullSongPanel: React.FC<LyriaFullSongPanelProps> = ({
             >
               🛡️ SynthID
             </Badge>
+            {onAddToLibrary && (
+              <Badge appearance="tint" color="success" size="small">
+                ✓ Ajouté au Player
+              </Badge>
+            )}
           </div>
           {doneClip.audioUrl && (
             <audio

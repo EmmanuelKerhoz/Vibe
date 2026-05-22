@@ -1,12 +1,12 @@
 /** VoxNova Player — domain types */
 
-export type TrackSource = 'cloud' | 'local';
+export type TrackSource = 'cloud' | 'local' | 'lyria';
 
 export interface TrackEntry {
   id: string;
   title: string;
   source: TrackSource;
-  /** Blob URL (local) or remote URL (cloud). Undefined = not yet linked. */
+  /** Blob URL (local/lyria) or remote URL (cloud). Undefined = not yet linked. */
   url?: string;
   /** Duration in seconds, populated after load */
   duration?: number;

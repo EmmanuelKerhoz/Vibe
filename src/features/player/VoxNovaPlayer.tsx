@@ -4,11 +4,11 @@ import { FrequencyVisualizer } from './FrequencyVisualizer';
 import { PlayerControls } from './PlayerControls';
 import { useAudioEngine } from './useAudioEngine';
 import { useFrequencyAnalyser } from './useFrequencyAnalyser';
-import { useLibrary } from './useLibrary';
+import { useLibraryContext } from '../../contexts/LibraryContext';
 import { LCARS } from './lcarsTheme';
 import type { TrackEntry, ScanConfig } from './types';
 
-type LibraryView = 'cloud' | 'local';
+type LibraryView = 'cloud' | 'local' | 'lyria';
 
 const LIBRARY_CAPACITY = 50;
 
@@ -79,7 +79,7 @@ function immediateParentName(f: File): string {
 export function VoxNovaPlayer() {
   const engine = useAudioEngine();
   const analyser = useFrequencyAnalyser();
-  const library = useLibrary();
+  const library = useLibraryContext();
 
   const [view, setView] = useState<LibraryView>('cloud');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -199,6 +199,16 @@ export function VoxNovaPlayer() {
   // sidebar hidden entirely when player is active (not just collapsed)
   const sidebarVisible = !engine.isPlaying;
 
+  // Switch to LYRIA view automatically when a new Lyria track appears
+  const lyriaCount = library.tracks.filter(t => t.source === 'lyria').length;
+  const prevLyriaCount = useRef(lyriaCount);
+  useEffect(() => {
+    if (lyriaCount > prevLyriaCount.current) {
+      setView('lyria');
+    }
+    prevLyriaCount.current = lyriaCount;
+  }, [lyriaCount]);
+
   return (
     <div
       style={{
@@ -253,6 +263,7 @@ export function VoxNovaPlayer() {
 
           <SidebarButton label="CLOUD" color={LCARS.purple} textColor="#0a0a10" active={view === 'cloud'} onClick={() => setView('cloud')} icon={<GlobeIcon />} />
           <SidebarButton label="LOCAL" color={LCARS.orange} textColor="#0a0a10" active={view === 'local'} onClick={() => setView('local')} icon={<DatabaseIcon />} />
+          <SidebarButton label="LYRIA" color="#00c8a0" textColor="#000" active={view === 'lyria'} onClick={() => setView('lyria')} icon={<SparkleIcon />} />
           <SidebarButton label="PURGE" color={LCARS.red} textColor="#0a0a10" onClick={handlePurge} />
 
           {/* Track list */}
@@ -833,6 +844,10 @@ function GlobeIcon() {
 
 function DatabaseIcon() {
   return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5" /><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" /></svg>;
+}
+
+function SparkleIcon() {
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" /></svg>;
 }
 
 function UploadIcon() {
