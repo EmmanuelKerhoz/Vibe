@@ -167,7 +167,9 @@ export async function listMediaItems(
   const subFolderFetches: Promise<OneDriveItem[]>[] = [];
 
   while (url) {
-    const page = await graphGet<GraphDriveItemList>(url.startsWith('/') ? url : url.replace('https://graph.microsoft.com/v1.0', ''));
+    const page: GraphDriveItemList = await graphGet<GraphDriveItemList>(
+      url.startsWith('/') ? url : url.replace('https://graph.microsoft.com/v1.0', '')
+    );
     for (const item of page.value) {
       if (item.folder) {
         subFolderFetches.push(
@@ -187,8 +189,8 @@ export async function listMediaItems(
         });
       }
     }
-    // Handle pagination
-    const nextLink = page['@odata.nextLink'];
+    // Handle pagination — explicit type annotation avoids TS7022
+    const nextLink: string | undefined = page['@odata.nextLink'];
     url = nextLink ? nextLink.replace('https://graph.microsoft.com/v1.0', '') : undefined;
   }
 
