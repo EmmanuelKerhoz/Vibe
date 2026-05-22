@@ -197,6 +197,9 @@ export function VoxNovaPlayer() {
     { label: 'ALL', value: 'all' },
   ];
 
+  // Hide left sidebar when player is actively playing
+  const sidebarVisible = !engine.isPlaying;
+
   return (
     <div
       style={{
@@ -217,15 +220,18 @@ export function VoxNovaPlayer() {
         style={{
           position: 'relative',
           zIndex: 1,
-          width: 200,
+          width: sidebarVisible ? 200 : 0,
           flexShrink: 0,
-          padding: '12px 12px 12px 16px',
+          padding: sidebarVisible ? '12px 12px 12px 16px' : '0',
           display: 'flex',
           flexDirection: 'column',
           gap: 6,
+          overflow: 'hidden',
+          transition: 'width 300ms cubic-bezier(0.4,0,0.2,1), padding 300ms cubic-bezier(0.4,0,0.2,1)',
         }}
+        aria-hidden={!sidebarVisible}
       >
-        {/* VOX / NV-42 CORE block — text pushed right toward the main panel border */}
+        {/* VOX / NV-42 CORE block */}
         <div
           style={{
             background: LCARS.peach,
@@ -314,16 +320,41 @@ export function VoxNovaPlayer() {
           ))}
         </div>
 
-        <SidebarButton
-          label="UPLINK"
-          color={LCARS.peach}
-          textColor="#0a0a10"
+        {/* UPLINK button — textured background */}
+        <button
+          type="button"
           onClick={() => uploadInputRef.current?.click()}
-          icon={<UploadIcon />}
-          outlined
-        />
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            padding: '10px 14px',
+            background: `repeating-linear-gradient(
+              135deg,
+              ${LCARS.peach}22 0px,
+              ${LCARS.peach}22 2px,
+              transparent 2px,
+              transparent 8px
+            ), linear-gradient(180deg, ${LCARS.peach}44 0%, ${LCARS.peach}1a 100%)`,
+            color: LCARS.peach,
+            border: `2px solid ${LCARS.peach}`,
+            borderRadius: 4,
+            fontSize: 11,
+            letterSpacing: 2,
+            fontWeight: 700,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+          aria-label="Uplink audio files"
+        >
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 16 }}>
+            <UploadIcon />
+          </span>
+          <span>UPLINK</span>
+        </button>
 
-        {/* SCAN SECTOR panel */}
+        {/* SCAN SECTOR — protocol + pattern filter */}
         <div
           style={{
             border: `1px solid ${LCARS.orange}55`,
@@ -391,34 +422,36 @@ export function VoxNovaPlayer() {
               }}
             />
           </div>
-          <div
-            style={{
-              background: LCARS.orange,
-              color: '#000',
-              padding: '14px 14px 24px 14px',
-              borderTopLeftRadius: 4,
-              borderTopRightRadius: 4,
-              borderBottomLeftRadius: 64,
-              borderBottomRightRadius: 4,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
-            }}
-            role="button"
-            tabIndex={0}
-            onClick={() => folderInputRef.current?.click()}
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                folderInputRef.current?.click();
-              }
-            }}
-          >
-            <DatabaseIcon />
-            <span style={{ fontSize: 11, letterSpacing: 2, fontWeight: 600 }}>SCAN SECTOR</span>
-          </div>
+        </div>
+
+        {/* SCAN SECTOR — extracted below the filter block */}
+        <div
+          style={{
+            background: LCARS.orange,
+            color: '#000',
+            padding: '14px 18px 24px 14px',
+            borderTopLeftRadius: 4,
+            borderTopRightRadius: 4,
+            borderBottomLeftRadius: 64,
+            borderBottomRightRadius: 4,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 8,
+          }}
+          role="button"
+          tabIndex={0}
+          onClick={() => folderInputRef.current?.click()}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              folderInputRef.current?.click();
+            }
+          }}
+        >
+          <DatabaseIcon />
+          <span style={{ fontSize: 11, letterSpacing: 2, fontWeight: 600 }}>SCAN SECTOR</span>
         </div>
 
         <input
@@ -536,7 +569,7 @@ export function VoxNovaPlayer() {
           </div>
         </div>
 
-        {/* Stage — order: title → memo → controls → seekbar → volume → EQ → black hole */}
+        {/* Stage — order: title → memo → controls → seekbar → volume → black hole → EQ */}
         <div
           style={{
             flex: 1,
@@ -636,26 +669,7 @@ export function VoxNovaPlayer() {
             <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
           </div>
 
-          {/* Equalizer / Frequency Visualizer — LCARS red tint */}
-          <div
-            style={{
-              border: `1px solid ${LCARS.red ?? '#cc3333'}33`,
-              borderRadius: 4,
-              padding: '8px',
-              background: LCARS_BOX_COLORS[3],
-            }}
-          >
-            <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 3, marginBottom: 6, paddingLeft: 4 }}>
-              SUBSPACE FREQUENCY SCAN
-            </div>
-            <FrequencyVisualizer
-              isPlaying={engine.isPlaying}
-              analyser={analyser}
-              audioRef={engine.audioRef}
-            />
-          </div>
-
-          {/* Black Hole visual indicator — below the EQ */}
+          {/* Black Hole visual indicator — above the EQ */}
           <div
             style={{
               alignSelf: 'center',
@@ -680,6 +694,26 @@ export function VoxNovaPlayer() {
             </div>
             <BlackHoleBadge active={engine.isPlaying} />
           </div>
+
+          {/* Equalizer / Frequency Visualizer — LCARS red tint — below black hole */}
+          <div
+            style={{
+              border: `1px solid ${LCARS.red ?? '#cc3333'}33`,
+              borderRadius: 4,
+              padding: '8px',
+              background: LCARS_BOX_COLORS[3],
+            }}
+          >
+            <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 3, marginBottom: 6, paddingLeft: 4 }}>
+              SUBSPACE FREQUENCY SCAN
+            </div>
+            <FrequencyVisualizer
+              isPlaying={engine.isPlaying}
+              analyser={analyser}
+              audioRef={engine.audioRef}
+            />
+          </div>
+
         </div>
       </main>
     </div>
