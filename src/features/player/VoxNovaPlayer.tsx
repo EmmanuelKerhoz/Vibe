@@ -183,7 +183,7 @@ export function VoxNovaPlayer() {
   const memo = selectedTrack?.memo
     || (selectedTrack
       ? `[LCARS_SCAN] Identified: ${selectedTrack.title} | Integrity: Nominal`
-      : '[LCARS_SCAN] Standby — awaiting signal selection.');
+      : '[LCARS_SCAN] Standby \u2014 awaiting signal selection.');
 
   const title = selectedTrack?.title ?? 'Subspace Channel Idle';
 
@@ -193,7 +193,11 @@ export function VoxNovaPlayer() {
     { label: 'ALL', value: 'all' },
   ];
 
+  // Standard width for most content blocks
   const CONTENT_WIDTH = 'min(680px, 95%)';
+  // Wider width for bottom diagnostic blocks
+  const WIDE_WIDTH = 'min(900px, 98%)';
+
   const sidebarVisible = !engine.isPlaying;
 
   return (
@@ -323,7 +327,7 @@ export function VoxNovaPlayer() {
           <span>UPLINK</span>
         </button>
 
-        {/* SCAN SECTOR — filter block */}
+        {/* SCAN SECTOR \u2014 filter block */}
         <div
           style={{
             border: `1px solid ${LCARS.orange}55`,
@@ -425,7 +429,7 @@ export function VoxNovaPlayer() {
           type="file"
           multiple
           accept={buildAccept(scanProtocol)}
-          // @ts-expect-error — webkitdirectory is non-standard but widely supported
+          // @ts-expect-error \u2014 webkitdirectory is non-standard but widely supported
           webkitdirectory=""
           style={{ display: 'none' }}
           onChange={handleScanFolder}
@@ -603,14 +607,14 @@ export function VoxNovaPlayer() {
             <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
           </div>
 
-          {/* Flex spacer — pushes SINGULARITY STATUS + SUBSPACE FREQUENCY SCAN to the bottom */}
+          {/* Flex spacer \u2014 pushes SINGULARITY STATUS + SUBSPACE FREQUENCY SCAN to the bottom */}
           <div style={{ flex: 1, minHeight: 0 }} aria-hidden="true" />
 
-          {/* SINGULARITY STATUS */}
+          {/* SINGULARITY STATUS \u2014 wider */}
           <div
             style={{
               alignSelf: 'center',
-              width: CONTENT_WIDTH,
+              width: WIDE_WIDTH,
               border: `1px solid rgba(100,100,200,0.25)`,
               borderRadius: 4,
               padding: '10px 14px',
@@ -630,11 +634,11 @@ export function VoxNovaPlayer() {
             <BlackHoleBadge active={engine.isPlaying} />
           </div>
 
-          {/* SUBSPACE FREQUENCY SCAN */}
+          {/* SUBSPACE FREQUENCY SCAN \u2014 wider */}
           <div
             style={{
               alignSelf: 'center',
-              width: CONTENT_WIDTH,
+              width: WIDE_WIDTH,
               border: `1px solid ${LCARS.red ?? '#cc3333'}33`,
               borderRadius: 4,
               padding: '8px',
@@ -653,15 +657,70 @@ export function VoxNovaPlayer() {
   );
 }
 
+// CSS keyframes for pulse rings \u2014 injected once via a style tag
+const PULSE_STYLE = `
+  @keyframes bhPulse1 {
+    0%   { r: 18; opacity: 0.6; }
+    70%  { r: 34; opacity: 0; }
+    100% { r: 34; opacity: 0; }
+  }
+  @keyframes bhPulse2 {
+    0%   { r: 18; opacity: 0.4; }
+    70%  { r: 34; opacity: 0; }
+    100% { r: 34; opacity: 0; }
+  }
+  .bh-pulse-active .bh-ring1 {
+    animation: bhPulse1 1.6s ease-out infinite;
+  }
+  .bh-pulse-active .bh-ring2 {
+    animation: bhPulse2 1.6s ease-out 0.55s infinite;
+  }
+  .bh-pulse-idle .bh-ring1 {
+    animation: bhPulse1 3.5s ease-out infinite;
+  }
+  .bh-pulse-idle .bh-ring2 {
+    animation: bhPulse2 3.5s ease-out 1.2s infinite;
+  }
+`;
+
+let _pulseStyleInjected = false;
+function injectPulseStyle() {
+  if (_pulseStyleInjected) return;
+  _pulseStyleInjected = true;
+  const el = document.createElement('style');
+  el.textContent = PULSE_STYLE;
+  document.head.appendChild(el);
+}
+
 function BlackHoleBadge({ active }: { active: boolean }) {
+  useEffect(() => { injectPulseStyle(); }, []);
+
+  const ringColor = active ? 'rgba(100,160,255,0.7)' : 'rgba(80,100,200,0.4)';
+  const pulseClass = active ? 'bh-pulse-active' : 'bh-pulse-idle';
+
   return (
-    <svg width="56" height="56" viewBox="-28 -28 56 56" aria-label="Black hole"
-      style={{ flexShrink: 0, filter: active ? 'drop-shadow(0 0 8px #4466ff)' : 'none', transition: 'filter 600ms ease' }}
+    <svg
+      width="72"
+      height="72"
+      viewBox="-36 -36 72 72"
+      aria-label="Black hole"
+      className={pulseClass}
+      style={{
+        flexShrink: 0,
+        overflow: 'visible',
+        filter: active ? 'drop-shadow(0 0 10px #4466ff)' : 'none',
+        transition: 'filter 600ms ease',
+      }}
     >
+      {/* Pulse rings \u2014 animated via CSS classes */}
+      <circle className="bh-ring1" cx="0" cy="0" r="18" fill="none" stroke={ringColor} strokeWidth="1.5" />
+      <circle className="bh-ring2" cx="0" cy="0" r="18" fill="none" stroke={ringColor} strokeWidth="1" />
+
+      {/* Static structure */}
       <circle cx="0" cy="0" r="26" fill="none" stroke="rgba(80,100,200,0.2)" strokeWidth="10" />
-      <circle cx="0" cy="0" r="15" fill="none" stroke={active ? 'rgba(255,190,60,0.8)' : 'rgba(180,120,40,0.4)'} strokeWidth="2.5" />
+      <circle cx="0" cy="0" r="15" fill="none" stroke={active ? 'rgba(255,190,60,0.85)' : 'rgba(180,120,40,0.4)'} strokeWidth="2.5" />
       <circle cx="0" cy="0" r="11" fill="#000" />
-      {active && <ellipse cx="0" cy="0" rx="20" ry="5" fill="none" stroke="rgba(255,160,40,0.35)" strokeWidth="3" />}
+      {active && <ellipse cx="0" cy="0" rx="22" ry="5.5" fill="none" stroke="rgba(255,160,40,0.35)" strokeWidth="3" />}
     </svg>
   );
 }
