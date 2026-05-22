@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FrequencyVisualizer } from './FrequencyVisualizer';
 import { PlayerControls } from './PlayerControls';
 import { PlayerSidebar } from './PlayerSidebar';
@@ -88,9 +88,14 @@ export function VoxNovaPlayer() {
 
   const [view, setView] = useState<LibraryView>('cloud');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  // WAV is the default protocol
   const [scanProtocol, setScanProtocol] = useState<ScanConfig['accept']>('wav');
   const [scanPattern, setScanPattern] = useState('');
+  /**
+   * hideSidebarWhenPlaying: off by default.
+   * When enabled, the sidebar collapses while isPlaying and re-appears on pause/stop.
+   */
+  const [hideSidebarWhenPlaying, setHideSidebarWhenPlaying] = useState(false);
+  const onToggleHideSidebar = useCallback(() => setHideSidebarWhenPlaying(v => !v), []);
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +105,9 @@ export function VoxNovaPlayer() {
 
   const selectedTrack = library.tracks.find(t => t.id === selectedId);
   const visibleTracks = library.tracks.filter(t => t.source === view);
+
+  // Sidebar is visible unless the opt-in hide-when-playing flag is active AND engine is playing
+  const sidebarVisible = !(hideSidebarWhenPlaying && engine.isPlaying);
 
   const handleSelect = (track: TrackEntry) => {
     setSelectedId(track.id);
@@ -193,7 +201,7 @@ export function VoxNovaPlayer() {
   const memo = selectedTrack?.memo
     || (selectedTrack
       ? `[LCARS_SCAN] Identified: ${selectedTrack.title} | Integrity: Nominal`
-      : '[LCARS_SCAN] Standby — awaiting signal selection.');
+      : '[LCARS_SCAN] Standby \u2014 awaiting signal selection.');
 
   const title = selectedTrack?.title ?? 'Subspace Channel Idle';
 
@@ -220,24 +228,28 @@ export function VoxNovaPlayer() {
         overflow: 'hidden',
       }}
     >
-      {/* Sidebar always visible */}
-      <PlayerSidebar
-        view={view}
-        setView={setView}
-        tracks={library.tracks}
-        selectedId={selectedId}
-        onSelect={handleSelect}
-        onPurge={handlePurge}
-        scanProtocol={scanProtocol}
-        setScanProtocol={setScanProtocol}
-        scanPattern={scanPattern}
-        setScanPattern={setScanPattern}
-        uploadInputRef={uploadInputRef}
-        folderInputRef={folderInputRef}
-        buildAccept={buildAccept}
-        handleUplinkFiles={handleUplinkFiles}
-        handleScanFolder={handleScanFolder}
-      />
+      {/* Sidebar — always mounted; hidden via display:none when opt-in + playing */}
+      {sidebarVisible && (
+        <PlayerSidebar
+          view={view}
+          setView={setView}
+          tracks={library.tracks}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          onPurge={handlePurge}
+          scanProtocol={scanProtocol}
+          setScanProtocol={setScanProtocol}
+          scanPattern={scanPattern}
+          setScanPattern={setScanPattern}
+          uploadInputRef={uploadInputRef}
+          folderInputRef={folderInputRef}
+          buildAccept={buildAccept}
+          handleUplinkFiles={handleUplinkFiles}
+          handleScanFolder={handleScanFolder}
+          hideSidebarWhenPlaying={hideSidebarWhenPlaying}
+          onToggleHideSidebar={onToggleHideSidebar}
+        />
+      )}
 
       {/* MAIN PANEL */}
       <main

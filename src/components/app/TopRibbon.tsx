@@ -13,10 +13,10 @@ import { copyToClipboard } from '../../utils/clipboard';
 import type { EditMode } from '../../types';
 
 /**
- * TopRibbon — assembly component (~100 lines).
+ * TopRibbon — assembly component.
  * Owns: burger state, right-side actions.
  * Delegates: <RibbonMenuPanel> (menu), <RibbonTabs> (tab strip).
- * NOTE: VoiceAssistantButton has been moved to StatusBar.
+ * NOTE: "Send to LYRIA" button removed per UX decision.
  */
 interface Props {
   hasApiKey: boolean;
@@ -30,7 +30,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
   const { past, future, undo, redo } = useSongHistoryContext();
   const { isGenerating, clearSelection } = useComposerContext();
   const { song } = useSongContext();
-  const { activeTab, setActiveTab, isLeftPanelOpen, setIsLeftPanelOpen, isStructureOpen, setIsStructureOpen } = useAppNavigationContext();
+  const { activeTab, setActiveTab: _setActiveTab, isLeftPanelOpen, setIsLeftPanelOpen, isStructureOpen, setIsStructureOpen } = useAppNavigationContext();
   const { openKeyboardShortcuts, isAnalyzing } = useTopRibbonActions();
   const { t } = useTranslation();
 
@@ -44,8 +44,6 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const lyriaSentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [lyriaSent, setLyriaSent] = useState(false);
   const [lyricsCopied, setLyricsCopied] = useState(false);
 
   const lyricsText = useMemo(() => {
@@ -70,7 +68,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
   }, [lyricsText]);
 
   const toggleLeftPanel = () => {
-    if (!isLeftPanelOpen) { setActiveTab('lyrics'); setIsStructureOpen(false); }
+    if (!isLeftPanelOpen) { setIsStructureOpen(false); }
     setIsLeftPanelOpen(!isLeftPanelOpen);
   };
   const toggleStructurePanel = () => {
@@ -78,23 +76,6 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
     if (next) clearSelection();
     setIsStructureOpen(next);
   };
-
-  useEffect(() => () => {
-    if (lyriaSentTimeoutRef.current) clearTimeout(lyriaSentTimeoutRef.current);
-  }, []);
-
-  const handleSendToLyria = () => {
-    setActiveTab('musical');
-    if (lyriaSentTimeoutRef.current) clearTimeout(lyriaSentTimeoutRef.current);
-    setLyriaSent(true);
-    lyriaSentTimeoutRef.current = setTimeout(() => {
-      setLyriaSent(false);
-    }, 2000);
-  };
-
-  const lyriaTooltip = lyriaSent
-    ? (t.tooltips.sendToLyriaConfirm ?? 'Opening Musical…')
-    : (t.tooltips.sendToLyria ?? 'Open the Musical tab to generate a preview with Lyria');
 
   const lyricsTooltip = lyricsCopied
     ? (t.tooltips.copyLyricsConfirm ?? 'Lyrics copied to clipboard')
@@ -143,49 +124,20 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
             </button>
           </Tooltip>
         )}
-        {/* Send to LYRIA button + Copy Lyrics (lyrics tab only) */}
-        <div className="flex items-center gap-1">
-          <Tooltip title={lyriaTooltip}>
+        {/* Copy Lyrics (lyrics tab only) */}
+        {activeTab === 'lyrics' && (
+          <Tooltip title={lyricsTooltip}>
             <button
-              onClick={handleSendToLyria}
-              disabled={lyriaSent}
-              aria-label={t.ribbon.send_to_lyria ?? 'Send to LYRIA'}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all disabled:cursor-not-allowed disabled:opacity-70"
-              style={{
-                background: lyriaSent
-                  ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 12%, transparent)'
-                  : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 12%, transparent)',
-                color: lyriaSent
-                  ? 'var(--lcars-cyan, #4f98a3)'
-                  : 'var(--lcars-violet, #a86fdf)',
-                border: `1px solid ${
-                  lyriaSent
-                    ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 25%, transparent)'
-                    : 'color-mix(in srgb, var(--lcars-violet, #a86fdf) 25%, transparent)'
-                }`,
-              }}
+              onClick={handleCopyLyrics}
+              disabled={!lyricsText}
+              aria-label={t.ribbon.copy_lyrics ?? t.tooltips.copyLyrics ?? 'Copy Lyrics'}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium uppercase tracking-wide border border-[var(--border-color)] text-[var(--text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {lyriaSent
-                ? <Check className="w-3.5 h-3.5" />
-                : <Sparkles className="w-3.5 h-3.5" />}
-              <span className="hidden lg:inline">{t.ribbon.send_to_lyria ?? 'Send to LYRIA'}</span>
+              {lyricsCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span className="hidden lg:inline">{lyricsCopied ? (t.musical?.copied ?? 'Copied!') : (t.ribbon.copy_lyrics ?? 'Copy Lyrics')}</span>
             </button>
           </Tooltip>
-
-          {activeTab === 'lyrics' && (
-            <Tooltip title={lyricsTooltip}>
-              <button
-                onClick={handleCopyLyrics}
-                disabled={!lyricsText}
-                aria-label={t.ribbon.copy_lyrics ?? t.tooltips.copyLyrics ?? 'Copy Lyrics'}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium uppercase tracking-wide border border-[var(--border-color)] text-[var(--text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {lyricsCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="hidden lg:inline">{lyricsCopied ? (t.musical?.copied ?? 'Copied!') : (t.ribbon.copy_lyrics ?? 'Copy Lyrics')}</span>
-              </button>
-            </Tooltip>
-          )}
-        </div>
+        )}
         <div className="w-px h-4 bg-[var(--border-color)] mx-1 hidden lg:block" />
         <Tooltip title={t.tooltips.undo}>
           <IconButton onClick={undo} disabled={!canUndo} size="small" style={{ color: canUndo ? 'var(--accent-color)' : 'var(--text-secondary)', minWidth: 36, minHeight: 36 }} className={canUndo ? 'bg-[var(--accent-color)]/10 hover:bg-[var(--accent-color)]/20' : 'opacity-40 saturate-0 cursor-not-allowed'} aria-disabled={!canUndo} aria-label={t.tooltips.undo}>
