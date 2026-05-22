@@ -603,10 +603,12 @@ export function VoxNovaPlayer() {
             <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
           </div>
 
-          {/* SINGULARITY STATUS — pushed to bottom with marginTop:auto */}
+          {/* Flex spacer — pushes SINGULARITY STATUS + SUBSPACE FREQUENCY SCAN to the bottom */}
+          <div style={{ flex: 1, minHeight: 0 }} aria-hidden="true" />
+
+          {/* SINGULARITY STATUS */}
           <div
             style={{
-              marginTop: 'auto',
               alignSelf: 'center',
               width: CONTENT_WIDTH,
               border: `1px solid rgba(100,100,200,0.25)`,
