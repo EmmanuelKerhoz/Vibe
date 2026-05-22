@@ -8,6 +8,7 @@ import { useFrequencyAnalyser } from './useFrequencyAnalyser';
 import { useLibraryContext } from '../../contexts/LibraryContext';
 import { LCARS } from './lcarsTheme';
 import type { TrackEntry, ScanConfig } from './types';
+import type { TrackInfo } from './useAudioEngine';
 
 type LibraryView = 'cloud' | 'local' | 'lyria';
 
@@ -83,7 +84,7 @@ function immediateParentName(f: File): string {
   return f.name.replace(/\.[^/.]+$/, '');
 }
 
-// ── LCARS background layer (shared with Lyrics/Musical modes) ─────────────────
+// ── LCARS background layer ────────────────────────────────────────────────────
 function LCARSBackground() {
   return (
     <div
@@ -99,7 +100,6 @@ function LCARSBackground() {
           'radial-gradient(ellipse at 50% 0%, rgba(100,180,255,0.03) 0%, transparent 60%)',
       }}
     >
-      {/* Horizontal scanlines */}
       <div
         style={{
           position: 'absolute',
@@ -109,7 +109,6 @@ function LCARSBackground() {
           backgroundSize: '100% 4px',
         }}
       />
-      {/* LCARS grid overlay */}
       <div
         style={{
           position: 'absolute',
@@ -123,6 +122,56 @@ function LCARSBackground() {
         }}
       />
     </div>
+  );
+}
+
+// ── Tech spec line rendered inside MEMO LOG ───────────────────────────────────
+function TechSpecLine({ info, duration }: { info: TrackInfo | null; duration: number }) {
+  if (!info) {
+    return (
+      <span style={{ color: 'rgba(153,102,204,0.5)', fontStyle: 'italic' }}>
+        [SIGNAL_ANALYSIS] Scanning...
+      </span>
+    );
+  }
+
+  const parts: string[] = [];
+
+  // Channel topology
+  parts.push(info.channelLabel);
+
+  // Sample rate
+  if (info.sampleRate) {
+    const khz = (info.sampleRate / 1000).toFixed(1);
+    parts.push(`${khz} kHz`);
+  }
+
+  // Bitrate
+  if (info.bitrateKbps) {
+    parts.push(`~${info.bitrateKbps} kbps`);
+  }
+
+  // Duration
+  if (duration > 0) {
+    const m = Math.floor(duration / 60);
+    const s = Math.floor(duration % 60).toString().padStart(2, '0');
+    parts.push(`${m}:${s}`);
+  }
+
+  // Type tag
+  parts.push(info.isVideo ? 'VIDEO+AUDIO' : 'AUDIO');
+
+  return (
+    <span>
+      {parts.map((p, i) => (
+        <span key={i}>
+          {i > 0 && (
+            <span style={{ color: 'rgba(153,102,204,0.45)', margin: '0 6px' }}>│</span>
+          )}
+          <span style={{ color: i === 0 ? LCARS.amber : LCARS.purple }}>{p}</span>
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -201,7 +250,6 @@ function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProp
         </span>
       </div>
 
-      {/* Video element — ref managed externally by engine */}
       <video
         ref={videoRef}
         src={src}
@@ -212,7 +260,6 @@ function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProp
         aria-label="Video player"
       />
 
-      {/* LCARS side accents */}
       <div aria-hidden="true" style={{ position: 'absolute', top: 30, left: 0, width: 3, height: 36, background: LCARS.purple, borderRadius: '0 2px 2px 0', opacity: 0.55 }} />
       <div aria-hidden="true" style={{ position: 'absolute', top: 30, right: 0, width: 3, height: 36, background: LCARS.orange, borderRadius: '2px 0 0 2px', opacity: 0.55 }} />
     </div>
@@ -232,9 +279,8 @@ export function VoxNovaPlayer() {
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  // Stable ref for the <video> DOM element — passed directly to VideoPlayer
+  // Stable ref for the <video> DOM element
   const videoElRef = useRef<HTMLVideoElement>(null);
-  // Track whether we need to auto-play once the video element mounts
   const pendingVideoPlay = useRef(false);
 
   const registry = useMemo(() => genRegistry(), []);
@@ -243,7 +289,6 @@ export function VoxNovaPlayer() {
   const selectedTrack = library.tracks.find(t => t.id === selectedId);
   const visibleTracks = library.tracks.filter(t => t.source === view);
 
-  // Keep shuffle/repeat/autoplay refs current for the onEnded callback
   const shuffleRef = useRef(engine.shuffle);
   const repeatRef = useRef(engine.repeat);
   const autoplayRef = useRef(engine.autoplay);
@@ -290,7 +335,6 @@ export function VoxNovaPlayer() {
     }
   }, [visibleTracks, engine]);
 
-  // Wire onTrackEnded — respects repeat AND autoplay flags
   useEffect(() => {
     engine.setOnTrackEnded(() => {
       if (repeatRef.current !== 'none') {
@@ -302,13 +346,9 @@ export function VoxNovaPlayer() {
     return () => engine.setOnTrackEnded(undefined);
   }, [engine, handleNext]);
 
-  // ── Video element lifecycle ──────────────────────────────────────────────────
-  // When selectedTrack switches to a video, attach the <video> element to the engine
-  // and load+play. The <video> DOM is stable (videoElRef, never unmounts once video is
-  // selected) so we do this in a useEffect instead of a ref callback.
+  // ── Video element lifecycle ───────────────────────────────────────────────
   useEffect(() => {
     if (!selectedTrack?.isVideo) {
-      // Detach video element when switching back to audio
       engine.attachVideoElement(null);
       return;
     }
@@ -324,7 +364,6 @@ export function VoxNovaPlayer() {
   const handleSelect = useCallback((track: TrackEntry) => {
     setSelectedId(track.id);
     if (track.isVideo) {
-      // Video playback is handled by the useEffect above once DOM is ready
       pendingVideoPlay.current = true;
       engine.beep(880, 'sine', 0.05);
     } else {
@@ -420,10 +459,8 @@ export function VoxNovaPlayer() {
         overflow: 'hidden',
       }}
     >
-      {/* ── LCARS background (scanlines + grid nebula) ── */}
       <LCARSBackground />
 
-      {/* Sidebar — always visible */}
       <PlayerSidebar
         view={view}
         setView={setView}
@@ -562,7 +599,7 @@ export function VoxNovaPlayer() {
             <div style={{ width: 120, height: 3, background: LCARS.peach, borderRadius: 2 }} aria-hidden="true" />
           </div>
 
-          {/* LOCAL MEMO LOG */}
+          {/* LOCAL MEMO LOG — with tech spec second line */}
           <div
             style={{
               alignSelf: 'center',
@@ -574,12 +611,31 @@ export function VoxNovaPlayer() {
             }}
           >
             <div style={{ color: LCARS.purple, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>LOCAL MEMO LOG</div>
-            <div style={{ color: LCARS.text, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5, wordBreak: 'break-word' }}>
+            {/* Memo text */}
+            <div style={{ color: LCARS.text, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5, wordBreak: 'break-word', marginBottom: selectedTrack ? 8 : 0 }}>
               {memo}
             </div>
+            {/* Tech spec line — only when a track is selected */}
+            {selectedTrack && (
+              <div
+                style={{
+                  borderTop: `1px solid ${LCARS.purple}22`,
+                  paddingTop: 6,
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  letterSpacing: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <span style={{ color: LCARS.subText, marginRight: 6 }}>SIGNAL_ANALYSIS</span>
+                <TechSpecLine info={engine.trackInfo} duration={engine.duration} />
+              </div>
+            )}
           </div>
 
-          {/* ── VIDEO STREAM — shown between MEMO LOG and controls when track is video ── */}
+          {/* VIDEO STREAM — between MEMO LOG and controls */}
           {selectedTrack?.isVideo && (
             <VideoPlayer
               src={selectedTrack.url}
@@ -648,8 +704,8 @@ export function VoxNovaPlayer() {
             <BlackHoleBadge active={engine.isPlaying} />
           </div>
 
-          {/* SUBSPACE FREQUENCY SCAN — hidden for video tracks */}
-          {!selectedTrack?.isVideo && (
+          {/* SUBSPACE FREQUENCY SCAN — always visible when a track is selected */}
+          {selectedTrack && (
             <div
               style={{
                 alignSelf: 'center',
@@ -661,7 +717,7 @@ export function VoxNovaPlayer() {
               }}
             >
               <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 3, marginBottom: 6, paddingLeft: 4 }}>
-                SUBSPACE FREQUENCY SCAN
+                SUBSPACE FREQUENCY SCAN{selectedTrack.isVideo ? ' \u2014 AUDIO TRACK' : ''}
               </div>
               <FrequencyVisualizer isPlaying={engine.isPlaying} analyser={analyser} audioRef={engine.audioRef} />
             </div>

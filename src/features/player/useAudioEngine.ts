@@ -3,6 +3,17 @@ import type { TrackEntry } from './types';
 
 export type RepeatMode = 'none' | 'one' | 'all';
 
+export interface TrackInfo {
+  channels: number | null;
+  sampleRate: number | null;
+  /** Estimated bitrate in kbps — from file size + duration, null if unavailable */
+  bitrateKbps: number | null;
+  /** 'stereo' | 'mono' | '5.1' etc */
+  channelLabel: string;
+  codec: string | null;
+  isVideo: boolean;
+}
+
 export interface AudioEngineState {
   /** Ref to the underlying media element — may be <audio> or <video> */
   audioRef: React.RefObject<HTMLMediaElement>;
@@ -13,6 +24,7 @@ export interface AudioEngineState {
   repeat: RepeatMode;
   shuffle: boolean;
   autoplay: boolean;
+  trackInfo: TrackInfo | null;
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
@@ -30,6 +42,45 @@ export interface AudioEngineState {
   attachVideoElement: (el: HTMLVideoElement | null) => void;
 }
 
+function channelLabel(n: number): string {
+  if (n === 1) return 'MONO';
+  if (n === 2) return 'STEREO';
+  if (n === 6) return '5.1 SURROUND';
+  if (n === 8) return '7.1 SURROUND';
+  return `${n}CH`;
+}
+
+/** Probe audio file via WebAudio decodeAudioData — returns partial TrackInfo */
+async function probeAudioFile(
+  url: string,
+  fileSizeBytes: number | null,
+  duration: number,
+): Promise<Partial<TrackInfo>> {
+  try {
+    const res = await fetch(url);
+    const buf = await res.arrayBuffer();
+    const AudioCtx = window.AudioContext ||
+      (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return {};
+    const ctx = new AudioCtx();
+    const decoded = await ctx.decodeAudioData(buf);
+    await ctx.close();
+    const ch = decoded.numberOfChannels;
+    const sr = decoded.sampleRate;
+    const size = fileSizeBytes ?? buf.byteLength;
+    const bitrate = duration > 0 ? Math.round((size * 8) / duration / 1000) : null;
+    return {
+      channels: ch,
+      sampleRate: sr,
+      bitrateKbps: bitrate,
+      channelLabel: channelLabel(ch),
+      isVideo: false,
+    };
+  } catch {
+    return {};
+  }
+}
+
 export function useAudioEngine(): AudioEngineState {
   // Primary audio element for non-video tracks
   const internalAudioRef = useRef<HTMLAudioElement>(new Audio());
@@ -45,6 +96,7 @@ export function useAudioEngine(): AudioEngineState {
   const [repeat, setRepeat] = useState<RepeatMode>('none');
   const [shuffle, setShuffle] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
+  const [trackInfo, setTrackInfo] = useState<TrackInfo | null>(null);
 
   const repeatRef = useRef<RepeatMode>('none');
   const onTrackEndedRef = useRef<(() => void) | undefined>(undefined);
@@ -113,6 +165,25 @@ export function useAudioEngine(): AudioEngineState {
     audioRef.current = el;
     el.volume = activeMediaRef.current.volume;
     bindListeners(el);
+    // Probe video metadata via loadedmetadata event
+    const onMeta = () => {
+      const videoEl = el as HTMLVideoElement;
+      setTrackInfo({
+        channels: null,
+        sampleRate: null,
+        bitrateKbps: null,
+        channelLabel: 'STEREO', // assumption for video — audio track info unavailable in WebAPI
+        codec: null,
+        isVideo: true,
+      });
+      // If browser exposes audioTracks (non-standard, Firefox/some Chromium)
+      type MediaWithAudio = HTMLVideoElement & { audioTracks?: { length: number } };
+      const at = (videoEl as MediaWithAudio).audioTracks;
+      if (at && at.length) {
+        setTrackInfo(prev => prev ? { ...prev, channels: at.length * 2 } : null);
+      }
+    };
+    el.addEventListener('loadedmetadata', onMeta, { once: true });
   }, [bindListeners]);
 
   const play = useCallback(() => {
@@ -155,6 +226,28 @@ export function useAudioEngine(): AudioEngineState {
       activeMediaRef.current = el;
       audioRef.current = el;
       bindListeners(el);
+      // Probe audio info asynchronously
+      setTrackInfo(null);
+      // We probe after a short delay to avoid blocking play
+      const srcUrl = track.url;
+      const probeStart = performance.now();
+      el.addEventListener('loadedmetadata', () => {
+        const dur = el.duration || 0;
+        const elapsed = performance.now() - probeStart;
+        // Only probe if metadata loaded within 3s
+        if (elapsed < 3000) {
+          probeAudioFile(srcUrl, null, dur).then(info => {
+            setTrackInfo({
+              channels: info.channels ?? null,
+              sampleRate: info.sampleRate ?? null,
+              bitrateKbps: info.bitrateKbps ?? null,
+              channelLabel: info.channelLabel ?? (info.channels === 1 ? 'MONO' : 'STEREO'),
+              codec: null,
+              isVideo: false,
+            });
+          });
+        }
+      }, { once: true });
     }
     setCurrentTime(0);
     setIsPlaying(false);
@@ -197,7 +290,7 @@ export function useAudioEngine(): AudioEngineState {
 
   return {
     audioRef, isPlaying, currentTime, duration, volume,
-    repeat, shuffle, autoplay,
+    repeat, shuffle, autoplay, trackInfo,
     play, pause, togglePlay, seek, setVolume, loadTrack, beep,
     toggleRepeat, toggleShuffle, toggleAutoplay,
     setOnTrackEnded, attachVideoElement,
