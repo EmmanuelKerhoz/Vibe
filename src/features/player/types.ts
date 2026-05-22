@@ -9,10 +9,14 @@ export interface TrackEntry {
   linked?: boolean;
   /** True when the file is a video container (mp4/webm/mov/mkv) */
   isVideo?: boolean;
-  /** OneDrive item ID — used to refresh expired streaming URLs */
+  /** OneDrive Graph item ID — present only for source === 'cloud' */
   oneDriveItemId?: string;
-  /** Display path from OneDrive root (e.g. /OneDrive/Music/Album) */
-  oneDrivePath?: string;
+  /** OneDrive drive ID — used for multi-drive support */
+  oneDrivedriveId?: string;
+  /** ISO timestamp of last modification — used for display */
+  oneDriveLastModified?: string;
+  /** Approximate file size in bytes */
+  oneDriveSize?: number;
 }
 
 export interface ScanConfig {

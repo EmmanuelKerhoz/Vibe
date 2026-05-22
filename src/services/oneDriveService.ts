@@ -1,202 +1,211 @@
 /**
- * OneDrive Graph API Service
- * Auth: MSAL PopupLogin (no redirect — single-page PWA)
- * Scope: Files.Read (read-only, personal + business)
- * Streaming: @microsoft.graph.downloadUrl → direct range-request CDN URL (no download)
+ * OneDrive Graph API Service — MSAL SPA + Microsoft Graph v1.0
+ *
+ * Scopes: Files.Read (minimum — read user's own files)
+ * Auth flow: popup (SPA, no backend)
+ * Streaming: @microsoft.graph.downloadUrl — pre-authenticated, supports Range requests
  */
+import {
+  PublicClientApplication,
+  type AccountInfo,
+  type AuthenticationResult,
+  InteractionRequiredAuthError,
+} from '@azure/msal-browser';
 
-import type { PublicClientApplication, AccountInfo } from '@azure/msal-browser';
+// ---------------------------------------------------------------------------
+// App registration — replace CLIENT_ID with your Azure AD app registration.
+// Redirect URI: https://lyricist.valor.cloud (or http://localhost:5173 for dev)
+// Required API permission: Microsoft Graph → Files.Read (delegated)
+// ---------------------------------------------------------------------------
+const CLIENT_ID = import.meta.env.VITE_ONEDRIVE_CLIENT_ID ?? 'YOUR_AZURE_APP_CLIENT_ID';
+const TENANT   = 'common'; // multi-tenant; use your tenantId for single-tenant
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
-export interface OneDriveItem {
-  id: string;
-  name: string;
-  size: number;
-  /** Direct streaming URL (pre-signed, ~1 h validity) */
-  downloadUrl: string;
-  mimeType: string;
-  parentPath: string;
-}
-
-export type OneDriveAuthState =
-  | { status: 'idle' }
-  | { status: 'pending' }
-  | { status: 'connected'; account: AccountInfo }
-  | { status: 'error'; message: string };
-
-// ── Constants ───────────────────────────────────────────────────────────────
-
-/** Azure App Registration — redirect: single-page, public client */
-const CLIENT_ID = import.meta.env.VITE_MSAL_CLIENT_ID as string | undefined;
+const msalConfig = {
+  auth: {
+    clientId: CLIENT_ID,
+    authority: `https://login.microsoftonline.com/${TENANT}`,
+    redirectUri: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173',
+  },
+  cache: { cacheLocation: 'sessionStorage' as const, storeAuthStateInCookie: false },
+};
 
 const SCOPES = ['Files.Read', 'User.Read'];
 
-const AUDIO_MIME_RE = /^audio\//;
-const VIDEO_MIME_RE = /^video\//;
-const AUDIO_EXT_RE = /\.(mp3|wav|m4a|flac|ogg|aac|opus|wma)$/i;
-const VIDEO_EXT_RE = /\.(mp4|webm|mov|mkv)$/i;
-
-function isMedia(item: { name: string; file?: { mimeType?: string } }): boolean {
-  const mime = item.file?.mimeType ?? '';
-  return AUDIO_MIME_RE.test(mime) || VIDEO_MIME_RE.test(mime) ||
-    AUDIO_EXT_RE.test(item.name) || VIDEO_EXT_RE.test(item.name);
-}
-
-// ── MSAL lazy-loader ────────────────────────────────────────────────────────
-
+// Singleton — one MSAL instance per SPA session
 let _msalInstance: PublicClientApplication | null = null;
 
-async function getMsalInstance(): Promise<PublicClientApplication> {
-  if (_msalInstance) return _msalInstance;
-
-  const clientId = CLIENT_ID;
-  if (!clientId) throw new Error('VITE_MSAL_CLIENT_ID is not set. Add it to your .env file.');
-
-  // Dynamic import — keeps MSAL out of the initial bundle
-  const { PublicClientApplication: PCAM, LogLevel } = await import('@azure/msal-browser');
-
-  const instance = new PCAM({
-    auth: {
-      clientId,
-      authority: 'https://login.microsoftonline.com/common',
-      redirectUri: window.location.origin,
-    },
-    cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
-    system: {
-      loggerOptions: {
-        loggerCallback: () => {},
-        logLevel: LogLevel.Warning,
-        piiLoggingEnabled: false,
-      },
-    },
-  });
-
-  await instance.initialize();
-  _msalInstance = instance;
-  return instance;
+function getMsal(): PublicClientApplication {
+  if (!_msalInstance) {
+    _msalInstance = new PublicClientApplication(msalConfig);
+  }
+  return _msalInstance;
 }
 
-// ── Auth ────────────────────────────────────────────────────────────────────
+/** Initialize MSAL (must be called once before any auth op) */
+export async function initMsal(): Promise<void> {
+  const msal = getMsal();
+  await msal.initialize();
+  // Handle redirect response if we're coming back from a redirect flow
+  await msal.handleRedirectPromise();
+}
 
-/** Opens the MSAL popup login. Returns the active account on success. */
-export async function signInWithMsal(): Promise<AccountInfo> {
-  const msal = await getMsalInstance();
-
-  // Try silent first (already logged in)
+/** Returns the currently signed-in account, or null */
+export function getAccount(): AccountInfo | null {
+  const msal = getMsal();
   const accounts = msal.getAllAccounts();
-  if (accounts.length > 0) {
-    try {
-      const silent = await msal.acquireTokenSilent({ scopes: SCOPES, account: accounts[0] });
-      return silent.account;
-    } catch {
-      // fall through to popup
-    }
-  }
+  return accounts[0] ?? null;
+}
 
-  const result = await msal.loginPopup({ scopes: SCOPES });
+/** Sign in via popup — returns the account on success */
+export async function signIn(): Promise<AccountInfo> {
+  const msal = getMsal();
+  const result: AuthenticationResult = await msal.loginPopup({ scopes: SCOPES });
   return result.account;
 }
 
-export async function signOutMsal(): Promise<void> {
-  if (!_msalInstance) return;
-  const accounts = _msalInstance.getAllAccounts();
-  if (accounts.length > 0) {
-    await _msalInstance.logoutPopup({ account: accounts[0] });
+/** Sign out the current account */
+export async function signOut(): Promise<void> {
+  const msal = getMsal();
+  const account = getAccount();
+  if (account) await msal.logoutPopup({ account });
+}
+
+/** Silently acquire an access token (falls back to popup on interaction required) */
+async function getAccessToken(): Promise<string> {
+  const msal = getMsal();
+  const account = getAccount();
+  if (!account) throw new Error('ONEDRIVE_NOT_SIGNED_IN');
+  try {
+    const result = await msal.acquireTokenSilent({ scopes: SCOPES, account });
+    return result.accessToken;
+  } catch (err) {
+    if (err instanceof InteractionRequiredAuthError) {
+      const result = await msal.acquireTokenPopup({ scopes: SCOPES, account });
+      return result.accessToken;
+    }
+    throw err;
   }
 }
 
-async function getAccessToken(): Promise<string> {
-  const msal = await getMsalInstance();
-  const accounts = msal.getAllAccounts();
-  if (!accounts.length) throw new Error('Not authenticated');
-  const result = await msal.acquireTokenSilent({ scopes: SCOPES, account: accounts[0] });
-  return result.accessToken;
+// ---------------------------------------------------------------------------
+// Graph types
+// ---------------------------------------------------------------------------
+export interface OneDriveItem {
+  id: string;
+  name: string;
+  /** Signed temporary URL — valid ~1 hour, supports Range */
+  downloadUrl: string;
+  driveId: string;
+  size: number;
+  mimeType: string;
+  isVideo: boolean;
+  /** ISO timestamp — for display / sort */
+  lastModified: string;
 }
 
-// ── Graph API helpers ────────────────────────────────────────────────────────
+const AUDIO_MIME = /^audio\//;
+const VIDEO_MIME = /^video\//;
+const AUDIO_EXT  = /\.(mp3|wav|m4a|flac|ogg|aac|opus|wma)$/i;
+const VIDEO_EXT  = /\.(mp4|webm|mov|mkv|avi)$/i;
 
-const GRAPH = 'https://graph.microsoft.com/v1.0';
+function isMediaItem(item: { name: string; file?: { mimeType?: string } }): boolean {
+  const mime = item.file?.mimeType ?? '';
+  return AUDIO_MIME.test(mime) || VIDEO_MIME.test(mime) ||
+         AUDIO_EXT.test(item.name) || VIDEO_EXT.test(item.name);
+}
 
+// ---------------------------------------------------------------------------
+// Graph API calls
+// ---------------------------------------------------------------------------
 async function graphGet<T>(path: string): Promise<T> {
   const token = await getAccessToken();
-  const res = await fetch(`${GRAPH}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
   });
-  if (!res.ok) throw new Error(`Graph ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Graph ${res.status}: ${body.slice(0, 200)}`);
+  }
   return res.json() as Promise<T>;
 }
 
-interface GraphItem {
+interface GraphDriveItem {
   id: string;
   name: string;
-  size: number;
-  file?: { mimeType?: string };
-  folder?: object;
-  parentReference?: { path?: string };
   '@microsoft.graph.downloadUrl'?: string;
+  parentReference?: { driveId?: string };
+  size?: number;
+  file?: { mimeType?: string };
+  folder?: unknown;
+  lastModifiedDateTime?: string;
 }
 
-interface GraphListResponse {
-  value: GraphItem[];
+interface GraphDriveItemList {
+  value: GraphDriveItem[];
   '@odata.nextLink'?: string;
 }
 
-/** Recursively enumerate all media files under a given folder item-id (or 'root'). */
-async function collectMedia(
-  folderId: string,
-  parentPath: string,
-  accumulator: OneDriveItem[],
+/**
+ * List audio/video items in a OneDrive folder (recursive up to 3 levels).
+ * folderId = 'root' for the user's root drive.
+ */
+export async function listMediaItems(
+  folderId = 'root',
+  driveId?: string,
   depth = 0,
-): Promise<void> {
-  if (depth > 6) return; // guard against deeply nested structures
+): Promise<OneDriveItem[]> {
+  if (depth > 3) return [];
+  const basePath = driveId
+    ? `/drives/${driveId}/items/${folderId}/children`
+    : folderId === 'root'
+      ? '/me/drive/root/children'
+      : `/me/drive/items/${folderId}/children`;
 
-  const endpoint = folderId === 'root'
-    ? `/me/drive/root/children?$select=id,name,size,file,folder,parentReference,@microsoft.graph.downloadUrl&$top=200`
-    : `/me/drive/items/${folderId}/children?$select=id,name,size,file,folder,parentReference,@microsoft.graph.downloadUrl&$top=200`;
-
-  let url: string | undefined = endpoint;
+  const select = 'id,name,file,folder,size,lastModifiedDateTime,parentReference,@microsoft.graph.downloadUrl';
+  let url: string | undefined = `${basePath}?$select=${select}&$top=200`;
+  const results: OneDriveItem[] = [];
+  const subFolderFetches: Promise<OneDriveItem[]>[] = [];
 
   while (url) {
-    const data = await graphGet<GraphListResponse>(url.startsWith('http') ? url.replace(GRAPH, '') : url);
-    for (const item of data.value) {
+    const page = await graphGet<GraphDriveItemList>(url.startsWith('/') ? url : url.replace('https://graph.microsoft.com/v1.0', ''));
+    for (const item of page.value) {
       if (item.folder) {
-        // Recurse into sub-folder
-        await collectMedia(item.id, `${parentPath}/${item.name}`, accumulator, depth + 1);
-      } else if (isMedia(item) && item['@microsoft.graph.downloadUrl']) {
-        accumulator.push({
+        subFolderFetches.push(
+          listMediaItems(item.id, item.parentReference?.driveId, depth + 1)
+        );
+      } else if (isMediaItem(item) && item['@microsoft.graph.downloadUrl']) {
+        const mime = item.file?.mimeType ?? '';
+        results.push({
           id: item.id,
           name: item.name,
-          size: item.size,
           downloadUrl: item['@microsoft.graph.downloadUrl'],
-          mimeType: item.file?.mimeType ?? '',
-          parentPath,
+          driveId: item.parentReference?.driveId ?? '',
+          size: item.size ?? 0,
+          mimeType: mime,
+          isVideo: VIDEO_MIME.test(mime) || VIDEO_EXT.test(item.name),
+          lastModified: item.lastModifiedDateTime ?? '',
         });
       }
     }
-    url = data['@odata.nextLink'];
+    // Handle pagination
+    const nextLink = page['@odata.nextLink'];
+    url = nextLink ? nextLink.replace('https://graph.microsoft.com/v1.0', '') : undefined;
   }
+
+  const subResults = await Promise.all(subFolderFetches);
+  return [...results, ...subResults.flat()];
 }
 
 /**
- * Browse the user's OneDrive root and return all audio/video items.
- * Each item carries a `downloadUrl` suitable for direct `<audio src>` streaming.
+ * Refresh the downloadUrl for a single item (they expire ~1 hour).
+ * Returns the fresh downloadUrl.
  */
-export async function fetchOneDriveMediaItems(): Promise<OneDriveItem[]> {
-  const items: OneDriveItem[] = [];
-  await collectMedia('root', '/OneDrive', items);
-  return items;
-}
-
-/**
- * Refresh the streaming URL for a single item.
- * Use this when the cached downloadUrl has expired (~1 h).
- */
-export async function refreshDownloadUrl(itemId: string): Promise<string> {
-  const data = await graphGet<{ '@microsoft.graph.downloadUrl'?: string }>(
-    `/me/drive/items/${itemId}?$select=id,@microsoft.graph.downloadUrl`,
-  );
-  const url = data['@microsoft.graph.downloadUrl'];
-  if (!url) throw new Error(`No downloadUrl for item ${itemId}`);
-  return url;
+export async function refreshDownloadUrl(itemId: string, driveId?: string): Promise<string> {
+  const path = driveId
+    ? `/drives/${driveId}/items/${itemId}?$select=id,@microsoft.graph.downloadUrl`
+    : `/me/drive/items/${itemId}?$select=id,@microsoft.graph.downloadUrl`;
+  const item = await graphGet<GraphDriveItem>(path);
+  const fresh = item['@microsoft.graph.downloadUrl'];
+  if (!fresh) throw new Error(`No downloadUrl for item ${itemId}`);
+  return fresh;
 }
