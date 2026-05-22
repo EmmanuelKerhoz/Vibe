@@ -192,6 +192,7 @@ export function VoxNovaPlayer() {
   const CONTENT_WIDTH = 'min(680px, 95%)';
   const WIDE_WIDTH = 'min(900px, 98%)';
 
+  // Hide left sidebar when player is active (playing)
   const sidebarVisible = !engine.isPlaying;
 
   const lyriaCount = library.tracks.filter(t => t.source === 'lyria').length;
@@ -432,7 +433,7 @@ export function VoxNovaPlayer() {
             <BlackHoleBadge active={engine.isPlaying} />
           </div>
 
-          {/* SUBSPACE FREQUENCY SCAN — equalizer */}
+          {/* SUBSPACE FREQUENCY SCAN — equalizer, now directly under black hole */}
           <div
             style={{
               alignSelf: 'center',

@@ -157,7 +157,7 @@ export function PlayerSidebar({
         ))}
       </div>
 
-      {/* UPLINK button */}
+      {/* UPLINK button — textured background */}
       <button
         type="button"
         onClick={() => uploadInputRef.current?.click()}
@@ -167,21 +167,30 @@ export function PlayerSidebar({
           justifyContent: 'space-between',
           gap: 8,
           padding: '10px 14px',
-          background: `repeating-linear-gradient(
-            135deg,
-            ${LCARS.peach}22 0px,
-            ${LCARS.peach}22 2px,
-            transparent 2px,
-            transparent 8px
-          ), linear-gradient(180deg, ${LCARS.peach}44 0%, ${LCARS.peach}1a 100%)`,
+          background: `
+            repeating-linear-gradient(
+              135deg,
+              ${LCARS.peach}30 0px,
+              ${LCARS.peach}30 2px,
+              transparent 2px,
+              transparent 10px
+            ),
+            linear-gradient(
+              180deg,
+              ${LCARS.peach}55 0%,
+              ${LCARS.peach}22 60%,
+              ${LCARS.peach}0a 100%
+            )
+          `,
           color: LCARS.peach,
-          border: `2px solid ${LCARS.peach}`,
+          border: `2px solid ${LCARS.peach}cc`,
           borderRadius: 4,
           fontSize: 11,
           letterSpacing: 2,
           fontWeight: 700,
           cursor: 'pointer',
           fontFamily: 'inherit',
+          boxShadow: `0 0 8px ${LCARS.peach}44, inset 0 1px 0 ${LCARS.peach}33`,
         }}
         aria-label="Uplink audio files"
       >
@@ -191,7 +200,7 @@ export function PlayerSidebar({
         <span>UPLINK</span>
       </button>
 
-      {/* SCAN SECTOR — filter block */}
+      {/* SCAN SECTOR filter block */}
       <div
         style={{
           border: `1px solid ${LCARS.orange}55`,
@@ -257,12 +266,12 @@ export function PlayerSidebar({
         </div>
       </div>
 
-      {/* SCAN SECTOR button — outside filter block */}
+      {/* SCAN SECTOR button — outside filter block, text right-aligned */}
       <div
         style={{
           background: LCARS.orange,
           color: '#000',
-          padding: '14px 8px 24px 14px',
+          padding: '14px 20px 24px 14px',
           borderTopLeftRadius: 4,
           borderTopRightRadius: 4,
           borderBottomLeftRadius: 64,
@@ -270,10 +279,8 @@ export function PlayerSidebar({
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-end',
           gap: 8,
-          paddingLeft: 40,
-          paddingRight: 14,
         }}
         role="button"
         tabIndex={0}
