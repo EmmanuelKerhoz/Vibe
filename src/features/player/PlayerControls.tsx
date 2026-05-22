@@ -237,8 +237,8 @@ function VertDivider() {
 
 // ── Repeat state display ────────────────────────────────────────────────────
 
-const REPEAT_SUBLABEL: Record<RepeatMode, string | undefined> = {
-  none: undefined,
+const REPEAT_SUBLABEL: Record<RepeatMode, string> = {
+  none: '',
   one: 'TRACK',
   all: 'ALL',
 };
@@ -262,6 +262,8 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
     injectControlsCSS();
     injectedRef.current = true;
   }
+
+  const repeatSublabel = REPEAT_SUBLABEL[repeat] || undefined;
 
   const transportSquare: React.CSSProperties = {
     width: 52,
@@ -320,7 +322,7 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
         {/* REPEAT — cycles none → one → all */}
         <LCARSModeButton
           label="REPEAT"
-          sublabel={REPEAT_SUBLABEL[repeat]}
+          {...(repeatSublabel ? { sublabel: repeatSublabel } : {})}
           active={repeat !== 'none'}
           color={LCARS.purple}
           onClick={toggleRepeat}
