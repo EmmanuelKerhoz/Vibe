@@ -130,10 +130,11 @@ function LCARSBackground() {
 interface VideoPlayerProps {
   src: string;
   isPlaying: boolean;
-  onRef: (el: HTMLVideoElement | null) => void;
+  videoRef: React.RefObject<HTMLVideoElement>;
+  contentWidth: string;
 }
 
-function VideoPlayer({ src, isPlaying, onRef }: VideoPlayerProps) {
+function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProps) {
   const [showControls, setShowControls] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -143,19 +144,21 @@ function VideoPlayer({ src, isPlaying, onRef }: VideoPlayerProps) {
     timerRef.current = setTimeout(() => setShowControls(false), 2800);
   };
 
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
   return (
     <div
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setShowControls(false)}
       style={{
         alignSelf: 'center',
-        width: 'min(900px, 98%)',
+        width: contentWidth,
         border: `1px solid ${LCARS.purple}55`,
-        borderRadius: 6,
+        borderRadius: 4,
         overflow: 'hidden',
         background: '#000',
         position: 'relative',
-        boxShadow: `0 0 28px ${LCARS.purple}22, 0 4px 16px rgba(0,0,0,0.6)`,
+        boxShadow: `0 0 24px ${LCARS.purple}1a, 0 4px 16px rgba(0,0,0,0.5)`,
       }}
     >
       {/* LCARS label strip */}
@@ -165,7 +168,7 @@ function VideoPlayer({ src, isPlaying, onRef }: VideoPlayerProps) {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '5px 12px 4px',
-          background: 'rgba(0,0,0,0.6)',
+          background: 'rgba(0,0,0,0.7)',
           borderBottom: `1px solid ${LCARS.purple}33`,
         }}
       >
@@ -180,6 +183,7 @@ function VideoPlayer({ src, isPlaying, onRef }: VideoPlayerProps) {
             color: isPlaying ? LCARS.alertRed : LCARS.subText,
             fontSize: 9,
             letterSpacing: 2,
+            transition: 'color 200ms ease',
           }}
         >
           <span
@@ -189,6 +193,7 @@ function VideoPlayer({ src, isPlaying, onRef }: VideoPlayerProps) {
               borderRadius: '50%',
               background: isPlaying ? LCARS.alertRed : LCARS.subText,
               boxShadow: isPlaying ? `0 0 6px ${LCARS.alertRed}` : 'none',
+              transition: 'background 200ms ease, box-shadow 200ms ease',
             }}
             aria-hidden="true"
           />
@@ -196,44 +201,20 @@ function VideoPlayer({ src, isPlaying, onRef }: VideoPlayerProps) {
         </span>
       </div>
 
-      {/* Video element */}
+      {/* Video element — ref managed externally by engine */}
       <video
-        ref={onRef}
+        ref={videoRef}
         src={src}
-        style={{ width: '100%', display: 'block', maxHeight: 380, background: '#000' }}
+        style={{ width: '100%', display: 'block', maxHeight: 340, background: '#000' }}
         playsInline
         controls={showControls}
         preload="metadata"
         aria-label="Video player"
       />
 
-      {/* Subtle LCARS corner accents */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          top: 28,
-          left: 0,
-          width: 3,
-          height: 40,
-          background: LCARS.purple,
-          borderRadius: '0 2px 2px 0',
-          opacity: 0.6,
-        }}
-      />
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          top: 28,
-          right: 0,
-          width: 3,
-          height: 40,
-          background: LCARS.orange,
-          borderRadius: '2px 0 0 2px',
-          opacity: 0.6,
-        }}
-      />
+      {/* LCARS side accents */}
+      <div aria-hidden="true" style={{ position: 'absolute', top: 30, left: 0, width: 3, height: 36, background: LCARS.purple, borderRadius: '0 2px 2px 0', opacity: 0.55 }} />
+      <div aria-hidden="true" style={{ position: 'absolute', top: 30, right: 0, width: 3, height: 36, background: LCARS.orange, borderRadius: '2px 0 0 2px', opacity: 0.55 }} />
     </div>
   );
 }
@@ -250,6 +231,11 @@ export function VoxNovaPlayer() {
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+
+  // Stable ref for the <video> DOM element — passed directly to VideoPlayer
+  const videoElRef = useRef<HTMLVideoElement>(null);
+  // Track whether we need to auto-play once the video element mounts
+  const pendingVideoPlay = useRef(false);
 
   const registry = useMemo(() => genRegistry(), []);
   const sectorTime = useSectorTime();
@@ -285,7 +271,7 @@ export function VoxNovaPlayer() {
     if (next) {
       setSelectedId(next.id);
       engine.loadTrack(next);
-      engine.play();
+      if (!next.isVideo) engine.play();
       engine.beep(1100, 'sine', 0.04);
     }
   }, [visibleTracks, engine]);
@@ -299,7 +285,7 @@ export function VoxNovaPlayer() {
     if (prev) {
       setSelectedId(prev.id);
       engine.loadTrack(prev);
-      engine.play();
+      if (!prev.isVideo) engine.play();
       engine.beep(660, 'sine', 0.04);
     }
   }, [visibleTracks, engine]);
@@ -316,20 +302,36 @@ export function VoxNovaPlayer() {
     return () => engine.setOnTrackEnded(undefined);
   }, [engine, handleNext]);
 
-  // ── Video element ref callback ──────────────────────────────────────────────
-  const handleVideoRef = useCallback((el: HTMLVideoElement | null) => {
-    engine.attachVideoElement(el);
-    if (el && selectedTrack?.url) {
-      el.src = selectedTrack.url;
-      el.load();
+  // ── Video element lifecycle ──────────────────────────────────────────────────
+  // When selectedTrack switches to a video, attach the <video> element to the engine
+  // and load+play. The <video> DOM is stable (videoElRef, never unmounts once video is
+  // selected) so we do this in a useEffect instead of a ref callback.
+  useEffect(() => {
+    if (!selectedTrack?.isVideo) {
+      // Detach video element when switching back to audio
+      engine.attachVideoElement(null);
+      return;
     }
-  }, [engine, selectedTrack]);
+    const el = videoElRef.current;
+    if (!el) return;
+    engine.attachVideoElement(el);
+    el.src = selectedTrack.url;
+    el.load();
+    el.play().then(() => {}).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTrack?.id, selectedTrack?.isVideo]);
 
   const handleSelect = useCallback((track: TrackEntry) => {
     setSelectedId(track.id);
-    engine.loadTrack(track);
-    engine.play();
-    engine.beep(880, 'sine', 0.05);
+    if (track.isVideo) {
+      // Video playback is handled by the useEffect above once DOM is ready
+      pendingVideoPlay.current = true;
+      engine.beep(880, 'sine', 0.05);
+    } else {
+      engine.loadTrack(track);
+      engine.play();
+      engine.beep(880, 'sine', 0.05);
+    }
   }, [engine]);
 
   const handleUplinkFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -577,6 +579,16 @@ export function VoxNovaPlayer() {
             </div>
           </div>
 
+          {/* ── VIDEO STREAM — shown between MEMO LOG and controls when track is video ── */}
+          {selectedTrack?.isVideo && (
+            <VideoPlayer
+              src={selectedTrack.url}
+              isPlaying={engine.isPlaying}
+              videoRef={videoElRef}
+              contentWidth={CONTENT_WIDTH}
+            />
+          )}
+
           {/* Transport controls + seekbar */}
           <div
             style={{
@@ -636,14 +648,8 @@ export function VoxNovaPlayer() {
             <BlackHoleBadge active={engine.isPlaying} />
           </div>
 
-          {/* VIDEO STREAM or SUBSPACE FREQUENCY SCAN */}
-          {selectedTrack?.isVideo ? (
-            <VideoPlayer
-              src={selectedTrack.url}
-              isPlaying={engine.isPlaying}
-              onRef={handleVideoRef}
-            />
-          ) : (
+          {/* SUBSPACE FREQUENCY SCAN — hidden for video tracks */}
+          {!selectedTrack?.isVideo && (
             <div
               style={{
                 alignSelf: 'center',
