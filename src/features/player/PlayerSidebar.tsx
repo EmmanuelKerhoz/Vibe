@@ -73,16 +73,12 @@ export interface PlayerSidebarProps {
   buildAccept: (p: ScanConfig['accept']) => string;
   handleUplinkFiles: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleScanFolder: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  /** When true, sidebar hides itself while isPlaying. Default: false. */
-  hideSidebarWhenPlaying: boolean;
-  onToggleHideSidebar: () => void;
 }
 
 export function PlayerSidebar({
   view, setView, tracks, selectedId, onSelect, onPurge,
   scanProtocol, setScanProtocol, scanPattern, setScanPattern,
   uploadInputRef, folderInputRef, buildAccept, handleUplinkFiles, handleScanFolder,
-  hideSidebarWhenPlaying, onToggleHideSidebar,
 }: PlayerSidebarProps) {
   const visibleTracks = tracks.filter(t => t.source === view);
 
@@ -100,7 +96,7 @@ export function PlayerSidebar({
         overflow: 'hidden',
       }}
     >
-      {/* VOX / NV-42 CORE block + hide-when-playing toggle */}
+      {/* VOX / NV-42 CORE block */}
       <div
         style={{
           background: LCARS.peach,
@@ -121,31 +117,6 @@ export function PlayerSidebar({
       >
         <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>VOX</div>
         <div style={{ fontSize: 10, letterSpacing: 2, marginTop: 4, opacity: 0.85 }}>NV-42 CORE</div>
-        {/* Hide-when-playing toggle — small LCARS chip, off by default */}
-        <button
-          type="button"
-          onClick={onToggleHideSidebar}
-          title={hideSidebarWhenPlaying ? 'Sidebar hides when playing (click to disable)' : 'Sidebar always visible (click to auto-hide when playing)'}
-          aria-label="Toggle sidebar auto-hide when playing"
-          style={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            padding: '3px 7px',
-            borderRadius: 10,
-            border: `1px solid ${hideSidebarWhenPlaying ? '#000a' : '#0004'}`,
-            background: hideSidebarWhenPlaying ? '#000c' : '#0002',
-            color: hideSidebarWhenPlaying ? LCARS.peach : '#0007',
-            fontSize: 8,
-            letterSpacing: 1.5,
-            fontWeight: 700,
-            fontFamily: 'inherit',
-            cursor: 'pointer',
-            lineHeight: 1,
-          }}
-        >
-          {hideSidebarWhenPlaying ? '▶ HIDE' : '▶ VIS'}
-        </button>
       </div>
 
       {/* CLOUD first, LYRIA directly below, then LOCAL, PURGE */}
