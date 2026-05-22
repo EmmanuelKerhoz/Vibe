@@ -11,16 +11,51 @@ interface PlayerControlsProps {
 
 const CONTROLS_CSS = `
   @keyframes lcarsLedPulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor; }
-    50%       { opacity: 0.55; box-shadow: 0 0 2px currentColor; }
+    0%   { opacity: 1;    box-shadow: 0 0 7px currentColor, 0 0 14px currentColor; }
+    40%  { opacity: 0.35; box-shadow: 0 0 2px currentColor; }
+    55%  { opacity: 0.9;  box-shadow: 0 0 9px currentColor, 0 0 18px currentColor; }
+    100% { opacity: 1;    box-shadow: 0 0 7px currentColor, 0 0 14px currentColor; }
   }
-  .lcars-led-active  { animation: lcarsLedPulse 1.8s ease-in-out infinite; }
+  @keyframes lcarsRipple {
+    0%   { transform: scale(0); opacity: 0.55; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
+  @keyframes lcarsShuffleDot {
+    0%, 100% { transform: translateX(0); }
+    50%       { transform: translateX(4px); }
+  }
+  .lcars-led-active { animation: lcarsLedPulse 2.1s cubic-bezier(0.4,0,0.6,1) infinite; }
+  .lcars-shuffle-dot-active { animation: lcarsShuffleDot 1.4s ease-in-out infinite; }
+  .lcars-btn { position: relative; overflow: hidden; }
+  .lcars-btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at center, currentColor 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 200ms;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+  .lcars-btn:hover:not(:disabled)::after { opacity: 0.06; }
   .lcars-btn:hover:not(:disabled) { filter: brightness(1.18); }
-  .lcars-btn:active:not(:disabled) { transform: scale(0.96); }
-  .lcars-transport:hover:not(:disabled) { filter: brightness(1.22); transform: scale(1.05); }
-  .lcars-transport:active:not(:disabled) { transform: scale(0.94); }
-  .lcars-play:hover:not(:disabled) { box-shadow: 0 0 48px var(--lcars-play-glow, #f5b06b88) !important; filter: brightness(1.12); }
+  .lcars-btn:active:not(:disabled) { transform: scale(0.95); filter: brightness(0.92); }
+  .lcars-transport { position: relative; overflow: hidden; }
+  .lcars-transport:hover:not(:disabled) { filter: brightness(1.25); transform: scale(1.06); }
+  .lcars-transport:active:not(:disabled) { transform: scale(0.93); }
+  .lcars-play:hover:not(:disabled) {
+    box-shadow: 0 0 48px var(--lcars-play-glow, #f5b06b88) !important;
+    filter: brightness(1.12);
+  }
   .lcars-play:active:not(:disabled) { transform: scale(0.95) !important; }
+  .lcars-ripple {
+    position: absolute;
+    border-radius: 50%;
+    width: 20px; height: 20px;
+    margin-top: -10px; margin-left: -10px;
+    background: currentColor;
+    animation: lcarsRipple 480ms ease-out forwards;
+    pointer-events: none;
+  }
   .lcars-popover {
     position: absolute;
     bottom: calc(100% + 10px);
@@ -34,6 +69,16 @@ const CONTROLS_CSS = `
     min-width: 180px;
     box-shadow: 0 0 24px rgba(255,153,0,0.15), 0 8px 32px rgba(0,0,0,0.7);
   }
+  .lcars-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 8px 10px;
+    justify-items: center;
+    align-items: stretch;
+  }
+  @media (max-width: 480px) {
+    .lcars-mode-grid { grid-template-columns: repeat(2, auto); }
+  }
 `;
 
 let _cssInjected = false;
@@ -45,42 +90,55 @@ function injectControlsCSS() {
   document.head.appendChild(el);
 }
 
-function IconShuffle() {
+// ── Ripple helper ──────────────────────────────────────────────────
+function spawnRipple(e: React.MouseEvent<HTMLButtonElement>) {
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  const r = document.createElement('span');
+  r.className = 'lcars-ripple';
+  r.style.top  = `${e.clientY - rect.top}px`;
+  r.style.left = `${e.clientX - rect.left}px`;
+  btn.appendChild(r);
+  r.addEventListener('animationend', () => r.remove());
+}
+
+// ── Icons ──────────────────────────────────────────────────────────
+function IconShuffle({ active }: { active: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="16 3 21 3 21 8" />
       <line x1="4" y1="20" x2="21" y2="3" />
       <polyline points="21 16 21 21 16 21" />
       <line x1="15" y1="15" x2="21" y2="21" />
+      {active && (
+        <circle cx="4" cy="20" r="2.2" fill="currentColor" stroke="none"
+          className="lcars-shuffle-dot-active" />
+      )}
     </svg>
   );
 }
 
 function IconRepeat({ mode }: { mode: RepeatMode }) {
-  if (mode === 'one') {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <polyline points="17 1 21 5 17 9" />
-        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-        <polyline points="7 23 3 19 7 15" />
-        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-        <text x="9.5" y="14.5" fontSize="6.5" fontWeight="bold" fill="currentColor" stroke="none" fontFamily="monospace">1</text>
-      </svg>
-    );
-  }
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="17 1 21 5 17 9" />
       <path d="M3 11V9a4 4 0 0 1 4-4h14" />
       <polyline points="7 23 3 19 7 15" />
       <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+      {mode === 'one' && (
+        <text x="9.5" y="14.8" fontSize="6.5" fontWeight="bold"
+          fill="currentColor" stroke="none" fontFamily="monospace">1</text>
+      )}
     </svg>
   );
 }
 
 function IconAutoplay() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polygon points="5 3 19 12 5 21 5 3" />
       <line x1="19" y1="3" x2="19" y2="21" />
     </svg>
@@ -89,12 +147,13 @@ function IconAutoplay() {
 
 function IconCrossfade() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
       <path d="M4 6 Q12 18 20 6" />
       <path d="M4 18 Q12 6 20 18" />
-      <circle cx="4" cy="6" r="2" fill="currentColor" />
-      <circle cx="20" cy="6" r="2" fill="currentColor" />
-      <circle cx="4" cy="18" r="2" fill="currentColor" />
+      <circle cx="4"  cy="6"  r="2" fill="currentColor" />
+      <circle cx="20" cy="6"  r="2" fill="currentColor" />
+      <circle cx="4"  cy="18" r="2" fill="currentColor" />
       <circle cx="20" cy="18" r="2" fill="currentColor" />
     </svg>
   );
@@ -102,7 +161,8 @@ function IconCrossfade() {
 
 function IconSleep() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
   );
@@ -124,9 +184,11 @@ function IconNext() {
   );
 }
 
+// ── LCARS Mode Button ──────────────────────────────────────────────
 interface LCARSModeButtonProps {
   label: string;
-  sublabel?: string;
+  badge?: string;          // floating corner badge (e.g. "1", "ALL", "◉")
+  badgeColor?: string;
   active: boolean;
   disabled?: boolean;
   color: string;
@@ -137,16 +199,23 @@ interface LCARSModeButtonProps {
 }
 
 function LCARSModeButton({
-  label, sublabel, active, disabled, color, dimColor, onClick, title, children,
+  label, badge, badgeColor, active, disabled, color, dimColor, onClick, title, children,
 }: LCARSModeButtonProps) {
   const dim = dimColor ?? 'rgba(255,255,255,0.18)';
+  const bc  = badgeColor ?? color;
+
+  function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
+    spawnRipple(e);
+    onClick();
+  }
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       title={title}
-      aria-label={label + (sublabel ? ' — ' + sublabel : '')}
+      aria-label={label + (badge ? ' — ' + badge : '')}
       aria-pressed={active}
       className="lcars-btn"
       style={{
@@ -156,56 +225,139 @@ function LCARSModeButton({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 5,
-        padding: '10px 14px 8px',
-        minWidth: 72,
+        padding: '10px 16px 9px',
+        minWidth: 76,
         borderRadius: 6,
         border: `1px solid ${active ? color + 'cc' : color + '28'}`,
         background: active
-          ? `linear-gradient(160deg, ${color}1a 0%, ${color}08 100%)`
+          ? `linear-gradient(155deg, ${color}20 0%, ${color}0a 100%)`
           : 'rgba(0,0,0,0.28)',
         color: active ? color : dim,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.28 : 1,
         boxShadow: active
-          ? `0 0 14px ${color}33, inset 0 1px 0 ${color}22, 0 1px 0 rgba(0,0,0,0.4)`
+          ? `0 0 16px ${color}38, 0 0 4px ${color}18, inset 0 1px 0 ${color}22, 0 1px 0 rgba(0,0,0,0.4)`
           : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 0 rgba(0,0,0,0.4)',
         transition: 'all 160ms cubic-bezier(0.16,1,0.3,1)',
         userSelect: 'none',
         WebkitUserSelect: 'none',
       }}
     >
-      <span className={active ? 'lcars-led-active' : undefined}
-        style={{ position: 'absolute', top: 6, right: 7, width: 5, height: 5, borderRadius: '50%',
-          background: active ? color : 'rgba(255,255,255,0.12)', color: color,
-          transition: 'background 200ms ease' }}
+      {/* LED indicator */}
+      <span
+        className={active ? 'lcars-led-active' : undefined}
+        style={{
+          position: 'absolute', top: 6, right: 7,
+          width: 5, height: 5, borderRadius: '50%',
+          background: active ? color : 'rgba(255,255,255,0.10)',
+          color: color,
+          transition: 'background 200ms ease',
+        }}
         aria-hidden="true"
       />
-      <span style={{ lineHeight: 0 }}>{children}</span>
-      <span style={{ fontSize: 8, letterSpacing: 1.8, fontWeight: 700, fontFamily: 'inherit', lineHeight: 1, textTransform: 'uppercase' }}>
-        {label}
-      </span>
-      {sublabel && (
-        <span style={{ fontSize: 7, letterSpacing: 1.2, fontWeight: 600,
-          color: active ? color : 'rgba(255,255,255,0.25)',
-          background: active ? color + '22' : 'transparent',
-          padding: '1px 4px', borderRadius: 3, lineHeight: 1.2, transition: 'all 160ms ease' }}>
-          {sublabel}
+
+      {/* Badge (e.g. repeat mode, xfade duration) */}
+      {badge && (
+        <span style={{
+          position: 'absolute', top: 4, left: 6,
+          fontSize: 7, letterSpacing: 0.8, fontWeight: 800,
+          fontFamily: 'inherit', lineHeight: 1,
+          padding: '1px 3px', borderRadius: 3,
+          background: active ? bc + '30' : 'rgba(255,255,255,0.06)',
+          color: active ? bc : 'rgba(255,255,255,0.28)',
+          border: `1px solid ${active ? bc + '55' : 'rgba(255,255,255,0.10)'}`,
+          transition: 'all 160ms ease',
+          textTransform: 'uppercase',
+        }}>
+          {badge}
         </span>
       )}
+
+      {/* Icon */}
+      <span style={{ lineHeight: 0 }}>{children}</span>
+
+      {/* Label */}
+      <span style={{
+        fontSize: 8, letterSpacing: 1.8, fontWeight: 700,
+        fontFamily: 'inherit', lineHeight: 1, textTransform: 'uppercase',
+      }}>
+        {label}
+      </span>
     </button>
   );
 }
 
+// ── Vertical Divider ───────────────────────────────────────────────
 function VertDivider() {
   return (
     <div aria-hidden="true" style={{
-      width: 1, height: 32,
+      width: 1, height: 28, alignSelf: 'center',
       background: `linear-gradient(to bottom, transparent, ${LCARS.orange}30, transparent)`,
       flexShrink: 0,
     }} />
   );
 }
 
+// ── Active modes codeline ──────────────────────────────────────────
+function ActiveModesLine({
+  shuffle, repeat, autoplay, crossfadeMs, sleepTimerEnd, isPlaying,
+}: {
+  shuffle: boolean; repeat: RepeatMode; autoplay: boolean;
+  crossfadeMs: number; sleepTimerEnd: number | null; isPlaying: boolean;
+}) {
+  const tokens: string[] = [];
+  if (shuffle)           tokens.push('SHF');
+  if (repeat !== 'none') tokens.push(repeat === 'one' ? 'RPT·1' : 'RPT·ALL');
+  if (autoplay)          tokens.push('APL');
+  if (crossfadeMs > 0)   tokens.push(`XFD·${(crossfadeMs / 1000).toFixed(1)}s`);
+  if (sleepTimerEnd !== null) tokens.push('SLP');
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8,
+      height: 14, minWidth: 0,
+    }}>
+      <div style={{
+        height: 2, width: 32, flexShrink: 0,
+        background: LCARS.peach,
+        borderRadius: 1, opacity: 0.45,
+      }} aria-hidden="true" />
+
+      <span style={{
+        fontSize: 8, letterSpacing: 3, fontWeight: 700,
+        color: isPlaying ? LCARS.alertRed : LCARS.subText,
+        transition: 'color 300ms ease',
+        whiteSpace: 'nowrap', flexShrink: 0,
+      }}>
+        {isPlaying ? 'TRANSMITTING' : 'STANDBY'}
+      </span>
+
+      {tokens.length > 0 && (
+        <>
+          <div style={{
+            height: 1, width: 12, flexShrink: 0,
+            background: LCARS.orange, opacity: 0.4,
+          }} aria-hidden="true" />
+          <span style={{
+            fontSize: 7, letterSpacing: 2, fontWeight: 700,
+            color: LCARS.orange, opacity: 0.85,
+            whiteSpace: 'nowrap', flexShrink: 0,
+          }}>
+            {tokens.join('·')}
+          </span>
+        </>
+      )}
+
+      <div style={{
+        height: 2, width: 32, flexShrink: 0,
+        background: LCARS.peach,
+        borderRadius: 1, opacity: 0.45,
+      }} aria-hidden="true" />
+    </div>
+  );
+}
+
+// ── Crossfade Popover ──────────────────────────────────────────────
 const XFADE_PRESETS = [0, 500, 1000, 2000, 3000, 5000];
 
 interface CrossfadePopoverProps {
@@ -228,22 +380,20 @@ function CrossfadePopover({ crossfadeMs, setCrossfadeMs, onClose }: CrossfadePop
     <div ref={ref} className="lcars-popover" role="dialog" aria-label="Crossfade settings">
       <div style={{ color: LCARS.orange, fontSize: 9, letterSpacing: 3, marginBottom: 10 }}>XFADE DURATION</div>
       <input
-        type="range"
-        min={0}
-        max={6000}
-        step={100}
-        value={crossfadeMs}
+        type="range" min={0} max={6000} step={100} value={crossfadeMs}
         onChange={e => setCrossfadeMs(Number(e.target.value))}
         aria-label="Crossfade duration in milliseconds"
         style={{ width: '100%', accentColor: LCARS.orange, marginBottom: 8 }}
       />
-      <div style={{ color: LCARS.peach, fontSize: 14, fontVariantNumeric: 'tabular-nums', textAlign: 'center', letterSpacing: 2, marginBottom: 10 }}>
+      <div style={{
+        color: LCARS.peach, fontSize: 14, fontVariantNumeric: 'tabular-nums',
+        textAlign: 'center', letterSpacing: 2, marginBottom: 10,
+      }}>
         {crossfadeMs === 0 ? 'OFF' : `${(crossfadeMs / 1000).toFixed(1)}s`}
       </div>
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
         {XFADE_PRESETS.map(p => (
-          <button key={p} type="button"
-            onClick={() => setCrossfadeMs(p)}
+          <button key={p} type="button" onClick={() => setCrossfadeMs(p)}
             style={{
               flex: '1 1 auto', padding: '4px 6px', fontSize: 9, letterSpacing: 1, fontWeight: 700,
               fontFamily: 'inherit', borderRadius: 3, cursor: 'pointer',
@@ -262,25 +412,26 @@ function CrossfadePopover({ crossfadeMs, setCrossfadeMs, onClose }: CrossfadePop
   );
 }
 
+// ── Sleep Popover ──────────────────────────────────────────────────
 const SLEEP_PRESETS: Array<{ label: string; ms: number }> = [
-  { label: '5 MIN',  ms: 5 * 60 * 1000 },
+  { label: '5 MIN',  ms: 5  * 60 * 1000 },
   { label: '15 MIN', ms: 15 * 60 * 1000 },
   { label: '30 MIN', ms: 30 * 60 * 1000 },
   { label: '1 HR',   ms: 60 * 60 * 1000 },
   { label: '2 HR',   ms: 120 * 60 * 1000 },
 ];
 
-interface SleepPopoverProps {
-  sleepTimerEnd: number | null;
-  setSleepTimer: (ms: number | null) => void;
-  onClose: () => void;
-}
-
 function formatRemaining(end: number): string {
   const rem = Math.max(0, end - Date.now());
   const m = Math.floor(rem / 60000);
   const s = Math.floor((rem % 60000) / 1000).toString().padStart(2, '0');
   return `${m}:${s}`;
+}
+
+interface SleepPopoverProps {
+  sleepTimerEnd: number | null;
+  setSleepTimer: (ms: number | null) => void;
+  onClose: () => void;
 }
 
 function SleepPopover({ sleepTimerEnd, setSleepTimer, onClose }: SleepPopoverProps) {
@@ -305,7 +456,10 @@ function SleepPopover({ sleepTimerEnd, setSleepTimer, onClose }: SleepPopoverPro
     <div ref={ref} className="lcars-popover" role="dialog" aria-label="Sleep timer settings">
       <div style={{ color: LCARS.purple, fontSize: 9, letterSpacing: 3, marginBottom: 10 }}>SLEEP TIMER</div>
       {sleepTimerEnd && (
-        <div style={{ color: LCARS.alertRed, fontSize: 13, fontVariantNumeric: 'tabular-nums', textAlign: 'center', letterSpacing: 3, marginBottom: 10 }}>
+        <div style={{
+          color: LCARS.alertRed, fontSize: 13, fontVariantNumeric: 'tabular-nums',
+          textAlign: 'center', letterSpacing: 3, marginBottom: 10,
+        }}>
           ◉ {remaining}
         </div>
       )}
@@ -316,8 +470,7 @@ function SleepPopover({ sleepTimerEnd, setSleepTimer, onClose }: SleepPopoverPro
             style={{
               padding: '6px 10px', fontSize: 10, letterSpacing: 2, fontWeight: 700,
               fontFamily: 'inherit', borderRadius: 3, cursor: 'pointer', textAlign: 'left',
-              background: 'transparent',
-              color: LCARS.purple,
+              background: 'transparent', color: LCARS.purple,
               border: `1px solid ${LCARS.purple}55`,
               transition: 'all 120ms',
             }}
@@ -343,92 +496,99 @@ function SleepPopover({ sleepTimerEnd, setSleepTimer, onClose }: SleepPopoverPro
   );
 }
 
-const REPEAT_SUBLABEL: Record<RepeatMode, string | undefined> = {
+// ── Repeat badge helper ────────────────────────────────────────────
+const REPEAT_BADGE: Record<RepeatMode, string | undefined> = {
   none: undefined,
-  one: 'TRACK',
-  all: 'ALL',
+  one:  '×1',
+  all:  'ALL',
 };
-
 const REPEAT_TITLE: Record<RepeatMode, string> = {
   none: 'Repeat OFF — click for REPEAT·1',
-  one: 'Repeat TRACK — click for REPEAT·ALL',
-  all: 'Repeat ALL — click to disable',
+  one:  'Repeat TRACK — click for REPEAT·ALL',
+  all:  'Repeat ALL — click to disable',
 };
 
+// ── PlayerControls ─────────────────────────────────────────────────
 export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerControlsProps) {
   injectControlsCSS();
 
-  const { isPlaying, togglePlay, repeat, shuffle, autoplay, crossfadeMs, sleepTimerEnd,
-    toggleRepeat, toggleShuffle, toggleAutoplay, setCrossfadeMs, setSleepTimer } = engine;
+  const {
+    isPlaying, togglePlay,
+    repeat, shuffle, autoplay, crossfadeMs, sleepTimerEnd,
+    toggleRepeat, toggleShuffle, toggleAutoplay, setCrossfadeMs, setSleepTimer,
+  } = engine;
 
   const [xfadeOpen, setXfadeOpen] = useState(false);
-  const [sleepOpen, setSleepOpen] = useState(false);
+  const [sleepOpen,  setSleepOpen]  = useState(false);
 
-  // exactOptionalPropertyTypes-safe: only spread sublabel when it is a string
-  const repeatButtonProps = REPEAT_SUBLABEL[repeat]
-    ? { sublabel: REPEAT_SUBLABEL[repeat] as string }
-    : {};
-  const xfadeButtonProps = crossfadeMs > 0
-    ? { sublabel: `${(crossfadeMs / 1000).toFixed(1)}s` }
-    : {};
-  const sleepButtonProps = sleepTimerEnd !== null
-    ? { sublabel: '◉' }
-    : {};
+  const repeatBadge  = REPEAT_BADGE[repeat];
+  const xfadeBadge   = crossfadeMs > 0 ? `${(crossfadeMs / 1000).toFixed(1)}s` : undefined;
+  const sleepBadge   = sleepTimerEnd !== null ? '◉' : undefined;
 
-  const transportSquare: React.CSSProperties = {
+  // transport border glow when shuffle is active
+  const transportBase: React.CSSProperties = {
     width: 52, height: 52, borderRadius: 8,
     background: LCARS.panelDark,
-    border: `1px solid ${LCARS.peach}28`,
+    border: shuffle
+      ? `1px solid ${LCARS.peach}55`
+      : `1px solid ${LCARS.peach}28`,
     color: LCARS.peach,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.35 : 1,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     transition: 'all 140ms cubic-bezier(0.16,1,0.3,1)',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.4)',
+    boxShadow: shuffle
+      ? `0 0 8px ${LCARS.peach}28, inset 0 1px 0 rgba(255,255,255,0.07), 0 2px 4px rgba(0,0,0,0.4)`
+      : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.4)',
   };
 
+  function handlePrev(e: React.MouseEvent<HTMLButtonElement>) { spawnRipple(e); onPrev(); }
+  function handleNext(e: React.MouseEvent<HTMLButtonElement>) { spawnRipple(e); onNext(); }
+  function handlePlay(e: React.MouseEvent<HTMLButtonElement>) { spawnRipple(e); togglePlay(); }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '10px 0 4px', width: '100%' }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', gap: 14,
+      padding: '10px 0 4px', width: '100%',
+    }}>
 
-      {/* ── Mode strip ── */}
-      <div role="group" aria-label="Playback modes"
-        style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+      {/* ── Mode grid ── */}
+      <div role="group" aria-label="Playback modes" className="lcars-mode-grid">
 
-        <LCARSModeButton label="SHUFFLE" active={shuffle} color={LCARS.peach}
-          title="Randomise playback order" onClick={toggleShuffle}>
-          <IconShuffle />
+        <LCARSModeButton
+          label="SHUFFLE" active={shuffle} color={LCARS.peach}
+          title="Randomise playback order" onClick={toggleShuffle}
+        >
+          <IconShuffle active={shuffle} />
         </LCARSModeButton>
-
-        <VertDivider />
 
         <LCARSModeButton
           label="REPEAT"
+          badge={repeatBadge}
           active={repeat !== 'none'}
           color={LCARS.orange}
           title={REPEAT_TITLE[repeat]}
           onClick={toggleRepeat}
-          {...repeatButtonProps}
         >
           <IconRepeat mode={repeat} />
         </LCARSModeButton>
 
-        <VertDivider />
-
-        <LCARSModeButton label="AUTOPLAY" active={autoplay} color="#b0c8ff"
-          title="Auto-advance to next track on end" onClick={toggleAutoplay}>
+        <LCARSModeButton
+          label="AUTOPLAY" active={autoplay} color="#b0c8ff"
+          title="Auto-advance to next track on end" onClick={toggleAutoplay}
+        >
           <IconAutoplay />
         </LCARSModeButton>
 
-        <VertDivider />
-
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', display: 'flex' }}>
           <LCARSModeButton
             label="XFADE"
+            badge={xfadeBadge}
             active={crossfadeMs > 0}
             color={LCARS.amber}
             title="Configure crossfade duration"
             onClick={() => { setXfadeOpen(o => !o); setSleepOpen(false); }}
-            {...xfadeButtonProps}
           >
             <IconCrossfade />
           </LCARSModeButton>
@@ -441,16 +601,14 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
           )}
         </div>
 
-        <VertDivider />
-
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', display: 'flex' }}>
           <LCARSModeButton
             label="SLEEP"
+            badge={sleepBadge}
             active={sleepTimerEnd !== null}
             color={LCARS.purple}
             title="Set sleep timer"
             onClick={() => { setSleepOpen(o => !o); setXfadeOpen(false); }}
-            {...sleepButtonProps}
           >
             <IconSleep />
           </LCARSModeButton>
@@ -462,25 +620,34 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
             />
           )}
         </div>
+
+        {/* Spacer cell to keep grid symmetric when 5 items */}
+        <div aria-hidden="true" style={{ width: 76 }} />
       </div>
 
-      {/* ── LCARS status strip ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ height: 2, width: 40, background: LCARS.peach, borderRadius: 1, opacity: 0.5 }} aria-hidden="true" />
-        <span style={{ fontSize: 8, letterSpacing: 3, color: isPlaying ? LCARS.alertRed : LCARS.subText, transition: 'color 300ms ease' }}>
-          {isPlaying ? 'TRANSMITTING' : 'STANDBY'}
-        </span>
-        <div style={{ height: 2, width: 40, background: LCARS.peach, borderRadius: 1, opacity: 0.5 }} aria-hidden="true" />
-      </div>
+      {/* ── Status / active modes codeline ── */}
+      <ActiveModesLine
+        shuffle={shuffle}
+        repeat={repeat}
+        autoplay={autoplay}
+        crossfadeMs={crossfadeMs}
+        sleepTimerEnd={sleepTimerEnd}
+        isPlaying={isPlaying}
+      />
 
       {/* ── Transport ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button type="button" onClick={onPrev} disabled={disabled} aria-label="Previous track"
-          className="lcars-transport" style={transportSquare}>
+        <button
+          type="button" onClick={handlePrev} disabled={disabled}
+          aria-label="Previous track"
+          className="lcars-transport" style={transportBase}
+        >
           <IconPrev />
         </button>
 
-        <button type="button" onClick={togglePlay} disabled={disabled} aria-label={isPlaying ? 'Pause' : 'Play'}
+        <button
+          type="button" onClick={handlePlay} disabled={disabled}
+          aria-label={isPlaying ? 'Pause' : 'Play'}
           className="lcars-play"
           style={{
             width: 68, height: 68, borderRadius: 12,
@@ -496,12 +663,13 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
               ? `0 0 28px ${LCARS.orange}66, 0 4px 16px rgba(0,0,0,0.5)`
               : `0 0 12px ${LCARS.peach}33, 0 4px 16px rgba(0,0,0,0.5)`,
             transition: 'all 160ms cubic-bezier(0.16,1,0.3,1)',
+            position: 'relative', overflow: 'hidden',
             '--lcars-play-glow': LCARS.orange + '88',
           } as React.CSSProperties}
         >
           {isPlaying ? (
             <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <rect x="6" y="4" width="4" height="16" rx="1" />
+              <rect x="6"  y="4" width="4" height="16" rx="1" />
               <rect x="14" y="4" width="4" height="16" rx="1" />
             </svg>
           ) : (
@@ -511,8 +679,11 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
           )}
         </button>
 
-        <button type="button" onClick={onNext} disabled={disabled} aria-label="Next track"
-          className="lcars-transport" style={transportSquare}>
+        <button
+          type="button" onClick={handleNext} disabled={disabled}
+          aria-label="Next track"
+          className="lcars-transport" style={transportBase}
+        >
           <IconNext />
         </button>
       </div>
