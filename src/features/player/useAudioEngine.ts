@@ -11,6 +11,7 @@ export interface AudioEngineState {
   volume: number;
   repeat: RepeatMode;
   shuffle: boolean;
+  autoplay: boolean;
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
@@ -20,6 +21,7 @@ export interface AudioEngineState {
   beep: (freq?: number, type?: OscillatorType, duration?: number) => void;
   toggleRepeat: () => void;
   toggleShuffle: () => void;
+  toggleAutoplay: () => void;
   /** Called by the player when a track ends (for repeat-all / shuffle handling) */
   onTrackEnded?: () => void;
   setOnTrackEnded: (cb: (() => void) | undefined) => void;
@@ -33,8 +35,8 @@ export function useAudioEngine(): AudioEngineState {
   const [volume, setVolumeState] = useState(1);
   const [repeat, setRepeat] = useState<RepeatMode>('none');
   const [shuffle, setShuffle] = useState(false);
+  const [autoplay, setAutoplay] = useState(true);
 
-  // Mutable ref so onEnded closure always reads latest values without re-registering
   const repeatRef = useRef<RepeatMode>('none');
   const onTrackEndedRef = useRef<(() => void) | undefined>(undefined);
 
@@ -112,6 +114,10 @@ export function useAudioEngine(): AudioEngineState {
     setShuffle(s => !s);
   }, []);
 
+  const toggleAutoplay = useCallback(() => {
+    setAutoplay(a => !a);
+  }, []);
+
   const beep = useCallback((
     freq = 440,
     type: OscillatorType = 'sine',
@@ -137,9 +143,9 @@ export function useAudioEngine(): AudioEngineState {
 
   return {
     audioRef, isPlaying, currentTime, duration, volume,
-    repeat, shuffle,
+    repeat, shuffle, autoplay,
     play, pause, togglePlay, seek, setVolume, loadTrack, beep,
-    toggleRepeat, toggleShuffle,
+    toggleRepeat, toggleShuffle, toggleAutoplay,
     setOnTrackEnded,
   };
 }

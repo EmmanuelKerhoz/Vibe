@@ -100,11 +100,13 @@ export function VoxNovaPlayer() {
   const selectedTrack = library.tracks.find(t => t.id === selectedId);
   const visibleTracks = library.tracks.filter(t => t.source === view);
 
-  // Keep shuffle/repeat refs current for the onEnded callback
+  // Keep shuffle/repeat/autoplay refs current for the onEnded callback
   const shuffleRef = useRef(engine.shuffle);
   const repeatRef = useRef(engine.repeat);
+  const autoplayRef = useRef(engine.autoplay);
   useEffect(() => { shuffleRef.current = engine.shuffle; }, [engine.shuffle]);
   useEffect(() => { repeatRef.current = engine.repeat; }, [engine.repeat]);
+  useEffect(() => { autoplayRef.current = engine.autoplay; }, [engine.autoplay]);
 
   const selectedIdRef = useRef(selectedId);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
@@ -145,14 +147,17 @@ export function VoxNovaPlayer() {
     }
   }, [visibleTracks, engine]);
 
-  // Wire onTrackEnded: auto-advance on track end if repeat !== 'none' or just play next
+  // Wire onTrackEnded — respects repeat AND autoplay flags
   useEffect(() => {
     engine.setOnTrackEnded(() => {
       if (repeatRef.current !== 'none') {
-        // repeat-all or shuffle: advance
+        // repeat-all or shuffle: always advance
+        handleNext();
+      } else if (autoplayRef.current) {
+        // autoplay ON, repeat OFF: advance to next track
         handleNext();
       }
-      // repeat-none: stop (engine already set isPlaying=false)
+      // repeat=none + autoplay=OFF: stop (engine already set isPlaying=false)
     });
     return () => engine.setOnTrackEnded(undefined);
   }, [engine, handleNext]);
@@ -463,7 +468,7 @@ export function VoxNovaPlayer() {
             <BlackHoleBadge active={engine.isPlaying} />
           </div>
 
-          {/* SUBSPACE FREQUENCY SCAN — equalizer */}
+          {/* SUBSPACE FREQUENCY SCAN */}
           <div
             style={{
               alignSelf: 'center',
