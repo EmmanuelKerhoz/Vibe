@@ -569,7 +569,7 @@ export function VoxNovaPlayer() {
           </div>
         </div>
 
-        {/* Stage — order: title → memo → controls → seekbar → volume → black hole → EQ */}
+        {/* Stage — title → memo → controls → volume → black hole → EQ (pinned to bottom) */}
         <div
           style={{
             flex: 1,
@@ -669,7 +669,7 @@ export function VoxNovaPlayer() {
             <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
           </div>
 
-          {/* Black Hole visual indicator — above the EQ */}
+          {/* Black Hole visual indicator */}
           <div
             style={{
               alignSelf: 'center',
@@ -695,9 +695,10 @@ export function VoxNovaPlayer() {
             <BlackHoleBadge active={engine.isPlaying} />
           </div>
 
-          {/* Equalizer / Frequency Visualizer — LCARS red tint — below black hole */}
+          {/* SUBSPACE FREQUENCY SCAN — pushed to bottom to align with UPLINK in sidebar */}
           <div
             style={{
+              marginTop: 'auto',
               border: `1px solid ${LCARS.red ?? '#cc3333'}33`,
               borderRadius: 4,
               padding: '8px',
