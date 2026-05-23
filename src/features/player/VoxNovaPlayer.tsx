@@ -8,6 +8,8 @@ import { useAudioEngine } from './useAudioEngine';
 import { useFrequencyAnalyser } from './useFrequencyAnalyser';
 import { useLibraryContext } from '../../contexts/LibraryContext';
 import { usePlayerNavigation } from './usePlayerNavigation';
+import { useSpotifyAuth } from '../../contexts/SpotifyAuthContext';
+import { useSpotifyEngine_ } from '../../contexts/SpotifyEngineContext';
 import { LCARS } from './lcarsTheme';
 import type { TrackInfo } from './useAudioEngine';
 import type { TrackEntry } from './types';
@@ -20,7 +22,10 @@ const LCARS_BOX_COLORS = [
   'rgba(255,102,102,0.08)',
   'rgba(102,204,255,0.08)',
 ];
+const SPOTIFY_GREEN = '#1DB954';
 const DEFAULT_VIDEO_ASPECT_RATIO = 16 / 9;
+
+type AudioSource = 'local' | 'spotify';
 
 function genRegistry(): string {
   const buf = new Uint8Array(4);
@@ -63,7 +68,6 @@ function LCARSBackground() {
   );
 }
 
-
 function isEditableSpaceTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
@@ -77,28 +81,20 @@ function formatDate(value?: string): string | null {
   return Number.isFinite(time) ? new Date(time).toLocaleDateString() : null;
 }
 
-/**
- * OneDriveMetaLine — safe scalar fields only.
- * Displays: SOURCE | MODIFIED | LINK
- */
 function OneDriveMetaLine({ track }: { track: TrackEntry }) {
   const items: Array<{ label: string; value: string; color: string }> = [];
-
   items.push({
     label: 'SOURCE',
     value: track.source.toUpperCase(),
     color: track.source === 'local' ? LCARS.orange : track.source === 'lyria' ? '#00c8a0' : LCARS.purple,
   });
-
   const modified = formatDate(track.oneDriveLastModified);
   if (modified) items.push({ label: 'MODIFIED', value: modified, color: LCARS.subText });
-
   items.push({
     label: 'LINK',
     value: track.linked ? 'RESOLVED' : 'PENDING',
     color: track.linked ? LCARS.peach : LCARS.mutedText,
   });
-
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 0', marginBottom: 6 }}>
       {items.map((item, i) => (
@@ -186,12 +182,6 @@ function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProp
           {isPlaying ? 'ACTIVE' : 'STANDBY'}
         </span>
       </div>
-      {/*
-        The inner div uses aspectRatio (native video ratio) WITHOUT maxHeight.
-        Constraining via maxHeight clashes with aspectRatio and produces black bars.
-        Height is implicitly bounded by contentWidth (min(680px, 95%)) × aspectRatio.
-        Portrait or square videos will be naturally contained by the parent width.
-      */}
       <div style={{ aspectRatio, width: '100%', background: '#000', borderRadius: '0 0 4px 4px', overflow: 'hidden' }}>
         <video ref={videoRef} src={src}
           style={{ width: '100%', height: '100%', display: 'block', objectFit: 'fill' }}
@@ -205,10 +195,236 @@ function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProp
   );
 }
 
+// ---------------------------------------------------------------------------
+// Spotify source panel
+// ---------------------------------------------------------------------------
+
+function SpotifySourcePanel() {
+  const { status, login, logout, error } = useSpotifyAuth();
+  const { playerState, playbackState, controls } = useSpotifyEngine_();
+
+  const track = playbackState?.track_window?.current_track;
+  const isPlaying = !(playbackState?.paused ?? true);
+  const posMs = playbackState?.position ?? 0;
+  const durMs = track?.duration_ms ?? 0;
+
+  const statusColor =
+    playerState === 'ready' || playerState === 'playing' ? SPOTIFY_GREEN
+    : playerState === 'error' ? LCARS.alertRed
+    : LCARS.subText;
+
+  const statusLabel =
+    playerState === 'idle' ? 'STANDBY'
+    : playerState === 'loading' ? 'INITIALIZING…'
+    : playerState === 'ready' ? 'DEVICE READY'
+    : playerState === 'playing' ? 'STREAMING'
+    : 'ERROR';
+
+  return (
+    <div style={{
+      alignSelf: 'center', width: 'min(680px, 95%)',
+      border: `1px solid ${SPOTIFY_GREEN}44`,
+      borderRadius: 4, padding: '12px 16px',
+      background: 'rgba(29,185,84,0.06)',
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Spotify logo mark */}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill={SPOTIFY_GREEN} aria-hidden="true">
+            <circle cx="12" cy="12" r="12" fill={SPOTIFY_GREEN} opacity="0.15" />
+            <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 01-.277-1.215c3.809-.87 7.077-.496 9.712 1.115a.623.623 0 01.207.857zm1.223-2.722a.78.78 0 01-1.072.257c-2.687-1.652-6.786-2.131-9.965-1.166a.78.78 0 01-.973-.519.781.781 0 01.519-.973c3.632-1.102 8.147-.568 11.234 1.328a.78.78 0 01.257 1.073zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.937.937 0 11-.543-1.794c3.525-1.07 9.386-.863 13.087 1.306a.938.938 0 01-.927 1.645z" fill={SPOTIFY_GREEN} />
+          </svg>
+          <span style={{ color: SPOTIFY_GREEN, fontSize: 10, letterSpacing: 3, fontWeight: 700 }}>SPOTIFY STREAM</span>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor, boxShadow: playerState === 'playing' ? `0 0 6px ${SPOTIFY_GREEN}` : 'none' }} aria-hidden="true" />
+          <span style={{ color: statusColor, fontSize: 9, letterSpacing: 2 }}>{statusLabel}</span>
+        </div>
+
+        {/* Auth button */}
+        {status === 'authenticated'
+          ? (
+            <button
+              onClick={logout}
+              aria-label="Disconnect Spotify"
+              style={{
+                background: 'rgba(255,80,80,0.12)', border: '1px solid rgba(255,80,80,0.3)',
+                borderRadius: 3, color: LCARS.alertRed, fontSize: 9, letterSpacing: 2,
+                padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700,
+              }}
+            >
+              DISCONNECT
+            </button>
+          ) : (
+            <button
+              onClick={() => void login()}
+              disabled={status === 'authenticating'}
+              aria-label="Connect to Spotify"
+              style={{
+                background: status === 'authenticating' ? 'rgba(29,185,84,0.08)' : `${SPOTIFY_GREEN}22`,
+                border: `1px solid ${SPOTIFY_GREEN}55`,
+                borderRadius: 3, color: SPOTIFY_GREEN, fontSize: 9, letterSpacing: 2,
+                padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700,
+                opacity: status === 'authenticating' ? 0.6 : 1,
+              }}
+            >
+              {status === 'authenticating' ? 'CONNECTING…' : 'CONNECT'}
+            </button>
+          )
+        }
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div role="alert" style={{ color: LCARS.alertRed, fontSize: 10, fontFamily: 'monospace', letterSpacing: 1 }}>
+          ⚠ {error}
+        </div>
+      )}
+
+      {/* Now playing */}
+      {track && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {track.album?.images?.[0]?.url && (
+            <img
+              src={track.album.images[0].url}
+              alt={track.album.name ?? 'Album art'}
+              width={48} height={48}
+              style={{ borderRadius: 3, flexShrink: 0, border: `1px solid ${SPOTIFY_GREEN}33` }}
+            />
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: LCARS.text, fontSize: 13, fontWeight: 700, letterSpacing: 0.5,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {track.name}
+            </div>
+            <div style={{ color: LCARS.subText, fontSize: 10, letterSpacing: 1, marginTop: 2,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {track.artists?.map(a => a.name).join(', ')}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Seek + transport */}
+      {status === 'authenticated' && (
+        <>
+          <SeekBar
+            currentTime={posMs / 1000}
+            duration={durMs / 1000}
+            onSeek={(s) => void controls.seek(s * 1000)}
+            disabled={!track}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+            <button
+              onClick={() => void controls.previousTrack()}
+              disabled={!track}
+              aria-label="Previous track"
+              style={transportBtnStyle(!track)}
+            >
+              {/* prev */}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+            </button>
+            <button
+              onClick={() => void (isPlaying ? controls.pause() : controls.resume())}
+              disabled={!track}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+              style={{
+                ...transportBtnStyle(!track),
+                width: 36, height: 36, borderRadius: '50%',
+                background: track ? `${SPOTIFY_GREEN}22` : 'transparent',
+                border: `1px solid ${SPOTIFY_GREEN}55`,
+                color: SPOTIFY_GREEN,
+              }}
+            >
+              {isPlaying
+                ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              }
+            </button>
+            <button
+              onClick={() => void controls.nextTrack()}
+              disabled={!track}
+              aria-label="Next track"
+              style={transportBtnStyle(!track)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2.5-6 8.5 6V6z" /><path d="M16 6h2v12h-2z"/></svg>
+            </button>
+          </div>
+          <VolumeControl
+            volume={0.7}
+            onChange={(v) => void controls.setVolume(v)}
+          />
+        </>
+      )}
+
+      {/* Not connected CTA */}
+      {status !== 'authenticated' && status !== 'authenticating' && (
+        <div style={{ color: LCARS.subText, fontSize: 10, fontFamily: 'monospace', letterSpacing: 1, textAlign: 'center' }}>
+          Connect your Spotify Premium account to stream directly in this player.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function transportBtnStyle(disabled: boolean): React.CSSProperties {
+  return {
+    background: 'transparent',
+    border: 'none',
+    color: disabled ? LCARS.mutedText : LCARS.subText,
+    cursor: disabled ? 'default' : 'pointer',
+    padding: 6,
+    borderRadius: 3,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    opacity: disabled ? 0.4 : 1,
+    transition: 'opacity 150ms ease, color 150ms ease',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Source toggle pill
+// ---------------------------------------------------------------------------
+
+function SourceToggle({ source, onChange }: { source: AudioSource; onChange: (s: AudioSource) => void }) {
+  return (
+    <div role="group" aria-label="Audio source" style={{ display: 'flex', alignItems: 'center', gap: 2,
+      background: 'rgba(0,0,0,0.35)', borderRadius: 20, padding: '2px 3px',
+      border: '1px solid rgba(255,255,255,0.08)' }}>
+      {(['local', 'spotify'] as AudioSource[]).map(s => (
+        <button
+          key={s}
+          onClick={() => onChange(s)}
+          aria-pressed={source === s}
+          style={{
+            background: source === s
+              ? (s === 'spotify' ? `${SPOTIFY_GREEN}22` : `${LCARS.peach}22`)
+              : 'transparent',
+            border: source === s
+              ? `1px solid ${s === 'spotify' ? SPOTIFY_GREEN : LCARS.peach}55`
+              : '1px solid transparent',
+            borderRadius: 16, padding: '2px 10px',
+            color: source === s ? (s === 'spotify' ? SPOTIFY_GREEN : LCARS.peach) : LCARS.subText,
+            fontSize: 9, letterSpacing: 2, fontWeight: 700, cursor: 'pointer',
+            fontFamily: 'inherit', transition: 'all 150ms ease',
+          }}
+        >
+          {s.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main player
+// ---------------------------------------------------------------------------
+
 export function VoxNovaPlayer() {
   const engine = useAudioEngine();
   const analyser = useFrequencyAnalyser();
   const library = useLibraryContext();
+
+  const [audioSource, setAudioSource] = useState<AudioSource>('local');
 
   const videoElRef = useRef<HTMLVideoElement>(null);
   const registry = useMemo(() => genRegistry(), []);
@@ -240,10 +456,11 @@ export function VoxNovaPlayer() {
   };
 
   const handleSpacePlayPause = useCallback((event: KeyboardEvent) => {
+    if (audioSource !== 'local') return;
     if (event.defaultPrevented || event.code !== 'Space' || !selectedTrack || isEditableSpaceTarget(event.target)) return;
     event.preventDefault();
     engine.togglePlay();
-  }, [engine, selectedTrack]);
+  }, [engine, selectedTrack, audioSource]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleSpacePlayPause);
@@ -276,13 +493,15 @@ export function VoxNovaPlayer() {
         <div style={{ display: 'flex', alignItems: 'stretch', gap: 4 }}>
           <div style={{ flex: 1, height: 36, background: LCARS.peach, color: '#000', display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 12, fontWeight: 700, letterSpacing: 2, borderTopLeftRadius: 18, borderBottomLeftRadius: 18, justifyContent: 'space-between' }}>
             <span>USS VOX NOVA // REGISTRY {registry}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              {/* Source toggle — lives in the header bar */}
+              <SourceToggle source={audioSource} onChange={setAudioSource} />
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: LCARS.alertRed, boxShadow: `0 0 6px ${LCARS.alertRed}` }} aria-hidden="true" />
                 <span style={{ fontSize: 11 }}>IMPULSE_ONLY</span>
               </span>
               <ChipIcon /><NetworkIcon />
-            </span>
+            </div>
           </div>
           <div style={{ width: 60, height: 36, background: LCARS.purple, borderTopLeftRadius: 4, borderBottomLeftRadius: 4, borderTopRightRadius: 18, borderBottomRightRadius: 18 }} aria-hidden="true" />
         </div>
@@ -299,63 +518,67 @@ export function VoxNovaPlayer() {
 
         {/* Stage */}
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 20, padding: '12px 24px 16px 24px', overflow: 'auto' }}>
-          {/* Title */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-            <div style={{ color: LCARS.subText, fontSize: 12, letterSpacing: 4, textTransform: 'uppercase' }}>COMMS_ENCRYPTION: LEVEL 5</div>
-            <h1 style={{ margin: 0, fontSize: 'clamp(32px, 4.5vw, 56px)', fontWeight: 700, textAlign: 'center', letterSpacing: 1, lineHeight: 1.05, textShadow: '0 0 32px rgba(255,255,255,0.25)', maxWidth: WIDE_WIDTH }}>{title}</h1>
-            <div style={{ width: 120, height: 3, background: LCARS.peach, borderRadius: 2 }} aria-hidden="true" />
-          </div>
 
-          {/* MEMO LOG */}
-          <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.purple}55`, borderRadius: 4, padding: '10px 14px', background: LCARS_BOX_COLORS[1] }}>
-            <div style={{ color: LCARS.purple, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>LOCAL MEMO LOG</div>
-            <div style={{ color: LCARS.text, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5, wordBreak: 'break-word', marginBottom: selectedTrack ? 8 : 0 }}>{memo}</div>
-            {selectedTrack && <OneDriveMetaLine track={selectedTrack} />}
-            {selectedTrack && (
-              <div style={{ borderTop: `1px solid ${LCARS.purple}22`, paddingTop: 6, fontFamily: 'monospace', fontSize: 11, letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ color: LCARS.subText, marginRight: 6 }}>SIGNAL_ANALYSIS</span>
-                <TechSpecLine info={engine.trackInfo} duration={engine.duration} />
+          {audioSource === 'spotify' ? (
+            // ── SPOTIFY MODE ──────────────────────────────────────────────
+            <SpotifySourcePanel />
+          ) : (
+            // ── LOCAL MODE ────────────────────────────────────────────────
+            <>
+              {/* Title */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div style={{ color: LCARS.subText, fontSize: 12, letterSpacing: 4, textTransform: 'uppercase' }}>COMMS_ENCRYPTION: LEVEL 5</div>
+                <h1 style={{ margin: 0, fontSize: 'clamp(32px, 4.5vw, 56px)', fontWeight: 700, textAlign: 'center', letterSpacing: 1, lineHeight: 1.05, textShadow: '0 0 32px rgba(255,255,255,0.25)', maxWidth: WIDE_WIDTH }}>{title}</h1>
+                <div style={{ width: 120, height: 3, background: LCARS.peach, borderRadius: 2 }} aria-hidden="true" />
               </div>
-            )}
-          </div>
 
-          {/* Video */}
-          {selectedTrack?.isVideo && (
-            <VideoPlayer src={selectedTrack.url} isPlaying={engine.isPlaying} videoRef={videoElRef} contentWidth={CONTENT_WIDTH} />
-          )}
-
-          {/*
-            Transport container:
-            Order — SeekBar → PlayerControls (transport + status) → VolumeControl → mode grid
-            The mode grid is the last section inside PlayerControls (after transport + status).
-            VolumeControl sits between the transport row and the mode grid.
-          */}
-          <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.peach}33`, borderRadius: 4, padding: '12px 16px', background: LCARS_BOX_COLORS[2], display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <SeekBar currentTime={engine.currentTime} duration={engine.duration} onSeek={engine.seek} disabled={!selectedTrack} />
-            <PlayerControls engine={engine} onPrev={handlePrev} onNext={handleNext} disabled={!selectedTrack} />
-            <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
-          </div>
-
-          <div style={{ flex: 1, minHeight: 0 }} aria-hidden="true" />
-
-          {/* Frequency scan */}
-          {selectedTrack && (
-            <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: `1px solid ${LCARS.red ?? '#cc3333'}33`, borderRadius: 4, padding: '8px', background: LCARS_BOX_COLORS[3] }}>
-              <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 3, marginBottom: 6, paddingLeft: 4 }}>
-                SUBSPACE FREQUENCY SCAN{selectedTrack.isVideo ? ' — AUDIO TRACK' : ''}
+              {/* MEMO LOG */}
+              <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.purple}55`, borderRadius: 4, padding: '10px 14px', background: LCARS_BOX_COLORS[1] }}>
+                <div style={{ color: LCARS.purple, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>LOCAL MEMO LOG</div>
+                <div style={{ color: LCARS.text, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5, wordBreak: 'break-word', marginBottom: selectedTrack ? 8 : 0 }}>{memo}</div>
+                {selectedTrack && <OneDriveMetaLine track={selectedTrack} />}
+                {selectedTrack && (
+                  <div style={{ borderTop: `1px solid ${LCARS.purple}22`, paddingTop: 6, fontFamily: 'monospace', fontSize: 11, letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ color: LCARS.subText, marginRight: 6 }}>SIGNAL_ANALYSIS</span>
+                    <TechSpecLine info={engine.trackInfo} duration={engine.duration} />
+                  </div>
+                )}
               </div>
-              <FrequencyVisualizer isPlaying={engine.isPlaying} analyser={analyser} audioRef={engine.audioRef} />
-            </div>
-          )}
 
-          {/* Singularity status */}
-          <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: '1px solid rgba(100,100,200,0.25)', borderRadius: 4, padding: '10px 14px', background: 'rgba(0,0,20,0.35)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ color: 'rgba(100,150,255,0.7)', fontSize: 9, letterSpacing: 3, marginBottom: 4 }}>SINGULARITY STATUS</div>
-              <div style={{ color: LCARS.subText, fontSize: 11, letterSpacing: 1 }}>{engine.isPlaying ? 'ACCRETION ACTIVE' : 'EVENT HORIZON STABLE'}</div>
-            </div>
-            <BlackHoleBadge active={engine.isPlaying} analyser={analyser} />
-          </div>
+              {/* Video */}
+              {selectedTrack?.isVideo && (
+                <VideoPlayer src={selectedTrack.url} isPlaying={engine.isPlaying} videoRef={videoElRef} contentWidth={CONTENT_WIDTH} />
+              )}
+
+              {/* Transport */}
+              <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.peach}33`, borderRadius: 4, padding: '12px 16px', background: LCARS_BOX_COLORS[2], display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <SeekBar currentTime={engine.currentTime} duration={engine.duration} onSeek={engine.seek} disabled={!selectedTrack} />
+                <PlayerControls engine={engine} onPrev={handlePrev} onNext={handleNext} disabled={!selectedTrack} />
+                <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
+              </div>
+
+              <div style={{ flex: 1, minHeight: 0 }} aria-hidden="true" />
+
+              {/* Frequency scan */}
+              {selectedTrack && (
+                <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: `1px solid ${LCARS.red ?? '#cc3333'}33`, borderRadius: 4, padding: '8px', background: LCARS_BOX_COLORS[3] }}>
+                  <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 3, marginBottom: 6, paddingLeft: 4 }}>
+                    SUBSPACE FREQUENCY SCAN{selectedTrack.isVideo ? ' — AUDIO TRACK' : ''}
+                  </div>
+                  <FrequencyVisualizer isPlaying={engine.isPlaying} analyser={analyser} audioRef={engine.audioRef} />
+                </div>
+              )}
+
+              {/* Singularity status */}
+              <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: '1px solid rgba(100,100,200,0.25)', borderRadius: 4, padding: '10px 14px', background: 'rgba(0,0,20,0.35)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ color: 'rgba(100,150,255,0.7)', fontSize: 9, letterSpacing: 3, marginBottom: 4 }}>SINGULARITY STATUS</div>
+                  <div style={{ color: LCARS.subText, fontSize: 11, letterSpacing: 1 }}>{engine.isPlaying ? 'ACCRETION ACTIVE' : 'EVENT HORIZON STABLE'}</div>
+                </div>
+                <BlackHoleBadge active={engine.isPlaying} analyser={analyser} />
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>
