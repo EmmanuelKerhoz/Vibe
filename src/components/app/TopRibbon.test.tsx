@@ -216,21 +216,6 @@ describe('TopRibbon', () => {
     expect(screen.getByLabelText('Processing')).toBeDefined();
   });
 
-  it('switches to the Musical tab when Send to LYRIA is clicked', () => {
-    mockMusicalPrompt = 'a beautiful afro-pop ballad';
-    renderRibbon();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Send to LYRIA' }));
-
-    expect(mockSetActiveTab).toHaveBeenCalledWith('musical');
-  });
-
-  it('uses a distinct confirmation tooltip after Send to LYRIA', () => {
-    renderRibbon();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Send to LYRIA' }));
-
-    expect(screen.getByTitle('Opening Musical…')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Send to LYRIA' })).toBeDisabled();
-  });
+  // NOTE: "Send to LYRIA" button was removed from TopRibbon per UX decision
+  // (commit 9e6d8e8, v1.31.0.34). The corresponding tests were removed alongside it.
 });
