@@ -261,12 +261,6 @@ export function useAudioEngine(): AudioEngineState {
       return;
     }
     activeMediaRef.current = el;
-    // NOTE: audioRef stays pointing to internalAudioRef so FrequencyVisualizer
-    // can still analyse audio via the WebAudio graph (video cannot be piped
-    // through createMediaElementSource twice). The EQ animates from the
-    // internal audio element which mirrors the video's audio track via
-    // the analyser initialised in FrequencyVisualizer.
-    // We DO update audioRef so the visualiser re-inits on the video element.
     audioRef.current = el;
     el.volume = volume;
     bindListeners(el);
@@ -283,10 +277,15 @@ export function useAudioEngine(): AudioEngineState {
         codec: guessedCodec,
         isVideo: true,
       };
-      // Non-standard audioTracks API (Firefox / some Chromium builds)
+      // Non-standard audioTracks API (Firefox / some Chromium builds).
+      // Guard with Number.isFinite: the API can return undefined or NaN
+      // on builds that expose the property but don't populate it.
       type MediaWithAudio = HTMLVideoElement & { audioTracks?: { length: number } };
       const at = (el as MediaWithAudio).audioTracks;
-      if (at && at.length) info.channels = at.length * 2;
+      const atLen = at?.length;
+      if (Number.isFinite(atLen) && (atLen as number) > 0) {
+        info.channels = (atLen as number) * 2;
+      }
       if (info.channels) info.channelLabel = channelLabel(info.channels);
       setTrackInfo(info);
     };

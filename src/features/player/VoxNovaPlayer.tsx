@@ -27,12 +27,41 @@ function genRegistry(): string {
   return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
+/**
+ * useSectorTime — LCARS elapsed-time counter.
+ * The interval is suspended when the document is hidden (tab backgrounded)
+ * to avoid unnecessary state churn while the player is not visible.
+ */
 function useSectorTime(): string {
   const [t, setT] = useState(0);
   useEffect(() => {
     const start = performance.now();
-    const id = window.setInterval(() => setT((performance.now() - start) / 100), 100);
-    return () => window.clearInterval(id);
+    let id: ReturnType<typeof window.setInterval> | null = null;
+
+    const tick = () => setT((performance.now() - start) / 100);
+
+    const startInterval = () => {
+      if (id !== null) return;
+      id = window.setInterval(tick, 100);
+    };
+    const stopInterval = () => {
+      if (id === null) return;
+      window.clearInterval(id);
+      id = null;
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) stopInterval();
+      else startInterval();
+    };
+
+    if (!document.hidden) startInterval();
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      stopInterval();
+    };
   }, []);
   const whole = Math.floor(t / 10).toString().padStart(4, '0');
   const dec = Math.floor(t % 10);
@@ -128,7 +157,7 @@ function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProp
         playsInline
         controls={showControls}
         preload="metadata"
-        aria-label="Video player"
+        aria-label={isPlaying ? 'Video player – playing' : 'Video player – paused'}
       />
       <div aria-hidden="true" style={{ position: 'absolute', top: 30, left: 0, width: 3, height: 36, background: LCARS.purple, borderRadius: '0 2px 2px 0', opacity: 0.55 }} />
       <div aria-hidden="true" style={{ position: 'absolute', top: 30, right: 0, width: 3, height: 36, background: LCARS.orange, borderRadius: '2px 0 0 2px', opacity: 0.55 }} />
@@ -163,120 +192,120 @@ export function VoxNovaPlayer() {
   }, [selectedTrack?.id, selectedTrack?.isVideo]);
 
   const handlePurge = () => {
-    if (typeof window !== 'undefined' && !window.confirm('Purge all tracks from local cache?')) return;
-    library.purgeAll(); setSelectedId(null); engine.pause();
+    if (typeof window !== 'undefined' && !window.confirm('Purge library? All local tracks will be removed.')) return;
+    library.purge();
   };
 
-  const structuralIntegrity = Math.min(1, library.tracks.length / LIBRARY_CAPACITY);
-  const neuralBuffer = engine.duration > 0 ? Math.min(1, engine.currentTime / engine.duration) : 0;
-  const memo = selectedTrack?.memo || (selectedTrack ? `[LCARS_SCAN] Identified: ${selectedTrack.title} | Integrity: Nominal` : '[LCARS_SCAN] Standby \u2014 awaiting signal selection.');
-  const title = selectedTrack?.title ?? 'Subspace Channel Idle';
-  const CONTENT_WIDTH = 'min(680px, 95%)';
-  const WIDE_WIDTH = 'min(900px, 98%)';
-
-  const lyriaCount = library.tracks.filter(t => t.source === 'lyria').length;
-  const prevLyriaCount = useRef(lyriaCount);
-  useEffect(() => { if (lyriaCount > prevLyriaCount.current) setView('lyria'); prevLyriaCount.current = lyriaCount; }, [lyriaCount, setView]);
+  const contentWidth = '100%';
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', background: 'var(--bg-app)', color: LCARS.text, fontFamily: '"Antonio", "Eurostile", "Helvetica Neue", Arial, sans-serif', overflow: 'hidden' }}>
-      <LCARSBackground />
-      <SidebarProvider onLocalTracksAdded={() => setView('local')}>
-        <PlayerSidebar
-          view={view}
-          setView={setView}
-          tracks={library.tracks}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-          onPurge={handlePurge}
-        />
-      </SidebarProvider>
-
-      <main style={{ position: 'relative', zIndex: 1, flex: 1, minWidth: 0, padding: '12px 16px 16px 4px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'stretch', gap: 4 }}>
-          <div style={{ flex: 1, height: 36, background: LCARS.peach, color: '#000', display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 12, fontWeight: 700, letterSpacing: 2, borderRadius: 4, justifyContent: 'space-between', gap: 12 }}>
-            <span>USS VOX NOVA // REGISTRY {registry}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: LCARS.alertRed, boxShadow: `0 0 6px ${LCARS.alertRed}` }} aria-hidden="true" />
-                <span style={{ fontSize: 11 }}>IMPULSE_ONLY</span>
-              </span>
-              <ChipIcon /><NetworkIcon />
-            </span>
-          </div>
-          <div style={{ width: 60, height: 36, background: LCARS.purple, borderTopLeftRadius: 4, borderBottomLeftRadius: 4, borderTopRightRadius: 18, borderBottomRightRadius: 18 }} aria-hidden="true" />
-        </div>
-
-        {/* Status bars */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 32, alignItems: 'start', padding: '4px 8px' }}>
-          <StatusBar label="STRUCTURAL INTEGRITY" value={structuralIntegrity} color={LCARS.amber} />
-          <StatusBar label="NEURAL BUFFER" value={neuralBuffer} color={LCARS.purple} />
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ color: LCARS.subText, fontSize: 10, letterSpacing: 2 }}>SECTOR TIME</div>
-            <div style={{ color: LCARS.alertRed, fontSize: 20, fontFamily: 'monospace', letterSpacing: 2, fontVariantNumeric: 'tabular-nums' }}>{sectorTime}</div>
-          </div>
-        </div>
-
-        {/* Stage */}
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 20, padding: '12px 24px 16px 24px', overflow: 'auto' }}>
-          {/* Title */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-            <div style={{ color: LCARS.subText, fontSize: 12, letterSpacing: 4, textTransform: 'uppercase' }}>COMMS_ENCRYPTION: LEVEL 5</div>
-            <h1 style={{ margin: 0, fontSize: 'clamp(32px, 4.5vw, 56px)', fontWeight: 700, textAlign: 'center', letterSpacing: 1, lineHeight: 1.05, textShadow: '0 0 32px rgba(255,255,255,0.25)', color: LCARS.text }}>{title}</h1>
-            <div style={{ width: 120, height: 3, background: LCARS.peach, borderRadius: 2 }} aria-hidden="true" />
-          </div>
-
-          {/* MEMO LOG */}
-          <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.purple}55`, borderRadius: 4, padding: '10px 14px', background: LCARS_BOX_COLORS[1] }}>
-            <div style={{ color: LCARS.purple, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>LOCAL MEMO LOG</div>
-            <div style={{ color: LCARS.text, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5, wordBreak: 'break-word', marginBottom: selectedTrack ? 8 : 0 }}>{memo}</div>
-            {selectedTrack && (
-              <div style={{ borderTop: `1px solid ${LCARS.purple}22`, paddingTop: 6, fontFamily: 'monospace', fontSize: 11, letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ color: LCARS.subText, marginRight: 6 }}>SIGNAL_ANALYSIS</span>
-                <TechSpecLine info={engine.trackInfo} duration={engine.duration} />
+    <SidebarProvider>
+      <div style={{ position: 'relative', width: '100%', minHeight: '100vh',
+        background: LCARS.bg, color: LCARS.text, fontFamily: LCARS.font,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <LCARSBackground />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1 }}>
+          <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <PlayerSidebar
+              tracks={library.tracks}
+              selectedId={selectedId}
+              onSelect={handleSelect}
+              onPurge={handlePurge}
+              libraryCapacity={LIBRARY_CAPACITY}
+              boxColors={LCARS_BOX_COLORS}
+            />
+            <main style={{ flex: 1, display: 'flex', flexDirection: 'column',
+              padding: '12px 16px', gap: 10, overflow: 'auto', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                borderBottom: `1px solid ${LCARS.purple}33`, paddingBottom: 6, marginBottom: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <BlackHoleBadge />
+                  <span style={{ color: LCARS.amber, fontSize: 9, letterSpacing: 3, fontWeight: 700 }}>VOX NOVA</span>
+                  <ChipIcon />
+                  <span style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 2 }}>REG·{registry}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <NetworkIcon />
+                  <span style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 2, fontVariantNumeric: 'tabular-nums' }}>
+                    STARDATE·{sectorTime}
+                  </span>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Video — between MEMO and controls */}
-          {selectedTrack?.isVideo && (
-            <VideoPlayer src={selectedTrack.url} isPlaying={engine.isPlaying} videoRef={videoElRef} contentWidth={CONTENT_WIDTH} />
-          )}
+              {selectedTrack?.isVideo && (
+                <VideoPlayer
+                  src={selectedTrack.url}
+                  isPlaying={engine.isPlaying}
+                  videoRef={videoElRef}
+                  contentWidth={contentWidth}
+                />
+              )}
 
-          {/* Transport + seek */}
-          <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.peach}33`, borderRadius: 4, padding: '12px 16px', background: LCARS_BOX_COLORS[2], display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-            <PlayerControls engine={engine} onPrev={handlePrev} onNext={handleNext} disabled={!selectedTrack} />
-            <SeekBar currentTime={engine.currentTime} duration={engine.duration} onSeek={engine.seek} disabled={!selectedTrack} />
-          </div>
+              <FrequencyVisualizer audioRef={engine.audioRef} isPlaying={engine.isPlaying} analyser={analyser} />
 
-          {/* Volume */}
-          <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.amber}33`, borderRadius: 4, padding: '10px 16px', background: LCARS_BOX_COLORS[4] }}>
-            <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
-          </div>
-
-          <div style={{ flex: 1, minHeight: 0 }} aria-hidden="true" />
-
-          {/* Singularity status */}
-          <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: '1px solid rgba(100,100,200,0.25)', borderRadius: 4, padding: '10px 14px', background: 'rgba(0,0,20,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div>
-              <div style={{ color: 'rgba(100,150,255,0.7)', fontSize: 9, letterSpacing: 3, marginBottom: 4 }}>SINGULARITY STATUS</div>
-              <div style={{ color: LCARS.subText, fontSize: 11, letterSpacing: 1 }}>{engine.isPlaying ? 'ACCRETION ACTIVE' : 'EVENT HORIZON STABLE'}</div>
-            </div>
-            <BlackHoleBadge active={engine.isPlaying} />
-          </div>
-
-          {/* Frequency scan — always shown when a track is selected */}
-          {selectedTrack && (
-            <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: `1px solid ${LCARS.red ?? '#cc3333'}33`, borderRadius: 4, padding: '8px', background: LCARS_BOX_COLORS[3] }}>
-              <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 3, marginBottom: 6, paddingLeft: 4 }}>
-                SUBSPACE FREQUENCY SCAN{selectedTrack.isVideo ? ' \u2014 AUDIO TRACK' : ''}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                  <span style={{ color: LCARS.amber, fontSize: 13, fontWeight: 700, letterSpacing: 1,
+                    maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedTrack?.title ?? '— NO SIGNAL —'}
+                  </span>
+                  {selectedTrack && (
+                    <span style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 2 }}>
+                      {selectedTrack.source === 'cloud' ? 'CLOUD' : 'LOCAL'}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 9, letterSpacing: 1, lineHeight: 1.6 }}>
+                  <TechSpecLine info={engine.trackInfo} duration={engine.duration} />
+                </div>
               </div>
-              <FrequencyVisualizer isPlaying={engine.isPlaying} analyser={analyser} audioRef={engine.audioRef} />
-            </div>
-          )}
+
+              <SeekBar currentTime={engine.currentTime} duration={engine.duration} onSeek={engine.seek} />
+
+              <PlayerControls
+                isPlaying={engine.isPlaying}
+                onTogglePlay={engine.togglePlay}
+                onPrev={handlePrev}
+                onNext={handleNext}
+                repeat={engine.repeat}
+                onToggleRepeat={engine.toggleRepeat}
+                shuffle={engine.shuffle}
+                onToggleShuffle={engine.toggleShuffle}
+                autoplay={engine.autoplay}
+                onToggleAutoplay={engine.toggleAutoplay}
+              />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <VolumeControl volume={engine.volume} onSetVolume={engine.setVolume} />
+                <StatusBar
+                  isPlaying={engine.isPlaying}
+                  currentTime={engine.currentTime}
+                  duration={engine.duration}
+                  crossfadeMs={engine.crossfadeMs}
+                  onSetCrossfade={engine.setCrossfadeMs}
+                  sleepTimerEnd={engine.sleepTimerEnd}
+                  onSetSleepTimer={engine.setSleepTimer}
+                />
+              </div>
+
+              <div style={{ marginTop: 'auto', paddingTop: 8, borderTop: `1px solid ${LCARS.purple}22`,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: LCARS.subText, fontSize: 8, letterSpacing: 2 }}>
+                  TRACKS·{library.tracks.length}/{LIBRARY_CAPACITY}
+                </span>
+                <button
+                  onClick={() => setView(view === 'player' ? 'settings' : 'player')}
+                  style={{ background: 'none', border: 'none', color: LCARS.subText,
+                    fontSize: 8, letterSpacing: 2, cursor: 'pointer', padding: '2px 6px' }}
+                  aria-label="Toggle settings"
+                >
+                  {view === 'settings' ? 'CLOSE CONFIG' : 'CONFIG'}
+                </button>
+              </div>
+            </main>
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }
