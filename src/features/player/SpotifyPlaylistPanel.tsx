@@ -137,7 +137,7 @@ function PlaylistRow({ id, name, imageUrl, totalTracks, isOpen, onToggle }: Play
           {name}
         </div>
         <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 1 }}>
-          {totalTracks} TRACKS
+          {totalTracks > 0 ? `${totalTracks} TRACKS` : 'TAP TO LOAD'}
         </div>
       </div>
       <svg width="10" height="10" viewBox="0 0 24 24" fill={LCARS.subText}
@@ -170,7 +170,6 @@ export function SpotifyPlaylistPanel() {
   const handlePlay = (trackUri: string) => {
     const playlist = playlists.find(pl => pl.id === openId);
     if (!playlist) {
-      // Fallback: no playlist context known — play track in isolation
       void controls.play({ uris: [trackUri] });
       return;
     }
