@@ -7,6 +7,7 @@ import {
   Button as FluentButton,
   Badge,
   Slider,
+  type SliderOnChangeData,
   Text,
   Tooltip,
   makeStyles,
@@ -107,14 +108,14 @@ export const SpotifyConnect: React.FC = () => {
   const player = useSpotifyPlayer(auth);
 
   const handleSeekChange = useCallback(
-    (_: React.ChangeEvent<HTMLInputElement>, data: { value: number }) => {
+    (_ev: React.ChangeEvent<HTMLInputElement>, data: SliderOnChangeData) => {
       void player.seek(data.value);
     },
     [player]
   );
 
   const handleVolumeChange = useCallback(
-    (_: React.ChangeEvent<HTMLInputElement>, data: { value: number }) => {
+    (_ev: React.ChangeEvent<HTMLInputElement>, data: SliderOnChangeData) => {
       void player.setVolume(data.value / 100);
     },
     [player]

@@ -2,9 +2,9 @@
  * Feature: Spotify Player
  * Wraps Spotify Web Playback SDK — dynamic script load, device init,
  * state subscription, and playback commands.
+ * Types are global ambient (src/types/spotify.d.ts) — no named imports needed.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { SpotifyPlayer, SpotifyWebPlaybackState } from '../../types/spotify';
 import type { UseSpotifyAuthReturn } from './useSpotifyAuth';
 
 const SDK_URL = 'https://sdk.scdn.co/spotify-player.js';
@@ -25,7 +25,7 @@ export interface SpotifyPlayerState {
   deviceId: string | null;
   playbackState: SpotifyWebPlaybackState | null;
   isPlaying: boolean;
-  currentTrack: SpotifyWebPlaybackState['track_window']['current_track'] | null;
+  currentTrack: SpotifyTrack | null;
   positionMs: number;
   durationMs: number;
   volume: number;
