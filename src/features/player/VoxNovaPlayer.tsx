@@ -180,8 +180,7 @@ function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProp
         style={{
           width: '100%',
           display: 'block',
-          maxHeight: 'clamp(180px, 40vh, 480px)',
-          height: 'auto',
+          height: 'clamp(180px, 40vh, 480px)',
           background: '#000',
           objectFit: 'contain',
           borderRadius: '0 0 4px 4px',
