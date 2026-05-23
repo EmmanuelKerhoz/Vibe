@@ -3,9 +3,8 @@
  *
  * Strategy (layered, fail-open):
  *   1. If UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN are set,
- *      use @upstash/ratelimit (distributed, shared across all instances).
- *   2. Otherwise fall back to the in-memory Map (original behaviour,
- *      acceptable for low-traffic deployments).
+ *      use the Upstash Redis REST API directly (no package dependency).
+ *   2. Otherwise fall back to the in-memory Map.
  *
  * checkRateLimit() and resolveIp() public interfaces are unchanged.
  *
@@ -30,7 +29,7 @@ const WINDOW_MS = (() => {
   return Number.isFinite(v) && v > 0 ? v : DEFAULT_WINDOW_MS;
 })();
 
-// ─── In-memory fallback ───────────────────────────────────────────────────────
+// ─── In-memory fallback ────────────────────────────────────────────────────────────────────
 
 const buckets = new Map<string, number[]>();
 
@@ -55,12 +54,12 @@ function inMemoryCheck(
   return { allowed: true };
 }
 
-// ─── Distributed path (Upstash) ──────────────────────────────────────────────
+// ─── Distributed path (Upstash REST — no package dependency) ─────────────────
 
 /**
- * Attempt a distributed rate-limit check via Upstash Redis.
- * Returns null when the KV store is not configured or unreachable
- * (fail-open: caller falls back to in-memory).
+ * Sliding-window rate limit via Upstash Redis REST API.
+ * Uses MULTI/EXEC pipeline: ZADD + ZREMRANGEBYSCORE + ZCARD + EXPIRE.
+ * Returns null when env vars are absent or the request fails (fail-open).
  */
 async function tryDistributedRateLimit(
   ip: string,
@@ -70,32 +69,57 @@ async function tryDistributedRateLimit(
   if (!url || !token) return null;
 
   try {
-    // Dynamic import so the package is only resolved when env vars are present.
-    // Avoids a hard dependency for deployments that don't use Upstash.
-    const [{ Ratelimit }, { Redis }] = await Promise.all([
-      import('@upstash/ratelimit') as Promise<typeof import('@upstash/ratelimit')>,
-      import('@upstash/redis') as Promise<typeof import('@upstash/redis')>,
-    ]);
+    const now = Date.now();
+    const windowStart = now - WINDOW_MS;
+    const key = `vibe_rl:${ip}`;
+    const expireSec = Math.ceil(WINDOW_MS / 1000);
 
-    const ratelimit = new Ratelimit({
-      redis: new Redis({ url, token }),
-      limiter: Ratelimit.slidingWindow(MAX, `${Math.round(WINDOW_MS / 1000)} s`),
-      analytics: false,
-      prefix: 'vibe_rl',
+    // Pipeline: [ZADD key now now] [ZREMRANGEBYSCORE key 0 windowStart] [ZCARD key] [EXPIRE key expireSec]
+    const pipeline = [
+      ['ZADD', key, String(now), String(now)],
+      ['ZREMRANGEBYSCORE', key, '0', String(windowStart)],
+      ['ZCARD', key],
+      ['EXPIRE', key, String(expireSec)],
+    ];
+
+    const resp = await fetch(`${url}/pipeline`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(pipeline),
+      signal: AbortSignal.timeout(3_000),
     });
 
-    const { success, reset } = await ratelimit.limit(ip);
-    if (success) return { allowed: true };
-    const retryAfterSec = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
-    return { allowed: false, retryAfterSec };
+    if (!resp.ok) {
+      console.warn('[rateLimit] Upstash REST error', resp.status, '— falling back to in-memory');
+      return null;
+    }
+
+    // Response shape: [{result:…}, {result:…}, {result: <count>}, {result:…}]
+    const results = await resp.json() as Array<{ result: unknown }>;
+    const count = results[2]?.result;
+
+    if (typeof count !== 'number') {
+      console.warn('[rateLimit] Unexpected Upstash response shape — falling back to in-memory');
+      return null;
+    }
+
+    if (count > MAX) {
+      // Conservative retry: suggest one full window
+      const retryAfterSec = Math.ceil(WINDOW_MS / 1000);
+      return { allowed: false, retryAfterSec };
+    }
+
+    return { allowed: true };
   } catch (err) {
-    // Fail-open: log and fall through to in-memory.
-    console.warn('[rateLimit] Upstash unavailable, falling back to in-memory:', err);
+    console.warn('[rateLimit] Upstash fetch failed, falling back to in-memory:', err);
     return null;
   }
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// ─── Public API ─────────────────────────────────────────────────────────────────────
 
 export async function checkRateLimit(
   ip: string,
