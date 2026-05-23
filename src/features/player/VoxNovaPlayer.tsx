@@ -72,8 +72,6 @@ function formatDate(value?: string): string | null {
 /**
  * OneDriveMetaLine — safe scalar fields only.
  * Displays: SOURCE | MODIFIED | LINK
- * SIZE removed (redundant with SIGNAL_ANALYSIS duration/bitrate).
- * FORMAT/type removed (redundant with SIGNAL_ANALYSIS VIDEO+AUDIO tag).
  */
 function OneDriveMetaLine({ track }: { track: TrackEntry }) {
   const items: Array<{ label: string; value: string; color: string }> = [];
@@ -283,11 +281,7 @@ export function VoxNovaPlayer() {
             <div style={{ width: 120, height: 3, background: LCARS.peach, borderRadius: 2 }} aria-hidden="true" />
           </div>
 
-          {/* MEMO LOG
-              1. memo text
-              2. OneDriveMetaLine — SOURCE | MODIFIED | LINK  (SIZE+FORMAT removed, redundant)
-              3. SIGNAL_ANALYSIS  — channels | kHz | kbps | codec | duration | type
-          */}
+          {/* MEMO LOG */}
           <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.purple}55`, borderRadius: 4, padding: '10px 14px', background: LCARS_BOX_COLORS[1] }}>
             <div style={{ color: LCARS.purple, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>LOCAL MEMO LOG</div>
             <div style={{ color: LCARS.text, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5, wordBreak: 'break-word', marginBottom: selectedTrack ? 8 : 0 }}>{memo}</div>
@@ -307,17 +301,19 @@ export function VoxNovaPlayer() {
 
           {/*
             Transport container:
-            Order — SeekBar → VolumeControl → PlayerControls (transport first, mode grid below)
+            Order — SeekBar → PlayerControls (transport + status) → VolumeControl → mode grid
+            The mode grid is the last section inside PlayerControls (after transport + status).
+            VolumeControl sits between the transport row and the mode grid.
           */}
           <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.peach}33`, borderRadius: 4, padding: '12px 16px', background: LCARS_BOX_COLORS[2], display: 'flex', flexDirection: 'column', gap: 10 }}>
             <SeekBar currentTime={engine.currentTime} duration={engine.duration} onSeek={engine.seek} disabled={!selectedTrack} />
-            <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
             <PlayerControls engine={engine} onPrev={handlePrev} onNext={handleNext} disabled={!selectedTrack} />
+            <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
           </div>
 
           <div style={{ flex: 1, minHeight: 0 }} aria-hidden="true" />
 
-          {/* Frequency scan — above Singularity */}
+          {/* Frequency scan */}
           {selectedTrack && (
             <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: `1px solid ${LCARS.red ?? '#cc3333'}33`, borderRadius: 4, padding: '8px', background: LCARS_BOX_COLORS[3] }}>
               <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 3, marginBottom: 6, paddingLeft: 4 }}>
@@ -327,7 +323,7 @@ export function VoxNovaPlayer() {
             </div>
           )}
 
-          {/* Singularity status — below equalizer */}
+          {/* Singularity status */}
           <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: '1px solid rgba(100,100,200,0.25)', borderRadius: 4, padding: '10px 14px', background: 'rgba(0,0,20,0.35)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ color: 'rgba(100,150,255,0.7)', fontSize: 9, letterSpacing: 3, marginBottom: 4 }}>SINGULARITY STATUS</div>

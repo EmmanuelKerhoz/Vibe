@@ -72,7 +72,7 @@ const CONTROLS_CSS = `
   .lcars-mode-grid {
     display: flex;
     flex-wrap: nowrap;
-    gap: 6px;
+    gap: 5px;
     justify-content: center;
     align-items: stretch;
     width: 100%;
@@ -106,7 +106,7 @@ function spawnRipple(e: React.MouseEvent<HTMLButtonElement>) {
 
 function IconShuffle({ active }: { active: boolean }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="16 3 21 3 21 8" />
       <line x1="4" y1="20" x2="21" y2="3" />
@@ -122,7 +122,7 @@ function IconShuffle({ active }: { active: boolean }) {
 
 function IconRepeat({ mode }: { mode: RepeatMode }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="17 1 21 5 17 9" />
       <path d="M3 11V9a4 4 0 0 1 4-4h14" />
@@ -138,7 +138,7 @@ function IconRepeat({ mode }: { mode: RepeatMode }) {
 
 function IconAutoplay() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polygon points="5 3 19 12 5 21 5 3" />
       <line x1="19" y1="3" x2="19" y2="21" />
@@ -148,7 +148,7 @@ function IconAutoplay() {
 
 function IconCrossfade() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
       <path d="M4 6 Q12 18 20 6" />
       <path d="M4 18 Q12 6 20 18" />
@@ -162,7 +162,7 @@ function IconCrossfade() {
 
 function IconSleep() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
@@ -198,7 +198,7 @@ interface LCARSModeButtonProps {
   children: React.ReactNode;
 }
 
-/** Compact secondary mode button — smaller than transport controls */
+/** Compact secondary mode button */
 function LCARSModeButton({
   label, badge, badgeColor, active, disabled, color, dimColor, onClick, title, children,
 }: LCARSModeButtonProps) {
@@ -225,10 +225,10 @@ function LCARSModeButton({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 4,
-        padding: '6px 10px',
-        minWidth: 56,
-        borderRadius: 5,
+        gap: 3,
+        padding: '4px 8px',
+        minWidth: 46,
+        borderRadius: 4,
         border: `1px solid ${active ? color + 'cc' : color + '28'}`,
         background: active
           ? `linear-gradient(155deg, ${color}20 0%, ${color}0a 100%)`
@@ -237,7 +237,7 @@ function LCARSModeButton({
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.28 : 1,
         boxShadow: active
-          ? `0 0 12px ${color}38, 0 0 3px ${color}18, inset 0 1px 0 ${color}22, 0 1px 0 rgba(0,0,0,0.4)`
+          ? `0 0 10px ${color}38, 0 0 3px ${color}18, inset 0 1px 0 ${color}22, 0 1px 0 rgba(0,0,0,0.4)`
           : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 0 rgba(0,0,0,0.4)',
         transition: 'all 160ms cubic-bezier(0.16,1,0.3,1)',
         userSelect: 'none',
@@ -248,8 +248,8 @@ function LCARSModeButton({
       <span
         className={active ? 'lcars-led-active' : undefined}
         style={{
-          position: 'absolute', top: 4, right: 5,
-          width: 4, height: 4, borderRadius: '50%',
+          position: 'absolute', top: 3, right: 4,
+          width: 3, height: 3, borderRadius: '50%',
           background: active ? color : 'rgba(255,255,255,0.10)',
           color: color,
           transition: 'background 200ms ease',
@@ -259,7 +259,7 @@ function LCARSModeButton({
 
       {badge !== undefined && (
         <span style={{
-          position: 'absolute', top: 3, left: 4,
+          position: 'absolute', top: 2, left: 3,
           fontSize: 6, letterSpacing: 0.8, fontWeight: 800,
           fontFamily: 'inherit', lineHeight: 1,
           padding: '1px 2px', borderRadius: 3,
@@ -276,7 +276,7 @@ function LCARSModeButton({
       <span style={{ lineHeight: 0 }}>{children}</span>
 
       <span style={{
-        fontSize: 7, letterSpacing: 1.6, fontWeight: 700,
+        fontSize: 6, letterSpacing: 1.4, fontWeight: 700,
         fontFamily: 'inherit', lineHeight: 1, textTransform: 'uppercase',
       }}>
         {label}
@@ -475,7 +475,7 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '4px 0', width: '100%' }}>
 
-      {/* ── 1. Transport (main controls — top) ── */}
+      {/* ── 1. Transport (prev / play / next) ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button type="button" onClick={handlePrev} disabled={disabled}
           aria-label="Previous track" title="Previous track"
@@ -528,7 +528,7 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
         crossfadeMs={crossfadeMs} sleepTimerEnd={sleepTimerEnd} isPlaying={isPlaying}
       />
 
-      {/* ── 3. Mode grid (secondary, compact — below transport) ── */}
+      {/* ── 3. Mode grid (compact — below transport and volume) ── */}
       <div role="group" aria-label="Playback modes" className="lcars-mode-grid">
         <LCARSModeButton label="SHUFFLE" active={shuffle} color={LCARS.peach}
           title="Randomise playback order" onClick={toggleShuffle}>

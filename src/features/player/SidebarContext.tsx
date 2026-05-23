@@ -39,18 +39,6 @@ function filterFiles(files: File[], protocol: ScanConfig['accept'], pattern: str
   });
 }
 
-function formatBytes(size: number): string {
-  if (!Number.isFinite(size) || size <= 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let value = size;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
-}
-
 function formatModified(lastModified: number): string {
   return Number.isFinite(lastModified) && lastModified > 0
     ? new Date(lastModified).toLocaleDateString()
@@ -108,7 +96,7 @@ export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProvide
       title: f.name.replace(/\.[^/.]+$/, ''),
       source: 'local',
       url: URL.createObjectURL(f),
-      memo: `[UPLINK] ${f.name} | Type: ${f.type || 'media'} | Size: ${formatBytes(f.size)} | Modified: ${formatModified(f.lastModified)} | Integrity: Nominal`,
+      memo: `[UPLINK] ${f.name} | Modified: ${formatModified(f.lastModified)} | Integrity: Nominal`,
       linked: true,
       isVideo: VIDEO_EXT.test(f.name),
       oneDriveSize: f.size,
@@ -131,7 +119,7 @@ export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProvide
       title: immediateParentName(f),
       source: 'local',
       url: URL.createObjectURL(f),
-      memo: `[LCARS_SCAN] Identified: ${f.name} | Protocol: ${scanProtocol.join('+').toUpperCase()} | Type: ${f.type || 'media'} | Size: ${formatBytes(f.size)} | Modified: ${formatModified(f.lastModified)} | Integrity: Nominal`,
+      memo: `[LCARS_SCAN] Identified: ${f.name} | Modified: ${formatModified(f.lastModified)} | Integrity: Nominal`,
       linked: true,
       isVideo: VIDEO_EXT.test(f.name),
       oneDriveSize: f.size,
