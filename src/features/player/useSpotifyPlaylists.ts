@@ -184,7 +184,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
 
         const page: RawTrackPage = await apiFetch<RawTrackPage>(url, tokens, ctrl.signal);
         for (const entry of page.items) {
-          const t = entry?.track;
+          const t = entry.track;
           if (!t || !t.uri || !t.uri.startsWith('spotify:track:')) continue;
           collected.push({
             id: t.id,

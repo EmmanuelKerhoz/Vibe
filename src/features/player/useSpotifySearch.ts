@@ -96,7 +96,7 @@ export function useSpotifySearch(): SpotifySearchState {
           setError(`Spotify search failed (${err.status}): ${e.message}`);
         }
       } else {
-        setError(e?.message ?? 'Failed to search Spotify tracks');
+        setError(e.message ?? 'Failed to search Spotify tracks');
       }
       setResults([]);
     } finally {
