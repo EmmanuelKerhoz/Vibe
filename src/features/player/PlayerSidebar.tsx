@@ -109,7 +109,8 @@ export function PlayerSidebar({
         display: 'flex',
         flexDirection: 'column',
         gap: 6,
-        overflow: 'hidden',
+        overflowY: 'auto',
+        overflowX: 'hidden',
       }}
     >
       {/* VOX / NV-42 CORE block */}
@@ -226,18 +227,18 @@ export function PlayerSidebar({
       >
         <div>
           <div style={{ color: LCARS.orange, fontSize: 9, letterSpacing: 3, marginBottom: 6 }}>AUDIO PROTOCOL</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 4 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 4 }}>
             <button
               type="button"
               onClick={() => toggleProtocol('all')}
               style={{
                 flex: '1 1 100%',
-                padding: '5px 4px',
+                padding: '4px',
                 background: allProtocolsSelected ? LCARS.orange : 'rgba(0,0,0,0.32)',
                 color: allProtocolsSelected ? '#000' : LCARS.orange,
                 border: `1px solid ${LCARS.orange}`,
                 borderRadius: 3,
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: 700,
                 letterSpacing: 1,
                 cursor: 'pointer',
@@ -257,13 +258,13 @@ export function PlayerSidebar({
                 type="button"
                 onClick={() => toggleProtocol(p.value)}
                 style={{
-                  flex: '1 1 42px',
-                  padding: '5px 4px',
+                  flex: '1 1 39px',
+                  padding: '4px 3px',
                   background: selected ? (p.group === 'VIDEO' ? LCARS.purple : LCARS.orange) : 'transparent',
                   color: selected ? '#000' : (p.group === 'VIDEO' ? LCARS.purple : LCARS.orange),
                   border: `1px solid ${p.group === 'VIDEO' ? LCARS.purple : LCARS.orange}`,
                   borderRadius: 3,
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: 700,
                   letterSpacing: 1,
                   cursor: 'pointer',
