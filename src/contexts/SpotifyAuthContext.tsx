@@ -22,10 +22,14 @@ import type { SpotifyAuthState } from '../types/spotify';
 // Constants
 // ---------------------------------------------------------------------------
 
-const CLIENT_ID = (
-  (import.meta.env.VITE_SPOTIFY_CLIENT_ID as string | undefined)?.trim()
-  || '1290827e76c642dbb53d8157aa96a97d'
-);
+const _rawClientId = (import.meta.env.VITE_SPOTIFY_CLIENT_ID as string | undefined)?.trim();
+if (!_rawClientId) {
+  throw new Error(
+    '[Spotify] VITE_SPOTIFY_CLIENT_ID is not set. ' +
+    'Add it to your .env file (see .env.example).'
+  );
+}
+const CLIENT_ID: string = _rawClientId;
 
 const REDIRECT_URI = (() => {
   if (typeof window === 'undefined') return '';
@@ -54,7 +58,8 @@ const REFRESH_KEY  = 'spotify_refresh_token';
 const EXPIRY_KEY   = 'spotify_token_expiry';
 const VERIFIER_KEY = 'spotify_pkce_verifier';
 const STATE_KEY    = 'spotify_pkce_state';
-const TOKEN_EXPIRY_BUFFER_MS = 5_000;
+// 60 000 ms aligns with the 60s proactive refresh window in scheduleRefresh
+const TOKEN_EXPIRY_BUFFER_MS = 60_000;
 
 // ---------------------------------------------------------------------------
 // Storage helpers (localStorage + memStore fallback)
