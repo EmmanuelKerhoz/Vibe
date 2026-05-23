@@ -1,7 +1,8 @@
 /**
  * SpotifyPlaylistPanel
  * Accordion list of the user's Spotify playlists.
- * Expanding a row loads and shows its tracks; clicking a track plays it.
+ * Expanding a row loads and shows its tracks; clicking a track plays it
+ * via context_uri so Spotify handles shuffle / repeat / radio natively.
  */
 import { useState } from 'react';
 import { useSpotifyPlaylists, formatMs } from './useSpotifyPlaylists';
@@ -34,7 +35,7 @@ interface TrackRowProps {
   albumArtUrl: string | null;
   isPlayable: boolean;
   isActive: boolean;
-  onPlay: (uri: string) => void;
+  onPlay: (trackUri: string) => void;
 }
 
 function TrackRow({ uri, name, artists, durationMs, albumArtUrl, isPlayable, isActive, onPlay }: TrackRowProps) {
@@ -101,7 +102,7 @@ interface PlaylistRowProps {
 
 function PlaylistRow({ id, name, imageUrl, totalTracks, isOpen, onToggle }: PlaylistRowProps) {
   const [hovered, setHovered] = useState(false);
-  void id; // used by parent
+  void id;
   return (
     <button
       onClick={onToggle}
@@ -164,13 +165,23 @@ export function SpotifyPlaylistPanel() {
     fetchTracks(id);
   };
 
-  const handlePlay = (uri: string) => {
-    void controls.play(uri);
+  /** Play a track in the context of the currently open playlist.
+   *  This lets Spotify handle shuffle, repeat and radio natively. */
+  const handlePlay = (trackUri: string) => {
+    const playlist = playlists.find(pl => pl.id === openId);
+    if (!playlist) {
+      // Fallback: no playlist context known — play track in isolation
+      void controls.play({ uris: [trackUri] });
+      return;
+    }
+    void controls.play({
+      contextUri: `spotify:playlist:${playlist.id}`,
+      offsetUri: trackUri,
+    });
   };
 
   return (
     <>
-      {/* Keyframes injected once */}
       <style>{`@keyframes spotify-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}`}</style>
 
       <div style={{
@@ -205,7 +216,6 @@ export function SpotifyPlaylistPanel() {
           </button>
         </div>
 
-        {/* States */}
         {loading && (
           <div style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[70, 55, 80, 60, 75].map((w, i) => (
@@ -233,7 +243,6 @@ export function SpotifyPlaylistPanel() {
           </div>
         )}
 
-        {/* Playlist list */}
         {!loading && !error && playlists.length > 0 && (
           <div style={{ maxHeight: 420, overflowY: 'auto' }} role="list">
             {playlists.map(pl => (
@@ -247,7 +256,6 @@ export function SpotifyPlaylistPanel() {
                   onToggle={() => handleToggle(pl.id)}
                 />
 
-                {/* Expanded tracks */}
                 {openId === pl.id && (
                   <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 4px 4px 8px' }}>
                     {tracksLoading[pl.id] && (

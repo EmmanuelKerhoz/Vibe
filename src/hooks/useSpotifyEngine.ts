@@ -45,8 +45,17 @@ export interface UseSpotifyEngineOptions {
   accessToken: string | null | undefined;
 }
 
+/**
+ * Two mutually exclusive play modes:
+ * - context mode  : play a playlist/album/artist from a specific track offset
+ * - tracks mode   : play an ad-hoc list of track URIs (single track or queue)
+ */
+export type PlayRequest =
+  | { contextUri: string; offsetUri: string }
+  | { uris: string[] };
+
 export interface SpotifyEngineControls {
-  play: (uris: string[]) => Promise<void>;
+  play: (req: PlayRequest) => Promise<void>;
   resume: () => Promise<void>;
   pause: () => Promise<void>;
   seek: (positionMs: number) => Promise<void>;
@@ -91,7 +100,6 @@ export function useSpotifyEngine({ accessToken }: UseSpotifyEngineOptions): UseS
         },
       });
 
-      // Use explicit cast per listener to avoid overload conflicts
       (player.addListener as (event: 'ready', cb: (payload: { device_id: string }) => void) => boolean)(
         'ready',
         ({ device_id }) => {
@@ -150,15 +158,18 @@ export function useSpotifyEngine({ accessToken }: UseSpotifyEngineOptions): UseS
     };
   }, [accessToken]);
 
-  const play = useCallback(async (uris: string[]) => {
+  const play = useCallback(async (req: PlayRequest) => {
     if (!deviceId || !tokenRef.current) return;
+    const body = 'contextUri' in req
+      ? { context_uri: req.contextUri, offset: { uri: req.offsetUri } }
+      : { uris: req.uris };
     await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${tokenRef.current}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ uris }),
+      body: JSON.stringify(body),
     });
   }, [deviceId]);
 
