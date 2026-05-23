@@ -111,6 +111,14 @@ function determineFileSize(
   return status === 206 ? null : bufferLength;
 }
 
+async function cancelResponseBody(res: Response): Promise<void> {
+  try {
+    await res.body?.cancel();
+  } catch (error) {
+    console.warn('[probeAudioFile] Failed to cancel oversized response:', error);
+  }
+}
+
 async function probeAudioFile(
   url: string,
   fileSizeBytes: number | null,
@@ -127,7 +135,7 @@ async function probeAudioFile(
     const contentLength = parseContentLength(res.headers);
     const declaredSize = contentLength ?? fileSizeBytes;
     if (maxProbeBytes && res.status !== 206 && declaredSize !== null && declaredSize > maxProbeBytes) {
-      await res.body?.cancel().catch(() => undefined);
+      await cancelResponseBody(res);
       return { bitrateKbps: fallbackBitrate };
     }
     const buf = await res.arrayBuffer();

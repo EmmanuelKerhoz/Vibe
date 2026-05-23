@@ -122,9 +122,11 @@ describe('useAudioEngine', () => {
     const decodeAudioData = vi.fn();
     vi.stubGlobal('AudioContext', vi.fn(() => ({ decodeAudioData, close: vi.fn() })));
     const arrayBuffer = vi.fn().mockResolvedValue(new ArrayBuffer(1));
+    const cancel = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       status: 200,
       headers: new Headers({ 'content-length': '800000000' }),
+      body: { cancel } as unknown as ReadableStream<Uint8Array>,
       arrayBuffer,
     } as Response));
 
@@ -145,6 +147,7 @@ describe('useAudioEngine', () => {
 
     await waitFor(() => expect(result.current.trackInfo?.bitrateKbps).toBe(64000));
 
+    expect(cancel).toHaveBeenCalledOnce();
     expect(arrayBuffer).not.toHaveBeenCalled();
     expect(decodeAudioData).not.toHaveBeenCalled();
     expect(result.current.trackInfo).toMatchObject({
