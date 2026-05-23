@@ -4,7 +4,7 @@
  * Handles: login redirect, callback token exchange, token refresh.
  * No external library — pure fetch + crypto.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID as string;
 const SCOPES = [
@@ -124,6 +124,10 @@ export function useSpotifyAuth(): UseSpotifyAuthReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Mutex: serialises concurrent getValidToken() calls during the refresh window.
+  // All callers share the same in-flight promise; the ref is cleared on settlement.
+  const refreshPromiseRef = useRef<Promise<string> | null>(null);
+
   // Handle OAuth callback on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -172,6 +176,7 @@ export function useSpotifyAuth(): UseSpotifyAuthReturn {
     storeRemove(TOKEN_KEY);
     storeRemove(REFRESH_KEY);
     storeRemove(EXPIRY_KEY);
+    refreshPromiseRef.current = null;
     setAccessToken(null);
   }, []);
 
@@ -181,18 +186,34 @@ export function useSpotifyAuth(): UseSpotifyAuthReturn {
     const refreshToken = storeGet(REFRESH_KEY);
 
     if (!token) return null;
-    // Refresh 60s before expiry
-    if (Date.now() > expiry - 60_000 && refreshToken) {
-      try {
-        const fresh = await refreshAccessToken(refreshToken);
+
+    // Token still valid — return immediately
+    if (Date.now() <= expiry - 60_000) return token;
+
+    // No refresh token — can't renew, bail out
+    if (!refreshToken) {
+      logout();
+      return null;
+    }
+
+    // Mutex: if a refresh is already in flight, wait for it instead of firing a second one
+    if (refreshPromiseRef.current) return refreshPromiseRef.current;
+
+    refreshPromiseRef.current = refreshAccessToken(refreshToken)
+      .then((fresh) => {
         setAccessToken(fresh);
         return fresh;
-      } catch {
+      })
+      .catch(() => {
         logout();
-        return null;
-      }
-    }
-    return token;
+        // Rethrow so callers can handle or swallow gracefully
+        return Promise.reject(new Error('Spotify token refresh failed — user logged out'));
+      })
+      .finally(() => {
+        refreshPromiseRef.current = null;
+      });
+
+    return refreshPromiseRef.current;
   }, [logout]);
 
   return {
