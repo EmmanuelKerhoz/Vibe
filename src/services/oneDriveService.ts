@@ -17,8 +17,18 @@ import {
 // Redirect URI: https://lyricist.valor.cloud (or http://localhost:5173 for dev)
 // Required API permission: Microsoft Graph → Files.Read (delegated)
 // ---------------------------------------------------------------------------
-const CLIENT_ID = import.meta.env.VITE_ONEDRIVE_CLIENT_ID ?? 'YOUR_AZURE_APP_CLIENT_ID';
-const TENANT   = 'common'; // multi-tenant; use your tenantId for single-tenant
+const CLIENT_ID = import.meta.env.VITE_ONEDRIVE_CLIENT_ID;
+
+// Hard assertion at module init — fail loudly instead of silently using
+// an invalid placeholder that will produce a confusing MSAL error later.
+if (!CLIENT_ID || CLIENT_ID === 'YOUR_AZURE_APP_CLIENT_ID') {
+  throw new Error(
+    '[oneDriveService] VITE_ONEDRIVE_CLIENT_ID is not set.\n' +
+    'Add it to your .env file or Vercel environment variables.'
+  );
+}
+
+const TENANT = 'common'; // multi-tenant; use your tenantId for single-tenant
 
 const msalConfig = {
   auth: {

@@ -27,12 +27,24 @@ function genRegistry(): string {
   return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
+/**
+ * useSectorTime — LCARS elapsed-time counter.
+ * Interval suspended when document is hidden to avoid useless state churn.
+ */
 function useSectorTime(): string {
   const [t, setT] = useState(0);
   useEffect(() => {
     const start = performance.now();
-    const id = window.setInterval(() => setT((performance.now() - start) / 100), 100);
-    return () => window.clearInterval(id);
+    let id: number | null = null;
+
+    const tick = () => setT((performance.now() - start) / 100);
+    const startInterval = () => { if (id !== null) return; id = window.setInterval(tick, 100); };
+    const stopInterval = () => { if (id === null) return; window.clearInterval(id); id = null; };
+    const onVisibility = () => { if (document.hidden) stopInterval(); else startInterval(); };
+
+    if (!document.hidden) startInterval();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => { document.removeEventListener('visibilitychange', onVisibility); stopInterval(); };
   }, []);
   const whole = Math.floor(t / 10).toString().padStart(4, '0');
   const dec = Math.floor(t % 10);
@@ -42,7 +54,7 @@ function useSectorTime(): string {
 function LCARSBackground() {
   return (
     <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-      background: 'radial-gradient(ellipse at 20% 40%, rgba(255,153,0,0.04) 0%, transparent 55%), radial-gradient(ellipse at 80% 60%, rgba(153,102,204,0.05) 0%, transparent 55%), radial-gradient(ellipse at 50% 0%, rgba(100,180,255,0.03) 0%, transparent 60%)' }}>
+      background: 'radial-gradient(ellipse at 20% 40%, rgba(255,153,0,0.04) 0%, transparent 55%), radial-gradient(ellipse at 80% 60%, rgba(153,102,204,0.05) 0%, transparent 55%), radial-gradient(ellipse at 50% 50%, rgba(255,102,102,0.02) 0%, transparent 70%)' }}>
       <div style={{ position: 'absolute', inset: 0,
         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px)',
         backgroundSize: '100% 4px' }} />
@@ -128,7 +140,7 @@ function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProp
         playsInline
         controls={showControls}
         preload="metadata"
-        aria-label="Video player"
+        aria-label={isPlaying ? 'Video player – playing' : 'Video player – paused'}
       />
       <div aria-hidden="true" style={{ position: 'absolute', top: 30, left: 0, width: 3, height: 36, background: LCARS.purple, borderRadius: '0 2px 2px 0', opacity: 0.55 }} />
       <div aria-hidden="true" style={{ position: 'absolute', top: 30, right: 0, width: 3, height: 36, background: LCARS.orange, borderRadius: '2px 0 0 2px', opacity: 0.55 }} />
@@ -169,7 +181,7 @@ export function VoxNovaPlayer() {
 
   const structuralIntegrity = Math.min(1, library.tracks.length / LIBRARY_CAPACITY);
   const neuralBuffer = engine.duration > 0 ? Math.min(1, engine.currentTime / engine.duration) : 0;
-  const memo = selectedTrack?.memo || (selectedTrack ? `[LCARS_SCAN] Identified: ${selectedTrack.title} | Integrity: Nominal` : '[LCARS_SCAN] Standby \u2014 awaiting signal selection.');
+  const memo = selectedTrack?.memo || (selectedTrack ? `[LCARS_SCAN] Identified: ${selectedTrack.title} | Integrity: Nominal` : '[LCARS_SCAN] Standby — awaiting signal selection.');
   const title = selectedTrack?.title ?? 'Subspace Channel Idle';
   const CONTENT_WIDTH = 'min(680px, 95%)';
   const WIDE_WIDTH = 'min(900px, 98%)';
@@ -195,7 +207,7 @@ export function VoxNovaPlayer() {
       <main style={{ position: 'relative', zIndex: 1, flex: 1, minWidth: 0, padding: '12px 16px 16px 4px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'stretch', gap: 4 }}>
-          <div style={{ flex: 1, height: 36, background: LCARS.peach, color: '#000', display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 12, fontWeight: 700, letterSpacing: 2, borderRadius: 4, justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ flex: 1, height: 36, background: LCARS.peach, color: '#000', display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 12, fontWeight: 700, letterSpacing: 2, borderTopLeftRadius: 18, borderBottomLeftRadius: 18, justifyContent: 'space-between' }}>
             <span>USS VOX NOVA // REGISTRY {registry}</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -223,7 +235,7 @@ export function VoxNovaPlayer() {
           {/* Title */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
             <div style={{ color: LCARS.subText, fontSize: 12, letterSpacing: 4, textTransform: 'uppercase' }}>COMMS_ENCRYPTION: LEVEL 5</div>
-            <h1 style={{ margin: 0, fontSize: 'clamp(32px, 4.5vw, 56px)', fontWeight: 700, textAlign: 'center', letterSpacing: 1, lineHeight: 1.05, textShadow: '0 0 32px rgba(255,255,255,0.25)', color: LCARS.text }}>{title}</h1>
+            <h1 style={{ margin: 0, fontSize: 'clamp(32px, 4.5vw, 56px)', fontWeight: 700, textAlign: 'center', letterSpacing: 1, lineHeight: 1.05, textShadow: '0 0 32px rgba(255,255,255,0.25)', maxWidth: WIDE_WIDTH }}>{title}</h1>
             <div style={{ width: 120, height: 3, background: LCARS.peach, borderRadius: 2 }} aria-hidden="true" />
           </div>
 
@@ -245,7 +257,7 @@ export function VoxNovaPlayer() {
           )}
 
           {/* Transport + seek */}
-          <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.peach}33`, borderRadius: 4, padding: '12px 16px', background: LCARS_BOX_COLORS[2], display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.peach}33`, borderRadius: 4, padding: '12px 16px', background: LCARS_BOX_COLORS[2], display: 'flex', flexDirection: 'column', gap: 12 }}>
             <PlayerControls engine={engine} onPrev={handlePrev} onNext={handleNext} disabled={!selectedTrack} />
             <SeekBar currentTime={engine.currentTime} duration={engine.duration} onSeek={engine.seek} disabled={!selectedTrack} />
           </div>
@@ -258,7 +270,7 @@ export function VoxNovaPlayer() {
           <div style={{ flex: 1, minHeight: 0 }} aria-hidden="true" />
 
           {/* Singularity status */}
-          <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: '1px solid rgba(100,100,200,0.25)', borderRadius: 4, padding: '10px 14px', background: 'rgba(0,0,20,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: '1px solid rgba(100,100,200,0.25)', borderRadius: 4, padding: '10px 14px', background: 'rgba(0,0,20,0.35)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ color: 'rgba(100,150,255,0.7)', fontSize: 9, letterSpacing: 3, marginBottom: 4 }}>SINGULARITY STATUS</div>
               <div style={{ color: LCARS.subText, fontSize: 11, letterSpacing: 1 }}>{engine.isPlaying ? 'ACCRETION ACTIVE' : 'EVENT HORIZON STABLE'}</div>
@@ -270,7 +282,7 @@ export function VoxNovaPlayer() {
           {selectedTrack && (
             <div style={{ alignSelf: 'center', width: WIDE_WIDTH, border: `1px solid ${LCARS.red ?? '#cc3333'}33`, borderRadius: 4, padding: '8px', background: LCARS_BOX_COLORS[3] }}>
               <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 3, marginBottom: 6, paddingLeft: 4 }}>
-                SUBSPACE FREQUENCY SCAN{selectedTrack.isVideo ? ' \u2014 AUDIO TRACK' : ''}
+                SUBSPACE FREQUENCY SCAN{selectedTrack.isVideo ? ' — AUDIO TRACK' : ''}
               </div>
               <FrequencyVisualizer isPlaying={engine.isPlaying} analyser={analyser} audioRef={engine.audioRef} />
             </div>
