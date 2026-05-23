@@ -154,7 +154,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
       const collected: SpotifyTrackItem[] = [];
       // encodeURIComponent ensures IDs with spaces or special chars don't break the URL
       let url: string | null =
-        `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/tracks?limit=50&market=from_token`;
+        `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/tracks?limit=50&market=FR`;
 
       while (url) {
         type RawTrackPage = {
