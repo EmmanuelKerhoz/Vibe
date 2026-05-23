@@ -22,7 +22,10 @@ import type { SpotifyAuthState } from '../types/spotify';
 // Constants
 // ---------------------------------------------------------------------------
 
-const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID as string;
+const CLIENT_ID = (
+  (import.meta.env.VITE_SPOTIFY_CLIENT_ID as string | undefined)?.trim()
+  || '1290827e76c642dbb53d8157aa96a97d'
+);
 
 const REDIRECT_URI = (() => {
   if (typeof window === 'undefined') return '';
