@@ -19,6 +19,10 @@ export function UploadIcon() {
   return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 3v12M6 9l6-6 6 6M4 21h16" /></svg>;
 }
 
+export function TrashIcon() {
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5" /></svg>;
+}
+
 export function ChipIcon() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1" /><rect x="9" y="9" width="6" height="6" /><path d="M3 9h3M3 15h3M18 9h3M18 15h3M9 3v3M15 3v3M9 18v3M15 18v3" /></svg>;
 }
@@ -87,12 +91,12 @@ export function VolumeControl({ volume, onChange }: VolumeControlProps) {
   useEffect(() => { if (volume > 0) lastVolumeRef.current = volume; }, [volume]);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
-      <button type="button" onClick={() => onChange(muted ? (lastVolumeRef.current || 1) : 0)} aria-label={muted ? 'Unmute' : 'Mute'}
+      <button type="button" onClick={() => onChange(muted ? (lastVolumeRef.current || 0.5) : 0)} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Restore volume' : 'Mute volume'}
         style={{ background: 'transparent', border: 'none', color: LCARS.peach, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
       >
         <VolumeIcon muted={muted} />
       </button>
-      <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => onChange(Number(e.target.value))} aria-label="Volume" style={{ flex: 1, accentColor: LCARS.peach, cursor: 'pointer' }} />
+      <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => onChange(Number(e.target.value))} aria-label="Volume" title={`Volume ${pct}%`} style={{ flex: 1, accentColor: LCARS.peach, cursor: 'pointer' }} />
       <span style={{ color: LCARS.subText, fontFamily: 'monospace', fontSize: 11, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
     </div>
   );
@@ -102,14 +106,14 @@ export function VolumeControl({ volume, onChange }: VolumeControlProps) {
 
 const PULSE_STYLE = `
   @keyframes bhPulse1 {
-    0%   { r: 18; opacity: 0.6; }
-    70%  { r: 34; opacity: 0; }
-    100% { r: 34; opacity: 0; }
+    0%   { r: 20; opacity: 0.42; }
+    70%  { r: 35; opacity: 0; }
+    100% { r: 35; opacity: 0; }
   }
   @keyframes bhPulse2 {
-    0%   { r: 18; opacity: 0.4; }
-    70%  { r: 34; opacity: 0; }
-    100% { r: 34; opacity: 0; }
+    0%   { r: 22; opacity: 0.28; }
+    70%  { r: 38; opacity: 0; }
+    100% { r: 38; opacity: 0; }
   }
   .bh-pulse-active .bh-ring1 { animation: bhPulse1 1.6s ease-out infinite; }
   .bh-pulse-active .bh-ring2 { animation: bhPulse2 1.6s ease-out 0.55s infinite; }
@@ -128,21 +132,21 @@ function injectPulseStyle() {
 
 export function BlackHoleBadge({ active }: { active: boolean }) {
   useEffect(() => { injectPulseStyle(); }, []);
-  const ringColor = active ? 'rgba(100,160,255,0.7)' : 'rgba(80,100,200,0.4)';
+  const ringColor = active ? 'rgba(174,120,255,0.74)' : 'rgba(132,92,220,0.42)';
   const pulseClass = active ? 'bh-pulse-active' : 'bh-pulse-idle';
   return (
     <svg
       width="72" height="72" viewBox="-36 -36 72 72"
       aria-label={active ? 'Black hole — accretion active' : 'Black hole — event horizon stable'}
       className={pulseClass}
-      style={{ flexShrink: 0, overflow: 'visible', filter: active ? 'drop-shadow(0 0 10px #4466ff)' : 'none', transition: 'filter 600ms ease' }}
+      style={{ flexShrink: 0, overflow: 'visible', filter: active ? 'drop-shadow(0 0 12px rgba(156,140,255,0.65))' : 'none', transition: 'filter 600ms ease' }}
     >
-      <circle className="bh-ring1" cx="0" cy="0" r="18" fill="none" stroke={ringColor} strokeWidth="1.5" />
-      <circle className="bh-ring2" cx="0" cy="0" r="18" fill="none" stroke={ringColor} strokeWidth="1" />
-      <circle cx="0" cy="0" r="26" fill="none" stroke="rgba(80,100,200,0.2)" strokeWidth="10" />
-      <circle cx="0" cy="0" r="15" fill="none" stroke={active ? 'rgba(255,190,60,0.85)' : 'rgba(180,120,40,0.4)'} strokeWidth="2.5" />
-      <circle cx="0" cy="0" r="11" fill="#000" />
-      {active && <ellipse cx="0" cy="0" rx="22" ry="5.5" fill="none" stroke="rgba(255,160,40,0.35)" strokeWidth="3" />}
+      <circle className="bh-ring1" cx="0" cy="0" r="20" fill="none" stroke={ringColor} strokeWidth="1.2" />
+      <circle className="bh-ring2" cx="0" cy="0" r="22" fill="none" stroke={ringColor} strokeWidth="0.9" />
+      <circle cx="0" cy="0" r="27" fill="none" stroke="rgba(156,140,255,0.18)" strokeWidth="7" />
+      <circle cx="0" cy="0" r="16" fill="none" stroke={active ? 'rgba(190,120,255,0.86)' : 'rgba(132,92,220,0.42)'} strokeWidth="2" />
+      <circle cx="0" cy="0" r="12" fill="none" stroke="rgba(0,0,0,0.92)" strokeWidth="5" />
+      {active && <ellipse cx="0" cy="0" rx="23" ry="5.5" fill="none" stroke="rgba(210,150,255,0.36)" strokeWidth="2.5" />}
     </svg>
   );
 }

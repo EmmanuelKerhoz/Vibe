@@ -9,6 +9,7 @@ import { APP_VERSION_LABEL } from '../../version';
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppKpis } from '../../hooks/useAppKpis';
 import { useAppNavigationContext } from '../../contexts/AppStateContext';
+import { useOptionalLibraryContext } from '../../contexts/LibraryContext';
 import { useVoiceAssistantController } from '../../features/voice/useVoiceAssistantController';
 import type { SaveStatus } from '../../hooks/useSessionAutoSave';
 import type { Translations } from '../../i18n/locales/types';
@@ -43,6 +44,17 @@ function safeLocale(language: string): string {
   return stripped.length > 0 ? stripped : 'en';
 }
 
+export function formatConsolidatedDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
+  const total = Math.round(seconds);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  return hours > 0
+    ? `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    : `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
 export function StatusBar({
   hasApiKey,
   isAnalyzing,
@@ -56,6 +68,7 @@ export function StatusBar({
   const { sectionCount, wordCount, charCount } = useAppKpis();
   const { t, language } = useTranslation();
   const { activeTab } = useAppNavigationContext();
+  const library = useOptionalLibraryContext();
 
   // ── Voice assistant (moved from TopRibbon) ───────────────────────────────
   const {
@@ -129,6 +142,13 @@ export function StatusBar({
     : (t.statusBar.themeSwitchToDark  ?? `${t.statusBar.theme} — ${t.settings.theme.dark}`);
 
   const insights: Translations['insights'] = t.insights;
+  const isPlayerTab = activeTab === 'player';
+  const loadedSongs = library?.tracks.length ?? 0;
+  const totalDuration = library?.tracks.reduce((sum, track) => sum + (track.durationSeconds ?? 0), 0) ?? 0;
+  const songsLabel = loadedSongs === 1
+    ? (statusBarDict.song ?? 'Song')
+    : (statusBarDict.songs ?? 'Songs');
+  const durationLabel = statusBarDict.duration ?? 'Duration';
 
   const voiceActive = voiceUiState !== 'idle';
 
@@ -202,24 +222,43 @@ export function StatusBar({
         <div className="lcars-divider hidden lg:block" />
 
         {/* KPI counters */}
-        <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
-          {sectionCount}{' '}
-          <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
-            {tPlural(statusBarDict, 'sections', sectionCount, language)}
-          </span>
-        </span>
-        <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
-          {wordCount}{' '}
-          <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
-            {tPlural(statusBarDict, 'words', wordCount, language)}
-          </span>
-        </span>
-        <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
-          {charCount}{' '}
-          <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
-            {insights?.characters}
-          </span>
-        </span>
+        {isPlayerTab ? (
+          <>
+            <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
+              {loadedSongs}{' '}
+              <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
+                {songsLabel}
+              </span>
+            </span>
+            <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
+              {formatConsolidatedDuration(totalDuration)}{' '}
+              <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
+                {durationLabel}
+              </span>
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
+              {sectionCount}{' '}
+              <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
+                {tPlural(statusBarDict, 'sections', sectionCount, language)}
+              </span>
+            </span>
+            <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
+              {wordCount}{' '}
+              <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
+                {tPlural(statusBarDict, 'words', wordCount, language)}
+              </span>
+            </span>
+            <span className="hidden lg:inline telemetry-text" style={{ color: 'var(--text-primary)' }}>
+              {charCount}{' '}
+              <span className="uppercase" style={{ color: 'var(--text-secondary)' }}>
+                {insights?.characters}
+              </span>
+            </span>
+          </>
+        )}
       </div>
 
       {/* Centre: Voice activation pill — centred in the available horizontal space */}

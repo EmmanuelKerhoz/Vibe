@@ -1,7 +1,7 @@
 import { LCARS } from './lcarsTheme';
-import { GlobeIcon, DatabaseIcon, SparkleIcon, UploadIcon } from './PlayerWidgets';
-import { useSidebarContext } from './SidebarContext';
-import type { TrackEntry, ScanConfig } from './types';
+import { GlobeIcon, DatabaseIcon, SparkleIcon, TrashIcon, UploadIcon } from './PlayerWidgets';
+import { SCAN_PROTOCOLS, useSidebarContext } from './SidebarContext';
+import type { TrackEntry, ScanProtocol } from './types';
 
 const LCARS_BOX_COLORS = [
   'rgba(255,153,0,0.08)',
@@ -14,13 +14,15 @@ interface SidebarButtonProps {
   onClick: () => void;
   icon?: React.ReactNode;
   active?: boolean;
+  title?: string;
 }
 
-export function SidebarButton({ label, color, textColor, onClick, icon, active }: SidebarButtonProps) {
+export function SidebarButton({ label, color, textColor, onClick, icon, active, title }: SidebarButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -40,6 +42,7 @@ export function SidebarButton({ label, color, textColor, onClick, icon, active }
         outlineOffset: active ? 2 : 0,
       }}
       aria-pressed={active}
+      aria-label={title ?? label}
     >
       <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 16 }}>{icon ?? null}</span>
       <span>{label}</span>
@@ -49,12 +52,22 @@ export function SidebarButton({ label, color, textColor, onClick, icon, active }
 
 type LibraryView = 'cloud' | 'local' | 'lyria';
 
-const PROTOCOLS: Array<{ label: string; value: ScanConfig['accept'] }> = [
-  { label: 'WAV', value: 'wav' },
-  { label: 'MP3', value: 'mp3' },
-  { label: 'M4A', value: 'm4a' },
-  { label: 'MP4', value: 'mp4' },
-  { label: 'ALL', value: 'all' },
+const PROTOCOLS: Array<{ label: string; value: ScanProtocol; group: 'AUDIO' | 'VIDEO' }> = [
+  { label: 'WAV', value: 'wav', group: 'AUDIO' },
+  { label: 'MP3', value: 'mp3', group: 'AUDIO' },
+  { label: 'M4A', value: 'm4a', group: 'AUDIO' },
+  { label: 'FLAC', value: 'flac', group: 'AUDIO' },
+  { label: 'OGG', value: 'ogg', group: 'AUDIO' },
+  { label: 'OPUS', value: 'opus', group: 'AUDIO' },
+  { label: 'AAC', value: 'aac', group: 'AUDIO' },
+  { label: 'AIFF', value: 'aiff', group: 'AUDIO' },
+  { label: 'WMA', value: 'wma', group: 'AUDIO' },
+  { label: 'MP4', value: 'mp4', group: 'VIDEO' },
+  { label: 'WEBM', value: 'webm', group: 'VIDEO' },
+  { label: 'MOV', value: 'mov', group: 'VIDEO' },
+  { label: 'MKV', value: 'mkv', group: 'VIDEO' },
+  { label: 'AVI', value: 'avi', group: 'VIDEO' },
+  { label: 'M4V', value: 'm4v', group: 'VIDEO' },
 ];
 
 export interface PlayerSidebarProps {
@@ -74,6 +87,16 @@ export function PlayerSidebar({
     uploadInputRef, folderInputRef, buildAccept, handleUplinkFiles, handleScanFolder,
   } = useSidebarContext();
   const visibleTracks = tracks.filter(t => t.source === view);
+  const allProtocolsSelected = scanProtocol.length === SCAN_PROTOCOLS.length;
+  const toggleProtocol = (value: ScanProtocol | 'all') => {
+    if (value === 'all') {
+      setScanProtocol(allProtocolsSelected ? ['wav'] : [...SCAN_PROTOCOLS]);
+      return;
+    }
+    setScanProtocol(scanProtocol.includes(value)
+      ? (scanProtocol.length > 1 ? scanProtocol.filter(p => p !== value) : scanProtocol)
+      : [...scanProtocol, value]);
+  };
 
   return (
     <aside
@@ -86,7 +109,8 @@ export function PlayerSidebar({
         display: 'flex',
         flexDirection: 'column',
         gap: 6,
-        overflow: 'hidden',
+        overflowY: 'auto',
+        overflowX: 'hidden',
       }}
     >
       {/* VOX / NV-42 CORE block */}
@@ -97,7 +121,7 @@ export function PlayerSidebar({
           padding: '28px 14px 16px 14px',
           borderTopLeftRadius: 64,
           borderTopRightRadius: 4,
-          borderBottomLeftRadius: 12,
+          borderBottomLeftRadius: 4,
           borderBottomRightRadius: 4,
           minHeight: 110,
           display: 'flex',
@@ -113,10 +137,10 @@ export function PlayerSidebar({
       </div>
 
       {/* CLOUD first, LYRIA directly below, then LOCAL, PURGE */}
-      <SidebarButton label="CLOUD" color={LCARS.purple} textColor="#0a0a10" active={view === 'cloud'} onClick={() => setView('cloud')} icon={<GlobeIcon />} />
-      <SidebarButton label="LYRIA" color="#00c8a0" textColor="#000" active={view === 'lyria'} onClick={() => setView('lyria')} icon={<SparkleIcon />} />
-      <SidebarButton label="LOCAL" color={LCARS.orange} textColor="#0a0a10" active={view === 'local'} onClick={() => setView('local')} icon={<DatabaseIcon />} />
-      <SidebarButton label="PURGE" color={LCARS.red} textColor="#0a0a10" onClick={onPurge} />
+      <SidebarButton label="CLOUD" title="Show cloud library signals" color={LCARS.purple} textColor="#0a0a10" active={view === 'cloud'} onClick={() => setView('cloud')} icon={<GlobeIcon />} />
+      <SidebarButton label="LYRIA" title="Show Lyria generated signals" color="#00c8a0" textColor="#000" active={view === 'lyria'} onClick={() => setView('lyria')} icon={<SparkleIcon />} />
+      <SidebarButton label="LOCAL" title="Show local memo log signals" color={LCARS.orange} textColor="#0a0a10" active={view === 'local'} onClick={() => setView('local')} icon={<DatabaseIcon />} />
+      <SidebarButton label="PURGE" title="Purge loaded player library" color={LCARS.red} textColor="#0a0a10" onClick={onPurge} icon={<TrashIcon />} />
 
       {/* Track list */}
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', marginTop: 12, paddingRight: 2 }}>
@@ -154,7 +178,7 @@ export function PlayerSidebar({
         ))}
       </div>
 
-      {/* UPLINK button — textured background */}
+      {/* UPLINK button */}
       <button
         type="button"
         onClick={() => uploadInputRef.current?.click()}
@@ -164,21 +188,12 @@ export function PlayerSidebar({
           justifyContent: 'space-between',
           gap: 8,
           padding: '10px 14px',
-          background: `
-            repeating-linear-gradient(
-              135deg,
-              ${LCARS.peach}30 0px,
-              ${LCARS.peach}30 2px,
-              transparent 2px,
-              transparent 10px
-            ),
-            linear-gradient(
+          background: `linear-gradient(
               180deg,
               ${LCARS.peach}55 0%,
               ${LCARS.peach}22 60%,
               ${LCARS.peach}0a 100%
-            )
-          `,
+            )`,
           color: LCARS.peach,
           border: `2px solid ${LCARS.peach}cc`,
           borderRadius: 4,
@@ -190,6 +205,7 @@ export function PlayerSidebar({
           boxShadow: `0 0 8px ${LCARS.peach}44, inset 0 1px 0 ${LCARS.peach}33`,
         }}
         aria-label="Uplink audio files"
+        title="Uplink local audio or video files"
       >
         <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 16 }}>
           <UploadIcon />
@@ -211,31 +227,59 @@ export function PlayerSidebar({
       >
         <div>
           <div style={{ color: LCARS.orange, fontSize: 9, letterSpacing: 3, marginBottom: 6 }}>AUDIO PROTOCOL</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {PROTOCOLS.map(p => (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 4 }}>
+            <button
+              type="button"
+              onClick={() => toggleProtocol('all')}
+              style={{
+                flex: '1 1 100%',
+                padding: '4px',
+                background: allProtocolsSelected ? LCARS.orange : 'rgba(0,0,0,0.32)',
+                color: allProtocolsSelected ? '#000' : LCARS.orange,
+                border: `1px solid ${LCARS.orange}`,
+                borderRadius: 3,
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: 1,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: 'background 120ms, color 120ms',
+              }}
+              aria-pressed={allProtocolsSelected}
+              title="Toggle every supported audio and video protocol"
+            >
+              ALL CODECS
+            </button>
+            {PROTOCOLS.map(p => {
+              const selected = scanProtocol.includes(p.value);
+              return (
               <button
                 key={p.value}
                 type="button"
-                onClick={() => setScanProtocol(p.value)}
+                onClick={() => toggleProtocol(p.value)}
                 style={{
-                  flex: '1 1 auto',
-                  padding: '5px 4px',
-                  background: scanProtocol === p.value ? LCARS.orange : 'transparent',
-                  color: scanProtocol === p.value ? '#000' : LCARS.orange,
-                  border: `1px solid ${LCARS.orange}`,
+                  flex: '1 1 39px',
+                  padding: '4px 3px',
+                  background: selected ? (p.group === 'VIDEO' ? LCARS.purple : LCARS.orange) : 'transparent',
+                  color: selected ? '#000' : (p.group === 'VIDEO' ? LCARS.purple : LCARS.orange),
+                  border: `1px solid ${p.group === 'VIDEO' ? LCARS.purple : LCARS.orange}`,
                   borderRadius: 3,
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: 700,
                   letterSpacing: 1,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   transition: 'background 120ms, color 120ms',
                 }}
-                aria-pressed={scanProtocol === p.value}
+                aria-pressed={selected}
+                title={`${selected ? 'Remove' : 'Add'} ${p.label} ${p.group.toLowerCase()} protocol`}
               >
                 {p.label}
               </button>
-            ))}
+            );})}
+          </div>
+          <div style={{ color: LCARS.subText, fontSize: 8, letterSpacing: 1.2, textAlign: 'right' }}>
+            {scanProtocol.length} SELECTED
           </div>
         </div>
         <div>
@@ -246,6 +290,7 @@ export function PlayerSidebar({
             onChange={e => setScanPattern(e.target.value)}
             placeholder=""
             aria-label="Pattern match filter"
+            title="Filter scanned files by filename"
             style={{
               width: '100%',
               background: 'rgba(0,0,0,0.5)',
@@ -289,6 +334,7 @@ export function PlayerSidebar({
           }
         }}
         aria-label="Scan sector folder"
+        title="Scan a folder for selected audio and video protocols"
       >
         <DatabaseIcon />
         <span style={{ fontSize: 11, letterSpacing: 2, fontWeight: 600 }}>SCAN SECTOR</span>

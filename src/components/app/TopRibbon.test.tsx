@@ -11,6 +11,7 @@ let mockIsGenerating = false;
 let mockIsAnalyzing = false;
 let mockIsLeftPanelOpen = false;
 let mockIsStructureOpen = false;
+let mockActiveTab: 'lyrics' | 'musical' | 'player' = 'lyrics';
 let mockMusicalPrompt = '';
 
 const mockUndo = vi.fn();
@@ -42,7 +43,7 @@ vi.mock('../../contexts/ComposerContext', () => ({
 
 vi.mock('../../contexts/AppStateContext', () => ({
   useAppNavigationContext: () => ({
-    activeTab: 'lyrics' as const,
+    activeTab: mockActiveTab,
     setActiveTab: mockSetActiveTab,
     isLeftPanelOpen: mockIsLeftPanelOpen,
     setIsLeftPanelOpen: mockSetIsLeftPanelOpen,
@@ -71,6 +72,7 @@ vi.mock('../../i18n', () => ({
         openLeftPanel: 'Open panel',
         collapseRight: 'Collapse',
         showSidebar: 'Show sidebar',
+        playerSidebarDisabled: 'Sidebar is disabled in Player mode',
         sendToLyria: 'Open the Musical tab to generate a preview with Lyria',
         sendToLyriaConfirm: 'Opening Musical…',
         quantizeLineDone: 'Line quantized',
@@ -120,6 +122,7 @@ describe('TopRibbon', () => {
     mockIsGenerating = false;
     mockIsAnalyzing = false;
     mockMusicalPrompt = '';
+    mockActiveTab = 'lyrics';
     mockIsLeftPanelOpen = false;
     mockIsStructureOpen = false;
   });
@@ -202,6 +205,16 @@ describe('TopRibbon', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show sidebar' }));
     expect(mockClearSelection).toHaveBeenCalled();
     expect(mockSetIsStructureOpen).toHaveBeenCalledWith(true);
+  });
+
+  it('disables the structure panel button in player mode', () => {
+    mockActiveTab = 'player';
+    renderRibbon();
+    const button = screen.getByRole('button', { name: 'Sidebar is disabled in Player mode' });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(mockClearSelection).not.toHaveBeenCalled();
+    expect(mockSetIsStructureOpen).not.toHaveBeenCalled();
   });
 
   it('shows processing indicator when isGenerating=true', () => {

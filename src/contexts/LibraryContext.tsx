@@ -24,3 +24,7 @@ export function useLibraryContext(): LibraryState {
   if (!ctx) throw new Error('useLibraryContext must be used inside <LibraryProvider>');
   return ctx;
 }
+
+export function useOptionalLibraryContext(): LibraryState | null {
+  return useContext(LibraryContext);
+}

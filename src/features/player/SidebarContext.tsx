@@ -1,27 +1,60 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { useLibraryContext } from '../../contexts/LibraryContext';
-import type { ScanConfig, TrackEntry } from './types';
+import { SCAN_PROTOCOLS, type ScanConfig, type ScanProtocol, type TrackEntry } from './types';
 
-const VIDEO_EXT = /\.(mp4|webm|mov|mkv)$/i;
+const VIDEO_EXT = /\.(mp4|webm|mov|mkv|avi|m4v)$/i;
+const PROTOCOL_ACCEPT: Record<ScanProtocol, string[]> = {
+  wav: ['.wav', 'audio/wav', 'audio/x-wav'],
+  mp3: ['.mp3', 'audio/mpeg', 'audio/mp3'],
+  m4a: ['.m4a', 'audio/mp4', 'audio/x-m4a'],
+  flac: ['.flac', 'audio/flac', 'audio/x-flac'],
+  ogg: ['.ogg', 'audio/ogg', 'video/ogg', 'application/ogg'],
+  opus: ['.opus', 'audio/opus'],
+  aac: ['.aac', 'audio/aac'],
+  aiff: ['.aif', '.aiff', 'audio/aiff', 'audio/x-aiff'],
+  wma: ['.wma', 'audio/x-ms-wma'],
+  mp4: ['.mp4', 'video/mp4', 'audio/mp4'],
+  webm: ['.webm', 'video/webm', 'audio/webm'],
+  mov: ['.mov', 'video/quicktime'],
+  mkv: ['.mkv', 'video/x-matroska'],
+  avi: ['.avi', 'video/x-msvideo'],
+  m4v: ['.m4v', 'video/x-m4v'],
+};
 
 function buildAccept(protocol: ScanConfig['accept']): string {
-  if (protocol === 'wav') return '.wav,audio/wav,audio/x-wav';
-  if (protocol === 'mp3') return '.mp3,audio/mpeg';
-  if (protocol === 'm4a') return '.m4a,audio/mp4,audio/x-m4a';
-  if (protocol === 'mp4') return '.mp4,video/mp4,audio/mp4';
-  return '.wav,.mp3,.m4a,.mp4,.webm,.mov,.ogg,.flac,.aac,audio/*,video/*';
+  return Array.from(new Set(protocol.flatMap(p => PROTOCOL_ACCEPT[p]))).join(',');
 }
 
 function filterFiles(files: File[], protocol: ScanConfig['accept'], pattern: string): File[] {
   return files.filter(f => {
-    if (protocol === 'wav' && !f.name.toLowerCase().endsWith('.wav')) return false;
-    if (protocol === 'mp3' && !f.name.toLowerCase().endsWith('.mp3')) return false;
-    if (protocol === 'm4a' && !f.name.toLowerCase().endsWith('.m4a')) return false;
-    if (protocol === 'mp4' && !f.name.toLowerCase().endsWith('.mp4')) return false;
+    const lowerName = f.name.toLowerCase();
+    const lowerType = f.type.toLowerCase();
+    const matchesProtocol = protocol.some(p => PROTOCOL_ACCEPT[p].some(token => (
+      token.startsWith('.') ? lowerName.endsWith(token) : lowerType === token
+    )));
+    if (!matchesProtocol) return false;
     const p = pattern.trim().toLowerCase();
-    if (p && !f.name.toLowerCase().includes(p)) return false;
+    if (p && !lowerName.includes(p)) return false;
     return true;
   });
+}
+
+function formatBytes(size: number): string {
+  if (!Number.isFinite(size) || size <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = size;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
+function formatModified(lastModified: number): string {
+  return Number.isFinite(lastModified) && lastModified > 0
+    ? new Date(lastModified).toLocaleDateString()
+    : 'unknown date';
 }
 
 function immediateParentName(f: File): string {
@@ -60,14 +93,14 @@ interface SidebarProviderProps {
  */
 export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProviderProps) {
   const library = useLibraryContext();
-  const [scanProtocol, setScanProtocol] = useState<ScanConfig['accept']>('wav');
+  const [scanProtocol, setScanProtocol] = useState<ScanConfig['accept']>(['wav']);
   const [scanPattern, setScanPattern] = useState('');
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const handleUplinkFiles = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = filterFiles(
-      Array.from(e.target.files ?? []).filter(f => f.type.startsWith('audio/') || f.type.startsWith('video/')),
+      Array.from(e.target.files ?? []),
       scanProtocol,
       scanPattern,
     );
@@ -75,9 +108,11 @@ export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProvide
       title: f.name.replace(/\.[^/.]+$/, ''),
       source: 'local',
       url: URL.createObjectURL(f),
-      memo: `[UPLINK] ${f.name} | Integrity: Nominal`,
+      memo: `[UPLINK] ${f.name} | Type: ${f.type || 'media'} | Size: ${formatBytes(f.size)} | Modified: ${formatModified(f.lastModified)} | Integrity: Nominal`,
       linked: true,
       isVideo: VIDEO_EXT.test(f.name),
+      oneDriveSize: f.size,
+      oneDriveLastModified: new Date(f.lastModified || Date.now()).toISOString(),
     }));
     if (added.length) {
       library.addTracks(added);
@@ -88,7 +123,7 @@ export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProvide
 
   const handleScanFolder = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = filterFiles(
-      Array.from(e.target.files ?? []).filter(f => f.type.startsWith('audio/') || f.type.startsWith('video/')),
+      Array.from(e.target.files ?? []),
       scanProtocol,
       scanPattern,
     );
@@ -96,9 +131,11 @@ export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProvide
       title: immediateParentName(f),
       source: 'local',
       url: URL.createObjectURL(f),
-      memo: `[LCARS_SCAN] Identified: ${f.name} | Protocol: ${scanProtocol.toUpperCase()} | Integrity: Nominal`,
+      memo: `[LCARS_SCAN] Identified: ${f.name} | Protocol: ${scanProtocol.join('+').toUpperCase()} | Type: ${f.type || 'media'} | Size: ${formatBytes(f.size)} | Modified: ${formatModified(f.lastModified)} | Integrity: Nominal`,
       linked: true,
       isVideo: VIDEO_EXT.test(f.name),
+      oneDriveSize: f.size,
+      oneDriveLastModified: new Date(f.lastModified || Date.now()).toISOString(),
     }));
     if (added.length) {
       library.addTracks(added);
@@ -127,3 +164,5 @@ export function useSidebarContext(): SidebarContextValue {
   if (!ctx) throw new Error('useSidebarContext must be used inside <SidebarProvider>');
   return ctx;
 }
+
+export { buildAccept, filterFiles, SCAN_PROTOCOLS };
