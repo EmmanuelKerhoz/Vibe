@@ -256,6 +256,7 @@ export function useAudioEngine(): AudioEngineState {
 
   const loadTrack = useCallback(async (track: TrackEntry) => {
     if (!track.url) return;
+    setCurrentTime(0);
     if (!track.isVideo) {
       const el = internalAudioRef.current;
       el.src = track.url;
@@ -281,11 +282,9 @@ export function useAudioEngine(): AudioEngineState {
           });
         });
       }, { once: true });
-      setCurrentTime(0);
       await ready;
       return;
     }
-    setCurrentTime(0);
   }, [bindListeners]);
 
   const toggleRepeat = useCallback(() => { setRepeat(r => r === 'none' ? 'one' : r === 'one' ? 'all' : 'none'); }, []);
