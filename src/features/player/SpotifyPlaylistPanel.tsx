@@ -1,337 +1,301 @@
-import { useState, useEffect } from 'react';
-import { LCARS } from './lcarsTheme';
+/**
+ * SpotifyPlaylistPanel
+ * Accordion list of the user's Spotify playlists.
+ * Expanding a row loads and shows its tracks; clicking a track plays it.
+ */
+import { useState } from 'react';
 import { useSpotifyPlaylists, formatMs } from './useSpotifyPlaylists';
-import type { SpotifyPlaylistItem } from './useSpotifyPlaylists';
-import type { SpotifyEngineControls } from '../../hooks/useSpotifyEngine';
+import { useSpotifyEngine_ } from '../../contexts/SpotifyEngineContext';
+import { LCARS } from './lcarsTheme';
 
-// ---------------------------------------------------------------------------
-// Icons
-// ---------------------------------------------------------------------------
+const SPOTIFY_GREEN = '#1DB954';
 
-function IconPlaylist() {
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+
+function SkeletonRow({ width = '60%' }: { width?: string }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <line x1="8" y1="6" x2="21" y2="6" />
-      <line x1="8" y1="12" x2="21" y2="12" />
-      <line x1="8" y1="18" x2="21" y2="18" />
-      <polygon points="3 6 3 18 6 12" fill="currentColor" stroke="none" />
-    </svg>
+    <div style={{
+      height: 12, borderRadius: 3,
+      background: `linear-gradient(90deg, ${LCARS.void} 25%, rgba(255,255,255,0.06) 50%, ${LCARS.void} 75%)`,
+      backgroundSize: '200% 100%',
+      animation: 'spotify-shimmer 1.4s ease-in-out infinite',
+      width,
+    }} aria-hidden="true" />
   );
 }
 
-function IconPlay() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <polygon points="5 3 19 12 5 21 5 3" />
-    </svg>
-  );
+// ── Track row ─────────────────────────────────────────────────────────────────
+
+interface TrackRowProps {
+  uri: string;
+  name: string;
+  artists: string;
+  durationMs: number;
+  albumArtUrl: string | null;
+  isPlayable: boolean;
+  isActive: boolean;
+  onPlay: (uri: string) => void;
 }
 
-function IconChevron({ open }: { open: boolean }) {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-      style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 180ms ease' }}
-      aria-hidden="true">
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  );
-}
+function TrackRow({ uri, name, artists, durationMs, albumArtUrl, isPlayable, isActive, onPlay }: TrackRowProps) {
+  const [hovered, setHovered] = useState(false);
 
-function IconRefresh() {
   return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <polyline points="23 4 23 10 17 10" />
-      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-    </svg>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function TrackRow({
-  name, artists, durationMs, albumImageUrl, onPlay,
-}: {
-  name: string; artists: string; durationMs: number;
-  albumImageUrl: string | null; onPlay: () => void;
-}) {
-  return (
-    <div
-      role="listitem"
+    <button
+      onClick={() => isPlayable && onPlay(uri)}
+      disabled={!isPlayable}
+      aria-label={`Play ${name} by ${artists}`}
+      aria-pressed={isActive}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        padding: '5px 8px', borderRadius: 4,
-        cursor: 'pointer',
-        transition: 'background 140ms ease',
+        width: '100%', background: isActive
+          ? `rgba(29,185,84,0.12)` : hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
+        border: 'none', borderRadius: 3, padding: '5px 8px',
+        cursor: isPlayable ? 'pointer' : 'default',
+        opacity: isPlayable ? 1 : 0.4,
+        transition: 'background 120ms ease',
+        textAlign: 'left', fontFamily: 'inherit',
       }}
-      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
     >
-      {albumImageUrl ? (
-        <img src={albumImageUrl} alt="" width={28} height={28}
-          style={{ borderRadius: 3, flexShrink: 0, objectFit: 'cover' }} />
+      {albumArtUrl ? (
+        <img src={albumArtUrl} alt="" width={28} height={28}
+          style={{ borderRadius: 2, flexShrink: 0, border: `1px solid ${SPOTIFY_GREEN}22` }}
+          loading="lazy" />
       ) : (
-        <div style={{ width: 28, height: 28, borderRadius: 3, flexShrink: 0,
-          background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <IconPlay />
-        </div>
+        <div style={{ width: 28, height: 28, borderRadius: 2, flexShrink: 0, background: 'rgba(255,255,255,0.06)' }} aria-hidden="true" />
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, color: LCARS.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{
+          color: isActive ? SPOTIFY_GREEN : LCARS.text,
+          fontSize: 11, fontWeight: isActive ? 700 : 400,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          letterSpacing: 0.3,
+        }}>
+          {isActive && <span aria-hidden="true" style={{ marginRight: 4 }}>▶</span>}
           {name}
         </div>
-        <div style={{ fontSize: 9, color: LCARS.subText, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: 0.5 }}>
+        <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 1,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {artists}
         </div>
       </div>
-      <span style={{ fontSize: 9, color: LCARS.subText, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+      <span style={{ color: LCARS.mutedText, fontSize: 9, letterSpacing: 1, flexShrink: 0, fontFamily: 'monospace' }}>
         {formatMs(durationMs)}
       </span>
-      <button
-        type="button"
-        onClick={onPlay}
-        aria-label={`Play ${name}`}
-        style={{
-          flexShrink: 0, background: 'transparent', border: `1px solid ${LCARS.green}55`,
-          borderRadius: 3, color: LCARS.green, cursor: 'pointer',
-          width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'all 140ms',
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = LCARS.green + '22'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-      >
-        <IconPlay />
-      </button>
-    </div>
+    </button>
   );
 }
 
-function PlaylistRow({
-  playlist, isOpen, onToggle, onPlayContext,
-  tracks, tracksStatus, onPlayTrack,
-}: {
-  playlist: SpotifyPlaylistItem;
+// ── Playlist row (accordion header) ──────────────────────────────────────────
+
+interface PlaylistRowProps {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  totalTracks: number;
   isOpen: boolean;
   onToggle: () => void;
-  onPlayContext: () => void;
-  tracks: ReturnType<typeof import('./useSpotifyPlaylists').useSpotifyPlaylists>['tracksByPlaylist'][string] | undefined;
-  tracksStatus: 'idle' | 'loading' | 'loaded' | 'error';
-  onPlayTrack: (uri: string) => void;
-}) {
-  return (
-    <div style={{ borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
-      {/* Header row */}
-      <div
-        role="button"
-        tabIndex={0}
-        aria-expanded={isOpen}
-        onClick={onToggle}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 8px',
-          cursor: 'pointer', userSelect: 'none',
-          transition: 'background 140ms ease',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-      >
-        {playlist.imageUrl ? (
-          <img src={playlist.imageUrl} alt="" width={32} height={32}
-            style={{ borderRadius: 4, flexShrink: 0, objectFit: 'cover' }} />
-        ) : (
-          <div style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0,
-            background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', color: LCARS.subText }}>
-            <IconPlaylist />
-          </div>
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, color: LCARS.text, fontWeight: 700,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {playlist.name}
-          </div>
-          <div style={{ fontSize: 9, color: LCARS.subText, letterSpacing: 1 }}>
-            {playlist.tracksTotal} TRACKS
-          </div>
-        </div>
-        {/* Play context button */}
-        <button
-          type="button"
-          onClick={e => { e.stopPropagation(); onPlayContext(); }}
-          aria-label={`Play playlist ${playlist.name}`}
-          style={{
-            flexShrink: 0, background: 'transparent',
-            border: `1px solid ${LCARS.peach}55`, borderRadius: 3,
-            color: LCARS.peach, cursor: 'pointer',
-            width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 140ms',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = LCARS.peach + '22'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-        >
-          <IconPlay />
-        </button>
-        <IconChevron open={isOpen} />
-      </div>
+}
 
-      {/* Track list (expanded) */}
-      {isOpen && (
-        <div style={{ paddingBottom: 4 }} role="list" aria-label={`Tracks in ${playlist.name}`}>
-          {tracksStatus === 'loading' && (
-            <div style={{ padding: '8px 16px', fontSize: 9, color: LCARS.subText, letterSpacing: 2 }}>LOADING…</div>
-          )}
-          {tracksStatus === 'error' && (
-            <div style={{ padding: '8px 16px', fontSize: 9, color: LCARS.alertRed, letterSpacing: 2 }}>FETCH ERROR</div>
-          )}
-          {tracksStatus === 'loaded' && tracks?.map(track => (
-            <TrackRow
-              key={track.id}
-              name={track.name}
-              artists={track.artists}
-              durationMs={track.durationMs}
-              albumImageUrl={track.albumImageUrl}
-              onPlay={() => onPlayTrack(track.uri)}
-            />
-          ))}
-          {tracksStatus === 'loaded' && (!tracks || tracks.length === 0) && (
-            <div style={{ padding: '8px 16px', fontSize: 9, color: LCARS.subText, letterSpacing: 2 }}>NO TRACKS</div>
-          )}
+function PlaylistRow({ id, name, imageUrl, totalTracks, isOpen, onToggle }: PlaylistRowProps) {
+  const [hovered, setHovered] = useState(false);
+  void id; // used by parent
+  return (
+    <button
+      onClick={onToggle}
+      aria-expanded={isOpen}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        width: '100%', background: isOpen
+          ? `rgba(29,185,84,0.08)` : hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
+        border: 'none', borderBottom: `1px solid rgba(255,255,255,0.05)`,
+        padding: '7px 10px',
+        cursor: 'pointer', transition: 'background 120ms ease',
+        textAlign: 'left', fontFamily: 'inherit',
+      }}
+    >
+      {imageUrl ? (
+        <img src={imageUrl} alt="" width={32} height={32}
+          style={{ borderRadius: 3, flexShrink: 0, border: `1px solid ${SPOTIFY_GREEN}33` }}
+          loading="lazy" />
+      ) : (
+        <div style={{ width: 32, height: 32, borderRadius: 3, flexShrink: 0,
+          background: 'rgba(29,185,84,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={SPOTIFY_GREEN} opacity="0.6">
+            <path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/>
+          </svg>
         </div>
       )}
-    </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color: isOpen ? SPOTIFY_GREEN : LCARS.text, fontSize: 11, fontWeight: 600,
+          letterSpacing: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {name}
+        </div>
+        <div style={{ color: LCARS.subText, fontSize: 9, letterSpacing: 1 }}>
+          {totalTracks} TRACKS
+        </div>
+      </div>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill={LCARS.subText}
+        style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 180ms ease' }}
+        aria-hidden="true">
+        <path d="M7 10l5 5 5-5z"/>
+      </svg>
+    </button>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main panel
-// ---------------------------------------------------------------------------
+// ── Main panel ────────────────────────────────────────────────────────────────
 
-export interface SpotifyPlaylistPanelProps {
-  accessToken: string | null | undefined;
-  controls: SpotifyEngineControls;
-  deviceId: string | null;
-}
+export function SpotifyPlaylistPanel() {
+  const { playlists, loading, error, tracks, tracksLoading, tracksError, fetchTracks, reload } =
+    useSpotifyPlaylists();
+  const { controls, playbackState } = useSpotifyEngine_();
+  const [openId, setOpenId] = useState<string | null>(null);
 
-export function SpotifyPlaylistPanel({ accessToken, controls, deviceId }: SpotifyPlaylistPanelProps) {
-  const [open, setOpen] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const currentUri = playbackState?.track_window?.current_track?.uri ?? null;
 
-  const {
-    playlists, playlistsStatus,
-    fetchPlaylists,
-    tracksByPlaylist, tracksStatus, fetchTracks,
-  } = useSpotifyPlaylists(accessToken);
+  const handleToggle = (id: string) => {
+    if (openId === id) { setOpenId(null); return; }
+    setOpenId(id);
+    fetchTracks(id);
+  };
 
-  // Auto-fetch on first open
-  useEffect(() => {
-    if (open && playlistsStatus === 'idle') {
-      void fetchPlaylists();
-    }
-  }, [open, playlistsStatus, fetchPlaylists]);
-
-  function handleTogglePlaylist(id: string) {
-    if (expandedId === id) {
-      setExpandedId(null);
-    } else {
-      setExpandedId(id);
-      void fetchTracks(id);
-    }
-  }
-
-  async function handlePlayContext(playlist: SpotifyPlaylistItem) {
-    if (!deviceId) return;
-    // Play the whole playlist as context
-    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ context_uri: playlist.uri }),
-    });
-  }
-
-  async function handlePlayTrack(trackUri: string) {
-    await controls.play([trackUri]);
-  }
+  const handlePlay = (uri: string) => {
+    void controls.play(uri);
+  };
 
   return (
-    <div style={{ width: '100%', marginTop: 8 }}>
-      {/* Toggle header */}
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-        aria-label="Toggle playlist browser"
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '6px 10px', borderRadius: 4,
-          background: open ? `rgba(80,200,180,0.08)` : 'rgba(255,255,255,0.03)',
-          border: `1px solid ${open ? LCARS.green + '55' : 'rgba(255,255,255,0.10)'}`,
-          color: open ? LCARS.green : LCARS.subText,
-          cursor: 'pointer', transition: 'all 160ms ease',
-          userSelect: 'none',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <IconPlaylist />
-          <span style={{ fontSize: 9, letterSpacing: 2, fontWeight: 700, fontFamily: 'inherit' }}>MY PLAYLISTS</span>
-          {playlistsStatus === 'loaded' && (
-            <span style={{ fontSize: 8, color: LCARS.subText, letterSpacing: 1 }}>({playlists.length})</span>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {open && (
-            <button
-              type="button"
-              onClick={e => { e.stopPropagation(); void fetchPlaylists(); }}
-              aria-label="Refresh playlists"
-              title="Refresh"
-              style={{
-                background: 'transparent', border: 'none',
-                color: LCARS.subText, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', padding: 2,
-                transition: 'color 140ms',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = LCARS.text; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = LCARS.subText; }}
-            >
-              <IconRefresh />
-            </button>
-          )}
-          <IconChevron open={open} />
-        </div>
-      </button>
+    <>
+      {/* Keyframes injected once */}
+      <style>{`@keyframes spotify-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}`}</style>
 
-      {/* Playlist list */}
-      {open && (
+      <div style={{
+        alignSelf: 'center', width: 'min(680px, 95%)',
+        border: `1px solid ${SPOTIFY_GREEN}33`,
+        borderRadius: 4,
+        background: 'rgba(29,185,84,0.04)',
+        overflow: 'hidden',
+      }}>
+        {/* Header */}
         <div style={{
-          marginTop: 4, borderRadius: 4, overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(0,0,0,0.28)',
-          maxHeight: 360, overflowY: 'auto',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '8px 10px 7px',
+          borderBottom: `1px solid ${SPOTIFY_GREEN}22`,
+          background: 'rgba(29,185,84,0.06)',
         }}>
-          {playlistsStatus === 'loading' && (
-            <div style={{ padding: '16px', fontSize: 9, color: LCARS.subText, letterSpacing: 3, textAlign: 'center' }}>SCANNING SECTORS…</div>
-          )}
-          {playlistsStatus === 'error' && (
-            <div style={{ padding: '12px', fontSize: 9, color: LCARS.alertRed, letterSpacing: 2, textAlign: 'center' }}>SIGNAL LOST — RETRY</div>
-          )}
-          {playlistsStatus === 'loaded' && playlists.length === 0 && (
-            <div style={{ padding: '12px', fontSize: 9, color: LCARS.subText, letterSpacing: 2, textAlign: 'center' }}>NO PLAYLISTS FOUND</div>
-          )}
-          {playlistsStatus === 'loaded' && playlists.map(pl => (
-            <PlaylistRow
-              key={pl.id}
-              playlist={pl}
-              isOpen={expandedId === pl.id}
-              onToggle={() => handleTogglePlaylist(pl.id)}
-              onPlayContext={() => handlePlayContext(pl)}
-              tracks={tracksByPlaylist[pl.id]}
-              tracksStatus={tracksStatus[pl.id] ?? 'idle'}
-              onPlayTrack={handlePlayTrack}
-            />
-          ))}
+          <span style={{ color: SPOTIFY_GREEN, fontSize: 9, letterSpacing: 3, fontWeight: 700 }}>
+            YOUR PLAYLISTS
+          </span>
+          <button
+            onClick={reload}
+            aria-label="Reload playlists"
+            style={{
+              background: 'transparent', border: 'none', color: LCARS.subText,
+              cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center',
+              transition: 'color 150ms ease',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+          </button>
         </div>
-      )}
-    </div>
+
+        {/* States */}
+        {loading && (
+          <div style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[70, 55, 80, 60, 75].map((w, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 3, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} aria-hidden="true" />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <SkeletonRow width={`${w}%`} />
+                  <SkeletonRow width="30%" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && error && (
+          <div role="alert" style={{ padding: '10px 12px', color: LCARS.alertRed, fontSize: 10, fontFamily: 'monospace' }}>
+            ⚠ {error}
+            <button onClick={reload} style={{ marginLeft: 8, color: SPOTIFY_GREEN, background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', textDecoration: 'underline' }}>Retry</button>
+          </div>
+        )}
+
+        {!loading && !error && playlists.length === 0 && (
+          <div style={{ padding: '16px 12px', color: LCARS.subText, fontSize: 10, textAlign: 'center', letterSpacing: 1 }}>
+            No playlists found in your Spotify library.
+          </div>
+        )}
+
+        {/* Playlist list */}
+        {!loading && !error && playlists.length > 0 && (
+          <div style={{ maxHeight: 420, overflowY: 'auto' }} role="list">
+            {playlists.map(pl => (
+              <div key={pl.id} role="listitem">
+                <PlaylistRow
+                  id={pl.id}
+                  name={pl.name}
+                  imageUrl={pl.imageUrl}
+                  totalTracks={pl.totalTracks}
+                  isOpen={openId === pl.id}
+                  onToggle={() => handleToggle(pl.id)}
+                />
+
+                {/* Expanded tracks */}
+                {openId === pl.id && (
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 4px 4px 8px' }}>
+                    {tracksLoading[pl.id] && (
+                      <div style={{ padding: '8px 4px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                        {[65, 80, 50, 70].map((w, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 2, background: 'rgba(255,255,255,0.05)', flexShrink: 0 }} aria-hidden="true" />
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                              <SkeletonRow width={`${w}%`} />
+                              <SkeletonRow width="35%" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {tracksError[pl.id] && (
+                      <div role="alert" style={{ padding: '6px 8px', color: LCARS.alertRed, fontSize: 10, fontFamily: 'monospace' }}>
+                        ⚠ {tracksError[pl.id]}
+                      </div>
+                    )}
+
+                    {!tracksLoading[pl.id] && !tracksError[pl.id] && tracks[pl.id]?.length === 0 && (
+                      <div style={{ padding: '8px', color: LCARS.subText, fontSize: 10, letterSpacing: 1 }}>
+                        This playlist is empty.
+                      </div>
+                    )}
+
+                    {!tracksLoading[pl.id] && tracks[pl.id]?.map(track => (
+                      <TrackRow
+                        key={track.id}
+                        uri={track.uri}
+                        name={track.name}
+                        artists={track.artists}
+                        durationMs={track.durationMs}
+                        albumArtUrl={track.albumArtUrl}
+                        isPlayable={track.isPlayable}
+                        isActive={track.uri === currentUri}
+                        onPlay={handlePlay}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
