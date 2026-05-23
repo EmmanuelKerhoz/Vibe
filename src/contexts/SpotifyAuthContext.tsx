@@ -53,6 +53,7 @@ const REFRESH_KEY  = 'spotify_refresh_token';
 const EXPIRY_KEY   = 'spotify_token_expiry';
 const VERIFIER_KEY = 'spotify_pkce_verifier';
 const STATE_KEY    = 'spotify_pkce_state';
+const TOKEN_EXPIRY_BUFFER_MS = 5_000;
 
 // ---------------------------------------------------------------------------
 // Storage helpers (localStorage + memStore fallback)
@@ -286,7 +287,7 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
   const getValidToken = useCallback(async (): Promise<string | null> => {
     const accessToken = storeGet(TOKEN_KEY);
     const expiresAt = Number(storeGet(EXPIRY_KEY) ?? 0);
-    if (accessToken && Date.now() + 5_000 < expiresAt) return accessToken;
+    if (accessToken && Date.now() + TOKEN_EXPIRY_BUFFER_MS < expiresAt) return accessToken;
 
     const refreshToken = storeGet(REFRESH_KEY);
     if (!refreshToken) return null;

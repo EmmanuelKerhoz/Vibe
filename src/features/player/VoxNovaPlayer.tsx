@@ -15,7 +15,7 @@ import type { TrackInfo } from './useAudioEngine';
 import type { TrackEntry } from './types';
 import { SpotifyPlaylistPanel } from './SpotifyPlaylistPanel';
 import { SpotifySearchPanel } from './SpotifySearchPanel';
-import { SPOTIFY_VOLUME_DEFAULT, SPOTIFY_VOLUME_STORAGE_KEY } from '../../hooks/useSpotifyEngine';
+import { getStoredSpotifyVolume, SPOTIFY_VOLUME_STORAGE_KEY } from '../../hooks/useSpotifyEngine';
 
 const LIBRARY_CAPACITY = 50;
 const LCARS_BOX_COLORS = [
@@ -36,14 +36,6 @@ function genRegistry(): string {
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(buf);
   else for (let i = 0; i < buf.length; i++) buf[i] = Math.floor(Math.random() * 256);
   return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-}
-
-function getStoredSpotifyVolume(): number {
-  if (typeof window === 'undefined') return SPOTIFY_VOLUME_DEFAULT;
-  const raw = window.localStorage.getItem(SPOTIFY_VOLUME_STORAGE_KEY);
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed)) return SPOTIFY_VOLUME_DEFAULT;
-  return Math.max(0, Math.min(1, parsed));
 }
 
 function useSectorTime(): string {
@@ -214,6 +206,7 @@ function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProp
 function SpotifySourcePanel() {
   const { status, login, logout, error } = useSpotifyAuth();
   const { playerState, playbackState, controls } = useSpotifyEngine_();
+  const setSpotifyVolume = controls.setVolume;
   const [volume, setVolume] = useState<number>(() => getStoredSpotifyVolume());
   const [browserTab, setBrowserTab] = useState<SpotifyBrowserTab>('playlists');
 
@@ -223,8 +216,17 @@ function SpotifySourcePanel() {
   const durMs = track?.duration_ms ?? 0;
 
   useEffect(() => {
-    void controls.setVolume(volume);
-  }, [controls, volume]);
+    void setSpotifyVolume(volume);
+  }, [setSpotifyVolume, volume]);
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== SPOTIFY_VOLUME_STORAGE_KEY) return;
+      setVolume(getStoredSpotifyVolume());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const statusColor =
     playerState === 'ready' || playerState === 'playing' ? SPOTIFY_GREEN

@@ -75,7 +75,7 @@ export function useSpotifySearch(): SpotifySearchState {
         albumArtUrl: item.album.images?.[0]?.url ?? null,
       })));
     } catch (err) {
-      setError((err as Error).message ?? 'Search failed');
+      setError((err as Error).message ?? 'Failed to search Spotify tracks');
       setResults([]);
     } finally {
       setSearching(false);

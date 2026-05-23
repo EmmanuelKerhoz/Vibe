@@ -179,7 +179,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
             name: t.name,
             uri: t.uri,
             durationMs: t.duration_ms,
-            artists: t.artists.map((a: { name: string }) => a.name).join(', '),
+            artists: t.artists.map(a => a.name).join(', '),
             albumArtUrl: t.album?.images?.[0]?.url ?? null,
             isPlayable: t.is_playable !== false,
           });

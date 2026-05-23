@@ -42,7 +42,7 @@ const DEVICE_NAME = 'Lyricist Player';
 export const SPOTIFY_VOLUME_DEFAULT = 0.7;
 export const SPOTIFY_VOLUME_STORAGE_KEY = 'voxnova.spotify.volume';
 
-function getStoredSpotifyVolume(): number {
+export function getStoredSpotifyVolume(): number {
   if (typeof window === 'undefined') return SPOTIFY_VOLUME_DEFAULT;
   const raw = window.localStorage.getItem(SPOTIFY_VOLUME_STORAGE_KEY);
   const parsed = Number(raw);
@@ -87,9 +87,6 @@ export function useSpotifyEngine({ accessToken, getValidToken }: UseSpotifyEngin
   const [deviceId, setDeviceId] = useState<string | null>(null);
 
   const playerRef = useRef<SpotifySDKPlayer | null>(null);
-  const tokenRef = useRef<string | null | undefined>(accessToken);
-
-  useEffect(() => { tokenRef.current = accessToken; }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -108,7 +105,6 @@ export function useSpotifyEngine({ accessToken, getValidToken }: UseSpotifyEngin
         getOAuthToken: (cb: (token: string) => void) => {
           void getValidToken().then((token) => {
             if (token) cb(token);
-            else if (tokenRef.current) cb(tokenRef.current);
           });
         },
       });
