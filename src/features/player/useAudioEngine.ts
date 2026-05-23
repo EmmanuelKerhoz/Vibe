@@ -85,27 +85,54 @@ function waitForMediaReady(el: HTMLMediaElement): Promise<void> {
   });
 }
 
+const CLOUD_PROBE_BYTES = 64 * 1024;
+
+function parseContentLength(headers: Headers): number | null {
+  const len = Number(headers.get('content-length'));
+  return Number.isFinite(len) && len >= 0 ? len : null;
+}
+
+function parseContentRangeSize(headers: Headers): number | null {
+  const match = headers.get('content-range')?.match(/\/(\d+)$/);
+  if (!match) return null;
+  const size = Number(match[1]);
+  return Number.isFinite(size) ? size : null;
+}
+
 async function probeAudioFile(
   url: string,
   fileSizeBytes: number | null,
   duration: number,
+  maxProbeBytes?: number,
 ): Promise<Partial<TrackInfo>> {
+  const fallbackBitrate = fileSizeBytes && duration > 0
+    ? Math.round((fileSizeBytes * 8) / duration / 1000)
+    : null;
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, maxProbeBytes
+      ? { headers: { Range: `bytes=0-${maxProbeBytes - 1}` } }
+      : undefined);
+    const contentLength = parseContentLength(res.headers);
+    if (maxProbeBytes && res.status !== 206 && contentLength !== null && contentLength > maxProbeBytes) {
+      return { bitrateKbps: fallbackBitrate };
+    }
     const buf = await res.arrayBuffer();
+    if (maxProbeBytes && buf.byteLength > maxProbeBytes) {
+      return { bitrateKbps: fallbackBitrate };
+    }
     const AudioCtx = window.AudioContext ||
       (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return {};
+    if (!AudioCtx) return { bitrateKbps: fallbackBitrate };
     const ctx = new AudioCtx();
     const decoded = await ctx.decodeAudioData(buf);
     await ctx.close();
     const ch = decoded.numberOfChannels;
     const sr = decoded.sampleRate;
-    const size = fileSizeBytes ?? buf.byteLength;
-    const bitrate = duration > 0 ? Math.round((size * 8) / duration / 1000) : null;
+    const size = fileSizeBytes ?? parseContentRangeSize(res.headers) ?? (res.status === 206 ? null : buf.byteLength);
+    const bitrate = size !== null && duration > 0 ? Math.round((size * 8) / duration / 1000) : null;
     return { channels: ch, sampleRate: sr, bitrateKbps: bitrate, channelLabel: channelLabel(ch), isVideo: false };
   } catch {
-    return {};
+    return { bitrateKbps: fallbackBitrate };
   }
 }
 
@@ -267,9 +294,11 @@ export function useAudioEngine(): AudioEngineState {
       setTrackInfo(null);
       const srcUrl = track.url;
       const trackTitle = track.title;
+      const trackSize = track.oneDriveSize ?? null;
+      const probeLimit = track.source === 'cloud' ? CLOUD_PROBE_BYTES : undefined;
       el.addEventListener('loadedmetadata', () => {
         const dur = el.duration || 0;
-        probeAudioFile(srcUrl, null, dur).then(info => {
+        probeAudioFile(srcUrl, trackSize, dur, probeLimit).then(info => {
           setTrackInfo({
             channels: info.channels ?? null,
             sampleRate: info.sampleRate ?? null,
