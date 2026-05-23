@@ -56,7 +56,8 @@ export function useSpotifySearch(): SpotifySearchState {
     setSearching(true);
     setError(null);
     try {
-      const endpoint = `https://api.spotify.com/v1/search?type=track&limit=25&market=FR&q=${encodeURIComponent(term)}`;
+      // market omitted: the Bearer token scopes availability to the user's account country
+      const endpoint = `https://api.spotify.com/v1/search?type=track&limit=25&q=${encodeURIComponent(term)}`;
       const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error(`Spotify API ${res.status}: ${res.statusText}`);
       const data = await res.json() as {
