@@ -87,10 +87,8 @@ describe('useAudioEngine', () => {
     vi.stubGlobal('fetch', fetch);
 
     const { result } = renderHook(() => useAudioEngine());
-
     await act(async () => {
-      let loadPromise!: Promise<void>;
-      loadPromise = result.current.loadTrack({
+      const loadPromise = result.current.loadTrack({
         id: 'song',
         title: 'Song.flac',
         source: 'cloud',
@@ -131,10 +129,8 @@ describe('useAudioEngine', () => {
     } as Response));
 
     const { result } = renderHook(() => useAudioEngine());
-
     await act(async () => {
-      let loadPromise!: Promise<void>;
-      loadPromise = result.current.loadTrack({
+      const loadPromise = result.current.loadTrack({
         id: 'song',
         title: 'Song.flac',
         source: 'cloud',

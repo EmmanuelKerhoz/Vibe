@@ -99,6 +99,18 @@ function parseContentRangeSize(headers: Headers): number | null {
   return Number.isFinite(size) ? size : null;
 }
 
+function determineFileSize(
+  fileSizeBytes: number | null,
+  headers: Headers,
+  status: number,
+  bufferLength: number,
+): number | null {
+  if (fileSizeBytes !== null) return fileSizeBytes;
+  const rangeSize = parseContentRangeSize(headers);
+  if (rangeSize !== null) return rangeSize;
+  return status === 206 ? null : bufferLength;
+}
+
 async function probeAudioFile(
   url: string,
   fileSizeBytes: number | null,
@@ -113,7 +125,9 @@ async function probeAudioFile(
       ? { headers: { Range: `bytes=0-${maxProbeBytes - 1}` } }
       : undefined);
     const contentLength = parseContentLength(res.headers);
-    if (maxProbeBytes && res.status !== 206 && contentLength !== null && contentLength > maxProbeBytes) {
+    const declaredSize = contentLength ?? fileSizeBytes;
+    if (maxProbeBytes && res.status !== 206 && declaredSize !== null && declaredSize > maxProbeBytes) {
+      await res.body?.cancel().catch(() => undefined);
       return { bitrateKbps: fallbackBitrate };
     }
     const buf = await res.arrayBuffer();
@@ -128,7 +142,7 @@ async function probeAudioFile(
     await ctx.close();
     const ch = decoded.numberOfChannels;
     const sr = decoded.sampleRate;
-    const size = fileSizeBytes ?? parseContentRangeSize(res.headers) ?? (res.status === 206 ? null : buf.byteLength);
+    const size = determineFileSize(fileSizeBytes, res.headers, res.status, buf.byteLength);
     const bitrate = size !== null && duration > 0 ? Math.round((size * 8) / duration / 1000) : null;
     return { channels: ch, sampleRate: sr, bitrateKbps: bitrate, channelLabel: channelLabel(ch), isVideo: false };
   } catch {
