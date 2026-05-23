@@ -21,6 +21,14 @@ afterEach(() => {
 });
 
 describe('useAudioEngine', () => {
+  it('defaults player volume to 50 percent', () => {
+    const audio = makeMediaElement('audio');
+    vi.stubGlobal('Audio', vi.fn(() => audio.el));
+    const { result } = renderHook(() => useAudioEngine());
+    expect(result.current.volume).toBe(0.5);
+    expect(audio.el.volume).toBe(0.5);
+  });
+
   it('loadTrack resolves after the audio element is ready', async () => {
     const audio = makeMediaElement('audio');
     vi.stubGlobal('Audio', vi.fn(() => audio.el));

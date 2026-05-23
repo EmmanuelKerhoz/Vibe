@@ -17,9 +17,18 @@ export interface TrackEntry {
   oneDriveLastModified?: string;
   /** Approximate file size in bytes */
   oneDriveSize?: number;
+  /** Known media duration in seconds, populated after metadata loads */
+  durationSeconds?: number;
 }
 
+export const SCAN_PROTOCOLS = [
+  'wav', 'mp3', 'm4a', 'flac', 'ogg', 'opus', 'aac', 'aiff', 'wma',
+  'mp4', 'webm', 'mov', 'mkv', 'avi', 'm4v',
+] as const;
+
+export type ScanProtocol = typeof SCAN_PROTOCOLS[number];
+
 export interface ScanConfig {
-  accept: 'wav' | 'mp3' | 'm4a' | 'mp4' | 'all';
+  accept: ScanProtocol[];
   pattern: string;
 }

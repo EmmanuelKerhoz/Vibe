@@ -10,6 +10,7 @@ import { useLibraryContext } from '../../contexts/LibraryContext';
 import { usePlayerNavigation } from './usePlayerNavigation';
 import { LCARS } from './lcarsTheme';
 import type { TrackInfo } from './useAudioEngine';
+import type { TrackEntry } from './types';
 
 const LIBRARY_CAPACITY = 50;
 const LCARS_BOX_COLORS = [
@@ -54,9 +55,9 @@ function useSectorTime(): string {
 function LCARSBackground() {
   return (
     <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-      background: 'radial-gradient(ellipse at 20% 40%, rgba(255,153,0,0.04) 0%, transparent 55%), radial-gradient(ellipse at 80% 60%, rgba(153,102,204,0.05) 0%, transparent 55%), radial-gradient(ellipse at 50% 50%, rgba(255,102,102,0.02) 0%, transparent 70%)' }}>
+      background: 'radial-gradient(ellipse at 20% 40%, rgba(255,153,0,0.06) 0%, transparent 55%), radial-gradient(ellipse at 80% 60%, rgba(153,102,204,0.07) 0%, transparent 55%), radial-gradient(ellipse at 50% 50%, rgba(255,102,102,0.025) 0%, transparent 70%)' }}>
       <div style={{ position: 'absolute', inset: 0,
-        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px)',
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.018) 2px, rgba(255,255,255,0.018) 4px), repeating-linear-gradient(90deg, rgba(245,176,107,0.018) 0, rgba(245,176,107,0.018) 1px, transparent 1px, transparent 18px)',
         backgroundSize: '100% 4px' }} />
       <div style={{ position: 'absolute', inset: 0,
         backgroundImage: 'linear-gradient(rgba(255,153,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,153,0,0.025) 1px, transparent 1px)',
@@ -65,6 +66,24 @@ function LCARSBackground() {
         WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 80%)' }} />
     </div>
   );
+}
+
+function formatBytes(size?: number): string | null {
+  if (!size || !Number.isFinite(size)) return null;
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = size;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
+function formatDate(value?: string): string | null {
+  if (!value) return null;
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? new Date(time).toLocaleDateString() : null;
 }
 
 function TechSpecLine({ info, duration }: { info: TrackInfo | null; duration: number }) {
@@ -91,6 +110,27 @@ function TechSpecLine({ info, duration }: { info: TrackInfo | null; duration: nu
         </span>
       ))}
     </span>
+  );
+}
+
+function MemoMetadata({ track }: { track: TrackEntry }) {
+  const details = [
+    { label: 'SOURCE', value: track.source.toUpperCase(), color: track.source === 'local' ? LCARS.orange : track.source === 'lyria' ? '#00c8a0' : LCARS.purple },
+    { label: 'FORMAT', value: track.isVideo ? 'VIDEO' : 'AUDIO', color: track.isVideo ? LCARS.alertRed : LCARS.purple },
+    { label: 'SIZE', value: formatBytes(track.oneDriveSize), color: LCARS.amber },
+    { label: 'MODIFIED', value: formatDate(track.oneDriveLastModified), color: LCARS.subText },
+    { label: 'LINK', value: track.linked ? 'RESOLVED' : 'PENDING', color: track.linked ? LCARS.peach : LCARS.mutedText },
+  ].filter((item): item is { label: string; value: string; color: string } => Boolean(item.value));
+
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 10px', marginTop: 8 }}>
+      {details.map(item => (
+        <span key={item.label} style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 1 }}>
+          <span style={{ color: LCARS.subText }}>{item.label}:</span>{' '}
+          <span style={{ color: item.color }}>{item.value}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -174,6 +214,10 @@ export function VoxNovaPlayer() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTrack?.id, selectedTrack?.isVideo]);
 
+  useEffect(() => {
+    if (selectedId && engine.duration > 0) library.updateDuration(selectedId, engine.duration);
+  }, [engine.duration, library, selectedId]);
+
   const handlePurge = () => {
     if (typeof window !== 'undefined' && !window.confirm('Purge all tracks from local cache?')) return;
     library.purgeAll(); setSelectedId(null); engine.pause();
@@ -191,7 +235,7 @@ export function VoxNovaPlayer() {
   useEffect(() => { if (lyriaCount > prevLyriaCount.current) setView('lyria'); prevLyriaCount.current = lyriaCount; }, [lyriaCount, setView]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', background: 'var(--bg-app)', color: LCARS.text, fontFamily: '"Antonio", "Eurostile", "Helvetica Neue", Arial, sans-serif', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', background: `${LCARS.void}`, color: LCARS.text, fontFamily: '"Antonio", "Eurostile", "Helvetica Neue", Arial, sans-serif', overflow: 'hidden' }}>
       <LCARSBackground />
       <SidebarProvider onLocalTracksAdded={() => setView('local')}>
         <PlayerSidebar
@@ -243,6 +287,7 @@ export function VoxNovaPlayer() {
           <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.purple}55`, borderRadius: 4, padding: '10px 14px', background: LCARS_BOX_COLORS[1] }}>
             <div style={{ color: LCARS.purple, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>LOCAL MEMO LOG</div>
             <div style={{ color: LCARS.text, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5, wordBreak: 'break-word', marginBottom: selectedTrack ? 8 : 0 }}>{memo}</div>
+            {selectedTrack && <MemoMetadata track={selectedTrack} />}
             {selectedTrack && (
               <div style={{ borderTop: `1px solid ${LCARS.purple}22`, paddingTop: 6, fontFamily: 'monospace', fontSize: 11, letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ color: LCARS.subText, marginRight: 6 }}>SIGNAL_ANALYSIS</span>

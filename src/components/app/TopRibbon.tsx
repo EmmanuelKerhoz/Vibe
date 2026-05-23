@@ -41,6 +41,13 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
   const panelToggleLabel = isLeftPanelOpen
     ? (t.tooltips.closeLeftPanel ?? 'Close lyrics generation panel')
     : (t.tooltips.openLeftPanel ?? 'Open lyrics generation panel');
+  const tooltipDict = t.tooltips as Record<string, string | undefined>;
+  const isPlayerMode = activeTab === 'player';
+  const structureToggleLabel = isPlayerMode
+    ? (tooltipDict.playerSidebarDisabled ?? 'Sidebar is disabled in Player mode')
+    : isStructureOpen
+      ? t.tooltips.collapseRight
+      : t.tooltips.showSidebar;
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -72,6 +79,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
     setIsLeftPanelOpen(!isLeftPanelOpen);
   };
   const toggleStructurePanel = () => {
+    if (isPlayerMode) return;
     const next = !isStructureOpen;
     if (next) clearSelection();
     setIsStructureOpen(next);
@@ -160,8 +168,8 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
             <WandSparkles className="w-4 h-4" />
           </button>
         </Tooltip>
-        <Tooltip title={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar}>
-          <button onClick={toggleStructurePanel} aria-label={isStructureOpen ? t.tooltips.collapseRight : t.tooltips.showSidebar} className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors" style={{ color: isStructureOpen ? 'var(--accent-color)' : 'var(--text-secondary)', backgroundColor: isStructureOpen ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)' : undefined }}>
+        <Tooltip title={structureToggleLabel}>
+          <button onClick={toggleStructurePanel} disabled={isPlayerMode} aria-disabled={isPlayerMode} aria-label={structureToggleLabel} className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md transition-colors disabled:opacity-35 disabled:cursor-not-allowed" style={{ color: isStructureOpen && !isPlayerMode ? 'var(--accent-color)' : 'var(--text-secondary)', backgroundColor: isStructureOpen && !isPlayerMode ? 'color-mix(in srgb, var(--accent-color) 10%, transparent)' : undefined }}>
             <PanelRight className="w-4 h-4" />
           </button>
         </Tooltip>

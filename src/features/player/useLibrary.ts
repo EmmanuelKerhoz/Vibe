@@ -13,6 +13,7 @@ export interface LibraryState {
   removeTrack: (id: string) => void;
   updateMemo: (id: string, memo: string) => void;
   updateUrl: (id: string, url: string) => void;
+  updateDuration: (id: string, durationSeconds: number) => void;
   /** Replace all cloud-source tracks with fresh OneDrive items */
   replaceCloudTracks: (items: Omit<TrackEntry, 'id'>[]) => void;
   purgeAll: () => void;
@@ -40,6 +41,13 @@ export function useLibrary(): LibraryState {
     setTracks(prev => prev.map(t => t.id === id ? { ...t, url, linked: true } : t));
   }, []);
 
+  const updateDuration = useCallback((id: string, durationSeconds: number) => {
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return;
+    setTracks(prev => prev.map(t => t.id === id && t.durationSeconds !== durationSeconds
+      ? { ...t, durationSeconds }
+      : t));
+  }, []);
+
   const replaceCloudTracks = useCallback((items: Omit<TrackEntry, 'id'>[]) => {
     setTracks(prev => [
       // keep local + lyria tracks
@@ -61,5 +69,5 @@ export function useLibrary(): LibraryState {
     });
   }, []);
 
-  return { tracks, addTracks, removeTrack, updateMemo, updateUrl, replaceCloudTracks, purgeAll };
+  return { tracks, addTracks, removeTrack, updateMemo, updateUrl, updateDuration, replaceCloudTracks, purgeAll };
 }

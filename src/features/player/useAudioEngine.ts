@@ -58,12 +58,17 @@ function codecFromTitle(title: string): string | null {
     case 'flac': return 'FLAC';
     case 'ogg':  return 'Vorbis/OGG';
     case 'aac':  return 'AAC';
+    case 'aif':
+    case 'aiff': return 'AIFF';
+    case 'wma':  return 'WMA';
     case 'm4a':  return 'AAC/M4A';
     case 'opus': return 'OPUS';
     case 'mp4':  return 'H.264+AAC';
     case 'webm': return 'VP9+Opus';
     case 'mov':  return 'H.264/MOV';
-    case 'mkv':  return 'MKV';
+    case 'mkv':  return 'Matroska';
+    case 'avi':  return 'AVI';
+    case 'm4v':  return 'H.264/M4V';
     default:     return ext ? ext.toUpperCase() : null;
   }
 }
@@ -170,13 +175,15 @@ export function useAudioEngine(): AudioEngineState {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolumeState] = useState(1);
+  const [volume, setVolumeState] = useState(0.5);
   const [repeat, setRepeat] = useState<RepeatMode>('none');
   const [shuffle, setShuffle] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
   const [crossfadeMs, setCrossfadeMsState] = useState(0);
   const [sleepTimerEnd, setSleepTimerEndState] = useState<number | null>(null);
   const [trackInfo, setTrackInfo] = useState<TrackInfo | null>(null);
+
+  useEffect(() => { internalAudioRef.current.volume = 0.5; }, []);
 
   const repeatRef = useRef<RepeatMode>('none');
   const onTrackEndedRef = useRef<(() => void) | undefined>(undefined);

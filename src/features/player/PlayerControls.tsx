@@ -70,14 +70,17 @@ const CONTROLS_CSS = `
     box-shadow: 0 0 24px rgba(255,153,0,0.15), 0 8px 32px rgba(0,0,0,0.7);
   }
   .lcars-mode-grid {
-    display: grid;
-    grid-template-columns: repeat(3, auto);
-    gap: 8px 10px;
-    justify-items: center;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    justify-content: center;
     align-items: stretch;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
   @media (max-width: 480px) {
-    .lcars-mode-grid { grid-template-columns: repeat(2, auto); }
+    .lcars-mode-grid { justify-content: flex-start; }
   }
 `;
 
@@ -620,9 +623,6 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
             />
           )}
         </div>
-
-        {/* Spacer cell to keep grid symmetric when 5 items */}
-        <div aria-hidden="true" style={{ width: 76 }} />
       </div>
 
       {/* ── Status / active modes codeline ── */}
@@ -640,6 +640,7 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
         <button
           type="button" onClick={handlePrev} disabled={disabled}
           aria-label="Previous track"
+          title="Previous track"
           className="lcars-transport" style={transportBase}
         >
           <IconPrev />
@@ -648,6 +649,7 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
         <button
           type="button" onClick={handlePlay} disabled={disabled}
           aria-label={isPlaying ? 'Pause' : 'Play'}
+          title={isPlaying ? 'Pause playback' : 'Start playback'}
           className="lcars-play"
           style={{
             width: 68, height: 68, borderRadius: 12,
@@ -682,6 +684,7 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
         <button
           type="button" onClick={handleNext} disabled={disabled}
           aria-label="Next track"
+          title="Next track"
           className="lcars-transport" style={transportBase}
         >
           <IconNext />
