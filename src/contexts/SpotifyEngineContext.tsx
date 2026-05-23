@@ -10,8 +10,8 @@ import type { UseSpotifyEngineResult } from '../hooks/useSpotifyEngine';
 const SpotifyEngineContext = createContext<UseSpotifyEngineResult | null>(null);
 
 export function SpotifyEngineProvider({ children }: { children: React.ReactNode }) {
-  const { accessToken } = useSpotifyAuth();
-  const engine = useSpotifyEngine({ accessToken });
+  const { accessToken, getValidToken } = useSpotifyAuth();
+  const engine = useSpotifyEngine({ accessToken, getValidToken });
 
   return (
     <SpotifyEngineContext.Provider value={engine}>

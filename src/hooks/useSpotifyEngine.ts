@@ -39,10 +39,20 @@ function loadSpotifySDK(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 const DEVICE_NAME = 'Lyricist Player';
-const VOLUME_DEFAULT = 0.7;
+export const SPOTIFY_VOLUME_DEFAULT = 0.7;
+export const SPOTIFY_VOLUME_STORAGE_KEY = 'voxnova.spotify.volume';
+
+export function getStoredSpotifyVolume(): number {
+  if (typeof window === 'undefined') return SPOTIFY_VOLUME_DEFAULT;
+  const raw = window.localStorage.getItem(SPOTIFY_VOLUME_STORAGE_KEY);
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return SPOTIFY_VOLUME_DEFAULT;
+  return Math.max(0, Math.min(1, parsed));
+}
 
 export interface UseSpotifyEngineOptions {
   accessToken: string | null | undefined;
+  getValidToken: () => Promise<string | null>;
 }
 
 /**
@@ -71,15 +81,12 @@ export interface UseSpotifyEngineResult {
   deviceId: string | null;
 }
 
-export function useSpotifyEngine({ accessToken }: UseSpotifyEngineOptions): UseSpotifyEngineResult {
+export function useSpotifyEngine({ accessToken, getValidToken }: UseSpotifyEngineOptions): UseSpotifyEngineResult {
   const [playerState, setPlayerState] = useState<SpotifyPlayerState>('idle');
   const [playbackState, setPlaybackState] = useState<SpotifyPlaybackState | null>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);
 
   const playerRef = useRef<SpotifySDKPlayer | null>(null);
-  const tokenRef = useRef<string | null | undefined>(accessToken);
-
-  useEffect(() => { tokenRef.current = accessToken; }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -94,9 +101,11 @@ export function useSpotifyEngine({ accessToken }: UseSpotifyEngineOptions): UseS
 
       const player = new Spotify.Player({
         name: DEVICE_NAME,
-        volume: VOLUME_DEFAULT,
+        volume: getStoredSpotifyVolume(),
         getOAuthToken: (cb: (token: string) => void) => {
-          if (tokenRef.current) cb(tokenRef.current);
+          void getValidToken().then((token) => {
+            if (token) cb(token);
+          });
         },
       });
 
@@ -156,28 +165,34 @@ export function useSpotifyEngine({ accessToken }: UseSpotifyEngineOptions): UseS
       setDeviceId(null);
       setPlaybackState(null);
     };
-  }, [accessToken]);
+  }, [accessToken, getValidToken]);
 
   const play = useCallback(async (req: PlayRequest) => {
-    if (!deviceId || !tokenRef.current) return;
+    if (!deviceId) return;
+    const token = await getValidToken();
+    if (!token) return;
     const body = 'contextUri' in req
       ? { context_uri: req.contextUri, offset: { uri: req.offsetUri } }
       : { uris: req.uris };
     await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
       method: 'PUT',
       headers: {
-        Authorization: `Bearer ${tokenRef.current}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
     });
-  }, [deviceId]);
+  }, [deviceId, getValidToken]);
 
   const resume = useCallback(async () => { await playerRef.current?.resume(); }, []);
   const pause = useCallback(async () => { await playerRef.current?.pause(); }, []);
   const seek = useCallback(async (positionMs: number) => { await playerRef.current?.seek(positionMs); }, []);
   const setVolume = useCallback(async (fraction: number) => {
-    await playerRef.current?.setVolume(Math.max(0, Math.min(1, fraction)));
+    const normalized = Math.max(0, Math.min(1, fraction));
+    await playerRef.current?.setVolume(normalized);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(SPOTIFY_VOLUME_STORAGE_KEY, String(normalized));
+    }
   }, []);
   const nextTrack = useCallback(async () => { await playerRef.current?.nextTrack(); }, []);
   const previousTrack = useCallback(async () => { await playerRef.current?.previousTrack(); }, []);
