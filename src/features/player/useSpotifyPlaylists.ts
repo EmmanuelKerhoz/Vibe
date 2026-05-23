@@ -152,8 +152,9 @@ export function useSpotifyPlaylists(): PlaylistsState {
 
     const fetchAll = async () => {
       const collected: SpotifyTrackItem[] = [];
+      // No fields= filter: some collaborative/shared playlists reject filtered requests
       let url: string | null =
-        `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50&fields=next,items(track(id,name,uri,duration_ms,is_playable,artists(name),album(images)))`;
+        `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50&market=from_token`;
 
       while (url) {
         type RawTrackPage = {

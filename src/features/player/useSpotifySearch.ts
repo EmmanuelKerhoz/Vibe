@@ -20,6 +20,11 @@ interface SpotifySearchState {
   search: (q?: string) => Promise<void>;
 }
 
+/** Strip characters that cause Spotify search API 400 errors */
+function sanitizeQuery(q: string): string {
+  return q.replace(/[\/\\":?#\[\]@]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 export function useSpotifySearch(): SpotifySearchState {
   const { status, getValidToken } = useSpotifyAuth();
   const [query, setQuery] = useState('');
@@ -28,7 +33,8 @@ export function useSpotifySearch(): SpotifySearchState {
   const [results, setResults] = useState<SpotifySearchTrack[]>([]);
 
   const search = useCallback(async (q?: string) => {
-    const term = (q ?? query).trim();
+    const raw = (q ?? query).trim();
+    const term = sanitizeQuery(raw);
     if (!term) {
       setResults([]);
       setError(null);
