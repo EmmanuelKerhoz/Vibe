@@ -108,7 +108,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
             name: string;
             description: string | null;
             images: Array<{ url: string }> | null;
-            tracks: { total: number };
+            tracks: { total: number } | null;
             uri: string;
           }>;
           next: string | null;
@@ -121,7 +121,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
             name: item.name,
             description: item.description || null,
             imageUrl: item.images?.[0]?.url ?? null,
-            totalTracks: item.tracks.total,
+            totalTracks: item.tracks?.total ?? 0,
             uri: item.uri,
           });
         }
