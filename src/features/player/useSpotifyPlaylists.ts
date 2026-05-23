@@ -54,7 +54,9 @@ function formatMs(ms: number): string {
 }
 export { formatMs };
 
-async function apiFetch<T>(url: string, token: string, signal: AbortSignal): Promise<T> {
+async function apiFetch<T>(url: string, getToken: () => Promise<string | null>, signal: AbortSignal): Promise<T> {
+  const token = await getToken();
+  if (!token) throw new Error('Spotify token unavailable');
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
     signal,
@@ -68,7 +70,7 @@ async function apiFetch<T>(url: string, token: string, signal: AbortSignal): Pro
 // ---------------------------------------------------------------------------
 
 export function useSpotifyPlaylists(): PlaylistsState {
-  const { status, accessToken } = useSpotifyAuth();
+  const { status, accessToken, getValidToken } = useSpotifyAuth();
 
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([]);
   const [loading, setLoading] = useState(false);
@@ -111,7 +113,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
           }>;
           next: string | null;
         };
-        const page = await apiFetch<RawPage>(url, accessToken, ctrl.signal);
+        const page: RawPage = await apiFetch<RawPage>(url, getValidToken, ctrl.signal);
         for (const item of page.items) {
           if (!item) continue;
           collected.push({
@@ -137,11 +139,11 @@ export function useSpotifyPlaylists(): PlaylistsState {
     });
 
     return () => ctrl.abort();
-  }, [status, accessToken, tick]);
+  }, [status, accessToken, getValidToken, tick]);
 
   // ── Fetch tracks for a single playlist (on demand) ───────────────────────
   const fetchTracks = useCallback((playlistId: string) => {
-    if (!accessToken || tracks[playlistId] || tracksLoading[playlistId]) return;
+    if (status !== 'authenticated' || !accessToken || tracks[playlistId] || tracksLoading[playlistId]) return;
 
     const ctrl = new AbortController();
 
@@ -168,7 +170,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
             } | null;
           }>;
         };
-        const page = await apiFetch<RawTrackPage>(url, accessToken, ctrl.signal);
+        const page: RawTrackPage = await apiFetch<RawTrackPage>(url, getValidToken, ctrl.signal);
         for (const item of page.items) {
           const t = item.track;
           if (!t || !t.uri.startsWith('spotify:track:')) continue;
@@ -177,7 +179,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
             name: t.name,
             uri: t.uri,
             durationMs: t.duration_ms,
-            artists: t.artists.map(a => a.name).join(', '),
+            artists: t.artists.map((a: { name: string }) => a.name).join(', '),
             albumArtUrl: t.album?.images?.[0]?.url ?? null,
             isPlayable: t.is_playable !== false,
           });
@@ -194,7 +196,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
       setTracksError(prev => ({ ...prev, [playlistId]: (err as Error)?.message ?? 'Failed to load tracks' }));
       setTracksLoading(prev => ({ ...prev, [playlistId]: false }));
     });
-  }, [accessToken, tracks, tracksLoading]);
+  }, [status, accessToken, getValidToken, tracks, tracksLoading]);
 
   return { playlists, loading, error, tracks, tracksLoading, tracksError, fetchTracks, reload };
 }

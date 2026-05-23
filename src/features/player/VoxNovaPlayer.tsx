@@ -13,6 +13,9 @@ import { useSpotifyEngine_ } from '../../contexts/SpotifyEngineContext';
 import { LCARS } from './lcarsTheme';
 import type { TrackInfo } from './useAudioEngine';
 import type { TrackEntry } from './types';
+import { SpotifyPlaylistPanel } from './SpotifyPlaylistPanel';
+import { SpotifySearchPanel } from './SpotifySearchPanel';
+import { SPOTIFY_VOLUME_DEFAULT, SPOTIFY_VOLUME_STORAGE_KEY } from '../../hooks/useSpotifyEngine';
 
 const LIBRARY_CAPACITY = 50;
 const LCARS_BOX_COLORS = [
@@ -26,12 +29,21 @@ const SPOTIFY_GREEN = '#1DB954';
 const DEFAULT_VIDEO_ASPECT_RATIO = 16 / 9;
 
 type AudioSource = 'local' | 'spotify';
+type SpotifyBrowserTab = 'playlists' | 'search';
 
 function genRegistry(): string {
   const buf = new Uint8Array(4);
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(buf);
   else for (let i = 0; i < buf.length; i++) buf[i] = Math.floor(Math.random() * 256);
   return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function getStoredSpotifyVolume(): number {
+  if (typeof window === 'undefined') return SPOTIFY_VOLUME_DEFAULT;
+  const raw = window.localStorage.getItem(SPOTIFY_VOLUME_STORAGE_KEY);
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return SPOTIFY_VOLUME_DEFAULT;
+  return Math.max(0, Math.min(1, parsed));
 }
 
 function useSectorTime(): string {
@@ -202,11 +214,17 @@ function VideoPlayer({ src, isPlaying, videoRef, contentWidth }: VideoPlayerProp
 function SpotifySourcePanel() {
   const { status, login, logout, error } = useSpotifyAuth();
   const { playerState, playbackState, controls } = useSpotifyEngine_();
+  const [volume, setVolume] = useState<number>(() => getStoredSpotifyVolume());
+  const [browserTab, setBrowserTab] = useState<SpotifyBrowserTab>('playlists');
 
   const track = playbackState?.track_window?.current_track;
   const isPlaying = !(playbackState?.paused ?? true);
   const posMs = playbackState?.position ?? 0;
   const durMs = track?.duration_ms ?? 0;
+
+  useEffect(() => {
+    void controls.setVolume(volume);
+  }, [controls, volume]);
 
   const statusColor =
     playerState === 'ready' || playerState === 'playing' ? SPOTIFY_GREEN
@@ -350,8 +368,8 @@ function SpotifySourcePanel() {
             </button>
           </div>
           <VolumeControl
-            volume={0.7}
-            onChange={(v) => void controls.setVolume(v)}
+            volume={volume}
+            onChange={setVolume}
           />
         </>
       )}
@@ -360,6 +378,40 @@ function SpotifySourcePanel() {
       {status !== 'authenticated' && status !== 'authenticating' && (
         <div style={{ color: LCARS.subText, fontSize: 10, fontFamily: 'monospace', letterSpacing: 1, textAlign: 'center' }}>
           Connect your Spotify Premium account to stream directly in this player.
+        </div>
+      )}
+
+      {status === 'authenticated' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button
+              type="button"
+              onClick={() => setBrowserTab('playlists')}
+              aria-pressed={browserTab === 'playlists'}
+              style={{
+                background: browserTab === 'playlists' ? `${SPOTIFY_GREEN}22` : 'transparent',
+                color: browserTab === 'playlists' ? SPOTIFY_GREEN : LCARS.subText,
+                border: `1px solid ${browserTab === 'playlists' ? `${SPOTIFY_GREEN}66` : `${LCARS.subText}33`}`,
+                borderRadius: 3, fontSize: 9, letterSpacing: 2, fontWeight: 700, padding: '4px 8px', cursor: 'pointer',
+              }}
+            >
+              PLAYLISTS
+            </button>
+            <button
+              type="button"
+              onClick={() => setBrowserTab('search')}
+              aria-pressed={browserTab === 'search'}
+              style={{
+                background: browserTab === 'search' ? `${SPOTIFY_GREEN}22` : 'transparent',
+                color: browserTab === 'search' ? SPOTIFY_GREEN : LCARS.subText,
+                border: `1px solid ${browserTab === 'search' ? `${SPOTIFY_GREEN}66` : `${LCARS.subText}33`}`,
+                borderRadius: 3, fontSize: 9, letterSpacing: 2, fontWeight: 700, padding: '4px 8px', cursor: 'pointer',
+              }}
+            >
+              SEARCH
+            </button>
+          </div>
+          {browserTab === 'playlists' ? <SpotifyPlaylistPanel /> : <SpotifySearchPanel />}
         </div>
       )}
     </div>
@@ -475,6 +527,16 @@ export function VoxNovaPlayer() {
     engine.togglePlay();
   }, [engine, selectedTrack, audioSource]);
 
+  const handleLocalPrev = useCallback(() => {
+    if (audioSource !== 'local') return;
+    void handlePrev();
+  }, [audioSource, handlePrev]);
+
+  const handleLocalNext = useCallback(() => {
+    if (audioSource !== 'local') return;
+    void handleNext();
+  }, [audioSource, handleNext]);
+
   useEffect(() => {
     window.addEventListener('keydown', handleSpacePlayPause);
     return () => window.removeEventListener('keydown', handleSpacePlayPause);
@@ -566,7 +628,7 @@ export function VoxNovaPlayer() {
               {/* Transport */}
               <div style={{ alignSelf: 'center', width: CONTENT_WIDTH, border: `1px solid ${LCARS.peach}33`, borderRadius: 4, padding: '12px 16px', background: LCARS_BOX_COLORS[2], display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <SeekBar currentTime={engine.currentTime} duration={engine.duration} onSeek={engine.seek} disabled={!selectedTrack} />
-                <PlayerControls engine={engine} onPrev={handlePrev} onNext={handleNext} disabled={!selectedTrack} />
+                <PlayerControls engine={engine} onPrev={handleLocalPrev} onNext={handleLocalNext} disabled={!selectedTrack} />
                 <VolumeControl volume={engine.volume} onChange={engine.setVolume} />
               </div>
 

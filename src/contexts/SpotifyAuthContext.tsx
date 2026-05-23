@@ -141,6 +141,7 @@ async function doRefresh(refreshToken: string): Promise<{
 interface SpotifyAuthContextValue extends SpotifyAuthState {
   login: () => Promise<void>;
   logout: () => void;
+  getValidToken: () => Promise<string | null>;
 }
 
 const SpotifyAuthContext = createContext<SpotifyAuthContextValue | null>(null);
@@ -282,8 +283,46 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
     setState({ status: 'idle', accessToken: null, expiresAt: null, error: null });
   }, [clearStorage]);
 
+  const getValidToken = useCallback(async (): Promise<string | null> => {
+    const accessToken = storeGet(TOKEN_KEY);
+    const expiresAt = Number(storeGet(EXPIRY_KEY) ?? 0);
+    if (accessToken && Date.now() + 5_000 < expiresAt) return accessToken;
+
+    const refreshToken = storeGet(REFRESH_KEY);
+    if (!refreshToken) return null;
+
+    try {
+      if (!refreshPromiseRef.current) {
+        refreshPromiseRef.current = doRefresh(refreshToken)
+          .then((data) => {
+            const newExpiry = Date.now() + data.expires_in * 1000;
+            storeSet(TOKEN_KEY, data.access_token);
+            if (data.refresh_token) storeSet(REFRESH_KEY, data.refresh_token);
+            storeSet(EXPIRY_KEY, String(newExpiry));
+            setState({
+              status: 'authenticated',
+              accessToken: data.access_token,
+              expiresAt: newExpiry,
+              error: null,
+            });
+            scheduleRefresh(newExpiry);
+          })
+          .catch((err) => {
+            clearStorage();
+            setState({ status: 'error', accessToken: null, expiresAt: null, error: 'Token refresh failed. Please log in again.' });
+            throw err;
+          })
+          .finally(() => { refreshPromiseRef.current = null; });
+      }
+      await refreshPromiseRef.current;
+      return storeGet(TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  }, [clearStorage, scheduleRefresh]);
+
   return (
-    <SpotifyAuthContext.Provider value={{ ...state, login, logout }}>
+    <SpotifyAuthContext.Provider value={{ ...state, login, logout, getValidToken }}>
       {children}
     </SpotifyAuthContext.Provider>
   );
