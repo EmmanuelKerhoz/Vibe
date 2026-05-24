@@ -4,7 +4,7 @@
  * Expanding a row loads and shows its tracks; clicking a track plays it
  * via context_uri so Spotify handles shuffle / repeat / radio natively.
  */
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useSpotifyPlaylists, formatMs } from './useSpotifyPlaylists';
 import { useSpotifyEngine_ } from '../../contexts/SpotifyEngineContext';
 import { LCARS } from './lcarsTheme';
@@ -176,6 +176,10 @@ export function SpotifyPlaylistPanel() {
   const { controls, playbackState } = useSpotifyEngine_();
   const [openId, setOpenId] = useState<string | null>(null);
   const headerButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  useEffect(() => {
+    headerButtonRefs.current = headerButtonRefs.current.slice(0, playlists.length);
+  }, [playlists.length]);
 
   const currentUri = playbackState?.track_window?.current_track?.uri ?? null;
 
