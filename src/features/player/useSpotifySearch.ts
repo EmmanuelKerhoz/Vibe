@@ -50,6 +50,9 @@ const SpotifySearchResponseSchema = z.object({
   }).optional(),
 });
 
+// Feb 2026: Spotify enforces limit ≤ 10 for apps in Development Mode.
+const SEARCH_LIMIT = 10;
+
 export function useSpotifySearch(): SpotifySearchState {
   const { status } = useSpotifyAuth();
   const { request, getErrorMessage } = useSpotifyApiClient();
@@ -75,10 +78,8 @@ export function useSpotifySearch(): SpotifySearchState {
     setSearching(true);
     setError(null);
     try {
-      // `q` first per Spotify docs convention; type & limit follow.
-      // Market omitted — the Bearer token scopes availability to the
-      // user's account country natively.
-      const endpoint = `https://api.spotify.com/v1/search?q=${encodeURIComponent(term)}&type=track&limit=25`;
+      // limit capped at 10 — Feb 2026 Spotify Dev Mode restriction.
+      const endpoint = `https://api.spotify.com/v1/search?q=${encodeURIComponent(term)}&type=track&limit=${SEARCH_LIMIT}`;
       const data = await request(
         endpoint,
         { parse: (payload) => SpotifySearchResponseSchema.parse(payload) },

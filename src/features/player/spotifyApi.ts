@@ -3,13 +3,13 @@ import type { SpotifyTokenProvider } from '../../types/spotify';
 /**
  * Shared helpers for Spotify Web API REST calls.
  *
- * Two responsibilities the previous code lacked:
+ * Three responsibilities:
  *
  *  1) **401 recovery** — When Spotify rejects a cached access token (server-side
  *     revocation, refresh-token rotation race, clock skew, scope change), the
  *     first call simply throws and the user is stuck. `spotifyFetch` retries
  *     once with a force-refreshed token before giving up. This is the standard
- *     Spotify SDK pattern and fixes the recurring 401 on `/playlists/{id}/tracks`
+ *     Spotify SDK pattern and fixes the recurring 401 on `/playlists/{id}/items`
  *     even though the Web Playback SDK is happily connected with the same
  *     credentials.
  *
@@ -17,6 +17,10 @@ import type { SpotifyTokenProvider } from '../../types/spotify';
  *     `{ error: { status, message } }`. Surfacing `error.message` turns an
  *     opaque "Spotify API 400" into actionable info ("invalid id", "malformed
  *     query", etc.) for both users and the dev console.
+ *
+ *  3) **500 retry** — Spotify sporadically returns 500 on playlist/track
+ *     endpoints (ghosted tracks, regional unavailability). `spotifyFetch` retries
+ *     up to 2 times with a 1 s delay before surfacing the error.
  */
 
 export interface SpotifyFetchOptions<T = unknown> {
@@ -31,7 +35,7 @@ export interface SpotifyFetchOptions<T = unknown> {
 
 /**
  * Custom error carrying the HTTP status so callers can branch on it
- * (e.g. logout on persistent 401).
+ * (e.g. logout on persistent 401, "inaccessible" label on 403).
  */
 export class SpotifyApiError extends Error {
   readonly status: number;
@@ -61,6 +65,10 @@ async function extractErrorMessage(res: Response): Promise<string> {
   return res.statusText || 'request failed';
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 const forceRefreshInFlight = new WeakMap<SpotifyTokenProvider['forceRefreshToken'], Promise<string | null>>();
 
 function forceRefreshTokenOnce(tokens: SpotifyTokenProvider): Promise<string | null> {
@@ -75,9 +83,14 @@ function forceRefreshTokenOnce(tokens: SpotifyTokenProvider): Promise<string | n
   return pending;
 }
 
+const MAX_500_RETRIES = 2;
+const RETRY_DELAY_MS  = 1_000;
+
 /**
- * Performs a Spotify Web API call with one automatic 401 retry after a
- * forced token refresh. Throws `SpotifyApiError` on non-2xx responses.
+ * Performs a Spotify Web API call with:
+ *  - one automatic 401 retry after a forced token refresh
+ *  - up to 2 retries on 500 errors (1 s delay between attempts)
+ * Throws `SpotifyApiError` on non-2xx responses after all retries.
  */
 export async function spotifyFetch<T>(
   url: string,
@@ -110,6 +123,15 @@ export async function spotifyFetch<T>(
       throw new SpotifyApiError(401, msg);
     }
     token = refreshed;
+    res = await doOne(token);
+  }
+
+  // 500 → Spotify transient error; retry up to MAX_500_RETRIES times.
+  let attempts = 0;
+  while (res.status === 500 && attempts < MAX_500_RETRIES) {
+    if (signal?.aborted) break;
+    await sleep(RETRY_DELAY_MS);
+    attempts++;
     res = await doOne(token);
   }
 

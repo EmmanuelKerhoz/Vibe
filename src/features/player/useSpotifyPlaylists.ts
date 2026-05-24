@@ -5,11 +5,17 @@
  * - Uses SpotifyAuthContext tokens via shared spotify API client.
  * - AbortController cancels in-flight requests on unmount / token change.
  * - Playlist tracks are loaded on-demand when a playlist is expanded.
+ *
+ * Feb 2026 migration:
+ *   - /playlists/{id}/tracks → /playlists/{id}/items (renamed endpoint)
+ *   - 403 on playlist tracks = playlist inaccessible (collaborative/shared);
+ *     surfaced as a user-visible error instead of silent TAP TO LOAD.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ZodError, z } from 'zod';
 import { useSpotifyAuth } from '../../contexts/SpotifyAuthContext';
 import { useSpotifyApiClient } from './useSpotifyApiClient';
+import { SpotifyApiError } from './spotifyApi';
 
 export interface SpotifyPlaylist {
   id: string;
@@ -62,6 +68,7 @@ const PLAYLIST_PAGE_SCHEMA = z.object({
   next: z.string().nullable(),
 });
 
+// Feb 2026: endpoint renamed from /tracks to /items; response shape identical.
 const TRACK_PAGE_SCHEMA = z.object({
   next: z.string().nullable(),
   items: z.array(
@@ -211,7 +218,8 @@ export function useSpotifyPlaylists(): PlaylistsState {
 
     const fetchAll = async () => {
       const collected: SpotifyTrackItem[] = [];
-      let url: string | null = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/tracks?limit=50`;
+      // Feb 2026: endpoint renamed /tracks → /items
+      let url: string | null = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/items?limit=50`;
 
       while (url) {
         const page: TrackPage = await request<TrackPage>(url, {
@@ -241,7 +249,10 @@ export function useSpotifyPlaylists(): PlaylistsState {
 
     fetchAll().catch((err: unknown) => {
       if ((err as Error)?.name === 'AbortError') return;
-      if (err instanceof ZodError) {
+      // Feb 2026: 403 = playlist inaccessible (shared/collaborative outside whitelist)
+      if (err instanceof SpotifyApiError && err.status === 403) {
+        setTracksError((prev) => ({ ...prev, [playlistId]: 'Playlist inaccessible — not available in Dev Mode.' }));
+      } else if (err instanceof ZodError) {
         setTracksError((prev) => ({ ...prev, [playlistId]: 'Spotify returned an unexpected tracks payload.' }));
       } else {
         setTracksError((prev) => ({ ...prev, [playlistId]: getErrorMessage(err, 'Failed to load tracks') }));
