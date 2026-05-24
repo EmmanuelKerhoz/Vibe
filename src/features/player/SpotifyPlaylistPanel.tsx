@@ -92,7 +92,6 @@ function TrackRow({ uri, name, artists, durationMs, albumArtUrl, isPlayable, isA
 // ── Playlist row (accordion header) ──────────────────────────────────────────
 
 interface PlaylistRowProps {
-  id: string;
   name: string;
   imageUrl: string | null;
   totalTracks: number;
@@ -106,7 +105,6 @@ interface PlaylistRowProps {
 }
 
 function PlaylistRow({
-  id,
   name,
   imageUrl,
   totalTracks,
@@ -128,7 +126,6 @@ function PlaylistRow({
       ref={(element) => registerButton(index, element)}
       aria-expanded={isOpen}
       aria-controls={panelId}
-      data-playlist-id={id}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -306,7 +303,6 @@ export function SpotifyPlaylistPanel() {
               return (
                 <div key={pl.id} role="listitem">
                   <PlaylistRow
-                    id={pl.id}
                     name={pl.name}
                     imageUrl={pl.imageUrl}
                     totalTracks={pl.totalTracks}

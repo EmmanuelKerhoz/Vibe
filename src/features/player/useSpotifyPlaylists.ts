@@ -88,10 +88,18 @@ const TRACK_PAGE_SCHEMA = z.object({
 type PlaylistPage = z.infer<typeof PLAYLIST_PAGE_SCHEMA>;
 type TrackPage = z.infer<typeof TRACK_PAGE_SCHEMA>;
 
-const PLAYLIST_CACHE_TTL_MS = 2 * 60_000;
+const PLAYLISTS_CACHE_TTL_MS = 2 * 60_000;
 
 let playlistsCache: { value: SpotifyPlaylist[]; fetchedAt: number } | null = null;
 const tracksCache = new Map<string, SpotifyTrackItem[]>();
+let cacheAccessToken: string | null = null;
+
+function syncCacheScope(accessToken: string | null): void {
+  if (cacheAccessToken === accessToken) return;
+  playlistsCache = null;
+  tracksCache.clear();
+  cacheAccessToken = accessToken;
+}
 
 export function useSpotifyPlaylists(): PlaylistsState {
   const { status, accessToken } = useSpotifyAuth();
@@ -111,6 +119,15 @@ export function useSpotifyPlaylists(): PlaylistsState {
   const reload = useCallback(() => setTick((t) => t + 1), []);
 
   useEffect(() => {
+    syncCacheScope(accessToken);
+    setTracks(Object.fromEntries(tracksCache.entries()));
+    setTracksLoading({});
+    setTracksError({});
+  }, [accessToken]);
+
+  useEffect(() => {
+    syncCacheScope(accessToken);
+
     if (status !== 'authenticated' || !accessToken) {
       setPlaylists([]);
       setLoading(false);
@@ -120,7 +137,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
     const hasFreshCache =
       tick === 0 &&
       playlistsCache !== null &&
-      Date.now() - playlistsCache.fetchedAt < PLAYLIST_CACHE_TTL_MS;
+      Date.now() - playlistsCache.fetchedAt < PLAYLISTS_CACHE_TTL_MS;
     if (hasFreshCache && playlistsCache) {
       setPlaylists(playlistsCache.value);
       setError(null);
@@ -176,9 +193,11 @@ export function useSpotifyPlaylists(): PlaylistsState {
   }, [status, accessToken, request, getErrorMessage, tick]);
 
   const fetchTracks = useCallback((playlistId: string) => {
-    if (status !== 'authenticated' || !accessToken || tracksLoading[playlistId]) return;
+    syncCacheScope(accessToken);
 
+    if (status !== 'authenticated' || !accessToken) return;
     if (tracks[playlistId]) return;
+    if (tracksLoading[playlistId]) return;
     const cachedTracks = tracksCache.get(playlistId);
     if (cachedTracks) {
       setTracks((prev) => ({ ...prev, [playlistId]: cachedTracks }));

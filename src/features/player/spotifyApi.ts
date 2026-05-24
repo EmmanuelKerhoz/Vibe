@@ -61,17 +61,17 @@ async function extractErrorMessage(res: Response): Promise<string> {
   return res.statusText || 'request failed';
 }
 
-const forceRefreshInFlight = new WeakMap<SpotifyTokenProvider, Promise<string | null>>();
+const forceRefreshInFlight = new WeakMap<SpotifyTokenProvider['forceRefreshToken'], Promise<string | null>>();
 
 function forceRefreshTokenOnce(tokens: SpotifyTokenProvider): Promise<string | null> {
-  const existing = forceRefreshInFlight.get(tokens);
+  const refreshFn = tokens.forceRefreshToken;
+  const existing = forceRefreshInFlight.get(refreshFn);
   if (existing) return existing;
-  const pending = tokens
-    .forceRefreshToken()
+  const pending = refreshFn()
     .finally(() => {
-      forceRefreshInFlight.delete(tokens);
+      forceRefreshInFlight.delete(refreshFn);
     });
-  forceRefreshInFlight.set(tokens, pending);
+  forceRefreshInFlight.set(refreshFn, pending);
   return pending;
 }
 
