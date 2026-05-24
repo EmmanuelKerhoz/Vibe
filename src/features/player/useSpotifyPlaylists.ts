@@ -11,10 +11,15 @@
  *   - Only playlists owned by the current user are shown; shared/collaborative
  *     playlists are excluded at source to avoid Dev Mode 403s.
  *
- * May 2026:
+ * May 2026 (v1.31.0.55):
  *   - TRACK_PAGE_SCHEMA hardened against podcast episodes and local files.
- *     Items with type !== 'track' or uri not starting with 'spotify:track:'
- *     are silently skipped instead of throwing ZodError.
+ *     Items with uri not starting with 'spotify:track:' are silently skipped.
+ *
+ * May 2026 (v1.31.0.56):
+ *   - fetchTracks: retry allowed when previous attempt errored (tap again
+ *     clears error and re-fetches instead of silently no-op).
+ *   - playlistsCache: reload() always bypasses cache regardless of TTL,
+ *     so stale module-level cache from before owner-filter deploy is busted.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ZodError, z } from 'zod';
@@ -82,15 +87,14 @@ const PLAYLIST_PAGE_SCHEMA = z.object({
  * TRACK_PAGE_SCHEMA — resilient to heterogeneous playlist items.
  *
  * A Spotify playlist /items response can contain:
- *   - Regular tracks      (type: 'track', uri: 'spotify:track:…')
- *   - Podcast episodes    (type: 'episode', uri: 'spotify:episode:…')
- *   - Local files         (id: null, uri: 'spotify:local:…')
- *   - Null items          (track: null — deleted/unavailable)
+ *   - Regular tracks   (type: 'track', uri: 'spotify:track:…')
+ *   - Podcast episodes (type: 'episode', uri: 'spotify:episode:…')
+ *   - Local files      (id: null, uri: 'spotify:local:…')
+ *   - Null items       (track: null — deleted/unavailable)
  *
- * Using z.object().passthrough() on the track shape means unknown fields
- * (e.g. episode-only props like `show`, `release_date`) are preserved but
- * don't cause a ZodError. The filter in fetchTracks already discards
- * anything that isn't a real streamable track.
+ * .passthrough() means unknown fields (episode-only props) are ignored
+ * instead of throwing ZodError. The filter in fetchTracks discards
+ * anything that isn't a real spotify:track: URI.
  */
 const TRACK_ITEM_SCHEMA = z
   .object({
@@ -121,6 +125,8 @@ const TRACK_PAGE_SCHEMA = z.object({
 type PlaylistPage = z.infer<typeof PLAYLIST_PAGE_SCHEMA>;
 type TrackPage = z.infer<typeof TRACK_PAGE_SCHEMA>;
 
+// TTL kept at 2 min but only used when tick === 0 (initial mount).
+// reload() increments tick, which always bypasses cache.
 const PLAYLISTS_CACHE_TTL_MS = 2 * 60_000;
 
 let playlistsCache: { value: SpotifyPlaylist[]; fetchedAt: number } | null = null;
@@ -148,8 +154,17 @@ export function useSpotifyPlaylists(): PlaylistsState {
   const [tracksError, setTracksError] = useState<Record<string, string | null>>({});
 
   const abortRef = useRef<AbortController | null>(null);
+  // tick === 0: use cache if fresh. tick > 0: always refetch (reload() call).
   const [tick, setTick] = useState(0);
-  const reload = useCallback(() => setTick((t) => t + 1), []);
+  const reload = useCallback(() => {
+    // Bust module-level cache so the next fetch re-filters with current userId.
+    playlistsCache = null;
+    tracksCache.clear();
+    setTracks({});
+    setTracksLoading({});
+    setTracksError({});
+    setTick((t) => t + 1);
+  }, []);
 
   useEffect(() => {
     syncCacheScope(accessToken);
@@ -167,6 +182,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
       return;
     }
 
+    // Only use cache on initial mount (tick === 0) and within TTL.
     const hasFreshCache =
       tick === 0 &&
       playlistsCache !== null &&
@@ -235,70 +251,86 @@ export function useSpotifyPlaylists(): PlaylistsState {
     return () => ctrl.abort();
   }, [status, accessToken, request, getErrorMessage, tick]);
 
-  const fetchTracks = useCallback((playlistId: string) => {
-    syncCacheScope(accessToken);
+  const fetchTracks = useCallback(
+    (playlistId: string) => {
+      syncCacheScope(accessToken);
 
-    if (status !== 'authenticated' || !accessToken) return;
-    if (tracks[playlistId]) return;
-    if (tracksLoading[playlistId]) return;
-    const cachedTracks = tracksCache.get(playlistId);
-    if (cachedTracks) {
-      setTracks((prev) => ({ ...prev, [playlistId]: cachedTracks }));
-      return;
-    }
+      if (status !== 'authenticated' || !accessToken) return;
+      // Only skip if tracks already loaded successfully OR currently in flight.
+      // A previous error (tracksError set) allows retry — tap again re-fetches.
+      if (tracks[playlistId]) return;
+      if (tracksLoading[playlistId]) return;
 
-    const ctrl = new AbortController();
+      const cachedTracks = tracksCache.get(playlistId);
+      if (cachedTracks) {
+        setTracks((prev) => ({ ...prev, [playlistId]: cachedTracks }));
+        return;
+      }
 
-    setTracksLoading((prev) => ({ ...prev, [playlistId]: true }));
-    setTracksError((prev) => ({ ...prev, [playlistId]: null }));
+      const ctrl = new AbortController();
 
-    const fetchAll = async () => {
-      const collected: SpotifyTrackItem[] = [];
-      // Feb 2026: endpoint renamed /tracks → /items
-      let url: string | null = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/items?limit=50`;
+      // Clear any previous error before attempting fetch.
+      setTracksLoading((prev) => ({ ...prev, [playlistId]: true }));
+      setTracksError((prev) => ({ ...prev, [playlistId]: null }));
 
-      while (url) {
-        const page: TrackPage = await request<TrackPage>(url, {
-          signal: ctrl.signal,
-          parse: (payload) => TRACK_PAGE_SCHEMA.parse(payload),
-        });
-        for (const entry of page.items) {
-          const t = entry.track;
-          // Skip null items (deleted tracks), episodes, local files —
-          // only process real streamable spotify:track: URIs with a valid id.
-          if (!t) continue;
-          if (!t.uri || !t.uri.startsWith('spotify:track:')) continue;
-          if (!t.id) continue;
-          collected.push({
-            id: t.id,
-            name: t.name,
-            uri: t.uri,
-            durationMs: t.duration_ms ?? 0,
-            artists: (t.artists ?? []).map((a) => a.name).join(', '),
-            albumArtUrl: t.album?.images?.[0]?.url ?? null,
-            isPlayable: t.is_playable !== false,
+      const fetchAll = async () => {
+        const collected: SpotifyTrackItem[] = [];
+        // Feb 2026: endpoint renamed /tracks → /items
+        let url: string | null = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/items?limit=50`;
+
+        while (url) {
+          const page: TrackPage = await request<TrackPage>(url, {
+            signal: ctrl.signal,
+            parse: (payload) => TRACK_PAGE_SCHEMA.parse(payload),
           });
+          for (const entry of page.items) {
+            const t = entry.track;
+            // Skip null items (deleted), episodes, local files.
+            if (!t) continue;
+            if (!t.uri || !t.uri.startsWith('spotify:track:')) continue;
+            if (!t.id) continue;
+            collected.push({
+              id: t.id,
+              name: t.name,
+              uri: t.uri,
+              durationMs: t.duration_ms ?? 0,
+              artists: (t.artists ?? []).map((a) => a.name).join(', '),
+              albumArtUrl: t.album?.images?.[0]?.url ?? null,
+              isPlayable: t.is_playable !== false,
+            });
+          }
+          url = page.next;
         }
-        url = page.next;
-      }
 
-      tracksCache.set(playlistId, collected);
-      setTracks((prev) => ({ ...prev, [playlistId]: collected }));
-      setTracksLoading((prev) => ({ ...prev, [playlistId]: false }));
-    };
+        // Only cache on success.
+        tracksCache.set(playlistId, collected);
+        setTracks((prev) => ({ ...prev, [playlistId]: collected }));
+        setTracksLoading((prev) => ({ ...prev, [playlistId]: false }));
+      };
 
-    fetchAll().catch((err: unknown) => {
-      if ((err as Error)?.name === 'AbortError') return;
-      if (err instanceof SpotifyApiError && err.status === 403) {
-        setTracksError((prev) => ({ ...prev, [playlistId]: 'Playlist inaccessible — not available in Dev Mode.' }));
-      } else if (err instanceof ZodError) {
-        setTracksError((prev) => ({ ...prev, [playlistId]: 'Spotify returned an unexpected tracks payload.' }));
-      } else {
-        setTracksError((prev) => ({ ...prev, [playlistId]: getErrorMessage(err, 'Failed to load tracks') }));
-      }
-      setTracksLoading((prev) => ({ ...prev, [playlistId]: false }));
-    });
-  }, [status, accessToken, tracksLoading, tracks, request, getErrorMessage]);
+      fetchAll().catch((err: unknown) => {
+        if ((err as Error)?.name === 'AbortError') return;
+        if (err instanceof SpotifyApiError && err.status === 403) {
+          setTracksError((prev) => ({
+            ...prev,
+            [playlistId]: 'Playlist inaccessible — not available in Dev Mode.',
+          }));
+        } else if (err instanceof ZodError) {
+          setTracksError((prev) => ({
+            ...prev,
+            [playlistId]: 'Spotify returned an unexpected tracks payload.',
+          }));
+        } else {
+          setTracksError((prev) => ({
+            ...prev,
+            [playlistId]: getErrorMessage(err, 'Failed to load tracks'),
+          }));
+        }
+        setTracksLoading((prev) => ({ ...prev, [playlistId]: false }));
+      });
+    },
+    [status, accessToken, tracksLoading, tracks, request, getErrorMessage],
+  );
 
   return { playlists, loading, error, tracks, tracksLoading, tracksError, fetchTracks, reload };
 }
