@@ -7,6 +7,12 @@
  *   - Refresh proactif via setTimeout (60s avant expiry)
  *   - Mutex refreshPromiseRef : 0 double-refresh concurrent
  *   - Storage : localStorage + memStore fallback (contextes sandboxés)
+ *
+ * v1.31.0.62 — Re-hydration post-mount :
+ *   useState() init est synchrone ; si localStorage est bloqué, memStore
+ *   est vide au premier render → status:'idle'. Un effet de re-sync au
+ *   montage lit storeGet() après que le callback OAuth a pu peupler
+ *   memStore, et flip vers 'authenticated' si un token valide est trouvé.
  */
 import React, {
   createContext,
@@ -34,7 +40,6 @@ const CLIENT_ID: string = _rawClientId;
 const REDIRECT_URI = (() => {
   if (typeof window === 'undefined') return '';
   const { protocol, host } = window.location;
-  // Dev: http://127.0.0.1:5173 | Prod: https://lyricist-emmanuelkerhozs-projects.vercel.app
   return `${protocol}//${host}`;
 })();
 
@@ -58,7 +63,6 @@ const REFRESH_KEY  = 'spotify_refresh_token';
 const EXPIRY_KEY   = 'spotify_token_expiry';
 const VERIFIER_KEY = 'spotify_pkce_verifier';
 const STATE_KEY    = 'spotify_pkce_state';
-// 60 000 ms aligns with the 60s proactive refresh window in scheduleRefresh
 const TOKEN_EXPIRY_BUFFER_MS = 60_000;
 
 // ---------------------------------------------------------------------------
@@ -149,13 +153,6 @@ interface SpotifyAuthContextValue extends SpotifyAuthState {
   login: () => Promise<void>;
   logout: () => void;
   getValidToken: () => Promise<string | null>;
-  /**
-   * Force a token refresh regardless of the cached `expiresAt`.
-   * Use this after a Spotify REST call returns 401 (cached token rejected
-   * server-side, e.g. revoked, rotated, or clock-skewed). Shares the same
-   * mutex as `getValidToken` to avoid concurrent refresh races.
-   * Returns null if no refresh token is available or the refresh failed.
-   */
   forceRefreshToken: () => Promise<string | null>;
 }
 
@@ -175,7 +172,6 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
   });
 
   const refreshTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Mutex: évite les doubles refresh concurrents
   const refreshPromiseRef = useRef<Promise<void> | null>(null);
 
   const clearStorage = useCallback(() => {
@@ -190,8 +186,6 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
     refreshTimerRef.current = setTimeout(async () => {
       const refreshToken = storeGet(REFRESH_KEY);
       if (!refreshToken) return;
-
-      // Mutex
       if (refreshPromiseRef.current) return;
       refreshPromiseRef.current = doRefresh(refreshToken)
         .then((data) => {
@@ -215,7 +209,24 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
     }, delay);
   }, [clearStorage]);
 
-  // Gestion du callback OAuth au montage
+  // ── Re-hydration post-mount ──────────────────────────────────────────────
+  // useState() init is synchronous; if localStorage is sandboxed (Vercel
+  // preview / iframe), memStore is empty at first render → status:'idle'.
+  // The OAuth callback useEffect populates memStore asynchronously. This
+  // effect runs once after mount and promotes to 'authenticated' if a valid
+  // token is now available — without waiting for a full page reload.
+  useEffect(() => {
+    if (state.status !== 'idle') return;
+    const accessToken = storeGet(TOKEN_KEY);
+    const expiresAt   = Number(storeGet(EXPIRY_KEY) ?? 0);
+    if (accessToken && Date.now() < expiresAt) {
+      setState({ status: 'authenticated', accessToken, expiresAt, error: null });
+      scheduleRefresh(expiresAt);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── OAuth callback handler ───────────────────────────────────────────────
   useEffect(() => {
     const run = async () => {
       const params      = new URLSearchParams(window.location.search);
@@ -223,7 +234,7 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
       const stateParam  = params.get('state');
       const errorParam  = params.get('error');
 
-      if (!code && !errorParam) return; // Pas un callback Spotify
+      if (!code && !errorParam) return;
 
       if (errorParam) {
         setState({ status: 'error', accessToken: null, expiresAt: null, error: `Spotify auth denied: ${errorParam}` });
@@ -298,10 +309,6 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
     setState({ status: 'idle', accessToken: null, expiresAt: null, error: null });
   }, [clearStorage]);
 
-  /**
-   * Run a refresh through the shared mutex. Multiple callers awaiting at
-   * the same time will all observe the result of a single underlying request.
-   */
   const refreshWithMutex = useCallback(async (refreshToken: string): Promise<string | null> => {
     try {
       if (!refreshPromiseRef.current) {
