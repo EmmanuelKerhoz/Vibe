@@ -10,6 +10,11 @@
  *   - /playlists/{id}/tracks → /playlists/{id}/items (renamed endpoint)
  *   - Only playlists owned by the current user are shown; shared/collaborative
  *     playlists are excluded at source to avoid Dev Mode 403s.
+ *
+ * May 2026:
+ *   - TRACK_PAGE_SCHEMA hardened against podcast episodes and local files.
+ *     Items with type !== 'track' or uri not starting with 'spotify:track:'
+ *     are silently skipped instead of throwing ZodError.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ZodError, z } from 'zod';
@@ -73,27 +78,43 @@ const PLAYLIST_PAGE_SCHEMA = z.object({
   next: z.string().nullable(),
 });
 
-// Feb 2026: endpoint renamed from /tracks to /items; response shape identical.
+/**
+ * TRACK_PAGE_SCHEMA — resilient to heterogeneous playlist items.
+ *
+ * A Spotify playlist /items response can contain:
+ *   - Regular tracks      (type: 'track', uri: 'spotify:track:…')
+ *   - Podcast episodes    (type: 'episode', uri: 'spotify:episode:…')
+ *   - Local files         (id: null, uri: 'spotify:local:…')
+ *   - Null items          (track: null — deleted/unavailable)
+ *
+ * Using z.object().passthrough() on the track shape means unknown fields
+ * (e.g. episode-only props like `show`, `release_date`) are preserved but
+ * don't cause a ZodError. The filter in fetchTracks already discards
+ * anything that isn't a real streamable track.
+ */
+const TRACK_ITEM_SCHEMA = z
+  .object({
+    id: z.string().nullable(),
+    name: z.string(),
+    uri: z.string().nullable(),
+    type: z.string().optional(),
+    duration_ms: z.number().optional().default(0),
+    is_playable: z.boolean().optional(),
+    artists: z.array(z.object({ name: z.string() })).optional().default([]),
+    album: z
+      .object({
+        images: z.array(z.object({ url: z.string() })).optional(),
+      })
+      .optional(),
+  })
+  .passthrough();
+
 const TRACK_PAGE_SCHEMA = z.object({
   next: z.string().nullable(),
   items: z.array(
     z.object({
-      track: z
-        .object({
-          id: z.string().nullable(),
-          name: z.string(),
-          uri: z.string().nullable(),
-          duration_ms: z.number(),
-          is_playable: z.boolean().optional(),
-          artists: z.array(z.object({ name: z.string() })),
-          album: z
-            .object({
-              images: z.array(z.object({ url: z.string() })).optional(),
-            })
-            .optional(),
-        })
-        .nullable(),
-    }),
+      track: TRACK_ITEM_SCHEMA.nullable(),
+    }).passthrough(),
   ),
 });
 
@@ -243,13 +264,17 @@ export function useSpotifyPlaylists(): PlaylistsState {
         });
         for (const entry of page.items) {
           const t = entry.track;
-          if (!t?.uri || !t.uri.startsWith('spotify:track:') || !t.id) continue;
+          // Skip null items (deleted tracks), episodes, local files —
+          // only process real streamable spotify:track: URIs with a valid id.
+          if (!t) continue;
+          if (!t.uri || !t.uri.startsWith('spotify:track:')) continue;
+          if (!t.id) continue;
           collected.push({
             id: t.id,
             name: t.name,
             uri: t.uri,
-            durationMs: t.duration_ms,
-            artists: t.artists.map((a) => a.name).join(', '),
+            durationMs: t.duration_ms ?? 0,
+            artists: (t.artists ?? []).map((a) => a.name).join(', '),
             albumArtUrl: t.album?.images?.[0]?.url ?? null,
             isPlayable: t.is_playable !== false,
           });
