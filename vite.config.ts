@@ -94,8 +94,23 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,
         clientsClaim: true,
         cacheId: `vibe-${pkg.version}`,
-        globPatterns: ['**/*.{js,css,html,png,svg,woff,woff2}'],
+        // html excluded: index.html must never be precached so a new SW
+        // always serves the latest shell from the network.
+        globPatterns: ['**/*.{js,css,png,svg,woff,woff2}'],
         runtimeCaching: [
+          {
+            // Shell: / and any .html — always NetworkFirst so a new deploy
+            // is picked up immediately. Versioned cacheName invalidates
+            // stale entries from previous SW on every version bump.
+            urlPattern: ({ request }: { request: Request }) =>
+              request.destination === 'document',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: `vibe-shell-${pkg.version}`,
+              networkTimeoutSeconds: 3,
+              cacheableResponse: { statuses: [200] }
+            }
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
