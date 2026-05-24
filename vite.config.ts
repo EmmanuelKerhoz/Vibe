@@ -52,6 +52,7 @@ export default defineConfig(({ mode }) => ({
     twemojiPreloadPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
+      updateViaCache: 'none',
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
         name: 'VIBE — Lyricist Pro',
@@ -92,6 +93,7 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
+        cacheId: `vibe-${pkg.version}`,
         globPatterns: ['**/*.{js,css,html,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
