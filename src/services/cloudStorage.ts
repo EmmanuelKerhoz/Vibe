@@ -42,6 +42,9 @@ const MSAL_CLIENT_ID =
 const MSAL_AUTHORITY =
   (import.meta.env.VITE_MSGRAPH_AUTHORITY as string | undefined) ??
   'https://login.microsoftonline.com/common';
+const SHAREPOINT_ORIGIN =
+  (import.meta.env.VITE_SHAREPOINT_ORIGIN as string | undefined) ??
+  'https://your-tenant.sharepoint.com';
 const DROPBOX_APP_KEY =
   (import.meta.env.VITE_DROPBOX_APP_KEY as string | undefined) ?? '';
 const BOX_CLIENT_ID =
@@ -120,7 +123,7 @@ async function pickOneDrive(business: boolean): Promise<CloudFile | null> {
   // OneDrive File Picker v8 (SDK-less) ─ ouvre une fenêtre popup
   return new Promise(resolve => {
     const origin = business
-      ? 'https://your-tenant.sharepoint.com' // remplacé dynamiquement si besoin
+      ? SHAREPOINT_ORIGIN
       : 'https://onedrive.live.com';
 
     const pickerWindow = window.open(

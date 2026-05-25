@@ -27,6 +27,7 @@ export interface TopRibbonActions {
   openAbout: () => void;
   openKeyboardShortcuts: () => void;
   openPasteModal: () => void;
+  openCloudStorage: () => void;
   canPasteLyrics: boolean;
   isAnalyzing: boolean;
 }
@@ -45,6 +46,7 @@ export function useTopRibbonActions(): TopRibbonActions {
   const openAbout             = useCallback(() => openModal('about'),             [openModal]);
   const openKeyboardShortcuts = useCallback(() => openModal('keyboardShortcuts'), [openModal]);
   const openPasteModal        = useCallback(() => openModal('paste'),             [openModal]);
+  const openCloudStorage      = useCallback(() => openModal('cloudStorage'),      [openModal]);
 
   return {
     openVersionsModal,
@@ -56,6 +58,7 @@ export function useTopRibbonActions(): TopRibbonActions {
     openAbout,
     openKeyboardShortcuts,
     openPasteModal,
+    openCloudStorage,
     canPasteLyrics,
     isAnalyzing,
   };

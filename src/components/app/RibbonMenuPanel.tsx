@@ -16,7 +16,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   Download, Upload, Trash2, History,
   Library, FilePlus, Settings, Info, WandSparkles, ClipboardPaste, Heart,
-  KeyboardRegular, Music, AlignLeft,
+  KeyboardRegular, Music, AlignLeft, Cloud,
 } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
@@ -52,7 +52,7 @@ export function RibbonMenuPanel({
   const {
     openVersionsModal, openResetModal, openImport, openExport,
     openLibrary, openSettings, openAbout, openKeyboardShortcuts,
-    openPasteModal, canPasteLyrics,
+    openPasteModal, openCloudStorage, canPasteLyrics,
   } = useTopRibbonActions();
   const { t } = useTranslation();
 
@@ -130,6 +130,12 @@ export function RibbonMenuPanel({
         <button onClick={() => run(openImport)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Upload className="w-4 h-4 text-[var(--accent-color)]" />
           {t.ribbon.load_import ?? 'Load / Import'}
+        </button>
+      </Tooltip>
+      <Tooltip title={(t as { tooltips?: { importCloud?: string } }).tooltips?.importCloud ?? 'Import from OneDrive, Dropbox, Box or Google Drive'}>
+        <button onClick={() => run(openCloudStorage)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+          <Cloud className="w-4 h-4 text-[var(--accent-color)]" />
+          {(t as { menu?: { importCloud?: string } }).menu?.importCloud ?? 'Import from Cloud'}
         </button>
       </Tooltip>
       <Tooltip title={t.tooltips.export}>
