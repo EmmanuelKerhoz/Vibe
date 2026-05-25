@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cloudTrackTitle, detectCloudProvider, isCloudVideoUrl, normalizeCloudUrl } from './cloudProviders';
+import { cloudTrackTitle, detectCloudProvider, formatCloudProviderLabel, isCloudVideoUrl, normalizeCloudUrl } from './cloudProviders';
 
 describe('cloudProviders', () => {
   it('normalizes share links to direct download links by provider', () => {
@@ -25,5 +25,6 @@ describe('cloudProviders', () => {
     expect(isCloudVideoUrl('https://cdn.example.com/video.mkv')).toBe(true);
     expect(isCloudVideoUrl('https://cdn.example.com/audio.flac')).toBe(false);
     expect(cloudTrackTitle('https://cdn.example.com/folder/My%20Track.mp3')).toBe('My Track');
+    expect(formatCloudProviderLabel('onedrive-business')).toBe('ONEDRIVE BUSINESS');
   });
 });

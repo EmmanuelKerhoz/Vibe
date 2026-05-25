@@ -86,3 +86,7 @@ export function cloudTrackTitle(url: string): string {
     return 'cloud-track';
   }
 }
+
+export function formatCloudProviderLabel(provider: CloudProviderId): string {
+  return provider.replace(/-/g, ' ').toUpperCase();
+}

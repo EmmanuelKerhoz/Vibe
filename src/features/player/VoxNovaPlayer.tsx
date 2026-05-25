@@ -17,6 +17,7 @@ import { SpotifyPlaylistPanel } from './SpotifyPlaylistPanel';
 import { SpotifySearchPanel } from './SpotifySearchPanel';
 import { getStoredSpotifyVolume, SPOTIFY_VOLUME_STORAGE_KEY } from '../../hooks/useSpotifyEngine';
 import { ErrorBoundary } from '../../components/app/ErrorBoundary';
+import { formatCloudProviderLabel } from '../../utils/cloudProviders';
 
 const LIBRARY_CAPACITY = 50;
 const LCARS_BOX_COLORS = [
@@ -88,7 +89,7 @@ function formatDate(value?: string): string | null {
 
 function OneDriveMetaLine({ track }: { track: TrackEntry }) {
   const providerLabel = track.cloudProvider
-    ? track.cloudProvider.replace(/-/g, ' ').toUpperCase()
+    ? formatCloudProviderLabel(track.cloudProvider)
     : track.source.toUpperCase();
   const items: Array<{ label: string; value: string; color: string }> = [];
   items.push({
