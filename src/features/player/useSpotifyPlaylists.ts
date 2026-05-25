@@ -2,6 +2,12 @@
  * useSpotifyPlaylists
  * Fetches the authenticated user's playlists and, lazily, their tracks.
  *
+ * May 2026 (v1.31.0.65):
+ *   - fix: relinked tracks (id=null, uri=spotify:track:) no longer skipped.
+ *     The !t.id guard was rejecting tracks that Spotify returns with a null id
+ *     in playlist context but a valid id via Search (track relinking).
+ *     uri starting with spotify:track: is now the sole accept criterion.
+ *
  * May 2026 (v1.31.0.64):
  *   - skippedByType: split rejected playlist items by cause so the UI can
  *     distinguish local files from podcast episodes and other unsupported
@@ -291,13 +297,16 @@ export function useSpotifyPlaylists(): PlaylistsState {
               totalSkipped++;
               continue;
             }
-            if (!t.uri?.startsWith('spotify:track:') || !t.id) {
+            // Accept any spotify:track: uri regardless of whether id is null.
+            // Spotify returns id=null for relinked tracks in playlist responses
+            // while Search returns the same track with a populated id.
+            if (!t.uri?.startsWith('spotify:track:')) {
               skippedByType.unsupported++;
               totalSkipped++;
               continue;
             }
             collected.push({
-              id: t.id,
+              id: t.id ?? t.uri,
               name: t.name,
               uri: t.uri,
               durationMs: t.duration_ms ?? 0,
