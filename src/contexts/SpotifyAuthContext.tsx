@@ -304,7 +304,7 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
     void run();
   }, []);
 
-  // Planifier le refresh en un seul endroit dès que l'expiry authentifiée change.
+  // Schedule refresh in one place whenever the authenticated expiry changes.
   useEffect(() => {
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);

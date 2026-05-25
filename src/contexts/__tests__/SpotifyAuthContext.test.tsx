@@ -63,14 +63,17 @@ describe('SpotifyAuthContext', () => {
     const fetchMock = vi.fn(() => new Promise<Response>((resolve) => { resolveFetch = resolve; }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const { SpotifyAuthProvider, useSpotifyAuth } = await loadSpotifyAuthContext();
+    const { SpotifyAuthProvider, useSpotifyAuthActions, useSpotifyAuthState } = await loadSpotifyAuthContext();
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <SpotifyAuthProvider>{children}</SpotifyAuthProvider>
     );
-    const { result } = renderHook(() => useSpotifyAuth(), { wrapper });
+    const { result } = renderHook(() => ({
+      actions: useSpotifyAuthActions(),
+      state: useSpotifyAuthState(),
+    }), { wrapper });
 
     await act(async () => {
-      const manualRefresh = result.current.forceRefreshToken();
+      const manualRefresh = result.current.actions.forceRefreshToken();
       await vi.advanceTimersByTimeAsync(0);
       expect(fetchMock).toHaveBeenCalledTimes(1);
       resolveFetch?.(new Response(JSON.stringify({
@@ -83,7 +86,7 @@ describe('SpotifyAuthContext', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem(TOKEN_KEY)).toBe('fresh-token');
-    expect(result.current.accessToken).toBe('fresh-token');
+    expect(result.current.state.accessToken).toBe('fresh-token');
   });
 
   it('rejects invalid Spotify refresh payloads at runtime', async () => {
@@ -93,18 +96,21 @@ describe('SpotifyAuthContext', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
 
-    const { SpotifyAuthProvider, useSpotifyAuth } = await loadSpotifyAuthContext();
+    const { SpotifyAuthProvider, useSpotifyAuthActions, useSpotifyAuthState } = await loadSpotifyAuthContext();
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <SpotifyAuthProvider>{children}</SpotifyAuthProvider>
     );
-    const { result } = renderHook(() => useSpotifyAuth(), { wrapper });
+    const { result } = renderHook(() => ({
+      actions: useSpotifyAuthActions(),
+      state: useSpotifyAuthState(),
+    }), { wrapper });
 
     await act(async () => {
-      await expect(result.current.forceRefreshToken()).resolves.toBeNull();
+      await expect(result.current.actions.forceRefreshToken()).resolves.toBeNull();
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(result.current.status).toBe('error');
-    expect(result.current.error).toBe('Token refresh failed. Please log in again.');
+    expect(result.current.state.status).toBe('error');
+    expect(result.current.state.error).toBe('Token refresh failed. Please log in again.');
   });
 });
