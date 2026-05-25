@@ -348,8 +348,8 @@ export const buildShareUrl = ({
   };
 
   const json = JSON.stringify(payload);
-  let binary = '';
-  new TextEncoder().encode(json).forEach(byte => { binary += String.fromCharCode(byte); });
+  const bytes = new TextEncoder().encode(json);
+  const binary = Array.from(bytes).map(b => String.fromCharCode(b)).join('');
   const base64 = btoa(binary);
 
   const base = typeof window !== 'undefined'

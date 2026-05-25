@@ -261,7 +261,7 @@ export function ExportModal({ isOpen, onClose, onOpenLibrary, onExport, getShare
                       }
                     : {
                         borderColor: 'var(--accent-color)',
-                        background: 'var(--accent-color)10',
+                        background: 'transparent',
                         color: 'var(--accent-color)',
                       }}
                 >
