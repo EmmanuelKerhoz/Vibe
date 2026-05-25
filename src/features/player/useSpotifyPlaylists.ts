@@ -2,6 +2,13 @@
  * useSpotifyPlaylists
  * Fetches the authenticated user's playlists and, lazily, their tracks.
  *
+ * May 2026 (v1.31.0.67):
+ *   - fix: TRACK_ITEM_SCHEMA rend nullable type/name/artists/album.
+ *     Spotify renvoie parfois type:null, name:null ou artists:null pour des
+ *     tracks normaux en contexte playlist → Zod rejetait le parse entier →
+ *     entry.track tombait à null → compté comme unsupported sur toutes les
+ *     playlists. On coerce maintenant ces champs avec des fallbacks sûrs.
+ *
  * May 2026 (v1.31.0.65):
  *   - fix: relinked tracks (id=null, uri=spotify:track:) no longer skipped.
  *     The !t.id guard was rejecting tracks that Spotify returns with a null id
@@ -83,16 +90,18 @@ const PLAYLIST_PAGE_SCHEMA = z.object({
 const TRACK_ITEM_SCHEMA = z
   .object({
     id: z.string().nullable(),
-    name: z.string(),
+    // name/type/artists/album peuvent être null dans les réponses playlist
+    name: z.string().nullable().optional(),
     uri: z.string().nullable(),
-    type: z.string().optional(),
+    type: z.string().nullable().optional(),
     duration_ms: z.number().optional().default(0),
     is_playable: z.boolean().optional(),
-    artists: z.array(z.object({ name: z.string() })).optional().default([]),
+    artists: z.array(z.object({ name: z.string() })).nullable().optional().default([]),
     album: z
       .object({
         images: z.array(z.object({ url: z.string() })).optional(),
       })
+      .nullable()
       .optional(),
   })
   .passthrough();
@@ -307,7 +316,7 @@ export function useSpotifyPlaylists(): PlaylistsState {
             }
             collected.push({
               id: t.id ?? t.uri,
-              name: t.name,
+              name: t.name ?? '',
               uri: t.uri,
               durationMs: t.duration_ms ?? 0,
               artists: (t.artists ?? []).map((a) => a.name).join(', '),
