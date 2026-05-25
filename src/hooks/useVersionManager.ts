@@ -93,6 +93,9 @@ const deepCloneSong = (song: Section[]): Section[] | null => {
   }
 };
 
+const shouldCreateRestorePoint = (snapshot: VersionSnapshot): boolean =>
+  snapshot.song.length > 0 || (snapshot.musicalPrompt ?? '').trim().length > 0;
+
 export function useVersionManager(params: UseVersionManagerParams) {
   const {
     updateSongAndStructureWithHistory,
@@ -217,7 +220,7 @@ export function useVersionManager(params: UseVersionManagerParams) {
     const previousSnapshot = previousLyricsSnapshotRef.current;
     const snapshotChanged = previousFingerprintRef.current !== currentFingerprint;
 
-    if (snapshotChanged && (previousSnapshot.song.length > 0 || (previousSnapshot.musicalPrompt ?? '').trim().length > 0)) {
+    if (snapshotChanged && shouldCreateRestorePoint(previousSnapshot)) {
       setVersions(prev => createVersion(previousSnapshot, 'Auto Restore Point', prev));
     }
     previousLyricsSnapshotRef.current = currentSnapshot;

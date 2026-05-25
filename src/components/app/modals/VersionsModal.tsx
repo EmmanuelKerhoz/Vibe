@@ -142,8 +142,14 @@ export const VersionsModal = ({
                         <Sparkles className="w-3 h-3" />
                         {version.topic || 'No topic'}
                       </div>
-                      <div>Δ {diff.changed} changed · +{diff.added} · -{diff.removed}</div>
-                      {version.musicalPrompt && <div>Musical prompt saved</div>}
+                      <div aria-label={`${diff.changed} changed lines, ${diff.added} added lines, ${diff.removed} removed lines`}>
+                        Δ {diff.changed} changed · +{diff.added} · -{diff.removed}
+                      </div>
+                      {version.musicalPrompt && (
+                        <div title={version.musicalPrompt}>
+                          Musical prompt: {version.musicalPrompt.slice(0, 48)}{version.musicalPrompt.length > 48 ? '…' : ''}
+                        </div>
+                      )}
                     </div>
                     {diff.changedSections.length > 0 && (
                       <div className="mt-3 space-y-2">
