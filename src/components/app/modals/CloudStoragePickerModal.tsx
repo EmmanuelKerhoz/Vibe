@@ -9,7 +9,7 @@ import { Cloud, X, Upload } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 import { Button } from '../../ui/Button';
 import {
-  pickCloudFile,
+  pickFromCloud,
   getProvidersMeta,
   type CloudProviderId,
   type CloudFile,
@@ -52,7 +52,7 @@ export function CloudStoragePickerModal({ isOpen, onClose, onFileLoaded, mode = 
     setPickState('picking');
     setErrorMsg('');
     try {
-      const file = await pickCloudFile(id, ac.signal, mode);
+      const file = await pickFromCloud(id, mode, ac.signal);
       if (!file) {
         setPickState('idle');
         setActiveProvider(null);

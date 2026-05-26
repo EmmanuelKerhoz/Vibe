@@ -10,7 +10,7 @@ import {
   normalizeCloudUrl,
   type CloudProviderId,
 } from '../../utils/cloudProviders';
-import { pickCloudFile } from '../../services/cloudStorage';
+import { pickFromCloud, type CloudFile, type AudioFileEntry } from '../../services/cloudStorage';
 
 const VIDEO_EXT = /\.(mp4|webm|mov|mkv|avi|m4v)$/i;
 const PROTOCOL_ACCEPT: Record<ScanProtocol, string[]> = {
@@ -199,13 +199,13 @@ export function SidebarProvider({ onLocalTracksAdded, onCloudTracksAdded, childr
     if (oneDriveScanStatus === 'scanning') return;
     setOneDriveScanStatus('scanning');
     const ac = new AbortController();
-    pickCloudFile('onedrive', ac.signal, 'player')
-      .then(result => {
+    pickFromCloud('onedrive', 'player', ac.signal)
+      .then((result: CloudFile | null) => {
         if (!result?.fileList?.length) {
           setOneDriveScanStatus('idle');
           return;
         }
-        const added: Omit<TrackEntry, 'id'>[] = result.fileList.map(entry => ({
+        const added: Omit<TrackEntry, 'id'>[] = result.fileList.map((entry: AudioFileEntry) => ({
           title: entry.name.replace(/\.[^/.]+$/, ''),
           source: 'cloud' as const,
           url: entry.downloadUrl,
