@@ -151,6 +151,7 @@ export const Save = createIcon(SaveRegular, 'Save');
 export const BookOpen = createIcon(BookOpenRegular, 'BookOpen');
 export const Library = createIcon(LibraryRegular, 'Library');
 export const FolderOpen = createIcon(FolderOpenRegular, 'FolderOpen');
+export const FolderMusic = createIcon(FolderOpenRegular, 'FolderMusic');
 export const HardDrive = createIcon(HardDriveRegular, 'HardDrive');
 export const Headphones = createIcon(HeadphonesRegular, 'Headphones');
 export const AlertTriangle = createIcon(WarningRegular, 'AlertTriangle');
