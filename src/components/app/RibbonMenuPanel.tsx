@@ -16,7 +16,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   Download, Upload, Trash2, History,
   Library, FilePlus, Settings, Info, WandSparkles, ClipboardPaste, Heart,
-  KeyboardRegular, Music, AlignLeft, Cloud,
+  KeyboardRegular, Music, AlignLeft, Cloud, FolderMusic,
 } from '../ui/icons';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
@@ -52,7 +52,7 @@ export function RibbonMenuPanel({
   const {
     openVersionsModal, openResetModal, openImport, openExport,
     openLibrary, openSettings, openAbout, openKeyboardShortcuts,
-    openPasteModal, openCloudStorage, canPasteLyrics,
+    openPasteModal, openCloudStorageLyrics, openCloudStoragePlayer, canPasteLyrics,
   } = useTopRibbonActions();
   const { t } = useTranslation();
 
@@ -132,10 +132,16 @@ export function RibbonMenuPanel({
           {t.ribbon.load_import ?? 'Load / Import'}
         </button>
       </Tooltip>
-      <Tooltip title={(t as { tooltips?: { importCloud?: string } }).tooltips?.importCloud ?? 'Import from OneDrive, Dropbox, Box or Google Drive'}>
-        <button onClick={() => run(openCloudStorage)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+      <Tooltip title={(t as { tooltips?: { importCloud?: string } }).tooltips?.importCloud ?? 'Import lyrics file from OneDrive, Dropbox, Box or Google Drive'}>
+        <button onClick={() => run(openCloudStorageLyrics)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Cloud className="w-4 h-4 text-[var(--accent-color)]" />
-          {(t as { menu?: { importCloud?: string } }).menu?.importCloud ?? 'Import from Cloud'}
+          {(t as { menu?: { importCloud?: string } }).menu?.importCloud ?? 'Import Lyrics from Cloud'}
+        </button>
+      </Tooltip>
+      <Tooltip title={(t as { tooltips?: { openAudioFolder?: string } }).tooltips?.openAudioFolder ?? 'Point to a cloud folder and enumerate all audio files (OneDrive)'}>
+        <button onClick={() => run(openCloudStoragePlayer)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+          <FolderMusic className="w-4 h-4 text-[var(--accent-color)]" />
+          {(t as { menu?: { openAudioFolder?: string } }).menu?.openAudioFolder ?? 'Open Audio Folder from Cloud'}
         </button>
       </Tooltip>
       <Tooltip title={t.tooltips.export}>

@@ -27,7 +27,10 @@ export interface TopRibbonActions {
   openAbout: () => void;
   openKeyboardShortcuts: () => void;
   openPasteModal: () => void;
-  openCloudStorage: () => void;
+  /** mode:'lyrics' — ouvre le picker cloud pour sélectionner un fichier de paroles */
+  openCloudStorageLyrics: () => void;
+  /** mode:'player' — ouvre le picker cloud pour sélectionner un dossier audio */
+  openCloudStoragePlayer: () => void;
   canPasteLyrics: boolean;
   isAnalyzing: boolean;
 }
@@ -37,16 +40,17 @@ export function useTopRibbonActions(): TopRibbonActions {
   const { uiState } = useModalState();
   const { canPasteLyrics, isAnalyzing } = useAnalysisContext();
 
-  const openVersionsModal     = useCallback(() => openModal('versions'),          [openModal]);
-  const openResetModal        = useCallback(() => openModal('reset'),             [openModal]);
-  const openImport            = useCallback(() => uiState.importInputRef.current?.click(), [uiState.importInputRef]);
-  const openExport            = useCallback(() => openModal('export'),            [openModal]);
-  const openLibrary           = useCallback(() => openModal('saveToLibrary'),     [openModal]);
-  const openSettings          = useCallback(() => openModal('settings'),          [openModal]);
-  const openAbout             = useCallback(() => openModal('about'),             [openModal]);
-  const openKeyboardShortcuts = useCallback(() => openModal('keyboardShortcuts'), [openModal]);
-  const openPasteModal        = useCallback(() => openModal('paste'),             [openModal]);
-  const openCloudStorage      = useCallback(() => openModal('cloudStorage'),      [openModal]);
+  const openVersionsModal      = useCallback(() => openModal('versions'),                              [openModal]);
+  const openResetModal         = useCallback(() => openModal('reset'),                                 [openModal]);
+  const openImport             = useCallback(() => uiState.importInputRef.current?.click(),            [uiState.importInputRef]);
+  const openExport             = useCallback(() => openModal('export'),                                [openModal]);
+  const openLibrary            = useCallback(() => openModal('saveToLibrary'),                        [openModal]);
+  const openSettings           = useCallback(() => openModal('settings'),                             [openModal]);
+  const openAbout              = useCallback(() => openModal('about'),                                [openModal]);
+  const openKeyboardShortcuts  = useCallback(() => openModal('keyboardShortcuts'),                    [openModal]);
+  const openPasteModal         = useCallback(() => openModal('paste'),                                [openModal]);
+  const openCloudStorageLyrics = useCallback(() => openModal('cloudStorage', { mode: 'lyrics' }),     [openModal]);
+  const openCloudStoragePlayer = useCallback(() => openModal('cloudStorage', { mode: 'player' }),     [openModal]);
 
   return {
     openVersionsModal,
@@ -58,7 +62,8 @@ export function useTopRibbonActions(): TopRibbonActions {
     openAbout,
     openKeyboardShortcuts,
     openPasteModal,
-    openCloudStorage,
+    openCloudStorageLyrics,
+    openCloudStoragePlayer,
     canPasteLyrics,
     isAnalyzing,
   };
