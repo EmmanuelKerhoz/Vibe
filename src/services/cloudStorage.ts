@@ -66,6 +66,26 @@ const GDRIVE_API_KEY =
 const GDRIVE_CLIENT_ID =
   (import.meta.env.VITE_GDRIVE_CLIENT_ID as string | undefined) ?? '';
 
+// ─── Origin whitelists (exact match — no .includes()) ────────────────────────
+// Using .includes() on event.origin allows spoofed origins such as
+// https://evil-onedrive.attacker.com to bypass the guard.
+
+const ONEDRIVE_ORIGINS: ReadonlySet<string> = new Set([
+  'https://onedrive.live.com',
+]);
+
+/** Resolved at runtime for ODB tenants — populated after resolveODBOrigin(). */
+const resolvedODBOrigins: Set<string> = new Set();
+
+function isAllowedOneDriveOrigin(origin: string): boolean {
+  return ONEDRIVE_ORIGINS.has(origin) || resolvedODBOrigins.has(origin);
+}
+
+const BOX_ORIGINS: ReadonlySet<string> = new Set([
+  'https://app.box.com',
+  'https://account.box.com',
+]);
+
 // ─── Extensions acceptées par mode ───────────────────────────────────────────
 
 export const LYRICS_EXTENSIONS = ['.txt', '.md', '.json', '.docx', '.odt'];
@@ -141,6 +161,8 @@ async function resolveODBOrigin(token: string): Promise<string> {
   const data = await res.json() as { webUrl?: string };
   if (!data.webUrl) throw new Error('Cannot resolve ODB tenant: missing webUrl');
   const url = new URL(data.webUrl);
+  // Register the resolved ODB origin so the message handler can trust it
+  resolvedODBOrigins.add(url.origin);
   return url.origin;
 }
 
@@ -208,16 +230,11 @@ async function pickOneDrive(
   if (signal?.aborted) return null;
 
   const origin = business
-    ? await resolveODBOrigin(token)
+    ? await resolveODBOrigin(token)   // also registers in resolvedODBOrigins
     : 'https://onedrive.live.com';
 
   if (signal?.aborted) return null;
 
-  // Picker v8 (SDK-less)
-  // - LYRICS : navigation libre, pas de filtre extension (filtrer à réception)
-  // - PLAYER : idem — l'utilisateur navigue jusqu'au dossier cible et le sélectionne
-  //   Le picker v8 ne supporte pas la sélection de dossier directement,
-  //   donc on laisse la navigation libre et on détecte le type de l'item retourné.
   const pickerUrl =
     `${origin}/picker?v=8&quantum=1` +
     `&entry.mode=files` +
@@ -244,8 +261,8 @@ async function pickOneDrive(
     }, 500);
 
     const messageHandler = async (event: MessageEvent) => {
-      // Accepter uniquement les messages du domaine du picker
-      if (!event.origin.includes('onedrive') && !event.origin.includes('sharepoint')) return;
+      // Exact-match origin whitelist — rejects spoofed origins
+      if (!isAllowedOneDriveOrigin(event.origin)) return;
 
       const msg = event.data as {
         type?: string;
@@ -284,7 +301,6 @@ async function pickOneDrive(
         }
 
         // ── MODE LYRICS : item est un fichier texte ────────────────────────
-        // Si l'utilisateur a sélectionné un dossier en mode lyrics → ignorer
         if (item.folder) { resolve(null); return; }
         if (!item.name || !isLyricsFile(item.name)) { resolve(null); return; }
 
@@ -296,7 +312,6 @@ async function pickOneDrive(
           const content = await readBlobAsText(blob);
           resolve({ name: item.name, content });
         } else if (item.id) {
-          // Fallback : Graph API
           const resp = await fetch(
             `https://graph.microsoft.com/v1.0/me/drive/items/${item.id}/content`,
             { headers: { Authorization: `Bearer ${token}` } },
@@ -314,9 +329,7 @@ async function pickOneDrive(
       }
     };
 
-    // Abort signal
     signal?.addEventListener('abort', () => { cleanup(); resolve(null); });
-
     window.addEventListener('message', messageHandler);
   });
 }
@@ -368,7 +381,8 @@ async function pickBox(mode: PickMode, signal?: AbortSignal): Promise<CloudFile 
     if (!popup) { resolve(null); return; }
 
     const handler = (e: MessageEvent) => {
-      if (!e.origin.includes('box.com')) return;
+      // Exact-match against Box origins
+      if (!BOX_ORIGINS.has(e.origin)) return;
       window.removeEventListener('message', handler);
       if (!popup.closed) popup.close();
       const token = (e.data as { access_token?: string }).access_token;
@@ -414,6 +428,8 @@ async function pickGDrive(mode: PickMode, signal?: AbortSignal): Promise<CloudFi
       // Nécessite un token OAuth2 Google — non implémenté sans GAPI auth
       resolve(null);
     });
+
+    void reject; // satisfy TS unused-variable
   });
 }
 
@@ -425,7 +441,7 @@ export function getProvidersMeta(): CloudProviderMeta[] {
       id: 'onedrive',
       label: 'OneDrive Personal',
       colorClass: 'text-blue-400',
-      available: true, // Picker v8 public — aucune config requise
+      available: true,
     },
     {
       id: 'onedrive-business',
