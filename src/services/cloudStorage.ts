@@ -3,8 +3,9 @@
  * Providers : OneDrive Personnel, OneDrive Business, Dropbox, Box, Google Drive.
  *
  * Modes :
- *   'lyrics'  — sélection d'un fichier texte unique (.txt .md .json .docx .odt)
- *   'player'  — sélection d'un dossier → crawl Graph → liste fichiers audio
+ *   'lyrics'       — sélection d'un fichier texte unique (.txt .md .json .docx .odt)
+ *   'player'       — sélection d'un dossier → crawl Graph → liste fichiers audio
+ *   'player-files' — sélection multiple de fichiers audio individuels (multi-select)
  *
  * Aucune dépendance runtime supplémentaire hors @azure/msal-browser (déjà présent).
  */
@@ -27,7 +28,7 @@ import {
 export interface CloudFile {
   name: string;
   content: string;
-  /** Pour mode 'player' : liste sérialisée des fichiers du dossier (JSON AudioFileEntry[]). */
+  /** Pour mode 'player' / 'player-files' : liste sérialisée des fichiers (JSON AudioFileEntry[]). */
   fileList?: AudioFileEntry[];
   /** Google Drive file ID — set when file was loaded from GDrive (used for save-back). */
   gdriveFileId?: string;
@@ -42,7 +43,7 @@ export interface AudioFileEntry {
   mimeType: string;
 }
 
-export type PickMode = 'lyrics' | 'player';
+export type PickMode = 'lyrics' | 'player' | 'player-files';
 
 export type CloudProviderId =
   | 'onedrive'
@@ -240,11 +241,15 @@ async function pickOneDrive(
 
   if (signal?.aborted) return null;
 
+  // player-files: multi-select on files; player: single-select on folder; lyrics: single on files
+  const selectMode = mode === 'player-files' ? 'multiple' : 'single';
+  const navigationMode = mode === 'player' ? '&navigation=all' : '';
+
   const pickerUrl =
     `${origin}/picker?v=8&quantum=1` +
     `&entry.mode=files` +
-    `&select.mode=single` +
-    (mode === 'player' ? `&navigation=all` : '');
+    `&select.mode=${selectMode}` +
+    navigationMode;
 
   return new Promise(resolve => {
     const pickerWindow = window.open(
@@ -277,6 +282,7 @@ async function pickOneDrive(
           folder?: object;
           '@microsoft.graph.downloadUrl'?: string;
           file?: { mimeType?: string };
+          size?: number;
         }>;
       };
 
@@ -289,9 +295,30 @@ async function pickOneDrive(
       if (msg.type !== 'Success' || !msg.items?.length) return;
 
       cleanup();
-      const item = msg.items[0]!;
 
       try {
+        // ── MODE PLAYER-FILES : multi-sélection de fichiers audio ──────────
+        if (mode === 'player-files') {
+          const entries: AudioFileEntry[] = (msg.items ?? [])
+            .filter(i => i.name && isAudioFile(i.name))
+            .map(i => ({
+              id:          i.id ?? '',
+              name:        i.name ?? '',
+              downloadUrl: i['@microsoft.graph.downloadUrl'] ?? '',
+              size:        i.size ?? 0,
+              mimeType:    i.file?.mimeType ?? 'audio/mpeg',
+            }));
+          if (!entries.length) { resolve(null); return; }
+          resolve({
+            name:     `selection (${entries.length} fichiers)`,
+            content:  JSON.stringify(entries),
+            fileList: entries,
+          });
+          return;
+        }
+
+        const item = msg.items[0]!;
+
         // ── MODE PLAYER : item est un dossier → crawl ──────────────────────
         if (mode === 'player') {
           if (!item.id) { resolve(null); return; }
@@ -343,7 +370,7 @@ async function pickOneDrive(
 
 async function pickDropbox(mode: PickMode, signal?: AbortSignal): Promise<CloudFile | null> {
   if (!DROPBOX_APP_KEY) return null;
-  if (mode === 'player') throw new Error('Dropbox folder crawl not yet supported');
+  if (mode === 'player' || mode === 'player-files') throw new Error('Dropbox folder crawl not yet supported');
 
   return new Promise((resolve, reject) => {
     const options = {
@@ -376,7 +403,7 @@ async function pickDropbox(mode: PickMode, signal?: AbortSignal): Promise<CloudF
 
 async function pickBox(mode: PickMode, signal?: AbortSignal): Promise<CloudFile | null> {
   if (!BOX_CLIENT_ID) return null;
-  if (mode === 'player') throw new Error('Box folder crawl not yet supported');
+  if (mode === 'player' || mode === 'player-files') throw new Error('Box folder crawl not yet supported');
 
   return new Promise(resolve => {
     const popup = window.open(
@@ -410,7 +437,7 @@ async function pickBox(mode: PickMode, signal?: AbortSignal): Promise<CloudFile 
  */
 async function pickGDrive(mode: PickMode, signal?: AbortSignal): Promise<CloudFile | null> {
   if (!isGDriveConfigured()) return null;
-  if (mode === 'player') throw new Error('Google Drive folder crawl not yet supported');
+  if (mode === 'player' || mode === 'player-files') throw new Error('Google Drive folder crawl not yet supported');
   if (signal?.aborted) return null;
 
   let token: string;
