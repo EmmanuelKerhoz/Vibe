@@ -42,9 +42,6 @@ const MSAL_CLIENT_ID =
 const MSAL_AUTHORITY =
   (import.meta.env.VITE_MSGRAPH_AUTHORITY as string | undefined) ??
   'https://login.microsoftonline.com/common';
-const SHAREPOINT_ORIGIN =
-  (import.meta.env.VITE_SHAREPOINT_ORIGIN as string | undefined) ??
-  'https://your-tenant.sharepoint.com';
 const DROPBOX_APP_KEY =
   (import.meta.env.VITE_DROPBOX_APP_KEY as string | undefined) ?? '';
 const BOX_CLIENT_ID =
@@ -95,7 +92,6 @@ async function getMsalToken(scopes: string[]): Promise<string | null> {
   try {
     let result: AuthenticationResult;
     if (accounts.length > 0) {
-      // exactOptionalPropertyTypes: account must be AccountInfo, not undefined
       const account = accounts[0]!;
       result = await app.acquireTokenSilent({ scopes, account });
     } else {
@@ -112,22 +108,38 @@ async function getMsalToken(scopes: string[]): Promise<string | null> {
   }
 }
 
-// ─── OneDrive Personnel ──────────────────────────────────────────────────────
+// ─── Résolution dynamique du tenant SharePoint ───────────────────────────────
+
+/**
+ * Résout l'origin SharePoint de l'utilisateur connecté via Graph.
+ * GET /v1.0/sites/root retourne le site racine du tenant courant.
+ * Aucune config statique — 100% multi-tenant.
+ */
+async function resolveSharePointOrigin(token: string): Promise<string> {
+  const res = await fetch(
+    'https://graph.microsoft.com/v1.0/sites/root?$select=webUrl',
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) throw new Error(`Graph /sites/root failed: ${res.status}`);
+  const data = await res.json() as { webUrl?: string };
+  if (!data.webUrl) throw new Error('Cannot resolve SharePoint tenant: missing webUrl');
+  return new URL(data.webUrl).origin;
+}
+
+// ─── OneDrive Personnel / Business ───────────────────────────────────────────
 
 async function pickOneDrive(business: boolean): Promise<CloudFile | null> {
-  const scopes = business
-    ? ['Files.Read', 'User.Read', 'openid', 'profile']
-    : ['Files.Read', 'User.Read', 'openid', 'profile'];
+  const scopes = ['Files.Read', 'User.Read', 'openid', 'profile'];
 
   const token = await getMsalToken(scopes);
   if (!token) return null;
 
+  const origin = business
+    ? await resolveSharePointOrigin(token)
+    : 'https://onedrive.live.com';
+
   // OneDrive File Picker v8 (SDK-less) ─ ouvre une fenêtre popup
   return new Promise(resolve => {
-    const origin = business
-      ? SHAREPOINT_ORIGIN
-      : 'https://onedrive.live.com';
-
     const pickerWindow = window.open(
       `${origin}/picker?v=8&quantum=1&entry.mode=files&select.mode=single&typesAndExtensions=${encodeURIComponent(ACCEPTED_EXTENSIONS.join(','))}`,
       'OneDrivePicker',
@@ -151,7 +163,6 @@ async function pickOneDrive(business: boolean): Promise<CloudFile | null> {
             const content = await res.text();
             resolve({ name: item.name, content });
           } else if (item.id) {
-            // Fallback Graph API
             const res = await fetch(
               `https://graph.microsoft.com/v1.0/me/drive/items/${item.id}/content`,
               { headers: { Authorization: `Bearer ${token}` } },
@@ -173,7 +184,6 @@ async function pickOneDrive(business: boolean): Promise<CloudFile | null> {
 
     window.addEventListener('message', messageHandler);
 
-    // Fallback timeout 5 min
     setTimeout(() => {
       window.removeEventListener('message', messageHandler);
       if (!pickerWindow.closed) pickerWindow.close();
@@ -199,7 +209,6 @@ interface DropboxWindow {
 async function pickDropbox(): Promise<CloudFile | null> {
   if (!DROPBOX_APP_KEY) return null;
 
-  // Charge le SDK Dropbox Chooser de façon lazy
   const winWithDropbox = window as unknown as Partial<DropboxWindow>;
   if (!winWithDropbox.Dropbox) {
     await new Promise<void>((res, rej) => {
@@ -221,7 +230,6 @@ async function pickDropbox(): Promise<CloudFile | null> {
         const f = files[0];
         if (!f || !isAcceptedFile(f.name)) { resolve(null); return; }
         try {
-          // direct_link : lien téléchargeable direct
           const res = await fetch(f.link.replace('?dl=0', '?dl=1'));
           const blob = await res.blob();
           const content = await readBlobAsText(blob);
@@ -243,7 +251,6 @@ async function pickDropbox(): Promise<CloudFile | null> {
 async function pickBox(): Promise<CloudFile | null> {
   if (!BOX_CLIENT_ID) return null;
 
-  // Charge Box Content Picker de façon lazy via popup OAuth implicite
   return new Promise(resolve => {
     const popupUrl =
       `https://app.box.com/api/oauth2/authorize` +
@@ -293,7 +300,6 @@ async function pickGoogleDrive(): Promise<CloudFile | null> {
     build: () => { setVisible: (v: boolean) => void };
   };
 
-  // Charge gapi lazy
   const gapiWindow = window as Window & {
     gapi?: {
       load: (lib: string, cb: () => void) => void;
