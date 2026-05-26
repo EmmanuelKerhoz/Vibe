@@ -1,7 +1,7 @@
 /**
  * googleDriveService.ts — Google Drive REST v3, OAuth2 implicit (SPA, no backend)
  *
- * Auth flow : popup window → Google OAuth2 → token in URL hash → postMessage back
+ * Auth flow : silent iframe refresh (prompt=none) → fallback popup (select_account)
  * Scopes    : https://www.googleapis.com/auth/drive.file
  *             (read+write files created by this app; cannot read arbitrary Drive files)
  *
@@ -9,7 +9,7 @@
  *
  * Env vars (Vite):
  *   VITE_GDRIVE_CLIENT_ID  — OAuth2 client ID (Web application, Authorized JS origins)
- *   VITE_GDRIVE_API_KEY    — API key (Picker API)
+ *   VITE_GDRIVE_API_KEY    — API key (Picker API, optional)
  *
  * No external SDK dependency. Pure REST + window.open popup.
  */
@@ -20,6 +20,8 @@
 
 const CLIENT_ID = (import.meta.env.VITE_GDRIVE_CLIENT_ID as string | undefined) ?? '';
 const API_KEY   = (import.meta.env.VITE_GDRIVE_API_KEY   as string | undefined) ?? '';
+// API_KEY kept for future Picker API use; not required for current REST flow.
+void API_KEY;
 
 const SCOPE_READ  = 'https://www.googleapis.com/auth/drive.readonly';
 const SCOPE_WRITE = 'https://www.googleapis.com/auth/drive.file';
@@ -70,32 +72,89 @@ export function getStoredToken(): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// OAuth2 implicit grant via popup
+// Silent refresh via hidden iframe (prompt=none)
 // ---------------------------------------------------------------------------
 
 /**
- * Open a Google OAuth2 popup and resolve with the access token.
- * Uses the implicit grant (token in fragment) — suitable for SPAs.
+ * Attempt a silent token refresh using a hidden iframe.
+ * Google resolves immediately if the user is already signed-in to the same
+ * account; rejects with `access_denied` / `interaction_required` otherwise.
+ * Times out after 8 s to avoid hanging.
  */
-export async function signIn(write = false): Promise<string> {
-  if (isTokenValid()) return _cachedToken!;
-  if (!CLIENT_ID) throw new Error('[googleDriveService] VITE_GDRIVE_CLIENT_ID is not set.');
-
-  const scope     = write ? SCOPE_WRITE : SCOPE_READ;
-  const redirectUri = `${window.location.origin}/gdrive-callback.html`;
-
-  const params = new URLSearchParams({
-    client_id:     CLIENT_ID,
-    redirect_uri:  redirectUri,
-    response_type: 'token',
-    scope,
-    include_granted_scopes: 'true',
-    prompt: 'select_account',
-  });
-
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-
+function silentRefresh(scope: string): Promise<string> {
   return new Promise((resolve, reject) => {
+    if (!CLIENT_ID) { reject(new Error('GDRIVE_NOT_CONFIGURED')); return; }
+
+    const redirectUri = `${window.location.origin}/gdrive-callback.html`;
+    const params = new URLSearchParams({
+      client_id:              CLIENT_ID,
+      redirect_uri:           redirectUri,
+      response_type:          'token',
+      scope,
+      include_granted_scopes: 'true',
+      prompt:                 'none',
+    });
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
+    iframe.src = authUrl;
+    document.body.appendChild(iframe);
+
+    const TIMEOUT_MS = 8_000;
+    let settled = false;
+
+    const cleanup = () => {
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      window.removeEventListener('message', messageHandler);
+    };
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('GDRIVE_SILENT_TIMEOUT'));
+    }, TIMEOUT_MS);
+
+    const messageHandler = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string; access_token?: string; expires_in?: number; error?: string };
+      if (data.type !== 'GDRIVE_TOKEN') return;
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cleanup();
+      if (data.error || !data.access_token) {
+        reject(new Error(data.error ?? 'GDRIVE_NO_TOKEN'));
+      } else {
+        storeToken(data.access_token, data.expires_in ?? 3600);
+        resolve(data.access_token);
+      }
+    };
+
+    window.addEventListener('message', messageHandler);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// OAuth2 popup (full interactive login)
+// ---------------------------------------------------------------------------
+
+function popupSignIn(scope: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!CLIENT_ID) { reject(new Error('GDRIVE_NOT_CONFIGURED')); return; }
+
+    const redirectUri = `${window.location.origin}/gdrive-callback.html`;
+    const params = new URLSearchParams({
+      client_id:              CLIENT_ID,
+      redirect_uri:           redirectUri,
+      response_type:          'token',
+      scope,
+      include_granted_scopes: 'true',
+      prompt:                 'select_account',
+    });
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
     const popup = window.open(authUrl, 'GDriveAuth', 'width=520,height=640,toolbar=0,scrollbars=1');
     if (!popup) { reject(new Error('GDRIVE_POPUP_BLOCKED')); return; }
 
@@ -125,6 +184,36 @@ export async function signIn(write = false): Promise<string> {
 
     window.addEventListener('message', messageHandler);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Public sign-in: silent first, popup fallback
+// ---------------------------------------------------------------------------
+
+/**
+ * Obtain a valid Google OAuth2 access token.
+ * Strategy:
+ *   1. In-memory cache hit → return immediately (no network).
+ *   2. Silent iframe refresh (prompt=none) → resolves if Google session active.
+ *   3. Interactive popup (select_account) → user explicitly consents.
+ *
+ * Throws GDRIVE_AUTH_CANCELLED | GDRIVE_POPUP_BLOCKED on user abort.
+ */
+export async function signIn(write = false): Promise<string> {
+  if (isTokenValid()) return _cachedToken!;
+  if (!CLIENT_ID) throw new Error('[googleDriveService] VITE_GDRIVE_CLIENT_ID is not set.');
+
+  const scope = write ? SCOPE_WRITE : SCOPE_READ;
+
+  // 1. Try silent refresh
+  try {
+    return await silentRefresh(scope);
+  } catch {
+    // Silent failed (no active session, interaction_required, timeout) — fall through to popup
+  }
+
+  // 2. Interactive popup
+  return popupSignIn(scope);
 }
 
 // ---------------------------------------------------------------------------
@@ -258,6 +347,10 @@ export async function saveFile(
 // Capability check
 // ---------------------------------------------------------------------------
 
+/**
+ * Returns true if CLIENT_ID is configured.
+ * API_KEY is optional (reserved for future Picker API use).
+ */
 export function isGDriveConfigured(): boolean {
-  return !!(CLIENT_ID && API_KEY);
+  return !!CLIENT_ID;
 }
