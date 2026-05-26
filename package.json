@@ -1,6 +1,6 @@
 {
   "name": "vibe",
-  "version": "1.31.0.45",
+  "version": "1.31.0.46",
   "private": true,
   "type": "module",
   "scripts": {
@@ -38,6 +38,7 @@
     "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
+    "vite-plugin-pwa": "^0.21.1",
     "vitest": "^3.2.1"
   }
 }
