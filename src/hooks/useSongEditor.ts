@@ -146,8 +146,10 @@ export const useSongEditor = ({
           setRhythm(result.data.rhythm ?? '');
           setNarrative(result.data.narrative ?? '');
           setMusicalPrompt(result.data.musicalPrompt ?? '');
-          // P7: versions validated by SongVersionSchema — no cast needed
-          const importedVersions: SongVersion[] = result.data.versions ?? [];
+          // SongVersionSchema validated above — cast is safe under exactOptionalPropertyTypes.
+          // Zod infers optional fields as T|undefined; SongVersion uses strict T.
+          // Runtime shape is guaranteed by the schema parse immediately above.
+          const importedVersions = (result.data.versions ?? []) as unknown as SongVersion[];
           versionContext?.replaceVersions(importedVersions);
           return {
             ...(result.data.songLanguage ? { songLanguage: result.data.songLanguage } : {}),
