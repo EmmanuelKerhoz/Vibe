@@ -204,7 +204,6 @@ async function crawlFolder(
     for (const item of data.value) {
       if (signal.aborted) break;
       if (item.folder) {
-        // Récursion dans les sous-dossiers
         await crawlFolder(token, item.id, signal, results);
       } else if (item.file && isAudioFile(item.name)) {
         results.push({
@@ -223,6 +222,20 @@ async function crawlFolder(
 }
 
 // ─── OneDrive Personnel / Business ───────────────────────────────────────────
+//
+// Le picker OneDrive v8 (OD personnel ET ODB/SharePoint) ne lit PAS les
+// paramètres de sélection depuis l'URL. La multi-sélection doit être
+// configurée via un handshake postMessage :
+//
+//   1. La page ouvre la popup avec une URL minimale (sans select params).
+//   2. Le picker envoie  { type: 'initialize' }  dès qu'il est prêt.
+//   3. On répond avec   { type: 'activate', ... }  incluant la config de
+//      sélection.  C'est à ce moment que le picker affiche les checkboxes.
+//   4. L'utilisateur sélectionne puis clique Select/Open.
+//   5. Le picker envoie  { type: 'Success', items: [...] }.
+//
+// Références :
+//   https://learn.microsoft.com/en-us/onedrive/developer/controls/file-pickers/
 
 async function pickOneDrive(
   business: boolean,
@@ -236,20 +249,28 @@ async function pickOneDrive(
   if (signal?.aborted) return null;
 
   const origin = business
-    ? await resolveODBOrigin(token)   // also registers in resolvedODBOrigins
+    ? await resolveODBOrigin(token)
     : 'https://onedrive.live.com';
 
   if (signal?.aborted) return null;
 
-  // player-files: multi-select on files; player: single-select on folder; lyrics: single on files
-  const selectMode = mode === 'player-files' ? 'multiple' : 'single';
-  const navigationMode = mode === 'player' ? '&navigation=all' : '';
+  // ── Picker URL: minimal, NO select params in query string ──────────────────
+  // select.mode via URL is silently ignored by both OD and ODB; the only
+  // reliable mechanism is the postMessage activate command below.
+  const baseUrl = business
+    ? `${origin}/_layouts/15/FilePicker.aspx`
+    : `${origin}/picker`;
 
-  const pickerUrl =
-    `${origin}/picker?v=8&quantum=1` +
-    `&entry.mode=files` +
-    `&select.mode=${selectMode}` +
-    navigationMode;
+  const pickerParams = new URLSearchParams({
+    sdk: '8.0',
+    entry: JSON.stringify({
+      oneDrive: {
+        files: {},
+      },
+    }),
+  });
+
+  const pickerUrl = `${baseUrl}?${pickerParams.toString()}`;
 
   return new Promise(resolve => {
     const pickerWindow = window.open(
@@ -271,7 +292,7 @@ async function pickOneDrive(
     }, 500);
 
     const messageHandler = async (event: MessageEvent) => {
-      // Exact-match origin whitelist — rejects spoofed origins
+      // Exact-match origin whitelist
       if (!isAllowedOneDriveOrigin(event.origin)) return;
 
       const msg = event.data as {
@@ -286,6 +307,30 @@ async function pickOneDrive(
         }>;
       };
 
+      // ── Step 2-3: Handshake — picker ready, send activate config ───────────
+      if (msg.type === 'initialize') {
+        const multiSelect = mode === 'player-files';
+        const navigationMode = mode === 'player' ? 'all' : 'files';
+
+        pickerWindow.postMessage(
+          {
+            type: 'activate',
+            select: {
+              mode: multiSelect ? 'multiple' : 'single',
+            },
+            navigation: {
+              entrypoint: navigationMode,
+            },
+            typesAndSources: {
+              mode: mode === 'player' ? 'folders' : 'files',
+              pivots: { oneDrive: true, recent: true },
+            },
+          },
+          event.origin,
+        );
+        return;
+      }
+
       if (msg.type === 'cancel') {
         cleanup();
         resolve(null);
@@ -297,7 +342,7 @@ async function pickOneDrive(
       cleanup();
 
       try {
-        // ── MODE PLAYER-FILES : multi-sélection de fichiers audio ──────────
+        // ── MODE PLAYER-FILES : multi-sélection de fichiers audio ───────────
         if (mode === 'player-files') {
           const entries: AudioFileEntry[] = (msg.items ?? [])
             .filter(i => i.name && isAudioFile(i.name))
@@ -370,13 +415,40 @@ async function pickOneDrive(
 
 async function pickDropbox(mode: PickMode, signal?: AbortSignal): Promise<CloudFile | null> {
   if (!DROPBOX_APP_KEY) return null;
-  if (mode === 'player' || mode === 'player-files') throw new Error('Dropbox folder crawl not yet supported');
+  if (mode === 'player') throw new Error('Dropbox folder crawl not yet supported');
 
   return new Promise((resolve, reject) => {
+    // player-files: multi-select audio files
+    const isMulti = mode === 'player-files';
+    const extensions = isMulti ? AUDIO_EXTENSIONS : LYRICS_EXTENSIONS;
+
     const options = {
       success: async (files: Array<{ name: string; link: string }>) => {
         if (signal?.aborted) { resolve(null); return; }
         try {
+          if (!files.length) { resolve(null); return; }
+
+          if (isMulti) {
+            // Collect all selected audio files — build AudioFileEntry[] from Dropbox direct links
+            const entries: AudioFileEntry[] = files
+              .filter(f => isAudioFile(f.name))
+              .map((f, idx) => ({
+                id:          `dropbox-${idx}-${f.name}`,
+                name:        f.name,
+                downloadUrl: f.link,
+                size:        0,
+                mimeType:    'audio/mpeg',
+              }));
+            if (!entries.length) { resolve(null); return; }
+            resolve({
+              name:     `selection (${entries.length} fichiers)`,
+              content:  JSON.stringify(entries),
+              fileList: entries,
+            });
+            return;
+          }
+
+          // lyrics mode — single file
           const file = files[0];
           if (!file) { resolve(null); return; }
           if (!isLyricsFile(file.name)) { resolve(null); return; }
@@ -388,8 +460,8 @@ async function pickDropbox(mode: PickMode, signal?: AbortSignal): Promise<CloudF
       },
       cancel: () => resolve(null),
       linkType: 'direct' as const,
-      multiselect: false,
-      extensions: LYRICS_EXTENSIONS,
+      multiselect: isMulti,
+      extensions,
     };
 
     const dbx = (window as unknown as { Dropbox?: { choose: (o: typeof options) => void } }).Dropbox;
@@ -403,7 +475,7 @@ async function pickDropbox(mode: PickMode, signal?: AbortSignal): Promise<CloudF
 
 async function pickBox(mode: PickMode, signal?: AbortSignal): Promise<CloudFile | null> {
   if (!BOX_CLIENT_ID) return null;
-  if (mode === 'player' || mode === 'player-files') throw new Error('Box folder crawl not yet supported');
+  if (mode === 'player' || mode === 'player-files') throw new Error('Box multi-file pick not yet supported');
 
   return new Promise(resolve => {
     const popup = window.open(
@@ -413,14 +485,11 @@ async function pickBox(mode: PickMode, signal?: AbortSignal): Promise<CloudFile 
     if (!popup) { resolve(null); return; }
 
     const handler = (e: MessageEvent) => {
-      // Exact-match against Box origins
       if (!BOX_ORIGINS.has(e.origin)) return;
       window.removeEventListener('message', handler);
       if (!popup.closed) popup.close();
       const token = (e.data as { access_token?: string }).access_token;
       if (!token) { resolve(null); return; }
-
-      // Box Picker SDK minimal (non supporté sans SDK tiers)
       resolve(null);
     };
     signal?.addEventListener('abort', () => { if (!popup.closed) popup.close(); resolve(null); });
@@ -437,7 +506,7 @@ async function pickBox(mode: PickMode, signal?: AbortSignal): Promise<CloudFile 
  */
 async function pickGDrive(mode: PickMode, signal?: AbortSignal): Promise<CloudFile | null> {
   if (!isGDriveConfigured()) return null;
-  if (mode === 'player' || mode === 'player-files') throw new Error('Google Drive folder crawl not yet supported');
+  if (mode === 'player' || mode === 'player-files') throw new Error('Google Drive multi-file pick not yet supported');
   if (signal?.aborted) return null;
 
   let token: string;
@@ -455,7 +524,6 @@ async function pickGDrive(mode: PickMode, signal?: AbortSignal): Promise<CloudFi
   if (!files.length) return null;
   if (signal?.aborted) return null;
 
-  // Present a native picker dialog to the user
   const chosen = await showGDriveFilePicker(files);
   if (!chosen || signal?.aborted) return null;
 
