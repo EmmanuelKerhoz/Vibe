@@ -34,6 +34,13 @@ const SongVersionSchema = z.object({
   name:        z.string(),
 });
 
+/** Schema for a single musical-prompt snapshot. */
+export const PromptSnapshotSchema = z.object({
+  timestamp: z.number(),
+  prompt:    z.string(),
+  label:     z.string().optional(),
+});
+
 export const LibraryAsset_MetadataSchema = z
   .object({
     album:           z.string().optional(),
@@ -47,6 +54,8 @@ export const LibraryAsset_MetadataSchema = z
     rhythm:          z.string().optional(),
     narrative:       z.string().optional(),
     musicalPrompt:   z.string().optional(),
+    /** Ordered history of musical prompt values, oldest first. */
+    promptSnapshots: z.array(PromptSnapshotSchema).optional(),
   })
   .catchall(z.unknown()); // preserves [key: string]: unknown extension
 

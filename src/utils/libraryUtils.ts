@@ -1,4 +1,4 @@
-import type { Section, SongVersion } from '../types';
+import type { Section, SongVersion, PromptSnapshot } from '../types';
 import type { SimilarityMatch } from './similarityUtils';
 import { calculateSimilarityWithMetadata } from './rhymeDetection';
 import { DEFAULT_MOOD, DEFAULT_TOPIC } from './songDefaults';
@@ -27,6 +27,8 @@ export type LibraryAsset = {
     rhythm?: string;
     narrative?: string;
     musicalPrompt?: string;
+    /** Ordered history of musical prompt values, oldest first. */
+    promptSnapshots?: PromptSnapshot[];
     [key: string]: unknown;
   };
 };
@@ -150,6 +152,102 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
     return newAsset;
   } catch (error) {
     console.error('Failed to save asset to library:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update an existing LibraryAsset in place.
+ *
+ * Before applying the patch:
+ * 1. The current asset state is pushed into `versions[]` as a named snapshot
+ *    (auto-label "v{n} – {ISO date}") so the full history is preserved.
+ * 2. If `patch.metadata.musicalPrompt` differs from the stored value, the
+ *    old prompt is appended to `metadata.promptSnapshots[]` before overwrite.
+ *
+ * Nothing happens if `id` is not found — returns `null` in that case.
+ */
+export const updateAssetInLibrary = async (
+  id: string,
+  patch: Partial<Omit<LibraryAsset, 'id'>>,
+): Promise<LibraryAsset | null> => {
+  try {
+    const current = readStore();
+    const idx = current.assets.findIndex(a => a.id === id);
+    if (idx === -1) return null;
+
+    const existing = current.assets[idx] as LibraryAsset;
+    const now = Date.now();
+
+    // --- 1. Snapshot current state into versions[] ---
+    const existingVersions: SongVersion[] = Array.isArray(existing.versions)
+      ? existing.versions
+      : [];
+    const versionCount = existingVersions.length + 1;
+    const versionLabel = `v${versionCount} – ${new Date(now).toISOString().slice(0, 16).replace('T', ' ')}`;
+    const snapshot: SongVersion = {
+      id:          `ver_${now}_${Math.random().toString(36).substring(2, 7)}`,
+      timestamp:   now,
+      song:        existing.sections,
+      structure:   existing.sections.map(s => s.name),
+      title:       existing.title,
+      titleOrigin: 'user',
+      topic:       existing.metadata?.topic ?? '',
+      mood:        existing.metadata?.mood ?? '',
+      ...(existing.metadata?.musicalPrompt !== undefined && {
+        musicalPrompt: existing.metadata.musicalPrompt,
+      }),
+      name: versionLabel,
+    };
+
+    // --- 2. Snapshot old musicalPrompt if it changes ---
+    const incomingPrompt = patch.metadata?.musicalPrompt;
+    const oldPrompt = existing.metadata?.musicalPrompt;
+    const existingSnapshots: PromptSnapshot[] = Array.isArray(existing.metadata?.promptSnapshots)
+      ? (existing.metadata!.promptSnapshots as PromptSnapshot[])
+      : [];
+
+    let updatedSnapshots = existingSnapshots;
+    if (
+      typeof incomingPrompt === 'string' &&
+      typeof oldPrompt === 'string' &&
+      incomingPrompt !== oldPrompt &&
+      oldPrompt.trim() !== ''
+    ) {
+      const promptSnapshot: PromptSnapshot = {
+        timestamp: now,
+        prompt:    oldPrompt,
+        label:     `Before update ${new Date(now).toISOString().slice(0, 10)}`,
+      };
+      updatedSnapshots = [...existingSnapshots, promptSnapshot];
+    }
+
+    // --- 3. Build updated asset ---
+    const updatedMetadata: LibraryAsset_Metadata = {
+      ...existing.metadata,
+      ...patch.metadata,
+      promptSnapshots: updatedSnapshots.length > 0 ? updatedSnapshots : undefined,
+    };
+
+    const updatedAsset: LibraryAsset = {
+      ...existing,
+      ...patch,
+      id,
+      timestamp: now,
+      versions: [...existingVersions, snapshot],
+      metadata: updatedMetadata,
+    };
+
+    const updatedAssets = [
+      ...current.assets.slice(0, idx),
+      updatedAsset,
+      ...current.assets.slice(idx + 1),
+    ].sort((a, b) => b.timestamp - a.timestamp);
+
+    writeStore({ version: current.version + 1, assets: updatedAssets });
+    return updatedAsset;
+  } catch (error) {
+    console.error('Failed to update asset in library:', error);
     throw error;
   }
 };

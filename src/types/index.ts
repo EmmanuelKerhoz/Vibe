@@ -22,6 +22,8 @@ export interface Section {
   language?: string;
   /** User-intended rhyme pattern (e.g. "AABB"). Tracked in UNDO/REDO history. */
   targetSchema?: string;
+  /** Incremented each time this section is modified (manual or AI). Used to detect stale sections on reload. */
+  version?: number;
 }
 
 export type LineDragInfo = { sectionId: string; lineId: string } | null;
@@ -40,4 +42,12 @@ export interface SongVersion {
   mood: string;
   musicalPrompt?: string;
   name: string;
+}
+
+/** A point-in-time snapshot of a musical prompt, stored in LibraryAsset.metadata.promptSnapshots. */
+export interface PromptSnapshot {
+  timestamp: number;
+  prompt: string;
+  /** Optional user-facing label, e.g. "v3 – afrobeat variant" */
+  label?: string;
 }
