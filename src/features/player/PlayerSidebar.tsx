@@ -195,10 +195,13 @@ function ConnectorRow({ connector, onActivate }: ConnectorRowProps) {
 
 interface CloudSourcePanelProps {
   onLibraryLink: () => void;
+  onOneDriveScan: () => void;
+  oneDriveScanBadge: string;
+  oneDriveScanBadgeColor: string;
   onSpotifyActivate: () => void;
 }
 
-function CloudSourcePanel({ onLibraryLink, onSpotifyActivate }: CloudSourcePanelProps) {
+function CloudSourcePanel({ onLibraryLink, onOneDriveScan, oneDriveScanBadge, oneDriveScanBadgeColor, onSpotifyActivate }: CloudSourcePanelProps) {
   const connectors: Array<CloudConnector & { onActivate: () => void }> = [
     {
       id: 'library',
@@ -213,12 +216,12 @@ function CloudSourcePanel({ onLibraryLink, onSpotifyActivate }: CloudSourcePanel
     {
       id: 'onedrive',
       label: 'ONEDRIVE SCAN',
-      sublabel: 'Scan dossier OneDrive / SharePoint',
+      sublabel: 'Pointer un dossier OneDrive / SharePoint',
       color: '#2196F3',
-      badge: 'ACTIVE',
-      badgeColor: '#2196F3',
+      badge: oneDriveScanBadge,
+      badgeColor: oneDriveScanBadgeColor,
       icon: <OneDriveIcon />,
-      onActivate: onLibraryLink,
+      onActivate: onOneDriveScan,
     },
     {
       id: 'spotify',
@@ -381,6 +384,7 @@ export function PlayerSidebar({
     scanProtocol, setScanProtocol, scanPattern, setScanPattern,
     uploadInputRef, folderInputRef, buildAccept, handleUplinkFiles, handleScanFolder,
     cloudProvider, setCloudProvider, cloudUrl, setCloudUrl, cloudError, handleCloudTrackLink,
+    handleOneDriveScanFolder, oneDriveScanStatus,
   } = useSidebarContext();
 
   const [cloudExpanded, setCloudExpanded] = useState(false);
@@ -403,6 +407,21 @@ export function PlayerSidebar({
     setView('cloud');
     setCloudExpanded(prev => !prev);
     if (cloudExpanded) setShowLinkForm(false);
+  };
+
+  // OneDrive scan badge
+  const oneDriveBadgeLabel =
+    oneDriveScanStatus === 'scanning' ? 'SCANNING…' :
+    oneDriveScanStatus === 'error'    ? 'ERROR' :
+    'ACTIVE';
+  const oneDriveBadgeColor =
+    oneDriveScanStatus === 'scanning' ? LCARS.orange :
+    oneDriveScanStatus === 'error'    ? LCARS.alertRed ?? '#f87171' :
+    '#2196F3';
+
+  const handleOneDriveScanClick = () => {
+    setView('cloud');
+    handleOneDriveScanFolder();
   };
 
   return (
@@ -460,6 +479,9 @@ export function PlayerSidebar({
       {cloudExpanded && (
         <CloudSourcePanel
           onLibraryLink={() => setShowLinkForm(prev => !prev)}
+          onOneDriveScan={handleOneDriveScanClick}
+          oneDriveScanBadge={oneDriveBadgeLabel}
+          oneDriveScanBadgeColor={oneDriveBadgeColor}
           onSpotifyActivate={() => onSpotifyActivate?.()}
         />
       )}

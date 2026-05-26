@@ -10,6 +10,7 @@ import {
   normalizeCloudUrl,
   type CloudProviderId,
 } from '../../utils/cloudProviders';
+import { pickCloudFile } from '../../services/cloudStorage';
 
 const VIDEO_EXT = /\.(mp4|webm|mov|mkv|avi|m4v)$/i;
 const PROTOCOL_ACCEPT: Record<ScanProtocol, string[]> = {
@@ -62,6 +63,8 @@ function immediateParentName(f: File): string {
   return f.name.replace(/\.[^/.]+$/, '');
 }
 
+export type OneDriveScanStatus = 'idle' | 'scanning' | 'error';
+
 export interface SidebarContextValue {
   scanProtocol: ScanConfig['accept'];
   setScanProtocol: (p: ScanConfig['accept']) => void;
@@ -78,6 +81,9 @@ export interface SidebarContextValue {
   setCloudUrl: (url: string) => void;
   cloudError: string | null;
   handleCloudTrackLink: () => void;
+  /** Triggers OneDrive picker in folder-scan mode, crawls Graph, adds tracks as source:'cloud'. */
+  handleOneDriveScanFolder: () => void;
+  oneDriveScanStatus: OneDriveScanStatus;
 }
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
@@ -85,6 +91,8 @@ const SidebarContext = createContext<SidebarContextValue | null>(null);
 interface SidebarProviderProps {
   /** Called after local tracks are added so the player can switch to the LOCAL view. */
   onLocalTracksAdded?: () => void;
+  /** Called after cloud tracks are added so the player can switch to the CLOUD view. */
+  onCloudTracksAdded?: () => void;
   children: ReactNode;
 }
 
@@ -94,7 +102,7 @@ interface SidebarProviderProps {
  * were prop-drilled into PlayerSidebar from VoxNovaPlayer; lifting them into
  * a context dramatically thins the PlayerSidebar prop surface.
  */
-export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProviderProps) {
+export function SidebarProvider({ onLocalTracksAdded, onCloudTracksAdded, children }: SidebarProviderProps) {
   const library = useLibraryContext();
   const [scanProtocol, setScanProtocol] = useState<ScanConfig['accept']>(['wav']);
   const [scanPattern, setScanPattern] = useState('');
@@ -103,6 +111,7 @@ export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProvide
   const [cloudProvider, setCloudProvider] = useState<CloudProviderId>('onedrive');
   const [cloudUrl, setCloudUrl] = useState('');
   const [cloudError, setCloudError] = useState<string | null>(null);
+  const [oneDriveScanStatus, setOneDriveScanStatus] = useState<OneDriveScanStatus>('idle');
 
   const handleUplinkFiles = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = filterFiles(
@@ -186,6 +195,38 @@ export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProvide
     setCloudUrl('');
   }, [cloudProvider, cloudUrl, library]);
 
+  const handleOneDriveScanFolder = useCallback(() => {
+    if (oneDriveScanStatus === 'scanning') return;
+    setOneDriveScanStatus('scanning');
+    const ac = new AbortController();
+    pickCloudFile('onedrive', ac.signal, 'player')
+      .then(result => {
+        if (!result?.fileList?.length) {
+          setOneDriveScanStatus('idle');
+          return;
+        }
+        const added: Omit<TrackEntry, 'id'>[] = result.fileList.map(entry => ({
+          title: entry.name.replace(/\.[^/.]+$/, ''),
+          source: 'cloud' as const,
+          url: entry.downloadUrl,
+          memo: `[OD_SCAN] ${entry.name} | Size: ${Math.round(entry.size / 1024)} KB | Type: ${entry.mimeType}`,
+          linked: true,
+          isVideo: VIDEO_EXT.test(entry.name),
+          cloudProvider: 'onedrive' as CloudProviderId,
+          oneDriveItemId: entry.id,
+          oneDriveSize: entry.size,
+          oneDriveLastModified: new Date().toISOString(),
+        }));
+        library.addTracks(added);
+        onCloudTracksAdded?.();
+        setOneDriveScanStatus('idle');
+      })
+      .catch(() => {
+        setOneDriveScanStatus('error');
+        setTimeout(() => setOneDriveScanStatus('idle'), 3000);
+      });
+  }, [oneDriveScanStatus, library, onCloudTracksAdded]);
+
   const value = useMemo<SidebarContextValue>(() => ({
     scanProtocol,
     setScanProtocol,
@@ -202,6 +243,8 @@ export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProvide
     setCloudUrl,
     cloudError,
     handleCloudTrackLink,
+    handleOneDriveScanFolder,
+    oneDriveScanStatus,
   }), [
     scanProtocol,
     scanPattern,
@@ -211,6 +254,8 @@ export function SidebarProvider({ onLocalTracksAdded, children }: SidebarProvide
     cloudUrl,
     cloudError,
     handleCloudTrackLink,
+    handleOneDriveScanFolder,
+    oneDriveScanStatus,
   ]);
 
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
