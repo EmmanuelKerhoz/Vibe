@@ -14,6 +14,13 @@ import {
   type Configuration,
   type AuthenticationResult,
 } from '@azure/msal-browser';
+import {
+  signIn as gdriveSignIn,
+  listRecentLyricsFiles,
+  downloadFile as gdriveDownload,
+  saveFile as gdriveSave,
+  isGDriveConfigured,
+} from './googleDriveService';
 
 // ─── Types publics ────────────────────────────────────────────────────────────
 
@@ -22,6 +29,8 @@ export interface CloudFile {
   content: string;
   /** Pour mode 'player' : liste sérialisée des fichiers du dossier (JSON AudioFileEntry[]). */
   fileList?: AudioFileEntry[];
+  /** Google Drive file ID — set when file was loaded from GDrive (used for save-back). */
+  gdriveFileId?: string;
 }
 
 export interface AudioFileEntry {
@@ -61,10 +70,6 @@ const DROPBOX_APP_KEY =
   (import.meta.env.VITE_DROPBOX_APP_KEY as string | undefined) ?? '';
 const BOX_CLIENT_ID =
   (import.meta.env.VITE_BOX_CLIENT_ID as string | undefined) ?? '';
-const GDRIVE_API_KEY =
-  (import.meta.env.VITE_GDRIVE_API_KEY as string | undefined) ?? '';
-const GDRIVE_CLIENT_ID =
-  (import.meta.env.VITE_GDRIVE_CLIENT_ID as string | undefined) ?? '';
 
 // ─── Origin whitelists (exact match — no .includes()) ────────────────────────
 // Using .includes() on event.origin allows spoofed origins such as
@@ -398,39 +403,118 @@ async function pickBox(mode: PickMode, signal?: AbortSignal): Promise<CloudFile 
 
 // ─── Google Drive ─────────────────────────────────────────────────────────────
 
+/**
+ * Pick a lyrics file from Google Drive.
+ * Auth → list 30 recent lyrics files → user selects via native <dialog> → download.
+ * The returned CloudFile includes gdriveFileId for later save-back.
+ */
 async function pickGDrive(mode: PickMode, signal?: AbortSignal): Promise<CloudFile | null> {
-  if (!GDRIVE_API_KEY || !GDRIVE_CLIENT_ID) return null;
+  if (!isGDriveConfigured()) return null;
   if (mode === 'player') throw new Error('Google Drive folder crawl not yet supported');
+  if (signal?.aborted) return null;
 
-  return new Promise((resolve, reject) => {
-    const gapi = (window as unknown as { gapi?: { load: (m: string, cb: () => void) => void; auth2?: unknown; picker?: unknown } }).gapi;
-    if (!gapi) { resolve(null); return; }
+  let token: string;
+  try {
+    token = await gdriveSignIn(false);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg === 'GDRIVE_AUTH_CANCELLED' || msg === 'GDRIVE_POPUP_BLOCKED') return null;
+    throw err;
+  }
 
-    gapi.load('picker', () => {
-      if (signal?.aborted) { resolve(null); return; }
-      const picker = (window as unknown as {
-        google?: {
-          picker: {
-            PickerBuilder: new () => {
-              addView: (v: unknown) => unknown;
-              setOAuthToken: (t: string) => unknown;
-              setDeveloperKey: (k: string) => unknown;
-              setCallback: (cb: (data: { action: string; docs?: Array<{ name: string; id: string }> }) => void) => unknown;
-              build: () => { setVisible: (v: boolean) => void };
-            };
-            DocsView: new () => unknown;
-            Action: { PICKED: string; CANCEL: string };
-          };
-        };
-      }).google?.picker;
-      if (!picker) { resolve(null); return; }
+  if (signal?.aborted) return null;
 
-      // Nécessite un token OAuth2 Google — non implémenté sans GAPI auth
-      resolve(null);
+  const files = await listRecentLyricsFiles(token);
+  if (!files.length) return null;
+  if (signal?.aborted) return null;
+
+  // Present a native picker dialog to the user
+  const chosen = await showGDriveFilePicker(files);
+  if (!chosen || signal?.aborted) return null;
+
+  const content = await gdriveDownload(chosen.id, token);
+  return { name: chosen.name, content, gdriveFileId: chosen.id };
+}
+
+/**
+ * Show a minimal native <dialog> listing GDrive files for selection.
+ * Returns the chosen file or null if dismissed.
+ */
+function showGDriveFilePicker(
+  files: Array<{ id: string; name: string; mimeType: string }>,
+): Promise<{ id: string; name: string } | null> {
+  return new Promise(resolve => {
+    const dialog = document.createElement('dialog');
+    dialog.style.cssText = [
+      'padding:0',
+      'border:none',
+      'border-radius:8px',
+      'box-shadow:0 8px 32px rgba(0,0,0,.24)',
+      'min-width:320px',
+      'max-width:480px',
+      'font-family:inherit',
+    ].join(';');
+
+    const header = document.createElement('div');
+    header.style.cssText = 'padding:16px 20px 8px;font-weight:600;font-size:15px;border-bottom:1px solid #e0e0e0';
+    header.textContent = 'Open from Google Drive';
+
+    const list = document.createElement('ul');
+    list.style.cssText = 'list-style:none;margin:0;padding:8px 0;max-height:320px;overflow-y:auto';
+
+    files.forEach(f => {
+      const li = document.createElement('li');
+      li.style.cssText = 'padding:10px 20px;cursor:pointer;font-size:14px;border-bottom:1px solid #f0f0f0';
+      li.textContent = f.name;
+      li.addEventListener('mouseenter', () => { li.style.background = '#f5f5f5'; });
+      li.addEventListener('mouseleave', () => { li.style.background = ''; });
+      li.addEventListener('click', () => {
+        dialog.close();
+        dialog.remove();
+        resolve({ id: f.id, name: f.name });
+      });
+      list.appendChild(li);
     });
 
-    void reject; // satisfy TS unused-variable
+    const footer = document.createElement('div');
+    footer.style.cssText = 'padding:10px 20px;display:flex;justify-content:flex-end;border-top:1px solid #e0e0e0';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:6px 16px;cursor:pointer;font-size:13px';
+    cancelBtn.addEventListener('click', () => {
+      dialog.close();
+      dialog.remove();
+      resolve(null);
+    });
+    footer.appendChild(cancelBtn);
+
+    dialog.appendChild(header);
+    dialog.appendChild(list);
+    dialog.appendChild(footer);
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    dialog.addEventListener('close', () => {
+      dialog.remove();
+      resolve(null);
+    });
   });
+}
+
+// ─── Google Drive Save ────────────────────────────────────────────────────────
+
+/**
+ * Save text content to Google Drive.
+ * - fileId provided → update existing file
+ * - fileId omitted  → create new file in Drive root
+ */
+export async function saveToGDrive(
+  content: string,
+  fileName: string,
+  fileId?: string,
+): Promise<{ id: string; name: string }> {
+  const saved = await gdriveSave(content, fileName, 'text/plain', fileId);
+  return { id: saved.id, name: saved.name };
 }
 
 // ─── API publique ─────────────────────────────────────────────────────────────
@@ -441,45 +525,46 @@ export function getProvidersMeta(): CloudProviderMeta[] {
       id: 'onedrive',
       label: 'OneDrive Personal',
       colorClass: 'text-blue-400',
-      available: true,
+      available: !!MSAL_CLIENT_ID,
     },
     {
       id: 'onedrive-business',
       label: 'OneDrive Business',
-      colorClass: 'text-blue-600',
+      colorClass: 'text-blue-500',
       available: !!MSAL_CLIENT_ID,
     },
     {
       id: 'dropbox',
       label: 'Dropbox',
-      colorClass: 'text-sky-400',
+      colorClass: 'text-blue-600',
       available: !!DROPBOX_APP_KEY,
     },
     {
       id: 'box',
       label: 'Box',
-      colorClass: 'text-blue-500',
+      colorClass: 'text-blue-700',
       available: !!BOX_CLIENT_ID,
     },
     {
       id: 'gdrive',
       label: 'Google Drive',
-      colorClass: 'text-yellow-400',
-      available: !!(GDRIVE_API_KEY && GDRIVE_CLIENT_ID),
+      colorClass: 'text-yellow-500',
+      available: isGDriveConfigured(),
     },
   ];
 }
 
-export async function pickCloudFile(
-  provider: CloudProviderId,
+export async function pickFromCloud(
+  providerId: CloudProviderId,
+  mode: PickMode,
   signal?: AbortSignal,
-  mode: PickMode = 'lyrics',
 ): Promise<CloudFile | null> {
-  switch (provider) {
+  switch (providerId) {
     case 'onedrive':          return pickOneDrive(false, mode, signal);
     case 'onedrive-business': return pickOneDrive(true,  mode, signal);
     case 'dropbox':           return pickDropbox(mode, signal);
     case 'box':               return pickBox(mode, signal);
     case 'gdrive':            return pickGDrive(mode, signal);
+    default:                  return null;
   }
 }
