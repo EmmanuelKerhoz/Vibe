@@ -107,11 +107,12 @@ export function AppModalLayer() {
     onComplete: () => setIsLeftPanelOpen(false),
   });
 
-  // Cloud storage — brânche selon le mode
+  // Cloud storage — branche selon le mode
   const handleCloudFileLoaded = useCallback((file: CloudFile) => {
     setIsLeftPanelOpen(false);
-    if (cloudStoragePickerMode === 'player') {
-      // Mode player : émettre un événement custom pour que le PlayerTab le consomme
+    if (cloudStoragePickerMode === 'player' || cloudStoragePickerMode === 'player-files') {
+      // Both player modes dispatch to PlayerTab via custom event.
+      // PlayerTab listener reads file.fileList (AudioFileEntry[]) and adds tracks.
       window.dispatchEvent(new CustomEvent('vibe:playerfolderloaded', { detail: file }));
       return;
     }
