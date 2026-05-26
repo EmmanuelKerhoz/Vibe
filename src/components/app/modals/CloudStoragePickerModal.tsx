@@ -3,7 +3,7 @@
  * Providers supportés : OneDrive, OneDrive Business, Dropbox, Box, Google Drive.
  * S'intègre au pattern modal existant (lcars-gradient-outline, dialog-surface, etc.).
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Cloud, X, Upload } from '../../ui/icons';
 import { useTranslation } from '../../../i18n';
 import { Button } from '../../ui/Button';
@@ -23,7 +23,7 @@ interface Props {
 type PickState = 'idle' | 'picking' | 'error';
 
 const PROVIDER_ICONS: Record<CloudProviderId, string> = {
-  'onedrive':          '\u{1F4C4}', // placeholder — remplacer par icônes Fluent réelles si dispo
+  'onedrive':          '\u{1F4C4}',
   'onedrive-business': '\u{1F4BC}',
   'dropbox':           '\u{1F4E6}',
   'box':               '\u{1F5C3}',
@@ -35,17 +35,22 @@ export function CloudStoragePickerModal({ isOpen, onClose, onFileLoaded }: Props
   const [pickState, setPickState] = useState<PickState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [activeProvider, setActiveProvider] = useState<CloudProviderId | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const providers = getProvidersMeta();
 
   const handlePick = useCallback(async (id: CloudProviderId) => {
+    // Annule tout pick précédent
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
     setActiveProvider(id);
     setPickState('picking');
     setErrorMsg('');
     try {
-      const file = await pickCloudFile(id);
+      const file = await pickCloudFile(id, ac.signal);
       if (!file) {
-        // Annulé par l'utilisateur — pas d'erreur
         setPickState('idle');
         setActiveProvider(null);
         return;
@@ -53,25 +58,32 @@ export function CloudStoragePickerModal({ isOpen, onClose, onFileLoaded }: Props
       onFileLoaded(file);
       onClose();
     } catch (err) {
+      if ((err as { name?: string }).name === 'AbortError') {
+        setPickState('idle');
+        setActiveProvider(null);
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'Unknown error';
       setErrorMsg(msg);
       setPickState('error');
     } finally {
       setActiveProvider(null);
+      abortRef.current = null;
     }
   }, [onFileLoaded, onClose]);
 
+  // Toujours fermable — abort le pick en cours si nécessaire
   const handleClose = useCallback(() => {
-    if (pickState === 'picking') return; // bloque la fermeture pendant le pick
+    abortRef.current?.abort();
+    abortRef.current = null;
     setPickState('idle');
     setErrorMsg('');
     setActiveProvider(null);
     onClose();
-  }, [pickState, onClose]);
+  }, [onClose]);
 
   if (!isOpen) return null;
 
-  // i18n avec fallbacks
   const cloud = (t as { cloudStorage?: {
     title?: string;
     subtitle?: string;
@@ -81,12 +93,12 @@ export function CloudStoragePickerModal({ isOpen, onClose, onFileLoaded }: Props
     errorPrefix?: string;
   } }).cloudStorage ?? {};
 
-  const title        = cloud.title        ?? 'Cloud Storage';
-  const subtitle     = cloud.subtitle     ?? 'Import a file from your cloud provider';
-  const pickButton   = cloud.pickButton   ?? 'Open';
+  const title         = cloud.title         ?? 'Cloud Storage';
+  const subtitle      = cloud.subtitle      ?? 'Import a file from your cloud provider';
+  const pickButton    = cloud.pickButton    ?? 'Open';
   const notConfigured = cloud.notConfigured ?? 'Not configured';
-  const picking      = cloud.picking      ?? 'Opening…';
-  const errorPrefix  = cloud.errorPrefix  ?? 'Error:';
+  const picking       = cloud.picking       ?? 'Opening…';
+  const errorPrefix   = cloud.errorPrefix   ?? 'Error:';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
@@ -130,9 +142,8 @@ export function CloudStoragePickerModal({ isOpen, onClose, onFileLoaded }: Props
             </div>
             <button
               onClick={handleClose}
-              disabled={pickState === 'picking'}
               aria-label="Close"
-              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors disabled:opacity-40"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)] rounded-lg transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -178,7 +189,6 @@ export function CloudStoragePickerModal({ isOpen, onClose, onFileLoaded }: Props
               );
             })}
 
-            {/* Message d'erreur */}
             {pickState === 'error' && errorMsg && (
               <p className="text-xs text-red-400 pt-1">
                 {errorPrefix} {errorMsg}
@@ -190,7 +200,6 @@ export function CloudStoragePickerModal({ isOpen, onClose, onFileLoaded }: Props
           <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-end">
             <Button
               onClick={handleClose}
-              disabled={pickState === 'picking'}
               variant="outlined"
               color="inherit"
             >

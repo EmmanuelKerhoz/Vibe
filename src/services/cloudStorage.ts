@@ -108,35 +108,44 @@ async function getMsalToken(scopes: string[]): Promise<string | null> {
   }
 }
 
-// ─── Résolution dynamique du tenant SharePoint ───────────────────────────────
+// ─── Résolution dynamique du tenant ODB ──────────────────────────────────────
 
 /**
- * Résout l'origin SharePoint de l'utilisateur connecté via Graph.
- * GET /v1.0/sites/root retourne le site racine du tenant courant.
- * Aucune config statique — 100% multi-tenant.
+ * Résout l'URL OneDrive for Business de l'utilisateur via Graph.
+ * GET /v1.0/me/drive retourne le driveType et webUrl du drive personnel ODB.
+ * Format résultant : https://<tenant>-my.sharepoint.com
+ * (et non pas https://<tenant>.sharepoint.com qui est le site root SharePoint)
  */
-async function resolveSharePointOrigin(token: string): Promise<string> {
+async function resolveODBOrigin(token: string): Promise<string> {
   const res = await fetch(
-    'https://graph.microsoft.com/v1.0/sites/root?$select=webUrl',
+    'https://graph.microsoft.com/v1.0/me/drive?$select=webUrl',
     { headers: { Authorization: `Bearer ${token}` } },
   );
-  if (!res.ok) throw new Error(`Graph /sites/root failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Graph /me/drive failed: ${res.status}`);
   const data = await res.json() as { webUrl?: string };
-  if (!data.webUrl) throw new Error('Cannot resolve SharePoint tenant: missing webUrl');
-  return new URL(data.webUrl).origin;
+  if (!data.webUrl) throw new Error('Cannot resolve ODB tenant: missing webUrl');
+  // webUrl example: https://valorconseil-my.sharepoint.com/personal/emmanuel_valor_pro/Documents
+  const url = new URL(data.webUrl);
+  return url.origin; // → https://valorconseil-my.sharepoint.com
 }
 
 // ─── OneDrive Personnel / Business ───────────────────────────────────────────
 
-async function pickOneDrive(business: boolean): Promise<CloudFile | null> {
+/**
+ * signal : AbortSignal optionnel — si aborted, ferme la popup et resolve(null).
+ */
+async function pickOneDrive(business: boolean, signal?: AbortSignal): Promise<CloudFile | null> {
   const scopes = ['Files.Read', 'User.Read', 'openid', 'profile'];
 
   const token = await getMsalToken(scopes);
   if (!token) return null;
+  if (signal?.aborted) return null;
 
   const origin = business
-    ? await resolveSharePointOrigin(token)
+    ? await resolveODBOrigin(token)
     : 'https://onedrive.live.com';
+
+  if (signal?.aborted) return null;
 
   // OneDrive File Picker v8 (SDK-less) ─ ouvre une fenêtre popup
   return new Promise(resolve => {
@@ -148,12 +157,19 @@ async function pickOneDrive(business: boolean): Promise<CloudFile | null> {
 
     if (!pickerWindow) { resolve(null); return; }
 
+    const cleanup = () => {
+      window.removeEventListener('message', messageHandler);
+      if (!pickerWindow.closed) pickerWindow.close();
+    };
+
+    // Abort : ferme la popup immédiatement
+    signal?.addEventListener('abort', () => { cleanup(); resolve(null); }, { once: true });
+
     const messageHandler = async (event: MessageEvent) => {
       if (event.source !== pickerWindow) return;
       const data = event.data as { type?: string; items?: Array<{ name: string; '@microsoft.graph.downloadUrl'?: string; id?: string }> };
       if (data?.type === 'Success' && data.items?.length) {
-        window.removeEventListener('message', messageHandler);
-        pickerWindow.close();
+        cleanup();
         const item = data.items[0];
         if (!item || !isAcceptedFile(item.name)) { resolve(null); return; }
         try {
@@ -176,19 +192,14 @@ async function pickOneDrive(business: boolean): Promise<CloudFile | null> {
           resolve(null);
         }
       } else if (data?.type === 'Cancel') {
-        window.removeEventListener('message', messageHandler);
-        pickerWindow.close();
+        cleanup();
         resolve(null);
       }
     };
 
     window.addEventListener('message', messageHandler);
 
-    setTimeout(() => {
-      window.removeEventListener('message', messageHandler);
-      if (!pickerWindow.closed) pickerWindow.close();
-      resolve(null);
-    }, 300_000);
+    setTimeout(() => { cleanup(); resolve(null); }, 300_000);
   });
 }
 
@@ -370,10 +381,13 @@ async function pickGoogleDrive(): Promise<CloudFile | null> {
 
 // ─── API publique ─────────────────────────────────────────────────────────────
 
-export async function pickCloudFile(provider: CloudProviderId): Promise<CloudFile | null> {
+/**
+ * signal optionnel : AbortSignal pour annuler un pick en cours (ex: fermeture du dialogue).
+ */
+export async function pickCloudFile(provider: CloudProviderId, signal?: AbortSignal): Promise<CloudFile | null> {
   switch (provider) {
-    case 'onedrive':          return pickOneDrive(false);
-    case 'onedrive-business': return pickOneDrive(true);
+    case 'onedrive':          return pickOneDrive(false, signal);
+    case 'onedrive-business': return pickOneDrive(true, signal);
     case 'dropbox':           return pickDropbox();
     case 'box':               return pickBox();
     case 'gdrive':            return pickGoogleDrive();
