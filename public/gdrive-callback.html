@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Google Drive Auth</title></head>
+<body>
+<script>
+  // Parse the access_token from the URL fragment and postMessage it to the opener.
+  (function () {
+    var hash = window.location.hash.slice(1);
+    var params = {};
+    hash.split('&').forEach(function (pair) {
+      var parts = pair.split('=');
+      if (parts.length === 2) params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1]);
+    });
+
+    var msg = { type: 'GDRIVE_TOKEN' };
+    if (params['access_token']) {
+      msg.access_token = params['access_token'];
+      msg.expires_in   = parseInt(params['expires_in'] || '3600', 10);
+    } else {
+      msg.error = params['error'] || 'NO_TOKEN';
+    }
+
+    if (window.opener) {
+      window.opener.postMessage(msg, window.location.origin);
+    }
+    window.close();
+  })();
+</script>
+</body>
+</html>
