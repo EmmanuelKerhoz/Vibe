@@ -8,7 +8,7 @@
  * Provider availability per mode:
  *   lyrics       : all configured providers
  *   player       : onedrive, onedrive-business only (folder crawl via Graph)
- *   player-files : onedrive, onedrive-business, dropbox (multi-select audio)
+ *   player-files : onedrive, onedrive-business, dropbox, gdrive
  */
 import React, { useState, useCallback, useRef } from 'react';
 import { Cloud, X, Upload } from '../../ui/icons';
@@ -44,7 +44,7 @@ const PROVIDER_ICONS: Record<CloudProviderId, string> = {
 const MODE_SUPPORTED_PROVIDERS: Record<PickMode, ReadonlySet<CloudProviderId>> = {
   'lyrics':       new Set(['onedrive', 'onedrive-business', 'dropbox', 'box', 'gdrive']),
   'player':       new Set(['onedrive', 'onedrive-business']),
-  'player-files': new Set(['onedrive', 'onedrive-business', 'dropbox']),
+  'player-files': new Set(['onedrive', 'onedrive-business', 'dropbox', 'gdrive']),
 };
 
 function getModeUnavailableLabel(mode: PickMode): string {
