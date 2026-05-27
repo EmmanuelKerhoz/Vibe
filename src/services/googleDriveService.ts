@@ -12,6 +12,10 @@
  *   VITE_GDRIVE_API_KEY    — API key (Picker API, optional)
  *
  * No external SDK dependency. Pure REST + window.open popup.
+ *
+ * SECURITY: OAuth2 implicit flow (response_type=token) est déprécié (RFC 9700).
+ * Migration vers PKCE (Authorization Code + code_verifier) requiert un backend
+ * ou un service worker. À planifier avant mise en production.
  */
 
 // ---------------------------------------------------------------------------
@@ -69,6 +73,7 @@ export interface GDriveFile {
 
 let _cachedToken: string | null = null;
 let _tokenExpiry = 0;
+let _proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 function isTokenValid(): boolean {
   return !!_cachedToken && Date.now() < _tokenExpiry - 60_000;
@@ -77,11 +82,22 @@ function isTokenValid(): boolean {
 function storeToken(token: string, expiresInSeconds: number): void {
   _cachedToken = token;
   _tokenExpiry = Date.now() + expiresInSeconds * 1000;
+
+  // Proactive silent refresh 5 min before expiry to avoid mid-session 401s.
+  if (_proactiveRefreshTimer !== null) clearTimeout(_proactiveRefreshTimer);
+  _proactiveRefreshTimer = setTimeout(
+    () => { void silentRefresh(SCOPE_READ).catch(() => {}); },
+    Math.max(0, expiresInSeconds - 300) * 1000,
+  );
 }
 
 export function clearToken(): void {
   _cachedToken = null;
   _tokenExpiry = 0;
+  if (_proactiveRefreshTimer !== null) {
+    clearTimeout(_proactiveRefreshTimer);
+    _proactiveRefreshTimer = null;
+  }
 }
 
 export function getStoredToken(): string | null {
@@ -175,18 +191,25 @@ function popupSignIn(scope: string): Promise<string> {
     const popup = window.open(authUrl, 'GDriveAuth', 'width=520,height=640,toolbar=0,scrollbars=1');
     if (!popup) { reject(new Error('GDRIVE_POPUP_BLOCKED')); return; }
 
+    // `settled` guard prevents double-resolve/reject when both closedCheck
+    // and messageHandler fire in the same tick (race condition on popup.close).
+    let settled = false;
+
     const closedCheck = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(closedCheck);
-        window.removeEventListener('message', messageHandler);
-        reject(new Error('GDRIVE_AUTH_CANCELLED'));
-      }
+      if (!popup.closed) return;
+      if (settled) { clearInterval(closedCheck); return; }
+      settled = true;
+      clearInterval(closedCheck);
+      window.removeEventListener('message', messageHandler);
+      reject(new Error('GDRIVE_AUTH_CANCELLED'));
     }, 500);
 
     const messageHandler = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       const data = event.data as { type?: string; access_token?: string; expires_in?: number; error?: string };
       if (data.type !== 'GDRIVE_TOKEN') return;
+      if (settled) return;
+      settled = true;
 
       clearInterval(closedCheck);
       window.removeEventListener('message', messageHandler);
@@ -245,7 +268,7 @@ async function driveGet<T>(path: string, token: string): Promise<T> {
     const body = await res.text().catch(() => '');
     throw new Error(`Drive GET ${res.status}: ${body.slice(0, 200)}`);
   }
-  return res.json() as Promise<T>;
+  return (await res.json()) as T;
 }
 
 // ---------------------------------------------------------------------------
@@ -277,28 +300,51 @@ export async function listRecentLyricsFiles(token: string): Promise<GDriveFile[]
 /**
  * List the 50 most recent audio files from Drive.
  * Uses drive.readonly scope — works with any file in the user's Drive.
- * Only includes files that have a webContentLink (downloadable).
- * Returns GDriveFile[] with webContentLink for direct download.
+ * Returns GDriveFile[] with id only (no webContentLink — use createAudioBlobUrl for streaming).
  */
 export async function listRecentAudioFiles(token: string): Promise<GDriveFile[]> {
   const mimeQuery = AUDIO_MIME_TYPES.map(m => `mimeType='${m}'`).join(' or ');
   const q = encodeURIComponent(`(${mimeQuery}) and trashed=false`);
-  const fields = encodeURIComponent('files(id,name,mimeType,webContentLink,size)');
+  const fields = encodeURIComponent('files(id,name,mimeType,size)');
   const data = await driveGet<DriveFileListResponse>(
     `/files?q=${q}&fields=${fields}&pageSize=50&orderBy=modifiedTime desc`,
     token,
   );
   return (data.files ?? [])
     .filter(f =>
-      GDRIVE_AUDIO_EXTENSIONS.some(ext => f.name.toLowerCase().endsWith(ext)) &&
-      f.webContentLink !== undefined
+      GDRIVE_AUDIO_EXTENSIONS.some(ext => f.name.toLowerCase().endsWith(ext))
     )
     .map(f => {
       const file: GDriveFile = { id: f.id, name: f.name, mimeType: f.mimeType };
-      if (f.webContentLink !== undefined) file.webContentLink = f.webContentLink;
       if (f.size !== undefined) file.size = f.size;
       return file;
     });
+}
+
+// ---------------------------------------------------------------------------
+// Audio streaming via alt=media (Bearer token — not webContentLink)
+// ---------------------------------------------------------------------------
+
+/**
+ * Download a Drive audio file as a Blob Object URL.
+ * Uses alt=media with Authorization header — the only reliable method for
+ * files under drive.readonly scope (webContentLink requires a Google session
+ * cookie and fails in fetch() with CORS when the user is not logged in via
+ * the browser).
+ *
+ * IMPORTANT: caller must call URL.revokeObjectURL(url) when done to free memory.
+ */
+export async function createAudioBlobUrl(fileId: string, token: string): Promise<string> {
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Drive audio download ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
 }
 
 // ---------------------------------------------------------------------------
@@ -384,7 +430,7 @@ export async function saveFile(
     throw new Error(`Drive ${method} ${res.status}: ${errBody.slice(0, 200)}`);
   }
 
-  return res.json() as Promise<GDriveFile>;
+  return (await res.json()) as GDriveFile;
 }
 
 // ---------------------------------------------------------------------------
