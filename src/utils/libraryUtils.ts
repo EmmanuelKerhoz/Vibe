@@ -6,6 +6,7 @@ import { safeGetItem, safeSetItem } from './safeStorage';
 import { normalizeLoadedSection } from './songUtils';
 import { SectionSchema } from '../schemas/sessionSchema';
 import { LibraryAssetSchema, LibraryStoreSchema } from '../schemas/librarySchema';
+import { logger } from './logger';
 
 // ---------------------------------------------------------------------------
 // History size caps — prevents unbounded localStorage growth.
@@ -65,7 +66,7 @@ const readStore = (): LibraryStore => {
     const json = JSON.parse(raw) as unknown;
     const result = LibraryStoreSchema.safeParse(json);
     if (!result.success) {
-      console.warn(
+      logger.warn(
         '[libraryUtils] readStore: invalid library payload, resetting to empty store.\n',
         result.error.format(),
       );
@@ -157,7 +158,7 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
     writeStore({ version: current.version + 1, assets: merged });
     return newAsset;
   } catch (error) {
-    console.error('Failed to save asset to library:', error);
+    logger.error('Failed to save asset to library:', error);
     throw error;
   }
 };
@@ -261,7 +262,7 @@ export const updateAssetInLibrary = async (
     writeStore({ version: current.version + 1, assets: updatedAssets });
     return updatedAsset;
   } catch (error) {
-    console.error('Failed to update asset in library:', error);
+    logger.error('Failed to update asset in library:', error);
     throw error;
   }
 };
@@ -272,7 +273,7 @@ export const deleteAssetFromLibrary = async (assetId: string): Promise<void> => 
     const updated = current.assets.filter(a => a.id !== assetId);
     writeStore({ version: current.version + 1, assets: updated });
   } catch (error) {
-    console.error('Failed to delete asset from library:', error);
+    logger.error('Failed to delete asset from library:', error);
     throw error;
   }
 };
@@ -281,7 +282,7 @@ export const purgeLibrary = async (): Promise<void> => {
   try {
     writeStore({ version: 0, assets: [] });
   } catch (error) {
-    console.error('Failed to purge library:', error);
+    logger.error('Failed to purge library:', error);
     throw error;
   }
 };
@@ -578,7 +579,7 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
           if (result.success) {
             assets.push(result.data as unknown as LibraryAsset);
           } else {
-            console.warn(
+            logger.warn(
               `[libraryUtils] importAssetsFromFile: item ${idx} failed validation, skipping.`,
               result.error.format(),
             );
@@ -601,7 +602,7 @@ export const importAssetsFromFile = async (file: File): Promise<LibraryAsset[]> 
       assets.push(buildAssetFromText(text, file.name.replace(/\.(txt|md)$/, '')));
     }
   } catch (error) {
-    console.error('Failed to import assets:', error);
+    logger.error('Failed to import assets:', error);
   }
   return assets;
 };

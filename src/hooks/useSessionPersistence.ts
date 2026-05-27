@@ -6,6 +6,7 @@ import { safeSetItem, safeGetItem } from '../utils/safeStorage';
 import { isPristineDraft } from '../utils/songDefaults';
 import { useSongContext } from '../contexts/SongContext';
 import { SessionSchema } from '../schemas/sessionSchema';
+import { logger } from '../utils/logger';
 
 /** Debounce delay for session persistence writes (ms). */
 const SAVE_DEBOUNCE_MS = 500;
@@ -53,7 +54,7 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
           // Schema validation failed — session is corrupted or from an
           // incompatible version. Log in dev, skip hydration gracefully.
           if (import.meta.env.DEV) {
-            console.warn('[useSessionPersistence] Invalid session schema:', result.error.flatten());
+            logger.warn('[useSessionPersistence] Invalid session schema:', result.error.flatten());
           }
         } else {
           const parsed = result.data;
@@ -88,7 +89,7 @@ export function useSessionPersistence(params: UseSessionPersistenceParams): void
           }
         }
       } catch (e) {
-        console.error('[useSessionPersistence] Failed to parse saved session', e);
+        logger.error('[useSessionPersistence] Failed to parse saved session', e);
       }
     }
     setIsSessionHydrated(true);

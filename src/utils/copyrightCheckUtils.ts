@@ -1,5 +1,6 @@
 import type { Section } from '../types';
 import { getSectionText, getSongText } from './songUtils';
+import { logger } from './logger';
 
 export type CopyrightMatch = {
   score: number;
@@ -17,6 +18,33 @@ export type CopyrightMatch = {
   riskLevel: 'high' | 'medium' | 'low';
 };
 
+/** Default timeout for the copyright similarity API call. */
+const COPYRIGHT_REQUEST_TIMEOUT_MS = 15_000;
+
+/**
+ * Build an AbortSignal that fires after `timeoutMs` and is also aborted if the
+ * caller-provided `parentSignal` aborts.
+ */
+const makeTimeoutSignal = (
+  timeoutMs: number,
+  parentSignal?: AbortSignal,
+): { signal: AbortSignal; cleanup: () => void } => {
+  const controller = new AbortController();
+  const onParentAbort = () => controller.abort(parentSignal?.reason);
+  if (parentSignal) {
+    if (parentSignal.aborted) controller.abort(parentSignal.reason);
+    else parentSignal.addEventListener('abort', onParentAbort, { once: true });
+  }
+  const timer = setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), timeoutMs);
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      clearTimeout(timer);
+      parentSignal?.removeEventListener('abort', onParentAbort);
+    },
+  };
+};
+
 /**
  * Check similarity against worldwide copyrighted songs
  * Uses multiple lyrics APIs and databases
@@ -25,6 +53,7 @@ export const checkCopyrightSimilarity = async (
   currentSong: Section[],
   threshold = 30,
   limit = 10,
+  options?: { signal?: AbortSignal; timeoutMs?: number },
 ): Promise<CopyrightMatch[]> => {
   if (currentSong.length === 0) return [];
 
@@ -32,11 +61,16 @@ export const checkCopyrightSimilarity = async (
 
   const keywords = extractKeywords(songText);
 
+  const { signal, cleanup } = makeTimeoutSignal(
+    options?.timeoutMs ?? COPYRIGHT_REQUEST_TIMEOUT_MS,
+    options?.signal,
+  );
+
   try {
     const response = await fetch('/api/copyright/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         lyrics: songText,
         keywords,
         sections: currentSong.map(s => ({
@@ -44,20 +78,24 @@ export const checkCopyrightSimilarity = async (
           text: getSectionText(s)
         })),
         threshold,
-        limit 
+        limit
       }),
+      signal,
     });
 
     if (!response.ok) {
-      console.warn('Copyright API unavailable, feature disabled');
+      logger.warn('Copyright API unavailable, feature disabled');
       return [];
     }
 
     const data = await response.json();
     return data.matches || [];
   } catch (error) {
-    console.warn('Copyright check failed:', error);
+    if (options?.signal?.aborted) throw error;
+    logger.warn('Copyright check failed:', error);
     return [];
+  } finally {
+    cleanup();
   }
 };
 

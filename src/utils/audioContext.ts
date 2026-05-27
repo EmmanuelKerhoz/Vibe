@@ -1,3 +1,4 @@
+import { logger } from './logger';
 /**
  * audioContext.ts — shared AudioContext factory.
  *
@@ -41,7 +42,7 @@ export async function resumeAudioContext(ctx: AudioContext): Promise<boolean> {
     await ctx.resume();
     return true;
   } catch (e) {
-    console.warn('[audioContext] Failed to resume AudioContext:', e);
+    logger.warn('[audioContext] Failed to resume AudioContext:', e);
     return false;
   }
 }

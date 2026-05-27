@@ -19,6 +19,7 @@ import {
   sanitizeForPrompt,
 } from '../../utils/promptSanitization';
 import { z } from 'zod';
+import { logger } from '../../utils/logger';
 
 const LineResponseSchema = z.object({
   text: z.string().default(''),
@@ -367,7 +368,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
             );
           }
         } catch (err) {
-          console.debug('Failed to build IPA-enhanced prompt, continuing without:', err);
+          logger.debug('Failed to build IPA-enhanced prompt, continuing without:', err);
         }
       }
 

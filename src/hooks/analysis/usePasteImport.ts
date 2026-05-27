@@ -13,6 +13,7 @@ import { resolveUiLanguageName } from '../../utils/uiLangUtils';
 import { SECTION_TYPE_DEFINITIONS } from '../../constants/sections';
 import { parseTextToSections } from '../../utils/libraryUtils';
 import { UNTRUSTED_INPUT_PREAMBLE, fence, fenceLong, sanitizeForPrompt } from '../../utils/promptSanitization';
+import { logger } from '../../utils/logger';
 
 /** More aggressive retry budget for chunked paste-import calls. */
 const PASTE_IMPORT_RETRY = { maxAttempts: 3, delayMs: 1200 } as const;
@@ -456,7 +457,7 @@ export const usePasteImport = ({
             };
           } catch (sectionError) {
             if (isAbortError(sectionError)) return null;
-            console.warn(`Paste import: section "${chunk.displayLabel}" failed after retries, skipping.`, sectionError);
+            logger.warn(`Paste import: section "${chunk.displayLabel}" failed after retries, skipping.`, sectionError);
             return null;
           } finally {
             inProgressRef.delete(idx);
@@ -484,7 +485,7 @@ export const usePasteImport = ({
         }, PASTE_IMPORT_RETRY).then(res =>
           safeJsonParse<{ topic?: string; mood?: string; language?: string }>(res.text || '{}', {})
         ).catch((err) => {
-          console.debug('Failed to analyze pasted lyrics metadata:', err);
+          logger.debug('Failed to analyze pasted lyrics metadata:', err);
           return {} as { topic?: string; mood?: string; language?: string };
         });
 
