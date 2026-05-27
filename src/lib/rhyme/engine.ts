@@ -345,12 +345,13 @@ export async function rhymeScoreAsync(
   // accepts `LangFamily` (morphoNucleus-side type). The two enums overlap
   // (KWA/TAI/...) but are not structurally identical; the union of both is
   // safe here because the embedding backend short-circuits to a phonetic
-  // fallback for unknown families. Use `unknown` rather than `any` to keep
-  // the cast localized.
+  // fallback for unknown families. Use a named alias rather than an inline
+  // `Parameters<…>` cast so renaming embeddingScore stays explicit.
+  type EmbeddingFamily = Parameters<typeof embeddingScore>[2];
   const embResult = await embeddingScore(
     phonesA,
     phonesB,
-    family as unknown as Parameters<typeof embeddingScore>[2],
+    family as unknown as EmbeddingFamily,
     syncResult.langA,
   );
   const blended = blendScores(syncResult.score, embResult.score, 0.4);
