@@ -7,6 +7,12 @@ import { normalizeLoadedSection } from './songUtils';
 import { SectionSchema } from '../schemas/sessionSchema';
 import { LibraryAssetSchema, LibraryStoreSchema } from '../schemas/librarySchema';
 
+// ---------------------------------------------------------------------------
+// History size caps — prevents unbounded localStorage growth.
+// ---------------------------------------------------------------------------
+const MAX_ASSET_VERSIONS    = 50;
+const MAX_PROMPT_SNAPSHOTS  = 100;
+
 export type LibraryAsset = {
   id: string;
   title: string;
@@ -162,8 +168,10 @@ export const saveAssetToLibrary = async (asset: Omit<LibraryAsset, 'id' | 'times
  * Before applying the patch:
  * 1. The current asset state is pushed into `versions[]` as a named snapshot
  *    (auto-label "v{n} – {ISO date}") so the full history is preserved.
+ *    versions[] is capped at MAX_ASSET_VERSIONS (oldest entries dropped first).
  * 2. If `patch.metadata.musicalPrompt` differs from the stored value, the
  *    old prompt is appended to `metadata.promptSnapshots[]` before overwrite.
+ *    promptSnapshots[] is capped at MAX_PROMPT_SNAPSHOTS.
  *
  * Nothing happens if `id` is not found — returns `null` in that case.
  */
@@ -200,6 +208,9 @@ export const updateAssetInLibrary = async (
       name: versionLabel,
     };
 
+    // Cap versions[] at MAX_ASSET_VERSIONS — keep the most recent.
+    const cappedVersions = [...existingVersions, snapshot].slice(-MAX_ASSET_VERSIONS);
+
     // --- 2. Snapshot old musicalPrompt if it changes ---
     const incomingPrompt = patch.metadata?.musicalPrompt;
     const oldPrompt = existing.metadata?.musicalPrompt;
@@ -219,7 +230,8 @@ export const updateAssetInLibrary = async (
         prompt:    oldPrompt,
         label:     `Before update ${new Date(now).toISOString().slice(0, 10)}`,
       };
-      updatedSnapshots = [...existingSnapshots, promptSnapshot];
+      // Cap promptSnapshots[] at MAX_PROMPT_SNAPSHOTS — keep the most recent.
+      updatedSnapshots = [...existingSnapshots, promptSnapshot].slice(-MAX_PROMPT_SNAPSHOTS);
     }
 
     // --- 3. Build updated asset ---
@@ -236,7 +248,7 @@ export const updateAssetInLibrary = async (
       ...patch,
       id,
       timestamp: now,
-      versions: [...existingVersions, snapshot],
+      versions: cappedVersions,
       metadata: updatedMetadata,
     };
 
