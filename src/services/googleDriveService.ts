@@ -251,7 +251,11 @@ export async function signIn(write = false): Promise<string> {
 
   // Pre-open the popup synchronously so iOS Safari does not block it later
   // (window.open after an await is treated as a non-gesture context on iOS).
-  const prePopup = window.open('about:blank', 'GDriveAuth', 'width=520,height=640,toolbar=0,scrollbars=1');
+  const prePopup: Window | null = window.open(
+    'about:blank',
+    'GDriveAuth',
+    'width=520,height=640,toolbar=0,scrollbars=1',
+  );
 
   // 1. Try silent refresh (hidden iframe, no user interaction)
   try {

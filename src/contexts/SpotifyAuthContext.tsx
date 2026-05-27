@@ -72,6 +72,7 @@ const TOKEN_EXPIRY_BUFFER_MS = 60_000;
 // ---------------------------------------------------------------------------
 
 const memStore = new Map<string, string>();
+const sessionMemStore = new Map<string, string>();
 function storeSet(key: string, value: string): void {
   try { localStorage.setItem(key, value); } catch { memStore.set(key, value); }
 }
@@ -80,6 +81,15 @@ function storeGet(key: string): string | null {
 }
 function storeRemove(key: string): void {
   try { localStorage.removeItem(key); } catch { memStore.delete(key); }
+}
+function storeSetSession(key: string, value: string): void {
+  try { sessionStorage.setItem(key, value); } catch { sessionMemStore.set(key, value); }
+}
+function storeGetSession(key: string): string | null {
+  try { return sessionStorage.getItem(key); } catch { return sessionMemStore.get(key) ?? null; }
+}
+function storeRemoveSession(key: string): void {
+  try { sessionStorage.removeItem(key); } catch { sessionMemStore.delete(key); }
 }
 
 // ---------------------------------------------------------------------------
@@ -103,6 +113,10 @@ function base64UrlEncode(buffer: ArrayBuffer): string {
 
 async function generateCodeChallenge(verifier: string): Promise<string> {
   return base64UrlEncode(await sha256(verifier));
+}
+
+async function hashOAuthState(state: string): Promise<string> {
+  return base64UrlEncode(await sha256(state));
 }
 
 // ---------------------------------------------------------------------------
@@ -213,6 +227,8 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
     storeRemove(TOKEN_KEY);
     storeRemove(REFRESH_KEY);
     storeRemove(EXPIRY_KEY);
+    storeRemoveSession(STATE_KEY);
+    storeRemoveSession(VERIFIER_KEY);
   }, []);
 
   const refreshWithMutex = useCallback(async (refreshToken: string): Promise<string | null> => {
@@ -274,10 +290,11 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
         return;
       }
 
-      const storedState = storeGet(STATE_KEY);
-      const verifier    = storeGet(VERIFIER_KEY);
+      const storedStateHash = storeGetSession(STATE_KEY);
+      const verifier    = storeGetSession(VERIFIER_KEY);
+      const callbackStateHash = stateParam ? await hashOAuthState(stateParam) : null;
 
-      if (stateParam !== storedState) {
+      if (!storedStateHash || !callbackStateHash || callbackStateHash !== storedStateHash) {
         setState({ status: 'error', accessToken: null, expiresAt: null, error: 'OAuth state mismatch — possible CSRF.' });
         window.history.replaceState({}, '', window.location.pathname);
         return;
@@ -285,8 +302,8 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
 
       if (!verifier || !code) return;
 
-      storeRemove(STATE_KEY);
-      storeRemove(VERIFIER_KEY);
+      storeRemoveSession(STATE_KEY);
+      storeRemoveSession(VERIFIER_KEY);
       window.history.replaceState({}, '', window.location.pathname);
 
       try {
@@ -331,8 +348,8 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
     const oauthState = generateRandomString(16);
     const verifier = generateRandomString(64);
     const challenge = await generateCodeChallenge(verifier);
-    storeSet(STATE_KEY,    oauthState);
-    storeSet(VERIFIER_KEY, verifier);
+    storeSetSession(STATE_KEY,    await hashOAuthState(oauthState));
+    storeSetSession(VERIFIER_KEY, verifier);
 
     const authUrl = new URL('https://accounts.spotify.com/authorize');
     authUrl.searchParams.set('response_type',        'code');
