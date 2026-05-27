@@ -260,7 +260,6 @@ export function SidebarProvider({ onLocalTracksAdded, onCloudTracksAdded, childr
           linked:        true,
           isVideo:       VIDEO_EXT.test(entry.name),
           cloudProvider: provider,
-          oneDriveLastModified: new Date().toISOString(),
         };
         if (provider === 'onedrive' || provider === 'onedrive-business') {
           base.oneDriveItemId = entry.id;
