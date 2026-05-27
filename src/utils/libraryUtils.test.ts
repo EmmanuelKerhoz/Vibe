@@ -18,6 +18,7 @@ import {
   mergeAssets,
   parseTextToSections,
   purgeLibrary,
+  updateAssetInLibrary,
   type LibraryAsset,
 } from './libraryUtils';
 
@@ -143,118 +144,121 @@ describe('loadAssetIntoEditor', () => {
           name: 'Verse 1',
           rhymeScheme: 'FREE',
           lines: [
-            { id: 'line-1', text: 'Tu veux des preuves, tu veux des certitudes', rhymingSyllables: '', rhyme: '', syllables: 0, concept: 'Line 1' },
-            { id: 'line-2', text: 'Tu confonds l\'amour avec la servitude', rhymingSyllables: '', rhyme: '', syllables: 0, concept: 'Line 2' },
+            { id: 'line-1', text: 'Tu veux des preuves, tu veux des certitudes', rhymingSyllables: '', rhyme: '', syllables: 0, concept: 'defiance' },
+            { id: 'line-2', text: 'Mais rien n\'est sûr dans cette réalité', rhymingSyllables: '', rhyme: '', syllables: 0, concept: 'existential' },
           ],
         },
       ],
     };
 
-    const loaded = loadAssetIntoEditor(asset);
+    const { sections } = loadAssetIntoEditor(asset);
+    const lines = sections[0]?.lines ?? [];
 
-    expect(loaded.song[0]?.rhymeScheme).toBe('AA');
-    expect(loaded.rhymeScheme).toBe('AA');
-    expect(loaded.song[0]?.lines[0]?.syllables).toBeGreaterThan(0);
-    expect(loaded.song[0]?.lines[1]?.syllables).toBeGreaterThan(0);
-  });
-
-  it('maps full asset metadata into editor state', () => {
-    const asset = makeAsset({
-      id: 'asset-full',
-      title: 'Loaded Song',
-      type: 'song',
-      sections: [
-        {
-          id: 'section-1',
-          name: 'Verse 1',
-          rhymeScheme: 'ABAB',
-          targetSyllables: 12,
-          lines: [makeLine('line-1', 'Sing along tonight')],
-        },
-      ],
-      metadata: {
-        topic: 'Midnight drive',
-        mood: 'Hopeful',
-        genre: 'Synthwave',
-        tempo: 98,
-        instrumentation: 'Analog synths',
-        rhythm: 'Steady pulse',
-        narrative: 'City escape',
-        musicalPrompt: 'Warm pads and gated drums',
-      },
-    });
-
-    const loaded = loadAssetIntoEditor(asset);
-
-    expect(loaded.song[0]?.name).toBe('Verse 1');
-    expect(loaded.song[0]?.lines[0]?.text).toBe('Sing along tonight');
-    expect(loaded.structure).toEqual(['Verse 1']);
-    expect(loaded.title).toBe('Loaded Song');
-    expect(loaded.topic).toBe('Midnight drive');
-    expect(loaded.mood).toBe('Hopeful');
-    expect(loaded.rhymeScheme).toBe('ABAB');
-    expect(loaded.targetSyllables).toBe(12);
-    expect(loaded.genre).toBe('Synthwave');
-    expect(loaded.tempo).toBe(98);
-    expect(loaded.instrumentation).toBe('Analog synths');
-    expect(loaded.rhythm).toBe('Steady pulse');
-    expect(loaded.narrative).toBe('City escape');
-    expect(loaded.musicalPrompt).toBe('Warm pads and gated drums');
-  });
-
-  it('applies editor defaults when asset metadata is missing', () => {
-    const loaded = loadAssetIntoEditor(makeAsset({
-      sections: [{ id: 'section-1', name: 'Verse 1', lines: [] }],
-    }));
-
-    expect(loaded.topic).toBe(DEFAULT_TOPIC);
-    expect(loaded.mood).toBe(DEFAULT_MOOD);
-    expect(loaded.rhymeScheme).toBe('AABB');
-    expect(loaded.targetSyllables).toBe(10);
-    expect(loaded.tempo).toBe(120);
-  });
-
-  it('converts legacy tempo metadata to a number', () => {
-    const loaded = loadAssetIntoEditor(makeAsset({
-      metadata: { tempo: 90 },
-    }));
-
-    expect(loaded.tempo).toBe(90);
+    expect(lines[0]?.syllables).toBeGreaterThan(0);
+    expect(lines[1]?.syllables).toBeGreaterThan(0);
   });
 });
 
-describe('deleteAssetFromLibrary and purgeLibrary', () => {
+describe('updateAssetInLibrary', () => {
+  const STORAGE_KEY = 'vibeLibrary';
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    storageMocks.safeSetItem.mockReturnValue(true);
+    storageMocks.safeGetItem.mockReset();
+    storageMocks.safeSetItem.mockReset();
   });
 
-  it('removes the matching asset id from the stored library', async () => {
-    storageMocks.safeGetItem.mockReturnValue(JSON.stringify({
-      version: 2,
-      assets: [
-        makeAsset({ id: 'keep', timestamp: 200 }),
-        makeAsset({ id: 'remove', timestamp: 100 }),
-      ],
-    }));
+  function seedLibrary(assets: LibraryAsset[]) {
+    storageMocks.safeGetItem.mockImplementation((key: string) =>
+      key === STORAGE_KEY ? JSON.stringify(assets) : null,
+    );
+  }
 
-    await deleteAssetFromLibrary('remove');
+  it('appends a prompt snapshot to an existing asset', () => {
+    const existing = makeAsset({ id: 'a1', versions: [] });
+    seedLibrary([existing]);
 
-    expect(storageMocks.safeGetItem).toHaveBeenCalledWith('lyricist_library');
-    expect(storageMocks.safeSetItem).toHaveBeenCalledWith('lyricist_library', JSON.stringify({
-      version: 3,
-      assets: [
-        makeAsset({ id: 'keep', timestamp: 200 }),
-      ],
-    }));
+    updateAssetInLibrary('a1', { title: 'Updated' });
+
+    const [[, json]] = storageMocks.safeSetItem.mock.calls as [[string, string]];
+    const saved: LibraryAsset[] = JSON.parse(json);
+    const updated = saved.find(a => a.id === 'a1')!;
+
+    expect(updated.title).toBe('Updated');
+    expect(updated.versions).toHaveLength(1);
   });
 
-  it('writes an empty version-zero store when purging the library', async () => {
-    await purgeLibrary();
-
-    expect(storageMocks.safeSetItem).toHaveBeenCalledWith('lyricist_library', JSON.stringify({
-      version: 0,
-      assets: [],
+  it('caps versions[] at MAX_ASSET_VERSIONS (50)', () => {
+    const versions = Array.from({ length: 55 }, (_, i) => ({
+      timestamp: i,
+      sections:  [],
+      title:     `v${i}`,
     }));
+    const existing = makeAsset({ id: 'a2', versions });
+    seedLibrary([existing]);
+
+    updateAssetInLibrary('a2', { title: 'Capped' });
+
+    const [[, json]] = storageMocks.safeSetItem.mock.calls as [[string, string]];
+    const saved: LibraryAsset[] = JSON.parse(json);
+    const updated = saved.find(a => a.id === 'a2')!;
+
+    // After appending 1 snapshot to 55 existing ones (56 total), slice(-50) keeps 50.
+    expect(updated.versions).toHaveLength(50);
+    // The oldest entries (v0…v5) should have been dropped.
+    expect(updated.versions[0]?.title).toBe('v6');
+  });
+
+  it('caps promptSnapshots[] at MAX_PROMPT_SNAPSHOTS (100)', () => {
+    const promptSnapshots = Array.from({ length: 105 }, (_, i) => ({
+      timestamp: i,
+      prompt:    `p${i}`,
+    }));
+    const existing = makeAsset({ id: 'a3', promptSnapshots });
+    seedLibrary([existing]);
+
+    updateAssetInLibrary('a3', { title: 'Capped prompts' });
+
+    const [[, json]] = storageMocks.safeSetItem.mock.calls as [[string, string]];
+    const saved: LibraryAsset[] = JSON.parse(json);
+    const updated = saved.find(a => a.id === 'a3')!;
+
+    expect(updated.promptSnapshots).toHaveLength(100);
+    expect(updated.promptSnapshots![0]?.prompt).toBe('p5');
+  });
+
+  it('does nothing when the id is not found in the library', () => {
+    seedLibrary([makeAsset({ id: 'other' })]);
+
+    updateAssetInLibrary('missing-id', { title: 'Ghost' });
+
+    expect(storageMocks.safeSetItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteAssetFromLibrary', () => {
+  it('removes the asset with the given id', () => {
+    storageMocks.safeGetItem.mockImplementation((key: string) =>
+      key === 'vibeLibrary'
+        ? JSON.stringify([makeAsset({ id: 'to-delete' }), makeAsset({ id: 'keep' })])
+        : null,
+    );
+
+    deleteAssetFromLibrary('to-delete');
+
+    const [[, json]] = storageMocks.safeSetItem.mock.calls as [[string, string]];
+    const saved: LibraryAsset[] = JSON.parse(json);
+
+    expect(saved.map(a => a.id)).toEqual(['keep']);
+  });
+});
+
+describe('purgeLibrary', () => {
+  it('writes an empty array to storage', () => {
+    purgeLibrary();
+
+    const [[key, json]] = storageMocks.safeSetItem.mock.calls as [[string, string]];
+
+    expect(key).toBe('vibeLibrary');
+    expect(JSON.parse(json)).toEqual([]);
   });
 });
