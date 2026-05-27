@@ -173,9 +173,25 @@ function silentRefresh(scope: string): Promise<string> {
 // OAuth2 popup (full interactive login)
 // ---------------------------------------------------------------------------
 
-function popupSignIn(scope: string): Promise<string> {
+/**
+ * Complete an interactive OAuth2 popup sign-in.
+ *
+ * iOS Safari fix: window.open() must be called synchronously inside the
+ * user-gesture tick. signIn() pre-opens a blank window (about:blank) before
+ * any async work and passes the handle here. We redirect it to the auth URL
+ * once the URL is built. If the pre-opened handle is null (truly blocked),
+ * we throw GDRIVE_POPUP_BLOCKED as before.
+ *
+ * @param scope   OAuth2 scope string.
+ * @param preOpenedWindow  A pre-opened window handle obtained synchronously
+ *                         in the user-gesture context. May be null if the
+ *                         browser blocked the popup.
+ */
+function popupSignIn(scope: string, preOpenedWindow: Window | null): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!CLIENT_ID) { reject(new Error('GDRIVE_NOT_CONFIGURED')); return; }
+
+    if (!preOpenedWindow) { reject(new Error('GDRIVE_POPUP_BLOCKED')); return; }
 
     const redirectUri = `${window.location.origin}/gdrive-callback.html`;
     const params = new URLSearchParams({
@@ -188,8 +204,11 @@ function popupSignIn(scope: string): Promise<string> {
     });
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 
-    const popup = window.open(authUrl, 'GDriveAuth', 'width=520,height=640,toolbar=0,scrollbars=1');
-    if (!popup) { reject(new Error('GDRIVE_POPUP_BLOCKED')); return; }
+    // Redirect the pre-opened blank window to the actual auth URL.
+    // This works because the window handle was obtained synchronously during
+    // the user-gesture tick; only the URL assignment is deferred.
+    preOpenedWindow.location.href = authUrl;
+    const popup = preOpenedWindow;
 
     // `settled` guard prevents double-resolve/reject when both closedCheck
     // and messageHandler fire in the same tick (race condition on popup.close).
@@ -237,6 +256,12 @@ function popupSignIn(scope: string): Promise<string> {
  *   2. Silent iframe refresh (prompt=none) → resolves if Google session active.
  *   3. Interactive popup (select_account) → user explicitly consents.
  *
+ * iOS Safari: window.open() is blocked when called outside a synchronous
+ * user-gesture context. To work around this, we pre-open a blank popup window
+ * synchronously at the start of signIn() (before any await), then redirect it
+ * to the auth URL inside popupSignIn() if silent refresh fails. If silent
+ * refresh succeeds, the pre-opened window is closed immediately.
+ *
  * Throws GDRIVE_AUTH_CANCELLED | GDRIVE_POPUP_BLOCKED on user abort.
  */
 export async function signIn(write = false): Promise<string> {
@@ -245,15 +270,23 @@ export async function signIn(write = false): Promise<string> {
 
   const scope = write ? SCOPE_WRITE : SCOPE_READ;
 
+  // Pre-open a blank popup synchronously inside the user-gesture tick.
+  // On iOS Safari, window.open() is only allowed synchronously during a
+  // user-gesture handler. We open about:blank now and redirect later if needed.
+  const preOpenedWindow = window.open('about:blank', 'GDriveAuth', 'width=520,height=640,toolbar=0,scrollbars=1');
+
   // 1. Try silent refresh
   try {
-    return await silentRefresh(scope);
+    const token = await silentRefresh(scope);
+    // Silent succeeded — close the pre-opened window without user impact.
+    if (preOpenedWindow && !preOpenedWindow.closed) preOpenedWindow.close();
+    return token;
   } catch {
     // Silent failed (no active session, interaction_required, timeout) — fall through to popup
   }
 
-  // 2. Interactive popup
-  return popupSignIn(scope);
+  // 2. Interactive popup — reuse the pre-opened window handle.
+  return popupSignIn(scope, preOpenedWindow);
 }
 
 // ---------------------------------------------------------------------------
