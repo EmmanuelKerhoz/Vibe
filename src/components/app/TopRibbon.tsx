@@ -7,6 +7,7 @@ import { useSongHistoryContext, useSongContext } from '../../contexts/SongContex
 import { useComposerContext } from '../../contexts/ComposerContext';
 import { useAppNavigationContext } from '../../contexts/AppStateContext';
 import { useTopRibbonActions } from '../../hooks/useTopRibbonActions';
+import { useVoiceAssistantController } from '../../features/voice/useVoiceAssistantController';
 import { RibbonMenuPanel } from './RibbonMenuPanel';
 import { RibbonTabs } from './RibbonTabs';
 import { copyToClipboard } from '../../utils/clipboard';
@@ -14,9 +15,8 @@ import type { EditMode } from '../../types';
 
 /**
  * TopRibbon — assembly component.
- * Owns: burger state, right-side actions.
+ * Owns: burger state, right-side actions, centred voice assistant button.
  * Delegates: <RibbonMenuPanel> (menu), <RibbonTabs> (tab strip).
- * NOTE: "Send to LYRIA" button removed per UX decision.
  */
 interface Props {
   hasApiKey: boolean;
@@ -26,7 +26,7 @@ interface Props {
   currentEditMode: EditMode;
 }
 
-export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, onOpenNewEmpty, currentEditMode: _currentEditMode }: Props) {
+export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, onOpenNewEmpty, currentEditMode }: Props) {
   const { past, future, undo, redo } = useSongHistoryContext();
   const { isGenerating, clearSelection } = useComposerContext();
   const { song, musicalPrompt } = useSongContext();
@@ -34,10 +34,63 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
   const { openKeyboardShortcuts, isAnalyzing } = useTopRibbonActions();
   const { t } = useTranslation();
 
+  // ── Voice assistant ───────────────────────────────────────────────────────
+  const {
+    invoke: invokeVoiceAssistant,
+    uiState: voiceUiState,
+    promptText: voicePromptText,
+    textFallback: voiceTextFallback,
+    errorText: voiceErrorText,
+  } = useVoiceAssistantController({
+    enabled: hasApiKey,
+    page: activeTab,
+    mode: currentEditMode,
+  });
+
+  const voiceLabel =
+    voiceUiState === 'listening'
+      ? (t.tooltips?.voiceListening ?? 'Listening\u2026')
+      : voiceUiState === 'processing'
+        ? (t.tooltips?.voiceProcessing ?? 'Processing your request\u2026')
+        : voiceUiState === 'speaking'
+          ? (t.tooltips?.voiceSpeaking ?? 'Speaking\u2026')
+          : (t.tooltips?.voiceAssistant ?? 'Voice assistant');
+
+  const voiceActive = voiceUiState !== 'idle';
+
+  const VoiceIcon = () => {
+    if (voiceUiState === 'listening') {
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+          <line x1="12" y1="19" x2="12" y2="23" />
+          <line x1="8" y1="23" x2="16" y2="23" />
+        </svg>
+      );
+    }
+    if (voiceUiState === 'processing' || voiceUiState === 'speaking') {
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+        </svg>
+      );
+    }
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="23" />
+        <line x1="8" y1="23" x2="16" y2="23" />
+      </svg>
+    );
+  };
+
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
   const isBusy = isGenerating || isAnalyzing;
-  const processingLabel = t.tooltips.processing ?? 'Processing…';
+  const processingLabel = t.tooltips.processing ?? 'Processing\u2026';
   const panelToggleLabel = isLeftPanelOpen
     ? (t.tooltips.closeLeftPanel ?? 'Close lyrics generation panel')
     : (t.tooltips.openLeftPanel ?? 'Open lyrics generation panel');
@@ -109,6 +162,7 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
     >
       <div style={{ position: 'absolute', bottom: -1, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, var(--lcars-amber) 0%, var(--lcars-cyan) 50%, var(--lcars-violet) 100%)', opacity: 0.85, pointerEvents: 'none', zIndex: 1 }} />
 
+      {/* Left: menu + tabs */}
       <div className="flex items-center gap-3 lg:gap-6 pl-0">
         <div className="relative" style={{ zIndex: 60 }}>
           <Tooltip title={t.ribbon.menu ?? 'Menu'}>
@@ -131,6 +185,49 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
         <RibbonTabs />
       </div>
 
+      {/* Centre: Voice assistant pill — absolutely centred */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5" style={{ zIndex: 10 }}>
+        <Tooltip title={voiceLabel}>
+          <button
+            onClick={invokeVoiceAssistant}
+            disabled={!hasApiKey}
+            aria-label={voiceLabel}
+            aria-pressed={voiceActive}
+            className="flex items-center gap-2 px-4 h-8 rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              fontSize: '0.625rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: voiceActive ? 'var(--lcars-cyan, #4f98a3)' : 'var(--text-secondary)',
+              background: voiceActive
+                ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 14%, transparent)'
+                : 'color-mix(in srgb, var(--text-secondary) 6%, transparent)',
+              border: `1px solid ${voiceActive
+                ? 'color-mix(in srgb, var(--lcars-cyan, #4f98a3) 30%, transparent)'
+                : 'color-mix(in srgb, var(--text-secondary) 15%, transparent)'}`,
+              boxShadow: voiceActive
+                ? '0 0 10px color-mix(in srgb, var(--lcars-cyan, #4f98a3) 25%, transparent)'
+                : 'none',
+            }}
+          >
+            <VoiceIcon />
+            <span className="hidden sm:inline">{voiceLabel}</span>
+          </button>
+        </Tooltip>
+        {/* Inline voice feedback strip */}
+        {(voicePromptText || voiceTextFallback || voiceErrorText) && (
+          <div
+            role={voiceErrorText ? 'alert' : 'status'}
+            aria-live={voiceErrorText ? 'assertive' : 'polite'}
+            className="absolute top-[calc(100%+6px)] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[var(--border-color)] bg-[var(--bg-sidebar)] px-2.5 py-1 text-[10px] text-[var(--text-secondary)] shadow z-50"
+          >
+            {voiceErrorText ?? voiceTextFallback ?? voicePromptText}
+          </div>
+        )}
+      </div>
+
+      {/* Right: actions */}
       <div className="flex items-center gap-1 lg:gap-2">
         {isBusy && (
           <Tooltip title={processingLabel}>
@@ -145,7 +242,6 @@ export function TopRibbon({ hasApiKey, handleApiKeyHelp, onOpenNewGeneration, on
             </button>
           </Tooltip>
         )}
-        {/* Copy Lyrics (lyrics tab only) */}
         {activeTab === 'lyrics' && (
           <Tooltip title={lyricsTooltip}>
             <button
