@@ -432,7 +432,7 @@ function SourceToggle({ source, onChange }: { source: AudioSource; onChange: (s:
   );
 }
 
-export function VoxNovaPlayer() {
+function VoxNovaPlayerInner() {
   const engine = useAudioEngine();
   const spotifyEngine = useSpotifyAsEngine();
   const { playerState: spotifyPlayerState, playbackState: spotifyPlaybackState, controls: spotifyControls } = useSpotifyEngine_();
@@ -664,5 +664,18 @@ export function VoxNovaPlayer() {
         </div>
       </main>
     </div>
+  );
+}
+
+/**
+ * Public entry point. Wraps the whole player — including the audio-engine
+ * hooks and their derived UI — in an ErrorBoundary so an uncaught failure in
+ * the engine degrades gracefully instead of taking down the entire app shell.
+ */
+export function VoxNovaPlayer() {
+  return (
+    <ErrorBoundary label="Audio player">
+      <VoxNovaPlayerInner />
+    </ErrorBoundary>
   );
 }
