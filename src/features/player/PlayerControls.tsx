@@ -93,6 +93,10 @@ function injectControlsCSS() {
   document.head.appendChild(el);
 }
 
+// Must stay >= the lcarsRipple animation duration (see CONTROLS_CSS) so the
+// fallback never removes the node before the animation finishes.
+const RIPPLE_ANIM_MS = 480;
+
 function spawnRipple(e: React.MouseEvent<HTMLButtonElement>) {
   const btn = e.currentTarget;
   const rect = btn.getBoundingClientRect();
@@ -101,12 +105,22 @@ function spawnRipple(e: React.MouseEvent<HTMLButtonElement>) {
   r.style.top  = `${e.clientY - rect.top}px`;
   r.style.left = `${e.clientX - rect.left}px`;
   btn.appendChild(r);
-  r.addEventListener('animationend', () => r.remove());
+
+  // Robust cleanup: remove on animationend, but also guarantee removal via a
+  // timeout fallback in case the animation never fires (e.g. prefers-reduced-
+  // motion, missing keyframes, or the button unmounting mid-animation).
+  let fallback: ReturnType<typeof setTimeout> | undefined;
+  const remove = () => {
+    if (fallback !== undefined) clearTimeout(fallback);
+    r.remove();
+  };
+  r.addEventListener('animationend', remove, { once: true });
+  fallback = setTimeout(remove, RIPPLE_ANIM_MS + 80);
 }
 
 function IconShuffle({ active }: { active: boolean }) {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="16 3 21 3 21 8" />
       <line x1="4" y1="20" x2="21" y2="3" />
@@ -122,7 +136,7 @@ function IconShuffle({ active }: { active: boolean }) {
 
 function IconRepeat({ mode }: { mode: RepeatMode }) {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="17 1 21 5 17 9" />
       <path d="M3 11V9a4 4 0 0 1 4-4h14" />
@@ -138,7 +152,7 @@ function IconRepeat({ mode }: { mode: RepeatMode }) {
 
 function IconAutoplay() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polygon points="5 3 19 12 5 21 5 3" />
       <line x1="19" y1="3" x2="19" y2="21" />
@@ -148,7 +162,7 @@ function IconAutoplay() {
 
 function IconCrossfade() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
       <path d="M4 6 Q12 18 20 6" />
       <path d="M4 18 Q12 6 20 18" />
@@ -162,7 +176,7 @@ function IconCrossfade() {
 
 function IconSleep() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
@@ -260,7 +274,7 @@ function LCARSModeButton({
       {badge !== undefined && (
         <span style={{
           position: 'absolute', top: 2, left: 3,
-          fontSize: 6, letterSpacing: 0.8, fontWeight: 800,
+          fontSize: 8, letterSpacing: 0.5, fontWeight: 800,
           fontFamily: 'inherit', lineHeight: 1,
           padding: '1px 2px', borderRadius: 3,
           background: active ? bc + '30' : 'rgba(255,255,255,0.06)',
@@ -276,7 +290,7 @@ function LCARSModeButton({
       <span style={{ lineHeight: 0 }}>{children}</span>
 
       <span style={{
-        fontSize: 6, letterSpacing: 1.4, fontWeight: 700,
+        fontSize: 8, letterSpacing: 1, fontWeight: 700,
         fontFamily: 'inherit', lineHeight: 1, textTransform: 'uppercase',
       }}>
         {label}
@@ -299,11 +313,11 @@ function ActiveModesLine({
   if (sleepTimerEnd !== null) tokens.push('SLP');
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 14, minWidth: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 16, minWidth: 0 }}>
       <div style={{ height: 2, width: 32, flexShrink: 0, background: LCARS.peach, borderRadius: 1, opacity: 0.45 }} aria-hidden="true" />
       <span style={{
-        fontSize: 8, letterSpacing: 3, fontWeight: 700,
-        color: isPlaying ? LCARS.alertRed : LCARS.subText,
+        fontSize: 10, letterSpacing: 3, fontWeight: 700,
+        color: isPlaying ? LCARS.transmit : LCARS.subText,
         transition: 'color 300ms ease',
         whiteSpace: 'nowrap', flexShrink: 0,
       }}>
@@ -312,7 +326,7 @@ function ActiveModesLine({
       {tokens.length > 0 && (
         <>
           <div style={{ height: 1, width: 12, flexShrink: 0, background: LCARS.orange, opacity: 0.4 }} aria-hidden="true" />
-          <span style={{ fontSize: 7, letterSpacing: 2, fontWeight: 700, color: LCARS.orange, opacity: 0.85, whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <span style={{ fontSize: 9, letterSpacing: 2, fontWeight: 700, color: LCARS.orange, opacity: 0.85, whiteSpace: 'nowrap', flexShrink: 0 }}>
             {tokens.join('·')}
           </span>
         </>
@@ -439,7 +453,10 @@ const REPEAT_TITLE: Record<RepeatMode, string> = {
 };
 
 export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerControlsProps) {
-  injectControlsCSS();
+  // Inject the controls stylesheet as a commit-phase side effect, not during
+  // render. The module-level `_cssInjected` flag keeps it idempotent across
+  // every mounted instance (and StrictMode's double-invoke effect).
+  useEffect(() => { injectControlsCSS(); }, []);
 
   const {
     isPlaying, togglePlay,

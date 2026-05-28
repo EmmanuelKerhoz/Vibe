@@ -16,6 +16,7 @@ export const LCARS = {
   purple: '#9c8cff',        // CLOUD button, neural buffer bar
   red: '#e0676b',           // PURGE / alert
   alertRed: '#ff3b30',      // IMPULSE_ONLY status dot
+  transmit: '#3ddc84',      // active/nominal status (TRANSMITTING) — green, not an alert
 
   // Text
   text: '#f8f8f8',

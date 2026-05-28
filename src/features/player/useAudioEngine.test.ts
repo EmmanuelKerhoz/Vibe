@@ -165,4 +165,42 @@ describe('useAudioEngine', () => {
       codec: 'FLAC',
     });
   });
+
+  it('beep closes its AudioContext once the tone ends', () => {
+    const audio = makeMediaElement('audio');
+    vi.stubGlobal('Audio', vi.fn(() => audio.el));
+
+    const osc = {
+      type: 'sine' as OscillatorType,
+      frequency: { setValueAtTime: vi.fn() },
+      connect: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+      onended: null as null | (() => void),
+    };
+    const gain = {
+      gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+      connect: vi.fn(),
+    };
+    const close = vi.fn().mockResolvedValue(undefined);
+    const ctx = {
+      currentTime: 0,
+      destination: {},
+      createOscillator: vi.fn(() => osc),
+      createGain: vi.fn(() => gain),
+      close,
+    };
+    vi.stubGlobal('AudioContext', vi.fn(() => ctx));
+
+    const { result } = renderHook(() => useAudioEngine());
+    act(() => { result.current.beep(660, 'square', 0.05); });
+
+    // Context stays open until the oscillator finishes…
+    expect(close).not.toHaveBeenCalled();
+    expect(typeof osc.onended).toBe('function');
+
+    // …then is released when onended fires.
+    act(() => { osc.onended?.(); });
+    expect(close).toHaveBeenCalledOnce();
+  });
 });

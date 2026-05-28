@@ -374,6 +374,9 @@ export function useAudioEngine(): AudioEngineState {
       gain.gain.setValueAtTime(0.1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + durationSec);
       osc.connect(gain); gain.connect(ctx.destination);
+      // Release the AudioContext once the tone finishes — browsers cap the
+      // number of concurrent contexts, so a per-beep context would leak.
+      osc.onended = () => { ctx.close().catch(() => {}); };
       osc.start(); osc.stop(ctx.currentTime + durationSec);
     } catch (_) {}
   }, []);
