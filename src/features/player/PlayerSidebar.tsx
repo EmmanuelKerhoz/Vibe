@@ -4,8 +4,9 @@ import { GlobeIcon, DatabaseIcon, SparkleIcon, TrashIcon, UploadIcon } from './P
 import { CLOUD_PROVIDER_OPTIONS, SCAN_PROTOCOLS, useSidebarContext } from './SidebarContext';
 import type { TrackEntry, ScanProtocol } from './types';
 
+// Raised from 0.08 → 0.20 for readability over textured background
 const LCARS_BOX_COLORS = [
-  'rgba(255,153,0,0.08)',
+  'rgba(255,153,0,0.20)',
 ];
 
 const SPOTIFY_GREEN = '#1DB954';
