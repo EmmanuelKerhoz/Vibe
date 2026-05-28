@@ -95,7 +95,7 @@ export const normalizeSectionLookup = (value: string): string =>
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 
-const escapeRegex = (value: string): string =>
+const escapeForRegex = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const SECTION_HEADER_ALIAS_LOOKUP = new Set<string>();
@@ -107,7 +107,7 @@ SECTION_TYPE_DEFINITIONS.forEach(({ aliases }) => {
     if (!normalizedAlias) return;
     SECTION_HEADER_ALIAS_LOOKUP.add(normalizedAlias);
     SECTION_HEADER_WITH_INDEX_REGEXES.push(
-      new RegExp(`^${escapeRegex(normalizedAlias)}\\s+(?:\\d+|[ivx]+)$`, 'i'),
+      new RegExp(`^${escapeForRegex(normalizedAlias)}\\s+(?:\\d+|[ivx]+)$`, 'i'),
     );
   });
 });
