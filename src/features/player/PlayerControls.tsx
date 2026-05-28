@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { AudioEngineState, RepeatMode } from './useAudioEngine';
 import { LCARS } from './lcarsTheme';
 
@@ -106,9 +106,6 @@ function spawnRipple(e: React.MouseEvent<HTMLButtonElement>) {
   r.style.left = `${e.clientX - rect.left}px`;
   btn.appendChild(r);
 
-  // Robust cleanup: remove on animationend, but also guarantee removal via a
-  // timeout fallback in case the animation never fires (e.g. prefers-reduced-
-  // motion, missing keyframes, or the button unmounting mid-animation).
   let fallback: ReturnType<typeof setTimeout> | undefined;
   const remove = () => {
     if (fallback !== undefined) clearTimeout(fallback);
@@ -453,9 +450,6 @@ const REPEAT_TITLE: Record<RepeatMode, string> = {
 };
 
 export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerControlsProps) {
-  // Inject the controls stylesheet as a commit-phase side effect, not during
-  // render. The module-level `_cssInjected` flag keeps it idempotent across
-  // every mounted instance (and StrictMode's double-invoke effect).
   useEffect(() => { injectControlsCSS(); }, []);
 
   const {
@@ -466,6 +460,12 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
 
   const [xfadeOpen, setXfadeOpen] = useState(false);
   const [sleepOpen,  setSleepOpen]  = useState(false);
+
+  // B4 fix: stable callbacks so CrossfadePopover/SleepPopover useEffect
+  // deps don't trigger on every parent render, preventing mousedown
+  // listener attach/detach churn.
+  const handleXfadeClose = useCallback(() => setXfadeOpen(false), []);
+  const handleSleepClose  = useCallback(() => setSleepOpen(false),  []);
 
   const repeatBadge = REPEAT_BADGE[repeat];
   const xfadeBadge  = crossfadeMs > 0 ? `${(crossfadeMs / 1000).toFixed(1)}s` : undefined;
@@ -573,7 +573,7 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
             <IconCrossfade />
           </LCARSModeButton>
           {xfadeOpen && (
-            <CrossfadePopover crossfadeMs={crossfadeMs} setCrossfadeMs={setCrossfadeMs} onClose={() => setXfadeOpen(false)} />
+            <CrossfadePopover crossfadeMs={crossfadeMs} setCrossfadeMs={setCrossfadeMs} onClose={handleXfadeClose} />
           )}
         </div>
 
@@ -586,7 +586,7 @@ export function PlayerControls({ engine, onPrev, onNext, disabled }: PlayerContr
             <IconSleep />
           </LCARSModeButton>
           {sleepOpen && (
-            <SleepPopover sleepTimerEnd={sleepTimerEnd} setSleepTimer={setSleepTimer} onClose={() => setSleepOpen(false)} />
+            <SleepPopover sleepTimerEnd={sleepTimerEnd} setSleepTimer={setSleepTimer} onClose={handleSleepClose} />
           )}
         </div>
       </div>
