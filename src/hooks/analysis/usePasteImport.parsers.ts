@@ -95,18 +95,30 @@ export const normalizeSectionLookup = (value: string): string =>
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 
+const escapeForRegex = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const SECTION_HEADER_ALIAS_LOOKUP = new Set<string>();
+const SECTION_HEADER_WITH_INDEX_REGEXES: RegExp[] = [];
+
+SECTION_TYPE_DEFINITIONS.forEach(({ aliases }) => {
+  aliases.forEach(alias => {
+    const normalizedAlias = normalizeSectionLookup(alias);
+    if (!normalizedAlias) return;
+    SECTION_HEADER_ALIAS_LOOKUP.add(normalizedAlias);
+    SECTION_HEADER_WITH_INDEX_REGEXES.push(
+      new RegExp(`^${escapeForRegex(normalizedAlias)}\\s+(?:\\d+|[ivx]+)$`, 'i'),
+    );
+  });
+});
+
 export const getSectionHeaderHint = (line: string): string => {
   const normalized = normalizeSectionHeaderCandidate(line);
   const lookup = normalizeSectionLookup(normalized);
   if (!lookup) return '';
 
-  const isStandaloneHeader = SECTION_TYPE_DEFINITIONS.some(({ aliases }) =>
-    aliases.some((alias) => {
-      const normalizedAlias = normalizeSectionLookup(alias);
-      return lookup === normalizedAlias
-        || lookup.match(new RegExp(`^${normalizedAlias}\\s+(?:\\d+|[ivx]+)$`, 'i')) !== null;
-    }),
-  );
+  const isStandaloneHeader = SECTION_HEADER_ALIAS_LOOKUP.has(lookup)
+    || SECTION_HEADER_WITH_INDEX_REGEXES.some(regex => regex.test(lookup));
 
   return isStandaloneHeader ? normalized : '';
 };
