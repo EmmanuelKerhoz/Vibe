@@ -7,6 +7,11 @@ const newId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2);
 
+const revokeBlobUrl = (url: string | undefined) => {
+  if (!url || !url.startsWith('blob:')) return;
+  try { URL.revokeObjectURL(url); } catch (_) { /* noop */ }
+};
+
 export interface LibraryState {
   tracks: TrackEntry[];
   addTracks: (entries: Omit<TrackEntry, 'id'>[]) => void;
@@ -30,7 +35,11 @@ export function useLibrary(): LibraryState {
   }, []);
 
   const removeTrack = useCallback((id: string) => {
-    setTracks(prev => prev.filter(t => t.id !== id));
+    setTracks(prev => {
+      const removed = prev.find(t => t.id === id);
+      revokeBlobUrl(removed?.url);
+      return prev.filter(t => t.id !== id);
+    });
   }, []);
 
   const updateMemo = useCallback((id: string, memo: string) => {
@@ -38,7 +47,11 @@ export function useLibrary(): LibraryState {
   }, []);
 
   const updateUrl = useCallback((id: string, url: string) => {
-    setTracks(prev => prev.map(t => t.id === id ? { ...t, url, linked: true } : t));
+    setTracks(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      if (t.url !== url) revokeBlobUrl(t.url);
+      return { ...t, url, linked: true };
+    }));
   }, []);
 
   const updateDuration = useCallback((id: string, durationSeconds: number) => {
@@ -49,22 +62,22 @@ export function useLibrary(): LibraryState {
   }, []);
 
   const replaceCloudTracks = useCallback((items: Omit<TrackEntry, 'id'>[]) => {
-    setTracks(prev => [
-      // keep local + lyria tracks
-      ...prev.filter(t => t.source !== ('cloud' as TrackSource)),
-      // fresh OneDrive items
-      ...items.map(e => ({ ...e, id: newId() })),
-    ]);
+    setTracks(prev => {
+      const cloudTracks = prev.filter(t => t.source === ('cloud' as TrackSource));
+      cloudTracks.forEach(t => revokeBlobUrl(t.url));
+      return [
+        // keep local + lyria tracks
+        ...prev.filter(t => t.source !== ('cloud' as TrackSource)),
+        // fresh OneDrive items
+        ...items.map(e => ({ ...e, id: newId() })),
+      ];
+    });
   }, []);
 
   const purgeAll = useCallback(() => {
     setTracks(prev => {
       // Revoke blob URLs to free memory
-      prev.forEach(t => {
-        if (t.url && t.url.startsWith('blob:')) {
-          try { URL.revokeObjectURL(t.url); } catch (_) { /* noop */ }
-        }
-      });
+      prev.forEach(t => revokeBlobUrl(t.url));
       return [];
     });
   }, []);
