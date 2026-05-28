@@ -10,21 +10,18 @@ import { useAppOrchestration } from './hooks/useAppOrchestration';
 import { useEditorPanelState } from './hooks/useEditorPanelState';
 import { useMobileSession } from './hooks/useMobileSession';
 import { useAutoSaveCoordinator } from './hooks/useAutoSaveCoordinator';
-import { SimilarityProvider } from './contexts/SimilarityContext';
 import { ModalProvider } from './contexts/ModalContext';
-import { DragProvider } from './contexts/DragContext';
 import { DragHandlersProvider } from './contexts/DragHandlersContext';
 import { EditorProvider } from './contexts/EditorContext';
 import { AnalysisProvider } from './contexts/AnalysisContext';
 import { RhymeProxyProvider } from './contexts/RhymeProxyContext';
-import { AppStateProvider, useAppStateContext } from './contexts/AppStateContext';
-import { LibraryProvider } from './contexts/LibraryContext';
+import { useAppStateContext } from './contexts/AppStateContext';
 import { TranslationAdaptationProvider } from './contexts/TranslationAdaptationContext';
-import { VersionProvider, useVersionContext } from './contexts/VersionContext';
+import { useVersionContext } from './contexts/VersionContext';
 import { useLanguage, useTranslation } from './i18n';
-import { SongProvider, useSongContext } from './contexts/SongContext';
-import { SongMutationProvider } from './contexts/SongMutationContext';
-import { ComposerProvider, useComposerContext } from './contexts/ComposerContext';
+import { useSongContext } from './contexts/SongContext';
+import { useComposerContext } from './contexts/ComposerContext';
+import { AppProviderTree } from './components/app/AppProviderTree';
 import { loadSession, SESSION_SCHEMA_VERSION } from './lib/sessionPersistence';
 import type { SessionSnapshot } from './lib/sessionPersistence';
 import { parseShareHash, sharePayloadToSong } from './utils/exportUtils';
@@ -323,23 +320,9 @@ function AppInner() {
   if (initialSession === undefined) return <AppSplash />;
 
   return (
-    <AppStateProvider initialSession={initialSession}>
-      <LibraryProvider>
-        <DragProvider>
-          <SongProvider initialSession={initialSession}>
-            <SongMutationProvider>
-              <ComposerProvider>
-              <VersionProvider initialVersions={initialSession?.versions}>
-                  <SimilarityProvider>
-                    <AppProviders initialSession={initialSession} />
-                  </SimilarityProvider>
-                </VersionProvider>
-              </ComposerProvider>
-            </SongMutationProvider>
-          </SongProvider>
-        </DragProvider>
-      </LibraryProvider>
-    </AppStateProvider>
+    <AppProviderTree initialSession={initialSession}>
+      <AppProviders initialSession={initialSession} />
+    </AppProviderTree>
   );
 }
 
