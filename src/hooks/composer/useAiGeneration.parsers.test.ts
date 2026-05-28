@@ -19,14 +19,14 @@ describe('useAiGeneration.parsers', () => {
       { id: 's2', name: 'Verse', rhymeScheme: 'ABAB', lines: [] },
     ];
 
-    const aligned = alignGeneratedSongToStructure(generatedSong, ['Verse', 'Bridge', 'Chorus'], 'FREE');
+    const aligned = alignGeneratedSongToStructure(generatedSong, ['Verse', 'Chorus', 'Bridge'], 'FREE');
     expect(aligned).toHaveLength(3);
     expect(aligned[0]?.name).toBe('Verse');
     expect(aligned[0]?.rhymeScheme).toBe('ABAB');
-    expect(aligned[1]?.name).toBe('Bridge');
-    expect(aligned[1]?.rhymeScheme).toBe('FREE');
-    expect(aligned[2]?.name).toBe('Chorus');
-    expect(aligned[2]?.rhymeScheme).toBe('AABB');
+    expect(aligned[1]?.name).toBe('Chorus');
+    expect(aligned[1]?.rhymeScheme).toBe('AABB');
+    expect(aligned[2]?.name).toBe('Bridge');
+    expect(aligned[2]?.rhymeScheme).toBe('FREE');
   });
 
   it('flags pure bracket meta-lines and sanitizes language instruction', () => {
