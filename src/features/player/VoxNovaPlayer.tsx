@@ -20,12 +20,13 @@ import { ErrorBoundary } from '../../components/app/ErrorBoundary';
 import { formatCloudProviderLabel } from '../../utils/cloudProviders';
 
 const LIBRARY_CAPACITY = 50;
+// Raised from 0.08 → 0.18 for readability over textured background
 const LCARS_BOX_COLORS = [
-  'rgba(255,153,0,0.08)',
-  'rgba(153,102,204,0.08)',
-  'rgba(204,153,102,0.08)',
-  'rgba(255,102,102,0.08)',
-  'rgba(102,204,255,0.08)',
+  'rgba(255,153,0,0.18)',
+  'rgba(153,102,204,0.18)',
+  'rgba(204,153,102,0.18)',
+  'rgba(255,102,102,0.18)',
+  'rgba(102,204,255,0.18)',
 ];
 const SPOTIFY_GREEN = '#1DB954';
 const DEFAULT_VIDEO_ASPECT_RATIO = 16 / 9;
@@ -289,7 +290,7 @@ function SpotifyMemoLog({ contentWidth, playerState, track }: SpotifyMemoLogProp
 
   return (
     <div style={{ alignSelf: 'center', width: contentWidth, border: `1px solid ${SPOTIFY_GREEN}44`,
-      borderRadius: 4, padding: '10px 14px', background: 'rgba(29,185,84,0.06)' }}>
+      borderRadius: 4, padding: '10px 14px', background: 'rgba(29,185,84,0.12)' }}>
       <div style={{ color: SPOTIFY_GREEN, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>SPOTIFY TRANSMISSION LOG</div>
       <div style={{ color: LCARS.text, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5, wordBreak: 'break-word', marginBottom: 8 }}>
         {memo}
@@ -401,36 +402,6 @@ function SpotifyBrowserSection({ contentWidth }: { contentWidth: string }) {
   );
 }
 
-function SourceToggle({ source, onChange }: { source: AudioSource; onChange: (s: AudioSource) => void }) {
-  return (
-    <div role="group" aria-label="Audio source" style={{ display: 'flex', alignItems: 'center', gap: 2,
-      background: 'rgba(0,0,0,0.35)', borderRadius: 20, padding: '2px 3px',
-      border: '1px solid rgba(255,255,255,0.08)' }}>
-      {(['local', 'spotify'] as AudioSource[]).map(s => (
-        <button
-          key={s}
-          onClick={() => onChange(s)}
-          aria-pressed={source === s}
-          style={{
-            background: source === s
-              ? (s === 'spotify' ? `${SPOTIFY_GREEN}22` : `${LCARS.peach}22`)
-              : 'transparent',
-            border: source === s
-              ? `1px solid ${s === 'spotify' ? SPOTIFY_GREEN : LCARS.peach}55`
-              : '1px solid transparent',
-            borderRadius: 16, padding: '2px 10px',
-            color: source === s ? (s === 'spotify' ? SPOTIFY_GREEN : LCARS.peach) : LCARS.subText,
-            fontSize: 9, letterSpacing: 2, fontWeight: 700, cursor: 'pointer',
-            fontFamily: 'inherit', transition: 'all 150ms ease',
-          }}
-        >
-          {s.toUpperCase()}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export function VoxNovaPlayer() {
   const engine = useAudioEngine();
   const spotifyEngine = useSpotifyAsEngine();
@@ -492,6 +463,9 @@ export function VoxNovaPlayer() {
 
   // Sidebar is hidden while the player is active (playing)
   const sidebarHidden = activeEngine.isPlaying;
+
+  // Show Spotify connect panel in the local memo area when not yet authenticated
+  const showSpotifyConnectInline = !isSpotify && spotifyStatus !== 'authenticated';
 
   const handleSpacePlayPause = useCallback((event: KeyboardEvent) => {
     if (event.defaultPrevented || event.code !== 'Space' || isEditableSpaceTarget(event.target)) return;
@@ -556,12 +530,11 @@ export function VoxNovaPlayer() {
       </SidebarProvider>
 
       <main style={{ position: 'relative', zIndex: 1, flex: 1, minWidth: 0, padding: '12px 16px 16px 4px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* Header */}
+        {/* Header — SourceToggle removed: Spotify auto-activates on auth, connect is inline below */}
         <div style={{ display: 'flex', alignItems: 'stretch', gap: 4 }}>
           <div style={{ flex: 1, height: 36, background: LCARS.peach, color: '#000', display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 12, fontWeight: 700, letterSpacing: 2, borderTopLeftRadius: 18, borderBottomLeftRadius: 18, justifyContent: 'space-between' }}>
             <span>USS VOX NOVA // REGISTRY {registry}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <SourceToggle source={audioSource} onChange={setAudioSource} />
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: LCARS.alertRed, boxShadow: `0 0 6px ${LCARS.alertRed}` }} aria-hidden="true" />
                 <span style={{ fontSize: 11 }}>IMPULSE_ONLY</span>
@@ -605,6 +578,12 @@ export function VoxNovaPlayer() {
                   <TechSpecLine info={engine.trackInfo} duration={engine.duration} />
                 </div>
               )}
+              {/* Spotify connect — inline when not authenticated, avoids need for header ribbon */}
+              {showSpotifyConnectInline && (
+                <div style={{ borderTop: `1px solid ${LCARS.purple}22`, paddingTop: 8, marginTop: 8 }}>
+                  <SpotifyAuthBlock />
+                </div>
+              )}
             </div>
           )}
 
@@ -628,7 +607,7 @@ export function VoxNovaPlayer() {
           <div style={{ alignSelf: 'center', width: CONTENT_WIDTH,
             border: `1px solid ${isSpotify ? `${SPOTIFY_GREEN}55` : `${LCARS.peach}33`}`,
             borderRadius: 4, padding: '12px 16px',
-            background: isSpotify ? 'rgba(29,185,84,0.06)' : LCARS_BOX_COLORS[2],
+            background: isSpotify ? 'rgba(29,185,84,0.12)' : LCARS_BOX_COLORS[2],
             display: 'flex', flexDirection: 'column', gap: 10 }}>
             <SeekBar currentTime={activeEngine.currentTime} duration={activeEngine.duration} onSeek={activeEngine.seek} disabled={!hasActiveTrack} />
             <PlayerControls engine={activeEngine} onPrev={handlePrevTrack} onNext={handleNextTrack} disabled={!hasActiveTrack} />
