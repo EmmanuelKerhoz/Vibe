@@ -175,6 +175,7 @@ describe('useVoxNovaPlayer', () => {
     rerender();
 
     expect(result.current.audioSource).toBe('spotify');
+    expect(vi.getTimerCount()).toBe(0);
 
     act(() => {
       result.current.setAudioSource('local');

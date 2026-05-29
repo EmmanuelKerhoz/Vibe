@@ -50,6 +50,7 @@ export function useVoxNovaPlayer() {
     prevSpotifyStatus.current = spotifyStatus;
 
     if (spotifyStatus !== 'authenticated' || !pendingSpotifyAutoSwitch.current) {
+      if (spotifyStatus !== 'authenticated') pendingSpotifyAutoSwitch.current = false;
       clearSpotifyAutoSwitchTimer();
       return undefined;
     }
