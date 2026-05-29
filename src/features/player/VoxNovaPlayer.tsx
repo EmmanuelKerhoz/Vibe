@@ -1,35 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { PlayerControls } from './PlayerControls';
 import { PlayerSidebar } from './PlayerSidebar';
 import { SidebarProvider } from './SidebarContext';
-import { useAudioEngine } from './useAudioEngine';
-import { useFrequencyAnalyser } from './useFrequencyAnalyser';
-import { useLibraryContext } from '../../contexts/LibraryContext';
-import { usePlayerNavigation } from './usePlayerNavigation';
-import { useSpotifyAuthState } from '../../contexts/SpotifyAuthContext';
-import { useSpotifyEngine_ } from '../../contexts/SpotifyEngineContext';
 import { LCARS } from './lcarsTheme';
 import { SpotifyPlaylistPanel } from './SpotifyPlaylistPanel';
 import { SpotifySearchPanel } from './SpotifySearchPanel';
-import { useSpotifyAsEngine } from './useSpotifyAsEngine';
 import { ErrorBoundary } from '../../components/app/ErrorBoundary';
 import { VoxNovaHeader } from './VoxNovaHeader';
-import type { AudioSource } from './VoxNovaHeader';
 import { VoxNovaArtwork, VoxNovaFrequencyPanel } from './VoxNovaArtwork';
 import { VoxNovaLocalMemo, VoxNovaSpotifyMemo } from './VoxNovaLocalMemo';
-import { VoxNovaSeekBar } from './VoxNovaSeekBar';
-import { VoxNovaVolumeBar } from './VoxNovaVolumeBar';
+import { SeekBar, VolumeControl } from './PlayerWidgets';
 import { LCARSBackground, VoxNovaFooter } from './VoxNovaFooter';
-import { SPOTIFY_GREEN, LCARS_BOX_COLORS, LIBRARY_CAPACITY } from './playerConstants';
+import { useVoxNovaPlayer } from './useVoxNovaPlayer';
+import { SPOTIFY_GREEN, LCARS_BOX_COLORS } from './playerConstants';
 
 type SpotifyBrowserTab = 'playlists' | 'search';
-
-function isEditableSpaceTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.isContentEditable) return true;
-  const tag = target.tagName.toLowerCase();
-  return tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button';
-}
 
 // ─── SpotifyBrowserSection ────────────────────────────────────────────────────
 
@@ -71,106 +56,38 @@ function SpotifyBrowserSection({ contentWidth }: { contentWidth: string }) {
 // ─── VoxNovaPlayerInner ───────────────────────────────────────────────────────
 
 function VoxNovaPlayerInner() {
-  const engine = useAudioEngine();
-  const spotifyEngine = useSpotifyAsEngine();
-  const { playerState: spotifyPlayerState, playbackState: spotifyPlaybackState, controls: spotifyControls } = useSpotifyEngine_();
-  const analyser = useFrequencyAnalyser();
-  const library = useLibraryContext();
-
-  const [audioSource, setAudioSource] = useState<AudioSource>('local');
-
-  const { status: spotifyStatus } = useSpotifyAuthState();
-  const prevSpotifyStatus = useRef(spotifyStatus);
-  useEffect(() => {
-    // Auto-switch to Spotify on successful auth; do NOT force back to local on disconnect
-    // — VoxNovaSpotifyMemo is always visible and shows CONNECT inline.
-    if (prevSpotifyStatus.current !== 'authenticated' && spotifyStatus === 'authenticated') {
-      setAudioSource('spotify');
-    }
-    prevSpotifyStatus.current = spotifyStatus;
-  }, [spotifyStatus]);
-
-  const videoElRef = useRef<HTMLVideoElement>(null);
-
   const {
-    view, setView, selectedId, setSelectedId, selectedTrack,
-    handleSelect, handlePrev, handleNext,
-  } = usePlayerNavigation({ tracks: library.tracks, engine });
+    engine,
+    analyser,
+    library,
+    audioSource,
+    setAudioSource,
+    spotifyStatus,
+    videoElRef,
+    view,
+    setView,
+    selectedId,
+    selectedTrack,
+    handleSelect,
+    handlePurge,
+    isSpotify,
+    activeEngine,
+    spotifyPlayerState,
+    spotifyTrack,
+    spotifyArtists,
+    spotifyAlbumArt,
+    hasActiveTrack,
+    sidebarHidden,
+    handlePrevTrack,
+    handleNextTrack,
+    structuralIntegrity,
+    neuralBuffer,
+    memo,
+    title,
+  } = useVoxNovaPlayer();
 
-  useEffect(() => {
-    if (!selectedTrack?.isVideo) { engine.attachVideoElement(null); return; }
-    const el = videoElRef.current;
-    if (!el) return;
-    engine.attachVideoElement(el);
-    el.src = selectedTrack.url;
-    el.load();
-    el.play().catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTrack?.id, selectedTrack?.isVideo]);
-
-  useEffect(() => {
-    if (selectedId && engine.duration > 0) library.updateDuration(selectedId, engine.duration);
-  }, [engine.duration, library, selectedId]);
-
-  const handlePurge = () => {
-    if (typeof window !== 'undefined' && !window.confirm('Purge all tracks from local cache?')) return;
-    library.purgeAll(); setSelectedId(null); engine.pause();
-  };
-
-  const isSpotify = audioSource === 'spotify';
-  const activeEngine = isSpotify ? spotifyEngine : engine;
-
-  const spotifyTrack = spotifyPlaybackState?.track_window?.current_track;
-  const spotifyArtists = (spotifyTrack?.artists ?? []).map(a => a.name).join(', ');
-  const spotifyAlbumArt = spotifyTrack?.album?.images?.[0]?.url ?? null;
-
-  const hasActiveTrack = isSpotify ? !!spotifyTrack : !!selectedTrack;
-
-  // Sidebar is hidden while the player is active (playing)
-  const sidebarHidden = activeEngine.isPlaying;
-
-  const handleSpacePlayPause = useCallback((event: KeyboardEvent) => {
-    if (event.defaultPrevented || event.code !== 'Space' || isEditableSpaceTarget(event.target)) return;
-    if (isSpotify) {
-      if (!spotifyTrack) return;
-      event.preventDefault();
-      spotifyEngine.togglePlay();
-    } else {
-      if (!selectedTrack) return;
-      event.preventDefault();
-      engine.togglePlay();
-    }
-  }, [engine, spotifyEngine, selectedTrack, spotifyTrack, isSpotify]);
-
-  const handlePrevTrack = useCallback(() => {
-    if (isSpotify) { void spotifyControls.previousTrack(); return; }
-    void handlePrev();
-  }, [isSpotify, spotifyControls, handlePrev]);
-
-  const handleNextTrack = useCallback(() => {
-    if (isSpotify) { void spotifyControls.nextTrack(); return; }
-    void handleNext();
-  }, [isSpotify, spotifyControls, handleNext]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleSpacePlayPause);
-    return () => window.removeEventListener('keydown', handleSpacePlayPause);
-  }, [handleSpacePlayPause]);
-
-  const structuralIntegrity = isSpotify
-    ? (hasActiveTrack ? 1 : 0)
-    : Math.min(1, library.tracks.length / LIBRARY_CAPACITY);
-  const neuralBuffer = activeEngine.duration > 0 ? Math.min(1, activeEngine.currentTime / activeEngine.duration) : 0;
-  const memo = selectedTrack?.memo || (selectedTrack ? `[LCARS_SCAN] Identified: ${selectedTrack.title} | Integrity: Nominal` : '[LCARS_SCAN] Standby — awaiting signal selection.');
-  const title = isSpotify
-    ? (spotifyTrack?.name ?? 'Subspace Channel Idle')
-    : (selectedTrack?.title ?? 'Subspace Channel Idle');
   const CONTENT_WIDTH = 'min(680px, 95%)';
   const WIDE_WIDTH = 'min(900px, 98%)';
-
-  const lyriaCount = library.tracks.filter(t => t.source === 'lyria').length;
-  const prevLyriaCount = useRef(lyriaCount);
-  useEffect(() => { if (lyriaCount > prevLyriaCount.current) setView('lyria'); prevLyriaCount.current = lyriaCount; }, [lyriaCount, setView]);
 
   return (
     <div className="lcars-lyrics-area" style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', color: 'var(--text-primary)', fontFamily: '"Antonio", "Eurostile", "Helvetica Neue", Arial, sans-serif', overflow: 'hidden' }}>
@@ -245,9 +162,9 @@ function VoxNovaPlayerInner() {
             borderRadius: 4, padding: '12px 16px',
             background: isSpotify ? 'rgba(29,185,84,0.06)' : LCARS_BOX_COLORS[2],
             display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <VoxNovaSeekBar currentTime={activeEngine.currentTime} duration={activeEngine.duration} onSeek={activeEngine.seek} disabled={!hasActiveTrack} />
+            <SeekBar currentTime={activeEngine.currentTime} duration={activeEngine.duration} onSeek={activeEngine.seek} disabled={!hasActiveTrack} />
             <PlayerControls engine={activeEngine} onPrev={handlePrevTrack} onNext={handleNextTrack} disabled={!hasActiveTrack} />
-            <VoxNovaVolumeBar volume={activeEngine.volume} onChange={activeEngine.setVolume} />
+            <VolumeControl volume={activeEngine.volume} onChange={activeEngine.setVolume} />
           </div>
 
           <div style={{ flex: 1, minHeight: 0 }} aria-hidden="true" />
