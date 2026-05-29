@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { FrequencyVisualizer } from './FrequencyVisualizer';
 import { LCARS } from './lcarsTheme';
 import { SPOTIFY_GREEN, DEFAULT_VIDEO_ASPECT_RATIO, LCARS_BOX_COLORS } from './playerConstants';
@@ -130,7 +130,7 @@ export interface VoxNovaArtworkProps {
   spotifyArtistsLabel?: string | undefined;
 }
 
-export function VoxNovaArtwork({
+function VoxNovaArtworkImpl({
   isSpotify,
   contentWidth,
   isPlaying,
@@ -162,6 +162,14 @@ export function VoxNovaArtwork({
     />
   );
 }
+
+/**
+ * Album-art / video stage. Memoized: it only re-renders when one of its props
+ * changes (track image/name, video source, playback state, layout width), so
+ * unrelated parent re-renders (e.g. the ticking SECTOR TIME clock) don't force
+ * the artwork — and the embedded <video> element — to re-render needlessly.
+ */
+export const VoxNovaArtwork = memo(VoxNovaArtworkImpl);
 
 // ─── VoxNovaFrequencyPanel ────────────────────────────────────────────────────
 
