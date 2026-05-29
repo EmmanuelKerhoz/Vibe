@@ -37,31 +37,38 @@ export function useVoxNovaPlayer() {
   const pendingSpotifyAutoSwitch = useRef(false);
   const spotifyAutoSwitchTimer = useRef<number | null>(null);
   useEffect(() => {
+    const clearSpotifyAutoSwitchTimer = () => {
+      if (spotifyAutoSwitchTimer.current === null) return;
+      window.clearTimeout(spotifyAutoSwitchTimer.current);
+      spotifyAutoSwitchTimer.current = null;
+    };
+
     // Auto-switch to Spotify on successful auth; do NOT force back to local on disconnect
     // — VoxNovaSpotifyMemo is always visible and shows CONNECT inline.
     const hasJustAuthenticated = prevSpotifyStatus.current !== 'authenticated' && spotifyStatus === 'authenticated';
     if (hasJustAuthenticated) pendingSpotifyAutoSwitch.current = true;
     prevSpotifyStatus.current = spotifyStatus;
 
-    if (spotifyStatus !== 'authenticated' || !pendingSpotifyAutoSwitch.current) return undefined;
+    if (spotifyStatus !== 'authenticated' || !pendingSpotifyAutoSwitch.current) {
+      clearSpotifyAutoSwitchTimer();
+      return undefined;
+    }
 
     if (spotifyPlaybackState !== null) {
+      clearSpotifyAutoSwitchTimer();
       pendingSpotifyAutoSwitch.current = false;
       setAudioSource('spotify');
       return undefined;
     }
 
+    clearSpotifyAutoSwitchTimer();
     spotifyAutoSwitchTimer.current = window.setTimeout(() => {
       pendingSpotifyAutoSwitch.current = false;
       spotifyAutoSwitchTimer.current = null;
       setAudioSource('spotify');
     }, SPOTIFY_AUTO_SWITCH_FALLBACK_MS);
 
-    return () => {
-      if (spotifyAutoSwitchTimer.current === null) return;
-      window.clearTimeout(spotifyAutoSwitchTimer.current);
-      spotifyAutoSwitchTimer.current = null;
-    };
+    return clearSpotifyAutoSwitchTimer;
   }, [spotifyStatus, spotifyPlaybackState]);
 
   const videoElRef = useRef<HTMLVideoElement>(null);
