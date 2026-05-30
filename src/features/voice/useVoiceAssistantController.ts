@@ -1,4 +1,4 @@
-import { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { EditMode } from '../../types';
 import {
   BrowserVoiceAudioService,
@@ -70,14 +70,6 @@ export function useVoiceAssistantController({
 
   // Guard setState calls in async paths against component unmount.
   const mountedRef = useRef(true);
-  useMemo(() => {
-    mountedRef.current = true;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // useEffect would be cleaner but we need the ref set before the first render
-  // so that tests that synchronously unmount after mount are also covered.
-  // The actual cleanup still runs in useEffect.
-  const { useEffect } = require('react') as typeof import('react');
   useEffect(() => {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
