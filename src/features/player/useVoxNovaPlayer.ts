@@ -36,6 +36,15 @@ export function useVoxNovaPlayer() {
   const prevSpotifyStatus = useRef(spotifyStatus);
   const pendingSpotifyAutoSwitch = useRef(false);
   const spotifyAutoSwitchTimer = useRef<number | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     const clearSpotifyAutoSwitchTimer = () => {
       if (spotifyAutoSwitchTimer.current === null) return;
@@ -66,7 +75,9 @@ export function useVoxNovaPlayer() {
     spotifyAutoSwitchTimer.current = window.setTimeout(() => {
       pendingSpotifyAutoSwitch.current = false;
       spotifyAutoSwitchTimer.current = null;
-      setAudioSource('spotify');
+      // Guard against calling setState on an unmounted component (e.g. route change
+      // occurring within the 5s fallback window).
+      if (mountedRef.current) setAudioSource('spotify');
     }, SPOTIFY_AUTO_SWITCH_FALLBACK_MS);
 
     return clearSpotifyAutoSwitchTimer;
