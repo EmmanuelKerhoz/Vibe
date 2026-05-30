@@ -17,13 +17,27 @@ import type { LineEndingUnit, LangCode, RhymeNucleus } from './types';
 const FR_MUTE_FINALS = /[bcdghpqst]+$/i;
 
 // French silent suffixes, ordered longest-first so the greediest match wins.
-// Covers: -ent (ils chantent), -aient (imparfait), -eront (futur),
-//         -es (2s présent / pluriel), bare -e (e muet)
-const FR_SILENT_SUFFIX = /(?:aient|eront|ent|es|e)$/i;
+// Covers:
+//   -aient  (imparfait 3p:   chantaient)
+//   -eront  (futur 3p:       chanteront)
+//   -aient  already above
+//   -iront  (futur irrég:    viendront — caught by -ont below)
+//   -ont    (futur/présent:  seront, feront, verront, vont, font*)
+//          *font/sont/dont are in FR_PRONOUNCED_FINALS — they won't be stripped
+//   -ons    (présent 1p:     allons, viendrons)
+//   -ent    (présent 3p:     chantent)
+//   -es     (2s présent / pluriel)
+//   -e      (e muet)
+const FR_SILENT_SUFFIX = /(?:aient|eront|iront|uront|aront|ont|ons|ent|es|e)$/i;
 
-// ─── Whitelist: French loan-words whose final consonant IS pronounced ─────────
-// These must NOT have their final consonant stripped by FR_MUTE_FINALS.
+// ─── Whitelist: French words whose final consonant IS pronounced ──────────────
+// These must NOT have their final consonant stripped by FR_MUTE_FINALS,
+// and -ont endings here must NOT be stripped by FR_SILENT_SUFFIX.
 const FR_PRONOUNCED_FINALS = new Set([
+  // Native French — final consonant phonetically realised
+  'font', 'sont', 'dont', 'pont', 'mont', 'front', 'long', 'bond',
+  'fond', 'rond', 'blond', 'second', 'profond', 'respond',
+  // English loans
   'net', 'fat', 'test', 'toast', 'fast', 'cast', 'best', 'west', 'rest',
   'trust', 'bust', 'dust', 'rust', 'gust', 'just', 'must', 'post', 'coast',
   'ghost', 'host', 'most', 'roast', 'boost', 'frost', 'lost', 'cost',
@@ -42,8 +56,8 @@ const FR_PRONOUNCED_FINALS = new Set([
 
 // ─── Vowel regex (shared) ─────────────────────────────────────────────────────
 // Order matters: multi-char digraphs/trigraphs must precede single vowels.
-// Covers the main French phonemic vowel clusters.
-const VOWEL_RE = /eau|oeu|œu|[ao]u|[aeo]i|eu|[aeo]u|[aeiouáàâäéèêëíìîïóòôöúùûüýÿæœ]+/giu;
+// 'ui' added before single-vowel fallback to correctly capture nuit/bruit/fruit/lui.
+const VOWEL_RE = /eau|oeu|œu|[ao]u|[aeo]i|ui|eu|[aeiouáàâäéèêëíìîïóòôöúùûüýÿæœ]+/giu;
 
 // ─── French mora count table ──────────────────────────────────────────────────
 // Maps orthographic vowel clusters to their mora count.
@@ -92,12 +106,13 @@ function normalizeFR(surface: string): { stripped: string; offsetMap: number[] }
 
   let effectiveEnd = joined.length;
 
-  const silentSuffixMatch = FR_SILENT_SUFFIX.exec(joined);
-  if (silentSuffixMatch && silentSuffixMatch.index + silentSuffixMatch[0].length === joined.length) {
-    effectiveEnd = silentSuffixMatch.index;
-  }
-
+  // Only strip -ont/-ons if the word is NOT in the pronounced-finals whitelist
   if (!FR_PRONOUNCED_FINALS.has(tokenLower)) {
+    const silentSuffixMatch = FR_SILENT_SUFFIX.exec(joined);
+    if (silentSuffixMatch && silentSuffixMatch.index + silentSuffixMatch[0].length === joined.length) {
+      effectiveEnd = silentSuffixMatch.index;
+    }
+
     const afterSuffix = joined.slice(0, effectiveEnd);
     const muteFinalMatch = FR_MUTE_FINALS.exec(afterSuffix);
     if (muteFinalMatch && muteFinalMatch.index + muteFinalMatch[0].length === afterSuffix.length) {
@@ -186,8 +201,6 @@ function extractNucleusData(
     }
     // ai / ei before a rhotic coda → /ɛ/ : clair /klɛʁ/, chair /ʃɛʁ/,
     // faire /fɛʁ/, peine→reine (ei) — so they rhyme with mer, hier, fier.
-    // Restricted to a rhotic coda to avoid mis-merging -ail /aj/ (travail)
-    // and nasal -ain/-aim /ɛ̃/ (main, faim) which keep their own nucleus.
     else if ((rawLower === 'ai' || rawLower === 'ei') && codaLower.startsWith('r')) {
       vowels = 'e';
     }
