@@ -37,6 +37,9 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): TextToSpe
   const { bcpTag } = useUiSpeechLocale();
 
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  // Mirror of speakingId read synchronously inside callbacks without adding it
+  // to dep arrays — avoids recreating `speak` on every utterance change.
+  const speakingIdRef = useRef<string | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -49,6 +52,7 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): TextToSpe
 
   const stop = useCallback(() => {
     audio.cancel?.();
+    speakingIdRef.current = null;
     if (mountedRef.current) setSpeakingId(null);
   }, [audio]);
 
@@ -57,20 +61,23 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): TextToSpe
     if (!trimmed || !audio.isSpeechSupported()) return;
 
     // Toggle: clicking the active control again stops playback.
-    if (speakingId === id) {
+    // Read from ref so this callback stays stable across utterance changes.
+    if (speakingIdRef.current === id) {
       stop();
       return;
     }
 
+    speakingIdRef.current = id;
     setSpeakingId(id);
     void audio.speak(trimmed, { lang: bcpTag }).finally(() => {
       // Only clear if we are still the active utterance; a newer speak() call
       // may have already taken over and updated speakingId.
-      if (mountedRef.current) {
+      if (mountedRef.current && speakingIdRef.current === id) {
+        speakingIdRef.current = null;
         setSpeakingId(prev => (prev === id ? null : prev));
       }
     });
-  }, [audio, bcpTag, speakingId, stop]);
+  }, [audio, bcpTag, stop]);
 
   return { isSupported: audio.isSpeechSupported(), speakingId, speak, stop };
 }

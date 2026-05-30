@@ -1,4 +1,4 @@
-import { useCallback, useContext, useMemo, useState } from 'react';
+import { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import type { EditMode } from '../../types';
 import {
   BrowserVoiceAudioService,
@@ -48,18 +48,40 @@ export function useVoiceAssistantController({
   const { uiLocaleCode, bcpTag } = useUiSpeechLocale();
 
   // Localized user-facing messages, falling back to English literals.
+  // Memoised so the object identity is stable when the locale has not changed,
+  // preventing spurious invalidation of the invoke callback.
   const voiceMessages = (langCtx?.t.voice ?? {}) as Partial<typeof FALLBACK_MESSAGES>;
-  const messages = {
+  const messages = useMemo(() => ({
     prompt: voiceMessages.prompt ?? FALLBACK_MESSAGES.prompt,
     noInput: voiceMessages.noInput ?? FALLBACK_MESSAGES.noInput,
     unavailable: voiceMessages.unavailable ?? FALLBACK_MESSAGES.unavailable,
     error: voiceMessages.error ?? FALLBACK_MESSAGES.error,
-  };
+  }), [
+    voiceMessages.prompt,
+    voiceMessages.noInput,
+    voiceMessages.unavailable,
+    voiceMessages.error,
+  ]);
 
   const [uiState, setUiState] = useState<VoiceAssistantUiState>('idle');
   const [errorText, setErrorText] = useState<string | null>(null);
   const [textFallback, setTextFallback] = useState<string | null>(null);
   const [promptText, setPromptText] = useState<string | null>(null);
+
+  // Guard setState calls in async paths against component unmount.
+  const mountedRef = useRef(true);
+  useMemo(() => {
+    mountedRef.current = true;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // useEffect would be cleaner but we need the ref set before the first render
+  // so that tests that synchronously unmount after mount are also covered.
+  // The actual cleanup still runs in useEffect.
+  const { useEffect } = require('react') as typeof import('react');
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const isBusy = uiState !== 'idle';
 
@@ -91,17 +113,21 @@ export function useVoiceAssistantController({
       const spoken = await audio.speak(reply, {
         lang: bcpTag,
         slowStartMs: VOICE_SPEECH_SLOW_START_MS,
-        onSlowStart: () => setTextFallback(reply),
+        onSlowStart: () => { if (mountedRef.current) setTextFallback(reply); },
       });
 
-      if (!spoken) setTextFallback(reply);
-      setUiState('idle');
+      if (mountedRef.current) {
+        if (!spoken) setTextFallback(reply);
+        setUiState('idle');
+      }
     } catch (error) {
-      const message = error instanceof Error ? error.message : messages.error;
-      setErrorText(message);
-      setUiState('idle');
+      if (mountedRef.current) {
+        const message = error instanceof Error ? error.message : messages.error;
+        setErrorText(message);
+        setUiState('idle');
+      }
     }
-  }, [audio, bcpTag, context, enabled, isFirstCall, markFirstCallHandled, messages.error, messages.noInput, messages.prompt, messages.unavailable, requestReply, uiLocaleCode, uiState]);
+  }, [audio, bcpTag, context, enabled, isFirstCall, markFirstCallHandled, messages, requestReply, uiLocaleCode, uiState]);
 
   return {
     invoke,
