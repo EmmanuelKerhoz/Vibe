@@ -490,6 +490,28 @@ const getLastVowelGroupSuffix = (
   return canonicalizeRhymeSuffix(tail, langCode)[0] ?? tail;
 };
 
+/**
+ * Romance rhotic / liquid vowel mergers mirroring the phonetic ALGO-ROM rules
+ * so the graphemic safety-net agrees with the IPA pipeline. Only the vowel
+ * nucleus is rewritten; the rhotic/liquid coda (matched via lookahead) is
+ * preserved:
+ *   ie → e / _[lr] : hier 'ier'→'er', fier 'ier'→'er', ciel 'iel'→'el'
+ *   ai|ei → e / _r : clair 'air'→'er', chair 'air'→'er', faire 'aire'→'ere'
+ * Restricted to a rhotic/liquid coda so -ai /aj/ (travail) and nasal -ain /ɛ̃/
+ * (main) keep their own nucleus.
+ *
+ * Applied only to the comparison candidates (not inside canonicalizeRhymeSuffix)
+ * so rhyme highlighting, which slices the raw orthography, is left untouched.
+ */
+const applyRomanceRhoticMerge = (suffix: string, langCode?: string): string => {
+  const family = langCode ? getAlgoFamily(langCode) : undefined;
+  const isRomance = !family || family === 'ALGO-ROM';
+  if (!isRomance) return suffix;
+  return suffix
+    .replace(/^ie(?=[lr])/, 'e')
+    .replace(/^(?:ai|ei)(?=r)/, 'e');
+};
+
 const getRhymeCandidates = (
   text: string,
   langCode?: string,
@@ -502,7 +524,7 @@ const getRhymeCandidates = (
   const vowelGroups = memoGet(word.normalizedWord);
   if (vowelGroups.length === 0) {
     return canonicalizeRhymeSuffix(word.normalizedWord, langCode)
-      .map(normalizedSuffix => ({ normalizedSuffix }));
+      .map(form => ({ normalizedSuffix: applyRomanceRhoticMerge(form, langCode) }));
   }
 
   let groupsToUse = vowelGroups;
@@ -526,7 +548,7 @@ const getRhymeCandidates = (
 
   return groupsToUse.flatMap(({ start }) =>
     canonicalizeRhymeSuffix(word.normalizedWord.slice(start), langCode)
-      .map(normalizedSuffix => ({ normalizedSuffix })),
+      .map(form => ({ normalizedSuffix: applyRomanceRhoticMerge(form, langCode) })),
   );
 };
 

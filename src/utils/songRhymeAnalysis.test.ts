@@ -316,6 +316,18 @@ describe('detectRhymeSchemeLocally — French schemes', () => {
   it('treats connaissance/effervescence as a valid Romance rhyme pair', () => {
     expect(doLinesRhymeGraphemic('Sa forme défiait toute ma connaissance,', 'Une danse de lueurs, une douce effervescence', 'fr')).toBe(true);
   });
+
+  it('detects AABB when the second pair rhymes via ai/ie + rhotic (clair/hier)', () => {
+    const lines = [
+      "L'aube enfin surgit",
+      "Mon cœur s'élargit",
+      'Un doux rayon clair',
+      "Chasse l'ombre hier (l'ombre d'hier)",
+    ];
+
+    const scheme = detectRhymeSchemeLocally(lines, 'fr');
+    expect(scheme).toBe('AABB');
+  });
 });
 
 // ─── New tests: canonicalizeRhymeSuffix direct coverage ──────────────────────

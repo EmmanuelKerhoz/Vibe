@@ -85,6 +85,32 @@ describe('doLinesRhymeGraphemic — forScheme mode stricter rules', () => {
   });
 });
 
+describe('doLinesRhymeGraphemic — ie/ai/ei + rhotic merge to /ɛ/ (Romance)', () => {
+  it('matches clair / hier (ai+r vs ie+r → /ɛʁ/) in scheme mode', () => {
+    expect(doLinesRhymeGraphemic('Un doux rayon clair', "Chasse l'ombre hier", 'fr', { forScheme: true })).toBe(true);
+  });
+
+  it('matches clair / hier even with parenthetical annotation', () => {
+    expect(doLinesRhymeGraphemic('Un doux rayon clair', "Chasse l'ombre hier (l'ombre d'hier)", 'fr', { forScheme: true })).toBe(true);
+  });
+
+  it('matches chair / mer (ai+r vs e+r → /ɛʁ/) in scheme mode', () => {
+    expect(doLinesRhymeGraphemic('Pas de corps ni de chair', 'Au bord de la mer', 'fr', { forScheme: true })).toBe(true);
+  });
+
+  it('matches ciel / miel (ie+l → /ɛl/) in scheme mode', () => {
+    expect(doLinesRhymeGraphemic('Sous le ciel', 'Un goût de miel', 'fr', { forScheme: true })).toBe(true);
+  });
+
+  it('does NOT merge nasal -ain (main) with clair', () => {
+    expect(doLinesRhymeGraphemic('Tends-moi la main', 'Un doux rayon clair', 'fr', { forScheme: true })).toBe(false);
+  });
+
+  it('does NOT over-match clair with an unrelated open vowel (café)', () => {
+    expect(doLinesRhymeGraphemic('Un doux rayon clair', 'Un petit café', 'fr', { forScheme: true })).toBe(false);
+  });
+});
+
 describe('doLinesRhymeGraphemic — œ ligature & nucleus handling (Romance)', () => {
   it('matches lueur / cœur via œ→oe + ueu/oeu canonicalization (FR)', () => {
     expect(doLinesRhymeGraphemic(
