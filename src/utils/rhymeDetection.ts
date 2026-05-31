@@ -492,9 +492,11 @@ const getLastVowelGroupSuffix = (
 
 /**
  * Romance rhotic / liquid vowel mergers mirroring the phonetic ALGO-ROM rules
- * so the graphemic safety-net agrees with the IPA pipeline:
- *   ie + l/r → /ɛ/ : hier /jɛʁ/, fier /fjɛʁ/, ciel /sjɛl/, miel /mjɛl/
- *   ai/ei + r → /ɛ/ : clair /klɛʁ/, chair /ʃɛʁ/, faire /fɛʁ/
+ * so the graphemic safety-net agrees with the IPA pipeline. Only the vowel
+ * nucleus is rewritten; the rhotic/liquid coda (matched via lookahead) is
+ * preserved:
+ *   ie → e / _[lr] : hier 'ier'→'er', fier 'ier'→'er', ciel 'iel'→'el'
+ *   ai|ei → e / _r : clair 'air'→'er', chair 'air'→'er', faire 'aire'→'ere'
  * Restricted to a rhotic/liquid coda so -ai /aj/ (travail) and nasal -ain /ɛ̃/
  * (main) keep their own nucleus.
  *
