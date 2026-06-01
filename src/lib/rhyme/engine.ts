@@ -403,8 +403,8 @@ export function rhymeScore(
     csDetected,
     lineA,
     lineB,
-    rhymeTokenA,
-    rhymeTokenB,
+    ...(rhymeTokenA !== undefined ? { rhymeTokenA } : {}),
+    ...(rhymeTokenB !== undefined ? { rhymeTokenB } : {}),
   });
 }
 
@@ -477,8 +477,8 @@ interface BuildOptions {
   csDetected?: boolean;
   lineA?: string;
   lineB?: string;
-  rhymeTokenA?: string | undefined;
-  rhymeTokenB?: string | undefined;
+  rhymeTokenA?: string;
+  rhymeTokenB?: string;
 }
 
 function build({
