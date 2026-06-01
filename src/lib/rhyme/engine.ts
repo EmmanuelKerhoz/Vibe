@@ -36,7 +36,7 @@ import { routeToFamily } from './router';
 import { categorize, scoreKWANormalized, scoreCRV, phonemeEditDistance } from './scoring';
 import { extractNucleusKWA } from './algo-kwa';
 import { extractNucleusCRV } from './algo-crv';
-import { extractNucleusROM, scoreROM } from './algo-rom';
+import { extractNucleusROM, scoreROM, lastRhymingToken } from './algo-rom';
 import { extractNucleusGER, scoreGER } from './algo-ger';
 import { extractNucleusBNT, scoreBNT } from './algo-bnt';
 import { extractNucleusYRB, scoreYRB, type YRBNucleus } from './algo-yrb';
@@ -315,17 +315,14 @@ export function rhymeScore(
     const tailA = normalizeInput(unitA.surface).slice(-4).toLowerCase();
     const tailB = normalizeInput(unitB.surface).slice(-4).toLowerCase();
     const scoreRaw = 1 - phonemeEditDistance(tailA, tailB);
-    return {
-      score: Math.max(0, Math.min(1, scoreRaw)),
-      category: categorize(scoreRaw),
-      family: 'FALLBACK',
-      langA: resolvedLangA, langB: resolvedLangB, unitA, unitB,
-      nucleusA, nucleusB,
-      lowResourceFallback: true,
-      warnings,
-      position,
-      csDetected,
-    };
+    // Route through build() so charSpanA/B are computed (from unit.surface) —
+    // returning a raw object here left them undefined, silently desyncing the UI.
+    return build(
+      scoreRaw, 'FALLBACK', resolvedLangA, resolvedLangB,
+      unitA, unitB, nucleusA, nucleusB,
+      true, warnings, position, csDetected,
+      lineA, lineB,
+    );
   }
 
   // ── Step 3: Family scoring ────────────────────────────────────────────────
@@ -337,21 +334,17 @@ export function rhymeScore(
 
   const handler = ALGO_REGISTRY[family];
   if (handler) {
-    // For ROM family we call extractNucleusROM directly to capture rhymeToken
+    nucleusA = handler.extract(unitA, resolvedLangA, lowResource);
+    nucleusB = handler.extract(unitB, resolvedLangB, routeToFamily(resolvedLangB).lowResource);
+    baseScore = handler.score(nucleusA, nucleusB, resolvedLangA, resolvedLangB);
+
+    // ROM exposes the exact rhyming token (last word of the unit) so build()
+    // can compute a precise charSpan. Extraction itself runs once via the
+    // registry above; lastRhymingToken is a cheap re-derivation of just the
+    // token (no second extractNucleusROM call).
     if (family === 'ROM') {
-      const augA = extractNucleusROM(unitA, resolvedLangA);
-      const augB = extractNucleusROM(unitB, resolvedLangB);
-      const { rhymeToken: rtA, ...nA } = augA;
-      const { rhymeToken: rtB, ...nB } = augB;
-      nucleusA = nA;
-      nucleusB = nB;
-      rhymeTokenA = rtA;
-      rhymeTokenB = rtB;
-      baseScore = scoreROM(nucleusA, nucleusB, resolvedLangA, phonemeEditDistance);
-    } else {
-      nucleusA = handler.extract(unitA, resolvedLangA, lowResource);
-      nucleusB = handler.extract(unitB, resolvedLangB, routeToFamily(resolvedLangB).lowResource);
-      baseScore = handler.score(nucleusA, nucleusB, resolvedLangA, resolvedLangB);
+      rhymeTokenA = lastRhymingToken(unitA.surface);
+      rhymeTokenB = lastRhymingToken(unitB.surface);
     }
 
     if (family === 'CRV' && lowResource) warnings.push('low-resource-fallback');

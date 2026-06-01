@@ -222,6 +222,15 @@ describe('ROM rhyme engine', () => {
     const r = rhymeScore('la canción', 'el corazón', 'es', 'es');
     expect(r.score).toBeGreaterThanOrEqual(0.70);
   });
+  it('FR: charSpanA/B target the exact rhyming token', () => {
+    const lineA = 'mon amour';
+    const lineB = 'pour toujours';
+    const r = rhymeScore(lineA, lineB, 'fr', 'fr');
+    expect(r.charSpanA).toBeDefined();
+    expect(r.charSpanB).toBeDefined();
+    expect(lineA.slice(r.charSpanA!.start, r.charSpanA!.end)).toBe('amour');
+    expect(lineB.slice(r.charSpanB!.start, r.charSpanB!.end)).toBe('toujours');
+  });
 });
 // ─── FR nasal verbal finals (-ont/-ons) — regression for Safari lookbehind ───
 // FR_NASAL_VERBAL_FINAL was rewritten without a regex lookbehind (which is a
@@ -708,6 +717,16 @@ describe('cross-family fallback', () => {
     const r = rhymeScore('the night', 'la nuit', 'en', 'fr');
     const bothEmpty = r.nucleusA.vowels === '' && r.nucleusB.vowels === '';
     expect(bothEmpty).toBe(false);
+  });
+  it('cross-family: charSpanA/B are populated and target the line-ending token', () => {
+    const lineA = 'the night';
+    const lineB = 'la nuit';
+    const r = rhymeScore(lineA, lineB, 'en', 'fr');
+    expect(r.family).toBe('FALLBACK');
+    expect(r.charSpanA).toBeDefined();
+    expect(r.charSpanB).toBeDefined();
+    expect(lineA.slice(r.charSpanA!.start, r.charSpanA!.end)).toBe('night');
+    expect(lineB.slice(r.charSpanB!.start, r.charSpanB!.end)).toBe('nuit');
   });
   it('FALLBACK: surface is NFC-normalised (no broken multi-byte slice)', () => {
     const r = rhymeScore('\u0645\u0633\u0627\u0621', '\u0645\u0633\u0627\u0621', 'ar', 'ar');
