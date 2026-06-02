@@ -116,7 +116,7 @@ interface SidebarProviderProps {
  */
 export function SidebarProvider({ onLocalTracksAdded, onCloudTracksAdded, children }: SidebarProviderProps) {
   const library = useLibraryContext();
-  const [scanProtocol, setScanProtocol] = useState<ScanConfig['accept']>(['wav']);
+  const [scanProtocol, setScanProtocol] = useState<ScanConfig['accept']>(['wav', 'aac', 'mp4']);
   const [scanPattern, setScanPattern] = useState('');
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);

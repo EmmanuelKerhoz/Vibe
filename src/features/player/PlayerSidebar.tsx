@@ -241,7 +241,7 @@ function CloudSourcePanel({ onLibraryLink, onOneDriveScan, oneDriveScanBadge, on
       color: GOOGLE_BLUE,
       badge: 'SOON',
       badgeColor: LCARS.subText,
-      disabled: true,
+      disabled: false,
       icon: <GoogleMusicIcon />,
       onActivate: () => undefined,
     },
@@ -548,7 +548,7 @@ export function PlayerSidebar({
         );})}
       </div>
 
-      {/* UPLINK — fond peach solide + hachures sombres + texte #000 + glow fort */}
+      {/* UPLINK — solid peach background + dark text + strong glow */}
       <button
         type="button"
         onClick={() => uploadInputRef.current?.click()}
@@ -558,16 +558,7 @@ export function PlayerSidebar({
           justifyContent: 'space-between',
           gap: 8,
           padding: '10px 14px',
-          background: `
-            repeating-linear-gradient(
-              135deg,
-              rgba(0,0,0,0.10) 0px,
-              rgba(0,0,0,0.10) 2px,
-              transparent 2px,
-              transparent 10px
-            ),
-            ${LCARS.peach}
-          `,
+          background: LCARS.peach,
           color: '#000',
           border: `2px solid ${LCARS.peach}`,
           borderRadius: 4,
@@ -600,7 +591,7 @@ export function PlayerSidebar({
         }}
       >
         <div>
-          <div style={{ color: LCARS.orange, fontSize: 9, letterSpacing: 3, marginBottom: 6 }}>AUDIO PROTOCOL</div>
+          <div style={{ color: LCARS.orange, fontSize: 9, letterSpacing: 3, marginBottom: 6 }}>MEDIA PROTOCOL</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 4 }}>
             <button
               type="button"
