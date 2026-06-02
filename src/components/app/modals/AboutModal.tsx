@@ -143,49 +143,61 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
 
           <div ref={sweepItemsRef} className="px-8 pt-4 pb-8 space-y-6">
             <p className="about-sweep-item text-sm text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto text-center">
-              {about.description ?? 'AI-powered songwriting assistant.'}
+              <span className="about-sweep-content">
+                {about.description ?? 'AI-powered songwriting assistant.'}
+              </span>
             </p>
 
             {/* Tech Info — Gemini */}
             <div className="grid grid-cols-1 gap-3 pt-4 border-t border-[var(--border-color)] sm:grid-cols-2">
               <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
-                <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{about.engineLabel ?? 'Engine'}</span>
-                <span className="text-xs text-[var(--text-primary)] telemetry-text">{about.engine ?? 'Vibe AI'}</span>
+                <div className="about-sweep-content flex flex-col items-center gap-1">
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{about.engineLabel ?? 'Engine'}</span>
+                  <span className="text-xs text-[var(--text-primary)] telemetry-text">{about.engine ?? 'Vibe AI'}</span>
+                </div>
               </div>
               <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
-                <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{about.modelLabel ?? 'Model'}</span>
-                <span className="text-xs text-[var(--text-primary)] telemetry-text break-all text-center">{AI_MODEL_NAME}</span>
+                <div className="about-sweep-content flex flex-col items-center gap-1">
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{about.modelLabel ?? 'Model'}</span>
+                  <span className="text-xs text-[var(--text-primary)] telemetry-text break-all text-center">{AI_MODEL_NAME}</span>
+                </div>
               </div>
               <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
-                <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{about.apiKeyLabel ?? 'API key'}</span>
-                <span className="text-xs text-[var(--text-primary)] telemetry-text break-all text-center">{AI_KEY_ENV_VAR}</span>
+                <div className="about-sweep-content flex flex-col items-center gap-1">
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{about.apiKeyLabel ?? 'API key'}</span>
+                  <span className="text-xs text-[var(--text-primary)] telemetry-text break-all text-center">{AI_KEY_ENV_VAR}</span>
+                </div>
               </div>
               <div className="about-sweep-item flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]">
-                <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{about.licenseLabel ?? 'License'}</span>
-                <span className="text-xs text-[var(--text-primary)] telemetry-text">{about.license ?? 'MIT'}</span>
+                <div className="about-sweep-content flex flex-col items-center gap-1">
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">{about.licenseLabel ?? 'License'}</span>
+                  <span className="text-xs text-[var(--text-primary)] telemetry-text">{about.license ?? 'MIT'}</span>
+                </div>
               </div>
             </div>
 
             {/* Lyria Music Generation */}
             <div className="about-sweep-item pt-4 border-t border-[var(--border-color)] space-y-3">
-              <div className="flex items-center gap-2">
-                <Music className="w-3.5 h-3.5 text-[var(--accent-color)]" aria-hidden="true" />
-                <span className="text-[10px] uppercase tracking-widest font-semibold text-[var(--accent-color)]">Lyria Music Generation</span>
-                <span className="ml-auto text-[10px] text-[var(--text-secondary)] font-mono">VITE_LYRIA_INTERNAL_TOKEN</span>
-              </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {LYRIA_MODELS.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex flex-col gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-[var(--text-primary)]">{m.label}</span>
-                      <span className="text-[10px] font-mono text-[var(--accent-color)] bg-[var(--accent-color)]/10 px-1.5 py-0.5 rounded">{m.id}</span>
+              <div className="about-sweep-content space-y-3">
+                <div className="flex items-center gap-2">
+                  <Music className="w-3.5 h-3.5 text-[var(--accent-color)]" aria-hidden="true" />
+                  <span className="text-[10px] uppercase tracking-widest font-semibold text-[var(--accent-color)]">Lyria Music Generation</span>
+                  <span className="ml-auto text-[10px] text-[var(--text-secondary)] font-mono">VITE_LYRIA_INTERNAL_TOKEN</span>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {LYRIA_MODELS.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex flex-col gap-1 px-4 py-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-color)]"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-[var(--text-primary)]">{m.label}</span>
+                        <span className="text-[10px] font-mono text-[var(--accent-color)] bg-[var(--accent-color)]/10 px-1.5 py-0.5 rounded">{m.id}</span>
+                      </div>
+                      <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{m.description}</p>
                     </div>
-                    <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{m.description}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -199,7 +211,11 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
                   aria-label={about.github ?? 'GitHub'}
                   className="about-sweep-item ux-interactive flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg text-xs font-medium"
                 >
-                  <Github className="w-4 h-4" /><span>{about.github ?? 'GitHub'}</span><ExternalLink className="w-3 h-3 opacity-50" />
+                  <span className="about-sweep-content flex items-center justify-center gap-2">
+                    <Github className="w-4 h-4" />
+                    <span>{about.github ?? 'GitHub'}</span>
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </span>
                 </a>
                 <button
                   type="button"
@@ -212,7 +228,10 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
                       : 'bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
-                  <BookOpen className="w-4 h-4" /><span>{about.docs ?? 'Documentation'}</span>
+                  <span className="about-sweep-content flex items-center justify-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    <span>{about.docs ?? 'Documentation'}</span>
+                  </span>
                 </button>
               </div>
 
@@ -222,58 +241,88 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
 
               <a href="https://github.com/sponsors/EmmanuelKerhoz" target="_blank" rel="noopener noreferrer" aria-label="Visit GitHub Sponsors page"
                 className="about-sweep-item ux-interactive mx-auto flex w-full max-w-sm items-center justify-center gap-2 px-4 py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 hover:border-pink-500/40 text-pink-400 hover:text-pink-300 rounded-lg text-xs font-medium">
-                <Github className="w-4 h-4" /><span>Donation (Github Sponsor)</span><ExternalLink className="w-3 h-3 opacity-50" />
+                <span className="about-sweep-content flex items-center justify-center gap-2">
+                  <Github className="w-4 h-4" />
+                  <span>Donation (Github Sponsor)</span>
+                  <ExternalLink className="w-3 h-3 opacity-50" />
+                </span>
               </a>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <a href="https://www.youtube.com/@voxnova42" target="_blank" rel="noopener noreferrer" aria-label="Visit YouTube channel"
                   className="about-sweep-item ux-interactive flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium">
-                  <Youtube className="w-4 h-4" /><span>YouTube</span><ExternalLink className="w-3 h-3 opacity-50" />
+                  <span className="about-sweep-content flex items-center justify-center gap-2">
+                    <Youtube className="w-4 h-4" />
+                    <span>YouTube</span>
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </span>
                 </a>
                 <a href="https://open.spotify.com/artist/6VfhDlWsBW0qk0a8x7UbOM" target="_blank" rel="noopener noreferrer" aria-label="Visit Spotify artist page"
                   className="about-sweep-item ux-interactive flex items-center justify-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/40 text-green-400 hover:text-green-300 rounded-lg text-xs font-medium">
-                  <Music className="w-4 h-4" /><span>Spotify</span><ExternalLink className="w-3 h-3 opacity-50" />
+                  <span className="about-sweep-content flex items-center justify-center gap-2">
+                    <Music className="w-4 h-4" />
+                    <span>Spotify</span>
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </span>
                 </a>
                 <a href="https://www.linkedin.com/in/emmanuelkerhoz/" target="_blank" rel="noopener noreferrer" aria-label="Visit LinkedIn profile"
                   className="about-sweep-item ux-interactive flex items-center justify-center gap-2 px-4 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 hover:border-sky-500/40 text-sky-400 hover:text-sky-300 rounded-lg text-xs font-medium">
-                  <Linkedin className="w-4 h-4" /><span>LinkedIn</span><ExternalLink className="w-3 h-3 opacity-50" />
+                  <span className="about-sweep-content flex items-center justify-center gap-2">
+                    <Linkedin className="w-4 h-4" />
+                    <span>LinkedIn</span>
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </span>
                 </a>
                 <a href="https://network.landr.com/users/emmanueldk" target="_blank" rel="noopener noreferrer" aria-label="Visit Landr profile"
                   className="about-sweep-item ux-interactive flex items-center justify-center gap-2 px-4 py-2 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 hover:border-violet-500/40 text-violet-400 hover:text-violet-300 rounded-lg text-xs font-medium">
-                  <Radio className="w-4 h-4" /><span>Landr</span><ExternalLink className="w-3 h-3 opacity-50" />
+                  <span className="about-sweep-content flex items-center justify-center gap-2">
+                    <Radio className="w-4 h-4" />
+                    <span>Landr</span>
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </span>
                 </a>
                 <a href="https://music.amazon.com/artists/B0DKW3BNL7/emmanuel-kerhoz" target="_blank" rel="noopener noreferrer" aria-label="Visit Amazon Music artist page"
                   className="about-sweep-item ux-interactive flex items-center justify-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 text-amber-400 hover:text-amber-300 rounded-lg text-xs font-medium">
-                  <ShoppingBag className="w-4 h-4" /><span>Amazon</span><ExternalLink className="w-3 h-3 opacity-50" />
+                  <span className="about-sweep-content flex items-center justify-center gap-2">
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>Amazon</span>
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </span>
                 </a>
                 <a href="https://music.apple.com/artist/emmanuel-kerhoz/1776965137" target="_blank" rel="noopener noreferrer" aria-label="Visit Apple Music artist page"
                   className="about-sweep-item ux-interactive flex items-center justify-center gap-2 px-4 py-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--accent-color)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg text-xs font-medium">
-                  <Apple className="w-4 h-4" /><span>Apple Music</span><ExternalLink className="w-3 h-3 opacity-50" />
+                  <span className="about-sweep-content flex items-center justify-center gap-2">
+                    <Apple className="w-4 h-4" />
+                    <span>Apple Music</span>
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </span>
                 </a>
               </div>
 
               {/* Legal */}
               <div className="about-sweep-item pt-3 border-t border-[var(--border-color)] flex items-center justify-center gap-4">
-                <a
-                  href="/privacy.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Privacy Policy"
-                  className="ux-interactive flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                  <Info className="w-3 h-3" />
-                  <span>Privacy Policy</span>
-                </a>
-                <span className="text-[var(--border-color)]">·</span>
-                <a
-                  href="/terms.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Terms of Service"
-                  className="ux-interactive flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                  <FileText className="w-3 h-3" />
-                  <span>Terms of Service</span>
-                </a>
+                <div className="about-sweep-content flex items-center justify-center gap-4">
+                  <a
+                    href="/privacy.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Privacy Policy"
+                    className="ux-interactive flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                  >
+                    <Info className="w-3 h-3" />
+                    <span>Privacy Policy</span>
+                  </a>
+                  <span className="text-[var(--border-color)]">·</span>
+                  <a
+                    href="/terms.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Terms of Service"
+                    className="ux-interactive flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                  >
+                    <FileText className="w-3 h-3" />
+                    <span>Terms of Service</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>

@@ -230,6 +230,7 @@
 .about-sweep-item {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
 }
 .about-sweep-item::before {
   content: '';
@@ -249,7 +250,7 @@
   animation: about-item-shimmer 800ms cubic-bezier(0.4, 0, 0.2, 1) both;
   animation-play-state: paused;
 }
-.about-sweep-item > * {
+.about-sweep-content {
   position: relative;
   z-index: 1;
 }
