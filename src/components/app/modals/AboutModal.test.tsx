@@ -42,4 +42,17 @@ describe('AboutModal', () => {
 
     expect(screen.getByText(APP_VERSION_LABEL, { exact: false })).toBeTruthy();
   });
+
+  it('wraps each swept about item in an explicit content layer', () => {
+    const { container } = render(
+      <LanguageProvider>
+        <AboutModal isOpen onClose={() => {}} />
+      </LanguageProvider>,
+    );
+
+    const sweepItems = container.querySelectorAll('.about-sweep-item');
+    const contentLayers = container.querySelectorAll('.about-sweep-item > .about-sweep-content');
+
+    expect(contentLayers).toHaveLength(sweepItems.length);
+  });
 });
