@@ -160,7 +160,7 @@ export function RibbonMenuPanel({
 
       {/* ── Mode ──────────────────────────────────────────────────── */}
       <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
-      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{t.menu?.mode ?? 'Mode'}</div>
+      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{(t as { menu?: { mode?: string } }).menu?.mode ?? 'Mode'}</div>
       <Tooltip title={t.tooltips.lyricsTab ?? 'Open the lyrics editor'}>
         <button onClick={() => run(() => setActiveTab('lyrics'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <AlignLeft className="w-4 h-4 text-[var(--text-secondary)]" />
@@ -205,12 +205,6 @@ export function RibbonMenuPanel({
         <button onClick={() => run(openSettings)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Settings className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.statusBar.settings}
-        </button>
-      </Tooltip>
-      <Tooltip title={t.tooltips.reset}>
-        <button onClick={() => run(openResetModal)} disabled={song.length === 0} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
-          <Trash2 className="w-4 h-4" />
-          {t.ribbon.reset}
         </button>
       </Tooltip>
 
