@@ -4,9 +4,9 @@ import { GlobeIcon, DatabaseIcon, SparkleIcon, TrashIcon, UploadIcon } from './P
 import { CLOUD_PROVIDER_OPTIONS, SCAN_PROTOCOLS, useSidebarContext } from './SidebarContext';
 import type { TrackEntry, ScanProtocol } from './types';
 
-// Raised from 0.08 → 0.20 for readability over textured background
+// Raised from 0.08 → 0.20 → 0.40 for readability over textured background (especially light mode)
 const LCARS_BOX_COLORS = [
-  'rgba(255,153,0,0.20)',
+  'rgba(255,153,0,0.40)',
 ];
 
 const SPOTIFY_GREEN = '#1DB954';
@@ -154,7 +154,7 @@ function ConnectorRow({ connector, onActivate }: ConnectorRowProps) {
         width: '100%',
         padding: '7px 8px',
         background: 'transparent',
-        border: `1px solid ${connector.color}44`,
+        border: `1px solid ${connector.color}88`,
         borderRadius: 3,
         color: connector.disabled ? LCARS.mutedText : connector.color,
         cursor: connector.disabled ? 'not-allowed' : 'pointer',
@@ -163,7 +163,7 @@ function ConnectorRow({ connector, onActivate }: ConnectorRowProps) {
         transition: 'background 140ms, border-color 140ms',
       }}
       onMouseEnter={e => {
-        if (!connector.disabled) (e.currentTarget as HTMLButtonElement).style.background = `${connector.color}18`;
+        if (!connector.disabled) (e.currentTarget as HTMLButtonElement).style.background = `${connector.color}33`;
       }}
       onMouseLeave={e => {
         (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
@@ -241,7 +241,7 @@ function CloudSourcePanel({ onLibraryLink, onOneDriveScan, oneDriveScanBadge, on
       color: GOOGLE_BLUE,
       badge: 'SOON',
       badgeColor: LCARS.subText,
-      disabled: true,
+      disabled: false,
       icon: <GoogleMusicIcon />,
       onActivate: () => undefined,
     },
@@ -548,7 +548,7 @@ export function PlayerSidebar({
         );})}
       </div>
 
-      {/* UPLINK — fond peach solide + hachures sombres + texte #000 + glow fort */}
+      {/* UPLINK — solid peach background + dark text + strong glow */}
       <button
         type="button"
         onClick={() => uploadInputRef.current?.click()}
@@ -558,16 +558,7 @@ export function PlayerSidebar({
           justifyContent: 'space-between',
           gap: 8,
           padding: '10px 14px',
-          background: `
-            repeating-linear-gradient(
-              135deg,
-              rgba(0,0,0,0.10) 0px,
-              rgba(0,0,0,0.10) 2px,
-              transparent 2px,
-              transparent 10px
-            ),
-            ${LCARS.peach}
-          `,
+          background: LCARS.peach,
           color: '#000',
           border: `2px solid ${LCARS.peach}`,
           borderRadius: 4,
@@ -600,7 +591,7 @@ export function PlayerSidebar({
         }}
       >
         <div>
-          <div style={{ color: LCARS.orange, fontSize: 9, letterSpacing: 3, marginBottom: 6 }}>AUDIO PROTOCOL</div>
+          <div style={{ color: LCARS.orange, fontSize: 9, letterSpacing: 3, marginBottom: 6 }}>MEDIA PROTOCOL</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 4 }}>
             <button
               type="button"

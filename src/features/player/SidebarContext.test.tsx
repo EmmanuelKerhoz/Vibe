@@ -23,7 +23,7 @@ describe('SidebarContext', () => {
 
   it('exposes default scan protocol and pattern', () => {
     const { result } = renderHook(() => useSidebarContext(), { wrapper: wrap() });
-    expect(result.current.scanProtocol).toEqual(['wav']);
+    expect(result.current.scanProtocol).toEqual(['wav', 'aac', 'mp4']);
     expect(result.current.scanPattern).toBe('');
     expect(result.current.cloudProvider).toBe('onedrive');
     expect(result.current.cloudUrl).toBe('');

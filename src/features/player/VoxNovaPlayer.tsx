@@ -13,6 +13,7 @@ import { SeekBar, VolumeControl } from './PlayerWidgets';
 import { LCARSBackground, VoxNovaFooter } from './VoxNovaFooter';
 import { useVoxNovaPlayer } from './useVoxNovaPlayer';
 import { SPOTIFY_GREEN, LCARS_BOX_COLORS } from './playerConstants';
+import { useSpotifyAuthActions } from '../../contexts/SpotifyAuthContext';
 
 type SpotifyBrowserTab = 'playlists' | 'search';
 
@@ -86,6 +87,8 @@ function VoxNovaPlayerInner() {
     title,
   } = useVoxNovaPlayer();
 
+  const { login: spotifyLogin } = useSpotifyAuthActions();
+
   const CONTENT_WIDTH = 'min(680px, 95%)';
   const WIDE_WIDTH = 'min(900px, 98%)';
 
@@ -104,6 +107,7 @@ function VoxNovaPlayerInner() {
           <PlayerSidebar
             view={view} setView={setView} tracks={library.tracks}
             selectedId={selectedId} onSelect={handleSelect} onPurge={handlePurge}
+            onSpotifyActivate={() => void spotifyLogin()}
           />
         </div>
       </SidebarProvider>
@@ -180,17 +184,17 @@ function VoxNovaPlayerInner() {
             />
           )}
 
+          {/* Spotify browser — only when authenticated and in spotify mode */}
+          {isSpotify && spotifyStatus === 'authenticated' && (
+            <SpotifyBrowserSection contentWidth={CONTENT_WIDTH} />
+          )}
+
           {/* Singularity status */}
           <VoxNovaFooter
             isPlaying={activeEngine.isPlaying}
             analyser={analyser}
             wideWidth={WIDE_WIDTH}
           />
-
-          {/* Spotify browser — only when authenticated and in spotify mode */}
-          {isSpotify && spotifyStatus === 'authenticated' && (
-            <SpotifyBrowserSection contentWidth={CONTENT_WIDTH} />
-          )}
         </div>
       </main>
     </div>
