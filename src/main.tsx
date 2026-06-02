@@ -16,6 +16,15 @@ if (!rootElement) {
   );
 }
 
+// Remove legacy legal footer markup that may remain in cached/stale host HTML.
+// The canonical Privacy/Terms links are rendered inside StatusBar.
+document.querySelectorAll('[data-legacy-legal-footer], body > footer').forEach((el) => {
+  const hrefs = Array.from(el.querySelectorAll<HTMLAnchorElement>('a[href]')).map((anchor) => anchor.getAttribute('href'));
+  if (hrefs.includes('/privacy.html') && hrefs.includes('/terms.html')) {
+    el.remove();
+  }
+});
+
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <ErrorBoundary>
