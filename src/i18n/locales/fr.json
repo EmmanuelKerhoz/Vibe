@@ -45,7 +45,7 @@
   },
   "ribbon": {
     "lyrics": "PAROLES",
-    "musical": "MUSICAL",
+    "musical": "MUSIQUE",
     "similarity": "Similarité",
     "load_import": "Charger / Importer",
     "save_export": "Enregistrer / Exporter",
@@ -63,7 +63,7 @@
     "navigation": "Navigation mobile",
     "settings": "Paramètres",
     "lyrics": "Paroles",
-    "music": "Musique",
+    "music": "MUSIQUE",
     "structure": "Structure",
     "compose": "Composer",
     "composeAria": "Ouvrir le panneau de génération de paroles",
@@ -285,7 +285,7 @@
     "noData": "Aucune donnée d'analyse disponible.",
     "showMusicalSuggestions": "Afficher les suggestions musicales",
     "hideMusicalSuggestions": "Masquer les suggestions musicales",
-    "musicalSuggestionsMovedHint": "Suggestions musicales disponibles dans l'onglet Musical"
+    "musicalSuggestionsMovedHint": "Suggestions musicales disponibles dans l'onglet MUSIQUE"
   },
   "similarity": {
     "title": "Vérification de similarité",
@@ -477,10 +477,10 @@
     "hideSidebar": "Masquer la barre latérale",
     "showSidebar": "Afficher la barre latérale",
     "lyricsTab": "Passer à l'éditeur de paroles",
-    "musicalTab": "Passer au générateur de prompt musical",
+    "musicalTab": "Passer au panneau MUSIQUE",
     "import": "Charger / Importer un fichier",
     "export": "Enregistrer / Exporter les paroles",
-    "versions": "Versions de la chanson",
+    "versions": "Gestion des versions",
     "undo": "Annuler",
     "redo": "Rétablir",
     "reset": "Réinitialiser la chanson",
@@ -541,8 +541,8 @@
     "browseLibrary": "Enregistrer ou parcourir votre bibliothèque de chansons",
     "openSettings": "Ouvrir les paramètres de l'application",
     "sponsor": "Soutenir le développeur",
-    "sendToLyriaConfirm": "Ouverture de Musical…",
-    "sendToLyria": "Ouvrir l'onglet Musical pour générer un aperçu avec Lyria",
+    "sendToLyriaConfirm": "Ouverture de MUSIQUE…",
+    "sendToLyria": "Ouvrir l'onglet MUSIQUE pour générer un aperçu avec Lyria",
     "quantizeLineDone": "Ligne quantifiée",
     "voiceAssistant": "Assistant vocal",
     "voiceListening": "Écoute en cours…",
@@ -598,7 +598,7 @@
     "zen": "Zen"
   },
   "insights": {
-    "title": "TRADUIRE",
+    "title": "ADAPTER",
     "sections": "Sections",
     "words": "Mots",
     "characters": "Caractères"
