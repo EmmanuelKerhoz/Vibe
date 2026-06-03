@@ -19,7 +19,7 @@
  * "Open Audio Folder from Cloud" and "Add Audio Files from Cloud" have been
  * moved to the Player tab (cloud functions of the Player, not document import).
  *
- * OUTILS section contains: Reset / Versions / Bibliothèque / Raccourcis clavier / Settings
+ * OUTILS section: Reset / Versions / Bibliothèque / Raccourcis clavier / Settings
  */
 import React, { useEffect, useRef } from 'react';
 import {
