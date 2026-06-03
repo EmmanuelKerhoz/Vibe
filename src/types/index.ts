@@ -44,6 +44,18 @@ export interface SongVersion {
   name: string;
 }
 
+/** Per-section version snapshot for managing individual section changes */
+export interface SectionVersion {
+  id: string;
+  timestamp: number;
+  sectionId: string;
+  sectionName: string;
+  section: Section;
+  name: string;
+  /** If true, this is an auto-generated snapshot before a change */
+  isAutoSave?: boolean;
+}
+
 /** A point-in-time snapshot of a musical prompt, stored in LibraryAsset.metadata.promptSnapshots. */
 export interface PromptSnapshot {
   timestamp: number;

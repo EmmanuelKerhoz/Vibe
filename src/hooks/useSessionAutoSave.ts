@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { saveSession } from '../lib/sessionPersistence';
 import type { SessionSnapshot } from '../lib/sessionPersistence';
-import type { Section, SongVersion } from '../types';
+import type { Section, SongVersion, SectionVersion } from '../types';
 import type { AppTab } from './useUIState';
 import { logger } from '../utils/logger';
 
@@ -35,6 +35,7 @@ interface AutoSavePayload {
   narrative: string;
   musicalPrompt: string;
   versions: SongVersion[];
+  sectionVersions: Record<string, SectionVersion[]>;
   activeTab: AppTab;
   isStructureOpen: boolean;
   isLeftPanelOpen: boolean;
@@ -91,6 +92,7 @@ export function useSessionAutoSave(payload: AutoSavePayload): SessionAutoSaveRes
         narrative: p.narrative,
         musicalPrompt: p.musicalPrompt,
         versions: p.versions,
+        sectionVersions: p.sectionVersions,
         activeTab: p.activeTab,
         isStructureOpen: p.isStructureOpen,
         isLeftPanelOpen: p.isLeftPanelOpen,
@@ -129,6 +131,7 @@ export function useSessionAutoSave(payload: AutoSavePayload): SessionAutoSaveRes
     payload.narrative,
     payload.musicalPrompt,
     payload.versions,
+    payload.sectionVersions,
     payload.activeTab,
     payload.isStructureOpen,
     payload.isLeftPanelOpen,

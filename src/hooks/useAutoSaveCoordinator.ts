@@ -11,6 +11,7 @@
 import { useRef } from 'react';
 import { useSongContext } from '../contexts/SongContext';
 import { useOptionalVersionContext } from '../contexts/VersionContext';
+import { useOptionalSectionVersionContext } from '../contexts/SectionVersionContext';
 import { useSessionAutoSave } from './useSessionAutoSave';
 import type { SessionAutoSaveResult } from './useSessionAutoSave';
 import type { AppTab } from './useUIState';
@@ -31,6 +32,7 @@ export function useAutoSaveCoordinator({
 }: AutoSaveCoordinatorOptions): SessionAutoSaveResult {
   const songCtx = useSongContext();
   const versionCtx = useOptionalVersionContext();
+  const sectionVersionCtx = useOptionalSectionVersionContext();
 
   // Stable ref so useSessionAutoSave's dep-array never sees a new function.
   const onSavedRef = useRef(onSaved);
@@ -59,6 +61,7 @@ export function useAutoSaveCoordinator({
     narrative:           songCtx.narrative,
     musicalPrompt:       songCtx.musicalPrompt,
     versions:            versionCtx?.versions ?? [],
+    sectionVersions:     sectionVersionCtx?.sectionVersions ?? {},
     activeTab,
     isStructureOpen,
     isLeftPanelOpen,

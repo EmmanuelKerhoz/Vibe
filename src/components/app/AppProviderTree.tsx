@@ -4,6 +4,7 @@ import { DragProvider } from '../../contexts/DragContext';
 import { AppStateProvider } from '../../contexts/AppStateContext';
 import { LibraryProvider } from '../../contexts/LibraryContext';
 import { VersionProvider } from '../../contexts/VersionContext';
+import { SectionVersionProvider } from '../../contexts/SectionVersionContext';
 import { SongProvider } from '../../contexts/SongContext';
 import { SongMutationProvider } from '../../contexts/SongMutationContext';
 import { ComposerProvider } from '../../contexts/ComposerContext';
@@ -33,9 +34,11 @@ export function AppProviderTree({
             <SongMutationProvider>
               <ComposerProvider>
                 <VersionProvider initialVersions={initialSession?.versions}>
-                  <SimilarityProvider>
-                    {children}
-                  </SimilarityProvider>
+                  <SectionVersionProvider initialVersions={initialSession?.sectionVersions}>
+                    <SimilarityProvider>
+                      {children}
+                    </SimilarityProvider>
+                  </SectionVersionProvider>
                 </VersionProvider>
               </ComposerProvider>
             </SongMutationProvider>
