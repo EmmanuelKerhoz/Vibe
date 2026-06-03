@@ -21,6 +21,8 @@ export interface UIStateSlice {
   setIsAnalysisPanelOpen: (v: boolean) => void;
   setIsCloudStoragePickerOpen: (v: boolean) => void;
   setCloudStoragePickerMode: (v: PickMode) => void;
+  setIsCloudSaveOpen: (v: boolean) => void;
+  setCloudSaveProvider: (v: 'onedrive' | 'gdrive') => void;
   isAboutOpen: boolean;
   isSettingsOpen: boolean;
   apiErrorModal: { open: boolean; message: string };
@@ -39,6 +41,8 @@ export interface UIStateSlice {
   isAnalysisPanelOpen: boolean;
   isCloudStoragePickerOpen: boolean;
   cloudStoragePickerMode: PickMode;
+  isCloudSaveOpen: boolean;
+  cloudSaveProvider: 'onedrive' | 'gdrive';
   activeTab: AppTab;
   setActiveTab: (v: AppTab) => void;
   isStructureOpen: boolean;

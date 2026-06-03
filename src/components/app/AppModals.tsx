@@ -14,6 +14,7 @@ import { ConfirmModal } from './modals/ConfirmModal';
 import { PromptModal } from './modals/PromptModal';
 import { SearchReplaceModal } from './modals/SearchReplaceModal';
 import { CloudStoragePickerModal } from './modals/CloudStoragePickerModal';
+import { CloudSaveModal } from './modals/CloudSaveModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useModalDispatch, useModalState } from '../../contexts/ModalContext';
 import type { LibraryAsset } from '../../utils/libraryUtils';
@@ -245,6 +246,7 @@ export const AppModals = React.memo(function AppModals({
         onFileLoaded={onCloudFileLoaded}
         mode={cloudPickerMode ?? 'lyrics'}
       />
+      <CloudSaveModal />
       <ApiErrorModal
         isOpen={ui.apiErrorModal.open} onClose={() => closeModal('apiError')}
         message={ui.apiErrorModal.message}

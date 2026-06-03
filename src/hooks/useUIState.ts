@@ -50,6 +50,8 @@ export function useUIState(initial?: NavInitial) {
   const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
   const [isCloudStoragePickerOpen, setIsCloudStoragePickerOpen] = useState(false);
   const [cloudStoragePickerMode, setCloudStoragePickerMode] = useState<PickMode>('lyrics');
+  const [isCloudSaveOpen, setIsCloudSaveOpen] = useState(false);
+  const [cloudSaveProvider, setCloudSaveProvider] = useState<'onedrive' | 'gdrive'>('gdrive');
 
   // ── Navigation ────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<AppTab>(initial?.activeTab ?? 'lyrics');
@@ -93,6 +95,8 @@ export function useUIState(initial?: NavInitial) {
     isAnalysisPanelOpen, setIsAnalysisPanelOpen,
     isCloudStoragePickerOpen, setIsCloudStoragePickerOpen,
     cloudStoragePickerMode, setCloudStoragePickerMode,
+    isCloudSaveOpen, setIsCloudSaveOpen,
+    cloudSaveProvider, setCloudSaveProvider,
     activeTab, setActiveTab,
     isStructureOpen, setIsStructureOpen,
     isLeftPanelOpen, setIsLeftPanelOpen,
