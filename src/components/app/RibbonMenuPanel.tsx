@@ -5,7 +5,7 @@
  * Owns:
  *   - fixed-position panel with LCARS gradient outline
  *   - outside-click / resize / scroll dismiss logic
- *   - all grouped menu sections (Create / Mode / Tools / App)
+ *   - all grouped menu sections (Create / Mode / Outils / App)
  *
  * Parent (TopRibbon) owns isMenuOpen state and passes:
  *   - anchorRef   : ref to the trigger button (for position calculation)
@@ -18,6 +18,8 @@
  *
  * "Open Audio Folder from Cloud" and "Add Audio Files from Cloud" have been
  * moved to the Player tab (cloud functions of the Player, not document import).
+ *
+ * OUTILS section contains: Reset / Versions / Bibliothèque / Raccourcis clavier / Settings
  */
 import React, { useEffect, useRef } from 'react';
 import {
@@ -136,7 +138,7 @@ export function RibbonMenuPanel({
       <Tooltip title={t.tooltips.newSong ?? 'Create a new empty song'}>
         <button onClick={() => run(onOpenNewEmpty)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <FilePlus className="w-4 h-4 text-[var(--text-secondary)]" />
-          {t.menu?.newSong ?? 'New Song'}
+          {t.menu?.newSong ?? 'Imagine a Song'}
         </button>
       </Tooltip>
 
@@ -218,19 +220,13 @@ export function RibbonMenuPanel({
       <Tooltip title="Open the audio player">
         <button onClick={() => run(() => setActiveTab('player'))} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Music className="w-4 h-4 text-[var(--text-secondary)]" />
-          {t.mobileNav?.player ?? 'Player'}
-        </button>
-      </Tooltip>
-      <Tooltip title={t.tooltips.browseLibrary ?? 'Save or browse your song library'}>
-        <button onClick={() => run(openLibrary)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-          <Library className="w-4 h-4 text-[var(--text-secondary)]" />
-          {t.saveToLibrary.title}
+          {t.mobileNav?.player ?? 'PLAYER'}
         </button>
       </Tooltip>
 
-      {/* ── Tools ──────────────────────────────────────────────────────── */}
+      {/* ── Outils ─────────────────────────────────────────────────────── */}
       <div className="h-px bg-[var(--border-color)] mx-3 my-1" />
-      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{t.menu?.tools ?? 'Tools'}</div>
+      <div className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-[0.24em] text-[var(--text-secondary)]">{t.menu?.tools ?? 'Outils'}</div>
       <Tooltip title={t.tooltips.reset}>
         <button onClick={() => run(openResetModal)} disabled={!hasSong} className={`${menuActionClass} text-red-400 hover:bg-red-500/10 disabled:opacity-50`}>
           <Trash2 className="w-4 h-4" />
@@ -241,6 +237,18 @@ export function RibbonMenuPanel({
         <button onClick={() => run(openVersionsModal)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <History className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.ribbon.versions}
+        </button>
+      </Tooltip>
+      <Tooltip title={t.tooltips.browseLibrary ?? 'Save or browse your song library'}>
+        <button onClick={() => run(openLibrary)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+          <Library className="w-4 h-4 text-[var(--text-secondary)]" />
+          {t.saveToLibrary.title}
+        </button>
+      </Tooltip>
+      <Tooltip title={t.tooltips.keyboardShortcuts}>
+        <button onClick={() => run(openKeyboardShortcuts)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
+          <KeyboardRegular className="w-4 h-4 text-[var(--text-secondary)]" />
+          {t.keyboardShortcuts.title}
         </button>
       </Tooltip>
       <Tooltip title={t.tooltips.openSettings ?? 'Open application settings'}>
@@ -257,12 +265,6 @@ export function RibbonMenuPanel({
         <button onClick={() => run(openAbout)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
           <Info className="w-4 h-4 text-[var(--text-secondary)]" />
           {t.menu?.about ?? 'About'}
-        </button>
-      </Tooltip>
-      <Tooltip title={t.tooltips.keyboardShortcuts}>
-        <button onClick={() => run(openKeyboardShortcuts)} className={`${menuActionClass} text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10`}>
-          <KeyboardRegular className="w-4 h-4 text-[var(--text-secondary)]" />
-          {t.keyboardShortcuts.title}
         </button>
       </Tooltip>
       <Tooltip title={t.tooltips.sponsor ?? 'Support the developer'}>
