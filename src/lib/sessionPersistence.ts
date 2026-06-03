@@ -13,7 +13,7 @@
  *     Invalid or partial payloads (corrupted OPFS data, migration mismatch)
  *     return null so the app starts clean rather than propagating corrupt state.
  */
-import type { Section } from '../types';
+import type { Section, SectionVersion } from '../types';
 import type { SongVersion } from '../types';
 import type { AppTab } from '../hooks/useUIState';
 
@@ -43,6 +43,7 @@ export interface SessionSnapshot {
   narrative: string;
   musicalPrompt: string;
   versions?: SongVersion[];
+  sectionVersions?: Record<string, SectionVersion[]>;
   // UI navigation
   activeTab: AppTab;
   isStructureOpen: boolean;

@@ -2,7 +2,9 @@
   "common": {
     "loading": "Loading",
     "appLoading": "Application loading",
-    "initializing": "Initializing…"
+    "initializing": "Initializing…",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "errorBoundary": {
     "panelUnavailable": "{label} unavailable",
@@ -188,7 +190,14 @@
     "detect": "Detect",
     "quantize_line": "Quantize line",
     "quantize_line_unsupported": "Quantization only supports Latin-alphabet lyrics",
-    "quantize_line_done": "Line quantized"
+    "quantize_line_done": "Line quantized",
+    "adaptApply": "Apply",
+    "applyNoChanges": "No pending changes",
+    "applyNoLyrics": "No lyrics to adapt — add content first",
+    "applyPending": "Apply all pending changes to this section",
+    "saveSectionVersion": "Save Current Version",
+    "versionNamePlaceholder": "Version name...",
+    "noVersionsSaved": "No versions saved yet"
   },
   "suggestions": {
     "title": "AI Suggestions",
@@ -524,6 +533,10 @@
     "userEnteredTitle": "User-entered title",
     "openSearch": "Search and replace in lyrics (Ctrl+F)",
     "closeDialog": "Close this dialog",
+    "sectionVersions": "Section version history",
+    "restoreVersion": "Restore this version",
+    "deleteVersion": "Delete this version",
+    "readSection": "Read this section aloud",
     "processing": "Processing…",
     "removeFromLibrary": "Remove from library",
     "removeFromLibraryItem": "Remove this song from the library",

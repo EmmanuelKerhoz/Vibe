@@ -8,6 +8,7 @@ import { getSectionTooltipText, isAnchoredEndSection, isAnchoredStartSection, SE
 import type { Section } from '../../types';
 import { useSongContext } from '../../contexts/SongContext';
 import { useSongMutation } from '../../contexts/SongMutationContext';
+import { SectionVersionControl } from './SectionVersionControl';
 
 interface SectionHeaderProps {
   section: Section;
@@ -97,6 +98,9 @@ export const SectionHeader = React.memo(function SectionHeader({
           accentColor="var(--lcars-cyan)"
         />
       </div>
+
+      {/* Section Version Control */}
+      <SectionVersionControl section={section} sectionIndex={sectionIndex} />
     </div>
   );
 });
