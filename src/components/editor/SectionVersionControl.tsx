@@ -28,18 +28,8 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
   const [versionName, setVersionName] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // If context is not available, don't render anything
-  if (!versionContext) return null;
-
-  const {
-    getSectionVersions,
-    saveSectionVersion,
-    deleteSectionVersion,
-    getSectionVersionCount,
-  } = versionContext;
-
-  const versions = getSectionVersions(section.id);
-  const versionCount = getSectionVersionCount(section.id);
+  const versions = versionContext?.getSectionVersions(section.id) ?? [];
+  const versionCount = versionContext?.getSectionVersionCount(section.id) ?? 0;
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -56,11 +46,12 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
   }, [isOpen]);
 
   const handleSaveVersion = useCallback(() => {
-    if (!versionName.trim()) return;
-    saveSectionVersion(section, versionName.trim());
+    if (!versionContext || !versionName.trim()) return;
+
+    versionContext.saveSectionVersion(section, versionName.trim());
     setVersionName('');
     setSaveDialogOpen(false);
-  }, [section, versionName, saveSectionVersion]);
+  }, [section, versionName, versionContext]);
 
   const handleRestoreVersion = useCallback((version: SectionVersion) => {
     // Clone the section from the version and update the current section
@@ -77,8 +68,8 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
 
   const handleDeleteVersion = useCallback((e: React.MouseEvent, versionId: string) => {
     e.stopPropagation();
-    deleteSectionVersion(section.id, versionId);
-  }, [section.id, deleteSectionVersion]);
+    versionContext?.deleteSectionVersion(section.id, versionId);
+  }, [section.id, versionContext]);
 
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -89,6 +80,10 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
       minute: '2-digit',
     });
   };
+
+  // If context is not available, don't render anything. This stays after all hooks
+  // so React sees the same hook order on every render.
+  if (!versionContext) return null;
 
   return (
     <div className="relative" ref={menuRef}>
