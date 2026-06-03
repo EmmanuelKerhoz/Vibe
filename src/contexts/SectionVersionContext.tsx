@@ -19,7 +19,7 @@ export function SectionVersionProvider({
   initialVersions
 }: {
   children: ReactNode;
-  initialVersions?: Record<string, SectionVersion[]>;
+  initialVersions?: Record<string, SectionVersion[]> | undefined;
 }) {
   const {
     sectionVersions,

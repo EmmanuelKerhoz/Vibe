@@ -6,6 +6,8 @@ export interface Translations {
     appLoading?: string;
     /** Label shown under the splash spinner during initialization */
     initializing?: string;
+    save?: string;
+    cancel?: string;
   };
 
   /** Labels for inline error fallbacks rendered by panel ErrorBoundaries.
@@ -269,6 +271,12 @@ export interface Translations {
     applyNoLyrics?: string;
     /** Tooltip on APPLY button when changes are pending */
     applyPending?: string;
+    /** Button label to save a section version */
+    saveSectionVersion?: string;
+    /** Placeholder for version name input */
+    versionNamePlaceholder?: string;
+    /** Empty state message when no versions are saved */
+    noVersionsSaved?: string;
   };
 
   suggestions?: {
@@ -659,6 +667,12 @@ export interface Translations {
     userEnteredTitle: string;
     openSearch: string;
     closeDialog: string;
+    /** Tooltip for section version history button */
+    sectionVersions?: string;
+    /** Tooltip for restore version button */
+    restoreVersion?: string;
+    /** Tooltip for delete version button */
+    deleteVersion?: string;
     processing: string;
     removeFromLibrary: string;
     removeFromLibraryItem: string;

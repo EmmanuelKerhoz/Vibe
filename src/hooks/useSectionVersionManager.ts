@@ -56,7 +56,7 @@ const deepCloneSection = (section: Section): Section | null => {
 };
 
 interface UseSectionVersionManagerParams {
-  initialVersions?: Record<string, SectionVersion[]>;
+  initialVersions?: Record<string, SectionVersion[]> | undefined;
 }
 
 /**
@@ -93,10 +93,12 @@ export function useSectionVersionManager(params: UseSectionVersionManagerParams 
       // Check for duplicate if not explicitly allowed
       if (!options?.allowDuplicate && existingVersions.length > 0) {
         const latestVersion = existingVersions[0];
-        const normalizedLatest = JSON.stringify(latestVersion.section);
-        const normalizedNew = JSON.stringify(clonedSection);
-        if (normalizedLatest === normalizedNew) {
-          return prev; // Skip duplicate
+        if (latestVersion) {
+          const normalizedLatest = JSON.stringify(latestVersion.section);
+          const normalizedNew = JSON.stringify(clonedSection);
+          if (normalizedLatest === normalizedNew) {
+            return prev; // Skip duplicate
+          }
         }
       }
 

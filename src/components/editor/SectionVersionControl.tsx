@@ -4,7 +4,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
 import { useOptionalSectionVersionContext } from '../../contexts/SectionVersionContext';
 import type { Section, SectionVersion } from '../../types';
-import { useSongMutation } from '../../contexts/SongMutationContext';
+import { useSongContext } from '../../contexts/SongContext';
 
 interface SectionVersionControlProps {
   section: Section;
@@ -21,7 +21,7 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
 }: SectionVersionControlProps) {
   const { t } = useTranslation();
   const versionContext = useOptionalSectionVersionContext();
-  const { updateSection } = useSongMutation();
+  const { song, updateSongAndStructureWithHistory } = useSongContext();
 
   const [isOpen, setIsOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -68,9 +68,12 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
       ...version.section,
       id: section.id, // Keep the current section ID
     };
-    updateSection(section.id, restoredSection);
+
+    // Find the section and replace it
+    const newSong = song.map(s => s.id === section.id ? restoredSection : s);
+    updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
     setIsOpen(false);
-  }, [section.id, updateSection]);
+  }, [section.id, song, updateSongAndStructureWithHistory]);
 
   const handleDeleteVersion = useCallback((e: React.MouseEvent, versionId: string) => {
     e.stopPropagation();
