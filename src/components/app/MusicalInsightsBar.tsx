@@ -9,6 +9,7 @@
  *   [Quality] — score de complétude du prompt (segments remplis / total)
  */
 import React, { useCallback, useState } from 'react';
+import { Spinner } from '@fluentui/react-components';
 import { Tooltip } from '../ui/Tooltip';
 import { useTranslation } from '../../i18n';
 import { useSongContext } from '../../contexts/SongContext';
@@ -23,16 +24,17 @@ import {
   MusicNote2Regular,
   CopyRegular,
   ArrowDownloadRegular,
-  DeleteRegular,
+  ArrowResetRegular,
   PlayCircleRegular,
   CheckmarkCircleRegular,
   ErrorCircleRegular,
   SparkleRegular,
+  DismissCircleRegular,
 } from '@fluentui/react-icons';
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
-function PromptStateBadge({ hasPrompt }: { hasPrompt: boolean }) {
+function PromptStateBadge({ hasPrompt, labelReady, labelEmpty }: { hasPrompt: boolean; labelReady: string; labelEmpty: string }) {
   return (
     <div
       className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold tracking-wide"
@@ -47,12 +49,12 @@ function PromptStateBadge({ hasPrompt }: { hasPrompt: boolean }) {
             : 'var(--border-color)'
         }`,
       }}
-      aria-label={hasPrompt ? 'Prompt ready' : 'Prompt empty'}
+      aria-label={hasPrompt ? labelReady : labelEmpty}
     >
       {hasPrompt
         ? <CheckmarkCircleRegular style={{ width: 13, height: 13 }} />
         : <ErrorCircleRegular style={{ width: 13, height: 13 }} />}
-      <span>{hasPrompt ? 'PROMPT READY' : 'NO PROMPT'}</span>
+      <span>{hasPrompt ? labelReady : labelEmpty}</span>
     </div>
   );
 }
@@ -61,11 +63,11 @@ function CompletenessScore({ pct, filled, total }: { pct: number; filled: number
   const color =
     pct >= 80 ? 'var(--lcars-cyan, #4f98a3)'
     : pct >= 40 ? 'var(--lcars-amber, #e8af34)'
-    : 'var(--accent-danger, #f87171)';
+    : 'var(--accent-danger, var(--color-error, #a12c7b))';
 
   return (
-    <Tooltip title={`Prompt completeness: ${filled}/${total} sections detected`}>
-      <div className="flex items-center gap-2" aria-label={`Completeness ${pct}%`}>
+    <Tooltip title={`Complétude du prompt : ${filled}/${total} sections détectées`}>
+      <div className="flex items-center gap-2" aria-label={`Complétude ${pct}%`}>
         <div
           style={{
             width: 56,
@@ -87,7 +89,7 @@ function CompletenessScore({ pct, filled, total }: { pct: number; filled: number
         </div>
         <span
           style={{
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: 600,
             fontVariantNumeric: 'tabular-nums',
             color,
@@ -163,20 +165,15 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
   const busy = isGenerating || isGeneratingMusicalPrompt || isSunoGenerating;
 
   // ── Auto-Suggest gating ─────────────────────────────────────────────────────
-  // Mirror the guard used inside `useMusicalPrompt.generateMusicalPrompt`
-  // (`title || topic || hasLyrics || mood || genre || instrumentation`) so the
-  // button reflects exactly when the action will actually produce a prompt.
-  // Without this, the button could be clicked but silently return early —
-  // leaving the "NO PROMPT" indicator unchanged and confusing the user.
   const hasLyrics = song.some(s => s.lines.some(l => l.text.trim() !== ''));
   const hasContext = Boolean(title || topic || hasLyrics || mood || genre || instrumentation);
   const canAutoSuggest = hasApiKey && hasContext;
   const autoSuggestDisabled = busy || !canAutoSuggest;
   const autoSuggestTooltip = !hasApiKey
-    ? (t.tooltips?.aiUnavailable ?? 'AI unavailable — set your API key first')
+    ? (t.tooltips?.aiUnavailable ?? 'IA indisponible — configurez votre clé API')
     : !hasContext
-      ? 'Add a title, topic, lyrics, mood, genre or instrumentation first'
-      : 'Generate musical prompt from current settings';
+      ? 'Ajoutez un titre, sujet, paroles, humeur, genre ou instrumentation'
+      : (t.tooltips?.generateMusical ?? 'Générer le prompt musical depuis les paramètres actuels');
 
   const handleAutoSuggest = useCallback(() => {
     if (autoSuggestDisabled) return;
@@ -208,7 +205,7 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
   const handleCopy = useCallback(async () => {
     if (!musicalPrompt) return;
     const ok = await copyToClipboard(musicalPrompt);
-    if (!ok) return; // clipboard unavailable — do not flash the "Copied" state
+    if (!ok) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   }, [musicalPrompt]);
@@ -231,13 +228,15 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
   // ── Coherence dialog handler ─────────────────────────────────────────────────
   const handleCoherenceApply = useCallback((option: 'a' | 'b', result: CoherenceResult) => {
     if (option === 'a') {
-      // Option A: adjust BPM to the suggested range lower bound
       const [suggestedMin] = result.suggestedBpmRange;
       setTempo(suggestedMin);
     }
-    // Option B: we just show which lines are too long (already shown in the dialog)
     dismissCoherenceResult?.();
   }, [setTempo, dismissCoherenceResult]);
+
+  // i18n labels pour PromptStateBadge
+  const labelReady = (t.musical?.promptReady ?? 'PROMPT READY');
+  const labelEmpty = (t.musical?.promptEmpty ?? 'NO PROMPT');
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -266,7 +265,7 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
           style={{ width: 15, height: 15, color: 'var(--lcars-violet, #a86fdf)', flexShrink: 0 }}
           aria-hidden
         />
-        <PromptStateBadge hasPrompt={hasPrompt} />
+        <PromptStateBadge hasPrompt={hasPrompt} labelReady={labelReady} labelEmpty={labelEmpty} />
       </div>
 
       <Divider />
@@ -292,13 +291,10 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
               cursor: autoSuggestDisabled ? 'not-allowed' : 'pointer',
               opacity: autoSuggestDisabled ? 0.5 : 1,
             }}
-            aria-label={t.tooltips?.generateMusical ?? 'Generate musical prompt'}
+            aria-label={t.tooltips?.generateMusical ?? 'Générer le prompt musical'}
           >
             {isGeneratingMusicalPrompt ? (
-              <span
-                className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin"
-                aria-hidden
-              />
+              <Spinner size="tiny" aria-label="Génération en cours…" />
             ) : (
               <SparkleRegular style={{ width: 13, height: 13 }} />
             )}
@@ -307,54 +303,67 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
         </Tooltip>
 
         {/* Copy */}
-        <Tooltip title={copied ? 'Copied!' : 'Copy prompt to clipboard'}>
+        <Tooltip title={copied ? 'Copié !' : 'Copier le prompt'}>
           <button
             onClick={handleCopy}
             disabled={!hasPrompt || busy}
-            className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md transition-all"
+            className="flex items-center justify-center rounded-md transition-all"
             style={{
+              minWidth: 44,
+              minHeight: 44,
               color: copied ? 'var(--lcars-cyan, #4f98a3)' : 'var(--text-secondary)',
               opacity: hasPrompt ? 1 : 0.35,
               cursor: hasPrompt ? 'pointer' : 'not-allowed',
             }}
-            aria-label="Copy prompt"
-            aria-pressed={copied}
+            aria-label="Copier le prompt"
           >
             <CopyRegular style={{ width: 15, height: 15 }} />
           </button>
         </Tooltip>
+        {/* sr-only live region pour feedback "Copié" */}
+        <span
+          aria-live="polite"
+          className="sr-only"
+          style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}
+        >
+          {copied ? 'Prompt copié dans le presse-papiers' : ''}
+        </span>
 
         {/* Export JSON */}
-        <Tooltip title="Export prompt as JSON">
+        <Tooltip title="Exporter le prompt en JSON">
           <button
             onClick={handleExport}
             disabled={!hasPrompt || busy}
-            className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md transition-all"
+            className="flex items-center justify-center rounded-md transition-all"
             style={{
+              minWidth: 44,
+              minHeight: 44,
               color: 'var(--text-secondary)',
               opacity: hasPrompt ? 1 : 0.35,
               cursor: hasPrompt ? 'pointer' : 'not-allowed',
             }}
-            aria-label="Export prompt as JSON"
+            aria-label="Exporter le prompt en JSON"
           >
             <ArrowDownloadRegular style={{ width: 15, height: 15 }} />
           </button>
         </Tooltip>
 
         {/* Reset */}
-        <Tooltip title="Reset all musical fields">
+        <Tooltip title="Réinitialiser les champs musicaux">
           <button
             onClick={handleReset}
             disabled={busy}
-            className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-md transition-all"
+            className="flex items-center justify-center rounded-md transition-all"
             style={{
+              minWidth: 44,
+              minHeight: 44,
               color: 'var(--text-secondary)',
               opacity: busy ? 0.35 : 0.7,
               cursor: busy ? 'not-allowed' : 'pointer',
             }}
-            aria-label="Reset musical form"
+            aria-label="Réinitialiser le formulaire musical"
           >
-            <DeleteRegular style={{ width: 15, height: 15 }} />
+            <ArrowResetRegular style={{ width: 15, height: 15 }} />
           </button>
         </Tooltip>
       </div>
@@ -362,7 +371,7 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
       <Divider />
 
       {/* ── Suno generate ─────────────────────────────────────────────── */}
-      <Tooltip title={hasPrompt ? 'Generate music with Suno' : 'Generate a prompt first'}>
+      <Tooltip title={hasPrompt ? 'Générer de la musique avec Suno' : 'Générez d\'abord un prompt'}>
         <button
           onClick={handleGenerateWithSuno}
           disabled={!hasPrompt || busy}
@@ -372,55 +381,61 @@ export const MusicalInsightsBar = React.memo(function MusicalInsightsBar() {
               hasPrompt && !busy
                 ? 'var(--lcars-amber, #e8af34)'
                 : 'color-mix(in srgb, var(--lcars-amber, #e8af34) 15%, transparent)',
-            color: hasPrompt && !busy ? '#0c0c0c' : 'var(--text-secondary)',
+            color: hasPrompt && !busy
+              ? 'var(--color-text-inverse, #1a1a1a)'
+              : 'var(--text-secondary)',
             border: 'none',
             cursor: hasPrompt && !busy ? 'pointer' : 'not-allowed',
             opacity: hasPrompt ? 1 : 0.4,
-            minHeight: 28,
+            minHeight: 32,
           }}
-          aria-label="Generate music with Suno"
+          aria-label="Générer de la musique avec Suno"
           aria-busy={isSunoGenerating}
         >
           {isSunoGenerating ? (
-            <span
-              className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin"
-              aria-hidden
-            />
+            <Spinner size="tiny" aria-label="Génération Suno en cours…" />
           ) : (
             <PlayCircleRegular style={{ width: 14, height: 14 }} />
           )}
           <span>
             {status.phase === 'polling'
-              ? `Generating… ${Math.round(((status as { elapsed?: number }).elapsed ?? 0) / 1000)}s`
+              ? `Génération… ${Math.round(((status as { elapsed?: number }).elapsed ?? 0) / 1000)}s`
               : isSunoGenerating
-              ? 'Generating…'
+              ? 'Génération…'
               : 'Generate Music'}
           </span>
         </button>
       </Tooltip>
 
-      {/* Suno error */}
+      {/* Suno error — message complet, non tronqué */}
       {status.phase === 'error' && (
-        <span
-          className="text-[10px]"
-          style={{ color: 'var(--accent-danger, #f87171)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-          title={(status as { message?: string }).message}
+        <div
+          role="alert"
+          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px]"
+          style={{
+            color: 'var(--accent-danger, var(--color-error, #a12c7b))',
+            background: 'color-mix(in srgb, var(--accent-danger, var(--color-error, #a12c7b)) 10%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--accent-danger, var(--color-error, #a12c7b)) 25%, transparent)',
+            maxWidth: 320,
+            wordBreak: 'break-word',
+          }}
         >
-          {(status as { message?: string }).message}
-        </span>
+          <DismissCircleRegular style={{ width: 13, height: 13, flexShrink: 0 }} />
+          <span>{(status as { message?: string }).message ?? 'Erreur Suno'}</span>
+        </div>
       )}
 
       {/* ── Completeness ─────────────────────────────────────────────── */}
       <div className="ml-auto hidden sm:flex items-center gap-2">
         <span
           style={{
-            fontSize: 10,
+            fontSize: 12,
             color: 'var(--text-secondary)',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
           }}
         >
-          Prompt
+          Complétude
         </span>
         <CompletenessScore pct={pct} filled={filled} total={total} />
       </div>
