@@ -76,19 +76,24 @@ let _cachedToken: string | null = null;
 let _tokenExpiry = 0;
 let _proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 let _refreshToken: string | null = null;
+/** P2: track active scope to use in proactive silent refresh (avoids scope drift). */
+let _cachedScope: string = SCOPE_READ;
 
 function isTokenValid(): boolean {
   return !!_cachedToken && Date.now() < _tokenExpiry - 60_000;
 }
 
-function storeToken(token: string, expiresInSeconds: number): void {
+/** P2: accepts scope so the proactive refresh reuses the same scope as the stored token. */
+function storeToken(token: string, expiresInSeconds: number, scope: string): void {
   _cachedToken = token;
   _tokenExpiry = Date.now() + expiresInSeconds * 1000;
+  _cachedScope = scope;
 
   // Proactive silent refresh 5 min before expiry to avoid mid-session 401s.
+  // Uses _cachedScope instead of hardcoded SCOPE_READ to prevent write→read drift.
   if (_proactiveRefreshTimer !== null) clearTimeout(_proactiveRefreshTimer);
   _proactiveRefreshTimer = setTimeout(
-    () => { void silentRefresh(SCOPE_READ).catch(() => {}); },
+    () => { void silentRefresh(_cachedScope).catch(() => {}); },
     Math.max(0, expiresInSeconds - 300) * 1000,
   );
 }
@@ -97,6 +102,7 @@ export function clearToken(): void {
   _cachedToken = null;
   _tokenExpiry = 0;
   _refreshToken = null;
+  _cachedScope = SCOPE_READ;
   if (_proactiveRefreshTimer !== null) {
     clearTimeout(_proactiveRefreshTimer);
     _proactiveRefreshTimer = null;
@@ -105,6 +111,22 @@ export function clearToken(): void {
 
 export function getStoredToken(): string | null {
   return isTokenValid() ? _cachedToken : null;
+}
+
+// ---------------------------------------------------------------------------
+// P3: Type guard for postMessage data — prevents unsafe casts on non-object payloads.
+// ---------------------------------------------------------------------------
+
+type GDriveMessageData = {
+  type?: string;
+  code?: string;
+  access_token?: string;
+  expires_in?: number;
+  error?: string;
+};
+
+function isGDriveMessage(data: unknown): data is GDriveMessageData {
+  return typeof data === 'object' && data !== null;
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +241,9 @@ async function silentRefresh(scope: string): Promise<string> {
 
     const messageHandler = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      const data = event.data as { type?: string; code?: string; error?: string };
+      // P3: guard against non-object payloads before property access.
+      if (!isGDriveMessage(event.data)) return;
+      const data = event.data;
       if (data.type !== 'GDRIVE_CODE') return;
       if (settled) return;
       settled = true;
@@ -230,7 +254,8 @@ async function silentRefresh(scope: string): Promise<string> {
       } else {
         try {
           const tokenData = await exchangeCodeForToken(data.code, codeVerifier, redirectUri);
-          storeToken(tokenData.access_token, tokenData.expires_in);
+          // P2: pass scope so storeToken tracks it for proactive refresh.
+          storeToken(tokenData.access_token, tokenData.expires_in, scope);
           if (tokenData.refresh_token) _refreshToken = tokenData.refresh_token;
           resolve(tokenData.access_token);
         } catch (err) {
@@ -289,34 +314,32 @@ async function popupSignIn(scope: string, preOpenedWindow: Window | null): Promi
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 
     // Redirect the pre-opened blank window to the actual auth URL.
-    // This works because the window handle was obtained synchronously during
-    // the user-gesture tick; only the URL assignment is deferred.
     preOpenedWindow.location.href = authUrl;
     const popup = preOpenedWindow;
 
-    // `settled` guard prevents double-resolve/reject when both closedCheck
-    // and messageHandler fire in the same tick (race condition on popup.close).
     let settled = false;
-
-    const POPUP_TIMEOUT_MS = 90_000; // 90 seconds timeout for popup auth
+    const POPUP_TIMEOUT_MS = 90_000;
     let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // P4: centralized cleanup — called from all three settlement paths.
+    const cleanupPopup = () => {
+      clearInterval(closedCheck);
+      if (timeoutTimer !== null) clearTimeout(timeoutTimer);
+      window.removeEventListener('message', messageHandler);
+    };
 
     const closedCheck = setInterval(() => {
       if (!popup.closed) return;
       if (settled) { clearInterval(closedCheck); return; }
       settled = true;
-      clearInterval(closedCheck);
-      if (timeoutTimer) clearTimeout(timeoutTimer);
-      window.removeEventListener('message', messageHandler);
+      cleanupPopup();
       reject(new Error('GDRIVE_AUTH_CANCELLED'));
     }, 500);
 
-    // Add timeout to catch cases where popup doesn't close or communicate
     timeoutTimer = setTimeout(() => {
       if (settled) return;
       settled = true;
-      clearInterval(closedCheck);
-      window.removeEventListener('message', messageHandler);
+      cleanupPopup();
       if (!popup.closed) {
         try { popup.close(); } catch { /* ignore */ }
       }
@@ -325,16 +348,15 @@ async function popupSignIn(scope: string, preOpenedWindow: Window | null): Promi
 
     const messageHandler = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      // Guard against spoofed messages from other same-origin frames.
       if (event.source !== popup) return;
-      const data = event.data as { type?: string; code?: string; error?: string };
+      // P3: guard against non-object payloads before property access.
+      if (!isGDriveMessage(event.data)) return;
+      const data = event.data;
       if (data.type !== 'GDRIVE_CODE') return;
       if (settled) return;
       settled = true;
 
-      clearInterval(closedCheck);
-      if (timeoutTimer) clearTimeout(timeoutTimer);
-      window.removeEventListener('message', messageHandler);
+      cleanupPopup();
 
       if (data.error || !data.code) {
         reject(new Error(data.error ?? 'GDRIVE_NO_CODE'));
@@ -343,7 +365,8 @@ async function popupSignIn(scope: string, preOpenedWindow: Window | null): Promi
 
       try {
         const tokenData = await exchangeCodeForToken(data.code, codeVerifier, redirectUri);
-        storeToken(tokenData.access_token, tokenData.expires_in);
+        // P2: pass scope so storeToken tracks it for proactive refresh.
+        storeToken(tokenData.access_token, tokenData.expires_in, scope);
         if (tokenData.refresh_token) _refreshToken = tokenData.refresh_token;
         resolve(tokenData.access_token);
       } catch (err) {
@@ -381,11 +404,8 @@ export async function signIn(write = false): Promise<string> {
   const scope = write ? SCOPE_WRITE : SCOPE_READ;
 
   // Pre-open a blank popup synchronously inside the user-gesture tick.
-  // On iOS Safari, window.open() is only allowed synchronously during a
-  // user-gesture handler. We open about:blank now and redirect later if needed.
   const preOpenedWindow = window.open('about:blank', 'GDriveAuth', 'width=520,height=640,toolbar=0,scrollbars=1');
 
-  // null means the browser hard-blocked the popup.
   if (preOpenedWindow === null) {
     throw new Error('GDRIVE_POPUP_BLOCKED: Popup was blocked by the browser. Please allow popups for this site and try again.');
   }
@@ -393,11 +413,11 @@ export async function signIn(write = false): Promise<string> {
   // 1. Try silent refresh
   try {
     const token = await silentRefresh(scope);
-    // Silent succeeded — close the pre-opened window without user impact.
     if (!preOpenedWindow.closed) preOpenedWindow.close();
     return token;
-  } catch {
-    // Silent failed (no active session, interaction_required, timeout) — fall through to popup
+  } catch (err) {
+    // P6: log in dev to ease diagnosis (CSP block, network, etc.) without polluting prod.
+    if (import.meta.env.DEV) console.debug('[gdrive] silent refresh failed:', err);
   }
 
   // 2. Interactive popup — reuse the pre-opened window handle.
@@ -512,13 +532,8 @@ export async function downloadFile(fileId: string, token: string): Promise<strin
     const body = await res.text().catch(() => '');
     throw new Error(`Drive download ${res.status}: ${body.slice(0, 200)}`);
   }
-  const blob = await res.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(blob);
-  });
+  // P5: blob.text() replaces FileReader callback — same semantics, no boilerplate.
+  return res.blob().then(blob => blob.text());
 }
 
 // ---------------------------------------------------------------------------
