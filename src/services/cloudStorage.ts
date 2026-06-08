@@ -98,6 +98,17 @@ function getMsalSaveApp(): PublicClientApplication | null {
   return _msalSaveApp;
 }
 
+/**
+ * MSAL error codes that are expected user/browser events — not actionable in prod.
+ * popup_window_error : popup blocked by browser (Safari iOS default)
+ * user_cancelled     : user closed the popup manually
+ * These are logged at debug level only to avoid masking real errors in prod logs.
+ */
+const MSAL_EXPECTED_CODES = new Set([
+  'popup_window_error',
+  'user_cancelled',
+]);
+
 async function getMsalWriteToken(): Promise<string | null> {
   const app = getMsalSaveApp();
   if (!app) return null;
@@ -116,8 +127,14 @@ async function getMsalWriteToken(): Promise<string | null> {
       const result = await app.acquireTokenPopup({ scopes });
       return result.accessToken;
     } catch (err) {
-      // P4: log pour conserver la trace en prod — logger.warn survit hors DEV.
-      logger.warn('[cloudStorage] MSAL acquireTokenPopup fallback failed:', err);
+      // P2: distinguish expected user/browser events (popup blocked, cancelled)
+      // from real auth failures. Expected codes → debug only; unexpected → warn.
+      const code = (err as { errorCode?: string })?.errorCode ?? '';
+      if (MSAL_EXPECTED_CODES.has(code)) {
+        if (import.meta.env.DEV) logger.debug('[cloudStorage] MSAL popup expected event:', code);
+      } else {
+        logger.warn('[cloudStorage] MSAL acquireTokenPopup fallback failed:', err);
+      }
       return null;
     }
   }

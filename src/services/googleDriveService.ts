@@ -31,6 +31,9 @@ void API_KEY;
 const SCOPE_READ  = 'https://www.googleapis.com/auth/drive.readonly';
 const SCOPE_WRITE = 'https://www.googleapis.com/auth/drive.file';
 
+/** P3: narrow scope to the two valid values — prevents arbitrary string at compile time. */
+type GDriveScope = typeof SCOPE_READ | typeof SCOPE_WRITE;
+
 const LYRICS_MIME_TYPES = [
   'text/plain',
   'text/markdown',
@@ -77,14 +80,14 @@ let _tokenExpiry = 0;
 let _proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 let _refreshToken: string | null = null;
 /** P2: track active scope to use in proactive silent refresh (avoids scope drift). */
-let _cachedScope: string = SCOPE_READ;
+let _cachedScope: GDriveScope = SCOPE_READ;
 
 function isTokenValid(): boolean {
   return !!_cachedToken && Date.now() < _tokenExpiry - 60_000;
 }
 
-/** P2: accepts scope so the proactive refresh reuses the same scope as the stored token. */
-function storeToken(token: string, expiresInSeconds: number, scope: string): void {
+/** P2+P3: accepts GDriveScope so the proactive refresh reuses the same scope as the stored token. */
+function storeToken(token: string, expiresInSeconds: number, scope: GDriveScope): void {
   _cachedToken = token;
   _tokenExpiry = Date.now() + expiresInSeconds * 1000;
   _cachedScope = scope;
@@ -200,7 +203,7 @@ async function exchangeCodeForToken(
  * account; rejects with `access_denied` / `interaction_required` otherwise.
  * Times out after 8 s to avoid hanging.
  */
-async function silentRefresh(scope: string): Promise<string> {
+async function silentRefresh(scope: GDriveScope): Promise<string> {
   return new Promise(async (resolve, reject) => {
     if (!CLIENT_ID) { reject(new Error('GDRIVE_NOT_CONFIGURED')); return; }
 
@@ -252,9 +255,14 @@ async function silentRefresh(scope: string): Promise<string> {
       if (data.error || !data.code) {
         reject(new Error(data.error ?? 'GDRIVE_NO_CODE'));
       } else {
+        // P1: validate code is a non-empty string before hitting /token endpoint.
+        if (typeof data.code !== 'string' || data.code.length === 0) {
+          reject(new Error('GDRIVE_INVALID_CODE'));
+          return;
+        }
         try {
           const tokenData = await exchangeCodeForToken(data.code, codeVerifier, redirectUri);
-          // P2: pass scope so storeToken tracks it for proactive refresh.
+          // P2+P3: pass GDriveScope so storeToken tracks it for proactive refresh.
           storeToken(tokenData.access_token, tokenData.expires_in, scope);
           if (tokenData.refresh_token) _refreshToken = tokenData.refresh_token;
           resolve(tokenData.access_token);
@@ -292,7 +300,7 @@ async function silentRefresh(scope: string): Promise<string> {
  *                         in the user-gesture context. May be null if the
  *                         browser blocked the popup.
  */
-async function popupSignIn(scope: string, preOpenedWindow: Window | null): Promise<string> {
+async function popupSignIn(scope: GDriveScope, preOpenedWindow: Window | null): Promise<string> {
   return new Promise(async (resolve, reject) => {
     if (!CLIENT_ID) { reject(new Error('GDRIVE_NOT_CONFIGURED')); return; }
 
@@ -363,9 +371,15 @@ async function popupSignIn(scope: string, preOpenedWindow: Window | null): Promi
         return;
       }
 
+      // P1: validate code is a non-empty string before hitting /token endpoint.
+      if (typeof data.code !== 'string' || data.code.length === 0) {
+        reject(new Error('GDRIVE_INVALID_CODE'));
+        return;
+      }
+
       try {
         const tokenData = await exchangeCodeForToken(data.code, codeVerifier, redirectUri);
-        // P2: pass scope so storeToken tracks it for proactive refresh.
+        // P2+P3: pass GDriveScope so storeToken tracks it for proactive refresh.
         storeToken(tokenData.access_token, tokenData.expires_in, scope);
         if (tokenData.refresh_token) _refreshToken = tokenData.refresh_token;
         resolve(tokenData.access_token);
@@ -401,7 +415,7 @@ export async function signIn(write = false): Promise<string> {
   if (isTokenValid()) return _cachedToken as string;
   if (!CLIENT_ID) throw new Error('[googleDriveService] VITE_GDRIVE_CLIENT_ID is not set.');
 
-  const scope = write ? SCOPE_WRITE : SCOPE_READ;
+  const scope: GDriveScope = write ? SCOPE_WRITE : SCOPE_READ;
 
   // Pre-open a blank popup synchronously inside the user-gesture tick.
   const preOpenedWindow = window.open('about:blank', 'GDriveAuth', 'width=520,height=640,toolbar=0,scrollbars=1');
