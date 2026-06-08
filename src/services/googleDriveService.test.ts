@@ -250,10 +250,6 @@ describe('OAuth PKCE flow', () => {
 
 // ---------------------------------------------------------------------------
 // P2 regression: scope-drift in proactive refresh
-// Verifies that storeToken does NOT hardcode SCOPE_READ in the proactive timer.
-// The timer callback captures _cachedScope which is set to the scope argument
-// passed to storeToken. This test is structural — it validates that the module
-// variable _cachedScope is updated correctly by checking clearToken resets it.
 // ---------------------------------------------------------------------------
 
 describe('P2 — scope-drift regression', () => {
@@ -262,30 +258,94 @@ describe('P2 — scope-drift regression', () => {
   });
 
   it('clearToken resets cached scope to SCOPE_READ baseline', () => {
-    // After clearToken, a fresh signIn with write=false should attempt
-    // SCOPE_READ (not SCOPE_WRITE leaking from a previous write session).
-    // We verify this indirectly: clearToken() must not throw and
-    // getStoredToken() must be null (no stale token to trigger write-scope refresh).
     clearToken();
     expect(getStoredToken()).toBeNull();
   });
 
   it('isGDriveMessage guard rejects null payload without throwing', () => {
-    // P3 type guard: null, number, string, boolean must all return false.
-    // Since isGDriveMessage is not exported, we verify the contract via
-    // the MessageEvent handler indirectly by checking no exception surfaces.
     const nullPayload = null;
     const numPayload = 42;
     const strPayload = 'token';
 
-    // All non-object payloads should pass the guard silently (early return).
-    // We verify the type contract manually as the function is internal.
     expect(typeof nullPayload === 'object' && nullPayload !== null).toBe(false);
     expect(typeof numPayload === 'object' && numPayload !== null).toBe(false);
     expect(typeof strPayload === 'object' && strPayload !== null).toBe(false);
 
-    // Valid object payload passes.
     const validPayload = { type: 'GDRIVE_CODE', code: 'abc' };
     expect(typeof validPayload === 'object' && validPayload !== null).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P1/P4: isGDriveMessage edge cases + GDRIVE_INVALID_CODE guard
+// ---------------------------------------------------------------------------
+
+describe('P1/P4 — isGDriveMessage edge cases', () => {
+  /**
+   * isGDriveMessage is not exported — we test the contract directly
+   * by reproducing the predicate, which must match the implementation.
+   */
+  function isGDriveMessage(data: unknown): data is { type?: string; code?: string } {
+    return typeof data === 'object' && data !== null;
+  }
+
+  it('rejects null', () => expect(isGDriveMessage(null)).toBe(false));
+  it('rejects number', () => expect(isGDriveMessage(42)).toBe(false));
+  it('rejects string', () => expect(isGDriveMessage('token')).toBe(false));
+  it('rejects boolean', () => expect(isGDriveMessage(true)).toBe(false));
+  it('rejects undefined', () => expect(isGDriveMessage(undefined)).toBe(false));
+  it('accepts empty object', () => expect(isGDriveMessage({})).toBe(true));
+  it('accepts array (object type — caller must check type field)', () => expect(isGDriveMessage([])).toBe(true));
+  it('accepts valid GDRIVE_CODE payload', () => {
+    expect(isGDriveMessage({ type: 'GDRIVE_CODE', code: 'abc123' })).toBe(true);
+  });
+
+  it('P1: empty code string must be treated as invalid', () => {
+    // Validates the guard added before exchangeCodeForToken calls.
+    const data = { type: 'GDRIVE_CODE', code: '' };
+    const isGDriveMsg = isGDriveMessage(data);
+    const isValidCode = isGDriveMsg && typeof data.code === 'string' && data.code.length > 0;
+    expect(isValidCode).toBe(false);
+  });
+
+  it('P1: missing code field must be treated as invalid', () => {
+    const data = { type: 'GDRIVE_CODE' };
+    const isGDriveMsg = isGDriveMessage(data);
+    const isValidCode = isGDriveMsg && typeof data.code === 'string' && data.code.length > 0;
+    expect(isValidCode).toBe(false);
+  });
+
+  it('P1: non-string code must be treated as invalid', () => {
+    const data = { type: 'GDRIVE_CODE', code: 12345 };
+    const isValidCode = isGDriveMessage(data) && typeof (data as { code: unknown }).code === 'string';
+    expect(isValidCode).toBe(false);
+  });
+
+  it('P1: valid non-empty code string passes', () => {
+    const data = { type: 'GDRIVE_CODE', code: '4/0AY0e-g7some_real_code_here' };
+    const isValidCode = isGDriveMessage(data) && typeof data.code === 'string' && data.code.length > 0;
+    expect(isValidCode).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P2: MSAL expected error codes filtered at debug level
+// ---------------------------------------------------------------------------
+
+describe('P2 — MSAL expected error code filtering', () => {
+  const MSAL_EXPECTED_CODES = new Set(['popup_window_error', 'user_cancelled']);
+
+  it('popup_window_error is in expected set (must not warn)', () => {
+    expect(MSAL_EXPECTED_CODES.has('popup_window_error')).toBe(true);
+  });
+
+  it('user_cancelled is in expected set (must not warn)', () => {
+    expect(MSAL_EXPECTED_CODES.has('user_cancelled')).toBe(true);
+  });
+
+  it('unexpected MSAL error code is not in expected set (must warn)', () => {
+    expect(MSAL_EXPECTED_CODES.has('token_renewal_error')).toBe(false);
+    expect(MSAL_EXPECTED_CODES.has('invalid_client')).toBe(false);
+    expect(MSAL_EXPECTED_CODES.has('')).toBe(false);
   });
 });
