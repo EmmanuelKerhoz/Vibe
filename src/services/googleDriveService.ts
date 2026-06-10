@@ -25,13 +25,11 @@
 
 const CLIENT_ID = (import.meta.env.VITE_GDRIVE_CLIENT_ID as string | undefined) ?? '';
 const API_KEY   = (import.meta.env.VITE_GDRIVE_API_KEY   as string | undefined) ?? '';
-// API_KEY kept for future Picker API use; not required for current REST flow.
 void API_KEY;
 
 const SCOPE_READ  = 'https://www.googleapis.com/auth/drive.readonly';
 const SCOPE_WRITE = 'https://www.googleapis.com/auth/drive.file';
 
-/** P3: narrow scope to the two valid values — prevents arbitrary string at compile time. */
 type GDriveScope = typeof SCOPE_READ | typeof SCOPE_WRITE;
 
 const LYRICS_MIME_TYPES = [
@@ -66,7 +64,6 @@ export interface GDriveFile {
   id: string;
   name: string;
   mimeType: string;
-  /** Direct download link (requires auth header) */
   webContentLink?: string;
   size?: string;
 }
@@ -79,21 +76,17 @@ let _cachedToken: string | null = null;
 let _tokenExpiry = 0;
 let _proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 let _refreshToken: string | null = null;
-/** P2: track active scope to use in proactive silent refresh (avoids scope drift). */
 let _cachedScope: GDriveScope = SCOPE_READ;
 
 function isTokenValid(): boolean {
   return !!_cachedToken && Date.now() < _tokenExpiry - 60_000;
 }
 
-/** P2+P3: accepts GDriveScope so the proactive refresh reuses the same scope as the stored token. */
 function storeToken(token: string, expiresInSeconds: number, scope: GDriveScope): void {
   _cachedToken = token;
   _tokenExpiry = Date.now() + expiresInSeconds * 1000;
   _cachedScope = scope;
 
-  // Proactive silent refresh 5 min before expiry to avoid mid-session 401s.
-  // Uses _cachedScope instead of hardcoded SCOPE_READ to prevent write→read drift.
   if (_proactiveRefreshTimer !== null) clearTimeout(_proactiveRefreshTimer);
   _proactiveRefreshTimer = setTimeout(
     () => { void silentRefresh(_cachedScope).catch(() => {}); },
@@ -117,7 +110,9 @@ export function getStoredToken(): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// P3: Type guard for postMessage data — prevents unsafe casts on non-object payloads.
+// Type guard for postMessage data.
+// Validates that the payload is a plain object with a string `type` field.
+// - Rejects null, primitives, and arrays (typeof [] === 'object' trap).
 // ---------------------------------------------------------------------------
 
 type GDriveMessageData = {
@@ -129,7 +124,12 @@ type GDriveMessageData = {
 };
 
 function isGDriveMessage(data: unknown): data is GDriveMessageData {
-  return typeof data === 'object' && data !== null;
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    !Array.isArray(data) &&
+    typeof (data as Record<string, unknown>).type === 'string'
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -158,10 +158,6 @@ function isValidTokenResponse(data: unknown): data is TokenResponse {
 // PKCE helpers (RFC 7636)
 // ---------------------------------------------------------------------------
 
-/**
- * Generate a cryptographically secure random code verifier.
- * Per RFC 7636: 43-128 characters from [A-Z, a-z, 0-9, -, ., _, ~]
- */
 function generateCodeVerifier(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
@@ -171,10 +167,6 @@ function generateCodeVerifier(): string {
     .replace(/=/g, '');
 }
 
-/**
- * Generate code_challenge from code_verifier using SHA-256.
- * Per RFC 7636: BASE64URL(SHA256(ASCII(code_verifier)))
- */
 async function generateCodeChallenge(verifier: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(verifier);
@@ -185,9 +177,6 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
     .replace(/=/g, '');
 }
 
-/**
- * Exchange authorization code for access + refresh tokens via Google's /token endpoint.
- */
 async function exchangeCodeForToken(
   code: string,
   codeVerifier: string,
@@ -221,15 +210,16 @@ async function exchangeCodeForToken(
 }
 
 // ---------------------------------------------------------------------------
+// Test hook — tree-shaken in production (import.meta.env.TEST is undefined).
+// ---------------------------------------------------------------------------
+
+export const _testExchangeCodeForToken =
+  import.meta.env.TEST === 'true' ? exchangeCodeForToken : undefined;
+
+// ---------------------------------------------------------------------------
 // Silent refresh via hidden iframe (prompt=none)
 // ---------------------------------------------------------------------------
 
-/**
- * Attempt a silent token refresh using a hidden iframe with PKCE.
- * Google resolves immediately if the user is already signed-in to the same
- * account; rejects with `access_denied` / `interaction_required` otherwise.
- * Times out after 8 s to avoid hanging.
- */
 async function silentRefresh(scope: GDriveScope): Promise<string> {
   if (!CLIENT_ID) throw new Error('GDRIVE_NOT_CONFIGURED');
 
@@ -272,7 +262,6 @@ async function silentRefresh(scope: GDriveScope): Promise<string> {
 
     const messageHandler = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      // P3: guard against non-object payloads before property access.
       if (!isGDriveMessage(event.data)) return;
       const data = event.data;
       if (data.type !== 'GDRIVE_CODE') return;
@@ -283,14 +272,12 @@ async function silentRefresh(scope: GDriveScope): Promise<string> {
       if (data.error || !data.code) {
         reject(new Error(data.error ?? 'GDRIVE_NO_CODE'));
       } else {
-        // P1: validate code is a non-empty string before hitting /token endpoint.
         if (typeof data.code !== 'string' || data.code.length === 0) {
           reject(new Error('GDRIVE_INVALID_CODE'));
           return;
         }
         try {
           const tokenData = await exchangeCodeForToken(data.code, codeVerifier, redirectUri);
-          // P2+P3: pass GDriveScope so storeToken tracks it for proactive refresh.
           storeToken(tokenData.access_token, tokenData.expires_in, scope);
           if (tokenData.refresh_token) _refreshToken = tokenData.refresh_token;
           resolve(tokenData.access_token);
@@ -308,26 +295,6 @@ async function silentRefresh(scope: GDriveScope): Promise<string> {
 // OAuth2 popup (full interactive login)
 // ---------------------------------------------------------------------------
 
-/**
- * Complete an interactive OAuth2 popup sign-in with PKCE.
- *
- * iOS Safari fix: window.open() must be called synchronously inside the
- * user-gesture tick. signIn() pre-opens a blank window (about:blank) before
- * any async work and passes the handle here. We redirect it to the auth URL
- * once the URL is built. If the pre-opened handle is null (truly blocked),
- * we throw GDRIVE_POPUP_BLOCKED as before.
- *
- * Security:
- * - event.source is checked against the popup handle to prevent any
- *   same-origin frame from injecting a spoofed GDRIVE_CODE message.
- * - PKCE code_verifier is stored in memory and never exposed to the popup.
- * - Authorization code is exchanged for tokens via secure /token endpoint.
- *
- * @param scope   OAuth2 scope string.
- * @param preOpenedWindow  A pre-opened window handle obtained synchronously
- *                         in the user-gesture context. May be null if the
- *                         browser blocked the popup.
- */
 async function popupSignIn(scope: GDriveScope, preOpenedWindow: Window | null): Promise<string> {
   if (!CLIENT_ID) throw new Error('GDRIVE_NOT_CONFIGURED');
   if (!preOpenedWindow) throw new Error('GDRIVE_POPUP_BLOCKED');
@@ -349,7 +316,6 @@ async function popupSignIn(scope: GDriveScope, preOpenedWindow: Window | null): 
     });
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 
-    // Redirect the pre-opened blank window to the actual auth URL.
     preOpenedWindow.location.href = authUrl;
     const popup = preOpenedWindow;
 
@@ -357,7 +323,6 @@ async function popupSignIn(scope: GDriveScope, preOpenedWindow: Window | null): 
     const POPUP_TIMEOUT_MS = 90_000;
     let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // P4: centralized cleanup — called from all three settlement paths.
     const cleanupPopup = () => {
       clearInterval(closedCheck);
       if (timeoutTimer !== null) clearTimeout(timeoutTimer);
@@ -385,7 +350,6 @@ async function popupSignIn(scope: GDriveScope, preOpenedWindow: Window | null): 
     const messageHandler = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       if (event.source !== popup) return;
-      // P3: guard against non-object payloads before property access.
       if (!isGDriveMessage(event.data)) return;
       const data = event.data;
       if (data.type !== 'GDRIVE_CODE') return;
@@ -399,7 +363,6 @@ async function popupSignIn(scope: GDriveScope, preOpenedWindow: Window | null): 
         return;
       }
 
-      // P1: validate code is a non-empty string before hitting /token endpoint.
       if (typeof data.code !== 'string' || data.code.length === 0) {
         reject(new Error('GDRIVE_INVALID_CODE'));
         return;
@@ -407,7 +370,6 @@ async function popupSignIn(scope: GDriveScope, preOpenedWindow: Window | null): 
 
       try {
         const tokenData = await exchangeCodeForToken(data.code, codeVerifier, redirectUri);
-        // P2+P3: pass GDriveScope so storeToken tracks it for proactive refresh.
         storeToken(tokenData.access_token, tokenData.expires_in, scope);
         if (tokenData.refresh_token) _refreshToken = tokenData.refresh_token;
         resolve(tokenData.access_token);
@@ -424,45 +386,26 @@ async function popupSignIn(scope: GDriveScope, preOpenedWindow: Window | null): 
 // Public sign-in: silent first, popup fallback
 // ---------------------------------------------------------------------------
 
-/**
- * Obtain a valid Google OAuth2 access token.
- * Strategy:
- *   1. In-memory cache hit → return immediately (no network).
- *   2. Silent iframe refresh (prompt=none) → resolves if Google session active.
- *   3. Interactive popup (select_account) → user explicitly consents.
- *
- * iOS Safari: window.open() is blocked when called outside a synchronous
- * user-gesture context. To work around this, we pre-open a blank popup window
- * synchronously at the start of signIn() (before any await), then redirect it
- * to the auth URL inside popupSignIn() if silent refresh fails. If silent
- * refresh succeeds, the pre-opened window is closed immediately.
- *
- * Throws GDRIVE_AUTH_CANCELLED | GDRIVE_POPUP_BLOCKED on user abort.
- */
 export async function signIn(write = false): Promise<string> {
   if (isTokenValid()) return _cachedToken as string;
   if (!CLIENT_ID) throw new Error('[googleDriveService] VITE_GDRIVE_CLIENT_ID is not set.');
 
   const scope: GDriveScope = write ? SCOPE_WRITE : SCOPE_READ;
 
-  // Pre-open a blank popup synchronously inside the user-gesture tick.
   const preOpenedWindow = window.open('about:blank', 'GDriveAuth', 'width=520,height=640,toolbar=0,scrollbars=1');
 
   if (preOpenedWindow === null) {
     throw new Error('GDRIVE_POPUP_BLOCKED: Popup was blocked by the browser. Please allow popups for this site and try again.');
   }
 
-  // 1. Try silent refresh
   try {
     const token = await silentRefresh(scope);
     if (!preOpenedWindow.closed) preOpenedWindow.close();
     return token;
   } catch (err) {
-    // P6: log in dev to ease diagnosis (CSP block, network, etc.) without polluting prod.
     if (import.meta.env.DEV) console.debug('[gdrive] silent refresh failed:', err);
   }
 
-  // 2. Interactive popup — reuse the pre-opened window handle.
   return popupSignIn(scope, preOpenedWindow);
 }
 
@@ -481,19 +424,11 @@ async function driveGet<T>(path: string, token: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-// ---------------------------------------------------------------------------
-// Picker — list recent lyrics files and let user pick one
-// ---------------------------------------------------------------------------
-
 interface DriveFileListResponse {
   files: Array<{ id: string; name: string; mimeType: string; webContentLink?: string; size?: string }>;
   nextPageToken?: string;
 }
 
-/**
- * List the 30 most recent Drive files matching lyrics extensions.
- * Returns them sorted by name for display.
- */
 export async function listRecentLyricsFiles(token: string): Promise<GDriveFile[]> {
   const mimeQuery = LYRICS_MIME_TYPES.map(m => `mimeType='${m}'`).join(' or ');
   const q = encodeURIComponent(`(${mimeQuery}) and trashed=false`);
@@ -507,11 +442,6 @@ export async function listRecentLyricsFiles(token: string): Promise<GDriveFile[]
   );
 }
 
-/**
- * List the 50 most recent audio files from Drive.
- * Uses drive.readonly scope — works with any file in the user's Drive.
- * Returns GDriveFile[] with id only (no webContentLink — use createAudioBlobUrl for streaming).
- */
 export async function listRecentAudioFiles(token: string): Promise<GDriveFile[]> {
   const mimeQuery = AUDIO_MIME_TYPES.map(m => `mimeType='${m}'`).join(' or ');
   const q = encodeURIComponent(`(${mimeQuery}) and trashed=false`);
@@ -531,19 +461,6 @@ export async function listRecentAudioFiles(token: string): Promise<GDriveFile[]>
     });
 }
 
-// ---------------------------------------------------------------------------
-// Audio streaming via alt=media (Bearer token — not webContentLink)
-// ---------------------------------------------------------------------------
-
-/**
- * Download a Drive audio file as a Blob Object URL.
- * Uses alt=media with Authorization header — the only reliable method for
- * files under drive.readonly scope (webContentLink requires a Google session
- * cookie and fails in fetch() with CORS when the user is not logged in via
- * the browser).
- *
- * IMPORTANT: caller must call URL.revokeObjectURL(url) when done to free memory.
- */
 export async function createAudioBlobUrl(fileId: string, token: string): Promise<string> {
   const res = await fetch(
     `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
@@ -557,14 +474,6 @@ export async function createAudioBlobUrl(fileId: string, token: string): Promise
   return URL.createObjectURL(blob);
 }
 
-// ---------------------------------------------------------------------------
-// Load (download) a file by ID
-// ---------------------------------------------------------------------------
-
-/**
- * Download file content as text.
- * For Google Docs, exports as plain text; for binary files uses alt=media.
- */
 export async function downloadFile(fileId: string, token: string): Promise<string> {
   const res = await fetch(
     `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
@@ -574,27 +483,16 @@ export async function downloadFile(fileId: string, token: string): Promise<strin
     const body = await res.text().catch(() => '');
     throw new Error(`Drive download ${res.status}: ${body.slice(0, 200)}`);
   }
-  // P5: blob.text() replaces FileReader callback — same semantics, no boilerplate.
   return res.blob().then(blob => blob.text());
 }
 
-// ---------------------------------------------------------------------------
-// Save (upload / update) a file
-// ---------------------------------------------------------------------------
-
-/**
- * Upload text content to Drive.
- * - If fileId is provided → update existing file (PATCH multipart).
- * - Otherwise → create new file in app root (POST multipart).
- * Returns the GDriveFile metadata of the created/updated file.
- */
 export async function saveFile(
   content: string,
   fileName: string,
   mimeType = 'text/plain',
   fileId?: string,
 ): Promise<GDriveFile> {
-  const token = await signIn(true); // write scope
+  const token = await signIn(true);
 
   const metadata = JSON.stringify({
     name:     fileName,
@@ -638,14 +536,6 @@ export async function saveFile(
   return (await res.json()) as GDriveFile;
 }
 
-// ---------------------------------------------------------------------------
-// Capability check
-// ---------------------------------------------------------------------------
-
-/**
- * Returns true if CLIENT_ID is configured.
- * API_KEY is optional (reserved for future Picker API use).
- */
 export function isGDriveConfigured(): boolean {
   return !!CLIENT_ID;
 }
