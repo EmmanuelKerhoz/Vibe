@@ -9,6 +9,7 @@ import { useSongContext } from '../../../contexts/SongContext';
 import { useComposerContext } from '../../../contexts/ComposerContext';
 import { useLibraryContext } from '../../../contexts/LibraryContext';
 import { useAppNavigationContext } from '../../../contexts/AppStateContext';
+import { useTranslation } from '../../../i18n';
 import { LyriaPreviewPanel } from '../../../features/musical/LyriaPreviewPanel';
 import { LyriaFullSongPanel } from '../../../features/musical/LyriaFullSongPanel';
 import type { LyriaClip } from '../../../types/lyria';
@@ -18,6 +19,8 @@ interface Props {
 }
 
 export function MusicalTab({ hasApiKey }: Props) {
+  const { t } = useTranslation();
+  const m = t.musical;
   const {
     song, title, topic, mood,
     genre, setGenre, tempo, setTempo,
@@ -36,7 +39,7 @@ export function MusicalTab({ hasApiKey }: Props) {
 
   const { addTracks, tracks } = useLibraryContext();
   const { setActiveTab } = useAppNavigationContext();
-  const lyriaTrackCount = tracks.filter(t => t.source === 'lyria').length;
+  const lyriaTrackCount = tracks.filter(track => track.source === 'lyria').length;
 
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [approvedClip, setApprovedClip] = useState<LyriaClip | null>(null);
@@ -152,12 +155,12 @@ export function MusicalTab({ hasApiKey }: Props) {
             icon={<Play20Regular />}
             onClick={handleOpenPlayer}
             aria-label={lyriaTrackCount > 0
-              ? `Ouvrir le Player (${lyriaTrackCount} génération${lyriaTrackCount > 1 ? 's' : ''} Lyria)`
-              : 'Ouvrir le Player'}
+              ? `${m.openPlayer} (${lyriaTrackCount})`
+              : m.openPlayer}
           >
             {lyriaTrackCount > 0
-              ? `Ouvrir le Player (${lyriaTrackCount})`
-              : 'Ouvrir le Player'}
+              ? `${m.openPlayer} (${lyriaTrackCount})`
+              : m.openPlayer}
           </Button>
         </div>
       </div>
