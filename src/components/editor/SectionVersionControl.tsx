@@ -12,11 +12,10 @@ interface SectionVersionControlProps {
 }
 
 /**
- * Version button + dropdown for a section.
- *
- * - Button label = latest saved version name (e.g. VERSE-v003) or plain count.
- * - No manual save dialog — versions are saved automatically on section blur.
- * - Dropdown lists all saved versions with restore / delete actions.
+ * Dropdown control for per-section version history.
+ * - Button title = current version name (latest saved).
+ * - No manual name input — versioning is fully automatic.
+ * - Versions are saved externally on section blur (SectionEditor).
  */
 export const SectionVersionControl = React.memo(function SectionVersionControl({
   section,
@@ -30,12 +29,14 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
   const menuRef = useRef<HTMLDivElement>(null);
 
   const versions = versionContext?.getSectionVersions(section.id) ?? [];
-  const versionCount = versionContext?.getSectionVersionCount(section.id) ?? 0;
-  const latestVersion = versions[0];
+  const versionCount = versions.length;
 
-  // Button label: latest version name if available, otherwise count
-  const buttonLabel = latestVersion ? latestVersion.name : String(versionCount);
+  // Title = name of the most recent saved version, fallback to v000 placeholder
+  const currentVersionName = versionCount > 0
+    ? versions[0].name
+    : `${(section.name || 'SECTION').replace(/\s+/g, '_').toUpperCase()}-v000`;
 
+  // Close dropdown on outside click
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -48,7 +49,10 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
   }, [isOpen]);
 
   const handleRestoreVersion = useCallback((version: SectionVersion) => {
-    const restoredSection: Section = { ...version.section, id: section.id };
+    const restoredSection: Section = {
+      ...version.section,
+      id: section.id, // Preserve current section ID
+    };
     const newSong = song.map(s => s.id === section.id ? restoredSection : s);
     updateSongAndStructureWithHistory(newSong, newSong.map(s => s.name));
     setIsOpen(false);
@@ -59,14 +63,13 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
     versionContext?.deleteSectionVersion(section.id, versionId);
   }, [section.id, versionContext]);
 
-  const formatTimestamp = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString(undefined, {
+  const formatTimestamp = (timestamp: number) =>
+    new Date(timestamp).toLocaleString(undefined, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
 
   if (!versionContext) return null;
 
@@ -84,23 +87,21 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
             'hover:bg-[var(--lcars-orange)]/10',
             versionCount > 0 ? 'opacity-100' : 'opacity-60',
           ].join(' ')}
-          aria-label={`${versionCount} version${versionCount !== 1 ? 's' : ''} saved`}
-          aria-expanded={isOpen}
-          aria-haspopup="listbox"
+          aria-label={`Current version: ${currentVersionName}`}
         >
           <History className="h-3 w-3" />
-          <span>{buttonLabel}</span>
+          <span>{currentVersionName}</span>
         </button>
       </Tooltip>
 
       {isOpen && (
         <div
           className="absolute top-full right-0 mt-1 w-80 max-h-96 overflow-y-auto bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg shadow-xl z-50 custom-scrollbar"
-          role="listbox"
+          role="menu"
           aria-label="Section version history"
         >
           {/* Header */}
-          <div className="sticky top-0 bg-[var(--bg-sidebar)] border-b border-[var(--border-color)] p-3 flex items-center justify-between">
+          <div className="sticky top-0 bg-[var(--bg-sidebar)] border-b border-[var(--border-color)] p-3 flex items-center justify-between z-10">
             <h4 className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <History className="w-4 h-4 text-[var(--lcars-orange)]" />
               {section.name} Versions
@@ -115,13 +116,6 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
             </button>
           </div>
 
-          {/* Hint */}
-          <div className="px-3 py-2 border-b border-[var(--border-color)]">
-            <p className="text-[10px] text-[var(--text-secondary)] italic">
-              {t.editor?.versionAutoSaveHint ?? 'Versions are saved automatically when you move to another section.'}
-            </p>
-          </div>
-
           {/* Version list */}
           <div className="p-2">
             {versions.length === 0 ? (
@@ -129,18 +123,16 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
                 {t.editor?.noVersionsSaved ?? 'No versions saved yet'}
               </div>
             ) : (
-              <div className="space-y-1" role="group">
+              <div className="space-y-1">
                 {versions.map((version) => (
                   <div
                     key={version.id}
-                    className="group p-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--lcars-orange)]/30 rounded transition-all"
-                    role="option"
-                    aria-selected={false}
+                    className="group p-2 bg-[var(--bg-app)] hover:bg-[var(--bg-sidebar)] border border-[var(--border-color)] hover:border-[var(--accent-color)]/30 rounded transition-all"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="text-xs font-mono font-semibold text-[var(--lcars-orange)] truncate">
+                          <p className="text-xs font-medium text-[var(--text-primary)] truncate">
                             {version.name}
                           </p>
                           {version.isAutoSave && (
@@ -161,8 +153,8 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
                           <button
                             type="button"
                             onClick={() => handleRestoreVersion(version)}
-                            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--lcars-orange)] hover:bg-[var(--lcars-orange)]/10 rounded transition-colors"
-                            aria-label={`Restore ${version.name}`}
+                            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--accent-color)] hover:bg-[var(--accent-color)]/10 rounded transition-colors"
+                            aria-label="Restore version"
                           >
                             <Undo2 className="w-3.5 h-3.5" />
                           </button>
@@ -172,7 +164,7 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
                             type="button"
                             onClick={(e) => handleDeleteVersion(e, version.id)}
                             className="p-1.5 text-[var(--text-secondary)] hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
-                            aria-label={`Delete ${version.name}`}
+                            aria-label="Delete version"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
