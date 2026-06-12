@@ -35,7 +35,7 @@ const fingerprintSection = (section: Section): string => {
 
   return [
     section.id,
-    djb2(section.name),
+    djb2(section.name ?? ''),
     section.language ?? '',
     section.rhymeScheme ?? '',
     linePrint,

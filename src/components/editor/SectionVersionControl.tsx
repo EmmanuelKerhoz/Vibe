@@ -33,7 +33,7 @@ export const SectionVersionControl = React.memo(function SectionVersionControl({
 
   // Title = name of the most recent saved version, fallback to v000 placeholder
   const currentVersionName = versionCount > 0
-    ? versions[0].name
+    ? (versions[0]?.name ?? `${(section.name || 'SECTION').replace(/\s+/g, '_').toUpperCase()}-v000`)
     : `${(section.name || 'SECTION').replace(/\s+/g, '_').toUpperCase()}-v000`;
 
   // Close dropdown on outside click
