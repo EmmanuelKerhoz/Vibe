@@ -5,7 +5,8 @@ import type { Section, SectionVersion } from '../types';
 interface SectionVersionContextValue {
   sectionVersions: Record<string, SectionVersion[]>;
   getSectionVersions: (sectionId: string) => SectionVersion[];
-  saveSectionVersion: (section: Section, name?: string) => void;
+  /** Save a version snapshot on blur — name is auto-generated (SECTIONNAME-vXXX). */
+  saveSectionVersion: (section: Section) => void;
   autoSaveSectionVersion: (section: Section) => void;
   deleteSectionVersion: (sectionId: string, versionId: string) => void;
   clearSectionVersions: (sectionId: string) => void;
@@ -21,28 +22,10 @@ export function SectionVersionProvider({
   children: ReactNode;
   initialVersions?: Record<string, SectionVersion[]> | undefined;
 }) {
-  const {
-    sectionVersions,
-    getSectionVersions,
-    saveSectionVersion,
-    autoSaveSectionVersion,
-    deleteSectionVersion,
-    clearSectionVersions,
-    getSectionVersionCount,
-  } = useSectionVersionManager({ initialVersions });
+  const manager = useSectionVersionManager({ initialVersions });
 
   return (
-    <SectionVersionContext.Provider
-      value={{
-        sectionVersions,
-        getSectionVersions,
-        saveSectionVersion,
-        autoSaveSectionVersion,
-        deleteSectionVersion,
-        clearSectionVersions,
-        getSectionVersionCount,
-      }}
-    >
+    <SectionVersionContext.Provider value={manager}>
       {children}
     </SectionVersionContext.Provider>
   );

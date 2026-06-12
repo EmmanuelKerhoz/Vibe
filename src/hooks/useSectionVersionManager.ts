@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Section, SectionVersion } from '../types';
 import { generateId } from '../utils/idUtils';
 
@@ -7,7 +7,6 @@ const MAX_SECTION_VERSIONS = 20;
 
 /**
  * djb2 hash — fast non-cryptographic string hash.
- * Consistent with useVersionManager implementation.
  */
 function djb2(str: string): number {
   let h = 5381;
@@ -45,7 +44,6 @@ const fingerprintSection = (section: Section): string => {
 
 /**
  * Deep-clones a Section via JSON round-trip.
- * Returns null if the payload contains non-serialisable values.
  */
 const deepCloneSection = (section: Section): Section | null => {
   try {
@@ -55,6 +53,21 @@ const deepCloneSection = (section: Section): Section | null => {
   }
 };
 
+/**
+ * Generates an automatic version name.
+ * Format: SECTIONNAME_N-vXXX  (e.g. VERSE_3-v002)
+ * N     = section name uppercased, spaces→underscores
+ * XXX   = 1-based sequential index within this section's history, zero-padded to 3 digits
+ */
+function buildVersionName(section: Section, existingCount: number): string {
+  const base = section.name
+    .toUpperCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^A-Z0-9_]/g, '');
+  const seq = String(existingCount + 1).padStart(3, '0');
+  return `${base}-v${seq}`;
+}
+
 interface UseSectionVersionManagerParams {
   initialVersions?: Record<string, SectionVersion[]> | undefined;
 }
@@ -62,22 +75,17 @@ interface UseSectionVersionManagerParams {
 /**
  * Hook for managing per-section version history.
  * Each section maintains its own independent version stack.
+ * Version names are auto-generated — no user input required.
  */
 export function useSectionVersionManager(params: UseSectionVersionManagerParams = {}) {
-  // Map: sectionId -> array of versions for that section
   const [sectionVersions, setSectionVersions] = useState<Record<string, SectionVersion[]>>(
     () => params.initialVersions ?? {}
   );
 
-  // Track the last fingerprint for each section to detect changes
   const sectionFingerprintsRef = useRef<Record<string, string>>({});
 
-  /**
-   * Create a new version snapshot for a section.
-   */
   const createSectionVersion = useCallback((
     section: Section,
-    name: string,
     options?: { allowDuplicate?: boolean; isAutoSave?: boolean }
   ) => {
     const clonedSection = deepCloneSection(section);
@@ -90,17 +98,20 @@ export function useSectionVersionManager(params: UseSectionVersionManagerParams 
       const sectionId = section.id;
       const existingVersions = prev[sectionId] || [];
 
-      // Check for duplicate if not explicitly allowed
       if (!options?.allowDuplicate && existingVersions.length > 0) {
         const latestVersion = existingVersions[0];
         if (latestVersion) {
-          const normalizedLatest = JSON.stringify(latestVersion.section);
-          const normalizedNew = JSON.stringify(clonedSection);
-          if (normalizedLatest === normalizedNew) {
-            return prev; // Skip duplicate
+          if (JSON.stringify(latestVersion.section) === JSON.stringify(clonedSection)) {
+            return prev;
           }
         }
       }
+
+      // Total ever saved = existingVersions.length (before trim) — used for sequential naming.
+      // We count from total versions including trimmed ones by looking at the highest index
+      // already present, deriving from the latest name if available.
+      const totalSaved = existingVersions.length;
+      const versionName = buildVersionName(section, totalSaved);
 
       const newVersion: SectionVersion = {
         id: generateId(),
@@ -108,12 +119,11 @@ export function useSectionVersionManager(params: UseSectionVersionManagerParams 
         sectionId: section.id,
         sectionName: section.name,
         section: clonedSection,
-        name,
+        name: versionName,
         isAutoSave: options?.isAutoSave ?? false,
       };
 
       const updatedVersions = [newVersion, ...existingVersions];
-      // Trim to MAX_SECTION_VERSIONS
       const trimmedVersions = updatedVersions.length > MAX_SECTION_VERSIONS
         ? updatedVersions.slice(0, MAX_SECTION_VERSIONS)
         : updatedVersions;
@@ -125,43 +135,34 @@ export function useSectionVersionManager(params: UseSectionVersionManagerParams 
     });
   }, []);
 
-  /**
-   * Get all versions for a specific section.
-   */
   const getSectionVersions = useCallback((sectionId: string): SectionVersion[] => {
     return sectionVersions[sectionId] || [];
   }, [sectionVersions]);
 
   /**
-   * Save a manual version snapshot for a section.
+   * Save a manual version snapshot — name is auto-generated.
+   * Triggered on section blur (focus leaves the section).
    */
-  const saveSectionVersion = useCallback((section: Section, name?: string) => {
-    const versionName = name || `${section.name} - ${new Date().toLocaleTimeString()}`;
-    createSectionVersion(section, versionName, { allowDuplicate: true, isAutoSave: false });
+  const saveSectionVersion = useCallback((section: Section) => {
+    createSectionVersion(section, { allowDuplicate: false, isAutoSave: false });
   }, [createSectionVersion]);
 
   /**
-   * Auto-save: create a restore point before section changes.
-   * Call this before making structural changes to a section.
+   * Auto-save: create a restore point before AI/structural changes.
    */
   const autoSaveSectionVersion = useCallback((section: Section) => {
-    // Only auto-save if section has content
     if (section.lines.length === 0) return;
 
     const currentFingerprint = fingerprintSection(section);
     const lastFingerprint = sectionFingerprintsRef.current[section.id];
 
-    // Create auto-save if fingerprint changed
     if (lastFingerprint && lastFingerprint !== currentFingerprint) {
-      createSectionVersion(section, 'Auto Save', { allowDuplicate: false, isAutoSave: true });
+      createSectionVersion(section, { allowDuplicate: false, isAutoSave: true });
     }
 
     sectionFingerprintsRef.current[section.id] = currentFingerprint;
   }, [createSectionVersion]);
 
-  /**
-   * Delete a specific version.
-   */
   const deleteSectionVersion = useCallback((sectionId: string, versionId: string) => {
     setSectionVersions(prev => {
       const versions = prev[sectionId] || [];
@@ -170,16 +171,10 @@ export function useSectionVersionManager(params: UseSectionVersionManagerParams 
         const { [sectionId]: _, ...rest } = prev;
         return rest;
       }
-      return {
-        ...prev,
-        [sectionId]: filtered,
-      };
+      return { ...prev, [sectionId]: filtered };
     });
   }, []);
 
-  /**
-   * Clear all versions for a specific section.
-   */
   const clearSectionVersions = useCallback((sectionId: string) => {
     setSectionVersions(prev => {
       const { [sectionId]: _, ...rest } = prev;
@@ -187,9 +182,6 @@ export function useSectionVersionManager(params: UseSectionVersionManagerParams 
     });
   }, []);
 
-  /**
-   * Get count of versions for a section.
-   */
   const getSectionVersionCount = useCallback((sectionId: string): number => {
     return (sectionVersions[sectionId] || []).length;
   }, [sectionVersions]);
