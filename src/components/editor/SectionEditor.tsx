@@ -15,6 +15,7 @@ import { useComposerContext } from '../../contexts/ComposerContext';
 import { useRhymeProxyContext } from '../../contexts/RhymeProxyContext';
 import { useSongContext } from '../../contexts/SongContext';
 import { useSongMutation } from '../../contexts/SongMutationContext';
+import { useOptionalSectionVersionContext } from '../../contexts/SectionVersionContext';
 import { isPureMetaLine } from '../../utils/metaUtils';
 import { useRhymeSchemeMultiLang } from '../../hooks/useRhymeSchemeMultiLang';
 import type { AdaptationLangId } from '../../i18n/constants';
@@ -57,6 +58,7 @@ export const SectionEditor = React.memo(function SectionEditor({
   const { isProxiedForSection } = useRhymeProxyContext();
   const { lineLanguages, rhymeScheme: globalRhymeScheme } = useSongContext();
   const { renameSectionWithRenumber, setSectionRhymeScheme } = useSongMutation();
+  const versionCtx = useOptionalSectionVersionContext();
 
   const sectionName: string = section.name ?? '';
   const committedRhyme: string = section.rhymeScheme || globalRhymeScheme;
@@ -83,8 +85,6 @@ export const SectionEditor = React.memo(function SectionEditor({
   const isRegenSection = isRegeneratingSection(section.id);
 
   // Release local lock once ALL async operations for this section are done.
-  // regenerateSection manages regeneratingSections (not isGenerating), so we
-  // must watch isRegenSection in addition to isGenerating / isAdaptingLanguage.
   useEffect(() => {
     if (!isGenerating && !isAdaptingLanguage && !isRegenSection) {
       setIsApplying(false);
@@ -129,7 +129,6 @@ export const SectionEditor = React.memo(function SectionEditor({
       setSectionRhymeScheme(section.id, pendingRhyme);
     }
 
-    // Track whether any async operation was actually dispatched
     let asyncDispatched = false;
 
     if (hasLyrics && (rhymeChanged || nameChanged)) {
@@ -145,8 +144,6 @@ export const SectionEditor = React.memo(function SectionEditor({
       }
     }
 
-    // No async op launched — reset immediately since no external state
-    // will ever flip to trigger the cleanup useEffect.
     if (!asyncDispatched) {
       setIsApplying(false);
     }
@@ -170,7 +167,6 @@ export const SectionEditor = React.memo(function SectionEditor({
 
   const isSectionDropTarget = dragOverIndex === sectionIndex && draggedItemIndex !== null && draggedItemIndex !== sectionIndex;
 
-  // Bar visible whenever any async operation is in flight for this section
   const isProcessing = isGenerating || isApplying || isAdaptingLanguage || isRegenSection;
 
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -195,8 +191,6 @@ export const SectionEditor = React.memo(function SectionEditor({
 
   const isProxied = isProxiedForSection(section.id);
 
-  // Stable digest used as a memo dep to detect per-line language changes even
-  // when the lineLanguages object reference stays the same.
   const lineLanguagesDigest = section.lines.map(l => lineLanguages[l.id] ?? '').join('\x00');
 
   const multiLangLines = useMemo(
@@ -219,9 +213,20 @@ export const SectionEditor = React.memo(function SectionEditor({
     ...(onLineBlur ? { onLineBlur } : {}),
   };
 
+  // Auto-save a version snapshot when focus leaves the section card entirely.
+  // relatedTarget is null when focus moves outside the document (e.g. tab switch),
+  // or is a node outside this section — both cases warrant a snapshot.
+  const handleSectionBlur = useCallback((e: React.FocusEvent<HTMLElement>) => {
+    const leavingSection = !e.currentTarget.contains(e.relatedTarget as Node | null);
+    if (leavingSection && versionCtx) {
+      versionCtx.autoSaveSectionVersion(section);
+    }
+  }, [versionCtx, section]);
+
   return (
     <section
       id={`section-${section.id}`}
+      onBlur={handleSectionBlur}
       onDragOver={onDragOver}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
@@ -237,7 +242,6 @@ export const SectionEditor = React.memo(function SectionEditor({
       <div className="flex-1 pt-2.5 px-3.5 pb-2" style={{ minWidth: 0, width: '100%', overflow: 'visible' }}>
 
         <div className="mb-2 flex items-start justify-between gap-3 flex-wrap relative">
-          {/* Indeterminate regeneration/adaptation progress bar — LTR sweep */}
           {isProcessing && (
             <div
               role="progressbar"
