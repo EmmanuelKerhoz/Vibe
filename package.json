@@ -46,8 +46,8 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.29.1",
-    "vite":^8.0.16",
-    "vite-plugin-pwa": "^1.3.0",
+    "vite": "^8.0.16",
+            "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.1.8"
   }
 }
