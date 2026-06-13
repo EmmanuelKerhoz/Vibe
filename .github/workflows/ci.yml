@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
+          npm install --legacy-peer-deps
           npm ci --prefix api
 
       - name: Lint
