@@ -36,7 +36,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
+          npm install --legacy-peer-deps
           npm ci --prefix api
 
       - name: Install Playwright browsers (chromium only)
@@ -90,7 +90,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
+          npm install --legacy-peer-deps
           npm ci --prefix api
 
       - name: Install Playwright browsers
