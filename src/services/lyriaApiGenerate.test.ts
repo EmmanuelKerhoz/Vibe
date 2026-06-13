@@ -124,6 +124,7 @@ describe('/api/lyria/generate', () => {
       res as never,
     );
 
+    console.log('TEST 1 BODY:', ctx.body);
     expect(ctx.statusCode).toBe(200);
     expect(mockGenerateContent).toHaveBeenCalled();
   });
@@ -142,6 +143,7 @@ describe('/api/lyria/generate', () => {
       res as never,
     );
 
+    console.log('TEST 2 BODY:', ctx.body);
     expect(ctx.statusCode).toBe(200);
   });
 
@@ -195,6 +197,7 @@ describe('/api/lyria/generate', () => {
       res as never,
     );
 
+    console.log('TEST 3 BODY:', ctx.body);
     expect(ctx.statusCode).toBe(200);
   });
 

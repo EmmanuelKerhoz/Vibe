@@ -9,5 +9,6 @@
     "allowImportingTsExtensions": false,
     "esModuleInterop": true
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts"],
+  "exclude": []
 }

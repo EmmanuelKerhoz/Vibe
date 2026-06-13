@@ -3,11 +3,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Minimal mock for @google/genai
 vi.mock('@google/genai', () => ({
-  GoogleGenAI: vi.fn().mockImplementation(() => ({
-    models: {
-      generateContent: vi.fn().mockResolvedValue({ text: 'mocked response' }),
-    },
-  })),
+  GoogleGenAI: vi.fn().mockImplementation(function () {
+    return {
+      models: {
+        generateContent: vi.fn().mockResolvedValue({ text: 'mocked response' }),
+      },
+    };
+  }),
 }));
 
 // Stub rate limiter to always allow
@@ -26,14 +28,14 @@ function makeReq(overrides: Partial<VercelRequest> = {}): VercelRequest {
   } as unknown as VercelRequest;
 }
 
-function makeRes(): { res: VercelResponse; statusCode: number; body: unknown } {
-  const ctx = { statusCode: 200, body: undefined as unknown };
+function makeRes() {
+  const ctx = { statusCode: 200, body: undefined as any };
   const res = {
     status: vi.fn().mockImplementation((code: number) => { ctx.statusCode = code; return res; }),
-    json: vi.fn().mockImplementation((data: unknown) => { ctx.body = data; }),
+    json: vi.fn().mockImplementation((data: unknown) => { ctx.body = data; return res; }),
     setHeader: vi.fn(),
   } as unknown as VercelResponse;
-  return { res, ...ctx };
+  return { res, ctx };
 }
 
 describe('POST /api/generate', () => {
@@ -47,58 +49,66 @@ describe('POST /api/generate', () => {
   });
 
   it('rejects non-POST methods', async () => {
-    const { res, statusCode } = makeRes();
+    const { res, ctx } = makeRes();
     await handler(makeReq({ method: 'GET' }), res);
-    expect(statusCode).toBe(405);
+    expect(ctx.statusCode).toBe(405);
   });
 
   it('rejects disallowed model prefix', async () => {
-    const { res, statusCode } = makeRes();
+    const { res, ctx } = makeRes();
     await handler(makeReq({ body: { model: 'openai-gpt4', contents: 'hello' } }), res);
-    expect(statusCode).toBe(400);
+    expect(ctx.statusCode).toBe(400);
   });
 
   it('rejects contents exceeding max length', async () => {
-    const { res, statusCode } = makeRes();
+    const { res, ctx } = makeRes();
     const longContents = 'x'.repeat(100_001);
     await handler(makeReq({ body: { model: 'gemini-1.5-pro', contents: longContents } }), res);
-    expect(statusCode).toBe(400);
+    expect(ctx.statusCode).toBe(400);
   });
 
   it('drops unknown config keys', async () => {
     const { GoogleGenAI } = await import('@google/genai');
     const mockGenerate = vi.fn().mockResolvedValue({ text: 'ok' });
-    (GoogleGenAI as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-      models: { generateContent: mockGenerate },
-    }));
-    const { res } = makeRes();
+    (GoogleGenAI as ReturnType<typeof vi.fn>).mockImplementation(function () {
+      return {
+        models: { generateContent: mockGenerate },
+      };
+    });
+    const { res, ctx } = makeRes();
     await handler(
       makeReq({ body: { model: 'gemini-1.5-pro', contents: 'test', config: { temperature: 0.5, systemInstruction: 'evil' } } }),
       res
     );
+    expect(ctx.statusCode).toBe(200);
     const callArg = mockGenerate.mock.calls[0]?.[0] as { config: Record<string, unknown> };
     expect(callArg?.config).not.toHaveProperty('systemInstruction');
     expect(callArg?.config).toHaveProperty('temperature', 0.5);
   });
 
-  it('drops responseSchema from config (security)', async () => {
+  it('preserves responseSchema in config', async () => {
     const { GoogleGenAI } = await import('@google/genai');
     const mockGenerate = vi.fn().mockResolvedValue({ text: 'ok' });
-    (GoogleGenAI as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-      models: { generateContent: mockGenerate },
-    }));
-    const { res } = makeRes();
+    (GoogleGenAI as ReturnType<typeof vi.fn>).mockImplementation(function () {
+      return {
+        models: { generateContent: mockGenerate },
+      };
+    });
+    const { res, ctx } = makeRes();
     await handler(
-      makeReq({ body: { model: 'gemini-pro', contents: 'test', config: { responseSchema: { type: 'object' } } } }),
+      makeReq({ body: { model: 'gemini-1.5-pro', contents: 'test', config: { responseSchema: { type: 'object' } } } }),
       res
     );
+    expect(ctx.statusCode).toBe(200);
     const callArg = mockGenerate.mock.calls[0]?.[0] as { config: Record<string, unknown> };
-    expect(callArg?.config).not.toHaveProperty('responseSchema');
+    expect(callArg?.config).toHaveProperty('responseSchema');
+    expect((callArg?.config?.responseSchema as any)?.type).toBe('object');
   });
 
   it('returns 200 with text on success', async () => {
-    const { res, statusCode } = makeRes();
+    const { res, ctx } = makeRes();
     await handler(makeReq(), res);
-    expect(statusCode).toBe(200);
+    console.log('BODY:', ctx.body);
+    expect(ctx.statusCode).toBe(200);
   });
 });

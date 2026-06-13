@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { readFileSync } from 'fs';
 import type { Plugin } from 'vite';
+import { fileURLToPath } from 'url';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8')) as { version: string };
 
@@ -199,13 +200,14 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': '/src',
+      '@google/genai': fileURLToPath(new URL('./node_modules/@google/genai', import.meta.url)),
     },
   },
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: [],
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'api/**/*.test.ts'],
     // Expose TEST=true so _testExchangeCodeForToken is exported and the
     // exchangeCodeForToken suite actually runs (not silently skipped).
     env: {
