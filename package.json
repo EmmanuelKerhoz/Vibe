@@ -21,7 +21,7 @@
     "@fluentui/react-components": "^9.60.2",
     "@fluentui/react-icons": "^2.0.266",
     "@google/genai": "^2.7.0",
-    "iflate": "^0.0.1",
+      "fflate": "^0.8.3",
     "motion": "^12.10.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
