@@ -63,11 +63,18 @@ function setupSunoExtendMock(page: Page) {
   });
 }
 
+/**
+ * Navigate to the Suno panel.
+ * Selector broadened to cover data-testid, aria-label, tab role, and text
+ * so the helper is resilient to UI refactors.
+ */
 async function navigateToSunoPanel(page: Page): Promise<boolean> {
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
   const sunoBtn = page
-    .locator('button, [role="tab"], a')
+    .locator(
+      'button, [role="tab"], a, [data-testid*="suno"], [aria-label*="suno" i]',
+    )
     .filter({ hasText: /suno/i })
     .first();
   if (await sunoBtn.isVisible({ timeout: 5_000 })) {
@@ -137,8 +144,9 @@ test.describe('Suno — Poll / extend (mocked)', () => {
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
     if (await generateBtn.isVisible()) {
       await generateBtn.click();
-      await page.waitForTimeout(3_000);
-      // pollCalled may be true if the app polls; skip if arch doesn't poll
+      // Wait for generate response, then one tick for polling to initialise
+      await page.waitForResponse('**/api/suno/generate**');
+      await page.waitForTimeout(500);
       if (!pollCalled) test.skip();
     } else {
       test.skip();
@@ -161,15 +169,17 @@ test.describe('Suno — Poll / extend (mocked)', () => {
     const found = await navigateToSunoPanel(page);
     if (!found) { test.skip(); return; }
 
-    // Generate first, then look for extend button
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
     if (await generateBtn.isVisible()) {
       await generateBtn.click();
-      await page.waitForTimeout(2_000);
+      await page.waitForResponse('**/api/suno/generate**');
       const extendBtn = page.locator('button').filter({ hasText: /extend|prolonger/i }).first();
       if (await extendBtn.isVisible()) {
-        await extendBtn.click();
-        await page.waitForTimeout(2_000);
+        const [extResp] = await Promise.all([
+          page.waitForResponse('**/api/suno/extend**'),
+          extendBtn.click(),
+        ]);
+        await extResp.finished();
         expect(extendCalled).toBe(true);
       } else {
         test.skip();
@@ -191,8 +201,11 @@ test.describe('Suno — Error handling (mocked)', () => {
 
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
     if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      await page.waitForTimeout(2_000);
+      const [response] = await Promise.all([
+        page.waitForResponse('**/api/suno/generate**'),
+        generateBtn.click(),
+      ]);
+      await response.finished();
       expect(pageErrors).toHaveLength(0);
       const errorIndicator = page
         .locator('[role="alert"], [class*="error"], text=/erreur|error|unavailable/i')
@@ -216,13 +229,12 @@ test.describe('Suno — Error handling (mocked)', () => {
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
     if (await generateBtn.isVisible()) {
       await generateBtn.click();
-      // Loading state should appear immediately
       const loadingEl = page
         .locator('[class*="loading"], [aria-busy="true"], [data-testid*="loading"]')
         .first();
       const isLoading = await loadingEl.isVisible({ timeout: 800 }).catch(() => false);
-      // Don't fail if loading indicator isn't implemented — just ensure no crash
-      await page.waitForTimeout(2_500);
+      // Wait for the slow mock to resolve instead of a fixed timeout
+      await page.waitForResponse('**/api/suno/generate**');
       expect(pageErrors).toHaveLength(0);
       if (!isLoading) test.skip();
     } else {

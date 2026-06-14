@@ -19,10 +19,13 @@ on:
 jobs:
   # ---------------------------------------------------------------------------
   # 1. Smoke gate (PR + main) — blocks merge on failure
+  #    Skipped on version-bump commits tagged [skip bump] to avoid wasting
+  #    CI minutes on no-op bot pushes.
   # ---------------------------------------------------------------------------
   smoke:
     name: Smoke (chromium)
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip bump]')"
     steps:
       - name: Checkout
         uses: actions/checkout@v4

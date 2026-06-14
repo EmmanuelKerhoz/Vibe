@@ -113,8 +113,11 @@ test.describe('AI Generate — Gemini (mocked)', () => {
     await fillLyricsAndOpenAI(page);
     const generateBtn = page.locator('button').filter({ hasText: /generat|AI/i }).first();
     if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      await page.waitForTimeout(2000);
+      const [response] = await Promise.all([
+        page.waitForResponse('**/api/generate**'),
+        generateBtn.click(),
+      ]);
+      await response.finished();
       expect(pageErrors).toHaveLength(0);
       const errorEl = page
         .locator('[class*="error"], [role="alert"], text=/erreur|error|failed/i')
@@ -143,7 +146,6 @@ test.describe('AI Generate — Gemini (mocked)', () => {
       .first();
     if (await providerSelect.isVisible()) {
       await providerSelect.selectOption({ label: /openai/i });
-      await page.waitForTimeout(500);
       await expect(page).not.toHaveURL(/error/);
     } else {
       test.skip();
@@ -181,8 +183,11 @@ test.describe('AI Generate — Lyria music generation (mocked)', () => {
     await page.waitForLoadState('domcontentloaded');
     const musicBtn = page.locator('button').filter({ hasText: /lyria|music|audio/i }).first();
     if (await musicBtn.isVisible()) {
-      await musicBtn.click();
-      await page.waitForTimeout(2000);
+      const [response] = await Promise.all([
+        page.waitForResponse('**/api/lyria/generate**'),
+        musicBtn.click(),
+      ]);
+      await response.finished();
       expect(pageErrors).toHaveLength(0);
     } else {
       test.skip();
@@ -220,8 +225,11 @@ test.describe('AI Generate — Suno music generation (mocked)', () => {
     await page.waitForLoadState('domcontentloaded');
     const sunoBtn = page.locator('button').filter({ hasText: /suno/i }).first();
     if (await sunoBtn.isVisible()) {
-      await sunoBtn.click();
-      await page.waitForTimeout(2000);
+      const [response] = await Promise.all([
+        page.waitForResponse('**/api/suno/generate**'),
+        sunoBtn.click(),
+      ]);
+      await response.finished();
       expect(pageErrors).toHaveLength(0);
     } else {
       test.skip();
