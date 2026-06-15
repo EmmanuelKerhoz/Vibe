@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # js-yaml <4.2.0 vulnerability: cannot upgrade — locked by @vercel/node
+      # via @vercel/python-analysis@0.11.1 requiring js-yaml@4.1.1
+      - dependency-name: "js-yaml"
+        update-types: ["version-update:semver-patch", "version-update:semver-minor"]
+      # protobufjs: same upstream Vercel transitive constraint
+      - dependency-name: "protobufjs"
+        update-types: ["version-update:semver-patch", "version-update:semver-minor"]
+
+  - package-ecosystem: "npm"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "js-yaml"
+        update-types: ["version-update:semver-patch", "version-update:semver-minor"]
+      - dependency-name: "protobufjs"
+        update-types: ["version-update:semver-patch", "version-update:semver-minor"]
