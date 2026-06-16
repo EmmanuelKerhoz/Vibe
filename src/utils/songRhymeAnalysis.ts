@@ -119,7 +119,7 @@ export const buildRhymeGroups = (lines: string[], langCode?: string): RhymeGroup
     for (let j = i + 1; j < n; j++) {
       if (groupIndex[j] !== null) continue;
       if (!lines[j]?.trim()) continue;
-      if (doLinesRhymeGraphemic(lines[i]!, lines[j]!, langCode)) {
+      if (lines[i]!.trim() !== lines[j]!.trim() && doLinesRhymeGraphemic(lines[i]!, lines[j]!, langCode)) {
         members.push(j);
       }
     }
@@ -177,7 +177,7 @@ export const buildRhymeScheme = (lineCount: number, groups: RhymeGroup[]): strin
   if (groups.length < 1) return null;
 
   const letters = new Array<string>(lineCount).fill('X');
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWYZ';
   let nextLetter = 0;
 
   for (const group of groups) {
