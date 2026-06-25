@@ -35,62 +35,64 @@ function setupLyriaMock(
   });
 }
 
-async function navigateToLyriaPanel(page: Page): Promise<boolean> {
+/**
+ * Navigate to the Lyria panel.
+ * Hard-asserts the panel is found — a missing panel is a regression, not a skip.
+ */
+async function navigateToLyriaPanel(page: Page): Promise<void> {
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
-  // Try to find a Lyria-specific button or tab
   const lyriaBtn = page
-    .locator('button, [role="tab"], a')
+    .locator('button, [role="tab"], a, [data-testid*="lyria"], [aria-label*="lyria" i]')
     .filter({ hasText: /lyria|music gen|mélodie/i })
     .first();
-  if (await lyriaBtn.isVisible({ timeout: 5_000 })) {
-    await lyriaBtn.click();
-    return true;
-  }
-  return false;
+  await expect(lyriaBtn).toBeVisible({ timeout: 8_000 });
+  await lyriaBtn.click();
 }
 
 test.describe('Lyria — Generation (mocked)', () => {
   test('Lyria generate button triggers API and renders audio player', async ({ page }) => {
     await setupLyriaMock(page);
-    const found = await navigateToLyriaPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToLyriaPanel(page);
 
     const generateBtn = page
       .locator('button')
       .filter({ hasText: /generat|créer|compose|produce/i })
       .first();
     await expect(generateBtn).toBeVisible({ timeout: 8_000 });
-    await generateBtn.click();
 
-    // Expect an audio element or player UI to appear
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/lyria/generate**'),
+      generateBtn.click(),
+    ]);
+    await response.finished();
+
     const audioEl = page.locator('audio, [data-testid="audio-player"], [class*="player"]').first();
     await expect(audioEl).toBeVisible({ timeout: 12_000 });
   });
 
   test('generated track title or URL is displayed', async ({ page }) => {
     await setupLyriaMock(page);
-    const found = await navigateToLyriaPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToLyriaPanel(page);
 
     const generateBtn = page
       .locator('button')
       .filter({ hasText: /generat|créer|compose/i })
       .first();
-    if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      // Either the title or a reference to the audio URL should appear
-      const titleOrUrl = page
-        .locator('text=/Mocked Lyria Track|lyria-test\.mp3/i')
-        .first();
-      const audioEl = page.locator('audio[src*="lyria-test"]').first();
-      const visible =
-        (await titleOrUrl.isVisible({ timeout: 10_000 }).catch(() => false)) ||
-        (await audioEl.isVisible({ timeout: 1_000 }).catch(() => false));
-      if (!visible) test.skip();
-    } else {
-      test.skip();
-    }
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/lyria/generate**'),
+      generateBtn.click(),
+    ]);
+    await response.finished();
+
+    // Either the mock title or the audio element must be visible
+    const titleEl = page.locator('text=/Mocked Lyria Track/i').first();
+    const audioEl = page.locator('audio[src*="lyria-test"]').first();
+    const titleVisible = await titleEl.isVisible({ timeout: 10_000 }).catch(() => false);
+    const audioVisible = await audioEl.isVisible({ timeout: 1_000 }).catch(() => false);
+    expect(titleVisible || audioVisible).toBe(true);
   });
 });
 
@@ -100,23 +102,23 @@ test.describe('Lyria — Error handling (mocked)', () => {
     const pageErrors: string[] = [];
     page.on('pageerror', (e) => pageErrors.push(e.message));
 
-    const found = await navigateToLyriaPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToLyriaPanel(page);
 
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
-    if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      await page.waitForTimeout(2_000);
-      expect(pageErrors).toHaveLength(0);
-      // An error indicator should be visible (not a blank/crashed UI)
-      const errorIndicator = page
-        .locator('[role="alert"], [class*="error"], text=/erreur|error|unavailable/i')
-        .first();
-      if (await errorIndicator.isVisible({ timeout: 5_000 })) {
-        await expect(errorIndicator).toBeVisible();
-      }
-    } else {
-      test.skip();
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/lyria/generate**'),
+      generateBtn.click(),
+    ]);
+    await response.finished();
+
+    expect(pageErrors).toHaveLength(0);
+    const errorIndicator = page
+      .locator('[role="alert"], [class*="error"], text=/erreur|error|unavailable/i')
+      .first();
+    if (await errorIndicator.isVisible({ timeout: 5_000 })) {
+      await expect(errorIndicator).toBeVisible();
     }
   });
 
@@ -131,17 +133,18 @@ test.describe('Lyria — Error handling (mocked)', () => {
     const pageErrors: string[] = [];
     page.on('pageerror', (e) => pageErrors.push(e.message));
 
-    const found = await navigateToLyriaPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToLyriaPanel(page);
 
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
-    if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      await page.waitForTimeout(2_000);
-      expect(pageErrors).toHaveLength(0);
-    } else {
-      test.skip();
-    }
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/lyria/generate**'),
+      generateBtn.click(),
+    ]);
+    await response.finished();
+
+    expect(pageErrors).toHaveLength(0);
   });
 });
 
@@ -157,23 +160,21 @@ test.describe('Lyria — UI state', () => {
       });
     });
 
-    const found = await navigateToLyriaPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToLyriaPanel(page);
 
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
-    if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      // Immediately after clicking, button should be disabled or show a loading state
-      const isDisabledOrLoading =
-        (await generateBtn.isDisabled()) ||
-        (await page
-          .locator('[class*="loading"], [aria-label*="loading" i], [data-testid*="loading"]')
-          .first()
-          .isVisible()
-          .catch(() => false));
-      if (!isDisabledOrLoading) test.skip();
-    } else {
-      test.skip();
-    }
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+    await generateBtn.click();
+
+    // Immediately after clicking, button should be disabled or show a loading state
+    const isDisabledOrLoading =
+      (await generateBtn.isDisabled()) ||
+      (await page
+        .locator('[class*="loading"], [aria-label*="loading" i], [data-testid*="loading"]')
+        .first()
+        .isVisible()
+        .catch(() => false));
+    // Loading state is a UI-quality check — skip only if genuinely not implemented
+    if (!isDisabledOrLoading) test.skip();
   });
 });

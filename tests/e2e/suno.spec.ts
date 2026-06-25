@@ -65,10 +65,10 @@ function setupSunoExtendMock(page: Page) {
 
 /**
  * Navigate to the Suno panel.
- * Selector broadened to cover data-testid, aria-label, tab role, and text
- * so the helper is resilient to UI refactors.
+ * Hard-asserts the panel is found — a missing panel is a regression, not a skip.
+ * Selector is intentionally broad to survive UI refactors.
  */
-async function navigateToSunoPanel(page: Page): Promise<boolean> {
+async function navigateToSunoPanel(page: Page): Promise<void> {
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
   const sunoBtn = page
@@ -77,26 +77,27 @@ async function navigateToSunoPanel(page: Page): Promise<boolean> {
     )
     .filter({ hasText: /suno/i })
     .first();
-  if (await sunoBtn.isVisible({ timeout: 5_000 })) {
-    await sunoBtn.click();
-    return true;
-  }
-  return false;
+  await expect(sunoBtn).toBeVisible({ timeout: 8_000 });
+  await sunoBtn.click();
 }
 
 test.describe('Suno — Generation (mocked)', () => {
   test('Suno generate button triggers API and renders audio player', async ({ page }) => {
     await setupSunoGenerateMock(page);
     await setupSunoGetMock(page);
-    const found = await navigateToSunoPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToSunoPanel(page);
 
     const generateBtn = page
       .locator('button')
       .filter({ hasText: /generat|créer|compose|create/i })
       .first();
     await expect(generateBtn).toBeVisible({ timeout: 8_000 });
-    await generateBtn.click();
+
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/suno/generate**'),
+      generateBtn.click(),
+    ]);
+    await response.finished();
 
     const audioEl = page.locator('audio, [data-testid="audio-player"], [class*="player"]').first();
     await expect(audioEl).toBeVisible({ timeout: 12_000 });
@@ -105,23 +106,26 @@ test.describe('Suno — Generation (mocked)', () => {
   test('generated track appears in track list', async ({ page }) => {
     await setupSunoGenerateMock(page);
     await setupSunoGetMock(page);
-    const found = await navigateToSunoPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToSunoPanel(page);
 
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
-    if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      const trackItem = page
-        .locator('[data-testid*="track"], [class*="track"], text=/Mocked Suno Track/i')
-        .first();
-      if (await trackItem.isVisible({ timeout: 10_000 }).catch(() => false)) {
-        await expect(trackItem).toBeVisible();
-      } else {
-        test.skip();
-      }
-    } else {
-      test.skip();
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/suno/generate**'),
+      generateBtn.click(),
+    ]);
+    await response.finished();
+
+    // Track list is an optional UI feature — skip only if the element is genuinely absent
+    const trackItem = page
+      .locator('[data-testid*="track"], [class*="track"], text=/Mocked Suno Track/i')
+      .first();
+    if (!(await trackItem.isVisible({ timeout: 10_000 }).catch(() => false))) {
+      test.skip(); // Track list UI not present in this build
+      return;
     }
+    await expect(trackItem).toBeVisible();
   });
 });
 
@@ -138,19 +142,24 @@ test.describe('Suno — Poll / extend (mocked)', () => {
       });
     });
 
-    const found = await navigateToSunoPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToSunoPanel(page);
 
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
-    if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      // Wait for generate response, then one tick for polling to initialise
-      await page.waitForResponse('**/api/suno/generate**');
-      await page.waitForTimeout(500);
-      if (!pollCalled) test.skip();
-    } else {
-      test.skip();
-    }
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+
+    await generateBtn.click();
+    // Wait for generate response, then for the audio/player element as the
+    // observable post-poll outcome — avoids arbitrary waitForTimeout
+    await page.waitForResponse('**/api/suno/generate**');
+    await page
+      .locator('audio, [data-testid="audio-player"], [class*="player"]')
+      .first()
+      .waitFor({ state: 'visible', timeout: 10_000 })
+      .catch(() => null); // player may not appear if polling is client-side only
+
+    // pollCalled reflects whether the app actually fires /api/suno/get;
+    // skip only if the polling feature is not implemented in this build
+    if (!pollCalled) test.skip();
   });
 
   test('extend action calls /api/suno/extend', async ({ page }) => {
@@ -166,27 +175,25 @@ test.describe('Suno — Poll / extend (mocked)', () => {
       });
     });
 
-    const found = await navigateToSunoPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToSunoPanel(page);
 
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
-    if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      await page.waitForResponse('**/api/suno/generate**');
-      const extendBtn = page.locator('button').filter({ hasText: /extend|prolonger/i }).first();
-      if (await extendBtn.isVisible()) {
-        const [extResp] = await Promise.all([
-          page.waitForResponse('**/api/suno/extend**'),
-          extendBtn.click(),
-        ]);
-        await extResp.finished();
-        expect(extendCalled).toBe(true);
-      } else {
-        test.skip();
-      }
-    } else {
-      test.skip();
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+    await generateBtn.click();
+    await page.waitForResponse('**/api/suno/generate**');
+
+    // Extend button is optional — skip if not present in this build
+    const extendBtn = page.locator('button').filter({ hasText: /extend|prolonger/i }).first();
+    if (!(await extendBtn.isVisible({ timeout: 5_000 }).catch(() => false))) {
+      test.skip(); // Extend feature not available in this build
+      return;
     }
+    const [extResp] = await Promise.all([
+      page.waitForResponse('**/api/suno/extend**'),
+      extendBtn.click(),
+    ]);
+    await extResp.finished();
+    expect(extendCalled).toBe(true);
   });
 });
 
@@ -196,25 +203,23 @@ test.describe('Suno — Error handling (mocked)', () => {
     const pageErrors: string[] = [];
     page.on('pageerror', (e) => pageErrors.push(e.message));
 
-    const found = await navigateToSunoPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToSunoPanel(page);
 
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
-    if (await generateBtn.isVisible()) {
-      const [response] = await Promise.all([
-        page.waitForResponse('**/api/suno/generate**'),
-        generateBtn.click(),
-      ]);
-      await response.finished();
-      expect(pageErrors).toHaveLength(0);
-      const errorIndicator = page
-        .locator('[role="alert"], [class*="error"], text=/erreur|error|unavailable/i')
-        .first();
-      if (await errorIndicator.isVisible({ timeout: 5_000 })) {
-        await expect(errorIndicator).toBeVisible();
-      }
-    } else {
-      test.skip();
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/suno/generate**'),
+      generateBtn.click(),
+    ]);
+    await response.finished();
+    expect(pageErrors).toHaveLength(0);
+
+    const errorIndicator = page
+      .locator('[role="alert"], [class*="error"], text=/erreur|error|unavailable/i')
+      .first();
+    if (await errorIndicator.isVisible({ timeout: 5_000 })) {
+      await expect(errorIndicator).toBeVisible();
     }
   });
 
@@ -223,22 +228,20 @@ test.describe('Suno — Error handling (mocked)', () => {
     const pageErrors: string[] = [];
     page.on('pageerror', (e) => pageErrors.push(e.message));
 
-    const found = await navigateToSunoPanel(page);
-    if (!found) { test.skip(); return; }
+    await navigateToSunoPanel(page);
 
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
-    if (await generateBtn.isVisible()) {
-      await generateBtn.click();
-      const loadingEl = page
-        .locator('[class*="loading"], [aria-busy="true"], [data-testid*="loading"]')
-        .first();
-      const isLoading = await loadingEl.isVisible({ timeout: 800 }).catch(() => false);
-      // Wait for the slow mock to resolve instead of a fixed timeout
-      await page.waitForResponse('**/api/suno/generate**');
-      expect(pageErrors).toHaveLength(0);
-      if (!isLoading) test.skip();
-    } else {
-      test.skip();
-    }
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+    await generateBtn.click();
+
+    const loadingEl = page
+      .locator('[class*="loading"], [aria-busy="true"], [data-testid*="loading"]')
+      .first();
+    const isLoading = await loadingEl.isVisible({ timeout: 800 }).catch(() => false);
+    // Wait for the slow mock to resolve via network event — no fixed timeout
+    await page.waitForResponse('**/api/suno/generate**');
+    expect(pageErrors).toHaveLength(0);
+    // Loading state is a UI-quality check — skip only if genuinely not implemented
+    if (!isLoading) test.skip();
   });
 });
