@@ -31,13 +31,16 @@ export type LocalRhymeSectionAnalysis = {
 };
 
 export interface RhymeGroup {
+  /** Representative suffix shared by all lines in the group. */
   suffix: string;
+  /** 0-based indices into the lyric-only lines array passed to buildRhymeGroups. */
   lineIndices: number[];
 }
 
 export interface RhymeOverlaySegment {
   before: string;
   rhyme: string;
+  /** Structural position resolved by segmentVerseToRhymingUnit (Step-0). */
   position: 'end' | 'internal' | 'enjambed';
 }
 
@@ -137,11 +140,17 @@ export const buildRhymeOverlays = (
   });
 };
 
+/**
+ * Maps a 0-based group index to a rhyme-scheme label.
+ * 'X' is intentionally excluded from the alphabet (it is the sole convention
+ * for non-rhyming lines). Groups 0-24 → A-W Y Z, then A1 B1 … for overflow.
+ */
 const formatRhymeLabel = (index: number): string => {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  // 25-letter alphabet — 'X' reserved as the non-rhyming marker
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWYZ';
   if (index < alphabet.length) return alphabet[index]!;
-  const suffix = Math.floor(index / alphabet.length);
-  return `${alphabet[index % alphabet.length]!}${suffix}`;
+  const cycle = Math.floor(index / alphabet.length);
+  return `${alphabet[index % alphabet.length]!}${cycle}`;
 };
 
 export const buildRhymeScheme = (lineCount: number, groups: RhymeGroup[]): string | null => {
@@ -306,7 +315,7 @@ export const analyzeSongRhymes = async (
         _lyricLines: lyricLines,
         _segmented: segmented,
       };
-    } catch {
+    } catch (_e) { /* best-effort: IPA pipeline not critical, fall back to graphemic */
       return {
         sectionId: section.id,
         sectionName: section.name,
@@ -368,8 +377,7 @@ export const analyzeSongRhymes = async (
             });
           }
         }
-      } catch {
-      }
+      } catch (_e) { /* best-effort: cross-section boundary detection not critical */ }
     }
   }
 
