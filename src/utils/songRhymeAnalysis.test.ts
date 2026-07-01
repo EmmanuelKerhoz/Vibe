@@ -159,7 +159,7 @@ describe('analyzeSongRhymes', () => {
         distance: 0.2,
         method: 'feature-weighted',
         isApproximated: true,
-      } as never);
+      });
 
     const song = [
       makeSection('section-a', 'Verse 1', 'fr', [

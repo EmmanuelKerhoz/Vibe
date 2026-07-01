@@ -1,6 +1,7 @@
 import { languageNameToCode, getAlgoFamily } from '../constants/langFamilyMap';
 import type { Section } from '../types';
 import { compareTextsWithIPA } from './ipaPipeline';
+import type { RhymeSimilarityResult } from './ipaUtils';
 import { detectRhymeSchemeFromIPAPairs, detectRhymeSchemeLocally } from './rhymeSchemeUtils';
 import {
   doLinesRhymeGraphemic,
@@ -52,7 +53,7 @@ export interface SectionRhymeAnalysis {
 
 const NATIVE_G2P_FAMILIES = new Set(['ALGO-ROM', 'ALGO-GER', 'ALGO-KWA', 'ALGO-CRV', 'ALGO-SEM']);
 
-const toPairConfidenceScore = (similarity: { score?: number; isApproximated?: boolean }) => {
+const toPairConfidenceScore = (similarity: RhymeSimilarityResult) => {
   const baseScore = typeof similarity.score === 'number' ? similarity.score : 0;
   const adjustedScore = similarity.isApproximated ? baseScore * 0.85 : baseScore;
   return Math.round(adjustedScore * 1000) / 10;
@@ -267,9 +268,9 @@ export const analyzeSongRhymes = async (
             lineIndexes: [firstIndex, secondIndex],
             lines: [first.rawText, second.rawText],
             quality: similarity.quality,
-            confidenceScore: toPairConfidenceScore(similarity as { score?: number; isApproximated?: boolean }),
+            confidenceScore: toPairConfidenceScore(similarity),
             usedIpa: true,
-            isApproximated: Boolean((similarity as { isApproximated?: boolean }).isApproximated),
+            isApproximated: Boolean(similarity.isApproximated),
             rhymePosition: first.position,
             ...(isCrossFamily && { crossFamily: true }),
           });
@@ -356,9 +357,9 @@ export const analyzeSongRhymes = async (
             lineIndexes: [current._lyricLines.length - 1, -1],
             lines: [lastLine, firstLine],
             quality: similarity.quality,
-            confidenceScore: toPairConfidenceScore(similarity as { score?: number; isApproximated?: boolean }),
+            confidenceScore: toPairConfidenceScore(similarity),
             usedIpa: true,
-            isApproximated: Boolean((similarity as { isApproximated?: boolean }).isApproximated),
+            isApproximated: Boolean(similarity.isApproximated),
             crossSection: true,
             rhymePosition: lastSeg?.position ?? 'end',
             ...(isCrossFamily && { crossFamily: true }),
