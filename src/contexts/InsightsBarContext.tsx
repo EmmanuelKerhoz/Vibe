@@ -52,18 +52,23 @@ export function InsightsBarProvider({
   children,
   value,
 }: { children: ReactNode; value: InsightsBarContextValue }) {
-  const actionsValue = useMemo<InsightsBarActionsContextValue>(() => ({
-    setTargetLanguage: value.setTargetLanguage,
-    adaptSongLanguage: value.adaptSongLanguage,
-    detectLanguage: value.detectLanguage,
-    analyzeCurrentSong: value.analyzeCurrentSong,
-    editMode: value.editMode,
-    switchEditMode: value.switchEditMode,
-    setIsSimilarityModalOpen: value.setIsSimilarityModalOpen,
-    onOpenSearch: value.onOpenSearch,
-    onToggleAnalysisPanel: value.onToggleAnalysisPanel,
-    ...(value.toggleMetronome ? { toggleMetronome: value.toggleMetronome } : {}),
-  }), [
+  const actionsValue = useMemo<InsightsBarActionsContextValue>(() => {
+    const nextValue: InsightsBarActionsContextValue = {
+      setTargetLanguage: value.setTargetLanguage,
+      adaptSongLanguage: value.adaptSongLanguage,
+      detectLanguage: value.detectLanguage,
+      analyzeCurrentSong: value.analyzeCurrentSong,
+      editMode: value.editMode,
+      switchEditMode: value.switchEditMode,
+      setIsSimilarityModalOpen: value.setIsSimilarityModalOpen,
+      onOpenSearch: value.onOpenSearch,
+      onToggleAnalysisPanel: value.onToggleAnalysisPanel,
+    };
+    if (value.toggleMetronome) {
+      nextValue.toggleMetronome = value.toggleMetronome;
+    }
+    return nextValue;
+  }, [
     value.setTargetLanguage,
     value.adaptSongLanguage,
     value.detectLanguage,
@@ -76,19 +81,24 @@ export function InsightsBarProvider({
     value.toggleMetronome,
   ]);
 
-  const stateValue = useMemo<InsightsBarStateContextValue>(() => ({
-    targetLanguage: value.targetLanguage,
-    isAdaptingLanguage: value.isAdaptingLanguage,
-    isDetectingLanguage: value.isDetectingLanguage,
-    adaptationProgress: value.adaptationProgress,
-    adaptationResult: value.adaptationResult,
-    isAnalyzing: value.isAnalyzing,
-    webBadgeLabel: value.webBadgeLabel,
-    libraryCount: value.libraryCount,
-    isAnalysisPanelOpen: value.isAnalysisPanelOpen,
-    hasApiKey: value.hasApiKey,
-    ...(value.isMetronomeActive !== undefined ? { isMetronomeActive: value.isMetronomeActive } : {}),
-  }), [
+  const stateValue = useMemo<InsightsBarStateContextValue>(() => {
+    const nextValue: InsightsBarStateContextValue = {
+      targetLanguage: value.targetLanguage,
+      isAdaptingLanguage: value.isAdaptingLanguage,
+      isDetectingLanguage: value.isDetectingLanguage,
+      adaptationProgress: value.adaptationProgress,
+      adaptationResult: value.adaptationResult,
+      isAnalyzing: value.isAnalyzing,
+      webBadgeLabel: value.webBadgeLabel,
+      libraryCount: value.libraryCount,
+      isAnalysisPanelOpen: value.isAnalysisPanelOpen,
+      hasApiKey: value.hasApiKey,
+    };
+    if (value.isMetronomeActive !== undefined) {
+      nextValue.isMetronomeActive = value.isMetronomeActive;
+    }
+    return nextValue;
+  }, [
     value.targetLanguage,
     value.isAdaptingLanguage,
     value.isDetectingLanguage,

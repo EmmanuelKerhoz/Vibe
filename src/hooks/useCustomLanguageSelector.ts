@@ -62,6 +62,11 @@ export function useCustomLanguageSelector({
     [],
   );
 
+  const selectValue = useMemo(
+    () => (showCustomInput ? CUSTOM_LANGUAGE_VALUE : migrateAdaptationToLangId(storedValue)),
+    [showCustomInput, storedValue],
+  );
+
   const handleLanguageSelect = (value: string) => {
     if (value === CUSTOM_LANGUAGE_VALUE) {
       setShowCustomInput(true);
@@ -79,7 +84,7 @@ export function useCustomLanguageSelector({
   };
 
   return {
-    selectValue: showCustomInput ? CUSTOM_LANGUAGE_VALUE : migrateAdaptationToLangId(storedValue),
+    selectValue,
     customText,
     setCustomText,
     customInputRef,
