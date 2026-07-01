@@ -293,6 +293,7 @@ test.describe('Suno — Error handling (mocked)', () => {
     const malformedCases: { name: string; payload: Record<string, unknown> }[] = [
       { name: 'missing prompt entirely', payload: { style: 'pop' } },
       { name: 'empty prompt', payload: { prompt: '' } },
+      { name: 'null prompt', payload: { prompt: null } },
       { name: 'wrong type for prompt', payload: { prompt: 123 } },
     ];
 
