@@ -74,9 +74,11 @@ export function StageOverlay({
   const lastVolumeRef = useRef(volume > 0 ? volume : 1);
   useEffect(() => { if (volume > 0) lastVolumeRef.current = volume; }, [volume]);
 
+  // Seek range upper bound — falls back gracefully while duration is unknown.
+  const seekMax = duration > 0 ? duration : Math.max(1, currentTime);
+
   const skip = (delta: number) => {
-    const max = duration > 0 ? duration : currentTime + Math.max(0, delta);
-    onSeek(Math.max(0, Math.min(max, currentTime + delta)));
+    onSeek(Math.max(0, Math.min(seekMax, currentTime + delta)));
   };
 
   return (
@@ -108,7 +110,7 @@ export function StageOverlay({
 
       {/* Bottom bar — seek, time display and volume cursor */}
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, padding: '0 12px 8px' }}>
-        <input type="range" min={0} max={duration || 1} step={0.1} value={Math.min(currentTime, duration || currentTime)}
+        <input type="range" min={0} max={seekMax} step={0.1} value={Math.min(currentTime, seekMax)}
           onChange={e => onSeek(Number(e.target.value))} aria-label="Seek"
           style={{ width: '100%', accentColor: LCARS.peach, cursor: 'pointer', height: 4 }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
