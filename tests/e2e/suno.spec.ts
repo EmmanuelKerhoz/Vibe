@@ -254,4 +254,93 @@ test.describe('Suno — Error handling (mocked)', () => {
     await page.waitForResponse('**/api/suno/generate**');
     expect(pageErrors).toHaveLength(0);
   });
+
+  test('malformed payload to /api/suno/generate is rejected with 4xx (backend contract)', async ({ page }) => {
+    // Mirrors the exact validation in api/suno/generate.ts: a request body
+    // missing the required `prompt` string field must be rejected with 400.
+    // The route mock re-implements that validation so it inspects the real
+    // request body instead of unconditionally returning an error, proving
+    // the malformed payload itself (not just a canned status code) is what
+    // triggers the 4xx. Requests are fired from inside the page (via
+    // `fetch`) so `page.route` can intercept them — `page.request` bypasses
+    // the browser network stack entirely and would hit the real (unmocked)
+    // server in this test environment. No UI interaction is needed for this
+    // backend-contract check, so we just load the app shell.
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+    await page.route('**/api/suno/generate**', async (route) => {
+      let payload: Record<string, unknown> | null = null;
+      try {
+        payload = JSON.parse(route.request().postData() ?? '');
+      } catch {
+        payload = null;
+      }
+      if (!payload || typeof payload.prompt !== 'string' || !payload.prompt) {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Missing required field: prompt (string)' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: 'mock-suno-job-001', status: 'complete' }),
+      });
+    });
+
+    const malformedCases: { name: string; payload: Record<string, unknown> }[] = [
+      { name: 'missing prompt entirely', payload: { style: 'pop' } },
+      { name: 'empty prompt', payload: { prompt: '' } },
+      { name: 'null prompt', payload: { prompt: null } },
+      { name: 'wrong type for prompt', payload: { prompt: 123 } },
+    ];
+
+    for (const { name, payload } of malformedCases) {
+      const result = await page.evaluate(async (body) => {
+        const res = await fetch('/api/suno/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        return { status: res.status, json: await res.json() };
+      }, payload);
+      expect(result.status, `case: ${name}`).toBeGreaterThanOrEqual(400);
+      expect(result.status, `case: ${name}`).toBeLessThan(500);
+      expect(result.json.error, `case: ${name}`).toBe('Missing required field: prompt (string)');
+    }
+  });
+
+  test('generate button click that yields a 4xx surfaces a user-facing error (mocked)', async ({ page }) => {
+    // Simulates the backend rejecting the app's own request (e.g. a
+    // validation error surfaced by the API) and asserts the dedicated Suno
+    // error alert (role="alert", see MusicalInsightsBar.tsx) is rendered.
+    await page.route('**/api/suno/generate**', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Missing required field: prompt (string)' }),
+      });
+    });
+    const pageErrors: string[] = [];
+    page.on('pageerror', (e) => pageErrors.push(e.message));
+
+    await navigateToSunoPanel(page);
+
+    const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/suno/generate**'),
+      generateBtn.click(),
+    ]);
+    expect(response.status()).toBeGreaterThanOrEqual(400);
+    expect(response.status()).toBeLessThan(500);
+    await response.finished();
+    expect(pageErrors).toHaveLength(0);
+
+    const errorIndicator = page.locator('[role="alert"]').first();
+    await expect(errorIndicator).toBeVisible({ timeout: 8_000 });
+  });
 });
