@@ -117,15 +117,14 @@ test.describe('Suno — Generation (mocked)', () => {
     ]);
     await response.finished();
 
-    // Track list is an optional UI feature — skip only if the element is genuinely absent
+    // Track list is a required post-generation affordance, not an optional
+    // probe: a successful mocked generation must surface the track. Asserting
+    // directly (instead of skipping when the probe times out) turns a missing
+    // element into a hard failure rather than a silently-hidden regression.
     const trackItem = page
       .locator('[data-testid*="track"], [class*="track"], text=/Mocked Suno Track/i')
       .first();
-    if (!(await trackItem.isVisible({ timeout: 10_000 }).catch(() => false))) {
-      test.skip(); // Track list UI not present in this build
-      return;
-    }
-    await expect(trackItem).toBeVisible();
+    await expect(trackItem).toBeVisible({ timeout: 10_000 });
   });
 });
 
@@ -147,19 +146,30 @@ test.describe('Suno — Poll / extend (mocked)', () => {
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
     await expect(generateBtn).toBeVisible({ timeout: 8_000 });
 
-    await generateBtn.click();
-    // Wait for generate response, then for the audio/player element as the
-    // observable post-poll outcome — avoids arbitrary waitForTimeout
-    await page.waitForResponse('**/api/suno/generate**');
-    await page
-      .locator('audio, [data-testid="audio-player"], [class*="player"]')
-      .first()
-      .waitFor({ state: 'visible', timeout: 10_000 })
-      .catch(() => null); // player may not appear if polling is client-side only
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/suno/generate**'),
+      generateBtn.click(),
+    ]);
+    await response.finished();
 
-    // pollCalled reflects whether the app actually fires /api/suno/get;
-    // skip only if the polling feature is not implemented in this build
-    if (!pollCalled) test.skip();
+    // Wait for the audio/player element as the observable post-poll outcome —
+    // avoids arbitrary waitForTimeout. If it never appears, only tolerate that
+    // when polling didn't fire either (feature not implemented in this build);
+    // otherwise rethrow as a real failure below.
+    try {
+      await page
+        .locator('audio, [data-testid="audio-player"], [class*="player"]')
+        .first()
+        .waitFor({ state: 'visible', timeout: 10_000 });
+    } catch (err) {
+      if (pollCalled) throw err;
+    }
+
+    // pollCalled reflects whether the app actually fires /api/suno/get after a
+    // successful generate response; the mocked generate response guarantees
+    // this must happen, so asserting directly turns a missing poll call into
+    // a hard failure instead of a silently-skipped test.
+    expect(pollCalled).toBe(true);
   });
 
   test('extend action calls /api/suno/extend', async ({ page }) => {
@@ -182,12 +192,11 @@ test.describe('Suno — Poll / extend (mocked)', () => {
     await generateBtn.click();
     await page.waitForResponse('**/api/suno/generate**');
 
-    // Extend button is optional — skip if not present in this build
+    // Extend is a required post-generation action, not optional UI: assert
+    // its presence directly so a missing button fails the test instead of
+    // being silently skipped.
     const extendBtn = page.locator('button').filter({ hasText: /extend|prolonger/i }).first();
-    if (!(await extendBtn.isVisible({ timeout: 5_000 }).catch(() => false))) {
-      test.skip(); // Extend feature not available in this build
-      return;
-    }
+    await expect(extendBtn).toBeVisible({ timeout: 5_000 });
     const [extResp] = await Promise.all([
       page.waitForResponse('**/api/suno/extend**'),
       extendBtn.click(),
@@ -237,11 +246,12 @@ test.describe('Suno — Error handling (mocked)', () => {
     const loadingEl = page
       .locator('[class*="loading"], [aria-busy="true"], [data-testid*="loading"]')
       .first();
-    const isLoading = await loadingEl.isVisible({ timeout: 800 }).catch(() => false);
+    // A slow (1.2s) mocked response guarantees the loading state must be
+    // observable before it resolves — assert directly instead of skipping
+    // when the probe times out, so a missing loading indicator fails loudly.
+    await expect(loadingEl).toBeVisible({ timeout: 800 });
     // Wait for the slow mock to resolve via network event — no fixed timeout
     await page.waitForResponse('**/api/suno/generate**');
     expect(pageErrors).toHaveLength(0);
-    // Loading state is a UI-quality check — skip only if genuinely not implemented
-    if (!isLoading) test.skip();
   });
 });

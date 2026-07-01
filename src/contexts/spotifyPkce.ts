@@ -14,13 +14,17 @@ import { z } from 'zod';
 // Constants
 // ---------------------------------------------------------------------------
 
-const _rawClientId = (import.meta.env.VITE_SPOTIFY_CLIENT_ID as string | undefined)?.trim() ?? '';
-export const CLIENT_ID: string = _rawClientId;
 export const SPOTIFY_CLIENT_ID_ERROR =
-  '[Spotify] VITE_SPOTIFY_CLIENT_ID is not set. Add it to your .env file (see .env.example).';
+  '[Spotify] VITE_SPOTIFY_CLIENT_ID is not set. ' +
+  'Add it to your .env file (see .env.example).';
+
+export const CLIENT_ID = (import.meta.env.VITE_SPOTIFY_CLIENT_ID as string | undefined)?.trim() ?? '';
+export const isSpotifyConfigured = (): boolean => CLIENT_ID.length > 0;
 
 export function assertSpotifyConfigured(): void {
-  if (!CLIENT_ID) throw new Error(SPOTIFY_CLIENT_ID_ERROR);
+  if (!isSpotifyConfigured()) {
+    throw new Error(SPOTIFY_CLIENT_ID_ERROR);
+  }
 }
 
 export const REDIRECT_URI = (() => {
