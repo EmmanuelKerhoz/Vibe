@@ -29,6 +29,7 @@ import React, {
 import type { SpotifyAuthState } from '../types/spotify';
 import {
   exchangeCode,
+  SPOTIFY_CLIENT_ID_ERROR,
   generateCodeChallenge,
   generateRandomString,
   storeGet,
@@ -145,6 +146,10 @@ export function SpotifyAuthProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const login = useCallback(async (): Promise<void> => {
+    if (!CLIENT_ID) {
+      setState({ status: 'error', accessToken: null, expiresAt: null, error: SPOTIFY_CLIENT_ID_ERROR });
+      return;
+    }
     setState(prev => ({ ...prev, status: 'authenticating', error: null }));
     const oauthState = generateRandomString(16);
     const verifier = generateRandomString(64);

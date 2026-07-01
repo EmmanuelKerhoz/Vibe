@@ -14,14 +14,14 @@ import { z } from 'zod';
 // Constants
 // ---------------------------------------------------------------------------
 
-const _rawClientId = (import.meta.env.VITE_SPOTIFY_CLIENT_ID as string | undefined)?.trim();
-if (!_rawClientId) {
-  throw new Error(
-    '[Spotify] VITE_SPOTIFY_CLIENT_ID is not set. ' +
-    'Add it to your .env file (see .env.example).'
-  );
-}
+const _rawClientId = (import.meta.env.VITE_SPOTIFY_CLIENT_ID as string | undefined)?.trim() ?? '';
 export const CLIENT_ID: string = _rawClientId;
+export const SPOTIFY_CLIENT_ID_ERROR =
+  '[Spotify] VITE_SPOTIFY_CLIENT_ID is not set. Add it to your .env file (see .env.example).';
+
+export function assertSpotifyConfigured(): void {
+  if (!CLIENT_ID) throw new Error(SPOTIFY_CLIENT_ID_ERROR);
+}
 
 export const REDIRECT_URI = (() => {
   if (typeof window === 'undefined') return '';
@@ -124,6 +124,7 @@ export async function exchangeCode(code: string, verifier: string): Promise<{
   refresh_token: string;
   expires_in: number;
 }> {
+  assertSpotifyConfigured();
   const res = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -144,6 +145,7 @@ export async function doRefresh(refreshToken: string): Promise<{
   refresh_token?: string;
   expires_in: number;
 }> {
+  assertSpotifyConfigured();
   const res = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
