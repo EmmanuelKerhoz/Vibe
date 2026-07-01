@@ -26,6 +26,7 @@ export interface InsightsBarActionsContextValue {
   setIsSimilarityModalOpen: (v: boolean) => void;
   onOpenSearch: () => void;
   onToggleAnalysisPanel: () => void;
+  toggleMetronome?: () => void;
 }
 
 export interface InsightsBarStateContextValue {
@@ -39,6 +40,7 @@ export interface InsightsBarStateContextValue {
   libraryCount: number;
   isAnalysisPanelOpen: boolean;
   hasApiKey: boolean;
+  isMetronomeActive?: boolean;
 }
 
 export interface InsightsBarContextValue extends InsightsBarActionsContextValue, InsightsBarStateContextValue {}
@@ -50,17 +52,23 @@ export function InsightsBarProvider({
   children,
   value,
 }: { children: ReactNode; value: InsightsBarContextValue }) {
-  const actionsValue = useMemo<InsightsBarActionsContextValue>(() => ({
-    setTargetLanguage: value.setTargetLanguage,
-    adaptSongLanguage: value.adaptSongLanguage,
-    detectLanguage: value.detectLanguage,
-    analyzeCurrentSong: value.analyzeCurrentSong,
-    editMode: value.editMode,
-    switchEditMode: value.switchEditMode,
-    setIsSimilarityModalOpen: value.setIsSimilarityModalOpen,
-    onOpenSearch: value.onOpenSearch,
-    onToggleAnalysisPanel: value.onToggleAnalysisPanel,
-  }), [
+  const actionsValue = useMemo<InsightsBarActionsContextValue>(() => {
+    const nextValue: InsightsBarActionsContextValue = {
+      setTargetLanguage: value.setTargetLanguage,
+      adaptSongLanguage: value.adaptSongLanguage,
+      detectLanguage: value.detectLanguage,
+      analyzeCurrentSong: value.analyzeCurrentSong,
+      editMode: value.editMode,
+      switchEditMode: value.switchEditMode,
+      setIsSimilarityModalOpen: value.setIsSimilarityModalOpen,
+      onOpenSearch: value.onOpenSearch,
+      onToggleAnalysisPanel: value.onToggleAnalysisPanel,
+    };
+    if (value.toggleMetronome) {
+      nextValue.toggleMetronome = value.toggleMetronome;
+    }
+    return nextValue;
+  }, [
     value.setTargetLanguage,
     value.adaptSongLanguage,
     value.detectLanguage,
@@ -70,20 +78,27 @@ export function InsightsBarProvider({
     value.setIsSimilarityModalOpen,
     value.onOpenSearch,
     value.onToggleAnalysisPanel,
+    value.toggleMetronome,
   ]);
 
-  const stateValue = useMemo<InsightsBarStateContextValue>(() => ({
-    targetLanguage: value.targetLanguage,
-    isAdaptingLanguage: value.isAdaptingLanguage,
-    isDetectingLanguage: value.isDetectingLanguage,
-    adaptationProgress: value.adaptationProgress,
-    adaptationResult: value.adaptationResult,
-    isAnalyzing: value.isAnalyzing,
-    webBadgeLabel: value.webBadgeLabel,
-    libraryCount: value.libraryCount,
-    isAnalysisPanelOpen: value.isAnalysisPanelOpen,
-    hasApiKey: value.hasApiKey,
-  }), [
+  const stateValue = useMemo<InsightsBarStateContextValue>(() => {
+    const nextValue: InsightsBarStateContextValue = {
+      targetLanguage: value.targetLanguage,
+      isAdaptingLanguage: value.isAdaptingLanguage,
+      isDetectingLanguage: value.isDetectingLanguage,
+      adaptationProgress: value.adaptationProgress,
+      adaptationResult: value.adaptationResult,
+      isAnalyzing: value.isAnalyzing,
+      webBadgeLabel: value.webBadgeLabel,
+      libraryCount: value.libraryCount,
+      isAnalysisPanelOpen: value.isAnalysisPanelOpen,
+      hasApiKey: value.hasApiKey,
+    };
+    if (value.isMetronomeActive !== undefined) {
+      nextValue.isMetronomeActive = value.isMetronomeActive;
+    }
+    return nextValue;
+  }, [
     value.targetLanguage,
     value.isAdaptingLanguage,
     value.isDetectingLanguage,
@@ -94,6 +109,7 @@ export function InsightsBarProvider({
     value.libraryCount,
     value.isAnalysisPanelOpen,
     value.hasApiKey,
+    value.isMetronomeActive,
   ]);
 
   return (

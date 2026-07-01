@@ -3,8 +3,8 @@ import { Tooltip } from '../../ui/Tooltip';
 import { useTranslation } from '../../../i18n';
 
 interface MetronomeButtonProps {
-  isMetronomeActive?: boolean;
-  toggleMetronome?: () => void;
+  isMetronomeActive?: boolean | undefined;
+  toggleMetronome?: (() => void) | undefined;
 }
 
 export function MetronomeButton({ isMetronomeActive, toggleMetronome }: MetronomeButtonProps) {

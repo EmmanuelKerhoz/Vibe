@@ -146,15 +146,24 @@ test.describe('Suno — Poll / extend (mocked)', () => {
     const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
     await expect(generateBtn).toBeVisible({ timeout: 8_000 });
 
-    await generateBtn.click();
-    // Wait for generate response, then for the audio/player element as the
-    // observable post-poll outcome — avoids arbitrary waitForTimeout
-    await page.waitForResponse('**/api/suno/generate**');
-    await page
-      .locator('audio, [data-testid="audio-player"], [class*="player"]')
-      .first()
-      .waitFor({ state: 'visible', timeout: 10_000 })
-      .catch(() => null); // player may not appear if polling is client-side only
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/suno/generate**'),
+      generateBtn.click(),
+    ]);
+    await response.finished();
+
+    // Wait for the audio/player element as the observable post-poll outcome —
+    // avoids arbitrary waitForTimeout. If it never appears, only tolerate that
+    // when polling didn't fire either (feature not implemented in this build);
+    // otherwise rethrow as a real failure below.
+    try {
+      await page
+        .locator('audio, [data-testid="audio-player"], [class*="player"]')
+        .first()
+        .waitFor({ state: 'visible', timeout: 10_000 });
+    } catch (err) {
+      if (pollCalled) throw err;
+    }
 
     // pollCalled reflects whether the app actually fires /api/suno/get after a
     // successful generate response; the mocked generate response guarantees
