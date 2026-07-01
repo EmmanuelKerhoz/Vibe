@@ -14,7 +14,7 @@ import { z } from 'zod';
 // Constants
 // ---------------------------------------------------------------------------
 
-export const SPOTIFY_CLIENT_ID_ERROR =
+const SPOTIFY_CLIENT_ID_ERROR =
   '[Spotify] VITE_SPOTIFY_CLIENT_ID is not set. ' +
   'Add it to your .env file (see .env.example).';
 
