@@ -254,4 +254,39 @@ test.describe('Suno — Error handling (mocked)', () => {
     await page.waitForResponse('**/api/suno/generate**');
     expect(pageErrors).toHaveLength(0);
   });
+
+  test('malformed payload to /api/suno/generate returns 4xx and surfaces a user-facing error', async ({ page }) => {
+    // Real API validation (api/suno/generate.ts) rejects a request whose body
+    // is missing the required `prompt` string field with a 400. Mock that
+    // exact contract here instead of the happy-path mock so the app's error
+    // handling for a schema-violating payload is exercised end-to-end.
+    await page.route('**/api/suno/generate**', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Missing required field: prompt (string)' }),
+      });
+    });
+    const pageErrors: string[] = [];
+    page.on('pageerror', (e) => pageErrors.push(e.message));
+
+    await navigateToSunoPanel(page);
+
+    const generateBtn = page.locator('button').filter({ hasText: /generat|créer/i }).first();
+    await expect(generateBtn).toBeVisible({ timeout: 8_000 });
+
+    const [response] = await Promise.all([
+      page.waitForResponse('**/api/suno/generate**'),
+      generateBtn.click(),
+    ]);
+    expect(response.status()).toBeGreaterThanOrEqual(400);
+    expect(response.status()).toBeLessThan(500);
+    await response.finished();
+    expect(pageErrors).toHaveLength(0);
+
+    const errorIndicator = page
+      .locator('[role="alert"], [class*="error"], text=/erreur|error|missing|invalid|required/i')
+      .first();
+    await expect(errorIndicator).toBeVisible({ timeout: 8_000 });
+  });
 });
