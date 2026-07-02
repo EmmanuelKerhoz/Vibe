@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Section } from '../types';
+import type { EditMode } from '../types';
 import { useAiGeneration } from './composer/useAiGeneration';
 import { useSuggestions } from './composer/useSuggestions';
 import { useLineEditor } from './composer/useLineEditor';
@@ -33,6 +34,7 @@ type UseSongComposerParams = {
   updateSongWithHistory: (newSong: Section[]) => void;
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   requestAutoTitleGeneration: () => void;
+  setEditMode?: (mode: EditMode) => void;
 };
 
 export const useSongComposer = ({
@@ -63,6 +65,7 @@ export const useSongComposer = ({
   updateSongWithHistory,
   updateSongAndStructureWithHistory,
   requestAutoTitleGeneration,
+  setEditMode,
 }: UseSongComposerParams) => {
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
 
@@ -95,6 +98,7 @@ export const useSongComposer = ({
       updateSongAndStructureWithHistory,
       requestAutoTitleGeneration,
       setSelectedLineId,
+      ...(setEditMode !== undefined ? { setEditMode } : {}),
     });
 
   const {
