@@ -26,6 +26,7 @@ import {
   RHYME_ENFORCEMENT_RULES,
   GENERATION_SCHEMA,
 } from './useAiGeneration.parsers';
+import type { EditMode } from '../../types';
 
 
 type UseAiGenerationParams = {
@@ -45,6 +46,7 @@ type UseAiGenerationParams = {
   updateSongAndStructureWithHistory: (newSong: Section[], newStructure: string[]) => void;
   requestAutoTitleGeneration: () => void;
   setSelectedLineId: (id: string | null) => void;
+  setEditMode?: (mode: EditMode) => void;
 };
 
 export const useAiGeneration = ({
@@ -62,6 +64,7 @@ export const useAiGeneration = ({
   updateSongAndStructureWithHistory,
   requestAutoTitleGeneration,
   setSelectedLineId,
+  setEditMode,
 }: UseAiGenerationParams) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [regeneratingSections, setRegeneratingSections] = useState<Set<string>>(new Set());
@@ -108,6 +111,7 @@ export const useAiGeneration = ({
 
   const generateSong = useCallback(async () => {
     setIsGenerating(true);
+    setEditMode?.('section');
     try {
       await withAbort(generateAbortRef, async (signal) => {
         const lang = sanitizeForPrompt(latestSongLanguageRef.current || 'English', { maxLength: 64 });
@@ -166,6 +170,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
         updateSongAndStructureWithHistory(orderedSong, structure);
         requestAutoTitleGeneration();
         setSelectedLineId(null);
+        setEditMode?.('section');
       });
     } catch (error: unknown) {
       if (isAbortError(error)) return;
@@ -175,7 +180,7 @@ For each line, provide the lyric text (in ${lang}), the rhyming syllables, the r
     }
   }, [
     structure,
-    updateSongAndStructureWithHistory, requestAutoTitleGeneration, setSelectedLineId,
+    updateSongAndStructureWithHistory, requestAutoTitleGeneration, setSelectedLineId, setEditMode,
   ]);
 
   const regenerateSection = useCallback(async (sectionId: string, overrides?: { rhymeScheme?: string }) => {

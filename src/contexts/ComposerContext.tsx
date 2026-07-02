@@ -67,6 +67,7 @@ export function ComposerProvider({ children }: { children: ReactNode }) {
     updateSongWithHistory,
     updateSongAndStructureWithHistory,
     requestAutoTitleGeneration: () => setShouldAutoGenerateTitle(true),
+    setEditMode: appState.setEditMode,
   });
 
   return (
