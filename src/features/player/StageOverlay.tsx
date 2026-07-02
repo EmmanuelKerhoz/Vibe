@@ -24,7 +24,7 @@ export interface StageOverlayProps extends StageOverlayBindings {
   isPlaying: boolean;
 }
 
-function formatTime(s: number): string {
+export function formatTime(s: number): string {
   if (!isFinite(s) || s < 0) return '0:00';
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
@@ -76,6 +76,8 @@ export function StageOverlay({
 
   // Seek range upper bound — falls back gracefully while duration is unknown.
   const seekMax = duration > 0 ? duration : Math.max(1, currentTime);
+  // tabIndex guard — invisible overlay controls must not be reachable via keyboard.
+  const ti = visible ? 0 : -1;
 
   const skip = (delta: number) => {
     onSeek(Math.max(0, Math.min(seekMax, currentTime + delta)));
@@ -94,15 +96,18 @@ export function StageOverlay({
       {/* Centre transport cluster — skip back / play-pause / skip forward */}
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         display: 'flex', alignItems: 'center', gap: 28 }}>
-        <button type="button" onClick={() => skip(-STAGE_SKIP_SECONDS)} aria-label={`Skip back ${STAGE_SKIP_SECONDS} seconds`}
+        <button type="button" tabIndex={ti} onClick={() => skip(-STAGE_SKIP_SECONDS)}
+          aria-label={`Skip back ${STAGE_SKIP_SECONDS} seconds`}
           title={`Back ${STAGE_SKIP_SECONDS}s`} style={{ ...ROUND_BTN, width: 44, height: 44, background: 'transparent' }}>
           <SkipIcon forward={false} />
         </button>
-        <button type="button" onClick={onTogglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
+        <button type="button" tabIndex={ti} onClick={onTogglePlay}
+          aria-label={isPlaying ? 'Pause' : 'Play'}
           title={isPlaying ? 'Pause' : 'Play'} style={{ ...ROUND_BTN, width: 64, height: 64 }}>
           <PlayPauseIcon isPlaying={isPlaying} />
         </button>
-        <button type="button" onClick={() => skip(STAGE_SKIP_SECONDS)} aria-label={`Skip forward ${STAGE_SKIP_SECONDS} seconds`}
+        <button type="button" tabIndex={ti} onClick={() => skip(STAGE_SKIP_SECONDS)}
+          aria-label={`Skip forward ${STAGE_SKIP_SECONDS} seconds`}
           title={`Forward ${STAGE_SKIP_SECONDS}s`} style={{ ...ROUND_BTN, width: 44, height: 44, background: 'transparent' }}>
           <SkipIcon forward />
         </button>
@@ -110,21 +115,31 @@ export function StageOverlay({
 
       {/* Bottom bar — seek, time display and volume cursor */}
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, padding: '0 12px 8px' }}>
-        <input type="range" min={0} max={seekMax} step={0.1} value={Math.min(currentTime, seekMax)}
-          onChange={e => onSeek(Number(e.target.value))} aria-label="Seek"
+        <input
+          type="range" min={0} max={seekMax} step={0.1} value={Math.min(currentTime, seekMax)}
+          tabIndex={ti}
+          onChange={e => onSeek(Number(e.target.value))}
+          aria-label="Seek"
+          aria-valuetext={`${formatTime(currentTime)} / ${formatTime(duration)}`}
           style={{ width: '100%', accentColor: LCARS.peach, cursor: 'pointer', height: 4 }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <span style={{ color: '#fff', fontFamily: 'monospace', fontSize: 12, fontVariantNumeric: 'tabular-nums', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button type="button" onClick={() => onVolumeChange(muted ? (lastVolumeRef.current || 0.5) : 0)}
-              aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Restore volume' : 'Mute volume'}
+            <button type="button" tabIndex={ti}
+              onClick={() => onVolumeChange(muted ? (lastVolumeRef.current || 0.5) : 0)}
+              aria-label={muted ? 'Unmute' : 'Mute'}
+              title={muted ? 'Unmute' : 'Mute'}
               style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
               <VolumeIcon muted={muted} />
             </button>
-            <input type="range" min={0} max={1} step={0.01} value={volume}
-              onChange={e => onVolumeChange(Number(e.target.value))} aria-label="Volume"
+            <input
+              type="range" min={0} max={1} step={0.01} value={volume}
+              tabIndex={ti}
+              onChange={e => onVolumeChange(Number(e.target.value))}
+              aria-label="Volume"
+              aria-valuetext={`${Math.round(Math.max(0, Math.min(1, volume)) * 100)}%`}
               title={`Volume ${Math.round(Math.max(0, Math.min(1, volume)) * 100)}%`}
               style={{ width: 90, accentColor: LCARS.purple, cursor: 'pointer', height: 4 }} />
           </span>
