@@ -124,7 +124,9 @@ async function restError(response: Response, provider: string): Promise<Error> {
     const body = await response.json() as { error?: { message?: string } };
     if (typeof body?.error?.message === 'string') detail = body.error.message;
   } catch { /* not JSON */ }
-  const err = new Error(detail || `${provider} request failed (${response.status})`) as Error & { status?: number };
+  const err = new Error(
+    detail || `${provider} request failed (HTTP ${response.status}). Check that the API key is valid and the provider is reachable.`,
+  ) as Error & { status?: number };
   err.status = response.status;
   return err;
 }

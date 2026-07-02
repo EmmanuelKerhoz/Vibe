@@ -39,11 +39,11 @@ export function AboutModal({ isOpen, onClose, isSplashScreen = false }: Props) {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   // Active AI provider info — refreshed when the dialog opens (the provider
   // status may resolve asynchronously and the user can change it in Settings).
-  const [aiInfo, setAiInfo] = useState(() => ({
+  const [aiInfo, setAiInfo] = useState({
     provider: getAiProviderName(),
     model: getAiModelName(),
     keySource: getAiKeySourceLabel(),
-  }));
+  });
 
   useEffect(() => {
     if (!isOpen) return;

@@ -12,8 +12,8 @@ import {
 const MAX_CONTENTS_LENGTH = 100_000;
 const MAX_API_KEY_LENGTH = 512;
 
-/** Reads a single-valued header, ignoring arrays (never legitimate here). */
-function headerValue(headers: Record<string, string | string[] | undefined>, name: string): string | undefined {
+/** Reads a header expected to be single-valued; arrays are ignored (never legitimate here). */
+function getSingleHeaderValue(headers: Record<string, string | string[] | undefined>, name: string): string | undefined {
   const raw = headers[name];
   return typeof raw === 'string' ? raw : undefined;
 }
@@ -25,8 +25,8 @@ function headerValue(headers: Record<string, string | string[] | undefined>, nam
  * echoed back to the client.
  */
 function resolveOverride(headers: Record<string, string | string[] | undefined>): ProviderOverride | undefined {
-  const provider = parseProviderName(headerValue(headers, 'x-ai-provider'));
-  const rawKey = headerValue(headers, 'x-ai-key')?.trim();
+  const provider = parseProviderName(getSingleHeaderValue(headers, 'x-ai-provider'));
+  const rawKey = getSingleHeaderValue(headers, 'x-ai-key')?.trim();
   const apiKey = rawKey && rawKey.length <= MAX_API_KEY_LENGTH && /^[\x21-\x7E]+$/.test(rawKey)
     ? rawKey
     : undefined;

@@ -8,6 +8,12 @@
  * of the server-configured one.
  *
  * Persistence follows the existing settings pattern (safeStorage keys).
+ *
+ * Security note: the user's API key is deliberately stored in plain
+ * localStorage. It is a user-owned key, scoped to this device and origin,
+ * and the Settings UI states this explicitly. Client-side encryption would
+ * add no real protection since any decryption key would live in the same
+ * origin (accepted CodeQL js/clear-text-storage-of-sensitive-data finding).
  */
 import { safeGetItem, safeSetItem, safeRemoveItem } from './safeStorage';
 
