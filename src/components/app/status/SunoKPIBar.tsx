@@ -1,102 +1,38 @@
-/**
- * SunoKPIBar — Fluent 2 status bar showing live Suno service metrics.
- * Mounts as a compact horizontal band; import wherever relevant (e.g. Settings panel or footer).
- *
- * KPIs displayed:
- *   • Mode badge (DEV/PROD)
- *   • Pending in-flight
- *   • Success / Error counts
- *   • Last round-trip latency
- *   • Last error tooltip
- */
-
-import {
-  Badge,
-  Text,
-  Tooltip,
-  tokens,
-} from '@fluentui/react-components';
-import { CheckmarkCircle20Regular, ErrorCircle20Regular, ArrowClockwise20Regular } from '@fluentui/react-icons';
-import { useSuno } from '../../../hooks/useSuno';
+import { useEffect, useState } from 'react';
+import { getKPISnapshot } from '../../../services/sunoService';
+import type { SunoKPISnapshot } from '../../../types/suno';
 
 export function SunoKPIBar() {
-  const { kpi, status } = useSuno();
+  const [kpi, setKpi] = useState<SunoKPISnapshot>(() => getKPISnapshot());
 
-  const isPolling = status.phase === 'polling';
-  const elapsedSec =
-    isPolling && 'elapsed' in status
-      ? (status.elapsed / 1000).toFixed(1)
-      : null;
+  useEffect(() => {
+    const id = window.setInterval(() => setKpi(getKPISnapshot()), 2000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const metrics = [
+    { key: 'mode', label: 'Mode', value: kpi.mode.toUpperCase() },
+    { key: 'req', label: 'Requests', value: String(kpi.totalRequests) },
+    { key: 'ok', label: 'Success', value: String(kpi.successCount) },
+    { key: 'err', label: 'Errors', value: String(kpi.errorCount) },
+    { key: 'pend', label: 'Pending', value: String(kpi.pendingCount) },
+  ];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: tokens.spacingHorizontalM,
-        padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
-        background: tokens.colorNeutralBackground3,
-        borderRadius: tokens.borderRadiusMedium,
-        flexWrap: 'wrap',
-      }}
-    >
-      {/* Mode */}
-      <Badge
-        appearance="filled"
-        color={kpi.mode === 'prod' ? 'success' : 'warning'}
-        size="small"
-      >
-        {kpi.mode.toUpperCase()}
-      </Badge>
-
-      {/* Pending */}
-      {kpi.pendingCount > 0 && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <ArrowClockwise20Regular
-            style={{ color: tokens.colorPaletteYellowForeground1, animation: 'spin 1s linear infinite' }}
-          />
-          <Text size={200}>{kpi.pendingCount} pending</Text>
-        </span>
-      )}
-
-      {/* Polling elapsed */}
-      {elapsedSec && (
-        <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-          ⏱ {elapsedSec}s
-        </Text>
-      )}
-
-      {/* Success */}
-      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <CheckmarkCircle20Regular style={{ color: tokens.colorPaletteGreenForeground1 }} />
-        <Text size={200}>{kpi.successCount}</Text>
-      </span>
-
-      {/* Errors */}
-      <Tooltip
-        content={kpi.lastError ?? 'No errors'}
-        relationship="description"
-        positioning="above"
-      >
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'default' }}>
-          <ErrorCircle20Regular
-            style={{
-              color:
-                kpi.errorCount > 0
-                  ? tokens.colorPaletteRedForeground1
-                  : tokens.colorNeutralForeground3,
-            }}
-          />
-          <Text size={200}>{kpi.errorCount}</Text>
-        </span>
-      </Tooltip>
-
-      {/* Latency */}
-      {kpi.lastGenerationMs !== null && (
-        <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-          {kpi.lastGenerationMs}ms
-        </Text>
-      )}
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+      {metrics.map((metric) => (
+        <div
+          key={metric.key}
+          className="rounded-md border border-[var(--border-color)] bg-[var(--bg-app)] px-2 py-1.5"
+        >
+          <div className="text-[9px] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+            {metric.label}
+          </div>
+          <div className="text-[11px] font-semibold text-[var(--text-primary)]">
+            {metric.value}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

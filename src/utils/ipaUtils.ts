@@ -226,6 +226,8 @@ export interface RhymeSimilarityResult {
   quality: RhymeQuality;
   distance: number;
   method: 'feature-weighted' | 'phoneme-edit' | 'exact';
+  /** True when the similarity was derived from a low-resource/approximated pipeline path. */
+  isApproximated?: boolean;
 }
 
 export const calculateRhymeSimilarity = (
